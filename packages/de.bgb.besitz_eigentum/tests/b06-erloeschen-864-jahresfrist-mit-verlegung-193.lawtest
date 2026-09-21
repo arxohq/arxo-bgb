@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 864 Abs. 1 mit § 193: die verbotene Eigenmacht ist am Sonnabend, dem 17. Mai 2025 verübt; die Jahresfrist endet kalendarisch am Sonntag, dem 17. Mai 2026 (§§ 187 Abs. 1, 188 Abs. 2) und wird auf Montag, den 18. Mai 2026 verlegt. Ohne Klage erlischt der Anspruch mit diesem Tag.
+test "§ 864 Abs. 1: Erlöschen mit dem Ablauf eines Jahres, Ende auf Sonntag verlegt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:b:besitz-a"), entity_ref("urn:de:bgb:be:b:fahrrad")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:b:besitz-a"), entity_ref("urn:de:bgb:be:b:A")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:b:besitz-a"), @2025-03-10) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:b:besitz-a")) { origin case_input; }
+        assert "f5": bewegliche_sache(entity_ref("urn:de:bgb:be:b:fahrrad")) { origin case_input; }
+        assert "f6": tat_betrifft_besitz(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:besitz-a")) { origin case_input; }
+        assert "f7": taeter(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:B")) { origin case_input; }
+        assert "f8": besitzentziehung(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "f9": ohne_willen_des_besitzers(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "f11": veruebt_am(entity_ref("urn:de:bgb:be:b:tat"), @2025-05-17) { origin case_input; }
+        assert "f12": besitzlage_sache(entity_ref("urn:de:bgb:be:b:besitz-b"), entity_ref("urn:de:bgb:be:b:fahrrad")) { origin case_input; }
+        assert "f13": besitzlage_person(entity_ref("urn:de:bgb:be:b:besitz-b"), entity_ref("urn:de:bgb:be:b:B")) { origin case_input; }
+        assert "f14": besitz_des_gegners(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:besitz-b")) { origin case_input; }
+        assert "f15": besitz_erlangt_durch(entity_ref("urn:de:bgb:be:b:besitz-b"), entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "f10": keine_gesetzliche_gestattung(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "h1": besitzschutzfrist(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:f:frist")) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::frist_ende_kalender(entity_ref("urn:de:bgb:be:f:frist"), @2026-05-17));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(besitzanspruch_erloschen_am(entity_ref("urn:de:bgb:be:b:tat"), @2026-05-18));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

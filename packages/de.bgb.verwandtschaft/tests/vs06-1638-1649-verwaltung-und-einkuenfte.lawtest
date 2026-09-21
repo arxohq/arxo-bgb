@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1638 Abs. 1: hat der Erblasser bestimmt, dass die Eltern das Vermögen nicht verwalten sollen, so erstreckt sich die Vermögenssorge nicht darauf; § 1640 Abs. 1 greift dann für diesen Erwerb nicht. § 1649 Abs. 1 Satz 1: die nicht benötigten Einkünfte des Kindesvermögens sind für den Unterhalt des Kindes zu verwenden.
+test "§§ 1638, 1649: ausgeschlossene Verwaltung und die Reihenfolge der Einkünfte" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erwerb_von_todes_wegen_oder_unentgeltlich(entity_ref("urn:de:bgb:vw:vs06:K"), 50000.00 EUR) { origin case_input; }
+        assert "f2": verwaltungsausschluss_bestimmt(entity_ref("urn:de:bgb:vw:vs06:K")) { origin case_input; }
+        assert "f3": vermoegenseinkuenfte_nicht_benoetigt(entity_ref("urn:de:bgb:vw:vs06:K")) { origin case_input; }
+    }
+    evaluate truth(vermoegenssorge_erstreckt_sich_nicht_auf_den_erwerb(entity_ref("urn:de:bgb:vw:vs06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vermoegensverzeichnis_einzureichen(entity_ref("urn:de:bgb:vw:vs06:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einkuenfte_fuer_den_unterhalt_des_kindes(entity_ref("urn:de:bgb:vw:vs06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

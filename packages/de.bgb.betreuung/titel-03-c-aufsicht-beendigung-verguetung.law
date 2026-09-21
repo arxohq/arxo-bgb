@@ -1,0 +1,812 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 4 ABSCHNITT 3 TITEL 3 — RECHTLICHE BETREUUNG
+// (§§ 1861–1881: Aufsicht, Beendigung, Vergütung). Nach D-14-03/D-14-06 mit
+// Regelmaschinerie ausgeführt: §§ 1861, 1862, § 1863 Absatz 3 (Jahresbericht),
+// 1864, 1865, 1866, 1867, § 1868 (Entlassung), 1869, §§ 1870–1875
+// (Ende/Aufhebung/Herausgabe/Vergütungsdispatcher), §§ 1876–1881 (Vergütung,
+// Aufwendungsersatz mit den Fristen aus § 1877 Absatz 4 und § 1878
+// Absatz 4). § 1807 (Titel 1) liest dieselbe Beendigungsmaschinerie
+// (Block 6, TASKS.json BG-14-TODO-1).
+
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+
+// § 1861: Beratung; Verpflichtung des Betreuers — Absatz 2 mit Ausnahme für
+// Betreuer, die mehr als eine Betreuung führen oder in den letzten zwei
+// Jahren geführt haben.
+
+pub relation ehrenamtlicher_betreuer_neu_bestellt(b: Person, betreuter: Person) kind empirical {
+    label de official "Ein ehrenamtlicher Betreuer wird bestellt (§ 1861 Absatz 2 Satz 1)";
+    label en unofficial "an honorary custodian is appointed (§ 1861 (2) sentence 1)";
+}
+pub relation betreuer_fuehrt_mehr_als_eine_betreuung_oder_kuerzlich(b: Person) kind empirical {
+    label de official "Der Betreuer führt mehr als eine Betreuung oder hat in den letzten zwei Jahren mehr als eine Betreuung geführt (§ 1861 Absatz 2 Satz 2)";
+    label en unofficial "the custodian holds more than one custodianship, or has held more than one in the last two years (§ 1861 (2) sentence 2)";
+}
+pub relation muendliche_verpflichtung_und_unterrichtung_pflicht(b: Person, betreuter: Person) kind institutional {
+    label de official "Der ehrenamtliche Betreuer wird alsbald mündlich verpflichtet, über seine Aufgaben unterrichtet und auf Beratungs-/Unterstützungsangebote hingewiesen (§ 1861 Absatz 2 Satz 1)";
+    label en unofficial "the honorary custodian is promptly given an oral undertaking, informed of their duties, and referred to advice/support services (§ 1861 (2) sentence 1)";
+}
+@source(BGB_P1861)
+rule MuendlicheVerpflichtungUndUnterrichtungPflicht(b: Person, betreuter: Person) strict {
+    label de official "Ein neu bestellter ehrenamtlicher Betreuer wird alsbald mündlich verpflichtet und unterrichtet, es sei denn, er führt mehr als eine Betreuung oder hat dies in den letzten zwei Jahren getan (§ 1861 Absatz 2)";
+    label en unofficial "a newly appointed honorary custodian is promptly given an oral undertaking and informed, unless they hold or recently held more than one custodianship (§ 1861 (2))";
+    when gesetzlicher_vertreter(b, betreuter) and ehrenamtlicher_betreuer_neu_bestellt(b, betreuter) and not_known(betreuer_fuehrt_mehr_als_eine_betreuung_oder_kuerzlich(b));
+    then muendliche_verpflichtung_und_unterrichtung_pflicht(b, betreuter);
+}
+
+// § 1862: Aufsicht durch das Betreuungsgericht — Absatz 2 (persönliche
+// Anhörung des Betreuten mit Ausnahme) und Absatz 3 (Einschreitenspflicht bei
+// festgestellter Pflichtwidrigkeit; kein Zwangsgeld gegen Betreuungsbehörde,
+// Behördenbetreuer oder Betreuungsverein).
+
+pub relation anhaltspunkte_fuer_pflichtwidrige_wunschmissachtung(b: Person, betreuter: Person) kind empirical {
+    label de official "Anhaltspunkte dafür, dass der Betreuer pflichtwidrig den Wünschen des Betreuten nicht oder nicht in geeigneter Weise entspricht oder seinen Pflichten gegenüber dem Betreuten in anderer Weise nicht nachkommt (§ 1862 Absatz 2)";
+    label en unofficial "indications that the custodian is in breach of duty, wrongly disregarding the represented person's wishes or otherwise failing their duties towards them (§ 1862 (2))";
+}
+pub relation persoenliche_anhoerung_nicht_geeignet_oder_nicht_erforderlich(b: Person, betreuter: Person) kind empirical {
+    label de official "Die persönliche Anhörung ist nicht geeignet oder nicht erforderlich, um die Pflichtwidrigkeit aufzuklären (§ 1862 Absatz 2 Halbsatz 2)";
+    label en unofficial "the personal hearing is not suitable or not necessary to clarify the breach of duty (§ 1862 (2) second half-sentence)";
+}
+pub relation persoenliche_anhoerung_pflicht_1862(b: Person, betreuter: Person) kind institutional {
+    label de official "Das Betreuungsgericht hat den Betreuten persönlich anzuhören (§ 1862 Absatz 2)";
+    label en unofficial "the custody court must hear the represented person in person (§ 1862 (2))";
+}
+@source(BGB_P1862)
+rule PersoenlicheAnhoerungPflicht1862(b: Person, betreuter: Person) strict {
+    label de official "Bestehen Anhaltspunkte für eine pflichtwidrige Wunschmissachtung, hat das Betreuungsgericht den Betreuten persönlich anzuhören, es sei denn, die Anhörung ist nicht geeignet oder nicht erforderlich (§ 1862 Absatz 2)";
+    label en unofficial "where there are indications of a breach disregarding the represented person's wishes, the custody court must hear them in person, unless the hearing is unsuitable or unnecessary (§ 1862 (2))";
+    when gesetzlicher_vertreter(b, betreuter) and anhaltspunkte_fuer_pflichtwidrige_wunschmissachtung(b, betreuter) and not_known(persoenliche_anhoerung_nicht_geeignet_oder_nicht_erforderlich(b, betreuter));
+    then persoenliche_anhoerung_pflicht_1862(b, betreuter);
+}
+pub relation pflichtwidrigkeit_des_betreuers_festgestellt(b: Person, betreuter: Person) kind empirical {
+    label de official "Das Betreuungsgericht stellt eine Pflichtwidrigkeit des Betreuers fest (§ 1862 Absatz 3 Satz 1)";
+    label en unofficial "the custody court finds a breach of duty by the custodian (§ 1862 (3) sentence 1)";
+}
+pub relation einschreitenspflicht_1862(b: Person, betreuter: Person) kind institutional {
+    label de official "Das Betreuungsgericht hat gegen die Pflichtwidrigkeit durch geeignete Gebote und Verbote einzuschreiten (§ 1862 Absatz 3 Satz 1)";
+    label en unofficial "the custody court must intervene against the breach of duty with suitable orders and prohibitions (§ 1862 (3) sentence 1)";
+}
+@source(BGB_P1862)
+rule EinschreitenspflichtBeiPflichtwidrigkeit1862(b: Person, betreuter: Person) strict {
+    label de official "Stellt das Betreuungsgericht eine Pflichtwidrigkeit fest, hat es durch geeignete Gebote und Verbote einzuschreiten (§ 1862 Absatz 3 Satz 1)";
+    label en unofficial "where the custody court finds a breach of duty, it must intervene with suitable orders and prohibitions (§ 1862 (3) sentence 1)";
+    when gesetzlicher_vertreter(b, betreuter) and pflichtwidrigkeit_des_betreuers_festgestellt(b, betreuter);
+    then einschreitenspflicht_1862(b, betreuter);
+}
+pub relation betreuer_ist_behoerde_oder_verein_1862(b: Person) kind empirical {
+    label de official "Der Betreuer ist die Betreuungsbehörde, ein Behördenbetreuer oder ein Betreuungsverein (§ 1862 Absatz 3 Satz 3)";
+    label en unofficial "the custodian is the custodianship authority, an authority custodian, or a custodianship association (§ 1862 (3) sentence 3)";
+}
+pub relation zwangsgeld_gegen_betreuer_ausgeschlossen_1862(b: Person, betreuter: Person) kind institutional {
+    label de official "Gegen den Betreuer wird kein Zwangsgeld festgesetzt (§ 1862 Absatz 3 Satz 3)";
+    label en unofficial "no coercive fine is imposed on the custodian (§ 1862 (3) sentence 3)";
+}
+@source(BGB_P1862)
+rule ZwangsgeldAusgeschlossenGegenBehoerdeOderVerein(b: Person, betreuter: Person) strict {
+    label de official "Gegen die Betreuungsbehörde, einen Behördenbetreuer oder einen Betreuungsverein wird kein Zwangsgeld festgesetzt (§ 1862 Absatz 3 Satz 3)";
+    label en unofficial "no coercive fine is imposed on the custodianship authority, an authority custodian, or a custodianship association (§ 1862 (3) sentence 3)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuer_ist_behoerde_oder_verein_1862(b);
+    then zwangsgeld_gegen_betreuer_ausgeschlossen_1862(b, betreuter);
+}
+
+// § 1863 Absatz 3: Jahresbericht — mindestens einmal jährlich, Frist über den Beginn der Betreuung.
+
+pub relation betreuung_uebernommen_am(b: Person, betreuter: Person, tag: Date) kind empirical {
+    label de official "Tag der Übernahme der Betreuung durch den Betreuer (§ 1863 Absatz 1 Satz 1)";
+    label en unofficial "day the custodian took up the custodianship (§ 1863 (1) sentence 1)";
+}
+pub relation jahresbericht_faellig_am(b: Person, betreuter: Person, f: Frist) kind empirical {
+    key(f);
+    label de official "Frist des Jahresberichts über die persönlichen Verhältnisse des Betreuten: mindestens einmal jährlich (§ 1863 Absatz 3 Satz 1)";
+    label en unofficial "the deadline for the annual report on the represented person's personal circumstances: at least once a year (§ 1863 (3) sentence 1)";
+}
+@source(BGB_P1863) {
+    rule JahresberichtsfristEreignis(b: Person, betreuter: Person, f: Frist, t: Date) strict {
+        label de official "Die Jahresfrist beginnt mit der Übernahme der Betreuung, für spätere Berichte mit dem vorigen Jahresbericht (§ 1863 Absatz 3 Satz 1)";
+        label en unofficial "the annual period begins with taking up the custodianship, or for later reports with the previous annual report (§ 1863 (3) sentence 1)";
+        when jahresbericht_faellig_am(b, betreuter, f) and jahresberichtsfrist_ereignistag(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule JahresberichtsfristDauer(b: Person, betreuter: Person, f: Frist) strict {
+        label de official "Der Betreuer hat dem Betreuungsgericht über die persönlichen Verhältnisse des Betreuten mindestens einmal jährlich zu berichten (§ 1863 Absatz 3 Satz 1)";
+        label en unofficial "the custodian must report to the custody court on the represented person's personal circumstances at least once a year (§ 1863 (3) sentence 1)";
+        when jahresbericht_faellig_am(b, betreuter, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+}
+pub relation jahresberichtsfrist_ereignistag(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Übernahme der Betreuung oder des vorigen Jahresberichts, ab dem die laufende Jahresfrist gezählt wird (§ 1863 Absatz 3 Satz 1)";
+    label en unofficial "day of taking up the custodianship or the previous annual report, from which the current annual period is counted (§ 1863 (3) sentence 1)";
+}
+pub relation jahresbericht_dem_betreuungsgericht_erstattet_am(f: Frist, tag: Date) kind empirical {
+    label de official "Tag, an dem der Betreuer den Jahresbericht dem Betreuungsgericht erstattet hat";
+    label en unofficial "day on which the custodian filed the annual report with the custody court";
+}
+pub relation jahresbericht_ueberfaellig(b: Person, betreuter: Person, f: Frist) kind institutional {
+    label de official "Der Jahresbericht ist nicht binnen der Jahresfrist erstattet worden (§ 1863 Absatz 3 Satz 1)";
+    label en unofficial "the annual report has not been filed within the annual period (§ 1863 (3) sentence 1)";
+}
+@source(BGB_P1863)
+rule JahresberichtUeberfaellig(b: Person, betreuter: Person, f: Frist, e: Date) strict {
+    label de official "Der Jahresbericht ist überfällig, wenn er nicht bis zum Ablauf der Jahresfrist erstattet worden ist (§ 1863 Absatz 3 Satz 1)";
+    label en unofficial "the annual report is overdue where it has not been filed by the expiry of the annual period (§ 1863 (3) sentence 1)";
+    when jahresbericht_faellig_am(b, betreuter, f) and de.bgb.fristen::frist_ende(f, e) and not_known(jahresbericht_dem_betreuungsgericht_erstattet_am(f, e));
+    then jahresbericht_ueberfaellig(b, betreuter, f);
+}
+pub relation jahresbericht_mit_betreuten_zu_besprechen(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat den Jahresbericht mit dem Betreuten zu besprechen (§ 1863 Absatz 3 Satz 2)";
+    label en unofficial "the custodian must discuss the annual report with the represented person (§ 1863 (3) sentence 2)";
+}
+pub relation besprechung_erhebliche_gesundheitliche_nachteile(b: Person, betreuter: Person) kind empirical {
+    label de official "Von der Besprechung sind erhebliche Nachteile für die Gesundheit des Betreuten zu besorgen, oder er ist offensichtlich nicht in der Lage, den Inhalt zur Kenntnis zu nehmen (§ 1863 Absatz 3 Satz 2)";
+    label en unofficial "the discussion is feared to cause substantial harm to the represented person's health, or they are evidently unable to take in its content (§ 1863 (3) sentence 2)";
+}
+@source(BGB_P1863)
+rule JahresberichtMitBetreutemZuBesprechen(b: Person, betreuter: Person, f: Frist) strict {
+    label de official "Der Betreuer hat den Jahresbericht mit dem Betreuten zu besprechen, es sei denn, erhebliche gesundheitliche Nachteile sind zu besorgen oder er kann den Inhalt offensichtlich nicht zur Kenntnis nehmen (§ 1863 Absatz 3 Satz 2)";
+    label en unofficial "the custodian must discuss the annual report with the represented person unless substantial health harm is feared or they are evidently unable to take in its content (§ 1863 (3) sentence 2)";
+    when jahresbericht_faellig_am(b, betreuter, f) and not_known(besprechung_erhebliche_gesundheitliche_nachteile(b, betreuter));
+    then jahresbericht_mit_betreuten_zu_besprechen(b, betreuter);
+}
+
+// § 1864: Auskunfts- und Mitteilungspflichten des Betreuers — Absatz 1
+// (Auskunft auf Verlangen) und Absatz 2 (unverzügliche Mitteilung
+// wesentlicher Änderungen).
+
+pub relation gericht_verlangt_auskunft_ueber_betreuungsfuehrung(b: Person, betreuter: Person) kind empirical {
+    label de official "Das Betreuungsgericht verlangt Auskunft über die Führung der Betreuung und die persönlichen und wirtschaftlichen Verhältnisse des Betreuten (§ 1864 Absatz 1)";
+    label en unofficial "the custody court demands information on how the custodianship is conducted and on the represented person's personal and economic circumstances (§ 1864 (1))";
+}
+pub relation auskunftspflicht_1864(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat dem Betreuungsgericht Auskunft zu erteilen (§ 1864 Absatz 1)";
+    label en unofficial "the custodian must provide the custody court with the information (§ 1864 (1))";
+}
+@source(BGB_P1864)
+rule AuskunftspflichtAufVerlangen1864(b: Person, betreuter: Person) strict {
+    label de official "Verlangt das Betreuungsgericht Auskunft, hat der Betreuer sie zu erteilen (§ 1864 Absatz 1)";
+    label en unofficial "where the custody court demands information, the custodian must provide it (§ 1864 (1))";
+    when gesetzlicher_vertreter(b, betreuter) and gericht_verlangt_auskunft_ueber_betreuungsfuehrung(b, betreuter);
+    then auskunftspflicht_1864(b, betreuter);
+}
+pub relation wesentliche_aenderung_der_verhaeltnisse_eingetreten(b: Person, betreuter: Person) kind empirical {
+    label de official "Eine wesentliche Änderung der persönlichen und wirtschaftlichen Verhältnisse des Betreuten ist eingetreten (§ 1864 Absatz 2 Satz 1)";
+    label en unofficial "a material change in the represented person's personal and economic circumstances has occurred (§ 1864 (2) sentence 1)";
+}
+pub relation mitteilungspflicht_wesentliche_aenderung_1864(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat dem Betreuungsgericht die wesentliche Änderung unverzüglich mitzuteilen (§ 1864 Absatz 2 Satz 1)";
+    label en unofficial "the custodian must notify the custody court of the material change without delay (§ 1864 (2) sentence 1)";
+}
+@source(BGB_P1864)
+rule MitteilungspflichtWesentlicheAenderung1864(b: Person, betreuter: Person) strict {
+    label de official "Tritt eine wesentliche Änderung der Verhältnisse des Betreuten ein, hat der Betreuer dies unverzüglich mitzuteilen (§ 1864 Absatz 2 Satz 1)";
+    label en unofficial "where a material change in the represented person's circumstances occurs, the custodian must notify it without delay (§ 1864 (2) sentence 1)";
+    when gesetzlicher_vertreter(b, betreuter) and wesentliche_aenderung_der_verhaeltnisse_eingetreten(b, betreuter);
+    then mitteilungspflicht_wesentliche_aenderung_1864(b, betreuter);
+}
+
+// § 1865: Rechnungslegung — Absatz 1 (Pflicht, sofern Vermögensverwaltung
+// zum Aufgabenkreis gehört) und Absatz 2 Satz 1 (jährlich).
+
+pub relation rechnungslegungspflicht_1865(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat dem Betreuungsgericht jährlich über die Vermögensverwaltung Rechnung zu legen (§ 1865 Absatz 1, Absatz 2 Satz 1)";
+    label en unofficial "the custodian must render an annual account of the asset administration to the custody court (§ 1865 (1), (2) sentence 1)";
+}
+@source(BGB_P1865)
+rule RechnungslegungspflichtJaehrlich1865(b: Person, betreuter: Person) strict {
+    label de official "Gehört die Vermögensverwaltung zum Aufgabenkreis, hat der Betreuer dem Betreuungsgericht jährlich Rechnung zu legen (§ 1865 Absatz 1, Absatz 2 Satz 1)";
+    label en unofficial "where asset administration falls within the custodian's scope, they must render an annual account to the custody court (§ 1865 (1), (2) sentence 1)";
+    when gesetzlicher_vertreter(b, betreuter) and vermoegensverwaltung_gehoert_zum_aufgabenkreis(b, betreuter);
+    then rechnungslegungspflicht_1865(b, betreuter);
+}
+
+// § 1866: Prüfung der Rechnung durch das Betreuungsgericht.
+
+pub relation rechnung_eingereicht_1865(b: Person, betreuter: Person) kind empirical {
+    label de official "Der Betreuer reicht die Rechnung nach § 1865 ein (§ 1866 Absatz 1)";
+    label en unofficial "the custodian submits the account under § 1865 (§ 1866 (1))";
+}
+pub relation pruefungspflicht_der_rechnung_1866(b: Person, betreuter: Person) kind institutional {
+    label de official "Das Betreuungsgericht hat die Rechnung sachlich und rechnerisch zu prüfen (§ 1866 Absatz 1)";
+    label en unofficial "the custody court must examine the account for substance and arithmetic (§ 1866 (1))";
+}
+@source(BGB_P1866)
+rule PruefungspflichtDerRechnung1866(b: Person, betreuter: Person) strict {
+    label de official "Reicht der Betreuer eine Rechnung ein, hat das Betreuungsgericht sie sachlich und rechnerisch zu prüfen (§ 1866 Absatz 1)";
+    label en unofficial "where the custodian submits an account, the custody court must examine it for substance and arithmetic (§ 1866 (1))";
+    when gesetzlicher_vertreter(b, betreuter) and rechnung_eingereicht_1865(b, betreuter);
+    then pruefungspflicht_der_rechnung_1866(b, betreuter);
+}
+
+// § 1867: Einstweilige Maßnahmen des Betreuungsgerichts — zwei alternative
+// Voraussetzungen (noch kein Betreuer bestellt / Betreuer an
+// Pflichterfüllung gehindert).
+
+pub relation dringende_gruende_fuer_betreuerbestellungsvoraussetzungen(volljaehriger: Person) kind empirical {
+    label de official "Dringende Gründe für die Annahme, dass die Voraussetzungen für die Bestellung eines Betreuers gegeben sind (§ 1867)";
+    label en unofficial "urgent grounds to assume that the requirements for appointing a custodian are met (§ 1867)";
+}
+pub relation betreuer_noch_nicht_bestellt(volljaehriger: Person) kind empirical {
+    label de official "Ein Betreuer konnte noch nicht bestellt werden (§ 1867)";
+    label en unofficial "a custodian could not yet be appointed (§ 1867)";
+}
+pub relation betreuer_an_pflichterfuellung_gehindert(volljaehriger: Person, b: Person) kind empirical {
+    label de official "Der Betreuer ist an der Erfüllung seiner Pflichten gehindert (§ 1867)";
+    label en unofficial "the custodian is prevented from fulfilling their duties (§ 1867)";
+}
+pub relation einstweilige_massnahmen_pflicht_1867(volljaehriger: Person) kind institutional {
+    label de official "Das Betreuungsgericht hat die dringend erforderlichen Maßnahmen zu treffen (§ 1867)";
+    label en unofficial "the custody court must take the urgently required measures (§ 1867)";
+}
+@source(BGB_P1867)
+rule EinstweiligeMassnahmenPflichtOhneBetreuer1867(volljaehriger: Person) strict {
+    label de official "Bestehen dringende Gründe für die Betreuerbestellungsvoraussetzungen und konnte noch kein Betreuer bestellt werden, hat das Betreuungsgericht dringend erforderliche Maßnahmen zu treffen (§ 1867)";
+    label en unofficial "where there are urgent grounds for the custodian-appointment requirements and no custodian could yet be appointed, the custody court must take urgently required measures (§ 1867)";
+    when dringende_gruende_fuer_betreuerbestellungsvoraussetzungen(volljaehriger) and betreuer_noch_nicht_bestellt(volljaehriger);
+    then einstweilige_massnahmen_pflicht_1867(volljaehriger);
+}
+@source(BGB_P1867)
+rule EinstweiligeMassnahmenPflichtBetreuerGehindert1867(volljaehriger: Person, b: Person) strict {
+    label de official "Bestehen dringende Gründe für die Betreuerbestellungsvoraussetzungen und ist der Betreuer an der Pflichterfüllung gehindert, hat das Betreuungsgericht dringend erforderliche Maßnahmen zu treffen (§ 1867)";
+    label en unofficial "where there are urgent grounds for the custodian-appointment requirements and the custodian is prevented from fulfilling their duties, the custody court must take urgently required measures (§ 1867)";
+    when dringende_gruende_fuer_betreuerbestellungsvoraussetzungen(volljaehriger) and gesetzlicher_vertreter(b, volljaehriger) and betreuer_an_pflichterfuellung_gehindert(volljaehriger, b);
+    then einstweilige_massnahmen_pflicht_1867(volljaehriger);
+}
+
+// § 1868: Entlassung des Betreuers.
+
+pub relation eignung_nicht_gewaehrleistet(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Eignung des Betreuers, die Angelegenheiten des Betreuten zu besorgen, ist nicht oder nicht mehr gewährleistet (§ 1868 Absatz 1 Satz 1)";
+    label en unofficial "the custodian's suitability to attend to the represented person's affairs is not, or no longer, assured (§ 1868 (1) sentence 1)";
+}
+pub relation sonstiger_wichtiger_entlassungsgrund_betreuer(b: Person, betreuter: Person) kind empirical {
+    label de official "Ein anderer wichtiger Grund für die Entlassung des Betreuers liegt vor, insbesondere vorsätzlich falsche Abrechnung oder fehlender persönlicher Kontakt (§ 1868 Absatz 1)";
+    label en unofficial "another important ground for the custodian's discharge exists, in particular an intentionally false accounting or lack of the required personal contact (§ 1868 (1))";
+}
+pub relation betreuer_zu_entlassen(b: Person, betreuter: Person) kind institutional {
+    label de official "Das Betreuungsgericht hat den Betreuer zu entlassen (§ 1868 Absatz 1)";
+    label en unofficial "the custody court must discharge the custodian (§ 1868 (1))";
+}
+@source(BGB_P1868) {
+    rule Entlassung1868EignungNichtGewaehrleistet(b: Person, betreuter: Person) strict {
+        label de official "Entlassungspflicht, wenn die Eignung des Betreuers nicht oder nicht mehr gewährleistet ist (§ 1868 Absatz 1 Satz 1)";
+        label en unofficial "mandatory discharge where the custodian's suitability is not, or no longer, assured (§ 1868 (1) sentence 1)";
+        when eignung_nicht_gewaehrleistet(b, betreuter);
+        then betreuer_zu_entlassen(b, betreuter);
+    }
+    rule Entlassung1868SonstigerWichtigerGrund(b: Person, betreuter: Person) strict {
+        label de official "Entlassungspflicht bei sonstigem wichtigem Grund (§ 1868 Absatz 1 Satz 1, 2)";
+        label en unofficial "mandatory discharge on another important ground (§ 1868 (1) sentences 1, 2)";
+        when sonstiger_wichtiger_entlassungsgrund_betreuer(b, betreuter);
+        then betreuer_zu_entlassen(b, betreuter);
+    }
+}
+pub relation registrierung_widerrufen_oder_zurueckgenommen(b: Person) kind empirical {
+    label de official "Die Registrierung des beruflichen Betreuers nach § 27 Absatz 1 und 2 Betreuungsorganisationsgesetz wurde widerrufen oder zurückgenommen (§ 1868 Absatz 2)";
+    label en unofficial "the professional custodian's registration under § 27 (1), (2) of the Custodianship Organisation Act has been revoked or withdrawn (§ 1868 (2))";
+}
+@source(BGB_P1868)
+rule Entlassung1868RegistrierungEntzogen(b: Person, betreuter: Person) strict {
+    label de official "Das Betreuungsgericht hat den beruflichen Betreuer zu entlassen, wenn dessen Registrierung widerrufen oder zurückgenommen wurde (§ 1868 Absatz 2)";
+    label en unofficial "the custody court must discharge the professional custodian where their registration has been revoked or withdrawn (§ 1868 (2))";
+    when registrierung_widerrufen_oder_zurueckgenommen(b) and gesetzlicher_vertreter(b, betreuter);
+    then betreuer_zu_entlassen(b, betreuter);
+}
+pub relation umstaende_fortfuehrung_nicht_zumutbar(b: Person, betreuter: Person) kind empirical {
+    label de official "Nach der Bestellung eingetretene Umstände, aufgrund derer dem Betreuer die Führung der Betreuung nicht mehr zugemutet werden kann (§ 1868 Absatz 4)";
+    label en unofficial "circumstances arising after appointment which mean continuing the custodianship can no longer reasonably be expected of the custodian (§ 1868 (4))";
+}
+pub relation betreuer_verlangt_entlassung(b: Person, betreuter: Person) kind empirical {
+    label de official "Der Betreuer verlangt seine Entlassung (§ 1868 Absatz 4)";
+    label en unofficial "the custodian demands their discharge (§ 1868 (4))";
+}
+@source(BGB_P1868)
+rule Entlassung1868AufVerlangenUnzumutbarkeit(b: Person, betreuter: Person) strict {
+    label de official "Das Betreuungsgericht entlässt den Betreuer auf dessen Verlangen, wenn ihm die Führung der Betreuung nicht mehr zugemutet werden kann (§ 1868 Absatz 4)";
+    label en unofficial "the custody court discharges the custodian on their demand where continuing the custodianship can no longer reasonably be expected of them (§ 1868 (4))";
+    when umstaende_fortfuehrung_nicht_zumutbar(b, betreuter) and betreuer_verlangt_entlassung(b, betreuter);
+    then betreuer_zu_entlassen(b, betreuter);
+}
+
+// § 1869: Bestellung eines neuen Betreuers — mit der Entlassung des
+// Betreuers (§ 1868, bereits als `betreuer_zu_entlassen` modelliert) oder
+// nach dessen Tod.
+
+pub relation betreuer_verstorben(b: Person) kind empirical {
+    label de official "Der Betreuer ist verstorben (§ 1869)";
+    label en unofficial "the custodian has died (§ 1869)";
+}
+pub relation neuer_betreuer_zu_bestellen_pflicht(betreuter: Person) kind institutional {
+    label de official "Es ist ein neuer Betreuer zu bestellen (§ 1869)";
+    label en unofficial "a new custodian must be appointed (§ 1869)";
+}
+@source(BGB_P1869)
+rule NeuerBetreuerZuBestellenNachEntlassung(b: Person, betreuter: Person) strict {
+    label de official "Mit der Entlassung des Betreuers ist ein neuer Betreuer zu bestellen (§ 1869)";
+    label en unofficial "on the custodian's discharge, a new custodian must be appointed (§ 1869)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuer_zu_entlassen(b, betreuter);
+    then neuer_betreuer_zu_bestellen_pflicht(betreuter);
+}
+@source(BGB_P1869)
+rule NeuerBetreuerZuBestellenNachTod(b: Person, betreuter: Person) strict {
+    label de official "Nach dem Tod des Betreuers ist ein neuer Betreuer zu bestellen (§ 1869)";
+    label en unofficial "after the custodian's death, a new custodian must be appointed (§ 1869)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuer_verstorben(b);
+    then neuer_betreuer_zu_bestellen_pflicht(betreuter);
+}
+
+// § 1870: Ende der Betreuung.
+
+pub relation betreuung_durch_gericht_aufgehoben(b: Person, betreuter: Person) kind empirical {
+    label de official "Das Betreuungsgericht hat die Betreuung aufgehoben (§ 1870) — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "the custody court has terminated the custodianship (§ 1870) — established fact, in the case origin adjudicated";
+}
+pub relation betreuter_verstorben(betreuter: Person) kind empirical {
+    label de official "Der Betreute ist verstorben (§ 1870)";
+    label en unofficial "the represented person has died (§ 1870)";
+}
+pub relation betreuung_endet(b: Person, betreuter: Person) kind institutional {
+    label de official "Die Betreuung endet (§ 1870)";
+    label en unofficial "the custodianship ends (§ 1870)";
+}
+@source(BGB_P1870) {
+    rule BetreuungEndetDurchAufhebung(b: Person, betreuter: Person) strict {
+        label de official "Die Betreuung endet mit der Aufhebung der Betreuung durch das Betreuungsgericht (§ 1870)";
+        label en unofficial "the custodianship ends with the custody court's termination of the custodianship (§ 1870)";
+        when betreuung_durch_gericht_aufgehoben(b, betreuter);
+        then betreuung_endet(b, betreuter);
+    }
+    rule BetreuungEndetDurchTod(b: Person, betreuter: Person) strict {
+        label de official "Die Betreuung endet mit dem Tod des Betreuten (§ 1870)";
+        label en unofficial "the custodianship ends with the represented person's death (§ 1870)";
+        when gesetzlicher_vertreter(b, betreuter) and betreuter_verstorben(betreuter);
+        then betreuung_endet(b, betreuter);
+    }
+}
+
+// § 1871: Aufhebung oder Änderung von Betreuung und Einwilligungsvorbehalt.
+
+pub relation voraussetzungen_der_betreuung_weggefallen(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Voraussetzungen der Betreuung sind weggefallen (§ 1871 Absatz 1 Satz 1)";
+    label en unofficial "the requirements for the custodianship have ceased to exist (§ 1871 (1) sentence 1)";
+}
+pub relation betreuung_aufzuheben(b: Person, betreuter: Person) kind institutional {
+    label de official "Die Betreuung ist aufzuheben (§ 1871 Absatz 1 Satz 1)";
+    label en unofficial "the custodianship must be terminated (§ 1871 (1) sentence 1)";
+}
+@source(BGB_P1871)
+rule BetreuungAufzuhebenBeiWegfall(b: Person, betreuter: Person) strict {
+    label de official "Die Betreuung ist aufzuheben, wenn ihre Voraussetzungen wegfallen (§ 1871 Absatz 1 Satz 1)";
+    label en unofficial "the custodianship must be terminated once its requirements cease to exist (§ 1871 (1) sentence 1)";
+    when voraussetzungen_der_betreuung_weggefallen(b, betreuter);
+    then betreuung_aufzuheben(b, betreuter);
+}
+pub relation betreuer_auf_antrag_des_betreuten_bestellt(b: Person, betreuter: Person) kind empirical {
+    label de official "Der Betreuer ist auf Antrag des Betreuten bestellt (§ 1871 Absatz 2 Satz 1)";
+    label en unofficial "the custodian was appointed on the represented person's application (§ 1871 (2) sentence 1)";
+}
+pub relation betreuter_beantragt_aufhebung(b: Person, betreuter: Person) kind empirical {
+    label de official "Der Betreute beantragt die Aufhebung der Betreuung (§ 1871 Absatz 2 Satz 1)";
+    label en unofficial "the represented person applies for termination of the custodianship (§ 1871 (2) sentence 1)";
+}
+pub relation aufrechterhaltung_trotz_1814_abs2_erforderlich(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Aufrechterhaltung der Betreuung ist auch unter Berücksichtigung von § 1814 Absatz 2 erforderlich (§ 1871 Absatz 2 Satz 1 Halbsatz 2)";
+    label en unofficial "maintaining the custodianship is necessary even having regard to § 1814 (2) (§ 1871 (2) sentence 1 second half-sentence)";
+}
+@source(BGB_P1871)
+rule BetreuungAufAntragWiederAufzuheben(b: Person, betreuter: Person) strict {
+    label de official "Ist der Betreuer auf Antrag des Betreuten bestellt, ist die Betreuung auf dessen Antrag wieder aufzuheben, es sei denn, ihre Aufrechterhaltung ist auch unter Berücksichtigung von § 1814 Absatz 2 erforderlich (§ 1871 Absatz 2 Satz 1)";
+    label en unofficial "where the custodian was appointed on the represented person's application, the custodianship must be terminated again on their application, unless maintaining it is necessary even having regard to § 1814 (2) (§ 1871 (2) sentence 1)";
+    when betreuer_auf_antrag_des_betreuten_bestellt(b, betreuter) and betreuter_beantragt_aufhebung(b, betreuter) and not_known(aufrechterhaltung_trotz_1814_abs2_erforderlich(b, betreuter));
+    then betreuung_aufzuheben(b, betreuter);
+}
+pub relation erweiterung_des_aufgabenkreises_erforderlich(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Erweiterung des Aufgabenkreises des Betreuers ist erforderlich geworden (§ 1871 Absatz 3 Satz 1)";
+    label en unofficial "expanding the custodian's scope has become necessary (§ 1871 (3) sentence 1)";
+}
+pub relation aufgabenkreis_zu_erweitern(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Aufgabenkreis des Betreuers ist zu erweitern (§ 1871 Absatz 3 Satz 1)";
+    label en unofficial "the custodian's scope must be expanded (§ 1871 (3) sentence 1)";
+}
+@source(BGB_P1871)
+rule AufgabenkreisZuErweitern(b: Person, betreuter: Person) strict {
+    label de official "Der Aufgabenkreis des Betreuers ist zu erweitern, wenn dies erforderlich wird (§ 1871 Absatz 3 Satz 1)";
+    label en unofficial "the custodian's scope must be expanded where this becomes necessary (§ 1871 (3) sentence 1)";
+    when erweiterung_des_aufgabenkreises_erforderlich(b, betreuter);
+    then aufgabenkreis_zu_erweitern(b, betreuter);
+}
+pub relation voraussetzungen_des_einwilligungsvorbehalts_weggefallen(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Voraussetzungen des Einwilligungsvorbehalts sind weggefallen (§ 1871 Absatz 4 mit Absatz 1)";
+    label en unofficial "the requirements for the consent requirement have ceased to exist (§ 1871 (4) with (1))";
+}
+pub relation einwilligungsvorbehalt_aufzuheben(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Einwilligungsvorbehalt ist aufzuheben (§ 1871 Absatz 4 mit Absatz 1)";
+    label en unofficial "the consent requirement must be lifted (§ 1871 (4) with (1))";
+}
+@source(BGB_P1871)
+rule EinwilligungsvorbehaltAufzuhebenBeiWegfall(b: Person, betreuter: Person) strict {
+    label de official "Für den Einwilligungsvorbehalt gilt Absatz 1 entsprechend: er ist aufzuheben, wenn seine Voraussetzungen wegfallen (§ 1871 Absatz 4)";
+    label en unofficial "paragraph 1 applies correspondingly to the consent requirement: it must be lifted once its requirements cease to exist (§ 1871 (4))";
+    when voraussetzungen_des_einwilligungsvorbehalts_weggefallen(b, betreuter);
+    then einwilligungsvorbehalt_aufzuheben(b, betreuter);
+}
+
+// § 1872: Herausgabe von Vermögen und Unterlagen; Schlussrechnungslegung;
+// Vermögensübersicht — Absatz 1 (Herausgabe- und Rechenschaftspflicht bei
+// Beendigung), Absatz 2 (Vermögensübersicht), Absatz 3 (Schlussrechnung bei
+// Betreuerwechsel), Absatz 4 (Ausnahme: befreiter Betreuer nach § 1859 —
+// Vermögensübersicht genügt statt Schlussrechnung, wiederverwendet
+// `ist_befreiter_betreuer_kraft_gesetzes` aus Block 3).
+
+pub relation betreuung_endet_1872(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Betreuung endet (§ 1872 Absatz 1)";
+    label en unofficial "the custodianship ends (§ 1872 (1))";
+}
+pub relation herausgabepflicht_bei_beendigung_1872(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat das seiner Verwaltung unterliegende Vermögen und alle Unterlagen herauszugeben (§ 1872 Absatz 1)";
+    label en unofficial "the custodian must hand over the assets under their administration and all documents obtained (§ 1872 (1))";
+}
+@source(BGB_P1872)
+rule HerausgabepflichtBeiBeendigung1872(b: Person, betreuter: Person) strict {
+    label de official "Endet die Betreuung, hat der Betreuer das Vermögen und die Unterlagen an den Betreuten, dessen Erben oder sonstige Berechtigte herauszugeben (§ 1872 Absatz 1)";
+    label en unofficial "where the custodianship ends, the custodian must hand over the assets and documents to the represented person, their heirs or other entitled persons (§ 1872 (1))";
+    when gesetzlicher_vertreter(b, betreuter) and betreuung_endet_1872(b, betreuter);
+    then herausgabepflicht_bei_beendigung_1872(b, betreuter);
+}
+pub relation vermoegensuebersicht_nach_beendigung_pflicht_1872(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat nach Beendigung eine Vermögensübersicht mit Versicherung der Richtigkeit und Vollständigkeit einzureichen (§ 1872 Absatz 2 Satz 1)";
+    label en unofficial "after the custodianship ends the custodian must submit an asset survey with an assurance of accuracy and completeness (§ 1872 (2) sentence 1)";
+}
+@source(BGB_P1872)
+rule VermoegensuebersichtNachBeendigungPflicht1872(b: Person, betreuter: Person) strict {
+    label de official "Endet die Betreuung, hat der Betreuer eine Vermögensübersicht beim Betreuungsgericht einzureichen (§ 1872 Absatz 2 Satz 1)";
+    label en unofficial "where the custodianship ends, the custodian must submit an asset survey to the custody court (§ 1872 (2) sentence 1)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuung_endet_1872(b, betreuter);
+    then vermoegensuebersicht_nach_beendigung_pflicht_1872(b, betreuter);
+}
+pub relation betreuerwechsel_1872(b: Person, betreuter: Person, neuer_betreuer: Person) kind empirical {
+    label de official "Wechsel des Betreuers (§ 1872 Absatz 3)";
+    label en unofficial "change of custodian (§ 1872 (3))";
+}
+pub relation schlussrechnungspflicht_1872(b: Person, betreuter: Person, neuer_betreuer: Person) kind institutional {
+    label de official "Der bisherige Betreuer hat durch eine Schlussrechnung Rechenschaft abzulegen und diese beim Betreuungsgericht einzureichen (§ 1872 Absatz 3 Satz 2, 3)";
+    label en unofficial "the former custodian must render account by a final account and submit it to the custody court (§ 1872 (3) sentences 2, 3)";
+}
+@source(BGB_P1872)
+rule SchlussrechnungspflichtBeiWechsel1872(b: Person, betreuter: Person, neuer_betreuer: Person) strict {
+    label de official "Bei einem Wechsel des Betreuers hat der bisherige Betreuer eine Schlussrechnung beim Betreuungsgericht einzureichen (§ 1872 Absatz 3 Satz 2, 3)";
+    label en unofficial "on a change of custodian, the former custodian must submit a final account to the custody court (§ 1872 (3) sentences 2, 3)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuerwechsel_1872(b, betreuter, neuer_betreuer) and not_known(ist_befreiter_betreuer_kraft_gesetzes(b, betreuter));
+    then schlussrechnungspflicht_1872(b, betreuter, neuer_betreuer);
+}
+pub relation vermoegensuebersicht_statt_schlussrechnung_genuegt_1872(b: Person, betreuter: Person, neuer_betreuer: Person) kind institutional {
+    label de official "War der Betreuer bei Beendigung gemäß § 1859 befreit, genügt eine Vermögensübersicht nach Absatz 2 statt der Schlussrechnung (§ 1872 Absatz 4)";
+    label en unofficial "where the custodian was exempted under § 1859 on ending their office, an asset survey under (2) suffices instead of the final account (§ 1872 (4))";
+}
+@source(BGB_P1872)
+rule VermoegensuebersichtGenuegtBeiBefreiung1872(b: Person, betreuter: Person, neuer_betreuer: Person) strict {
+    label de official "War der Betreuer nach § 1859 befreit, genügt statt der Schlussrechnung eine Vermögensübersicht (§ 1872 Absatz 4)";
+    label en unofficial "where the custodian was exempted under § 1859, an asset survey suffices instead of the final account (§ 1872 (4))";
+    when betreuerwechsel_1872(b, betreuter, neuer_betreuer) and ist_befreiter_betreuer_kraft_gesetzes(b, betreuter);
+    then vermoegensuebersicht_statt_schlussrechnung_genuegt_1872(b, betreuter, neuer_betreuer);
+}
+
+// § 1873: Schlussmitteilung; Rechnungsprüfung.
+
+pub relation schlussmitteilungspflicht_1873(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat dem Betreuungsgericht eine Schlussmitteilung mit Angaben zur Herausgabe zu übersenden (§ 1873 Absatz 1 Satz 1)";
+    label en unofficial "the custodian must send the custody court a final notice with details on the handover (§ 1873 (1) sentence 1)";
+}
+@source(BGB_P1873)
+rule SchlussmitteilungspflichtNachBeendigung1873(b: Person, betreuter: Person) strict {
+    label de official "Nach Beendigung der Betreuung hat der Betreuer eine Schlussmitteilung zu übersenden (§ 1873 Absatz 1 Satz 1)";
+    label en unofficial "after the custodianship ends, the custodian must send a final notice (§ 1873 (1) sentence 1)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuung_endet_1872(b, betreuter);
+    then schlussmitteilungspflicht_1873(b, betreuter);
+}
+pub relation pruefungspflicht_schlussrechnung_oder_uebersicht_1873(b: Person, betreuter: Person, neuer_betreuer: Person) kind institutional {
+    label de official "Das Betreuungsgericht hat die Schlussrechnung oder die Vermögensübersicht sachlich und rechnerisch zu prüfen (§ 1873 Absatz 2 Satz 1)";
+    label en unofficial "the custody court must examine the final account or asset survey for substance and arithmetic (§ 1873 (2) sentence 1)";
+}
+@source(BGB_P1873)
+rule PruefungspflichtSchlussrechnungBeiWechsel1873(b: Person, betreuter: Person, neuer_betreuer: Person) strict {
+    label de official "Liegt ein Fall des § 1872 Absatz 3 vor, hat das Betreuungsgericht die Schlussrechnung oder Vermögensübersicht zu prüfen (§ 1873 Absatz 2 Satz 1)";
+    label en unofficial "in a case under § 1872 (3), the custody court must examine the final account or asset survey (§ 1873 (2) sentence 1)";
+    when betreuerwechsel_1872(b, betreuter, neuer_betreuer);
+    then pruefungspflicht_schlussrechnung_oder_uebersicht_1873(b, betreuter, neuer_betreuer);
+}
+
+// § 1874: Besorgung der Angelegenheiten des Betreuten nach Beendigung der
+// Betreuung — Absatz 1 (Fortführungsbefugnis bis Kenntnis) und Absatz 2
+// (Pflicht bei Tod des Betreuten, unaufschiebbare Angelegenheiten).
+
+pub relation betreuer_kennt_beendigung_nicht_und_muss_sie_nicht_kennen(b: Person, betreuter: Person) kind empirical {
+    label de official "Der Betreuer hat von der Beendigung der Betreuung keine Kenntnis erlangt und muss sie auch nicht kennen (§ 1874 Absatz 1 Satz 1)";
+    label en unofficial "the custodian has not learned of the end of the custodianship and is not required to know of it (§ 1874 (1) sentence 1)";
+}
+pub relation fortfuehrungsbefugnis_1874(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer darf die Besorgung der Angelegenheiten des Betreuten fortführen (§ 1874 Absatz 1 Satz 1)";
+    label en unofficial "the custodian may continue attending to the represented person's affairs (§ 1874 (1) sentence 1)";
+}
+@source(BGB_P1874)
+rule FortfuehrungsbefugnisBisKenntnis1874(b: Person, betreuter: Person) strict {
+    label de official "Solange der Betreuer von der Beendigung keine Kenntnis erlangt hat und sie auch nicht kennen muss, darf er die Angelegenheiten fortführen (§ 1874 Absatz 1 Satz 1)";
+    label en unofficial "so long as the custodian has not learned of, and is not required to know of, the end of the custodianship, they may continue attending to the affairs (§ 1874 (1) sentence 1)";
+    when gesetzlicher_vertreter(b, betreuter) and betreuer_kennt_beendigung_nicht_und_muss_sie_nicht_kennen(b, betreuter);
+    then fortfuehrungsbefugnis_1874(b, betreuter);
+}
+pub relation besorgungspflicht_unaufschiebbarer_angelegenheiten_1874(b: Person, betreuter: Person) kind institutional {
+    label de official "Der Betreuer hat die unaufschiebbaren Angelegenheiten zu besorgen, bis der Erbe diese besorgen kann (§ 1874 Absatz 2)";
+    label en unofficial "the custodian must attend to matters admitting of no delay until the heir can attend to them (§ 1874 (2))";
+}
+@source(BGB_P1874)
+rule BesorgungspflichtBeiTodDesBetreuten1874(b: Person, betreuter: Person) strict {
+    label de official "Endet die Betreuung durch den Tod des Betreuten, hat der Betreuer die unaufschiebbaren Angelegenheiten im Rahmen seines Aufgabenkreises zu besorgen, bis der Erbe sie besorgen kann (§ 1874 Absatz 2)";
+    label en unofficial "where the custodianship ends through the represented person's death, the custodian must attend to matters admitting of no delay within their scope until the heir can attend to them (§ 1874 (2))";
+    when gesetzlicher_vertreter(b, betreuter) and betreuter_verstorben(betreuter);
+    then besorgungspflicht_unaufschiebbarer_angelegenheiten_1874(b, betreuter);
+}
+
+// § 1875: Vergütung und Aufwendungsersatz — Absatz 1 (ehrenamtlicher
+// Betreuer nach diesem Untertitel, §§ 1876 ff.), Absatz 2 (beruflicher
+// Betreuer, Betreuungsverein, Behördenbetreuer, Betreuungsbehörde nach dem
+// externen Vormünder- und Betreuervergütungsgesetz — VBVG).
+
+pub relation verguetung_nach_untertitel_anwendbar_1875(b: Person, betreuter: Person) kind institutional {
+    label de official "Vergütung und Aufwendungsersatz des Betreuers bestimmen sich nach den Vorschriften dieses Untertitels (§§ 1876 ff.) (§ 1875 Absatz 1)";
+    label en unofficial "the custodian's remuneration and reimbursement of expenses are governed by the provisions of this subtitle (§§ 1876 et seq.) (§ 1875 (1))";
+}
+@source(BGB_P1875)
+rule VerguetungNachUntertitelBeiEhrenamtlicherBetreuung1875(b: Person, betreuter: Person) strict {
+    label de official "Ist die Betreuung ehrenamtlich geführt, bestimmen sich Vergütung und Aufwendungsersatz nach diesem Untertitel (§ 1875 Absatz 1)";
+    label en unofficial "where the custodianship is honorary, remuneration and reimbursement are governed by this subtitle (§ 1875 (1))";
+    when gesetzlicher_vertreter(b, betreuter) and betreuung_ehrenamtlich_gefuehrt(b, betreuter);
+    then verguetung_nach_untertitel_anwendbar_1875(b, betreuter);
+}
+pub relation betreuer_beruflich_oder_verein_oder_behoerde_1875(b: Person) kind empirical {
+    label de official "Der Betreuer ist beruflicher Betreuer, Betreuungsverein, Behördenbetreuer oder Betreuungsbehörde (§ 1875 Absatz 2)";
+    label en unofficial "the custodian is a professional custodian, custodianship association, authority custodian, or custodianship authority (§ 1875 (2))";
+}
+pub relation verguetung_nach_vbvg_anwendbar_1875(b: Person, betreuter: Person) kind institutional {
+    label de official "Vergütung und Aufwendungsersatz bestimmen sich nach dem Vormünder- und Betreuervergütungsgesetz (§ 1875 Absatz 2)";
+    label en unofficial "remuneration and reimbursement of expenses are governed by the Custodian and Guardian Remuneration Act (VBVG) (§ 1875 (2))";
+}
+@source(BGB_P1875)
+rule VerguetungNachVBVGBeiBeruflicherBetreuung1875(b: Person, betreuter: Person) strict {
+    label de official "Ist der Betreuer beruflich, Verein, Behördenbetreuer oder Behörde, bestimmen sich Vergütung und Aufwendungsersatz nach dem VBVG (§ 1875 Absatz 2)";
+    label en unofficial "where the custodian is professional, an association, authority custodian, or authority, remuneration and reimbursement are governed by the VBVG (§ 1875 (2))";
+    when gesetzlicher_vertreter(b, betreuter) and betreuer_beruflich_oder_verein_oder_behoerde_1875(b);
+    then verguetung_nach_vbvg_anwendbar_1875(b, betreuter);
+}
+
+// § 1807 (Titel 1): entsprechende Anwendung der §§ 1872–1874 auf die beendete
+// Vormundschaft (D-14-01). §§ 1872–1874 tragen jetzt eigene Regelmaschinerie
+// (Block 5, D-14-06); § 1807 selbst wird in Block 6 nachgezogen (Verweis auf
+// dieselbe Maschinerie über `gesetzlicher_vertreter`, kein Zwilling).
+
+// § 1876: Vergütung des ehrenamtlichen Betreuers — Ausnahme vom Unentgeltlichkeitsgrundsatz.
+
+pub relation betreuung_ehrenamtlich_gefuehrt(b: Person, betreuter: Person) kind empirical {
+    label de official "Die Betreuung wird ehrenamtlich geführt (§ 1876 Satz 1)";
+    label en unofficial "the custodianship is conducted on a voluntary basis (§ 1876 sentence 1)";
+}
+pub relation grundsatz_kein_verguetungsanspruch_1876(b: Person, betreuter: Person) kind institutional {
+    label de official "Dem ehrenamtlichen Betreuer steht grundsätzlich kein Anspruch auf Vergütung zu (§ 1876 Satz 1)";
+    label en unofficial "as a rule, the voluntary custodian has no claim to remuneration (§ 1876 sentence 1)";
+}
+@source(BGB_P1876)
+rule KeinVerguetungsanspruchGrundsatz(b: Person, betreuter: Person) strict {
+    label de official "Dem ehrenamtlichen Betreuer steht grundsätzlich kein Anspruch auf Vergütung zu (§ 1876 Satz 1)";
+    label en unofficial "as a rule, the voluntary custodian has no claim to remuneration (§ 1876 sentence 1)";
+    when betreuung_ehrenamtlich_gefuehrt(b, betreuter);
+    then grundsatz_kein_verguetungsanspruch_1876(b, betreuter);
+}
+pub relation umfang_oder_schwierigkeit_rechtfertigt_verguetung(b: Person, betreuter: Person) kind empirical {
+    label de official "Umfang oder Schwierigkeit der Wahrnehmung der Angelegenheiten des Betreuten rechtfertigen eine Vergütung (§ 1876 Nummer 1)";
+    label en unofficial "the extent or difficulty of attending to the represented person's affairs justifies remuneration (§ 1876 no. 1)";
+}
+pub relation betreuter_nicht_mittellos(betreuter: Person) kind empirical {
+    label de official "Der Betreute ist nicht mittellos im Sinne des § 1880 (§ 1876 Nummer 2)";
+    label en unofficial "the represented person is not without means within the meaning of § 1880 (§ 1876 no. 2)";
+}
+pub relation angemessene_verguetung_bewilligbar_1876(b: Person, betreuter: Person) kind institutional {
+    label de official "Das Betreuungsgericht kann dem ehrenamtlichen Betreuer eine angemessene Vergütung bewilligen (§ 1876 Satz 2)";
+    label en unofficial "the custody court may grant the voluntary custodian reasonable remuneration (§ 1876 sentence 2)";
+}
+@source(BGB_P1876)
+rule AngemesseneVerguetungBewilligbar(b: Person, betreuter: Person) strict {
+    label de official "Das Betreuungsgericht kann abweichend vom Grundsatz eine angemessene Vergütung bewilligen, wenn Umfang oder Schwierigkeit der Angelegenheiten dies rechtfertigen und der Betreute nicht mittellos ist (§ 1876 Nummer 1, 2)";
+    label en unofficial "by way of derogation from the general rule, the custody court may grant reasonable remuneration where the extent or difficulty of the affairs justifies it and the represented person is not without means (§ 1876 nos. 1, 2)";
+    when grundsatz_kein_verguetungsanspruch_1876(b, betreuter) and umfang_oder_schwierigkeit_rechtfertigt_verguetung(b, betreuter) and betreuter_nicht_mittellos(betreuter);
+    then angemessene_verguetung_bewilligbar_1876(b, betreuter);
+}
+
+// § 1877: Aufwendungsersatz — die Fünfzehn-Monats-Ausschlussfrist.
+
+pub relation aufwendungen_zur_fuehrung_der_betreuung(b: Person, betreuter: Person, betrag: Money) kind empirical {
+    label de official "Aufwendungen, die der Betreuer zur Führung der Betreuung macht (§ 1877 Absatz 1 Satz 1)";
+    label en unofficial "expenses the custodian incurs in conducting the custodianship (§ 1877 (1) sentence 1)";
+}
+pub relation anspruch_auf_aufwendungsersatz(a: Anspruch) kind institutional {
+    label de official "Anspruch des Betreuers auf Vorschuss oder Ersatz seiner Aufwendungen nach §§ 669, 670 (§ 1877 Absatz 1 Satz 1)";
+    label en unofficial "the custodian's claim to an advance or reimbursement of their expenses under §§ 669, 670 (§ 1877 (1) sentence 1)";
+}
+pub relation aufwendungsersatz_anspruch_fuer(a: Anspruch, b: Person, betreuter: Person, betrag: Money) kind empirical {
+    key(a);
+    label de official "Anspruch, der die Aufwendungen dieses Betreuers für diesen Betreuten trägt (§ 1877 Absatz 1)";
+    label en unofficial "the claim carrying this custodian's expenses for this represented person (§ 1877 (1))";
+}
+@source(BGB_P1877)
+rule AnspruchAufAufwendungsersatz(a: Anspruch, b: Person, betreuter: Person, betrag: Money) strict {
+    label de official "Macht der Betreuer Aufwendungen zur Führung der Betreuung, kann er nach §§ 669, 670 Vorschuss oder Ersatz verlangen (§ 1877 Absatz 1 Satz 1)";
+    label en unofficial "where the custodian incurs expenses in conducting the custodianship, they may demand an advance or reimbursement under §§ 669, 670 (§ 1877 (1) sentence 1)";
+    when aufwendungsersatz_anspruch_fuer(a, b, betreuter, betrag) and aufwendungen_zur_fuehrung_der_betreuung(b, betreuter, betrag);
+    then anspruch_auf_aufwendungsersatz(a);
+}
+
+pub relation aufwendungsersatzfrist_1877(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist von fünfzehn Monaten nach Entstehung des Anspruchs, binnen deren er gerichtlich geltend zu machen ist, sonst erlischt er (§ 1877 Absatz 4 Satz 1)";
+    label en unofficial "fifteen-month period from the claim's accrual within which it must be judicially asserted, failing which it lapses (§ 1877 (4) sentence 1)";
+}
+@source(BGB_P1877) {
+    rule Aufwendungsersatzfrist1877Ereignis(a: Anspruch, f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit der Entstehung des Anspruchs auf Aufwendungsersatz (§ 1877 Absatz 4 Satz 1)";
+        label en unofficial "the period begins with the accrual of the claim to reimbursement (§ 1877 (4) sentence 1)";
+        when aufwendungsersatzfrist_betrifft_anspruch(f, a) and de.bgb.core::anspruch_entstanden_am(a, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Aufwendungsersatzfrist1877Dauer(f: Frist) strict {
+        label de official "Die Frist beträgt fünfzehn Monate (§ 1877 Absatz 4 Satz 1)";
+        label en unofficial "the period is fifteen months (§ 1877 (4) sentence 1)";
+        when aufwendungsersatzfrist_1877(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 15 calendar_month);
+    }
+}
+pub relation aufwendungsersatzfrist_betrifft_anspruch(f: Frist, a: Anspruch) kind empirical {
+    key(f);
+    label de official "Die Fünfzehn-Monats-Frist des § 1877 Absatz 4 betrifft diesen Anspruch";
+    label en unofficial "the fifteen-month period under § 1877 (4) concerns this claim";
+}
+pub relation gerichtlich_geltend_gemacht_bis(f: Frist, tag: Date) kind empirical {
+    label de official "Der Anspruch ist bis zu diesem Tag gerichtlich geltend gemacht worden (§ 1877 Absatz 4 Satz 1)";
+    label en unofficial "the claim has been judicially asserted by this day (§ 1877 (4) sentence 1)";
+}
+pub relation aufwendungsersatzanspruch_erloschen(a: Anspruch, f: Frist) kind institutional {
+    label de official "Der Anspruch auf Aufwendungsersatz ist erloschen, weil er nicht binnen fünfzehn Monaten gerichtlich geltend gemacht wurde (§ 1877 Absatz 4 Satz 1)";
+    label en unofficial "the claim to reimbursement has lapsed because it was not judicially asserted within fifteen months (§ 1877 (4) sentence 1)";
+}
+@source(BGB_P1877)
+rule AufwendungsersatzanspruchErloschenNachFristablauf(a: Anspruch, f: Frist, e: Date) strict {
+    label de official "Der Anspruch auf Aufwendungsersatz erlischt, wenn er nicht binnen fünfzehn Monaten nach seiner Entstehung gerichtlich geltend gemacht wird (§ 1877 Absatz 4 Satz 1)";
+    label en unofficial "the claim to reimbursement lapses if it is not judicially asserted within fifteen months of its accrual (§ 1877 (4) sentence 1)";
+    when aufwendungsersatzfrist_betrifft_anspruch(f, a) and aufwendungsersatzfrist_1877(f) and de.bgb.fristen::frist_ende(f, e) and not_known(gerichtlich_geltend_gemacht_bis(f, e));
+    then aufwendungsersatzanspruch_erloschen(a, f);
+}
+
+// § 1878: Aufwandspauschale — die Sechs-Monats-Ausschlussfrist.
+
+pub relation aufwandspauschale_ohne_verguetung_verlangt(b: Person, betreuter: Person, betrag: Money) kind empirical {
+    label de official "Der Betreuer, der für die Führung der Betreuung keine Vergütung erhält, verlangt die Aufwandspauschale (§ 1878 Absatz 1 Satz 1)";
+    label en unofficial "the custodian, who receives no remuneration for conducting the custodianship, demands the flat-rate expense allowance (§ 1878 (1) sentence 1)";
+}
+pub relation anspruch_auf_aufwandspauschale(a: Anspruch) kind institutional {
+    label de official "Anspruch auf die Aufwandspauschale (§ 1878 Absatz 1)";
+    label en unofficial "the claim to the flat-rate expense allowance (§ 1878 (1))";
+}
+pub relation aufwandspauschale_anspruch_fuer(a: Anspruch, b: Person, betreuter: Person, betrag: Money) kind empirical {
+    key(a);
+    label de official "Anspruch, der die Aufwandspauschale dieses Betreuers für dieses Betreuungsjahr trägt (§ 1878 Absatz 1, 3)";
+    label en unofficial "the claim carrying this custodian's flat-rate expense allowance for this custodianship year (§ 1878 (1), (3))";
+}
+@source(BGB_P1878)
+rule AnspruchAufAufwandspauschale(a: Anspruch, b: Person, betreuter: Person, betrag: Money) strict {
+    label de official "Erhält der Betreuer für die Betreuung keine Vergütung, kann er zur Abgeltung des Aufwendungsersatzanspruchs die Aufwandspauschale verlangen (§ 1878 Absatz 1 Satz 1)";
+    label en unofficial "where the custodian receives no remuneration for the custodianship, they may demand the flat-rate expense allowance in satisfaction of their reimbursement claim (§ 1878 (1) sentence 1)";
+    when aufwandspauschale_anspruch_fuer(a, b, betreuter, betrag) and aufwandspauschale_ohne_verguetung_verlangt(b, betreuter, betrag);
+    then anspruch_auf_aufwandspauschale(a);
+}
+
+pub relation aufwandspauschalenfrist_1878(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist von sechs Monaten nach Ablauf des Jahres, in dem der Anspruch entstanden ist, binnen deren er gerichtlich geltend zu machen ist, sonst erlischt er (§ 1878 Absatz 4 Satz 1)";
+    label en unofficial "six-month period after the end of the year in which the claim arose, within which it must be judicially asserted, failing which it lapses (§ 1878 (4) sentence 1)";
+}
+pub relation jahresende_der_entstehung(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Ablauf des Jahres, in dem der Anspruch auf die Aufwandspauschale entstanden ist (§ 1878 Absatz 4 Satz 1)";
+    label en unofficial "the end of the year in which the claim to the flat-rate expense allowance arose (§ 1878 (4) sentence 1)";
+}
+@source(BGB_P1878) {
+    rule Aufwandspauschalenfrist1878Ereignis(f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit dem Ablauf des Jahres, in dem der Anspruch entstanden ist (§ 1878 Absatz 4 Satz 1)";
+        label en unofficial "the period begins at the end of the year in which the claim arose (§ 1878 (4) sentence 1)";
+        when aufwandspauschalenfrist_1878(f) and jahresende_der_entstehung(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Aufwandspauschalenfrist1878Dauer(f: Frist) strict {
+        label de official "Die Frist beträgt sechs Monate (§ 1878 Absatz 4 Satz 1)";
+        label en unofficial "the period is six months (§ 1878 (4) sentence 1)";
+        when aufwandspauschalenfrist_1878(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+}
+pub relation aufwandspauschalenfrist_betrifft_anspruch(f: Frist, a: Anspruch) kind empirical {
+    key(f);
+    label de official "Die Sechs-Monats-Frist des § 1878 Absatz 4 betrifft diesen Anspruch";
+    label en unofficial "the six-month period under § 1878 (4) concerns this claim";
+}
+pub relation aufwandspauschale_gerichtlich_geltend_gemacht_bis(f: Frist, tag: Date) kind empirical {
+    label de official "Der Anspruch auf die Aufwandspauschale ist bis zu diesem Tag gerichtlich geltend gemacht worden (§ 1878 Absatz 4 Satz 1)";
+    label en unofficial "the claim to the flat-rate expense allowance has been judicially asserted by this day (§ 1878 (4) sentence 1)";
+}
+pub relation aufwandspauschalenanspruch_erloschen(a: Anspruch, f: Frist) kind institutional {
+    label de official "Der Anspruch auf die Aufwandspauschale ist erloschen (§ 1878 Absatz 4 Satz 1)";
+    label en unofficial "the claim to the flat-rate expense allowance has lapsed (§ 1878 (4) sentence 1)";
+}
+@source(BGB_P1878)
+rule AufwandspauschalenanspruchErloschenNachFristablauf(a: Anspruch, f: Frist, e: Date) strict {
+    label de official "Der Anspruch auf die Aufwandspauschale erlischt, wenn er nicht binnen sechs Monaten nach Ablauf des Jahres, in dem er entstanden ist, gerichtlich geltend gemacht wird (§ 1878 Absatz 4 Satz 1)";
+    label en unofficial "the claim to the flat-rate expense allowance lapses if it is not judicially asserted within six months of the end of the year in which it arose (§ 1878 (4) sentence 1)";
+    when aufwandspauschalenfrist_betrifft_anspruch(f, a) and aufwandspauschalenfrist_1878(f) and de.bgb.fristen::frist_ende(f, e) and not_known(aufwandspauschale_gerichtlich_geltend_gemacht_bis(f, e));
+    then aufwandspauschalenanspruch_erloschen(a, f);
+}
+
+// § 1879: Zahlung aus der Staatskasse.
+
+pub relation betreuter_mittellos_1880(betreuter: Person) kind empirical {
+    label de official "Der Betreute gilt als mittellos im Sinne von § 1880 (§ 1879)";
+    label en unofficial "the represented person is deemed without means within the meaning of § 1880 (§ 1879)";
+}
+pub relation zahlung_aus_staatskasse_verlangbar(b: Person, betreuter: Person, a: Anspruch) kind institutional {
+    label de official "Der Betreuer kann den Vorschuss, Aufwendungsersatz oder die Aufwandspauschale aus der Staatskasse verlangen (§ 1879)";
+    label en unofficial "the custodian may demand the advance, reimbursement or flat-rate expense allowance from the state treasury (§ 1879)";
+}
+@source(BGB_P1879)
+rule ZahlungAusStaatskasseBeiMittellosigkeit(b: Person, betreuter: Person, a: Anspruch) strict {
+    label de official "Gilt der Betreute als mittellos, kann der Betreuer den Vorschuss, Aufwendungsersatz oder die Aufwandspauschale aus der Staatskasse verlangen (§ 1879)";
+    label en unofficial "where the represented person is deemed without means, the custodian may demand the advance, reimbursement or flat-rate allowance from the state treasury (§ 1879)";
+    when betreuter_mittellos_1880(betreuter) and (anspruch_auf_aufwendungsersatz(a) or anspruch_auf_aufwandspauschale(a)) and traegt_anspruch_fuer(a, b, betreuter);
+    then zahlung_aus_staatskasse_verlangbar(b, betreuter, a);
+}
+pub relation traegt_anspruch_fuer(a: Anspruch, b: Person, betreuter: Person) kind empirical {
+    label de official "Dieser Anspruch betrifft diesen Betreuer und diesen Betreuten";
+    label en unofficial "this claim concerns this custodian and this represented person";
+}
+
+// § 1880: Mittellosigkeit des Betreuten.
+
+pub relation kann_betrag_nicht_ganz_oder_nur_ratenweise_aufbringen(betreuter: Person) kind empirical {
+    label de official "Der Betreute kann den Vorschuss, Aufwendungsersatz oder die Aufwandspauschale aus seinem einzusetzenden Vermögen nicht, nur zum Teil oder nur in Raten aufbringen (§ 1880 Absatz 1)";
+    label en unofficial "the represented person cannot raise the advance, reimbursement or flat-rate allowance from their available assets, or only partly or in instalments (§ 1880 (1))";
+}
+pub relation betreuter_gilt_als_mittellos(betreuter: Person) kind institutional {
+    label de official "Der Betreute gilt als mittellos (§ 1880 Absatz 1)";
+    label en unofficial "the represented person is deemed without means (§ 1880 (1))";
+}
+@source(BGB_P1880)
+rule BetreuterGiltAlsMittellos(betreuter: Person) strict {
+    label de official "Der Betreute gilt als mittellos, wenn er den Vorschuss, Aufwendungsersatz oder die Aufwandspauschale aus seinem Vermögen nicht, nur zum Teil oder nur in Raten aufbringen kann (§ 1880 Absatz 1)";
+    label en unofficial "the represented person is deemed without means where they cannot raise the advance, reimbursement or flat-rate allowance from their assets, or only partly or in instalments (§ 1880 (1))";
+    when kann_betrag_nicht_ganz_oder_nur_ratenweise_aufbringen(betreuter);
+    then betreuter_gilt_als_mittellos(betreuter);
+}
+
+// § 1881: Gesetzlicher Forderungsübergang.
+
+pub relation staatskasse_hat_betreuer_befriedigt(b: Person, betreuter: Person, betrag: Money) kind empirical {
+    label de official "Die Staatskasse hat den Betreuer befriedigt (§ 1881 Satz 1)";
+    label en unofficial "the state treasury has satisfied the custodian (§ 1881 sentence 1)";
+}
+pub relation anspruch_geht_auf_staatskasse_ueber(b: Person, betreuter: Person, betrag: Money) kind institutional {
+    label de official "Der Anspruch des Betreuers gegen den Betreuten geht auf die Staatskasse über (§ 1881 Satz 1)";
+    label en unofficial "the custodian's claim against the represented person passes to the state treasury (§ 1881 sentence 1)";
+}
+@source(BGB_P1881)
+rule ForderungsuebergangAufStaatskasse(b: Person, betreuter: Person, betrag: Money) strict {
+    label de official "Soweit die Staatskasse den Betreuer befriedigt, gehen dessen Ansprüche gegen den Betreuten auf die Staatskasse über (§ 1881 Satz 1)";
+    label en unofficial "so far as the state treasury satisfies the custodian, their claims against the represented person pass to the state treasury (§ 1881 sentence 1)";
+    when staatskasse_hat_betreuer_befriedigt(b, betreuter, betrag);
+    then anspruch_geht_auf_staatskasse_ueber(b, betreuter, betrag);
+}

@@ -1,0 +1,36 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// § 1928 Abs. 1, 2: Der Erblasser hinterlässt keine Abkömmlinge; Eltern und
+// Großeltern sind vorverstorben und haben außer der Linie des Erblassers keine
+// Abkömmlinge. Zwei Urgroßeltern leben. Erwartung vor der Ausführung, aus dem
+// Text gerechnet: sie erben allein und zu gleichen Teilen — je 1/2.
+test "§ 1928 Abs. 2: zwei lebende Urgroßeltern erben zu gleichen Teilen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:o01:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:o01:F"), entity_ref("urn:de:bgb:e:o01:V"), entity_ref("urn:de:bgb:e:o01:D")) { origin case_input; }
+        assert "f5": abstammung(entity_ref("urn:de:bgb:e:o01:F"), entity_ref("urn:de:bgb:e:o01:GV"), entity_ref("urn:de:bgb:e:o01:V")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:o01:F"), entity_ref("urn:de:bgb:e:o01:UG1"), entity_ref("urn:de:bgb:e:o01:GV")) { origin case_input; }
+        assert "f7": abstammung(entity_ref("urn:de:bgb:e:o01:F"), entity_ref("urn:de:bgb:e:o01:UG2"), entity_ref("urn:de:bgb:e:o01:GV")) { origin case_input; }
+        assert "f8": vorverstorben(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:V")) { origin case_input; }
+        assert "f9": vorverstorben(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:GV")) { origin case_input; }
+        assert "f10": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:UG1")) { origin case_input; }
+        assert "f11": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:UG2")) { origin case_input; }
+    }
+    evaluate truth(berufene_ordnung(entity_ref("urn:de:bgb:e:o01:E"), 4));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesamterbteil(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:UG1"), 1 / 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesamterbteil(entity_ref("urn:de:bgb:e:o01:E"), entity_ref("urn:de:bgb:e:o01:UG2"), 1 / 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nachlass_vollstaendig_verteilt(entity_ref("urn:de:bgb:e:o01:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

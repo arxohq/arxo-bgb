@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1478 Abs. 1: die Ehe ist geschieden, bevor die Auseinandersetzung beendet ist. Eingebracht haben A 75 000,00 € und B 25 000,00 €, zusammen 100 000,00 €; der Wert des Gesamtguts beträgt aber nur 60 000,00 €. Der Fehlbetrag von 40 000,00 € ist nach dem VERHÄLTNIS des Eingebrachten zu tragen: A trägt 40 000,00 × 7 500 000 / 10 000 000 = 30 000,00 €, B 10 000,00 €. Zähler und Nenner der Quote nennt der Text selbst; gerechnet wird in Cent, weil §58 kein Produkt zweier Geldbeträge kennt (Ledger D-12-10).
+test "§ 1478 Abs. 1: der Fehlbetrag nach dem Verhältnis des Eingebrachten" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:A"), entity_ref("urn:de:bgb:ehe:gg03:B")) { origin case_input; }
+        assert "f2": ehevertrag_gueterstand(entity_ref("urn:de:bgb:ehe:gg03:E"), Guetergemeinschaft) { origin case_input; }
+        assert "f3": guetergemeinschaft_beendet_am(entity_ref("urn:de:bgb:ehe:gg03:E"), @2025-08-31) { origin case_input; }
+        assert "f4": ehe_geschieden_vor_beendigung_der_auseinandersetzung(entity_ref("urn:de:bgb:ehe:gg03:E")) { origin case_input; }
+        assert "f5": rueckerstattung_verlangt(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:A")) { origin case_input; }
+        assert "f6": eingebrachter_wert(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:A"), 75000.00 EUR) { origin case_input; }
+        assert "f7": eingebrachter_wert(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:B"), 25000.00 EUR) { origin case_input; }
+        assert "f8": eingebrachter_wert_in_cent(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:A"), 7500000) { origin case_input; }
+        assert "f9": eingebrachter_wert_in_cent(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:B"), 2500000) { origin case_input; }
+        assert "f10": eingebrachte_summe(entity_ref("urn:de:bgb:ehe:gg03:E"), 100000.00 EUR) { origin case_input; }
+        assert "f11": eingebrachte_summe_in_cent(entity_ref("urn:de:bgb:ehe:gg03:E"), 10000000) { origin case_input; }
+        assert "f12": wert_des_gesamtguts_bei_der_auseinandersetzung(entity_ref("urn:de:bgb:ehe:gg03:E"), 60000.00 EUR) { origin case_input; }
+    }
+    evaluate truth(fehlbetrag(entity_ref("urn:de:bgb:ehe:gg03:E"), 40000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_fehlbetrag(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:A"), 30000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_fehlbetrag(entity_ref("urn:de:bgb:ehe:gg03:E"), entity_ref("urn:de:bgb:ehe:gg03:B"), 10000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,293 @@
+// §§ 194, 196–198, 200–202: Gegenstand der Verjährung, besondere Fristen
+// (zehn und dreißig Jahre), Rechtsnachfolge, Beginn anderer Fristen und
+// festgestellter Ansprüche, Verbot von Vereinbarungen. Eigene, von der
+// regelmäßigen Verjährung (§§ 195, 199, package.law) getrennte Relationen
+// `besondere_verjaehrungsfrist_*`, weil diese Fristen NICHT mit dem Schluss
+// des Jahres beginnen (§ 200: „mit der Entstehung“) und die Auswahl des
+// Grundes (§ 197 Abs. 1 Nr. 1–6) eigene Eingaben braucht.
+
+// --- § 194: Gegenstand der Verjährung -----------------------------------------------------------
+
+pub relation anspruch_aus_nicht_verjaehrbarem_verbrechen(a: Anspruch) kind empirical {
+    label de official "Anspruch, der aus einem nicht verjährbaren Verbrechen erwachsen ist (§ 194 Abs. 2 Nr. 1)";
+    label en unofficial "claim arising from a crime that is not subject to limitation (§ 194 (2) no. 1)";
+}
+pub relation familienrechtlicher_zukunftsanspruch(a: Anspruch) kind empirical {
+    label de official "Anspruch aus einem familienrechtlichen Verhältnis, gerichtet auf Herstellung des dem Verhältnis entsprechenden Zustands für die Zukunft oder auf Einwilligung in die genetische Untersuchung zur Klärung der leiblichen Abstammung (§ 194 Abs. 2 Nr. 2)";
+    label en unofficial "claim from a family-law relationship directed at establishing the state corresponding to that relationship for the future, or at consent to genetic testing to establish descent (§ 194 (2) no. 2)";
+}
+pub relation verjaehrung_ausgeschlossen(a: Anspruch) kind institutional {
+    key(a);
+    label de official "der Anspruch unterliegt nicht der Verjährung (§ 194 Abs. 2)";
+    label en unofficial "the claim is not subject to limitation (§ 194 (2))";
+}
+
+@source(BGB_P194)
+rule VerjaehrungAusgeschlossenVerbrechen(a: Anspruch) strict {
+    label de official "Ansprüche, die aus einem nicht verjährbaren Verbrechen erwachsen sind, unterliegen nicht der Verjährung (§ 194 Abs. 2 Nr. 1)";
+    label en unofficial "Claims arising from a crime not subject to limitation are themselves not subject to limitation (§ 194 (2) no. 1)";
+    when anspruch_aus_nicht_verjaehrbarem_verbrechen(a);
+    then verjaehrung_ausgeschlossen(a);
+}
+
+@source(BGB_P194)
+rule VerjaehrungAusgeschlossenFamilienrecht(a: Anspruch) strict {
+    label de official "Familienrechtliche Zukunftsansprüche nach § 194 Abs. 2 Nr. 2 unterliegen nicht der Verjährung";
+    label en unofficial "Family-law future claims under § 194 (2) no. 2 are not subject to limitation";
+    when familienrechtlicher_zukunftsanspruch(a);
+    then verjaehrung_ausgeschlossen(a);
+}
+
+// --- Besondere Fristen: gemeinsame Dauer-/Beginn-/Ende-Relationen -----------------------------------
+
+pub relation besondere_verjaehrungsfrist_dauer(a: Anspruch, dauer: Quantity) kind institutional {
+    key(a);
+    label de official "Dauer einer besonderen (nicht regelmäßigen) Verjährungsfrist (§§ 196, 197)";
+    label en unofficial "duration of a special (non-regular) limitation period (§§ 196, 197)";
+}
+pub relation besondere_verjaehrungsfrist_beginn(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Beginn einer besonderen Verjährungsfrist (§ 200, § 201)";
+    label en unofficial "beginning of a special limitation period (§ 200, § 201)";
+}
+pub relation besondere_verjaehrungsfrist_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die besondere Verjährungsfrist endet, ohne Hemmung (§§ 196, 197, 200, 201)";
+    label en unofficial "day at whose end the special limitation period ends, without suspension (§§ 196, 197, 200, 201)";
+}
+
+@source(BGB_P200)
+rule BesondereFristBeginnAusEntstehung(a: Anspruch, e: Date) strict {
+    label de official "Die Verjährungsfrist von Ansprüchen, die nicht der regelmäßigen Verjährungsfrist unterliegen, beginnt mit der Entstehung des Anspruchs (§ 200 Satz 1)";
+    label en unofficial "The limitation period of claims not subject to the regular limitation period begins with the accrual of the claim (§ 200 sentence 1)";
+    when de.bgb.core::anspruch_entstanden_am(a, e) and besondere_verjaehrungsfrist_dauer(a, _);
+    then besondere_verjaehrungsfrist_beginn(a, e);
+}
+
+@source(BGB_P196)
+rule BesondereFristEnde(a: Anspruch, e: Date, d: Quantity) strict {
+    label de official "Die besondere Verjährungsfrist endet mit dem Ablauf des Tages, der ihrer Dauer entspricht, vom Beginn an (§§ 196, 197, 200 Abs. 2, 188 Abs. 2) — Politik BGB_FRISTEN_KALENDER";
+    label en unofficial "The special limitation period ends on the day corresponding to its duration, counted from its beginning (§§ 196, 197, 200 (2), 188 (2)) — policy BGB_FRISTEN_KALENDER";
+    when besondere_verjaehrungsfrist_beginn(a, e) and besondere_verjaehrungsfrist_dauer(a, d);
+    then besondere_verjaehrungsfrist_ende(a, add_calendar_period(e, d));
+}
+
+// --- § 196: zehnjährige Verjährungsfrist bei Rechten an einem Grundstück ---------------------------
+
+pub relation anspruch_auf_grundstuecksrecht(a: Anspruch) kind empirical {
+    label de official "Anspruch auf Übertragung des Eigentums an einem Grundstück, auf Begründung, Übertragung oder Aufhebung eines Rechts an einem Grundstück, auf Änderung des Inhalts eines solchen Rechts, oder auf die Gegenleistung eines solchen Anspruchs (§ 196)";
+    label en unofficial "claim to transfer ownership of land, to create, transfer or extinguish a right in land, to alter the content of such a right, or to the counter-performance of such a claim (§ 196)";
+}
+
+@source(BGB_P196)
+rule ZehnjaehrigeVerjaehrungsfrist(a: Anspruch) strict {
+    label de official "Ansprüche auf Rechte an einem Grundstück nach § 196 verjähren in zehn Jahren";
+    label en unofficial "Claims to rights in land under § 196 are barred after ten years";
+    when anspruch_auf_grundstuecksrecht(a);
+    then besondere_verjaehrungsfrist_dauer(a, 10 calendar_year);
+}
+
+// --- § 197: dreißigjährige Verjährungsfrist -------------------------------------------------------
+
+pub enum DreissigjaehrigerGrund {
+    label de official "Grund der dreißigjährigen Verjährungsfrist (§ 197 Abs. 1 Nr. 1–6)";
+    label en unofficial "ground of the thirty-year limitation period (§ 197 (1) nos. 1-6)";
+    VorsaetzlicheVerletzung,
+    Herausgabeanspruch,
+    RechtskraeftigFestgestellt,
+    VollstreckbarerVergleichOderUrkunde,
+    InsolvenzverfahrenFestgestellt,
+    KostenDerZwangsvollstreckung
+}
+
+pub relation dreissigjaehriger_grund(a: Anspruch, grund: DreissigjaehrigerGrund) kind empirical {
+    key(a);
+    label de official "Grund, aus dem der Anspruch der dreißigjährigen Verjährungsfrist unterliegt (§ 197 Abs. 1)";
+    label en unofficial "ground on which the claim is subject to the thirty-year limitation period (§ 197 (1))";
+}
+// Beide Zweige des § 197 Abs. 2 brauchen eine EXPLIZITE Falleingabe (README-
+// Konvention 6, „Abwesenheit ist keine Verneinung"): `kuenftig_regelmaessig…`
+// für den Ausnahmefall, `nicht_kuenftig_regelmaessig…` für den Regelfall —
+// wie `hemmung`/`keine_hemmung` im package.law. `defeasible`/`unless` entfällt
+// hier, weil eine strict-Endregel (`BesondereFristEnde`) den bare Status der
+// Dauer sofort weiterverarbeitet (LDC-E4103, monotone supported(P) — L3 in 0.1).
+pub relation kuenftig_regelmaessig_wiederkehrende_leistung(a: Anspruch) kind empirical {
+    label de official "der Anspruch nach § 197 Abs. 1 Nr. 3 bis 5 hat künftig fällig werdende regelmäßig wiederkehrende Leistungen zum Inhalt (§ 197 Abs. 2)";
+    label en unofficial "the claim under § 197 (1) nos. 3 to 5 concerns recurring payments that will fall due in future (§ 197 (2))";
+}
+pub relation nicht_kuenftig_regelmaessig_wiederkehrende_leistung(a: Anspruch) kind empirical {
+    label de official "der Anspruch nach § 197 Abs. 1 Nr. 3 bis 5 hat KEINE künftig fällig werdenden regelmäßig wiederkehrenden Leistungen zum Inhalt — ausdrückliche Angabe des Falls (§ 197 Abs. 2 e contrario)";
+    label en unofficial "the claim under § 197 (1) nos. 3 to 5 does NOT concern recurring payments falling due in future — explicit case input (§ 197 (2) e contrario)";
+}
+
+@source(BGB_P197)
+rule DreissigjaehrigeFristOhneAbs2Anwendbarkeit(a: Anspruch, g: DreissigjaehrigerGrund) strict {
+    label de official "Ansprüche nach § 197 Abs. 1 Nr. 1, 2 oder 6 verjähren in 30 Jahren; Absatz 2 betrifft nur Nr. 3 bis 5 und kommt hier nicht in Betracht";
+    label en unofficial "Claims under § 197 (1) nos. 1, 2 or 6 are barred after 30 years; (2) concerns only nos. 3 to 5 and is not in issue here";
+    when dreissigjaehriger_grund(a, g)
+        and (g == VorsaetzlicheVerletzung or g == Herausgabeanspruch or g == KostenDerZwangsvollstreckung);
+    then besondere_verjaehrungsfrist_dauer(a, 30 calendar_year);
+}
+
+@source(BGB_P197)
+rule DreissigjaehrigeFristTrotzAbs2(a: Anspruch, g: DreissigjaehrigerGrund) strict {
+    label de official "Ansprüche nach § 197 Abs. 1 Nr. 3 bis 5 ohne künftig regelmäßig wiederkehrende Leistungen verjähren in 30 Jahren (§ 197 Abs. 2 e contrario)";
+    label en unofficial "Claims under § 197 (1) nos. 3 to 5 without future recurring payments are barred after 30 years (§ 197 (2) e contrario)";
+    when dreissigjaehriger_grund(a, g)
+        and (g == RechtskraeftigFestgestellt or g == VollstreckbarerVergleichOderUrkunde or g == InsolvenzverfahrenFestgestellt)
+        and nicht_kuenftig_regelmaessig_wiederkehrende_leistung(a);
+    then besondere_verjaehrungsfrist_dauer(a, 30 calendar_year);
+}
+
+@source(BGB_P197)
+rule DreissigjaehrigeFristErsetztDurchRegelmaessige(a: Anspruch, g: DreissigjaehrigerGrund) strict {
+    label de official "Betreffen die Ansprüche nach § 197 Abs. 1 Nr. 3 bis 5 künftig fällig werdende regelmäßig wiederkehrende Leistungen, so tritt an die Stelle der 30-Jahres-Frist die regelmäßige Verjährungsfrist von drei Jahren (§ 197 Abs. 2, § 195)";
+    label en unofficial "If the claims under § 197 (1) nos. 3 to 5 concern recurring payments falling due in future, the regular three-year limitation period applies instead of the 30-year period (§ 197 (2), § 195)";
+    when dreissigjaehriger_grund(a, g)
+        and (g == RechtskraeftigFestgestellt or g == VollstreckbarerVergleichOderUrkunde or g == InsolvenzverfahrenFestgestellt)
+        and kuenftig_regelmaessig_wiederkehrende_leistung(a);
+    then besondere_verjaehrungsfrist_dauer(a, 3 calendar_year);
+}
+
+// --- § 198: Verjährung bei Rechtsnachfolge --------------------------------------------------------
+//
+// Eigenes Zwischenprädikat `besondere_verjaehrungsfrist_beginn_nachfolge`
+// statt einer Ableitung von `besondere_verjaehrungsfrist_beginn` aus sich
+// selbst: eine direkte Ableitung schließt einen Prädikatzyklus (LDC-E4102,
+// wie § 190). Der eigene Endregel-Zweig unten macht die Übernahme dennoch
+// wirksam, ohne den bestehenden Beginn-Kopf rekursiv zu machen.
+
+pub relation rechtsnachfolge_dinglicher_anspruch(a_neu: Anspruch, a_alt: Anspruch) kind empirical {
+    key(a_neu);
+    label de official "die Sache, hinsichtlich derer ein dinglicher Anspruch besteht, ist durch Rechtsnachfolge in den Besitz eines Dritten gelangt (§ 198)";
+    label en unofficial "the thing to which a right in rem relates has passed by succession into the possession of a third party (§ 198)";
+}
+pub relation besondere_verjaehrungsfrist_beginn_nachfolge(a_neu: Anspruch, tag: Date) kind institutional {
+    key(a_neu);
+    label de official "Beginn der Verjährungsfrist, den der Rechtsnachfolger vom Rechtsvorgänger übernimmt (§ 198)";
+    label en unofficial "beginning of the limitation period the successor takes over from the predecessor (§ 198)";
+}
+
+@source(BGB_P198)
+rule VerjaehrungBeiRechtsnachfolge(a_neu: Anspruch, a_alt: Anspruch, beginn: Date) strict {
+    label de official "Die während des Besitzes des Rechtsvorgängers verstrichene Verjährungszeit kommt dem Rechtsnachfolger zugute: der Beginn der Frist des Rechtsvorgängers gilt auch für den Nachfolger (§ 198)";
+    label en unofficial "The limitation time that has elapsed during the predecessor's possession benefits the successor: the predecessor's beginning of the period also applies to the successor (§ 198)";
+    when rechtsnachfolge_dinglicher_anspruch(a_neu, a_alt) and besondere_verjaehrungsfrist_beginn(a_alt, beginn);
+    then besondere_verjaehrungsfrist_beginn_nachfolge(a_neu, beginn);
+}
+
+@source(BGB_P198)
+rule BesondereFristEndeNachfolge(a: Anspruch, e: Date, d: Quantity) strict {
+    label de official "Für den Rechtsnachfolger endet die besondere Verjährungsfrist wie beim Rechtsvorgänger begonnen, mit der eigenen Dauer des Nachfolgeanspruchs (§ 198, §§ 196, 197)";
+    label en unofficial "For the successor the special limitation period ends as begun by the predecessor, with the successor claim's own duration (§ 198, §§ 196, 197)";
+    when besondere_verjaehrungsfrist_beginn_nachfolge(a, e) and besondere_verjaehrungsfrist_dauer(a, d);
+    then besondere_verjaehrungsfrist_ende(a, add_calendar_period(e, d));
+}
+
+// --- § 201: Beginn der Verjährungsfrist von festgestellten Ansprüchen ------------------------------
+
+pub relation rechtskraft_titel_oder_feststellung_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag der Rechtskraft der Entscheidung, der Errichtung des vollstreckbaren Titels oder der Feststellung im Insolvenzverfahren (§ 201)";
+    label en unofficial "day of the finality of the decision, the creation of the enforceable title, or the establishment in insolvency proceedings (§ 201)";
+}
+
+@source(BGB_P201)
+rule BeginnFestgestellterAnspruchNachEntstehung(a: Anspruch, tag: Date, e: Date) strict {
+    label de official "Die Verjährung von Ansprüchen nach § 197 Abs. 1 Nr. 3 bis 6 beginnt mit der Rechtskraft, dem Titel oder der Feststellung, nicht jedoch vor der Entstehung des Anspruchs (§ 201) — hier: nicht vor der Entstehung";
+    label en unofficial "Limitation of claims under § 197 (1) nos. 3 to 6 begins with finality, the title or the establishment, but not before the claim arose (§ 201) — here: not before accrual";
+    when dreissigjaehriger_grund(a, _) and rechtskraft_titel_oder_feststellung_am(a, tag) and de.bgb.core::anspruch_entstanden_am(a, e) and tag >= e;
+    then besondere_verjaehrungsfrist_beginn(a, tag);
+}
+
+@source(BGB_P201)
+rule BeginnFestgestellterAnspruchVorEntstehung(a: Anspruch, tag: Date, e: Date) strict {
+    label de official "Liegt die Rechtskraft, der Titel oder die Feststellung vor der Entstehung des Anspruchs, beginnt die Frist nicht vor der Entstehung (§ 201)";
+    label en unofficial "If finality, the title or the establishment precedes accrual of the claim, the period does not begin before accrual (§ 201)";
+    when dreissigjaehriger_grund(a, _) and rechtskraft_titel_oder_feststellung_am(a, tag) and de.bgb.core::anspruch_entstanden_am(a, e) and tag < e;
+    then besondere_verjaehrungsfrist_beginn(a, e);
+}
+
+// --- § 202: Unzulässigkeit von Vereinbarungen über die Verjährung ----------------------------------
+
+pub relation vereinbarung_ueber_verjaehrung(a: Anspruch) kind empirical {
+    label de official "die Parteien haben eine Vereinbarung über die Verjährung des Anspruchs getroffen (§ 202)";
+    label en unofficial "the parties have made an agreement about the limitation of the claim (§ 202)";
+}
+pub relation haftung_wegen_vorsatzes(a: Anspruch) kind empirical {
+    label de official "die Haftung, auf die sich die Vereinbarung bezieht, beruht auf Vorsatz (§ 202 Abs. 1)";
+    label en unofficial "the liability to which the agreement relates is based on intent (§ 202 (1))";
+}
+pub relation vereinbarte_verjaehrungsfrist_jahre(a: Anspruch, jahre: Integer) kind empirical {
+    key(a);
+    label de official "durch Rechtsgeschäft vereinbarte Verjährungsfrist, in Jahren ab dem gesetzlichen Verjährungsbeginn (§ 202 Abs. 2)";
+    label en unofficial "limitation period agreed by legal transaction, in years from the statutory beginning of limitation (§ 202 (2))";
+}
+pub relation vereinbarung_ueber_verjaehrung_unzulaessig(a: Anspruch) kind institutional {
+    key(a);
+    label de official "die Vereinbarung über die Verjährung ist unzulässig (§ 202)";
+    label en unofficial "the agreement about limitation is impermissible (§ 202)";
+}
+
+@source(BGB_P202)
+rule VerjaehrungsvereinbarungBeiVorsatzUnzulaessig(a: Anspruch) strict {
+    label de official "Die Verjährung kann bei Haftung wegen Vorsatzes nicht im Voraus durch Rechtsgeschäft erleichtert werden (§ 202 Abs. 1)";
+    label en unofficial "Limitation may not be eased in advance by legal transaction in the case of liability for intent (§ 202 (1))";
+    when vereinbarung_ueber_verjaehrung(a) and haftung_wegen_vorsatzes(a);
+    then vereinbarung_ueber_verjaehrung_unzulaessig(a);
+}
+
+@source(BGB_P202)
+rule VerjaehrungsvereinbarungUeberDreissigJahreUnzulaessig(a: Anspruch, j: Integer) strict {
+    label de official "Die Verjährung kann durch Rechtsgeschäft nicht über eine Verjährungsfrist von 30 Jahren ab dem gesetzlichen Verjährungsbeginn hinaus erschwert werden (§ 202 Abs. 2)";
+    label en unofficial "Limitation may not be made more difficult by legal transaction beyond a limitation period of 30 years from the statutory beginning of limitation (§ 202 (2))";
+    when vereinbarung_ueber_verjaehrung(a) and vereinbarte_verjaehrungsfrist_jahre(a, j) and j > 30;
+    then vereinbarung_ueber_verjaehrung_unzulaessig(a);
+}
+
+pub relation verbotsbeginn_202_am(a: Anspruch, p: de.bgb.core::Person, tag: Date) kind empirical {
+    key(a);
+    label de official "Beginn des Verbots unzulässiger Verjährungsvereinbarungen nach § 202";
+    label en unofficial "start of the prohibition of impermissible limitation agreements under § 202";
+}
+pub relation abweichung_202_vereinbart_am(a: Anspruch, p: de.bgb.core::Person, tag: Date) kind empirical {
+    key(a);
+    label de official "Eine unzulässige Vereinbarung über die Verjährung wurde getroffen (§ 202)";
+    label en unofficial "an impermissible agreement about limitation was made (§ 202)";
+}
+@source(BGB_P202)
+rule PositionVerjaehrungsvereinbarung202(a: Anspruch, p: de.bgb.core::Person, tag: Date) strict {
+    label de official "Die Partei darf keine unzulässige Vereinbarung über die Verjährung treffen (§ 202)";
+    label en unofficial "The party must not make an impermissible agreement about limitation (§ 202)";
+    when verbotsbeginn_202_am(a, p, tag);
+    then prohibition ProhibitionVerjaehrungsvereinbarung202 {
+        bearer p;
+        action abweichung_202_vereinbart_am(a, p, tag);
+        window [tag, infinity);
+    };
+}
+
+pub relation violation_verjaehrungsvereinbarung_202(a: Anspruch, p: de.bgb.core::Person) kind derived {
+    label de official "Die Partei hat eine unzulässige Vereinbarung über die Verjährung getroffen (§ 202)";
+    label en unofficial "the party made an impermissible agreement about limitation (§ 202)";
+}
+@source(BGB_P202)
+rule ViolationVerjaehrungsvereinbarung202(a: Anspruch, p: de.bgb.core::Person, tag: Date) strict {
+    label de official "Die Partei hat eine unzulässige Vereinbarung über die Verjährung getroffen (§ 202)";
+    label en unofficial "the party made an impermissible agreement about limitation (§ 202)";
+    when abweichung_202_vereinbart_am(a, p, tag);
+    then violation_verjaehrungsvereinbarung_202(a, p);
+}
+@source(BGB_P202)
+rule MaintenanceVerjaehrungsvereinbarung202(a: Anspruch, p: de.bgb.core::Person, beginn: Date) strict {
+    label de official "Die Partei hat eine unzulässige Vereinbarung über die Verjährung getroffen (§ 202)";
+    label en unofficial "the party made an impermissible agreement about limitation (§ 202)";
+    when verbotsbeginn_202_am(a, p, beginn);
+    then duty MaintenanceVerjaehrungsvereinbarung202Duty {
+        bearer p;
+        goal maintenance {
+            condition not violation_verjaehrungsvereinbarung_202(a, p);
+            window [beginn, infinity);
+        }
+    };
+}

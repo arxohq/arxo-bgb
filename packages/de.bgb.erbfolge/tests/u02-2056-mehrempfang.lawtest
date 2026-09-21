@@ -1,0 +1,43 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 2056 Satz 1: Hat ein Miterbe durch die Zuwendung MEHR erhalten, als ihm bei
+// der Auseinandersetzung zukommen wuerde, so ist er zur Herauszahlung des
+// Mehrbetrags nicht verpflichtet; der Nachlass wird unter den uebrigen Erben so
+// geteilt, dass der Wert der Zuwendung und sein Erbteil ausser Ansatz bleiben
+// (Satz 2). Zuwendung an K1 70 000,00 EUR, Ueberschuss 30 000,00 EUR:
+// Ausgleichungsmasse 100 000,00 EUR, K1 haette 50 000,00 EUR zu beanspruchen —
+// er hat 70 000,00 EUR erhalten und damit mehr.
+test "§ 2056: der Mehrempfaenger zahlt nichts heraus und bleibt ausser Ansatz" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:u02:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:u02:F"), entity_ref("urn:de:bgb:e:u02:D"), entity_ref("urn:de:bgb:e:u02:K1")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K1")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:u02:F"), entity_ref("urn:de:bgb:e:u02:D"), entity_ref("urn:de:bgb:e:u02:K2")) { origin case_input; }
+        assert "f7": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K2")) { origin case_input; }
+        assert "f8": ueberschuss(entity_ref("urn:de:bgb:e:u02:E"), 30000.00 EUR) { origin case_input; }
+        assert "f9": zuwendung_des_erblassers(entity_ref("urn:de:bgb:e:u02:Z"), entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K1")) { origin case_input; }
+        assert "f10": wert_der_zuwendung(entity_ref("urn:de:bgb:e:u02:Z"), 70000.00 EUR) { origin case_input; }
+        assert "f11": ausstattung(entity_ref("urn:de:bgb:e:u02:Z")) { origin case_input; }
+    }
+    evaluate truth(ausgleichungsmasse(entity_ref("urn:de:bgb:e:u02:E"), 100000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(rechnerischer_anteil_brutto(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K1"), 50000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(mehrempfang(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(keine_herauszahlung_des_mehrbetrags(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausser_ansatz_bei_der_teilung(entity_ref("urn:de:bgb:e:u02:E"), entity_ref("urn:de:bgb:e:u02:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

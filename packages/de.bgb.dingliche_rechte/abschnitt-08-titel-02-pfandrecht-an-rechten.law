@@ -1,0 +1,494 @@
+// --- Buch 3 Abschnitt 8 Titel 2: Pfandrecht an Rechten (§§ 1273–1296) ----------------------------
+//
+// § 1273 Abs. 2 ordnet die entsprechende Anwendung der Vorschriften über das
+// Pfandrecht an beweglichen Sachen an und nimmt zwei davon ausdrücklich aus
+// (§ 1208 gutgläubiger Vorrangserwerb, § 1213 Abs. 2 Fruchtbezugsvermutung).
+// Im Modell heißt das: dieselbe Entität `Pfandrecht`, dasselbe Prädikat
+// `pfandrecht_entstanden`, aber ein EIGENER Gegenstand (`verpfaendetes_recht`)
+// und eigene Köpfe für die Einziehung der §§ 1281–1290.
+//
+// DIE EINZIEHUNG HAT ZWEI LAGEN. Vor der Fälligkeit darf der Schuldner nur an
+// Pfandgläubiger und Gläubiger GEMEINSCHAFTLICH leisten (§ 1281); mit dem
+// Eintritt der Voraussetzungen des § 1228 Abs. 2 zieht der Pfandgläubiger
+// ALLEIN ein, aber nur soweit es zu seiner Befriedigung erforderlich ist
+// (§ 1282 Abs. 1). § 1287 sagt, was die Leistung bewirkt: der Gläubiger
+// erwirbt den Gegenstand, der Pfandgläubiger ein Pfandrecht an ihm — bei
+// einem Grundstück eine SICHERUNGSHYPOTHEK, die dieses Paket bereits kennt
+// (§ 1184, Abschnitt 7).
+
+pub relation voraussetzungen_des_1228_abs2_noch_nicht_eingetreten(pf: Pfandrecht) kind empirical {
+    label de official "die Voraussetzungen des § 1228 Abs. 2 sind noch nicht eingetreten: die gesicherte Forderung ist noch nicht fällig (§ 1281 Satz 1, § 1294) — ausdrückliche Eingabe des Falls; das Schweigen des Falls ist keine Verneinung (Ledger D-11-07)";
+    label en unofficial "the conditions of § 1228 (2) have not yet arisen: the secured claim is not yet due (§ 1281 sentence 1, § 1294) — explicit case input; silence of the case is no denial (ledger D-11-07)";
+}
+
+pub entity VerpfaendetesRecht {
+    label de official "Recht, das Gegenstand eines Pfandrechts ist: Forderung, Grundschuld, Rentenschuld, Wertpapier (§ 1273 Abs. 1, § 1279, § 1291, §§ 1292–1296)";
+    label en unofficial "right forming the object of a pledge: claim, land charge, annuity charge, security (§ 1273 (1), § 1279, § 1291, §§ 1292–1296)";
+}
+
+// --- Eingaben des Falls -----------------------------------------------------------------------------
+
+pub relation verpfaendetes_recht(pf: Pfandrecht, r: VerpfaendetesRecht) kind empirical {
+    key(pf);
+    label de official "Recht, das mit dem Pfandrecht belastet ist (§ 1273 Abs. 1)";
+    label en unofficial "right encumbered with the pledge (§ 1273 (1))";
+}
+pub relation recht_nicht_uebertragbar(r: VerpfaendetesRecht) kind empirical {
+    label de official "das Recht ist nicht übertragbar; an ihm kann ein Pfandrecht nicht bestellt werden (§ 1274 Abs. 2)";
+    label en unofficial "the right is not transferable; no pledge may be created on it (§ 1274 (2))";
+}
+pub relation bestellung_nach_den_uebertragungsvorschriften(pf: Pfandrecht) kind empirical {
+    label de official "die Bestellung ist nach den für die Übertragung des Rechts geltenden Vorschriften erfolgt (§ 1274 Abs. 1 Satz 1)";
+    label en unofficial "the pledge was created in accordance with the rules governing transfer of the right (§ 1274 (1) sentence 1)";
+}
+pub relation recht_ist_eine_forderung(r: VerpfaendetesRecht) kind empirical {
+    label de official "das verpfändete Recht ist eine Forderung (§ 1279 Satz 1)";
+    label en unofficial "the pledged right is a claim (§ 1279 sentence 1)";
+}
+pub relation abtretungsvertrag_genuegt_zur_uebertragung(r: VerpfaendetesRecht) kind empirical {
+    label de official "zur Übertragung der Forderung genügt der Abtretungsvertrag (§ 1280)";
+    label en unofficial "an assignment contract suffices to transfer the claim (§ 1280)";
+}
+pub relation verpfaendung_dem_schuldner_angezeigt(pf: Pfandrecht) kind empirical {
+    label de official "der Gläubiger hat die Verpfändung dem Schuldner angezeigt (§ 1280)";
+    label en unofficial "the creditor has notified the debtor of the pledge (§ 1280)";
+}
+pub relation schuldner_der_verpfaendeten_forderung(r: VerpfaendetesRecht, p: Person) kind empirical {
+    label de official "Schuldner der verpfändeten Forderung (§ 1281, § 1282)";
+    label en unofficial "debtor of the pledged claim (§ 1281, § 1282)";
+}
+pub relation glaeubiger_der_verpfaendeten_forderung(r: VerpfaendetesRecht, p: Person) kind empirical {
+    label de official "Gläubiger der verpfändeten Forderung, also der Verpfänder des Rechts (§ 1281, § 1283)";
+    label en unofficial "creditor of the pledged claim, i.e. the pledgor of the right (§ 1281, § 1283)";
+}
+pub relation verpfaendete_forderung_faellig(pf: Pfandrecht) kind empirical {
+    label de official "die verpfändete Forderung ist fällig (§ 1285 Abs. 1)";
+    label en unofficial "the pledged claim is due (§ 1285 (1))";
+}
+pub relation zur_befriedigung_erforderlicher_betrag(pf: Pfandrecht, betrag: Money) kind empirical {
+    key(pf);
+    label de official "Betrag, dessen Einziehung zur Befriedigung des Pfandgläubigers erforderlich ist (§ 1282 Abs. 1 Satz 2)";
+    label en unofficial "amount whose collection is necessary for the pledgee's satisfaction (§ 1282 (1) sentence 2)";
+}
+pub relation abweichende_vereinbarung_ueber_die_einziehung(pf: Pfandrecht) kind empirical {
+    label de official "Pfandgläubiger und Gläubiger haben über die §§ 1281 bis 1283 ein anderes vereinbart (§ 1284)";
+    label en unofficial "pledgee and creditor have agreed otherwise on §§ 1281 to 1283 (§ 1284)";
+}
+pub relation faelligkeit_der_verpfaendeten_forderung_haengt_von_kuendigung_ab(pf: Pfandrecht) kind empirical {
+    label de official "die Fälligkeit der verpfändeten Forderung hängt von einer Kündigung ab (§ 1283 Abs. 1, § 1286)";
+    label en unofficial "maturity of the pledged claim depends on a notice of termination (§ 1283 (1), § 1286)";
+}
+pub relation kuendigung_dem_pfandglaeubiger_und_dem_glaeubiger_erklaert(pf: Pfandrecht) kind empirical {
+    label de official "die Kündigung des Schuldners ist dem Pfandgläubiger und dem Gläubiger erklärt worden (§ 1283 Abs. 2)";
+    label en unofficial "the debtor's notice was declared to both the pledgee and the creditor (§ 1283 (2))";
+}
+pub relation leistung_in_uebertragung_des_eigentums_am_grundstueck(pf: Pfandrecht, g: Grundstueck) kind empirical {
+    label de official "die Leistung besteht in der Übertragung des Eigentums an einem Grundstück (§ 1287 Satz 2)";
+    label en unofficial "the performance consists in the transfer of ownership of land (§ 1287 sentence 2)";
+}
+pub relation geleisteter_gegenstand(pf: Pfandrecht, s: Sache) kind empirical {
+    label de official "Gegenstand, den der Schuldner in Gemäßheit der §§ 1281, 1282 geleistet hat (§ 1287 Satz 1)";
+    label en unofficial "object performed by the debtor in accordance with §§ 1281, 1282 (§ 1287 sentence 1)";
+}
+pub relation eingezogener_betrag(pf: Pfandrecht, betrag: Money) kind empirical {
+    key(pf);
+    label de official "eingezogener Geldbetrag (§ 1288 Abs. 1, Abs. 2)";
+    label en unofficial "amount of money collected (§ 1288 (1), (2))";
+}
+pub relation anzeige_des_einziehungsrechts_an_den_schuldner(pf: Pfandrecht) kind empirical {
+    label de official "Anzeige des Pfandgläubigers an den Schuldner, dass er von dem Einziehungsrecht Gebrauch mache; sie tritt an die Stelle der Beschlagnahme (§ 1289 Satz 2)";
+    label en unofficial "notice by the pledgee to the debtor that they exercise the right of collection; it replaces the seizure (§ 1289 sentence 2)";
+}
+pub relation vorgehendes_pfandrecht_an_der_forderung(vorrangig: Pfandrecht, nachrangig: Pfandrecht) kind empirical {
+    label de official "das eine Pfandrecht an der Forderung geht dem anderen vor (§ 1290)";
+    label en unofficial "one pledge on the claim ranks ahead of the other (§ 1290)";
+}
+pub relation recht_ist_grund_oder_rentenschuld(r: VerpfaendetesRecht) kind empirical {
+    label de official "das verpfändete Recht ist eine Grundschuld oder eine Rentenschuld (§ 1291)";
+    label en unofficial "the pledged right is a land charge or an annuity charge (§ 1291)";
+}
+pub relation orderpapier(r: VerpfaendetesRecht) kind empirical {
+    label de official "Wechsel oder anderes Papier, das durch Indossament übertragen werden kann (§ 1292, § 1294, § 1295)";
+    label en unofficial "bill of exchange or other instrument transferable by endorsement (§ 1292, § 1294, § 1295)";
+}
+pub relation inhaberpapier(r: VerpfaendetesRecht) kind empirical {
+    label de official "Inhaberpapier (§ 1293, § 1294)";
+    label en unofficial "bearer instrument (§ 1293, § 1294)";
+}
+pub relation indossiertes_papier_uebergeben(pf: Pfandrecht) kind empirical {
+    label de official "das indossierte Papier ist übergeben worden (§ 1292)";
+    label en unofficial "the endorsed instrument has been handed over (§ 1292)";
+}
+pub relation zinsscheine_dem_pfandglaeubiger_uebergeben(pf: Pfandrecht) kind empirical {
+    label de official "die zu dem Papier gehörenden Zins-, Renten- oder Gewinnanteilscheine sind dem Pfandgläubiger übergeben (§ 1296 Satz 1)";
+    label en unofficial "the interest, annuity or dividend coupons belonging to the instrument have been handed to the pledgee (§ 1296 sentence 1)";
+}
+pub relation aufhebung_des_verpfaendeten_rechts_erklaert(pf: Pfandrecht) kind empirical {
+    label de official "das verpfändete Recht soll durch Rechtsgeschäft aufgehoben werden (§ 1276 Abs. 1)";
+    label en unofficial "the pledged right is to be surrendered by legal transaction (§ 1276 (1))";
+}
+pub relation zustimmung_des_pfandglaeubigers_zur_aufhebung(pf: Pfandrecht) kind empirical {
+    label de official "Zustimmung des Pfandgläubigers zur Aufhebung des verpfändeten Rechts; sie ist unwiderruflich (§ 1276 Abs. 1)";
+    label en unofficial "consent of the pledgee to the surrender of the pledged right; it is irrevocable (§ 1276 (1))";
+}
+pub relation aenderung_beeintraechtigt_das_pfandrecht(pf: Pfandrecht) kind empirical {
+    label de official "die Änderung des Rechts beeinträchtigt das Pfandrecht (§ 1276 Abs. 2)";
+    label en unofficial "the alteration of the right impairs the pledge (§ 1276 (2))";
+}
+pub relation vollstreckbarer_titel_gegen_den_schuldner(pf: Pfandrecht) kind empirical {
+    label de official "der Pfandgläubiger hat einen vollstreckbaren Titel (§ 1277 Satz 1) — festgestellte Tatsache des Verfahrens";
+    label en unofficial "the pledgee holds an enforceable title (§ 1277 sentence 1) — established fact of the procedure";
+}
+
+// --- Abgeleitete Köpfe -----------------------------------------------------------------------------------
+
+pub relation pfandrecht_am_recht_entstanden(pf: Pfandrecht, r: VerpfaendetesRecht) kind derived {
+    label de official "das Pfandrecht an dem Recht ist entstanden (§ 1274 Abs. 1, § 1280, § 1292)";
+    label en unofficial "the pledge on the right has arisen (§ 1274 (1), § 1280, § 1292)";
+}
+pub relation pfandrecht_am_recht_nicht_bestellbar(r: VerpfaendetesRecht) kind derived {
+    label de official "soweit ein Recht nicht übertragbar ist, kann ein Pfandrecht an dem Recht nicht bestellt werden (§ 1274 Abs. 2)";
+    label en unofficial "in so far as a right is not transferable, no pledge may be created on it (§ 1274 (2))";
+}
+pub relation aufhebung_nur_mit_zustimmung_wirksam(pf: Pfandrecht) kind derived {
+    label de official "ein verpfändetes Recht kann durch Rechtsgeschäft nur mit Zustimmung des Pfandgläubigers aufgehoben werden; das Gleiche gilt für eine Änderung, die das Pfandrecht beeinträchtigt (§ 1276)";
+    label en unofficial "a pledged right may be surrendered by legal transaction only with the pledgee's consent; the same applies to an alteration impairing the pledge (§ 1276)";
+}
+pub relation befriedigung_nur_auf_grund_eines_titels(pf: Pfandrecht, glaeubiger: Person) kind derived {
+    label de official "der Pfandgläubiger kann seine Befriedigung aus dem Recht nur auf Grund eines vollstreckbaren Titels nach den für die Zwangsvollstreckung geltenden Vorschriften suchen (§ 1277 Satz 1)";
+    label en unofficial "the pledgee may seek satisfaction from the right only on the basis of an enforceable title under the rules of enforcement (§ 1277 sentence 1)";
+}
+pub relation leistung_nur_gemeinschaftlich(pf: Pfandrecht, schuldner: Person) kind derived {
+    label de official "der Schuldner kann nur an den Pfandgläubiger und den Gläubiger gemeinschaftlich leisten; jeder von beiden kann gemeinschaftliche Leistung oder Hinterlegung verlangen (§ 1281)";
+    label en unofficial "the debtor may perform only to the pledgee and the creditor jointly; each may demand joint performance or deposit (§ 1281)";
+}
+pub relation einziehungsrecht_des_pfandglaeubigers(pf: Pfandrecht, glaeubiger: Person, betrag: Money) kind derived {
+    key(pf);
+    label de official "der Pfandgläubiger ist zur Einziehung der Forderung berechtigt; bei einer Geldforderung nur insoweit, als sie zu seiner Befriedigung erforderlich ist (§ 1282 Abs. 1)";
+    label en unofficial "the pledgee may collect the claim; for a monetary claim only to the extent necessary for their satisfaction (§ 1282 (1))";
+}
+pub relation abtretung_an_zahlungs_statt_verlangbar(pf: Pfandrecht, glaeubiger: Person) kind derived {
+    label de official "soweit der Pfandgläubiger zur Einziehung berechtigt ist, kann er verlangen, dass ihm die Geldforderung an Zahlungs statt abgetreten wird (§ 1282 Abs. 1 Satz 3)";
+    label en unofficial "in so far as the pledgee may collect, they may demand that the monetary claim be assigned to them in lieu of payment (§ 1282 (1) sentence 3)";
+}
+pub relation andere_verfuegungen_nicht_gestattet(pf: Pfandrecht) kind derived {
+    label de official "zu anderen Verfügungen über die Forderung ist der Pfandgläubiger nicht berechtigt (§ 1282 Abs. 2)";
+    label en unofficial "the pledgee is not entitled to other dispositions of the claim (§ 1282 (2))";
+}
+pub relation kuendigung_des_schuldners_wirksam(pf: Pfandrecht) kind derived {
+    label de official "die Kündigung des Schuldners ist nur wirksam, wenn sie dem Pfandgläubiger und dem Gläubiger erklärt wird; nach dem Eintritt der Voraussetzungen des § 1228 Abs. 2 genügt die Erklärung gegenüber dem Pfandgläubiger (§ 1283 Abs. 2, Abs. 3)";
+    label en unofficial "the debtor's notice is effective only if declared to pledgee and creditor; once § 1228 (2) applies, a declaration to the pledgee suffices (§ 1283 (2), (3))";
+}
+pub relation kuendigungsrecht_des_pfandglaeubigers(pf: Pfandrecht, glaeubiger: Person) kind derived {
+    label de official "sind die Voraussetzungen des § 1228 Abs. 2 eingetreten, so ist auch der Pfandgläubiger zur Kündigung berechtigt (§ 1283 Abs. 3)";
+    label en unofficial "once the conditions of § 1228 (2) are met, the pledgee too may give notice (§ 1283 (3))";
+}
+pub relation mitwirkungspflicht_zur_einziehung(pf: Pfandrecht) kind derived {
+    label de official "hat die Leistung gemeinschaftlich zu erfolgen, so sind Pfandgläubiger und Gläubiger einander verpflichtet, zur Einziehung mitzuwirken, wenn die Forderung fällig ist (§ 1285 Abs. 1)";
+    label en unofficial "where performance is to be joint, pledgee and creditor must cooperate in collection once the claim is due (§ 1285 (1))";
+}
+pub relation kuendigung_vom_glaeubiger_verlangbar(pf: Pfandrecht, glaeubiger: Person) kind derived {
+    label de official "der Pfandgläubiger kann von dem Gläubiger die Kündigung verlangen, wenn die Einziehung wegen Gefährdung der Sicherheit nach den Regeln einer ordnungsmäßigen Vermögensverwaltung geboten ist (§ 1286 Satz 1)";
+    label en unofficial "the pledgee may demand that the creditor give notice where collection is required by the rules of proper asset management because the security is endangered (§ 1286 sentence 1)";
+}
+pub relation glaeubiger_erwirbt_den_gegenstand(pf: Pfandrecht, s: Sache) kind derived {
+    label de official "leistet der Schuldner in Gemäßheit der §§ 1281, 1282, so erwirbt mit der Leistung der Gläubiger den geleisteten Gegenstand (§ 1287 Satz 1)";
+    label en unofficial "where the debtor performs under §§ 1281, 1282, the creditor acquires the object performed (§ 1287 sentence 1)";
+}
+pub relation pfandrecht_am_geleisteten_gegenstand(pf: Pfandrecht, s: Sache) kind derived {
+    label de official "der Pfandgläubiger erwirbt ein Pfandrecht an dem geleisteten Gegenstand (§ 1287 Satz 1)";
+    label en unofficial "the pledgee acquires a pledge on the object performed (§ 1287 sentence 1)";
+}
+pub relation sicherungshypothek_am_grundstueck_erworben(pf: Pfandrecht, g: Grundstueck) kind derived {
+    label de official "besteht die Leistung in der Übertragung des Eigentums an einem Grundstück, so erwirbt der Pfandgläubiger eine Sicherungshypothek (§ 1287 Satz 2)";
+    label en unofficial "where the performance consists in transferring ownership of land, the pledgee acquires a security mortgage (§ 1287 sentence 2)";
+}
+pub relation forderung_des_pfandglaeubigers_gilt_als_berichtigt(pf: Pfandrecht, betrag: Money) kind derived {
+    key(pf);
+    label de official "erfolgt die Einziehung in Gemäßheit des § 1282, so gilt die Forderung des Pfandgläubigers, soweit ihm der eingezogene Betrag gebührt, als von dem Gläubiger berichtigt (§ 1288 Abs. 2)";
+    label en unofficial "where collection follows § 1282, the pledgee's claim counts as settled by the creditor to the extent of the amount collected (§ 1288 (2))";
+}
+pub relation anlegungspflicht_des_eingezogenen_betrags(pf: Pfandrecht) kind derived {
+    label de official "wird eine Geldforderung in Gemäßheit des § 1281 eingezogen, so sind Pfandgläubiger und Gläubiger verpflichtet mitzuwirken, dass der Betrag angelegt und gleichzeitig das Pfandrecht bestellt wird (§ 1288 Abs. 1)";
+    label en unofficial "where a monetary claim is collected under § 1281, pledgee and creditor must cooperate so that the amount is invested and the pledge created on it (§ 1288 (1))";
+}
+pub relation pfandrecht_erstreckt_sich_auf_die_zinsen(pf: Pfandrecht) kind derived {
+    label de official "das Pfandrecht an einer Forderung erstreckt sich auf die Zinsen der Forderung; an die Stelle der Beschlagnahme tritt die Anzeige des Einziehungsrechts (§ 1289)";
+    label en unofficial "the pledge on a claim extends to its interest; the notice of the right of collection replaces the seizure (§ 1289)";
+}
+pub relation nur_der_vorrangige_pfandglaeubiger_zieht_ein(pf: Pfandrecht) kind derived {
+    label de official "bestehen mehrere Pfandrechte an einer Forderung, so ist zur Einziehung nur derjenige Pfandgläubiger berechtigt, dessen Pfandrecht den übrigen vorgeht (§ 1290)";
+    label en unofficial "where several pledges exist on a claim, only the pledgee whose pledge ranks first may collect (§ 1290)";
+}
+pub relation einziehung_auch_vor_faelligkeit_zulaessig(pf: Pfandrecht, glaeubiger: Person) kind derived {
+    label de official "bei Wechseln, Orderpapieren und Inhaberpapieren ist der Pfandgläubiger auch vor dem Eintritt der Voraussetzungen des § 1228 Abs. 2 zur Einziehung und Kündigung berechtigt (§ 1294)";
+    label en unofficial "for bills, order and bearer instruments the pledgee may collect and give notice even before the conditions of § 1228 (2) are met (§ 1294)";
+}
+pub relation freihaendiger_verkauf_des_orderpapiers_zulaessig(pf: Pfandrecht, glaeubiger: Person) kind derived {
+    label de official "hat ein verpfändetes Orderpapier einen Börsen- oder Marktpreis, so ist der Gläubiger nach dem Eintritt der Voraussetzungen des § 1228 Abs. 2 berechtigt, es nach § 1221 verkaufen zu lassen (§ 1295)";
+    label en unofficial "where a pledged order instrument has a market price, the creditor may, once § 1228 (2) applies, have it sold under § 1221 (§ 1295)";
+}
+pub relation pfandrecht_erstreckt_sich_auf_die_scheine(pf: Pfandrecht) kind derived {
+    label de official "das Pfandrecht an einem Wertpapier erstreckt sich auf die zugehörigen Zins-, Renten- oder Gewinnanteilscheine nur dann, wenn sie dem Pfandgläubiger übergeben sind (§ 1296 Satz 1)";
+    label en unofficial "the pledge on a security extends to its interest, annuity or dividend coupons only where they have been handed to the pledgee (§ 1296 sentence 1)";
+}
+
+// --- Regeln ----------------------------------------------------------------------------------------------
+
+@source(BGB_P1273)
+rule VorschriftenUeberSachpfandGeltenEntsprechend(pf: Pfandrecht, r: VerpfaendetesRecht, glaeubiger: Person) strict {
+    label de official "Gegenstand des Pfandrechts kann auch ein Recht sein; auf das Pfandrecht an Rechten finden die Vorschriften über das Pfandrecht an beweglichen Sachen entsprechende Anwendung, soweit sich nicht aus den §§ 1274 bis 1296 ein anderes ergibt; § 1208 und § 1213 Abs. 2 sind ausgeschlossen (§ 1273)";
+    label en unofficial "A right may also be the object of a pledge; the rules on pledges of movables apply accordingly unless §§ 1274 to 1296 provide otherwise; § 1208 and § 1213 (2) are excluded (§ 1273)";
+    when verpfaendetes_recht(pf, r) and pfandrecht_am_recht_entstanden(pf, r) and pfandglaeubiger(pf, glaeubiger);
+    then befriedigung_aus_der_sache_zulaessig(pf, glaeubiger);
+}
+
+@source(BGB_P1274) {
+    rule BestellungNachDenUebertragungsvorschriften(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+        label de official "Die Bestellung des Pfandrechts an einem Recht erfolgt nach den für die Übertragung des Rechts geltenden Vorschriften (§ 1274 Abs. 1 Satz 1)";
+        label en unofficial "A pledge on a right is created in accordance with the rules governing transfer of that right (§ 1274 (1) sentence 1)";
+        when verpfaendetes_recht(pf, r) and bestellung_nach_den_uebertragungsvorschriften(pf)
+            and not recht_nicht_uebertragbar(r) and not anzeige_an_den_schuldner_erforderlich(pf);
+        then pfandrecht_am_recht_entstanden(pf, r);
+    }
+    rule KeinPfandrechtAnUnuebertragbaremRecht(r: VerpfaendetesRecht) strict {
+        label de official "Soweit ein Recht nicht übertragbar ist, kann ein Pfandrecht an dem Recht nicht bestellt werden (§ 1274 Abs. 2)";
+        label en unofficial "In so far as a right is not transferable, no pledge may be created on it (§ 1274 (2))";
+        when recht_nicht_uebertragbar(r);
+        then pfandrecht_am_recht_nicht_bestellbar(r);
+    }
+}
+
+pub relation anzeige_an_den_schuldner_erforderlich(pf: Pfandrecht) kind derived {
+    label de official "die Verpfändung einer Forderung, zu deren Übertragung der Abtretungsvertrag genügt, bedarf der Anzeige an den Schuldner (§ 1280)";
+    label en unofficial "the pledge of a claim transferable by mere assignment contract requires notice to the debtor (§ 1280)";
+}
+
+@source(BGB_P1280) {
+    rule AnzeigeIstErforderlich(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+        label de official "Die Verpfändung einer Forderung, zu deren Übertragung der Abtretungsvertrag genügt, ist nur wirksam, wenn der Gläubiger sie dem Schuldner anzeigt (§ 1280)";
+        label en unofficial "The pledge of a claim transferable by mere assignment contract is effective only if the creditor notifies the debtor (§ 1280)";
+        when verpfaendetes_recht(pf, r) and recht_ist_eine_forderung(r) and abtretungsvertrag_genuegt_zur_uebertragung(r);
+        then anzeige_an_den_schuldner_erforderlich(pf);
+    }
+    rule PfandrechtAnDerForderungMitAnzeige(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+        label de official "Mit der Anzeige an den Schuldner ist die Verpfändung der Forderung wirksam (§ 1280 in Verbindung mit § 1274 Abs. 1)";
+        label en unofficial "With the notice to the debtor the pledge of the claim becomes effective (§ 1280 together with § 1274 (1))";
+        when verpfaendetes_recht(pf, r) and bestellung_nach_den_uebertragungsvorschriften(pf)
+            and anzeige_an_den_schuldner_erforderlich(pf) and verpfaendung_dem_schuldner_angezeigt(pf)
+            and not recht_nicht_uebertragbar(r);
+        then pfandrecht_am_recht_entstanden(pf, r);
+    }
+}
+
+@source(BGB_P1276) {
+    rule AufhebungNurMitZustimmung(pf: Pfandrecht) strict {
+        label de official "Ein verpfändetes Recht kann durch Rechtsgeschäft nur mit Zustimmung des Pfandgläubigers aufgehoben werden; die Zustimmung ist unwiderruflich (§ 1276 Abs. 1)";
+        label en unofficial "A pledged right may be surrendered by legal transaction only with the pledgee's consent; the consent is irrevocable (§ 1276 (1))";
+        when aufhebung_des_verpfaendeten_rechts_erklaert(pf) and zustimmung_des_pfandglaeubigers_zur_aufhebung(pf);
+        then aufhebung_nur_mit_zustimmung_wirksam(pf);
+    }
+    rule AenderungBrauchtZustimmung(pf: Pfandrecht) strict {
+        label de official "Das Gleiche gilt im Falle einer Änderung des Rechts, sofern sie das Pfandrecht beeinträchtigt (§ 1276 Abs. 2)";
+        label en unofficial "The same applies to an alteration of the right in so far as it impairs the pledge (§ 1276 (2))";
+        when aenderung_beeintraechtigt_das_pfandrecht(pf) and zustimmung_des_pfandglaeubigers_zur_aufhebung(pf);
+        then aufhebung_nur_mit_zustimmung_wirksam(pf);
+    }
+}
+
+@source(BGB_P1277)
+rule BefriedigungAusDemRechtNurMitTitel(pf: Pfandrecht, r: VerpfaendetesRecht, glaeubiger: Person) strict {
+    label de official "Der Pfandgläubiger kann seine Befriedigung aus dem Recht nur auf Grund eines vollstreckbaren Titels nach den für die Zwangsvollstreckung geltenden Vorschriften suchen, sofern nicht ein anderes bestimmt ist; § 1229 und § 1245 Abs. 2 bleiben unberührt (§ 1277)";
+    label en unofficial "The pledgee may seek satisfaction from the right only on an enforceable title under the rules of enforcement, unless otherwise provided; §§ 1229, 1245 (2) remain unaffected (§ 1277)";
+    when pfandrecht_am_recht_entstanden(pf, r) and pfandglaeubiger(pf, glaeubiger) and vollstreckbarer_titel_gegen_den_schuldner(pf);
+    then befriedigung_nur_auf_grund_eines_titels(pf, glaeubiger);
+}
+
+@source(BGB_P1278)
+rule ErloeschenDurchRueckgabeDerSache(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+    label de official "Ist ein Recht, zu dessen Verpfändung die Übergabe einer Sache erforderlich ist, Gegenstand des Pfandrechts, so findet auf das Erlöschen durch die Rückgabe der Sache § 1253 entsprechende Anwendung (§ 1278)";
+    label en unofficial "Where a right whose pledging requires handing over a thing is the object of the pledge, § 1253 applies accordingly to extinction by return of the thing (§ 1278)";
+    when pfandrecht_am_recht_entstanden(pf, r) and pfand_zurueckgegeben(pf);
+    then pfandrecht_erloschen(pf);
+}
+
+@source(BGB_P1281)
+rule LeistungNurGemeinschaftlichVorFaelligkeit(pf: Pfandrecht, r: VerpfaendetesRecht, schuldner: Person, glaeubiger: Person) strict {
+    label de official "Der Schuldner kann nur an den Pfandgläubiger und den Gläubiger gemeinschaftlich leisten; jeder von beiden kann verlangen, dass an sie gemeinschaftlich geleistet wird, oder statt der Leistung Hinterlegung verlangen (§ 1281)";
+    label en unofficial "The debtor may perform only to the pledgee and the creditor jointly; each may demand joint performance or, instead, deposit (§ 1281)";
+    when pfandrecht_am_recht_entstanden(pf, r) and recht_ist_eine_forderung(r)
+        and schuldner_der_verpfaendeten_forderung(r, schuldner) and pfandglaeubiger(pf, glaeubiger)
+        and voraussetzungen_des_1228_abs2_noch_nicht_eingetreten(pf)
+        and not abweichende_vereinbarung_ueber_die_einziehung(pf);
+    then leistung_nur_gemeinschaftlich(pf, schuldner);
+}
+
+@source(BGB_P1282) {
+    rule EinziehungsrechtNachFaelligkeit(pf: Pfandrecht, r: VerpfaendetesRecht, glaeubiger: Person, betrag: Money) strict {
+        label de official "Sind die Voraussetzungen des § 1228 Abs. 2 eingetreten, so ist der Pfandgläubiger zur Einziehung der Forderung berechtigt und kann der Schuldner nur an ihn leisten; die Einziehung einer Geldforderung steht ihm nur insoweit zu, als sie zu seiner Befriedigung erforderlich ist (§ 1282 Abs. 1 Sätze 1, 2)";
+        label en unofficial "Once the conditions of § 1228 (2) are met the pledgee may collect the claim and the debtor may perform only to them; for a monetary claim only to the extent necessary for their satisfaction (§ 1282 (1) sentences 1, 2)";
+        when pfandrecht_am_recht_entstanden(pf, r) and recht_ist_eine_forderung(r) and verkaufsberechtigung(pf, glaeubiger)
+            and zur_befriedigung_erforderlicher_betrag(pf, betrag) and not abweichende_vereinbarung_ueber_die_einziehung(pf);
+        then einziehungsrecht_des_pfandglaeubigers(pf, glaeubiger, betrag);
+    }
+    rule AbtretungAnZahlungsStatt(pf: Pfandrecht, glaeubiger: Person, betrag: Money) strict {
+        label de official "Soweit er zur Einziehung berechtigt ist, kann er auch verlangen, dass ihm die Geldforderung an Zahlungs statt abgetreten wird (§ 1282 Abs. 1 Satz 3)";
+        label en unofficial "In so far as they may collect, they may also demand assignment of the monetary claim in lieu of payment (§ 1282 (1) sentence 3)";
+        when einziehungsrecht_des_pfandglaeubigers(pf, glaeubiger, betrag);
+        then abtretung_an_zahlungs_statt_verlangbar(pf, glaeubiger);
+    }
+    rule KeineAnderenVerfuegungen(pf: Pfandrecht, glaeubiger: Person, betrag: Money) strict {
+        label de official "Zu anderen Verfügungen über die Forderung ist der Pfandgläubiger nicht berechtigt; das Recht, die Befriedigung nach § 1277 zu suchen, bleibt unberührt (§ 1282 Abs. 2)";
+        label en unofficial "The pledgee is not entitled to other dispositions of the claim; the right to seek satisfaction under § 1277 remains unaffected (§ 1282 (2))";
+        when einziehungsrecht_des_pfandglaeubigers(pf, glaeubiger, betrag);
+        then andere_verfuegungen_nicht_gestattet(pf);
+    }
+}
+
+@source(BGB_P1283) {
+    rule KuendigungDesSchuldnersAnBeide(pf: Pfandrecht) strict {
+        label de official "Die Kündigung des Schuldners ist nur wirksam, wenn sie dem Pfandgläubiger und dem Gläubiger erklärt wird (§ 1283 Abs. 2)";
+        label en unofficial "The debtor's notice is effective only if declared to the pledgee and the creditor (§ 1283 (2))";
+        when faelligkeit_der_verpfaendeten_forderung_haengt_von_kuendigung_ab(pf)
+            and kuendigung_dem_pfandglaeubiger_und_dem_glaeubiger_erklaert(pf);
+        then kuendigung_des_schuldners_wirksam(pf);
+    }
+    rule KuendigungsrechtDesPfandglaeubigers(pf: Pfandrecht, glaeubiger: Person) strict {
+        label de official "Sind die Voraussetzungen des § 1228 Abs. 2 eingetreten, so ist auch der Pfandgläubiger zur Kündigung berechtigt; für die Kündigung des Schuldners genügt dann die Erklärung gegenüber dem Pfandgläubiger (§ 1283 Abs. 3)";
+        label en unofficial "Once § 1228 (2) applies the pledgee too may give notice; a declaration to the pledgee then suffices for the debtor's notice (§ 1283 (3))";
+        when faelligkeit_der_verpfaendeten_forderung_haengt_von_kuendigung_ab(pf) and verkaufsberechtigung(pf, glaeubiger);
+        then kuendigungsrecht_des_pfandglaeubigers(pf, glaeubiger);
+    }
+}
+
+@source(BGB_P1285)
+rule MitwirkungspflichtBeiFaelligkeit(pf: Pfandrecht, schuldner: Person) strict {
+    label de official "Hat die Leistung an den Pfandgläubiger und den Gläubiger gemeinschaftlich zu erfolgen, so sind beide einander verpflichtet, zur Einziehung mitzuwirken, wenn die Forderung fällig ist (§ 1285 Abs. 1)";
+    label en unofficial "Where performance is to be joint, both must cooperate in collection once the claim is due (§ 1285 (1))";
+    when leistung_nur_gemeinschaftlich(pf, schuldner) and verpfaendete_forderung_faellig(pf);
+    then mitwirkungspflicht_zur_einziehung(pf);
+}
+
+@source(BGB_P1286)
+rule KuendigungVomGlaeubigerVerlangbar(pf: Pfandrecht, glaeubiger: Person) strict {
+    label de official "Hängt die Fälligkeit der verpfändeten Forderung von einer Kündigung ab, so kann der Pfandgläubiger von dem Gläubiger die Kündigung verlangen, wenn die Einziehung wegen Gefährdung ihrer Sicherheit nach den Regeln einer ordnungsmäßigen Vermögensverwaltung geboten ist (§ 1286 Satz 1)";
+    label en unofficial "Where maturity depends on notice, the pledgee may demand that the creditor give notice where collection is required by proper asset management because the security is endangered (§ 1286 sentence 1)";
+    when pfandglaeubiger(pf, glaeubiger) and faelligkeit_der_verpfaendeten_forderung_haengt_von_kuendigung_ab(pf)
+        and einziehung_nach_ordnungsmaessiger_vermoegensverwaltung_geboten(pf);
+    then kuendigung_vom_glaeubiger_verlangbar(pf, glaeubiger);
+}
+
+@source(BGB_P1286)
+pub external judgment relation einziehung_nach_ordnungsmaessiger_vermoegensverwaltung_geboten(pf: Pfandrecht) {
+    authority Court;
+    label de official "die Einziehung der Forderung ist wegen Gefährdung ihrer Sicherheit nach den Regeln einer ordnungsmäßigen Vermögensverwaltung geboten (§ 1286 Satz 1) — Wertung";
+    label en unofficial "collection of the claim is required by the rules of proper asset management because its security is endangered (§ 1286 sentence 1) — evaluation";
+}
+
+@source(BGB_P1287) {
+    rule GlaeubigerErwirbtDenGeleistetenGegenstand(pf: Pfandrecht, s: Sache, schuldner: Person) strict {
+        label de official "Leistet der Schuldner in Gemäßheit der §§ 1281, 1282, so erwirbt mit der Leistung der Gläubiger den geleisteten Gegenstand und der Pfandgläubiger ein Pfandrecht an dem Gegenstand (§ 1287 Satz 1)";
+        label en unofficial "Where the debtor performs under §§ 1281, 1282, the creditor acquires the object performed and the pledgee a pledge on it (§ 1287 sentence 1)";
+        when leistung_nur_gemeinschaftlich(pf, schuldner) and geleisteter_gegenstand(pf, s);
+        then glaeubiger_erwirbt_den_gegenstand(pf, s);
+    }
+    rule PfandglaeubigerErwirbtPfandrechtAmGegenstand(pf: Pfandrecht, s: Sache) strict {
+        label de official "Der Pfandgläubiger erwirbt ein Pfandrecht an dem geleisteten Gegenstand (§ 1287 Satz 1)";
+        label en unofficial "The pledgee acquires a pledge on the object performed (§ 1287 sentence 1)";
+        when glaeubiger_erwirbt_den_gegenstand(pf, s);
+        then pfandrecht_am_geleisteten_gegenstand(pf, s);
+    }
+    rule SicherungshypothekBeiGrundstuecksuebertragung(pf: Pfandrecht, g: Grundstueck, s: Sache) strict {
+        label de official "Besteht die Leistung in der Übertragung des Eigentums an einem Grundstück, so erwirbt der Pfandgläubiger eine Sicherungshypothek (§ 1287 Satz 2)";
+        label en unofficial "Where the performance consists in transferring ownership of land, the pledgee acquires a security mortgage (§ 1287 sentence 2)";
+        when glaeubiger_erwirbt_den_gegenstand(pf, s) and leistung_in_uebertragung_des_eigentums_am_grundstueck(pf, g);
+        then sicherungshypothek_am_grundstueck_erworben(pf, g);
+    }
+}
+
+@source(BGB_P1288) {
+    rule AnlegungDesEingezogenenBetrags(pf: Pfandrecht, schuldner: Person, betrag: Money) strict {
+        label de official "Wird eine Geldforderung in Gemäßheit des § 1281 eingezogen, so sind der Pfandgläubiger und der Gläubiger einander verpflichtet mitzuwirken, dass der eingezogene Betrag angelegt und gleichzeitig dem Pfandgläubiger das Pfandrecht bestellt wird (§ 1288 Abs. 1)";
+        label en unofficial "Where a monetary claim is collected under § 1281, pledgee and creditor must cooperate so that the amount is invested and the pledge created on it (§ 1288 (1))";
+        when leistung_nur_gemeinschaftlich(pf, schuldner) and eingezogener_betrag(pf, betrag);
+        then anlegungspflicht_des_eingezogenen_betrags(pf);
+    }
+    rule ForderungGiltInHoeheDesEingezogenenBetragsAlsBerichtigt(pf: Pfandrecht, glaeubiger: Person, erforderlich: Money, betrag: Money) strict {
+        label de official "Erfolgt die Einziehung in Gemäßheit des § 1282, so gilt die Forderung des Pfandgläubigers, soweit ihm der eingezogene Betrag zu seiner Befriedigung gebührt, als von dem Gläubiger berichtigt (§ 1288 Abs. 2)";
+        label en unofficial "Where collection follows § 1282, the pledgee's claim counts as settled by the creditor to the extent the amount collected accrues to them (§ 1288 (2))";
+        when einziehungsrecht_des_pfandglaeubigers(pf, glaeubiger, erforderlich) and eingezogener_betrag(pf, betrag)
+            and betrag <= erforderlich;
+        then forderung_des_pfandglaeubigers_gilt_als_berichtigt(pf, betrag);
+    }
+    rule ForderungGiltHoechstensInHoeheDesErforderlichenAlsBerichtigt(pf: Pfandrecht, glaeubiger: Person, erforderlich: Money, betrag: Money) strict {
+        label de official "Übersteigt der eingezogene Betrag das zur Befriedigung Erforderliche, so gilt die Forderung nur in dessen Höhe als berichtigt (§ 1288 Abs. 2 in Verbindung mit § 1282 Abs. 1 Satz 2)";
+        label en unofficial "Where the amount collected exceeds what is necessary for satisfaction, the claim counts as settled only to that extent (§ 1288 (2) together with § 1282 (1) sentence 2)";
+        when einziehungsrecht_des_pfandglaeubigers(pf, glaeubiger, erforderlich) and eingezogener_betrag(pf, betrag)
+            and betrag > erforderlich;
+        then forderung_des_pfandglaeubigers_gilt_als_berichtigt(pf, erforderlich);
+    }
+}
+
+@source(BGB_P1289)
+rule ErstreckungAufDieZinsenDerForderung(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+    label de official "Das Pfandrecht an einer Forderung erstreckt sich auf die Zinsen der Forderung; die §§ 1123 Abs. 2, 1124, 1125 finden entsprechende Anwendung, an die Stelle der Beschlagnahme tritt die Anzeige des Pfandgläubigers an den Schuldner, dass er von dem Einziehungsrecht Gebrauch mache (§ 1289)";
+    label en unofficial "The pledge on a claim extends to its interest; §§ 1123 (2), 1124, 1125 apply accordingly, the pledgee's notice of exercising the right of collection replacing the seizure (§ 1289)";
+    when pfandrecht_am_recht_entstanden(pf, r) and recht_ist_eine_forderung(r) and anzeige_des_einziehungsrechts_an_den_schuldner(pf);
+    then pfandrecht_erstreckt_sich_auf_die_zinsen(pf);
+}
+
+@source(BGB_P1290)
+rule NurDerVorrangigePfandglaeubigerZiehtEin(vorrangig: Pfandrecht, nachrangig: Pfandrecht) strict {
+    label de official "Bestehen mehrere Pfandrechte an einer Forderung, so ist zur Einziehung nur derjenige Pfandgläubiger berechtigt, dessen Pfandrecht den übrigen Pfandrechten vorgeht (§ 1290)";
+    label en unofficial "Where several pledges exist on a claim, only the pledgee whose pledge ranks first may collect (§ 1290)";
+    when vorgehendes_pfandrecht_an_der_forderung(vorrangig, nachrangig);
+    then nur_der_vorrangige_pfandglaeubiger_zieht_ein(vorrangig);
+}
+
+@source(BGB_P1291)
+rule VorschriftenGeltenAuchFuerGrundUndRentenschuld(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+    label de official "Die Vorschriften über das Pfandrecht an einer Forderung gelten auch für das Pfandrecht an einer Grundschuld und an einer Rentenschuld (§ 1291)";
+    label en unofficial "The rules on a pledge of a claim also apply to a pledge of a land charge or an annuity charge (§ 1291)";
+    when verpfaendetes_recht(pf, r) and recht_ist_grund_oder_rentenschuld(r);
+    then recht_ist_eine_forderung(r);
+}
+
+@source(BGB_P1292)
+rule VerpfaendungDesOrderpapiers(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+    label de official "Zur Verpfändung eines Wechsels oder eines anderen Papiers, das durch Indossament übertragen werden kann, genügt die Einigung des Gläubigers und des Pfandgläubigers und die Übergabe des indossierten Papiers (§ 1292)";
+    label en unofficial "To pledge a bill of exchange or other instrument transferable by endorsement, the agreement of creditor and pledgee and the handing over of the endorsed instrument suffice (§ 1292)";
+    when verpfaendetes_recht(pf, r) and orderpapier(r) and einigung_ueber_das_pfandrecht(pf) and indossiertes_papier_uebergeben(pf);
+    then pfandrecht_am_recht_entstanden(pf, r);
+}
+
+@source(BGB_P1294) {
+    rule EinziehungVorFaelligkeitBeiWertpapieren(pf: Pfandrecht, r: VerpfaendetesRecht, glaeubiger: Person) strict {
+        label de official "Ist ein Wechsel, ein anderes Orderpapier oder ein Inhaberpapier Gegenstand des Pfandrechts, so ist, auch wenn die Voraussetzungen des § 1228 Abs. 2 noch nicht eingetreten sind, der Pfandgläubiger zur Einziehung und, falls Kündigung erforderlich ist, zur Kündigung berechtigt und kann der Schuldner nur an ihn leisten (§ 1294)";
+        label en unofficial "Where a bill, another order instrument or a bearer instrument is the object of the pledge, the pledgee may collect and, if notice is required, give notice even before § 1228 (2) applies, and the debtor may perform only to them (§ 1294)";
+        when pfandrecht_am_recht_entstanden(pf, r) and orderpapier(r) and pfandglaeubiger(pf, glaeubiger);
+        then einziehung_auch_vor_faelligkeit_zulaessig(pf, glaeubiger);
+    }
+    rule EinziehungVorFaelligkeitBeiInhaberpapieren(pf: Pfandrecht, r: VerpfaendetesRecht, glaeubiger: Person) strict {
+        label de official "Dasselbe gilt für Inhaberpapiere (§ 1293, § 1294)";
+        label en unofficial "The same applies to bearer instruments (§ 1293, § 1294)";
+        when pfandrecht_am_recht_entstanden(pf, r) and inhaberpapier(r) and pfandglaeubiger(pf, glaeubiger);
+        then einziehung_auch_vor_faelligkeit_zulaessig(pf, glaeubiger);
+    }
+}
+
+@source(BGB_P1295)
+rule FreihaendigerVerkaufDesOrderpapiers(pf: Pfandrecht, r: VerpfaendetesRecht, glaeubiger: Person) strict {
+    label de official "Hat ein verpfändetes Papier, das durch Indossament übertragen werden kann, einen Börsen- oder Marktpreis, so ist der Gläubiger nach dem Eintritt der Voraussetzungen des § 1228 Abs. 2 berechtigt, das Papier nach § 1221 verkaufen zu lassen (§ 1295)";
+    label en unofficial "Where a pledged instrument transferable by endorsement has a market price, the creditor may, once § 1228 (2) applies, have it sold under § 1221 (§ 1295)";
+    when pfandrecht_am_recht_entstanden(pf, r) and orderpapier(r) and boersen_oder_marktpreis(pf)
+        and verkaufsberechtigung(pf, glaeubiger);
+    then freihaendiger_verkauf_des_orderpapiers_zulaessig(pf, glaeubiger);
+}
+
+@source(BGB_P1296)
+rule ErstreckungAufDieScheineNurBeiUebergabe(pf: Pfandrecht, r: VerpfaendetesRecht) strict {
+    label de official "Das Pfandrecht an einem Wertpapier erstreckt sich auf die zu dem Papier gehörenden Zins-, Renten- oder Gewinnanteilscheine nur dann, wenn sie dem Pfandgläubiger übergeben sind (§ 1296 Satz 1)";
+    label en unofficial "The pledge on a security extends to its interest, annuity or dividend coupons only where they have been handed to the pledgee (§ 1296 sentence 1)";
+    when pfandrecht_am_recht_entstanden(pf, r) and zinsscheine_dem_pfandglaeubiger_uebergeben(pf);
+    then pfandrecht_erstreckt_sich_auf_die_scheine(pf);
+}

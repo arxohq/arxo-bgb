@@ -1,0 +1,16 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Gegenstück zu w01: derselbe Fristbeginn, aber der Antrag geht erst am 17.03.2026 ein — einen Tag nach dem verlegten Fristende.
+test "Kanarienvogel § 1139 Satz 1: Antrag einen Tag nach dem verlegten Fristende genügt nicht" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": buchhypothek(entity_ref("urn:de:bgb:dr:w02:hyp")) { origin adjudicated; }
+        assert "f2": darlehen_nicht_hingegeben(entity_ref("urn:de:bgb:dr:w02:hyp")) { origin adjudicated; }
+        assert "f3": widerspruchsfrist_des_1139(entity_ref("urn:de:bgb:dr:w02:hyp"), entity_ref("urn:de:bgb:dr:w02:frist")) { origin case_input; }
+        assert "f4": hypothek_eingetragen_am(entity_ref("urn:de:bgb:dr:w02:hyp"), @2026-02-15) { origin adjudicated; }
+        assert "f5": antrag_auf_widerspruch_gestellt_am(entity_ref("urn:de:bgb:dr:w02:hyp"), @2026-03-17) { origin adjudicated; }
+    }
+    evaluate truth(antrag_genuegt_fuer_die_eintragung_des_widerspruchs(entity_ref("urn:de:bgb:dr:w02:hyp")));
+    expect truth_status == NEITHER;
+}

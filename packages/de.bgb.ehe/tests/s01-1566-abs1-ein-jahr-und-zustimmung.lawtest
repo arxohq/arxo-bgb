@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1566 Abs. 1: die Ehegatten leben seit dem 01.03.2024 getrennt; die Jahresfrist endet mit Ablauf des 01.03.2025 (ein Samstag — die Frist misst VERSTRICHENE ZEIT, § 193 verschiebt sie nicht, Kopf package.law). Am 02.03.2025 leben sie seit einem Jahr getrennt, und beide beantragen die Scheidung: das Scheitern wird UNWIDERLEGBAR vermutet (daher eine strikte Regel, keine `presumption`). Die Ehe kann geschieden werden.
+test "§ 1566 Abs. 1: ein Jahr Getrenntleben und Antrag beider Ehegatten" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:s01:E"), entity_ref("urn:de:bgb:ehe:s01:A"), entity_ref("urn:de:bgb:ehe:s01:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:s01:E")) { origin case_input; }
+        assert "f3": trennung_am(entity_ref("urn:de:bgb:ehe:s01:E"), @2024-03-01) { origin case_input; }
+        assert "f4": trennungsfrist_ein_jahr(entity_ref("urn:de:bgb:ehe:s01:E"), entity_ref("urn:de:bgb:ehe:s01:F")) { origin case_input; }
+        assert "f5": bewertungstag(entity_ref("urn:de:bgb:ehe:s01:E"), @2025-03-02) { origin case_input; }
+        assert "f6": beide_beantragen_die_scheidung(entity_ref("urn:de:bgb:ehe:s01:E")) { origin case_input; }
+        assert "f7": scheidungsantrag_gestellt(entity_ref("urn:de:bgb:ehe:s01:E"), entity_ref("urn:de:bgb:ehe:s01:A")) { origin case_input; }
+        assert "f8": ehe_gescheitert(entity_ref("urn:de:bgb:ehe:s01:E")) { origin adjudicated; }
+    }
+    evaluate truth(letzter_tag_der_trennungsfrist(entity_ref("urn:de:bgb:ehe:s01:E"), "ein Jahr (§ 1565 Abs. 2, § 1566 Abs. 1)", @2025-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(scheitern_unwiderleglich_vermutet(entity_ref("urn:de:bgb:ehe:s01:E"), "§ 1566 Abs. 1: ein Jahr Getrenntleben und Antrag beider Ehegatten"));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ehe_kann_geschieden_werden(entity_ref("urn:de:bgb:ehe:s01:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

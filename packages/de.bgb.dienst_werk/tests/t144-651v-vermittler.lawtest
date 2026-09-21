@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 651v Abs. 1, 3, 4: den Reisevermittler treffen die Informationspflicht und die Empfangsvollmacht; sitzt der Veranstalter außerhalb des EWR und weist der Vermittler die Pflichterfüllung nicht nach, treffen ihn auch die Veranstalterpflichten.
+
+test "urn:query:bgb-dw-t144-651v-vermittler" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": reisevermittler_651v(entity_ref("urn:de:bgb:dw:t144"), entity_ref("urn:de:bgb:dw:t144:M")) { origin case_input; }
+        assert "f2": reisevertrag_geschlossen_am(entity_ref("urn:de:bgb:dw:t144"), @2026-05-01) { origin case_input; }
+        assert "f3": veranstalter_ohne_sitz_im_ewr_651v(entity_ref("urn:de:bgb:dw:t144")) { origin case_input; }
+        assert "f4": not nachweis_der_pflichterfuellung_durch_veranstalter_651v(entity_ref("urn:de:bgb:dw:t144")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(VermittlerInformieren651v, ACTIVE);
+    evaluate truth(veranstalterpflichten_beim_vermittler_651v(entity_ref("urn:de:bgb:dw:t144"), entity_ref("urn:de:bgb:dw:t144:M")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vermittler_zur_entgegennahme_bevollmaechtigt_651v(entity_ref("urn:de:bgb:dw:t144"), entity_ref("urn:de:bgb:dw:t144:M")));
+    expect truth_status == TRUE_ONLY;
+}

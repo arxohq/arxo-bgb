@@ -1,0 +1,451 @@
+// ABSCHNITT 3 TITEL 2 GEGENSEITIGER VERTRAG, §§ 320–326
+//
+// Einreden (§§ 320–322), Rücktritt wegen Leistungsstörung (§§ 323–325) und
+// das Schicksal der Gegenleistung beim Ausschluss der Leistungspflicht
+// (§ 326). Der Rücktritt selbst — Erklärung und Rückgewähr — steht in
+// §§ 346 ff. (Datei abschnitt-03-titel-5-ruecktritt-widerruf.law).
+//
+// WERTUNGEN DES GERICHTS (Kanal §47.3): der Verstoß gegen Treu und Glauben bei
+// verhältnismäßiger Geringfügigkeit des Rückstands (§ 320 Abs. 2), die
+// erkennbare Gefährdung durch mangelnde Leistungsfähigkeit (§ 321 Abs. 1), die
+// angemessene Frist (§ 321 Abs. 2, § 323 Abs. 1), die Wesentlichkeit der
+// termingerechten Leistung und die besonderen Umstände (§ 323 Abs. 2 Nr. 2,
+// Nr. 3), die Unerheblichkeit der Pflichtverletzung (§ 323 Abs. 5 Satz 2), die
+// Offensichtlichkeit des künftigen Rücktrittsgrundes (§ 323 Abs. 4), die
+// Unzumutbarkeit des Festhaltens (§ 324) und die alleinige oder weit
+// überwiegende Verantwortlichkeit des Gläubigers (§ 323 Abs. 6, § 326 Abs. 2).
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- § 320 Einrede des nicht erfüllten Vertrags -----------------------------------------------------
+
+pub relation gegenseitiger_vertrag(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein gegenseitiger Vertrag (§§ 320 ff.)";
+    label en unofficial "the contract is a synallagmatic contract (§§ 320 et seq.)";
+}
+pub relation aus_gegenseitigem_vertrag_verpflichtet(v: Vertrag, teil: Person) kind empirical {
+    label de official "Diese Partei ist aus dem gegenseitigen Vertrag zur Leistung verpflichtet (§ 320 Abs. 1 Satz 1)";
+    label en unofficial "this party is bound to perform under the synallagmatic contract (§ 320 (1) sentence 1)";
+}
+pub relation vorleistungspflichtig(v: Vertrag, teil: Person) kind empirical {
+    label de official "Diese Partei ist vorzuleisten verpflichtet (§ 320 Abs. 1 Satz 1 Halbsatz 2, § 321 Abs. 1 Satz 1)";
+    label en unofficial "this party is obliged to perform first (§ 320 (1), § 321 (1))";
+}
+pub relation nicht_vorleistungspflichtig(v: Vertrag, teil: Person) kind empirical {
+    label de official "Diese Partei ist nicht vorzuleisten verpflichtet (§ 320 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "this party is not obliged to perform first (§ 320 (1)) — explicit case input";
+}
+pub relation gegenleistung_noch_nicht_bewirkt(v: Vertrag) kind empirical {
+    label de official "Die Gegenleistung ist noch nicht bewirkt (§ 320 Abs. 1 Satz 1)";
+    label en unofficial "the counter-performance has not yet been rendered (§ 320 (1) sentence 1)";
+}
+pub relation einrede_des_nicht_erfuellten_vertrags(v: Vertrag, teil: Person) kind institutional {
+    label de official "Die Partei kann die ihr obliegende Leistung bis zur Bewirkung der Gegenleistung verweigern (§ 320 Abs. 1 Satz 1); § 273 Abs. 3 findet keine Anwendung (Satz 3)";
+    label en unofficial "the party may refuse its performance until the counter-performance is rendered (§ 320 (1)); § 273 (3) does not apply (sentence 3)";
+}
+@source(BGB_P320)
+pub external judgment relation verweigerung_verstiesse_gegen_treu_und_glauben(v: Vertrag, teil: Person) {
+    authority Court;
+    label de official "§ 320 Abs. 2. Das Gericht hat festgestellt, dass die Verweigerung der Gegenleistung nach den Umständen, insbesondere wegen verhältnismäßiger Geringfügigkeit des rückständigen Teils, gegen Treu und Glauben verstoßen würde";
+    label en unofficial "§ 320 (2). The court found that refusing the counter-performance would be contrary to good faith, in particular because the outstanding part is proportionately trivial";
+}
+pub relation teilweise_geleistet(v: Vertrag) kind empirical {
+    label de official "Von der einen Seite ist teilweise geleistet worden (§ 320 Abs. 2)";
+    label en unofficial "one side has performed in part (§ 320 (2))";
+}
+pub relation gegenleistung_darf_nicht_verweigert_werden(v: Vertrag, teil: Person) kind institutional {
+    label de official "Die Gegenleistung kann insoweit nicht verweigert werden (§ 320 Abs. 2)";
+    label en unofficial "the counter-performance may not be refused to that extent (§ 320 (2))";
+}
+
+@source(BGB_P320)
+rule EinredeDesNichtErfuelltenVertrags(v: Vertrag, teil: Person) strict {
+    label de official "Wer aus einem gegenseitigen Vertrag verpflichtet ist, kann die ihm obliegende Leistung bis zur Bewirkung der Gegenleistung verweigern, es sei denn, dass er vorzuleisten verpflichtet ist (§ 320 Abs. 1 Satz 1)";
+    label en unofficial "A person bound under a synallagmatic contract may refuse his performance until the counter-performance is rendered, unless he must perform first (§ 320 (1) sentence 1)";
+    when gegenseitiger_vertrag(v);
+    when aus_gegenseitigem_vertrag_verpflichtet(v, teil);
+    when nicht_vorleistungspflichtig(v, teil);
+    when gegenleistung_noch_nicht_bewirkt(v);
+    then einrede_des_nicht_erfuellten_vertrags(v, teil);
+}
+
+@source(BGB_P320)
+rule KeineVerweigerungBeiGeringfuegigemRueckstand(v: Vertrag, teil: Person) strict {
+    label de official "Ist von der einen Seite teilweise geleistet worden, so kann die Gegenleistung insoweit nicht verweigert werden, als die Verweigerung nach den Umständen, insbesondere wegen verhältnismäßiger Geringfügigkeit des rückständigen Teils, gegen Treu und Glauben verstoßen würde (§ 320 Abs. 2)";
+    label en unofficial "Where one side has performed in part, the counter-performance may not be refused so far as refusal would offend good faith (§ 320 (2))";
+    when teilweise_geleistet(v);
+    when verweigerung_verstiesse_gegen_treu_und_glauben(v, teil);
+    then gegenleistung_darf_nicht_verweigert_werden(v, teil);
+}
+
+// --- § 321 Unsicherheitseinrede ----------------------------------------------------------------------
+
+@source(BGB_P321)
+pub external judgment relation gegenleistungsanspruch_durch_mangelnde_leistungsfaehigkeit_gefaehrdet(v: Vertrag) {
+    authority Court;
+    label de official "§ 321 Abs. 1 Satz 1. Das Gericht hat festgestellt, dass nach Abschluss des Vertrags erkennbar geworden ist, dass der Anspruch auf die Gegenleistung durch mangelnde Leistungsfähigkeit des anderen Teils gefährdet wird";
+    label en unofficial "§ 321 (1) sentence 1. The court found that after conclusion it became apparent that the claim to the counter-performance is jeopardised by the other party's lack of capacity to perform";
+}
+pub relation gegenleistung_bewirkt_oder_sicherheit_geleistet(v: Vertrag) kind empirical {
+    label de official "Die Gegenleistung ist bewirkt oder Sicherheit für sie geleistet (§ 321 Abs. 1 Satz 2)";
+    label en unofficial "the counter-performance has been rendered or security has been provided (§ 321 (1) sentence 2)";
+}
+pub relation weder_gegenleistung_noch_sicherheit(v: Vertrag) kind empirical {
+    label de official "Weder ist die Gegenleistung bewirkt noch Sicherheit geleistet (§ 321 Abs. 1 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "neither the counter-performance nor security has been provided (§ 321 (1) sentence 2) — explicit case input";
+}
+pub relation unsicherheitseinrede(v: Vertrag, teil: Person) kind institutional {
+    label de official "Der Vorleistungspflichtige kann die ihm obliegende Leistung verweigern (§ 321 Abs. 1 Satz 1)";
+    label en unofficial "the party obliged to perform first may refuse his performance (§ 321 (1) sentence 1)";
+}
+@source(BGB_P321)
+pub external judgment relation frist_zur_gegenleistung_oder_sicherheit_angemessen(v: Vertrag, ende: Date) {
+    authority Court;
+    label de official "§ 321 Abs. 2 Satz 1. Das Gericht hat festgestellt, dass die vom Vorleistungspflichtigen bestimmte Frist, in welcher der andere Teil Zug um Zug die Gegenleistung zu bewirken oder Sicherheit zu leisten hat, angemessen ist und mit dem Ablauf dieses Tages endet";
+    label en unofficial "§ 321 (2) sentence 1. The court found that the period fixed for rendering the counter-performance or providing security is reasonable and ends at the close of that day";
+}
+pub relation frist_des_321_erfolglos_abgelaufen(v: Vertrag) kind empirical {
+    label de official "Die Frist des § 321 Abs. 2 Satz 1 ist erfolglos abgelaufen (§ 321 Abs. 2 Satz 2)";
+    label en unofficial "the period under § 321 (2) sentence 1 expired without result (§ 321 (2) sentence 2)";
+}
+
+@source(BGB_P321)
+rule UnsicherheitseinredeDesVorleistungspflichtigen(v: Vertrag, teil: Person) strict {
+    label de official "Wer aus einem gegenseitigen Vertrag vorzuleisten verpflichtet ist, kann die ihm obliegende Leistung verweigern, wenn nach Abschluss des Vertrags erkennbar wird, dass sein Anspruch auf die Gegenleistung durch mangelnde Leistungsfähigkeit des anderen Teils gefährdet wird; das Recht entfällt, wenn die Gegenleistung bewirkt oder Sicherheit geleistet wird (§ 321 Abs. 1)";
+    label en unofficial "A party obliged to perform first may refuse performance where his claim to the counter-performance appears jeopardised; the right lapses upon performance or security (§ 321 (1))";
+    when gegenseitiger_vertrag(v);
+    when vorleistungspflichtig(v, teil);
+    when gegenleistungsanspruch_durch_mangelnde_leistungsfaehigkeit_gefaehrdet(v);
+    when weder_gegenleistung_noch_sicherheit(v);
+    then unsicherheitseinrede(v, teil);
+}
+
+@source(BGB_P321)
+rule RuecktrittNachErfolgloserFristDesVorleistungspflichtigen(v: Vertrag, teil: Person, ende: Date) strict {
+    label de official "Der Vorleistungspflichtige kann eine angemessene Frist bestimmen, in welcher der andere Teil Zug um Zug gegen die Leistung nach seiner Wahl die Gegenleistung zu bewirken oder Sicherheit zu leisten hat; nach erfolglosem Ablauf der Frist kann er vom Vertrag zurücktreten (§ 321 Abs. 2)";
+    label en unofficial "The party obliged to perform first may fix a reasonable period for the counter-performance or security; after its fruitless expiry he may withdraw from the contract (§ 321 (2))";
+    when unsicherheitseinrede(v, teil);
+    when frist_zur_gegenleistung_oder_sicherheit_angemessen(v, ende);
+    when frist_des_321_erfolglos_abgelaufen(v);
+    then ruecktrittsrecht(v, teil);
+}
+
+// --- § 322 Verurteilung Zug um Zug ---------------------------------------------------------------------
+
+pub relation klage_auf_die_geschuldete_leistung(v: Vertrag, klaeger: Person, beklagter: Person) kind empirical {
+    label de official "Der eine Teil erhebt aus dem gegenseitigen Vertrag Klage auf die ihm geschuldete Leistung (§ 322 Abs. 1)";
+    label en unofficial "one party brings an action for the performance owed to him (§ 322 (1))";
+}
+pub relation einrede_geltend_gemacht(v: Vertrag, beklagter: Person) kind empirical {
+    label de official "Der andere Teil macht sein Recht geltend, die Leistung bis zur Bewirkung der Gegenleistung zu verweigern (§ 322 Abs. 1)";
+    label en unofficial "the other party asserts his right to refuse performance until the counter-performance is rendered (§ 322 (1))";
+}
+pub relation verurteilung_zur_erfuellung_zug_um_zug(v: Vertrag, beklagter: Person) kind institutional {
+    label de official "Der andere Teil ist zur Erfüllung Zug um Zug zu verurteilen (§ 322 Abs. 1)";
+    label en unofficial "the other party is to be ordered to perform concurrently (§ 322 (1))";
+}
+pub relation klage_auf_leistung_nach_empfang_der_gegenleistung(v: Vertrag, klaeger: Person) kind institutional {
+    label de official "Hat der klagende Teil vorzuleisten, so kann er, wenn der andere Teil im Verzug der Annahme ist, auf Leistung nach Empfang der Gegenleistung klagen (§ 322 Abs. 2); auf die Zwangsvollstreckung findet § 274 Abs. 2 Anwendung (Abs. 3)";
+    label en unofficial "A claimant obliged to perform first may, where the other party is in default of acceptance, sue for performance after receipt of the counter-performance (§ 322 (2)); § 274 (2) applies to execution ((3))";
+}
+
+@source(BGB_P322)
+rule EinredeFuehrtZurVerurteilungZugUmZug(v: Vertrag, klaeger: Person, beklagter: Person) strict {
+    label de official "Erhebt aus einem gegenseitigen Vertrag der eine Teil Klage auf die ihm geschuldete Leistung, so hat die Geltendmachung des Rechts, die Leistung bis zur Bewirkung der Gegenleistung zu verweigern, nur die Wirkung, dass der andere Teil zur Erfüllung Zug um Zug zu verurteilen ist (§ 322 Abs. 1)";
+    label en unofficial "Where one party sues for performance, the assertion of the right to refuse until the counter-performance only leads to an order to perform concurrently (§ 322 (1))";
+    when klage_auf_die_geschuldete_leistung(v, klaeger, beklagter);
+    when einrede_geltend_gemacht(v, beklagter);
+    then verurteilung_zur_erfuellung_zug_um_zug(v, beklagter);
+}
+
+@source(BGB_P322)
+rule KlageDesVorleistungspflichtigenBeiAnnahmeverzug(v: Vertrag, klaeger: Person, beklagter: Person) strict {
+    label de official "Hat der klagende Teil vorzuleisten, so kann er, wenn der andere Teil im Verzug der Annahme ist, auf Leistung nach Empfang der Gegenleistung klagen (§ 322 Abs. 2)";
+    label en unofficial "A claimant obliged to perform first may sue for performance after receipt of the counter-performance where the other party is in default of acceptance (§ 322 (2))";
+    when klage_auf_die_geschuldete_leistung(v, klaeger, beklagter);
+    when vorleistungspflichtig(v, klaeger);
+    when annahmeverzug_des_glaeubigers(v);
+    then klage_auf_leistung_nach_empfang_der_gegenleistung(v, klaeger);
+}
+
+// --- § 323 Rücktritt wegen Leistungsstörung -------------------------------------------------------------
+
+pub relation faellige_leistung_nicht_oder_nicht_vertragsgemaess(v: Vertrag, l: Leistung) kind empirical {
+    label de official "Der Schuldner erbringt bei einem gegenseitigen Vertrag eine fällige Leistung nicht oder nicht vertragsgemäß (§ 323 Abs. 1)";
+    label en unofficial "the debtor does not render the performance due, or does not render it in conformity with the contract (§ 323 (1))";
+}
+pub relation fixgeschaeft_mit_wesentlicher_termintreue(v: Vertrag, l: Leistung) kind empirical {
+    label de official "Der Schuldner bewirkt die Leistung nicht bis zu einem im Vertrag bestimmten Termin oder innerhalb einer im Vertrag bestimmten Frist, obwohl die termin- oder fristgerechte Leistung für den Gläubiger nach einer Mitteilung vor Vertragsschluss oder aufgrund anderer Umstände wesentlich ist (§ 323 Abs. 2 Nr. 2)";
+    label en unofficial "the debtor fails to perform by a date or within a period fixed in the contract although timely performance is essential for the creditor (§ 323 (2) no. 2)";
+}
+@source(BGB_P323)
+pub external judgment relation besondere_umstaende_rechtfertigen_sofortigen_ruecktritt(v: Vertrag, l: Leistung) {
+    authority Court;
+    label de official "§ 323 Abs. 2 Nr. 3. Das Gericht hat festgestellt, dass im Falle einer nicht vertragsgemäß erbrachten Leistung besondere Umstände vorliegen, die unter Abwägung der beiderseitigen Interessen den sofortigen Rücktritt rechtfertigen";
+    label en unofficial "§ 323 (2) no. 3. The court found special circumstances justifying immediate withdrawal in the case of non-conforming performance";
+}
+@source(BGB_P323)
+pub external judgment relation eintritt_der_ruecktrittsvoraussetzungen_offensichtlich(v: Vertrag, l: Leistung) {
+    authority Court;
+    label de official "§ 323 Abs. 4. Das Gericht hat festgestellt, dass offensichtlich ist, dass die Voraussetzungen des Rücktritts eintreten werden; der Gläubiger kann dann bereits vor dem Eintritt der Fälligkeit zurücktreten";
+    label en unofficial "§ 323 (4). The court found it obvious that the requirements for withdrawal will be met; the creditor may then withdraw before the performance falls due";
+}
+@source(BGB_P323)
+pub external judgment relation glaeubiger_allein_oder_weit_ueberwiegend_verantwortlich(v: Vertrag, l: Leistung) {
+    authority Court;
+    label de official "§ 323 Abs. 6, § 326 Abs. 2 Satz 1. Das Gericht hat festgestellt, dass der Gläubiger für den Umstand allein oder weit überwiegend verantwortlich ist";
+    label en unofficial "§ 323 (6), § 326 (2) sentence 1. The court found the creditor solely or predominantly responsible for the circumstance";
+}
+pub relation ruecktritt_ausgeschlossen(v: Vertrag) kind institutional {
+    label de official "Der Rücktritt ist ausgeschlossen (§ 323 Abs. 6)";
+    label en unofficial "withdrawal is excluded (§ 323 (6))";
+}
+
+@source(BGB_P323)
+rule RuecktrittNachErfolgloserFristsetzung(v: Vertrag, l: Leistung, glaeubiger: Person, ende: Date) strict {
+    label de official "Erbringt bei einem gegenseitigen Vertrag der Schuldner eine fällige Leistung nicht oder nicht vertragsgemäß, so kann der Gläubiger, wenn er dem Schuldner erfolglos eine angemessene Frist zur Leistung oder Nacherfüllung bestimmt hat, vom Vertrag zurücktreten (§ 323 Abs. 1)";
+    label en unofficial "Where the debtor does not render a performance due, or not in conformity, the creditor may withdraw after fixing a reasonable period which expired without result (§ 323 (1))";
+    when gegenseitiger_vertrag(v);
+    when faellige_leistung_nicht_oder_nicht_vertragsgemaess(v, l);
+    when vertragspartei(v, glaeubiger);
+    when frist_zur_leistung_angemessen(l, ende);
+    when frist_erfolglos_abgelaufen(l);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule RuecktrittOhneFristBeiErnsthafterVerweigerung(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Die Fristsetzung ist entbehrlich, wenn der Schuldner die Leistung ernsthaft und endgültig verweigert (§ 323 Abs. 2 Nr. 1)";
+    label en unofficial "Fixing a period is dispensable where the debtor seriously and definitively refuses performance (§ 323 (2) no. 1)";
+    when gegenseitiger_vertrag(v);
+    when faellige_leistung_nicht_oder_nicht_vertragsgemaess(v, l);
+    when vertragspartei(v, glaeubiger);
+    when leistung_ernsthaft_und_endgueltig_verweigert(l);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule RuecktrittOhneFristBeiWesentlicherTermintreue(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Die Fristsetzung ist entbehrlich, wenn der Schuldner die Leistung bis zu einem im Vertrag bestimmten Termin nicht bewirkt, obwohl die termingerechte Leistung für den Gläubiger wesentlich ist (§ 323 Abs. 2 Nr. 2)";
+    label en unofficial "Fixing a period is dispensable where the debtor misses a contractual date although timely performance is essential (§ 323 (2) no. 2)";
+    when gegenseitiger_vertrag(v);
+    when fixgeschaeft_mit_wesentlicher_termintreue(v, l);
+    when vertragspartei(v, glaeubiger);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule RuecktrittOhneFristBeiBesonderenUmstaenden(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Die Fristsetzung ist entbehrlich, wenn im Falle einer nicht vertragsgemäß erbrachten Leistung besondere Umstände vorliegen, die den sofortigen Rücktritt rechtfertigen (§ 323 Abs. 2 Nr. 3)";
+    label en unofficial "Fixing a period is dispensable where special circumstances justify immediate withdrawal upon non-conforming performance (§ 323 (2) no. 3)";
+    when gegenseitiger_vertrag(v);
+    when faellige_leistung_nicht_oder_nicht_vertragsgemaess(v, l);
+    when vertragspartei(v, glaeubiger);
+    when besondere_umstaende_rechtfertigen_sofortigen_ruecktritt(v, l);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule AbmahnungStattFristsetzungBeimRuecktritt(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Kommt nach der Art der Pflichtverletzung eine Fristsetzung nicht in Betracht, so tritt an deren Stelle eine Abmahnung (§ 323 Abs. 3)";
+    label en unofficial "Where by the nature of the breach fixing a period is not an option, a warning notice takes its place (§ 323 (3))";
+    when gegenseitiger_vertrag(v);
+    when faellige_leistung_nicht_oder_nicht_vertragsgemaess(v, l);
+    when vertragspartei(v, glaeubiger);
+    when fristsetzung_kommt_nicht_in_betracht(l);
+    when abgemahnt(l);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule RuecktrittVorFaelligkeit(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Der Gläubiger kann bereits vor dem Eintritt der Fälligkeit der Leistung zurücktreten, wenn offensichtlich ist, dass die Voraussetzungen des Rücktritts eintreten werden (§ 323 Abs. 4)";
+    label en unofficial "The creditor may withdraw before the performance falls due where it is obvious that the requirements for withdrawal will be met (§ 323 (4))";
+    when gegenseitiger_vertrag(v);
+    when vertragspartei(v, glaeubiger);
+    when eintritt_der_ruecktrittsvoraussetzungen_offensichtlich(v, l);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule RuecktrittVomGanzenVertragBeiTeilleistung(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Hat der Schuldner eine Teilleistung bewirkt, so kann der Gläubiger vom ganzen Vertrag nur zurücktreten, wenn er an der Teilleistung kein Interesse hat (§ 323 Abs. 5 Satz 1)";
+    label en unofficial "Where the debtor rendered part performance, the creditor may withdraw from the whole contract only if he has no interest in it (§ 323 (5) sentence 1)";
+    when gegenseitiger_vertrag(v);
+    when vertragspartei(v, glaeubiger);
+    when teilleistung_bewirkt(l);
+    when kein_interesse_an_der_teilleistung(l);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P323)
+rule RuecktrittAusgeschlossenBeiUnerheblicherPflichtverletzung(v: Vertrag, l: Leistung) strict {
+    label de official "Hat der Schuldner die Leistung nicht vertragsgemäß bewirkt, so kann der Gläubiger vom Vertrag nicht zurücktreten, wenn die Pflichtverletzung unerheblich ist (§ 323 Abs. 5 Satz 2)";
+    label en unofficial "Where performance was not in conformity, the creditor may not withdraw if the breach is trivial (§ 323 (5) sentence 2)";
+    when gegenseitiger_vertrag(v);
+    when faellige_leistung_nicht_oder_nicht_vertragsgemaess(v, l);
+    when pflichtverletzung_unerheblich(l);
+    then ruecktritt_ausgeschlossen(v);
+}
+
+@source(BGB_P323)
+rule RuecktrittAusgeschlossenBeiVerantwortungDesGlaeubigers(v: Vertrag, l: Leistung) strict {
+    label de official "Der Rücktritt ist ausgeschlossen, wenn der Gläubiger für den Umstand, der ihn zum Rücktritt berechtigen würde, allein oder weit überwiegend verantwortlich ist (§ 323 Abs. 6 Alt. 1)";
+    label en unofficial "Withdrawal is excluded where the creditor is solely or predominantly responsible for the circumstance (§ 323 (6))";
+    when gegenseitiger_vertrag(v);
+    when glaeubiger_allein_oder_weit_ueberwiegend_verantwortlich(v, l);
+    then ruecktritt_ausgeschlossen(v);
+}
+
+@source(BGB_P323)
+rule RuecktrittAusgeschlossenBeiAnnahmeverzug(v: Vertrag, l: Leistung) strict {
+    label de official "Der Rücktritt ist ausgeschlossen, wenn der vom Schuldner nicht zu vertretende Umstand zu einer Zeit eintritt, zu welcher der Gläubiger im Verzug der Annahme ist (§ 323 Abs. 6 Alt. 2)";
+    label en unofficial "Withdrawal is excluded where the circumstance for which the debtor is not responsible occurs while the creditor is in default of acceptance (§ 323 (6))";
+    when gegenseitiger_vertrag(v);
+    when leistung_unterbleibt_aus_nicht_zu_vertretendem_umstand(l);
+    when annahmeverzug_des_glaeubigers(v);
+    then ruecktritt_ausgeschlossen(v);
+}
+
+// --- §§ 324, 325 ------------------------------------------------------------------------------------------
+
+@source(BGB_P324)
+pub external judgment relation festhalten_am_vertrag_nicht_mehr_zumutbar(v: Vertrag, glaeubiger: Person) {
+    authority Court;
+    label de official "§ 324. Das Gericht hat festgestellt, dass dem Gläubiger nach der Verletzung einer Pflicht nach § 241 Abs. 2 ein Festhalten am Vertrag nicht mehr zuzumuten ist";
+    label en unofficial "§ 324. The court found that after a breach of a duty under § 241 (2) adherence to the contract can no longer be required of the creditor";
+}
+pub relation schadensersatz_neben_ruecktritt(v: Vertrag, glaeubiger: Person) kind institutional {
+    label de official "Das Recht, bei einem gegenseitigen Vertrag Schadensersatz zu verlangen, wird durch den Rücktritt nicht ausgeschlossen (§ 325)";
+    label en unofficial "the right to claim damages under a synallagmatic contract is not excluded by withdrawal (§ 325)";
+}
+
+@source(BGB_P324)
+rule RuecktrittWegenVerletzungEinerRuecksichtnahmepflicht(v: Vertrag, glaeubiger: Person, schuldner: Person) strict {
+    label de official "Verletzt der Schuldner bei einem gegenseitigen Vertrag eine Pflicht nach § 241 Abs. 2, so kann der Gläubiger zurücktreten, wenn ihm ein Festhalten am Vertrag nicht mehr zuzumuten ist (§ 324)";
+    label en unofficial "Where the debtor breaches a duty under § 241 (2) in a synallagmatic contract, the creditor may withdraw if adherence can no longer be required of him (§ 324)";
+    when gegenseitiger_vertrag(v);
+    when pflichtverletzung_festgestellt(v, schuldner);
+    when festhalten_am_vertrag_nicht_mehr_zumutbar(v, glaeubiger);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+@source(BGB_P325)
+rule SchadensersatzTrotzRuecktritt(v: Vertrag, glaeubiger: Person) strict {
+    label de official "Das Recht, bei einem gegenseitigen Vertrag Schadensersatz zu verlangen, wird durch den Rücktritt nicht ausgeschlossen (§ 325)";
+    label en unofficial "The right to claim damages under a synallagmatic contract is not excluded by withdrawal (§ 325)";
+    when ruecktrittsrecht(v, glaeubiger);
+    then schadensersatz_neben_ruecktritt(v, glaeubiger);
+}
+
+// --- § 326 Gegenleistung beim Ausschluss der Leistungspflicht -----------------------------------------------
+
+pub relation anspruch_auf_die_gegenleistung_entfaellt(v: Vertrag, l: Leistung) kind institutional {
+    label de official "Braucht der Schuldner nach § 275 Abs. 1 bis 3 nicht zu leisten, entfällt der Anspruch auf die Gegenleistung (§ 326 Abs. 1 Satz 1)";
+    label en unofficial "where the debtor need not perform under § 275 (1) to (3), the claim to the counter-performance lapses (§ 326 (1) sentence 1)";
+}
+pub relation nacherfuellung_nach_275_nicht_zu_erbringen(v: Vertrag, l: Leistung) kind empirical {
+    label de official "Der Schuldner braucht im Falle der nicht vertragsgemäßen Leistung die Nacherfüllung nach § 275 Abs. 1 bis 3 nicht zu erbringen (§ 326 Abs. 1 Satz 2)";
+    label en unofficial "in the case of non-conforming performance the debtor need not cure under § 275 (1) to (3) (§ 326 (1) sentence 2)";
+}
+pub relation anspruch_auf_die_gegenleistung_bleibt(v: Vertrag, l: Leistung) kind institutional {
+    label de official "Der Schuldner behält den Anspruch auf die Gegenleistung (§ 326 Abs. 1 Satz 2, Abs. 2 Satz 1)";
+    label en unofficial "the debtor retains the claim to the counter-performance (§ 326 (1) sentence 2, (2) sentence 1)";
+}
+pub relation ersparnis_oder_anderweitiger_erwerb(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Was der Schuldner infolge der Befreiung von der Leistung erspart oder durch anderweitige Verwendung seiner Arbeitskraft erwirbt oder zu erwerben böswillig unterlässt (§ 326 Abs. 2 Satz 2)";
+    label en unofficial "what the debtor saves through release from performance or acquires, or maliciously fails to acquire, by other use of his labour (§ 326 (2) sentence 2)";
+}
+pub relation gegenleistung_betrag(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Höhe der vereinbarten Gegenleistung";
+    label en unofficial "amount of the agreed counter-performance";
+}
+pub relation anzurechnende_gegenleistung(v: Vertrag, betrag: Money) kind institutional {
+    key(v);
+    label de official "Gegenleistung nach Anrechnung dessen, was der Schuldner erspart oder anderweitig erwirbt (§ 326 Abs. 2 Satz 2)";
+    label en unofficial "counter-performance after setting off what the debtor saved or acquired otherwise (§ 326 (2) sentence 2)";
+}
+pub relation rueckforderung_der_gegenleistung(v: Vertrag) kind institutional {
+    label de official "Soweit die nach § 326 nicht geschuldete Gegenleistung bewirkt ist, kann das Geleistete nach den §§ 346 bis 348 zurückgefordert werden (§ 326 Abs. 4)";
+    label en unofficial "so far as a counter-performance not owed was rendered, it may be reclaimed under §§ 346 to 348 (§ 326 (4))";
+}
+pub relation gegenleistung_bewirkt(v: Vertrag) kind empirical {
+    label de official "Die Gegenleistung ist bewirkt (§ 326 Abs. 4)";
+    label en unofficial "the counter-performance has been rendered (§ 326 (4))";
+}
+
+@source(BGB_P326)
+rule WegfallDerGegenleistungBeiAusschlussDerLeistungspflicht(v: Vertrag, l: Leistung) strict {
+    label de official "Braucht der Schuldner nach § 275 Abs. 1 bis 3 nicht zu leisten, entfällt der Anspruch auf die Gegenleistung (§ 326 Abs. 1 Satz 1)";
+    label en unofficial "Where the debtor need not perform under § 275 (1) to (3), the claim to the counter-performance lapses (§ 326 (1) sentence 1)";
+    when gegenseitiger_vertrag(v);
+    when leistung_aus_schuldverhaeltnis(l, v);
+    when leistungsanspruch_ausgeschlossen(l);
+    then anspruch_auf_die_gegenleistung_entfaellt(v, l);
+}
+
+@source(BGB_P326)
+rule GegenleistungBleibtBeiAusschlussDerNacherfuellung(v: Vertrag, l: Leistung) strict {
+    label de official "Satz 1 gilt nicht, wenn der Schuldner im Falle der nicht vertragsgemäßen Leistung die Nacherfüllung nach § 275 Abs. 1 bis 3 nicht zu erbringen braucht (§ 326 Abs. 1 Satz 2)";
+    label en unofficial "Sentence 1 does not apply where, upon non-conforming performance, the debtor need not cure under § 275 (1) to (3) (§ 326 (1) sentence 2)";
+    when gegenseitiger_vertrag(v);
+    when nacherfuellung_nach_275_nicht_zu_erbringen(v, l);
+    then anspruch_auf_die_gegenleistung_bleibt(v, l);
+}
+
+@source(BGB_P326)
+rule GegenleistungBleibtBeiVerantwortungDesGlaeubigers(v: Vertrag, l: Leistung) strict {
+    label de official "Ist der Gläubiger für den Umstand, auf Grund dessen der Schuldner nach § 275 Abs. 1 bis 3 nicht zu leisten braucht, allein oder weit überwiegend verantwortlich, so behält der Schuldner den Anspruch auf die Gegenleistung (§ 326 Abs. 2 Satz 1 Alt. 1)";
+    label en unofficial "Where the creditor is solely or predominantly responsible, the debtor retains the claim to the counter-performance (§ 326 (2) sentence 1)";
+    when gegenseitiger_vertrag(v);
+    when leistung_aus_schuldverhaeltnis(l, v);
+    when leistungsanspruch_ausgeschlossen(l);
+    when glaeubiger_allein_oder_weit_ueberwiegend_verantwortlich(v, l);
+    then anspruch_auf_die_gegenleistung_bleibt(v, l);
+}
+
+@source(BGB_P326)
+rule GegenleistungBleibtBeiAnnahmeverzug(v: Vertrag, l: Leistung) strict {
+    label de official "Tritt der vom Schuldner nicht zu vertretende Umstand zu einer Zeit ein, zu welcher der Gläubiger im Verzug der Annahme ist, so behält der Schuldner den Anspruch auf die Gegenleistung (§ 326 Abs. 2 Satz 1 Alt. 2)";
+    label en unofficial "Where the circumstance occurs while the creditor is in default of acceptance, the debtor retains the claim to the counter-performance (§ 326 (2) sentence 1)";
+    when gegenseitiger_vertrag(v);
+    when leistung_aus_schuldverhaeltnis(l, v);
+    when leistungsanspruch_ausgeschlossen(l);
+    when leistung_unterbleibt_aus_nicht_zu_vertretendem_umstand(l);
+    when annahmeverzug_des_glaeubigers(v);
+    then anspruch_auf_die_gegenleistung_bleibt(v, l);
+}
+
+@source(BGB_P326)
+rule AnrechnungDesErspartenAufDieGegenleistung(v: Vertrag, l: Leistung, gegenleistung: Money, erspart: Money) strict {
+    label de official "Der Schuldner muss sich dasjenige anrechnen lassen, was er infolge der Befreiung von der Leistung erspart oder durch anderweitige Verwendung seiner Arbeitskraft erwirbt oder zu erwerben böswillig unterlässt (§ 326 Abs. 2 Satz 2)";
+    label en unofficial "The debtor must allow to be credited what he saves through release or acquires by other use of his labour (§ 326 (2) sentence 2)";
+    when anspruch_auf_die_gegenleistung_bleibt(v, l);
+    when gegenleistung_betrag(v, gegenleistung);
+    when ersparnis_oder_anderweitiger_erwerb(v, erspart);
+    then anzurechnende_gegenleistung(v, gegenleistung - erspart);
+}
+
+@source(BGB_P326)
+rule RueckforderungDerNichtGeschuldetenGegenleistung(v: Vertrag, l: Leistung) strict {
+    label de official "Soweit die nach dieser Vorschrift nicht geschuldete Gegenleistung bewirkt ist, kann das Geleistete nach den §§ 346 bis 348 zurückgefordert werden (§ 326 Abs. 4)";
+    label en unofficial "So far as a counter-performance not owed under this provision was rendered, it may be reclaimed under §§ 346 to 348 (§ 326 (4))";
+    when anspruch_auf_die_gegenleistung_entfaellt(v, l);
+    when gegenleistung_bewirkt(v);
+    then rueckforderung_der_gegenleistung(v);
+}
+
+@source(BGB_P326)
+rule RuecktrittBeiAusschlussDerLeistungspflicht(v: Vertrag, l: Leistung, glaeubiger: Person) strict {
+    label de official "Braucht der Schuldner nach § 275 Abs. 1 bis 3 nicht zu leisten, kann der Gläubiger zurücktreten; auf den Rücktritt findet § 323 mit der Maßgabe entsprechende Anwendung, dass die Fristsetzung entbehrlich ist (§ 326 Abs. 5)";
+    label en unofficial "Where the debtor need not perform under § 275 (1) to (3), the creditor may withdraw; § 323 applies with the proviso that fixing a period is dispensable (§ 326 (5))";
+    when gegenseitiger_vertrag(v);
+    when leistung_aus_schuldverhaeltnis(l, v);
+    when leistungsanspruch_ausgeschlossen(l);
+    when vertragspartei(v, glaeubiger);
+    then ruecktrittsrecht(v, glaeubiger);
+}

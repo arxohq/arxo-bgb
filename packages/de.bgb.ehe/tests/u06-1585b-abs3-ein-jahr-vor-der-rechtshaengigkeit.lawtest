@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1585b Abs. 3: der Unterhaltsantrag ist am 02.06.2025 rechtshängig geworden. Die Jahresfrist wird VORWÄRTS gerechnet (ein negativer Kalenderschritt ist unzulässig, Ledger D-13-03) und endet am 02.06.2026, einem Dienstag. Am 03.06.2026 kann für die weiter zurückliegende Zeit Erfüllung nur verlangt werden, wenn der Verpflichtete sich der Leistung absichtlich entzogen hat — der Fall behauptet das nicht. Wegen eines Sonderbedarfs bleibt der Anspruch für die Vergangenheit dagegen offen (Abs. 1).
+test "§ 1585b Abs. 3: Unterhalt für weiter zurückliegende Zeit" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:A"), entity_ref("urn:de:bgb:ehe:u06:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:u06:E")) { origin case_input; }
+        assert "f3": geschiedener_ehegatte(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B")) { origin case_input; }
+        assert "f4": rechtshaengigkeit_des_unterhaltsantrags_am(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B"), @2025-06-02) { origin case_input; }
+        assert "f5": rueckwirkungsfrist_1585b(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B"), entity_ref("urn:de:bgb:ehe:u06:F")) { origin case_input; }
+        assert "f6": bewertungstag(entity_ref("urn:de:bgb:ehe:u06:E"), @2026-06-03) { origin case_input; }
+        assert "f7": sonderbedarf_des_geschiedenen(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B")) { origin case_input; }
+    }
+    evaluate truth(letzter_tag_der_rueckwirkungsfrist(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B"), @2026-06-02));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(kein_unterhalt_fuer_weiter_zurueckliegende_zeit(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(unterhalt_fuer_die_vergangenheit(entity_ref("urn:de:bgb:ehe:u06:E"), entity_ref("urn:de:bgb:ehe:u06:B"), "§ 1585b Abs. 1: Sonderbedarf (§ 1613 Abs. 2)"));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

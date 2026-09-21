@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 573c Abs. 1 Satz 2: die Kündigungsfrist für den Vermieter verlängert sich nach fünf Jahren seit der Überlassung um drei Monate. Überlassung am 1. März 2018; fünf Jahre enden mit dem Ablauf des 1. März 2023, acht Jahre mit dem Ablauf des 1. März 2026. Der Kündigungsmonat April 2025 liegt nach der ersten und vor der zweiten Grenze: die Stufe ist fünf, das Mietverhältnis endet mit dem Ablauf des 30. September 2025.
+test "§ 573c Abs. 1 Satz 2: nach fünf Jahren drei Monate mehr" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:k03"), entity_ref("urn:de:bgb:miete:k03:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:k03"), entity_ref("urn:de:bgb:miete:k03:M")) { origin case_input; }
+        assert "f3": gegenstandsart(entity_ref("urn:de:bgb:miete:k03"), Wohnraum) { origin case_input; }
+        assert "f4": ueberlassung_am(entity_ref("urn:de:bgb:miete:k03"), @2018-03-01) { origin case_input; }
+        assert "f5": kuendigung_des(entity_ref("urn:de:bgb:miete:k03:K"), entity_ref("urn:de:bgb:miete:k03")) { origin case_input; }
+        assert "f6": kuendigung_durch_vermieter(entity_ref("urn:de:bgb:miete:k03:K")) { origin case_input; }
+        assert "f7": kuendigungsmonat_beginn(entity_ref("urn:de:bgb:miete:k03:K"), @2025-04-01) { origin case_input; }
+        assert "f8": kuendigung_erklaert_am(entity_ref("urn:de:bgb:miete:k03:K"), @2025-04-03) { origin case_input; }
+        assert "f9": kuendigung_schriftlich(entity_ref("urn:de:bgb:miete:k03:K")) { origin case_input; }
+    }
+    evaluate truth(acht_jahre_seit_ueberlassung_am(entity_ref("urn:de:bgb:miete:k03"), @2026-03-01));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(kuendigungsfrist_stufe(entity_ref("urn:de:bgb:miete:k03:K"), 5));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(beendigung_durch_kuendigung_am(entity_ref("urn:de:bgb:miete:k03:K"), @2025-09-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

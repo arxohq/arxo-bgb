@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 584 Abs. 1: ist bei dem Pachtverhältnis über ein Grundstück die Pachtzeit nicht bestimmt, so ist die Kündigung nur für den Schluss eines Pachtjahrs zulässig; sie hat spätestens am dritten Werktag des halben Jahres zu erfolgen, mit dessen Ablauf die Pacht enden soll. Das Pachtjahr ist das Kalenderjahr 2025, das halbe Jahr beginnt am 1. Juli 2025 — ein Dienstag, der dritte Werktag ist Donnerstag, der 3. Juli 2025. Die Kündigung an diesem Tag ist fristgerecht, die Pacht endet mit dem Ablauf des 31. Dezember 2025.
+test "§ 584 Abs. 1: dritter Werktag des halben Jahres, Ende zum Schluss des Pachtjahrs" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:p01"), entity_ref("urn:de:bgb:miete:p01:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:p01"), entity_ref("urn:de:bgb:miete:p01:P")) { origin case_input; }
+        assert "f3": vertragsart(entity_ref("urn:de:bgb:miete:p01"), Pacht) { origin case_input; }
+        assert "f4": gegenstandsart(entity_ref("urn:de:bgb:miete:p01"), Grundstueck) { origin case_input; }
+        assert "f5": pachtzeit_nicht_bestimmt(entity_ref("urn:de:bgb:miete:p01")) { origin case_input; }
+        assert "f6": pachtjahr_ende(entity_ref("urn:de:bgb:miete:p01"), @2025-12-31) { origin case_input; }
+        assert "f7": kuendigung_des(entity_ref("urn:de:bgb:miete:p01:K"), entity_ref("urn:de:bgb:miete:p01")) { origin case_input; }
+        assert "f8": halbjahr_beginn(entity_ref("urn:de:bgb:miete:p01:K"), @2025-07-01) { origin case_input; }
+        assert "f9": kuendigung_erklaert_am(entity_ref("urn:de:bgb:miete:p01:K"), @2025-07-03) { origin case_input; }
+        assert "f10": kuendigung_schriftlich(entity_ref("urn:de:bgb:miete:p01:K")) { origin case_input; }
+    }
+    evaluate truth(dritter_werktag_des_halben_jahres(entity_ref("urn:de:bgb:miete:p01:K"), @2025-07-03));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(pachtkuendigung_fristgerecht(entity_ref("urn:de:bgb:miete:p01:K")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(beendigung_durch_kuendigung_am(entity_ref("urn:de:bgb:miete:p01:K"), @2025-12-31));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(mietvorschriften_auf_pacht_anwendbar(entity_ref("urn:de:bgb:miete:p01")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

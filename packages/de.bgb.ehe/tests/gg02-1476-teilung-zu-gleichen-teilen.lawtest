@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1476 Abs. 1: der nach der Berichtigung der Gesamtgutsverbindlichkeiten verbleibende Überschuss beträgt 100 000,01 € und gebührt den Ehegatten zu GLEICHEN TEILEN. Die Hälfte ist 50 000,005 € — kaufmännisch auf den Cent 50 000,01 € je Ehegatte, mit EINEM `div_round` je Betrag (Ledger D-12-06, dieselbe Politik wie bei § 1378 Abs. 1).
+test "§ 1476 Abs. 1: der Überschuss zu gleichen Teilen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:gg02:E"), entity_ref("urn:de:bgb:ehe:gg02:A"), entity_ref("urn:de:bgb:ehe:gg02:B")) { origin case_input; }
+        assert "f2": ehevertrag_gueterstand(entity_ref("urn:de:bgb:ehe:gg02:E"), Guetergemeinschaft) { origin case_input; }
+        assert "f3": guetergemeinschaft_beendet_am(entity_ref("urn:de:bgb:ehe:gg02:E"), @2025-08-31) { origin case_input; }
+        assert "f4": ueberschuss_des_gesamtguts(entity_ref("urn:de:bgb:ehe:gg02:E"), 100000.01 EUR) { origin case_input; }
+    }
+    evaluate truth(anteil_am_ueberschuss(entity_ref("urn:de:bgb:ehe:gg02:E"), entity_ref("urn:de:bgb:ehe:gg02:A"), 50000.01 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_ueberschuss(entity_ref("urn:de:bgb:ehe:gg02:E"), entity_ref("urn:de:bgb:ehe:gg02:B"), 50000.01 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(auseinandersetzung_nach_1475_bis_1481(entity_ref("urn:de:bgb:ehe:gg02:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

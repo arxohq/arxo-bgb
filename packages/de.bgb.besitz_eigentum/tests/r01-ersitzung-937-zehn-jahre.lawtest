@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 937 Abs. 1: zehn Jahre Eigenbesitz an einer beweglichen Sache vom 20. März 2014 an; die Frist endet kalendarisch mit dem Ablauf des 20. März 2024 (§§ 187 Abs. 1, 188 Abs. 2). Erwerbsfrist: ohne Verlegung nach § 193. Das Gericht hat die grobe Fahrlässigkeit des Eigenbesitzers ausdrücklich verneint (§ 937 Abs. 2 in Verbindung mit § 932 Abs. 2).
+test "§ 937 Abs. 1: Ersitzung nach zehn Jahren Eigenbesitz" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:r:besitz"), entity_ref("urn:de:bgb:be:r:bild")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:r:besitz"), entity_ref("urn:de:bgb:be:r:P")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:r:besitz"), @2014-03-20) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "f5": besitzt_als_ihm_gehoerend(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "f6": bewegliche_sache(entity_ref("urn:de:bgb:be:r:bild")) { origin case_input; }
+        assert "f7": ersitzungsfrist(entity_ref("urn:de:bgb:be:r:besitz"), entity_ref("urn:de:bgb:be:r:frist")) { origin case_input; }
+        assert "f8": keine_hemmung_der_ersitzung(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "j9": not grob_fahrlaessige_unkenntnis_des_eigenbesitzers(entity_ref("urn:de:bgb:be:r:besitz")) { origin adjudicated; }
+    }
+    evaluate truth(eigenbesitzer(entity_ref("urn:de:bgb:be:r:bild"), entity_ref("urn:de:bgb:be:r:P")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ersitzung_vollendet_am(entity_ref("urn:de:bgb:be:r:besitz"), @2024-03-20));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_durch_ersitzung_erworben(entity_ref("urn:de:bgb:be:r:bild"), entity_ref("urn:de:bgb:be:r:P")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

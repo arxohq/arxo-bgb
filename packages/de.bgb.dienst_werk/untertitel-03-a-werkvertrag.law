@@ -1,0 +1,1573 @@
+// --- Untertitel 3 Kapitel 1 Allgemeine Vorschriften (Werkvertrag, §§ 631–650) ----------------------
+//
+// Reihenfolge: Grundpflichten (§ 631), Vergütung und Abschlagszahlungen
+// (§§ 632, 632a), Mangel und Mängelrechte (§§ 633, 634, 634a, 635–639),
+// Abnahme und Fälligkeit (§§ 640, 641, 646), Mitwirkung und Gefahr
+// (§§ 642–645), Sicherung (§§ 647, 647a), Kündigung (§§ 648, 648a, 649) und
+// Werklieferungsvertrag (§ 650).
+//
+// EIGENER TRÄGER `Werkvertrag`. Der Werkvertrag ist ein eigener Vertragstyp,
+// nicht ein Dienstverhältnis; die Regeln des Untertitels 1 laufen über ihren
+// eigenen Träger und werden hier nicht dupliziert.
+//
+// GELD UND RUNDUNG (Ledger D-07-07). Anders als der Untertitel 1 (Ledger
+// D-07-03: keine Geldrechnung außer zwei Subtraktionen) rechnet dieser
+// Untertitel Anteile: die Minderung des § 638 Abs. 3 (Verhältnis der Werte),
+// das Doppelte der Mängelbeseitigungskosten (§ 641 Abs. 3) und die Prozent-
+// sätze der §§ 648 Satz 3, 650c Abs. 3, 650f Abs. 1, 650m Abs. 1, 2. Jede
+// Division rechnet GENAU EINMAL je Größe und rundet dabei auf den Cent:
+// `div_round(Wert × z, n × 1.0, 2, "HALF_UP")`. Prozentsätze sind LITERALE
+// des Textes, keine Parameter.
+//
+// VERJÄHRUNG (§ 634a). Die Fristen von zwei und fünf Jahren rechnet dieses
+// Paket selbst (Politik BGB_DIENST_WERK_KALENDER, Zeilen in DEADLINES.json);
+// die regelmäßige Verjährungsfrist der Nummer 3 und des Absatzes 3 gehört
+// `de.bgb.fristen` (§§ 195, 199 Abs. 1) und wird von dort QUALIFIZIERT
+// gelesen, nicht nachgebaut — wie bei `de.bgb.kauf` § 438 Abs. 3.
+//
+// BEWERTENDE MERKMALE (DECISION-0194): Erwartung der Vergütung nach den
+// Umständen (§ 632 Abs. 1), angemessener Teil des Abschlags (§ 632a Abs. 1
+// Satz 2), übliche Beschaffenheit und Erwartung des Bestellers (§ 633 Abs. 2
+// Satz 2 Nr. 2), unverhältnismäßige Kosten der Nacherfüllung (§ 635 Abs. 3),
+// Fehlschlagen und Unzumutbarkeit der Nacherfüllung (§§ 636, 637 Abs. 2),
+// Angemessenheit der Nacherfüllungsfrist (§ 637 Abs. 1), Unwesentlichkeit
+// des Mangels (§ 640 Abs. 1 Satz 2), Angemessenheit der Abnahmefrist (§ 640
+// Abs. 2 Satz 1), angemessene Entschädigung (§ 642 Abs. 1), wichtiger Grund
+// (§ 648a Abs. 1 Satz 2), wesentliche Überschreitung des Kostenanschlags
+// (§ 649 Abs. 1) und Unverzüglichkeit der Anzeige (§ 649 Abs. 2).
+//
+// FESTGESTELLTE TATSACHE: arglistiges Verschweigen des Mangels (§§ 634a
+// Abs. 3, 639) — wie bei `de.bgb.kauf` im Tatsachenkanal, nicht im
+// Wertungskanal (Ledger D-07-05).
+//
+// WAS DIESES KAPITEL NICHT TUT (Grenzen aus dem Text):
+// 1. §§ 280, 281, 283, 284, 311a, 323, 326 Abs. 5 (§ 634 Nr. 3, 4), §§ 346
+//    bis 348 (§ 635 Abs. 4), § 218 (§ 634a Abs. 4, 5), § 275 Abs. 2, 3
+//    (§ 635 Abs. 3), § 447 (§ 644 Abs. 2), § 314 Abs. 2, 3 (§ 648a Abs. 3)
+//    und die Vorschriften über den Kauf (§ 650 Abs. 1) gehören den
+//    Nachbarpaketen `de.bgb.schuldrecht_at` und `de.bgb.kauf`; dieses Paket
+//    stellt nur fest, DASS der Verweis besteht, und baut die fremde Kette
+//    nicht nach.
+// 2. § 650 Abs. 2 bis 4 (digitale Produkte) verweist auf Abschnitt 3
+//    Titel 2a — Nachbarpaket `de.bgb.schuldrecht_at`.
+// 3. § 641a ist weggefallen und trägt keine Regel.
+
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// --- Gemeinsamer Träger des Untertitels ------------------------------------------------------------
+
+pub entity Werkvertrag {
+    label de official "Werkvertrag, durch den der Unternehmer zur Herstellung des versprochenen Werkes verpflichtet wird (§ 631 Abs. 1)";
+    label en unofficial "contract for work under which the contractor undertakes to produce the promised work (§ 631 (1))";
+}
+
+pub relation unternehmer(w: Werkvertrag, p: Person) kind empirical {
+    key(w);
+    label de official "der zur Herstellung des Werkes Verpflichtete (§ 631 Abs. 1)";
+    label en unofficial "the party obliged to produce the work (§ 631 (1))";
+}
+pub relation besteller(w: Werkvertrag, p: Person) kind empirical {
+    key(w);
+    label de official "der zur Entrichtung der Vergütung Verpflichtete (§ 631 Abs. 1)";
+    label en unofficial "the party obliged to pay the compensation (§ 631 (1))";
+}
+pub relation werkvertrag_geschlossen_am(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag des Abschlusses des Werkvertrags (§§ 631, 638 Abs. 3)";
+    label en unofficial "day the contract for work was concluded (§§ 631, 638 (3))";
+}
+pub relation vereinbarte_werkverguetung(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die vereinbarte Vergütung des Werkvertrags (§ 631 Abs. 1)";
+    label en unofficial "the agreed compensation under the contract for work (§ 631 (1))";
+}
+pub relation werk_hergestellt(w: Werkvertrag) kind empirical {
+    label de official "das versprochene Werk wurde hergestellt (§ 631 Abs. 1)";
+    label en unofficial "the promised work has been produced (§ 631 (1))";
+}
+pub relation werkverguetung_entrichtet(w: Werkvertrag) kind empirical {
+    label de official "die vereinbarte Vergütung wurde entrichtet (§ 631 Abs. 1)";
+    label en unofficial "the agreed compensation has been paid (§ 631 (1))";
+}
+
+// --- § 631 Vertragstypische Pflichten beim Werkvertrag ----------------------------------------------
+
+@source(BGB_P631)
+rule Pflichten631Herstellungspflicht(w: Werkvertrag, u: Person, b: Person, schluss: Date) strict {
+    label de official "Durch den Werkvertrag wird der Unternehmer zur Herstellung des versprochenen Werkes verpflichtet (§ 631 Abs. 1)";
+    label en unofficial "By the contract for work the contractor is obliged to produce the promised work (§ 631 (1))";
+    when unternehmer(w, u);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty HerstellungsPflicht631 {
+        bearer u;
+        achieve werk_hergestellt(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P631)
+rule PositionPflichten631Herstellungspflicht(w: Werkvertrag, u: Person, b: Person, schluss: Date) strict {
+    label de official "Der Unternehmer muss das versprochene Werk herstellen (§ 631 Abs. 1) — normative Position";
+    label en unofficial "the contractor must produce the promised work (§ 631 (1)) — normative position";
+    when unternehmer(w, u);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty HerstellungsPflicht631Position {
+        bearer u;
+        achieve werk_hergestellt(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P631)
+rule Pflichten631Verguetungspflicht(w: Werkvertrag, u: Person, b: Person, schluss: Date) strict {
+    label de official "Durch den Werkvertrag wird der Besteller zur Entrichtung der vereinbarten Vergütung verpflichtet (§ 631 Abs. 1)";
+    label en unofficial "By the contract for work the customer is obliged to pay the agreed compensation (§ 631 (1))";
+    when unternehmer(w, u);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty WerkVerguetungsPflicht631 {
+        bearer b;
+        achieve werkverguetung_entrichtet(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P631)
+rule PositionPflichten631Verguetungspflicht(w: Werkvertrag, u: Person, b: Person, schluss: Date) strict {
+    label de official "Der Besteller muss die vereinbarte Vergütung entrichten (§ 631 Abs. 1) — normative Position";
+    label en unofficial "the customer must pay the agreed compensation (§ 631 (1)) — normative position";
+    when unternehmer(w, u);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty WerkVerguetungsPflicht631Position {
+        bearer b;
+        achieve werkverguetung_entrichtet(w) during [schluss, infinity);
+    };
+}
+
+// --- § 632 Vergütung ---------------------------------------------------------------------------------
+
+@source(BGB_P632)
+pub external judgment relation werkherstellung_nur_gegen_verguetung_zu_erwarten(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 632 Abs. 1. Die Herstellung des Werkes ist den Umständen nach nur gegen eine Vergütung zu erwarten";
+    label en unofficial "§ 632 (1). Having regard to the circumstances, the production of the work is only to be expected in return for compensation";
+}
+pub relation werkverguetung_stillschweigend_vereinbart(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "eine Vergütung gilt als stillschweigend vereinbart (§ 632 Abs. 1)";
+    label en unofficial "compensation is deemed tacitly agreed (§ 632 (1))";
+}
+
+@source(BGB_P632)
+rule StillschweigendeVerguetung632Abs1(w: Werkvertrag) strict {
+    label de official "Eine Vergütung gilt als stillschweigend vereinbart, wenn die Herstellung des Werkes den Umständen nach nur gegen eine Vergütung zu erwarten ist (§ 632 Abs. 1)";
+    label en unofficial "Compensation is deemed tacitly agreed where the production of the work is, given the circumstances, only to be expected in return for compensation (§ 632 (1))";
+    when werkherstellung_nur_gegen_verguetung_zu_erwarten(w);
+    then werkverguetung_stillschweigend_vereinbart(w);
+}
+
+pub relation hoehe_der_werkverguetung_nicht_bestimmt(w: Werkvertrag) kind empirical {
+    label de official "die Höhe der Vergütung ist nicht bestimmt (§ 632 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the amount of the compensation is not determined (§ 632 (2)) — express statement of the case";
+}
+pub relation werktaxe_vorhanden(w: Werkvertrag) kind empirical {
+    label de official "es besteht eine Taxe für das Werk (§ 632 Abs. 2)";
+    label en unofficial "a fixed official scale exists for the work (§ 632 (2))";
+}
+pub relation keine_werktaxe_vorhanden(w: Werkvertrag) kind empirical {
+    label de official "es besteht keine Taxe für das Werk (§ 632 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no fixed official scale exists for the work (§ 632 (2)) — express statement of the case";
+}
+pub relation taxmaessige_werkverguetung(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die taxmäßige Vergütung des Werkes (§ 632 Abs. 2)";
+    label en unofficial "the compensation for the work under the fixed official scale (§ 632 (2))";
+}
+pub relation uebliche_werkverguetung(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die übliche Vergütung des Werkes (§ 632 Abs. 2)";
+    label en unofficial "the customary compensation for the work (§ 632 (2))";
+}
+pub relation werkverguetung_hoehe_bestimmt(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "als vereinbart anzusehende Höhe der Vergütung (§ 632 Abs. 2)";
+    label en unofficial "amount of compensation to be regarded as agreed (§ 632 (2))";
+}
+
+@source(BGB_P632)
+rule TaxmaessigeWerkverguetung632Abs2(w: Werkvertrag, betrag: Money) strict {
+    label de official "Ist die Höhe der Vergütung nicht bestimmt, so ist bei dem Bestehen einer Taxe die taxmäßige Vergütung als vereinbart anzusehen (§ 632 Abs. 2)";
+    label en unofficial "Where the amount is not determined and a fixed official scale exists, the compensation under that scale is regarded as agreed (§ 632 (2))";
+    when hoehe_der_werkverguetung_nicht_bestimmt(w);
+    when werktaxe_vorhanden(w);
+    when taxmaessige_werkverguetung(w, betrag);
+    then werkverguetung_hoehe_bestimmt(w, betrag);
+}
+
+@source(BGB_P632)
+rule UeblicheWerkverguetung632Abs2(w: Werkvertrag, betrag: Money) strict {
+    label de official "Ist die Höhe der Vergütung nicht bestimmt, so ist in Ermangelung einer Taxe die übliche Vergütung als vereinbart anzusehen (§ 632 Abs. 2)";
+    label en unofficial "Where the amount is not determined and no fixed official scale exists, the customary compensation is regarded as agreed (§ 632 (2))";
+    when hoehe_der_werkverguetung_nicht_bestimmt(w);
+    when keine_werktaxe_vorhanden(w);
+    when uebliche_werkverguetung(w, betrag);
+    then werkverguetung_hoehe_bestimmt(w, betrag);
+}
+
+pub relation kostenanschlag_erstellt(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat einen Kostenanschlag erstellt (§§ 632 Abs. 3, 649)";
+    label en unofficial "the contractor has prepared a cost estimate (§§ 632 (3), 649)";
+}
+pub relation keine_abweichende_vereinbarung_632(w: Werkvertrag) kind empirical {
+    label de official "über die Vergütung des Kostenanschlags ist nichts anderes vereinbart (§ 632 Abs. 3 „im Zweifel\") — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing else is agreed on remuneration for the cost estimate (§ 632 (3), 'in case of doubt') — express statement of the case";
+}
+pub relation kostenanschlag_nicht_zu_verguetenden(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "ein Kostenanschlag ist im Zweifel nicht zu vergüten (§ 632 Abs. 3)";
+    label en unofficial "in case of doubt, a cost estimate is not to be remunerated (§ 632 (3))";
+}
+
+@source(BGB_P632)
+rule Kostenanschlag632Abs3(w: Werkvertrag) strict {
+    label de official "Ein Kostenanschlag ist im Zweifel nicht zu vergüten (§ 632 Abs. 3)";
+    label en unofficial "In case of doubt, a cost estimate is not to be remunerated (§ 632 (3))";
+    when kostenanschlag_erstellt(w);
+    when keine_abweichende_vereinbarung_632(w);
+    then kostenanschlag_nicht_zu_verguetenden(w);
+}
+
+// --- § 632a Abschlagszahlungen -------------------------------------------------------------------------
+
+pub relation wert_der_erbrachten_leistungen(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "Wert der vom Unternehmer erbrachten und nach dem Vertrag geschuldeten Leistungen (§ 632a Abs. 1 Satz 1)";
+    label en unofficial "value of the services rendered by the contractor and owed under the contract (§ 632a (1) sentence 1)";
+}
+pub relation aufstellung_der_leistungen_vorgelegt(w: Werkvertrag) kind empirical {
+    label de official "die Leistungen sind durch eine Aufstellung nachgewiesen, die eine rasche und sichere Beurteilung ermöglicht (§ 632a Abs. 1 Satz 5)";
+    label en unofficial "the services are evidenced by a statement allowing a quick and reliable assessment (§ 632a (1) sentence 5)";
+}
+pub relation abschlagszahlungsanspruch_632a(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "Anspruch auf Abschlagszahlung in Höhe des Wertes der erbrachten Leistungen (§ 632a Abs. 1 Satz 1)";
+    label en unofficial "claim to an interim payment in the amount of the value of the services rendered (§ 632a (1) sentence 1)";
+}
+
+@source(BGB_P632a)
+rule Abschlagszahlung632aAbs1(w: Werkvertrag, betrag: Money) strict {
+    label de official "Der Unternehmer kann von dem Besteller eine Abschlagszahlung in Höhe des Wertes der von ihm erbrachten und nach dem Vertrag geschuldeten Leistungen verlangen; die Leistungen sind durch eine Aufstellung nachzuweisen (§ 632a Abs. 1 Satz 1, 5)";
+    label en unofficial "The contractor may demand from the customer an interim payment in the amount of the value of the services rendered and owed under the contract; the services must be evidenced by a statement (§ 632a (1) sentences 1, 5)";
+    when wert_der_erbrachten_leistungen(w, betrag);
+    when aufstellung_der_leistungen_vorgelegt(w);
+    then abschlagszahlungsanspruch_632a(w, betrag);
+}
+
+pub relation erbrachte_leistungen_nicht_vertragsgemaess_632a(w: Werkvertrag) kind empirical {
+    label de official "die erbrachten Leistungen sind nicht vertragsgemäß (§ 632a Abs. 1 Satz 2); die Beweislast für die vertragsgemäße Leistung verbleibt bis zur Abnahme beim Unternehmer (Satz 3)";
+    label en unofficial "the services rendered are not in conformity with the contract (§ 632a (1) sentence 2); the burden of proving conformity remains with the contractor until acceptance (sentence 3)";
+}
+pub relation zahlungsverweigerungsrecht_632a(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann die Zahlung eines angemessenen Teils des Abschlags verweigern (§ 632a Abs. 1 Satz 2)";
+    label en unofficial "the customer may refuse payment of an appropriate part of the interim payment (§ 632a (1) sentence 2)";
+}
+
+@source(BGB_P632a)
+rule Zahlungsverweigerung632aAbs1Satz2(w: Werkvertrag) strict {
+    label de official "Sind die erbrachten Leistungen nicht vertragsgemäß, kann der Besteller die Zahlung eines angemessenen Teils des Abschlags verweigern (§ 632a Abs. 1 Satz 2)";
+    label en unofficial "Where the services rendered are not in conformity with the contract, the customer may refuse payment of an appropriate part of the interim payment (§ 632a (1) sentence 2)";
+    when erbrachte_leistungen_nicht_vertragsgemaess_632a(w);
+    then zahlungsverweigerungsrecht_632a(w);
+}
+
+pub relation stoffe_oder_bauteile_bereitgestellt_632a(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "erforderliche Stoffe oder Bauteile sind angeliefert oder eigens angefertigt und bereitgestellt (§ 632a Abs. 1 Satz 6)";
+    label en unofficial "necessary materials or components have been delivered or specially made and provided (§ 632a (1) sentence 6)";
+}
+pub relation eigentum_oder_sicherheit_fuer_stoffe_632a(w: Werkvertrag) kind empirical {
+    label de official "dem Besteller ist nach seiner Wahl Eigentum an den Stoffen oder Bauteilen übertragen oder entsprechende Sicherheit geleistet (§ 632a Abs. 1 Satz 6, Abs. 2)";
+    label en unofficial "ownership of the materials or components has been transferred to the customer at their choice, or corresponding security has been provided (§ 632a (1) sentence 6, (2))";
+}
+
+@source(BGB_P632a)
+rule AbschlagFuerStoffe632aAbs1Satz6(w: Werkvertrag, betrag: Money) strict {
+    label de official "Die Sätze 1 bis 5 gelten auch für erforderliche Stoffe oder Bauteile, die angeliefert oder eigens angefertigt und bereitgestellt sind, wenn dem Besteller nach seiner Wahl Eigentum an ihnen übertragen oder entsprechende Sicherheit hierfür geleistet wird (§ 632a Abs. 1 Satz 6)";
+    label en unofficial "Sentences 1 to 5 also apply to necessary materials or components delivered or specially made and provided, where ownership of them is transferred to the customer at their choice or corresponding security is provided (§ 632a (1) sentence 6)";
+    when stoffe_oder_bauteile_bereitgestellt_632a(w, betrag);
+    when eigentum_oder_sicherheit_fuer_stoffe_632a(w);
+    then abschlagszahlungsanspruch_632a(w, betrag);
+}
+
+// --- § 633 Sach- und Rechtsmangel -----------------------------------------------------------------------
+
+pub relation werk_verschafft(w: Werkvertrag) kind empirical {
+    label de official "das Werk wurde dem Besteller frei von Sach- und Rechtsmängeln verschafft (§ 633 Abs. 1)";
+    label en unofficial "the work has been provided to the customer free of material and legal defects (§ 633 (1))";
+}
+pub relation beschaffenheit_vereinbart_633(w: Werkvertrag) kind empirical {
+    label de official "über die Beschaffenheit des Werkes ist eine Vereinbarung getroffen (§ 633 Abs. 2 Satz 1)";
+    label en unofficial "an agreement has been made on the quality of the work (§ 633 (2) sentence 1)";
+}
+pub relation vereinbarte_beschaffenheit_erfuellt_633(w: Werkvertrag) kind empirical {
+    label de official "das Werk hat die vereinbarte Beschaffenheit (§ 633 Abs. 2 Satz 1)";
+    label en unofficial "the work has the agreed quality (§ 633 (2) sentence 1)";
+}
+pub relation beschaffenheit_nicht_vereinbart_633(w: Werkvertrag) kind empirical {
+    label de official "über die Beschaffenheit des Werkes ist nichts vereinbart (§ 633 Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing is agreed on the quality of the work (§ 633 (2) sentence 2) — express statement of the case";
+}
+pub relation vertraglich_vorausgesetzte_verwendung_633(w: Werkvertrag) kind empirical {
+    label de official "eine nach dem Vertrag vorausgesetzte Verwendung ist bestimmt (§ 633 Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "a use presupposed under the contract is determined (§ 633 (2) sentence 2 no. 1)";
+}
+pub relation eignung_fuer_vorausgesetzte_verwendung_633(w: Werkvertrag) kind empirical {
+    label de official "das Werk eignet sich für die nach dem Vertrag vorausgesetzte Verwendung (§ 633 Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "the work is suitable for the use presupposed under the contract (§ 633 (2) sentence 2 no. 1)";
+}
+pub relation keine_vertraglich_vorausgesetzte_verwendung_633(w: Werkvertrag) kind empirical {
+    label de official "eine nach dem Vertrag vorausgesetzte Verwendung ist nicht bestimmt (§ 633 Abs. 2 Satz 2 Nr. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no use presupposed under the contract is determined (§ 633 (2) sentence 2 no. 2) — express statement of the case";
+}
+pub relation eignung_fuer_gewoehnliche_verwendung_633(w: Werkvertrag) kind empirical {
+    label de official "das Werk eignet sich für die gewöhnliche Verwendung (§ 633 Abs. 2 Satz 2 Nr. 2)";
+    label en unofficial "the work is suitable for the customary use (§ 633 (2) sentence 2 no. 2)";
+}
+@source(BGB_P633)
+pub external judgment relation uebliche_beschaffenheit_633(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 633 Abs. 2 Satz 2 Nr. 2. Das Werk weist eine Beschaffenheit auf, die bei Werken der gleichen Art üblich ist und die der Besteller nach der Art des Werkes erwarten kann";
+    label en unofficial "§ 633 (2) sentence 2 no. 2. The work has a quality that is customary in works of the same kind and that the customer may expect given the nature of the work";
+}
+pub relation anderes_werk_oder_zu_geringe_menge_633(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer stellt ein anderes als das bestellte Werk oder das Werk in zu geringer Menge her (§ 633 Abs. 2 Satz 3)";
+    label en unofficial "the contractor produces a work other than the one ordered, or the work in too small a quantity (§ 633 (2) sentence 3)";
+}
+pub relation rechte_dritter_am_werk_633(w: Werkvertrag) kind empirical {
+    label de official "Dritte können in Bezug auf das Werk Rechte gegen den Besteller geltend machen, die im Vertrag nicht übernommen sind (§ 633 Abs. 3)";
+    label en unofficial "third parties can assert rights in respect of the work against the customer that were not assumed in the contract (§ 633 (3))";
+}
+pub relation werk_frei_von_sachmaengeln(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "das Werk ist frei von Sachmängeln (§ 633 Abs. 2)";
+    label en unofficial "the work is free of material defects (§ 633 (2))";
+}
+pub relation werk_mangelhaft(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "das Werk ist mangelhaft (§§ 633, 634)";
+    label en unofficial "the work is defective (§§ 633, 634)";
+}
+pub relation rechtsmangel_633(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "das Werk ist mit einem Rechtsmangel behaftet (§ 633 Abs. 3)";
+    label en unofficial "the work is encumbered with a legal defect (§ 633 (3))";
+}
+
+@source(BGB_P633)
+rule Verschaffungspflicht633Abs1(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Der Unternehmer hat dem Besteller das Werk frei von Sach- und Rechtsmängeln zu verschaffen (§ 633 Abs. 1)";
+    label en unofficial "The contractor must provide the customer with the work free of material and legal defects (§ 633 (1))";
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty MangelfreieVerschaffung633 {
+        bearer u;
+        achieve werk_verschafft(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P633)
+rule Sachmangelfreiheit633Abs2Satz1(w: Werkvertrag) strict {
+    label de official "Das Werk ist frei von Sachmängeln, wenn es die vereinbarte Beschaffenheit hat (§ 633 Abs. 2 Satz 1)";
+    label en unofficial "The work is free of material defects if it has the agreed quality (§ 633 (2) sentence 1)";
+    when beschaffenheit_vereinbart_633(w);
+    when vereinbarte_beschaffenheit_erfuellt_633(w);
+    then werk_frei_von_sachmaengeln(w);
+}
+
+@source(BGB_P633)
+rule Sachmangelfreiheit633Abs2Nr1(w: Werkvertrag) strict {
+    label de official "Soweit die Beschaffenheit nicht vereinbart ist, ist das Werk frei von Sachmängeln, wenn es sich für die nach dem Vertrag vorausgesetzte Verwendung eignet (§ 633 Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "Where the quality is not agreed, the work is free of material defects if it is suitable for the use presupposed under the contract (§ 633 (2) sentence 2 no. 1)";
+    when beschaffenheit_nicht_vereinbart_633(w);
+    when vertraglich_vorausgesetzte_verwendung_633(w);
+    when eignung_fuer_vorausgesetzte_verwendung_633(w);
+    then werk_frei_von_sachmaengeln(w);
+}
+
+@source(BGB_P633)
+rule Sachmangelfreiheit633Abs2Nr2(w: Werkvertrag) strict {
+    label de official "Sonst ist das Werk frei von Sachmängeln, wenn es sich für die gewöhnliche Verwendung eignet und eine Beschaffenheit aufweist, die bei Werken der gleichen Art üblich ist und die der Besteller nach der Art des Werkes erwarten kann (§ 633 Abs. 2 Satz 2 Nr. 2)";
+    label en unofficial "Otherwise the work is free of material defects if it is suitable for the customary use and has a quality customary in works of the same kind that the customer may expect given the nature of the work (§ 633 (2) sentence 2 no. 2)";
+    when beschaffenheit_nicht_vereinbart_633(w);
+    when keine_vertraglich_vorausgesetzte_verwendung_633(w);
+    when eignung_fuer_gewoehnliche_verwendung_633(w);
+    when uebliche_beschaffenheit_633(w);
+    then werk_frei_von_sachmaengeln(w);
+}
+
+@source(BGB_P633)
+rule Sachmangel633Abs2Satz1Abweichung(w: Werkvertrag) strict {
+    label de official "Hat das Werk die vereinbarte Beschaffenheit nicht, so ist es mangelhaft (§ 633 Abs. 2 Satz 1)";
+    label en unofficial "If the work does not have the agreed quality, it is defective (§ 633 (2) sentence 1)";
+    when beschaffenheit_vereinbart_633(w);
+    when not vereinbarte_beschaffenheit_erfuellt_633(w);
+    then werk_mangelhaft(w);
+}
+
+@source(BGB_P633)
+rule Sachmangel633Abs2Satz3(w: Werkvertrag) strict {
+    label de official "Einem Sachmangel steht es gleich, wenn der Unternehmer ein anderes als das bestellte Werk oder das Werk in zu geringer Menge herstellt (§ 633 Abs. 2 Satz 3)";
+    label en unofficial "It is equivalent to a material defect if the contractor produces a work other than the one ordered or the work in too small a quantity (§ 633 (2) sentence 3)";
+    when anderes_werk_oder_zu_geringe_menge_633(w);
+    then werk_mangelhaft(w);
+}
+
+@source(BGB_P633)
+rule Rechtsmangel633Abs3(w: Werkvertrag) strict {
+    label de official "Das Werk ist frei von Rechtsmängeln, wenn Dritte in Bezug auf das Werk keine oder nur die im Vertrag übernommenen Rechte gegen den Besteller geltend machen können (§ 633 Abs. 3); können sie es, liegt ein Rechtsmangel vor";
+    label en unofficial "The work is free of legal defects if third parties can assert no rights, or only those assumed in the contract, against the customer in respect of the work (§ 633 (3)); if they can, a legal defect exists";
+    when rechte_dritter_am_werk_633(w);
+    then rechtsmangel_633(w);
+}
+
+@source(BGB_P633)
+rule MangelhaftigkeitBeiRechtsmangel633(w: Werkvertrag) strict {
+    label de official "Auch der Rechtsmangel macht das Werk mangelhaft (§ 633 Abs. 1, 3, § 634)";
+    label en unofficial "A legal defect also makes the work defective (§ 633 (1), (3), § 634)";
+    when rechtsmangel_633(w);
+    then werk_mangelhaft(w);
+}
+
+// --- § 634 Rechte des Bestellers bei Mängeln -------------------------------------------------------------
+
+pub relation recht_auf_nacherfuellung_634(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann nach § 635 Nacherfüllung verlangen (§ 634 Nr. 1)";
+    label en unofficial "the customer may demand cure under § 635 (§ 634 no. 1)";
+}
+pub relation recht_auf_selbstvornahme_634(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann nach § 637 den Mangel selbst beseitigen und Ersatz der erforderlichen Aufwendungen verlangen (§ 634 Nr. 2)";
+    label en unofficial "the customer may remedy the defect themselves under § 637 and demand reimbursement of the necessary expenses (§ 634 no. 2)";
+}
+pub relation recht_auf_ruecktritt_oder_minderung_634(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann nach den §§ 636, 323 und 326 Abs. 5 vom Vertrag zurücktreten oder nach § 638 die Vergütung mindern (§ 634 Nr. 3) — die Rücktrittsvoraussetzungen der §§ 323, 326 gehören de.bgb.schuldrecht_at";
+    label en unofficial "the customer may withdraw from the contract under §§ 636, 323 and 326 (5) or reduce the compensation under § 638 (§ 634 no. 3) — the requirements of withdrawal under §§ 323, 326 belong to de.bgb.schuldrecht_at";
+}
+pub relation recht_auf_schadensersatz_634(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann nach den §§ 636, 280, 281, 283 und 311a Schadensersatz oder nach § 284 Ersatz vergeblicher Aufwendungen verlangen (§ 634 Nr. 4) — die Anspruchsvoraussetzungen gehören de.bgb.schuldrecht_at";
+    label en unofficial "the customer may claim damages under §§ 636, 280, 281, 283 and 311a, or reimbursement of futile expenses under § 284 (§ 634 no. 4) — the requirements belong to de.bgb.schuldrecht_at";
+}
+
+@source(BGB_P634)
+rule Maengelrechte634Nr1(w: Werkvertrag) strict {
+    label de official "Ist das Werk mangelhaft, kann der Besteller nach § 635 Nacherfüllung verlangen (§ 634 Nr. 1)";
+    label en unofficial "If the work is defective, the customer may demand cure under § 635 (§ 634 no. 1)";
+    when werk_mangelhaft(w);
+    then recht_auf_nacherfuellung_634(w);
+}
+
+@source(BGB_P634)
+rule Maengelrechte634Nr2(w: Werkvertrag) strict {
+    label de official "Ist das Werk mangelhaft, kann der Besteller nach § 637 den Mangel selbst beseitigen und Ersatz der erforderlichen Aufwendungen verlangen (§ 634 Nr. 2)";
+    label en unofficial "If the work is defective, the customer may remedy the defect themselves under § 637 and demand reimbursement of the necessary expenses (§ 634 no. 2)";
+    when werk_mangelhaft(w);
+    then recht_auf_selbstvornahme_634(w);
+}
+
+@source(BGB_P634)
+rule Maengelrechte634Nr3(w: Werkvertrag) strict {
+    label de official "Ist das Werk mangelhaft, kann der Besteller nach den §§ 636, 323 und 326 Abs. 5 vom Vertrag zurücktreten oder nach § 638 die Vergütung mindern (§ 634 Nr. 3)";
+    label en unofficial "If the work is defective, the customer may withdraw under §§ 636, 323 and 326 (5) or reduce the compensation under § 638 (§ 634 no. 3)";
+    when werk_mangelhaft(w);
+    then recht_auf_ruecktritt_oder_minderung_634(w);
+}
+
+@source(BGB_P634)
+rule Maengelrechte634Nr4(w: Werkvertrag) strict {
+    label de official "Ist das Werk mangelhaft, kann der Besteller nach den §§ 636, 280, 281, 283 und 311a Schadensersatz oder nach § 284 Ersatz vergeblicher Aufwendungen verlangen (§ 634 Nr. 4)";
+    label en unofficial "If the work is defective, the customer may claim damages under §§ 636, 280, 281, 283 and 311a or reimbursement of futile expenses under § 284 (§ 634 no. 4)";
+    when werk_mangelhaft(w);
+    then recht_auf_schadensersatz_634(w);
+}
+
+// --- § 634a Verjährung der Mängelansprüche ----------------------------------------------------------------
+
+pub relation werkmaengelanspruch(a: Anspruch, w: Werkvertrag) kind institutional {
+    key(a);
+    label de official "der Anspruch ist ein in § 634 Nr. 1, 2 und 4 bezeichneter Mängelanspruch aus dem Werkvertrag (§ 634a Abs. 1)";
+    label en unofficial "the claim is one of the claims for defects designated in § 634 nos. 1, 2 and 4 under the contract for work (§ 634a (1))";
+}
+pub relation werk_ist_sachbezogen_634a(w: Werkvertrag) kind empirical {
+    label de official "der Erfolg des Werkes besteht in der Herstellung, Wartung oder Veränderung einer Sache oder in der Erbringung von Planungs- oder Überwachungsleistungen hierfür (§ 634a Abs. 1 Nr. 1)";
+    label en unofficial "the result of the work consists in producing, maintaining or altering a thing, or in rendering planning or supervisory services for that (§ 634a (1) no. 1)";
+}
+pub relation werk_ist_bauwerksbezogen_634a(w: Werkvertrag) kind empirical {
+    label de official "das Werk ist ein Bauwerk oder ein Werk, dessen Erfolg in der Erbringung von Planungs- oder Überwachungsleistungen hierfür besteht (§ 634a Abs. 1 Nr. 2)";
+    label en unofficial "the work is a building, or a work whose result consists in rendering planning or supervisory services for it (§ 634a (1) no. 2)";
+}
+pub relation werk_ist_weder_sach_noch_bauwerksbezogen_634a(w: Werkvertrag) kind empirical {
+    label de official "das Werk fällt weder unter Nummer 1 noch unter Nummer 2 (§ 634a Abs. 1 Nr. 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "the work falls under neither no. 1 nor no. 2 (§ 634a (1) no. 3) — express statement of the case";
+}
+pub relation abnahme_am(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Abnahme des Werkes (§§ 634a Abs. 2, 640, 641, 644)";
+    label en unofficial "day the work was accepted (§§ 634a (2), 640, 641, 644)";
+}
+pub relation mangel_arglistig_verschwiegen_634a(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat den Mangel arglistig verschwiegen (§§ 634a Abs. 3 Satz 1, 639) — festgestellte Tatsache";
+    label en unofficial "the contractor fraudulently concealed the defect (§§ 634a (3) sentence 1, 639) — established fact";
+}
+pub relation kein_arglistiges_verschweigen_634a(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat den Mangel nicht arglistig verschwiegen (§ 634a Abs. 3 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the contractor did not fraudulently conceal the defect (§ 634a (3) sentence 1) — express statement of the case";
+}
+pub relation verjaehrungsdauer_634a(a: Anspruch, dauer: Quantity) kind institutional {
+    key(a);
+    label de official "Dauer der Verjährungsfrist der Mängelansprüche des Werkvertrags (§ 634a Abs. 1)";
+    label en unofficial "length of the limitation period for claims for defects under the contract for work (§ 634a (1))";
+}
+pub relation regelfrist_ende_634a(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Frist des § 634a Abs. 1 Nr. 1, 2 ohne Arglist endet (§ 188 Abs. 2, Politik BGB_DIENST_WERK_KALENDER)";
+    label en unofficial "day at whose end the period of § 634a (1) nos. 1, 2 ends absent fraudulent concealment (§ 188 (2), policy BGB_DIENST_WERK_KALENDER)";
+}
+pub relation fuenfjahresende_634a(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Ablauf der fünfjährigen Frist des § 634a Abs. 1 Nr. 2, die auch bei Arglist nicht unterschritten wird (Abs. 3 Satz 2)";
+    label en unofficial "expiry of the five-year period of § 634a (1) no. 2, which is not undercut even in the case of fraud ((3) sentence 2)";
+}
+pub relation frist_ende_634a(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Mängelansprüche des Werkvertrags verjähren (§ 634a)";
+    label en unofficial "day at whose end the claims for defects under the contract for work become time-barred (§ 634a)";
+}
+
+@source(BGB_P634a)
+rule Verjaehrungsdauer634aNr1(a: Anspruch, w: Werkvertrag) strict {
+    label de official "Die in § 634 Nr. 1, 2 und 4 bezeichneten Ansprüche verjähren vorbehaltlich der Nummer 2 in zwei Jahren bei einem Werk, dessen Erfolg in der Herstellung, Wartung oder Veränderung einer Sache oder in der Erbringung von Planungs- oder Überwachungsleistungen hierfür besteht (§ 634a Abs. 1 Nr. 1)";
+    label en unofficial "Subject to no. 2, the claims designated in § 634 nos. 1, 2 and 4 become time-barred in two years for a work whose result consists in producing, maintaining or altering a thing or in rendering planning or supervisory services for that (§ 634a (1) no. 1)";
+    when werkmaengelanspruch(a, w);
+    when werk_ist_sachbezogen_634a(w);
+    when not werk_ist_bauwerksbezogen_634a(w);
+    then verjaehrungsdauer_634a(a, 2 calendar_year);
+}
+
+@source(BGB_P634a)
+rule Verjaehrungsdauer634aNr2(a: Anspruch, w: Werkvertrag) strict {
+    label de official "Die Ansprüche verjähren in fünf Jahren bei einem Bauwerk und einem Werk, dessen Erfolg in der Erbringung von Planungs- oder Überwachungsleistungen hierfür besteht (§ 634a Abs. 1 Nr. 2)";
+    label en unofficial "The claims become time-barred in five years for a building and for a work whose result consists in rendering planning or supervisory services for it (§ 634a (1) no. 2)";
+    when werkmaengelanspruch(a, w);
+    when werk_ist_bauwerksbezogen_634a(w);
+    then verjaehrungsdauer_634a(a, 5 calendar_year);
+}
+
+@source(BGB_P634a)
+rule Verjaehrungsbeginn634aAbs2(a: Anspruch, w: Werkvertrag, tag: Date) strict {
+    label de official "Die Verjährung beginnt in den Fällen des Absatzes 1 Nr. 1 und 2 mit der Abnahme (§ 634a Abs. 2); die Frist endet mit dem Tag, der dem Abnahmetag durch seine Zahl entspricht (§ 188 Abs. 2)";
+    label en unofficial "In the cases of (1) nos. 1 and 2 limitation begins with acceptance (§ 634a (2)); the period ends on the day corresponding by its number to the day of acceptance (§ 188 (2))";
+    when werkmaengelanspruch(a, w);
+    when abnahme_am(w, tag);
+    then verjaehrungsbeginn_634a(a, tag);
+}
+
+pub relation verjaehrungsbeginn_634a(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dem die Verjährung der Mängelansprüche des Werkvertrags beginnt (§ 634a Abs. 2)";
+    label en unofficial "day on which limitation of the claims for defects under the contract for work begins (§ 634a (2))";
+}
+
+@source(BGB_P634a)
+rule Regelfristende634a(a: Anspruch, b: Date, d: Quantity) strict {
+    label de official "Die Frist des § 634a Abs. 1 Nr. 1, 2 endet mit dem Ablauf des Tages, welcher durch seine Zahl dem Tag der Abnahme entspricht (§ 188 Abs. 2, Politik BGB_DIENST_WERK_KALENDER)";
+    label en unofficial "The period of § 634a (1) nos. 1, 2 ends with the expiry of the day corresponding by its number to the day of acceptance (§ 188 (2), policy BGB_DIENST_WERK_KALENDER)";
+    when verjaehrungsbeginn_634a(a, b);
+    when verjaehrungsdauer_634a(a, d);
+    then regelfrist_ende_634a(a, add_calendar_period(b, d));
+}
+
+@source(BGB_P634a)
+rule Fuenfjahresende634a(a: Anspruch, w: Werkvertrag, b: Date) strict {
+    label de official "Ablauf der in § 634a Abs. 1 Nr. 2 bestimmten Frist, gerechnet ab der Abnahme — sie wird auch bei Arglist nicht unterschritten (Abs. 3 Satz 2)";
+    label en unofficial "Expiry of the period determined in § 634a (1) no. 2, computed from acceptance — it is not undercut even in the case of fraud ((3) sentence 2)";
+    when werkmaengelanspruch(a, w);
+    when werk_ist_bauwerksbezogen_634a(w);
+    when verjaehrungsbeginn_634a(a, b);
+    then fuenfjahresende_634a(a, add_calendar_period(b, 5 calendar_year));
+}
+
+@source(BGB_P634a)
+rule Fristende634aOhneArglist(a: Anspruch, w: Werkvertrag, t: Date) strict {
+    label de official "Ohne arglistiges Verschweigen bleibt es bei der Frist der Absätze 1 und 2 (§ 634a)";
+    label en unofficial "Absent fraudulent concealment the period of subsections (1) and (2) applies (§ 634a)";
+    when werkmaengelanspruch(a, w);
+    when kein_arglistiges_verschweigen_634a(w);
+    when regelfrist_ende_634a(a, t);
+    then frist_ende_634a(a, t);
+}
+
+@source(BGB_P634a)
+rule Fristende634aArglistNr1(a: Anspruch, w: Werkvertrag, r: Date) strict {
+    label de official "Abweichend von Absatz 1 Nr. 1 und Absatz 2 verjähren die Ansprüche in der regelmäßigen Verjährungsfrist, wenn der Unternehmer den Mangel arglistig verschwiegen hat (§ 634a Abs. 3 Satz 1) — die regelmäßige Frist rechnet de.bgb.fristen (§§ 195, 199 Abs. 1)";
+    label en unofficial "By derogation from (1) no. 1 and (2), the claims become time-barred within the regular limitation period where the contractor fraudulently concealed the defect (§ 634a (3) sentence 1) — the regular period is computed by de.bgb.fristen (§§ 195, 199 (1))";
+    when werkmaengelanspruch(a, w);
+    when mangel_arglistig_verschwiegen_634a(w);
+    when not werk_ist_bauwerksbezogen_634a(w);
+    when de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(a, r);
+    then frist_ende_634a(a, r);
+}
+
+@source(BGB_P634a)
+rule Fristende634aArglistNr2RegelfristSpaeter(a: Anspruch, w: Werkvertrag, r: Date, f: Date) strict {
+    label de official "Im Falle des Absatzes 1 Nr. 2 tritt die Verjährung jedoch nicht vor Ablauf der dort bestimmten Frist ein (§ 634a Abs. 3 Satz 2) — endet die regelmäßige Frist später, so ist sie maßgebend";
+    label en unofficial "In the case of (1) no. 2 limitation does not occur before the expiry of the period determined there (§ 634a (3) sentence 2) — where the regular period ends later, it governs";
+    when werkmaengelanspruch(a, w);
+    when mangel_arglistig_verschwiegen_634a(w);
+    when fuenfjahresende_634a(a, f);
+    when de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(a, r);
+    when r >= f;
+    then frist_ende_634a(a, r);
+}
+
+@source(BGB_P634a)
+rule Fristende634aArglistNr2FuenfJahre(a: Anspruch, w: Werkvertrag, r: Date, f: Date) strict {
+    label de official "Endet die regelmäßige Frist früher, so tritt die Verjährung erst mit Ablauf der fünfjährigen Frist des Absatzes 1 Nr. 2 ein (§ 634a Abs. 3 Satz 2)";
+    label en unofficial "Where the regular period ends earlier, limitation occurs only upon expiry of the five-year period of (1) no. 2 (§ 634a (3) sentence 2)";
+    when werkmaengelanspruch(a, w);
+    when mangel_arglistig_verschwiegen_634a(w);
+    when fuenfjahresende_634a(a, f);
+    when de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(a, r);
+    when r < f;
+    then frist_ende_634a(a, f);
+}
+
+// --- § 635 Nacherfüllung -------------------------------------------------------------------------------
+
+pub relation nacherfuellung_verlangt_635(w: Werkvertrag) kind empirical {
+    label de official "der Besteller verlangt Nacherfüllung (§ 635 Abs. 1)";
+    label en unofficial "the customer demands cure (§ 635 (1))";
+}
+pub relation wahlrecht_des_unternehmers_635(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann nach seiner Wahl den Mangel beseitigen oder ein neues Werk herstellen (§ 635 Abs. 1)";
+    label en unofficial "the contractor may, at their choice, remedy the defect or produce a new work (§ 635 (1))";
+}
+pub relation nacherfuellungsaufwendungen_getragen_635(w: Werkvertrag) kind empirical {
+    label de official "die zum Zwecke der Nacherfüllung erforderlichen Aufwendungen, insbesondere Transport-, Wege-, Arbeits- und Materialkosten, wurden getragen (§ 635 Abs. 2)";
+    label en unofficial "the expenses necessary for cure, in particular transport, travel, labour and material costs, have been borne (§ 635 (2))";
+}
+@source(BGB_P635)
+pub external judgment relation nacherfuellung_nur_mit_unverhaeltnismaessigen_kosten_635(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 635 Abs. 3. Die Nacherfüllung ist nur mit unverhältnismäßigen Kosten möglich";
+    label en unofficial "§ 635 (3). Cure is possible only at disproportionate cost";
+}
+pub relation nacherfuellung_verweigert_635(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann die Nacherfüllung verweigern (§ 635 Abs. 3)";
+    label en unofficial "the contractor may refuse cure (§ 635 (3))";
+}
+pub relation neues_werk_hergestellt_635(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat ein neues Werk hergestellt (§ 635 Abs. 4)";
+    label en unofficial "the contractor has produced a new work (§ 635 (4))";
+}
+pub relation rueckgewaehranspruch_635(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann Rückgewähr des mangelhaften Werkes nach Maßgabe der §§ 346 bis 348 verlangen (§ 635 Abs. 4) — die Rückgewährmechanik gehört de.bgb.schuldrecht_at";
+    label en unofficial "the contractor may demand the return of the defective work under §§ 346 to 348 (§ 635 (4)) — the mechanics of restitution belong to de.bgb.schuldrecht_at";
+}
+
+@source(BGB_P635)
+rule Nacherfuellungswahlrecht635Abs1(w: Werkvertrag) strict {
+    label de official "Verlangt der Besteller Nacherfüllung, so kann der Unternehmer nach seiner Wahl den Mangel beseitigen oder ein neues Werk herstellen (§ 635 Abs. 1)";
+    label en unofficial "Where the customer demands cure, the contractor may at their choice remedy the defect or produce a new work (§ 635 (1))";
+    when recht_auf_nacherfuellung_634(w);
+    when nacherfuellung_verlangt_635(w);
+    then wahlrecht_des_unternehmers_635(w);
+}
+
+@source(BGB_P635)
+rule Nacherfuellungsaufwendungen635Abs2(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Der Unternehmer hat die zum Zwecke der Nacherfüllung erforderlichen Aufwendungen, insbesondere Transport-, Wege-, Arbeits- und Materialkosten, zu tragen (§ 635 Abs. 2)";
+    label en unofficial "The contractor must bear the expenses necessary for cure, in particular transport, travel, labour and material costs (§ 635 (2))";
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when wahlrecht_des_unternehmers_635(w);
+    then duty NacherfuellungsaufwendungenTragen635 {
+        bearer u;
+        achieve nacherfuellungsaufwendungen_getragen_635(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P635)
+rule PositionNacherfuellungsaufwendungen635Abs2(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Der Unternehmer muss die Nacherfüllungsaufwendungen tragen (§ 635 Abs. 2) — normative Position";
+    label en unofficial "the contractor must bear cure expenses (§ 635 (2)) — normative position";
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when wahlrecht_des_unternehmers_635(w);
+    then duty Nacherfuellungsaufwendungen635Abs2Position {
+        bearer u;
+        achieve nacherfuellungsaufwendungen_getragen_635(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P635)
+rule Nacherfuellungsverweigerung635Abs3(w: Werkvertrag) strict {
+    label de official "Der Unternehmer kann die Nacherfüllung unbeschadet des § 275 Abs. 2 und 3 verweigern, wenn sie nur mit unverhältnismäßigen Kosten möglich ist (§ 635 Abs. 3)";
+    label en unofficial "Without prejudice to § 275 (2) and (3), the contractor may refuse cure where it is possible only at disproportionate cost (§ 635 (3))";
+    when nacherfuellung_nur_mit_unverhaeltnismaessigen_kosten_635(w);
+    then nacherfuellung_verweigert_635(w);
+}
+
+@source(BGB_P635)
+rule Rueckgewaehr635Abs4(w: Werkvertrag) strict {
+    label de official "Stellt der Unternehmer ein neues Werk her, so kann er vom Besteller Rückgewähr des mangelhaften Werkes nach Maßgabe der §§ 346 bis 348 verlangen (§ 635 Abs. 4)";
+    label en unofficial "Where the contractor produces a new work, they may demand the return of the defective work from the customer under §§ 346 to 348 (§ 635 (4))";
+    when neues_werk_hergestellt_635(w);
+    then rueckgewaehranspruch_635(w);
+}
+
+// --- § 636 Besondere Bestimmungen für Rücktritt und Schadensersatz -------------------------------------------
+
+@source(BGB_P636)
+pub external judgment relation nacherfuellung_fehlgeschlagen_636(w: Werkvertrag) {
+    authority Court;
+    label de official "§§ 636, 637 Abs. 2 Satz 2. Die Nacherfüllung ist fehlgeschlagen";
+    label en unofficial "§§ 636, 637 (2) sentence 2. The cure has failed";
+}
+@source(BGB_P636)
+pub external judgment relation nacherfuellung_unzumutbar_636(w: Werkvertrag) {
+    authority Court;
+    label de official "§§ 636, 637 Abs. 2 Satz 2. Die Nacherfüllung ist dem Besteller unzumutbar";
+    label en unofficial "§§ 636, 637 (2) sentence 2. The cure is unreasonable for the customer";
+}
+pub relation fristsetzung_entbehrlich_636(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Fristsetzung bedarf es nicht (§ 636)";
+    label en unofficial "the setting of a period is not required (§ 636)";
+}
+
+@source(BGB_P636)
+rule FristsetzungEntbehrlich636Verweigerung(w: Werkvertrag) strict {
+    label de official "Der Fristsetzung bedarf es auch dann nicht, wenn der Unternehmer die Nacherfüllung gemäß § 635 Abs. 3 verweigert (§ 636)";
+    label en unofficial "The setting of a period is also not required where the contractor refuses cure under § 635 (3) (§ 636)";
+    when nacherfuellung_verweigert_635(w);
+    then fristsetzung_entbehrlich_636(w);
+}
+
+@source(BGB_P636)
+rule FristsetzungEntbehrlich636Fehlgeschlagen(w: Werkvertrag) strict {
+    label de official "Der Fristsetzung bedarf es auch dann nicht, wenn die Nacherfüllung fehlgeschlagen ist (§ 636)";
+    label en unofficial "The setting of a period is also not required where the cure has failed (§ 636)";
+    when nacherfuellung_fehlgeschlagen_636(w);
+    then fristsetzung_entbehrlich_636(w);
+}
+
+@source(BGB_P636)
+rule FristsetzungEntbehrlich636Unzumutbar(w: Werkvertrag) strict {
+    label de official "Der Fristsetzung bedarf es auch dann nicht, wenn die Nacherfüllung dem Besteller unzumutbar ist (§ 636)";
+    label en unofficial "The setting of a period is also not required where the cure is unreasonable for the customer (§ 636)";
+    when nacherfuellung_unzumutbar_636(w);
+    then fristsetzung_entbehrlich_636(w);
+}
+
+// --- § 637 Selbstvornahme --------------------------------------------------------------------------------
+
+@source(BGB_P637)
+pub external judgment relation nacherfuellungsfrist_angemessen_637(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 637 Abs. 1. Die vom Besteller zur Nacherfüllung bestimmte Frist ist angemessen";
+    label en unofficial "§ 637 (1). The period set by the customer for cure is appropriate";
+}
+pub relation nacherfuellungsfrist_ablauf_637(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "letzter Tag der vom Besteller zur Nacherfüllung bestimmten Frist (§ 637 Abs. 1)";
+    label en unofficial "last day of the period set by the customer for cure (§ 637 (1))";
+}
+pub relation nacherfuellung_bis_fristablauf_ausgeblieben_637(w: Werkvertrag) kind empirical {
+    label de official "die Nacherfüllung ist bis zum Ablauf der Frist ausgeblieben (§ 637 Abs. 1 „erfolgloser Ablauf\") — ausdrückliche Angabe des Falls";
+    label en unofficial "the cure did not occur before the period expired (§ 637 (1), 'unsuccessful expiry') — express statement of the case";
+}
+pub relation nacherfuellung_nicht_zu_recht_verweigert_637(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat die Nacherfüllung nicht zu Recht verweigert (§ 637 Abs. 1 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the contractor did not lawfully refuse cure (§ 637 (1) second half-sentence) — express statement of the case";
+}
+pub relation selbstvornahmerecht_637(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann den Mangel selbst beseitigen und Ersatz der erforderlichen Aufwendungen verlangen (§ 637 Abs. 1)";
+    label en unofficial "the customer may remedy the defect themselves and demand reimbursement of the necessary expenses (§ 637 (1))";
+}
+pub relation vorschussanspruch_637(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann für die zur Beseitigung des Mangels erforderlichen Aufwendungen Vorschuss verlangen (§ 637 Abs. 3)";
+    label en unofficial "the customer may demand an advance for the expenses necessary to remedy the defect (§ 637 (3))";
+}
+
+@source(BGB_P637)
+rule Selbstvornahme637Abs1(w: Werkvertrag, ablauf: Date) strict {
+    label de official "Der Besteller kann wegen eines Mangels des Werkes nach erfolglosem Ablauf einer von ihm zur Nacherfüllung bestimmten angemessenen Frist den Mangel selbst beseitigen und Ersatz der erforderlichen Aufwendungen verlangen, wenn nicht der Unternehmer die Nacherfüllung zu Recht verweigert (§ 637 Abs. 1)";
+    label en unofficial "On account of a defect of the work the customer may, after the unsuccessful expiry of an appropriate period set by them for cure, remedy the defect themselves and demand reimbursement of the necessary expenses, unless the contractor lawfully refuses cure (§ 637 (1))";
+    when werk_mangelhaft(w);
+    when nacherfuellungsfrist_ablauf_637(w, ablauf);
+    when nacherfuellungsfrist_angemessen_637(w);
+    when nacherfuellung_bis_fristablauf_ausgeblieben_637(w);
+    when nacherfuellung_nicht_zu_recht_verweigert_637(w);
+    then selbstvornahmerecht_637(w);
+}
+
+@source(BGB_P637)
+rule Selbstvornahme637Abs2OhneFrist(w: Werkvertrag) strict {
+    label de official "Der Bestimmung einer Frist bedarf es auch dann nicht, wenn die Nacherfüllung fehlgeschlagen oder dem Besteller unzumutbar ist (§ 637 Abs. 2 Satz 2)";
+    label en unofficial "The setting of a period is also not required where the cure has failed or is unreasonable for the customer (§ 637 (2) sentence 2)";
+    when werk_mangelhaft(w);
+    when fristsetzung_entbehrlich_636(w);
+    when nacherfuellung_nicht_zu_recht_verweigert_637(w);
+    then selbstvornahmerecht_637(w);
+}
+
+@source(BGB_P637)
+rule Vorschuss637Abs3(w: Werkvertrag) strict {
+    label de official "Der Besteller kann von dem Unternehmer für die zur Beseitigung des Mangels erforderlichen Aufwendungen Vorschuss verlangen (§ 637 Abs. 3)";
+    label en unofficial "The customer may demand from the contractor an advance for the expenses necessary to remedy the defect (§ 637 (3))";
+    when selbstvornahmerecht_637(w);
+    then vorschussanspruch_637(w);
+}
+
+// --- § 638 Minderung ---------------------------------------------------------------------------------------
+//
+// Absatz 3 nennt das Verhältnis selbst: Wert in mangelfreiem Zustand zum
+// wirklichen Wert, beide zur Zeit des Vertragsschlusses. Die Herabsetzung
+// rechnet GENAU EINMAL und rundet auf den Cent (Ledger D-07-07):
+// geminderte Vergütung = Vergütung × wirklicher Wert ÷ Wert ohne Mangel.
+
+pub relation minderung_erklaert_638(w: Werkvertrag) kind empirical {
+    label de official "der Besteller mindert die Vergütung durch Erklärung gegenüber dem Unternehmer (§ 638 Abs. 1 Satz 1)";
+    label en unofficial "the customer reduces the compensation by declaration to the contractor (§ 638 (1) sentence 1)";
+}
+pub relation mehrere_beteiligte_638(w: Werkvertrag) kind empirical {
+    label de official "auf der Seite des Bestellers oder des Unternehmers sind mehrere beteiligt (§ 638 Abs. 2)";
+    label en unofficial "several persons are involved on the customer's or the contractor's side (§ 638 (2))";
+}
+pub relation minderung_von_allen_oder_gegen_alle_erklaert_638(w: Werkvertrag) kind empirical {
+    label de official "die Minderung wurde von allen oder gegen alle erklärt (§ 638 Abs. 2)";
+    label en unofficial "the reduction was declared by all or against all (§ 638 (2))";
+}
+pub relation ein_beteiligter_je_seite_638(w: Werkvertrag) kind empirical {
+    label de official "auf keiner Seite sind mehrere beteiligt (§ 638 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "there are not several persons on either side (§ 638 (2)) — express statement of the case";
+}
+// Das Verhältnis des Absatzes 3 wird — wie die Bruchteile des Korpus — als
+// PAAR GANZER ZAHLEN geführt (Vorbild D-07); ein Produkt zweier Money-Größen
+// ist in v1 nicht definiert (§58, LDC-E2108). Die Einheit der beiden Werte
+// gibt der Fall an; nur ihr Verhältnis geht in die Rechnung ein.
+pub relation wert_ohne_mangel_638(w: Werkvertrag, wert: Integer) kind empirical {
+    key(w);
+    label de official "Wert des Werkes in mangelfreiem Zustand zur Zeit des Vertragsschlusses, als ganze Zahl geführter Nenner des Verhältnisses (§ 638 Abs. 3 Satz 1)";
+    label en unofficial "value of the work in a defect-free state at the time the contract was concluded, carried as the integer denominator of the ratio (§ 638 (3) sentence 1)";
+}
+pub relation wirklicher_wert_638(w: Werkvertrag, wert: Integer) kind empirical {
+    key(w);
+    label de official "wirklicher Wert des Werkes zur Zeit des Vertragsschlusses, als ganze Zahl geführter Zähler des Verhältnisses (§ 638 Abs. 3 Satz 1); soweit erforderlich, durch Schätzung ermittelt (Satz 2)";
+    label en unofficial "actual value of the work at the time the contract was concluded, carried as the integer numerator of the ratio (§ 638 (3) sentence 1); determined by estimation where necessary (sentence 2)";
+}
+pub relation geminderte_werkverguetung_638(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "die nach § 638 Abs. 3 herabgesetzte Vergütung — ein `div_round` auf den Cent (Ledger D-07-07)";
+    label en unofficial "the compensation reduced under § 638 (3) — one `div_round` to the cent (ledger D-07-07)";
+}
+pub relation minderungswirksam_638(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Minderungserklärung ist wirksam (§ 638 Abs. 1, 2)";
+    label en unofficial "the declaration of reduction is effective (§ 638 (1), (2))";
+}
+
+@source(BGB_P638)
+rule MinderungWirksamEinBeteiligter638(w: Werkvertrag) strict {
+    label de official "Statt zurückzutreten, kann der Besteller die Vergütung durch Erklärung gegenüber dem Unternehmer mindern (§ 638 Abs. 1 Satz 1)";
+    label en unofficial "Instead of withdrawing, the customer may reduce the compensation by declaration to the contractor (§ 638 (1) sentence 1)";
+    when recht_auf_ruecktritt_oder_minderung_634(w);
+    when minderung_erklaert_638(w);
+    when ein_beteiligter_je_seite_638(w);
+    then minderungswirksam_638(w);
+}
+
+@source(BGB_P638)
+rule MinderungWirksamMehrereBeteiligte638(w: Werkvertrag) strict {
+    label de official "Sind auf der Seite des Bestellers oder auf der Seite des Unternehmers mehrere beteiligt, so kann die Minderung nur von allen oder gegen alle erklärt werden (§ 638 Abs. 2)";
+    label en unofficial "Where several persons are involved on the customer's or the contractor's side, the reduction can be declared only by all or against all (§ 638 (2))";
+    when recht_auf_ruecktritt_oder_minderung_634(w);
+    when minderung_erklaert_638(w);
+    when mehrere_beteiligte_638(w);
+    when minderung_von_allen_oder_gegen_alle_erklaert_638(w);
+    then minderungswirksam_638(w);
+}
+
+@source(BGB_P638)
+rule GeminderteVerguetung638Abs3(w: Werkvertrag, verguetung: Money, ohne: Integer, wirklich: Integer) strict {
+    label de official "Bei der Minderung ist die Vergütung in dem Verhältnis herabzusetzen, in welchem zur Zeit des Vertragsschlusses der Wert des Werkes in mangelfreiem Zustand zu dem wirklichen Wert gestanden haben würde (§ 638 Abs. 3 Satz 1) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "On reduction the compensation is to be lowered in the ratio in which, at the time the contract was concluded, the value of the work in a defect-free state would have stood to its actual value (§ 638 (3) sentence 1) — one division, rounded to the cent (ledger D-07-07)";
+    when minderungswirksam_638(w);
+    when vereinbarte_werkverguetung(w, verguetung);
+    when wert_ohne_mangel_638(w, ohne);
+    when wirklicher_wert_638(w, wirklich);
+    then geminderte_werkverguetung_638(w, div_round(verguetung * wirklich, ohne * 1.0, 2, "HALF_UP"));
+}
+
+pub relation mehr_als_geminderte_verguetung_gezahlt_638(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "der vom Besteller gezahlte Betrag der Vergütung (§ 638 Abs. 4 Satz 1)";
+    label en unofficial "the amount of the compensation paid by the customer (§ 638 (4) sentence 1)";
+}
+pub relation erstattungsanspruch_638(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "Anspruch auf Erstattung des Mehrbetrags (§ 638 Abs. 4 Satz 1)";
+    label en unofficial "claim to reimbursement of the excess amount (§ 638 (4) sentence 1)";
+}
+
+@source(BGB_P638)
+rule Erstattung638Abs4(w: Werkvertrag, gezahlt: Money, gemindert: Money) strict {
+    label de official "Hat der Besteller mehr als die geminderte Vergütung gezahlt, so ist der Mehrbetrag vom Unternehmer zu erstatten (§ 638 Abs. 4 Satz 1)";
+    label en unofficial "Where the customer has paid more than the reduced compensation, the excess must be reimbursed by the contractor (§ 638 (4) sentence 1)";
+    when mehr_als_geminderte_verguetung_gezahlt_638(w, gezahlt);
+    when geminderte_werkverguetung_638(w, gemindert);
+    when gezahlt > gemindert;
+    then erstattungsanspruch_638(w, gezahlt - gemindert);
+}
+
+// --- § 639 Haftungsausschluss -------------------------------------------------------------------------------
+
+pub relation haftungsausschluss_vereinbart_639(w: Werkvertrag) kind empirical {
+    label de official "die Rechte des Bestellers wegen eines Mangels sind durch Vereinbarung ausgeschlossen oder beschränkt (§ 639)";
+    label en unofficial "the customer's rights on account of a defect are excluded or restricted by agreement (§ 639)";
+}
+pub relation garantie_fuer_beschaffenheit_uebernommen_639(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat eine Garantie für die Beschaffenheit des Werkes übernommen (§ 639)";
+    label en unofficial "the contractor has assumed a guarantee for the quality of the work (§ 639)";
+}
+pub relation berufung_auf_haftungsausschluss_versperrt_639(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann sich auf die Haftungsausschlussvereinbarung nicht berufen (§ 639)";
+    label en unofficial "the contractor may not rely on the agreement excluding liability (§ 639)";
+}
+
+@source(BGB_P639)
+rule Haftungsausschluss639Arglist(w: Werkvertrag) strict {
+    label de official "Auf eine Vereinbarung, durch welche die Rechte des Bestellers wegen eines Mangels ausgeschlossen oder beschränkt werden, kann sich der Unternehmer nicht berufen, soweit er den Mangel arglistig verschwiegen hat (§ 639)";
+    label en unofficial "The contractor may not rely on an agreement excluding or restricting the customer's rights on account of a defect in so far as they fraudulently concealed the defect (§ 639)";
+    when haftungsausschluss_vereinbart_639(w);
+    when mangel_arglistig_verschwiegen_634a(w);
+    then berufung_auf_haftungsausschluss_versperrt_639(w);
+}
+
+@source(BGB_P639)
+rule Haftungsausschluss639Garantie(w: Werkvertrag) strict {
+    label de official "Auf eine solche Vereinbarung kann sich der Unternehmer auch dann nicht berufen, soweit er eine Garantie für die Beschaffenheit des Werkes übernommen hat (§ 639)";
+    label en unofficial "Nor may the contractor rely on such an agreement in so far as they assumed a guarantee for the quality of the work (§ 639)";
+    when haftungsausschluss_vereinbart_639(w);
+    when garantie_fuer_beschaffenheit_uebernommen_639(w);
+    then berufung_auf_haftungsausschluss_versperrt_639(w);
+}
+
+// --- § 640 Abnahme -------------------------------------------------------------------------------------------
+
+pub relation werk_vertragsmaessig_hergestellt_640(w: Werkvertrag) kind empirical {
+    label de official "das Werk ist vertragsmäßig hergestellt (§ 640 Abs. 1 Satz 1)";
+    label en unofficial "the work has been produced in conformity with the contract (§ 640 (1) sentence 1)";
+}
+pub relation abnahme_nach_beschaffenheit_ausgeschlossen_640(w: Werkvertrag) kind empirical {
+    label de official "nach der Beschaffenheit des Werkes ist die Abnahme ausgeschlossen (§§ 640 Abs. 1 Satz 1, 646)";
+    label en unofficial "acceptance is excluded by the nature of the work (§§ 640 (1) sentence 1, 646)";
+}
+pub relation abnahme_nicht_ausgeschlossen_640(w: Werkvertrag) kind empirical {
+    label de official "die Abnahme ist nach der Beschaffenheit des Werkes nicht ausgeschlossen (§ 640 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "acceptance is not excluded by the nature of the work (§ 640 (1) sentence 1) — express statement of the case";
+}
+pub relation werk_abgenommen(w: Werkvertrag) kind empirical {
+    label de official "der Besteller hat das Werk abgenommen (§ 640 Abs. 1)";
+    label en unofficial "the customer has accepted the work (§ 640 (1))";
+}
+@source(BGB_P640)
+pub external judgment relation mangel_unwesentlich_640(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 640 Abs. 1 Satz 2. Der Mangel, wegen dessen die Abnahme verweigert wird, ist unwesentlich";
+    label en unofficial "§ 640 (1) sentence 2. The defect for which acceptance is refused is insignificant";
+}
+pub relation abnahmeverweigerung_unzulaessig_640(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "wegen unwesentlicher Mängel kann die Abnahme nicht verweigert werden (§ 640 Abs. 1 Satz 2)";
+    label en unofficial "acceptance cannot be refused on account of insignificant defects (§ 640 (1) sentence 2)";
+}
+
+@source(BGB_P640)
+rule Abnahmepflicht640Abs1(w: Werkvertrag, b: Person, schluss: Date) strict {
+    label de official "Der Besteller ist verpflichtet, das vertragsmäßig hergestellte Werk abzunehmen, sofern nicht nach der Beschaffenheit des Werkes die Abnahme ausgeschlossen ist (§ 640 Abs. 1 Satz 1)";
+    label en unofficial "The customer is obliged to accept the work produced in conformity with the contract, unless acceptance is excluded by the nature of the work (§ 640 (1) sentence 1)";
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when werk_vertragsmaessig_hergestellt_640(w);
+    when abnahme_nicht_ausgeschlossen_640(w);
+    then duty AbnahmePflicht640 {
+        bearer b;
+        achieve werk_abgenommen(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P640)
+rule AbnahmeverweigerungUnzulaessig640Abs1Satz2(w: Werkvertrag) strict {
+    label de official "Wegen unwesentlicher Mängel kann die Abnahme nicht verweigert werden (§ 640 Abs. 1 Satz 2)";
+    label en unofficial "Acceptance cannot be refused on account of insignificant defects (§ 640 (1) sentence 2)";
+    when mangel_unwesentlich_640(w);
+    then abnahmeverweigerung_unzulaessig_640(w);
+}
+
+pub relation fertigstellung_am_640(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Fertigstellung des Werks (§ 640 Abs. 2 Satz 1)";
+    label en unofficial "day the work was completed (§ 640 (2) sentence 1)";
+}
+pub relation abnahmefrist_ablauf_640(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "letzter Tag der vom Unternehmer nach Fertigstellung gesetzten Frist zur Abnahme (§ 640 Abs. 2 Satz 1)";
+    label en unofficial "last day of the period for acceptance set by the contractor after completion (§ 640 (2) sentence 1)";
+}
+@source(BGB_P640)
+pub external judgment relation abnahmefrist_angemessen_640(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 640 Abs. 2 Satz 1. Die vom Unternehmer gesetzte Frist zur Abnahme ist angemessen";
+    label en unofficial "§ 640 (2) sentence 1. The period for acceptance set by the contractor is appropriate";
+}
+pub relation abnahme_unter_mangelangabe_verweigert_640(w: Werkvertrag) kind empirical {
+    label de official "der Besteller hat die Abnahme innerhalb der Frist unter Angabe mindestens eines Mangels verweigert (§ 640 Abs. 2 Satz 1)";
+    label en unofficial "the customer refused acceptance within the period, stating at least one defect (§ 640 (2) sentence 1)";
+}
+pub relation abnahme_nicht_unter_mangelangabe_verweigert_640(w: Werkvertrag) kind empirical {
+    label de official "der Besteller hat die Abnahme innerhalb der Frist NICHT unter Angabe mindestens eines Mangels verweigert (§ 640 Abs. 2 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the customer did NOT refuse acceptance within the period stating at least one defect (§ 640 (2) sentence 1) — express statement of the case";
+}
+pub relation besteller_ist_verbraucher_640(w: Werkvertrag) kind empirical {
+    label de official "der Besteller ist ein Verbraucher (§ 640 Abs. 2 Satz 2)";
+    label en unofficial "the customer is a consumer (§ 640 (2) sentence 2)";
+}
+pub relation besteller_ist_kein_verbraucher_640(w: Werkvertrag) kind empirical {
+    label de official "der Besteller ist kein Verbraucher (§ 640 Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the customer is not a consumer (§ 640 (2) sentence 2) — express statement of the case";
+}
+pub relation hinweis_in_textform_erteilt_640(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat den Besteller zusammen mit der Aufforderung zur Abnahme in Textform auf die Folgen einer nicht erklärten oder ohne Angabe von Mängeln verweigerten Abnahme hingewiesen (§ 640 Abs. 2 Satz 2)";
+    label en unofficial "together with the request for acceptance, the contractor informed the customer in text form of the consequences of a non-declared acceptance or one refused without stating defects (§ 640 (2) sentence 2)";
+}
+pub relation werk_gilt_als_abgenommen_640(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "das Werk gilt als abgenommen (§ 640 Abs. 2)";
+    label en unofficial "the work is deemed accepted (§ 640 (2))";
+}
+
+@source(BGB_P640)
+rule Abnahmefiktion640Abs2Unternehmer(w: Werkvertrag, ablauf: Date) strict {
+    label de official "Als abgenommen gilt ein Werk auch, wenn der Unternehmer dem Besteller nach Fertigstellung des Werks eine angemessene Frist zur Abnahme gesetzt hat und der Besteller die Abnahme nicht innerhalb dieser Frist unter Angabe mindestens eines Mangels verweigert hat (§ 640 Abs. 2 Satz 1) — Besteller ist kein Verbraucher";
+    label en unofficial "A work is also deemed accepted where, after completion, the contractor set the customer an appropriate period for acceptance and the customer did not refuse acceptance within that period stating at least one defect (§ 640 (2) sentence 1) — the customer is not a consumer";
+    when abnahmefrist_ablauf_640(w, ablauf);
+    when abnahmefrist_angemessen_640(w);
+    when abnahme_nicht_unter_mangelangabe_verweigert_640(w);
+    when besteller_ist_kein_verbraucher_640(w);
+    then werk_gilt_als_abgenommen_640(w);
+}
+
+@source(BGB_P640)
+rule Abnahmefiktion640Abs2Verbraucher(w: Werkvertrag, ablauf: Date) strict {
+    label de official "Ist der Besteller ein Verbraucher, so treten die Rechtsfolgen des Satzes 1 nur dann ein, wenn der Unternehmer den Besteller zusammen mit der Aufforderung zur Abnahme in Textform auf die Folgen hingewiesen hat (§ 640 Abs. 2 Satz 2)";
+    label en unofficial "Where the customer is a consumer, the legal consequences of sentence 1 arise only if the contractor informed the customer in text form of the consequences together with the request for acceptance (§ 640 (2) sentence 2)";
+    when abnahmefrist_ablauf_640(w, ablauf);
+    when abnahmefrist_angemessen_640(w);
+    when abnahme_nicht_unter_mangelangabe_verweigert_640(w);
+    when besteller_ist_verbraucher_640(w);
+    when hinweis_in_textform_erteilt_640(w);
+    then werk_gilt_als_abgenommen_640(w);
+}
+
+pub relation mangel_bei_abnahme_bekannt_640(w: Werkvertrag) kind empirical {
+    label de official "der Besteller kennt den Mangel bei der Abnahme (§ 640 Abs. 3)";
+    label en unofficial "the customer knows of the defect at the time of acceptance (§ 640 (3))";
+}
+pub relation rechte_bei_abnahme_vorbehalten_640(w: Werkvertrag) kind empirical {
+    label de official "der Besteller hat sich seine Rechte wegen des Mangels bei der Abnahme vorbehalten (§ 640 Abs. 3)";
+    label en unofficial "the customer reserved their rights on account of the defect at the time of acceptance (§ 640 (3))";
+}
+pub relation maengelrechte_640_erhalten(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die in § 634 Nr. 1 bis 3 bezeichneten Rechte bleiben trotz Abnahme in Kenntnis des Mangels erhalten (§ 640 Abs. 3)";
+    label en unofficial "the rights designated in § 634 nos. 1 to 3 are preserved despite acceptance in knowledge of the defect (§ 640 (3))";
+}
+
+@source(BGB_P640)
+rule Vorbehalt640Abs3(w: Werkvertrag) strict {
+    label de official "Nimmt der Besteller ein mangelhaftes Werk gemäß Absatz 1 Satz 1 ab, obschon er den Mangel kennt, so stehen ihm die in § 634 Nr. 1 bis 3 bezeichneten Rechte nur zu, wenn er sich seine Rechte wegen des Mangels bei der Abnahme vorbehält (§ 640 Abs. 3)";
+    label en unofficial "Where the customer accepts a defective work under (1) sentence 1 although they know of the defect, the rights designated in § 634 nos. 1 to 3 belong to them only if they reserve their rights on account of the defect at the time of acceptance (§ 640 (3))";
+    when werk_abgenommen(w);
+    when mangel_bei_abnahme_bekannt_640(w);
+    when rechte_bei_abnahme_vorbehalten_640(w);
+    then maengelrechte_640_erhalten(w);
+}
+
+// --- § 641 Fälligkeit der Vergütung ---------------------------------------------------------------------------
+
+pub relation werkverguetung_faellig_am(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "Tag, an dem die Vergütung des Werkvertrags zu entrichten ist (§ 641)";
+    label en unofficial "day on which the compensation under the contract for work is due (§ 641)";
+}
+
+@source(BGB_P641)
+rule Faelligkeit641Abs1(w: Werkvertrag, tag: Date) strict {
+    label de official "Die Vergütung ist bei der Abnahme des Werkes zu entrichten (§ 641 Abs. 1 Satz 1)";
+    label en unofficial "The compensation is payable upon acceptance of the work (§ 641 (1) sentence 1)";
+    when abnahme_am(w, tag);
+    then werkverguetung_faellig_am(w, tag);
+}
+
+pub relation maengelbeseitigungskosten_641(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die für die Beseitigung des Mangels erforderlichen Kosten (§ 641 Abs. 3)";
+    label en unofficial "the costs necessary to remedy the defect (§ 641 (3))";
+}
+pub relation zurueckbehaltungsbetrag_641(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "angemessener Teil der Vergütung, dessen Zahlung verweigert werden kann — in der Regel das Doppelte der Mängelbeseitigungskosten (§ 641 Abs. 3)";
+    label en unofficial "appropriate part of the compensation whose payment may be refused — as a rule twice the costs of remedying the defect (§ 641 (3))";
+}
+
+@source(BGB_P641)
+rule Zurueckbehaltung641Abs3(w: Werkvertrag, kosten: Money) strict {
+    label de official "Kann der Besteller die Beseitigung eines Mangels verlangen, so kann er nach der Fälligkeit die Zahlung eines angemessenen Teils der Vergütung verweigern; angemessen ist in der Regel das Doppelte der für die Beseitigung des Mangels erforderlichen Kosten (§ 641 Abs. 3)";
+    label en unofficial "Where the customer may demand the remedying of a defect, they may after the due date refuse payment of an appropriate part of the compensation; as a rule, twice the costs necessary to remedy the defect is appropriate (§ 641 (3))";
+    when recht_auf_nacherfuellung_634(w);
+    when maengelbeseitigungskosten_641(w, kosten);
+    then zurueckbehaltungsbetrag_641(w, kosten * 2);
+}
+
+pub relation verguetung_gestundet_641(w: Werkvertrag) kind empirical {
+    label de official "die Vergütung ist gestundet (§ 641 Abs. 4)";
+    label en unofficial "the compensation is deferred (§ 641 (4))";
+}
+pub relation verguetung_nicht_gestundet_641(w: Werkvertrag) kind empirical {
+    label de official "die Vergütung ist nicht gestundet (§ 641 Abs. 4) — ausdrückliche Angabe des Falls";
+    label en unofficial "the compensation is not deferred (§ 641 (4)) — express statement of the case";
+}
+pub relation verzinsungspflicht_ab_641(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "Tag, ab dem eine in Geld festgesetzte Vergütung zu verzinsen ist (§ 641 Abs. 4)";
+    label en unofficial "day from which compensation fixed in money must bear interest (§ 641 (4))";
+}
+
+@source(BGB_P641)
+rule Verzinsung641Abs4(w: Werkvertrag, tag: Date) strict {
+    label de official "Eine in Geld festgesetzte Vergütung hat der Besteller von der Abnahme des Werkes an zu verzinsen, sofern nicht die Vergütung gestundet ist (§ 641 Abs. 4)";
+    label en unofficial "The customer must pay interest on compensation fixed in money from the acceptance of the work, unless the compensation is deferred (§ 641 (4))";
+    when abnahme_am(w, tag);
+    when verguetung_nicht_gestundet_641(w);
+    then verzinsungspflicht_ab_641(w, tag);
+}
+
+// --- § 642 Mitwirkung des Bestellers und § 643 Kündigung bei unterlassener Mitwirkung -------------------------
+
+pub relation handlung_des_bestellers_erforderlich_642(w: Werkvertrag) kind empirical {
+    label de official "bei der Herstellung des Werkes ist eine Handlung des Bestellers erforderlich (§ 642 Abs. 1)";
+    label en unofficial "an act of the customer is necessary for the production of the work (§ 642 (1))";
+}
+pub relation annahmeverzug_des_bestellers_642(w: Werkvertrag) kind empirical {
+    label de official "der Besteller kommt durch das Unterlassen der Handlung in Verzug der Annahme (§ 642 Abs. 1)";
+    label en unofficial "by omitting the act the customer falls into default of acceptance (§ 642 (1))";
+}
+@source(BGB_P642)
+pub external judgment relation entschaedigung_angemessen_642(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 642 Abs. 1, 2. Die verlangte Entschädigung ist angemessen; ihre Höhe bestimmt sich nach der Dauer des Verzugs und der Höhe der vereinbarten Vergütung einerseits und dem Ersparten oder anderweit Erworbenen andererseits";
+    label en unofficial "§ 642 (1), (2). The compensation demanded is appropriate; its amount is determined by the duration of the default and the amount of the agreed compensation on the one hand and by what was saved or otherwise earned on the other";
+}
+pub relation entschaedigungsanspruch_642(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "Anspruch des Unternehmers auf angemessene Entschädigung (§ 642 Abs. 1)";
+    label en unofficial "the contractor's claim to appropriate compensation (§ 642 (1))";
+}
+
+@source(BGB_P642)
+rule Entschaedigung642Abs1(w: Werkvertrag) strict {
+    label de official "Ist bei der Herstellung des Werkes eine Handlung des Bestellers erforderlich, so kann der Unternehmer, wenn der Besteller durch das Unterlassen der Handlung in Verzug der Annahme kommt, eine angemessene Entschädigung verlangen (§ 642 Abs. 1)";
+    label en unofficial "Where an act of the customer is necessary for the production of the work, the contractor may demand appropriate compensation if the customer falls into default of acceptance by omitting the act (§ 642 (1))";
+    when handlung_des_bestellers_erforderlich_642(w);
+    when annahmeverzug_des_bestellers_642(w);
+    when entschaedigung_angemessen_642(w);
+    then entschaedigungsanspruch_642(w);
+}
+
+pub relation nachholungsfrist_ablauf_643(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "letzter Tag der vom Unternehmer zur Nachholung der Handlung bestimmten Frist, verbunden mit der Kündigungserklärung (§ 643 Satz 1)";
+    label en unofficial "last day of the period set by the contractor for making up the act, combined with the declaration of termination (§ 643 sentence 1)";
+}
+pub relation handlung_bis_fristablauf_nicht_nachgeholt_643(w: Werkvertrag) kind empirical {
+    label de official "die Nachholung der Handlung ist bis zum Ablauf der Frist nicht erfolgt (§ 643 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the act was not made up before the period expired (§ 643 sentence 2) — express statement of the case";
+}
+pub relation vertrag_aufgehoben_643(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "der Vertrag gilt als aufgehoben (§ 643 Satz 2)";
+    label en unofficial "the contract is deemed terminated (§ 643 sentence 2)";
+}
+
+@source(BGB_P643)
+rule Aufhebung643(w: Werkvertrag, ablauf: Date) strict {
+    label de official "Der Vertrag gilt als aufgehoben, wenn nicht die Nachholung der Handlung bis zum Ablauf der vom Unternehmer bestimmten Frist erfolgt (§ 643)";
+    label en unofficial "The contract is deemed terminated if the act is not made up before the expiry of the period set by the contractor (§ 643)";
+    when entschaedigungsanspruch_642(w);
+    when nachholungsfrist_ablauf_643(w, ablauf);
+    when handlung_bis_fristablauf_nicht_nachgeholt_643(w);
+    then vertrag_aufgehoben_643(w, ablauf);
+}
+
+// --- § 644 Gefahrtragung und § 645 Verantwortlichkeit des Bestellers -------------------------------------------
+
+pub relation gefahr_beim_unternehmer_644(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer trägt die Gefahr bis zur Abnahme des Werkes (§ 644 Abs. 1 Satz 1)";
+    label en unofficial "the contractor bears the risk until acceptance of the work (§ 644 (1) sentence 1)";
+}
+pub relation gefahr_beim_besteller_644(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Gefahr ist auf den Besteller übergegangen (§ 644 Abs. 1 Satz 2)";
+    label en unofficial "the risk has passed to the customer (§ 644 (1) sentence 2)";
+}
+pub relation werk_noch_nicht_abgenommen_644(w: Werkvertrag) kind empirical {
+    label de official "das Werk ist noch nicht abgenommen (§ 644 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the work has not yet been accepted (§ 644 (1) sentence 1) — express statement of the case";
+}
+pub relation kein_annahmeverzug_des_bestellers_644(w: Werkvertrag) kind empirical {
+    label de official "der Besteller ist nicht in Verzug der Annahme (§ 644 Abs. 1 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the customer is not in default of acceptance (§ 644 (1) sentence 2) — express statement of the case";
+}
+
+@source(BGB_P644)
+rule Gefahrtragung644Abs1Satz1(w: Werkvertrag) strict {
+    label de official "Der Unternehmer trägt die Gefahr bis zur Abnahme des Werkes (§ 644 Abs. 1 Satz 1)";
+    label en unofficial "The contractor bears the risk until acceptance of the work (§ 644 (1) sentence 1)";
+    when werk_noch_nicht_abgenommen_644(w);
+    when kein_annahmeverzug_des_bestellers_644(w);
+    then gefahr_beim_unternehmer_644(w);
+}
+
+@source(BGB_P644)
+rule Gefahruebergang644Abs1Satz2(w: Werkvertrag) strict {
+    label de official "Kommt der Besteller in Verzug der Annahme, so geht die Gefahr auf ihn über (§ 644 Abs. 1 Satz 2)";
+    label en unofficial "Where the customer falls into default of acceptance, the risk passes to them (§ 644 (1) sentence 2)";
+    when annahmeverzug_des_bestellers_642(w);
+    then gefahr_beim_besteller_644(w);
+}
+
+pub relation untergang_infolge_stoffmangel_oder_anweisung_645(w: Werkvertrag) kind empirical {
+    label de official "das Werk ist vor der Abnahme infolge eines Mangels des vom Besteller gelieferten Stoffes oder infolge einer von ihm erteilten Anweisung untergegangen, verschlechtert oder unausführbar geworden (§ 645 Abs. 1 Satz 1)";
+    label en unofficial "before acceptance the work was destroyed, deteriorated or became impracticable as a result of a defect in the material supplied by the customer or of an instruction given by them (§ 645 (1) sentence 1)";
+}
+pub relation kein_vom_unternehmer_zu_vertretender_umstand_645(w: Werkvertrag) kind empirical {
+    label de official "es hat kein Umstand mitgewirkt, den der Unternehmer zu vertreten hat (§ 645 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "no circumstance for which the contractor is responsible contributed (§ 645 (1) sentence 1) — express statement of the case";
+}
+pub relation geleisteter_arbeit_entsprechender_teil_645(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "der der geleisteten Arbeit entsprechende Teil der Vergütung samt der nicht inbegriffenen Auslagen (§ 645 Abs. 1 Satz 1)";
+    label en unofficial "the part of the compensation corresponding to the work performed, together with the expenses not included in it (§ 645 (1) sentence 1)";
+}
+pub relation teilverguetungsanspruch_645(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "Anspruch des Unternehmers auf den der geleisteten Arbeit entsprechenden Teil der Vergütung und Ersatz der nicht inbegriffenen Auslagen (§ 645 Abs. 1)";
+    label en unofficial "the contractor's claim to the part of the compensation corresponding to the work performed and to reimbursement of the expenses not included (§ 645 (1))";
+}
+
+@source(BGB_P645)
+rule Teilverguetung645Abs1Satz1(w: Werkvertrag, betrag: Money) strict {
+    label de official "Ist das Werk vor der Abnahme infolge eines Mangels des vom Besteller gelieferten Stoffes oder infolge einer von ihm erteilten Anweisung untergegangen, verschlechtert oder unausführbar geworden, ohne dass ein vom Unternehmer zu vertretender Umstand mitgewirkt hat, so kann der Unternehmer einen der geleisteten Arbeit entsprechenden Teil der Vergütung und Ersatz der nicht inbegriffenen Auslagen verlangen (§ 645 Abs. 1 Satz 1)";
+    label en unofficial "Where before acceptance the work was destroyed, deteriorated or became impracticable as a result of a defect in the material supplied by the customer or of an instruction given by them, without any contribution of a circumstance for which the contractor is responsible, the contractor may demand the part of the compensation corresponding to the work performed and reimbursement of the expenses not included (§ 645 (1) sentence 1)";
+    when untergang_infolge_stoffmangel_oder_anweisung_645(w);
+    when kein_vom_unternehmer_zu_vertretender_umstand_645(w);
+    when geleisteter_arbeit_entsprechender_teil_645(w, betrag);
+    then teilverguetungsanspruch_645(w, betrag);
+}
+
+@source(BGB_P645)
+rule Teilverguetung645Abs1Satz2(w: Werkvertrag, betrag: Money, tag: Date) strict {
+    label de official "Das Gleiche gilt, wenn der Vertrag in Gemäßheit des § 643 aufgehoben wird (§ 645 Abs. 1 Satz 2)";
+    label en unofficial "The same applies where the contract is terminated pursuant to § 643 (§ 645 (1) sentence 2)";
+    when vertrag_aufgehoben_643(w, tag);
+    when geleisteter_arbeit_entsprechender_teil_645(w, betrag);
+    then teilverguetungsanspruch_645(w, betrag);
+}
+
+// --- § 646 Vollendung statt Abnahme -----------------------------------------------------------------------------
+
+pub relation werk_vollendet_am_646(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Vollendung des Werkes (§ 646)";
+    label en unofficial "day the work was completed (§ 646)";
+}
+
+@source(BGB_P646)
+rule VollendungStattAbnahme646(w: Werkvertrag, tag: Date) strict {
+    label de official "Ist nach der Beschaffenheit des Werkes die Abnahme ausgeschlossen, so tritt in den Fällen des § 634a Abs. 2 und der §§ 641, 644 und 645 an die Stelle der Abnahme die Vollendung des Werkes (§ 646)";
+    label en unofficial "Where acceptance is excluded by the nature of the work, in the cases of § 634a (2) and §§ 641, 644 and 645 completion of the work takes the place of acceptance (§ 646)";
+    when abnahme_nach_beschaffenheit_ausgeschlossen_640(w);
+    when werk_vollendet_am_646(w, tag);
+    then abnahme_am(w, tag);
+}
+
+// --- § 647 Unternehmerpfandrecht und § 647a Sicherungshypothek der Schiffswerft -----------------------------------
+
+pub relation bewegliche_sache_des_bestellers_im_besitz_647(w: Werkvertrag) kind empirical {
+    label de official "die vom Unternehmer hergestellten oder ausgebesserten beweglichen Sachen des Bestellers sind bei der Herstellung oder zum Zwecke der Ausbesserung in seinen Besitz gelangt (§ 647)";
+    label en unofficial "the customer's movable things produced or repaired by the contractor came into the contractor's possession in the course of production or for the purpose of repair (§ 647)";
+}
+pub relation unternehmerpfandrecht_647(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer hat für seine Forderungen aus dem Vertrag ein Pfandrecht an den Sachen des Bestellers (§ 647)";
+    label en unofficial "the contractor has a lien over the customer's things for their claims under the contract (§ 647)";
+}
+
+@source(BGB_P647)
+rule Unternehmerpfandrecht647(w: Werkvertrag) strict {
+    label de official "Der Unternehmer hat für seine Forderungen aus dem Vertrag ein Pfandrecht an den von ihm hergestellten oder ausgebesserten beweglichen Sachen des Bestellers, wenn sie bei der Herstellung oder zum Zwecke der Ausbesserung in seinen Besitz gelangt sind (§ 647)";
+    label en unofficial "The contractor has a lien over the customer's movable things produced or repaired by them for their claims under the contract, where those things came into their possession in the course of production or for the purpose of repair (§ 647)";
+    when bewegliche_sache_des_bestellers_im_besitz_647(w);
+    then unternehmerpfandrecht_647(w);
+}
+
+pub relation schiffswerft_forderung_647a(w: Werkvertrag) kind empirical {
+    label de official "der Inhaber einer Schiffswerft hat Forderungen aus dem Bau oder der Ausbesserung eines Schiffes (§ 647a Satz 1)";
+    label en unofficial "the owner of a shipyard has claims from the building or repair of a ship (§ 647a sentence 1)";
+}
+pub relation schiffshypothekenanspruch_647a(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "Anspruch auf Einräumung einer Schiffshypothek an dem Schiffsbauwerk oder dem Schiff des Bestellers (§ 647a Satz 1); § 647 findet keine Anwendung (Satz 3)";
+    label en unofficial "claim to the grant of a ship mortgage over the ship under construction or the customer's ship (§ 647a sentence 1); § 647 does not apply (sentence 3)";
+}
+
+@source(BGB_P647a)
+rule Schiffshypothek647a(w: Werkvertrag) strict {
+    label de official "Der Inhaber einer Schiffswerft kann für seine Forderungen aus dem Bau oder der Ausbesserung eines Schiffes die Einräumung einer Schiffshypothek an dem Schiffsbauwerk oder dem Schiff des Bestellers verlangen (§ 647a Satz 1)";
+    label en unofficial "The owner of a shipyard may demand, for their claims from the building or repair of a ship, the grant of a ship mortgage over the ship under construction or the customer's ship (§ 647a sentence 1)";
+    when schiffswerft_forderung_647a(w);
+    then schiffshypothekenanspruch_647a(w);
+}
+
+// --- § 648 Kündigungsrecht des Bestellers ------------------------------------------------------------------------
+//
+// Satz 3 nennt die Vermutung: fünf vom Hundert der auf den noch nicht
+// erbrachten Teil der Werkleistung entfallenden vereinbarten Vergütung
+// (§ 648 Satz 3) — eine Division je Größe, gerundet auf den Cent.
+
+pub relation werk_noch_nicht_vollendet_648(w: Werkvertrag) kind empirical {
+    label de official "das Werk ist noch nicht vollendet (§ 648 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the work is not yet completed (§ 648 sentence 1) — express statement of the case";
+}
+pub relation kuendigung_des_bestellers_648(w: Werkvertrag) kind empirical {
+    label de official "der Besteller kündigt den Vertrag (§ 648 Satz 1)";
+    label en unofficial "the customer terminates the contract (§ 648 sentence 1)";
+}
+pub relation verguetung_fuer_nicht_erbrachten_teil_648(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die auf den noch nicht erbrachten Teil der Werkleistung entfallende vereinbarte Vergütung (§ 648 Satz 3)";
+    label en unofficial "the agreed compensation attributable to the part of the work not yet performed (§ 648 sentence 3)";
+}
+pub relation verguetungsanspruch_nach_kuendigung_648(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "dem Unternehmer zustehender Teil der Vergütung nach der Kündigung des Bestellers — vermutete fünf vom Hundert des nicht erbrachten Teils (§ 648 Satz 3)";
+    label en unofficial "part of the compensation to which the contractor is entitled after the customer's termination — presumed five per cent of the part not performed (§ 648 sentence 3)";
+}
+pub relation hoehere_ersparnis_nachgewiesen_648(w: Werkvertrag) kind empirical {
+    label de official "es ist nachgewiesen, dass dem Unternehmer nach Anrechnung des Ersparten und anderweit Erworbenen ein anderer Betrag als die vermuteten fünf vom Hundert zusteht (§ 648 Satz 2, 3) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "it has been proved that, after setting off what was saved and otherwise earned, the contractor is entitled to an amount other than the presumed five per cent (§ 648 sentences 2, 3) — express rebutting evidence of the case";
+}
+pub relation kuendigungsrecht_des_bestellers_648(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann bis zur Vollendung des Werkes jederzeit den Vertrag kündigen (§ 648 Satz 1)";
+    label en unofficial "the customer may terminate the contract at any time until completion of the work (§ 648 sentence 1)";
+}
+
+@source(BGB_P648)
+rule Kuendigungsrecht648Satz1(w: Werkvertrag) strict {
+    label de official "Der Besteller kann bis zur Vollendung des Werkes jederzeit den Vertrag kündigen (§ 648 Satz 1)";
+    label en unofficial "The customer may terminate the contract at any time until completion of the work (§ 648 sentence 1)";
+    when werk_noch_nicht_vollendet_648(w);
+    then kuendigungsrecht_des_bestellers_648(w);
+}
+
+@source(BGB_P648)
+presumption Verguetungsvermutung648Satz3(w: Werkvertrag, betrag: Money) {
+    label de official "Es wird vermutet, dass dem Unternehmer nach der Kündigung des Bestellers 5 vom Hundert der auf den noch nicht erbrachten Teil der Werkleistung entfallenden vereinbarten Vergütung zustehen (§ 648 Satz 3) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "It is presumed that after the customer's termination the contractor is entitled to 5 per cent of the agreed compensation attributable to the part of the work not yet performed (§ 648 sentence 3) — one division, rounded to the cent (ledger D-07-07)";
+    when kuendigung_des_bestellers_648(w)
+        and verguetung_fuer_nicht_erbrachten_teil_648(w, betrag);
+    presume verguetungsanspruch_nach_kuendigung_648(w, div_round(betrag * 5, 100 * 1.0, 2, "HALF_UP"));
+    unless hoehere_ersparnis_nachgewiesen_648(w)
+        and verguetung_fuer_nicht_erbrachten_teil_648(w, betrag)
+        then not verguetungsanspruch_nach_kuendigung_648(w, div_round(betrag * 5, 100 * 1.0, 2, "HALF_UP"));
+}
+
+// --- § 648a Kündigung aus wichtigem Grund --------------------------------------------------------------------------
+
+@source(BGB_P648a)
+pub external judgment relation wichtiger_grund_648a(w: Werkvertrag, kuendigender: Person) {
+    authority Court;
+    label de official "§ 648a Abs. 1 Satz 2. Dem kündigenden Teil kann unter Berücksichtigung aller Umstände des Einzelfalls und unter Abwägung der beiderseitigen Interessen die Fortsetzung des Vertragsverhältnisses bis zur Fertigstellung des Werks nicht zugemutet werden";
+    label en unofficial "§ 648a (1) sentence 2. Having regard to all circumstances of the individual case and weighing both parties' interests, the terminating party cannot be expected to continue the contractual relationship until completion of the work";
+}
+pub relation kuendigung_aus_wichtigem_grund_zulaessig_648a(w: Werkvertrag, kuendigender: Person) kind institutional {
+    key(w, kuendigender);
+    label de official "die Kündigung des Vertrags aus wichtigem Grund ohne Einhaltung einer Kündigungsfrist ist zulässig (§ 648a Abs. 1 Satz 1)";
+    label en unofficial "termination of the contract for good cause without observing a notice period is permitted (§ 648a (1) sentence 1)";
+}
+
+@source(BGB_P648a)
+rule KuendigungWichtigerGrund648aAbs1(w: Werkvertrag, k: Person) strict {
+    label de official "Beide Vertragsparteien können den Vertrag aus wichtigem Grund ohne Einhaltung einer Kündigungsfrist kündigen (§ 648a Abs. 1 Satz 1)";
+    label en unofficial "Both parties may terminate the contract for good cause without observing a notice period (§ 648a (1) sentence 1)";
+    when wichtiger_grund_648a(w, k);
+    then kuendigung_aus_wichtigem_grund_zulaessig_648a(w, k);
+}
+
+pub relation teilkuendigung_auf_abgrenzbaren_teil_648a(w: Werkvertrag) kind empirical {
+    label de official "die Teilkündigung bezieht sich auf einen abgrenzbaren Teil des geschuldeten Werks (§ 648a Abs. 2)";
+    label en unofficial "the partial termination relates to a separable part of the work owed (§ 648a (2))";
+}
+pub relation teilkuendigung_zulaessig_648a(w: Werkvertrag, kuendigender: Person) kind institutional {
+    key(w, kuendigender);
+    label de official "die Teilkündigung ist zulässig (§ 648a Abs. 2)";
+    label en unofficial "the partial termination is permissible (§ 648a (2))";
+}
+
+@source(BGB_P648a)
+rule Teilkuendigung648aAbs2(w: Werkvertrag, k: Person) strict {
+    label de official "Eine Teilkündigung ist möglich; sie muss sich auf einen abgrenzbaren Teil des geschuldeten Werks beziehen (§ 648a Abs. 2)";
+    label en unofficial "A partial termination is possible; it must relate to a separable part of the work owed (§ 648a (2))";
+    when kuendigung_aus_wichtigem_grund_zulaessig_648a(w, k);
+    when teilkuendigung_auf_abgrenzbaren_teil_648a(w);
+    then teilkuendigung_zulaessig_648a(w, k);
+}
+
+pub relation mitwirkung_an_leistungsstandfeststellung_verweigert_648a(w: Werkvertrag, p: Person) kind empirical {
+    label de official "eine Vertragspartei verweigert die Mitwirkung an der gemeinsamen Feststellung des Leistungsstandes oder bleibt dem Termin fern (§ 648a Abs. 4 Satz 2)";
+    label en unofficial "a party refuses to participate in the joint determination of the state of performance or fails to attend the appointment (§ 648a (4) sentence 2)";
+}
+pub relation fernbleiben_nicht_zu_vertreten_und_mitgeteilt_648a(w: Werkvertrag, p: Person) kind empirical {
+    label de official "die Vertragspartei bleibt infolge eines Umstands fern, den sie nicht zu vertreten hat und den sie der anderen Partei unverzüglich mitgeteilt hat (§ 648a Abs. 4 Satz 3)";
+    label en unofficial "the party is absent owing to a circumstance for which they are not responsible and which they communicated to the other party without undue delay (§ 648a (4) sentence 3)";
+}
+pub relation beweislast_fuer_leistungsstand_648a(w: Werkvertrag, p: Person) kind institutional {
+    key(w, p);
+    label de official "die Vertragspartei trifft die Beweislast für den Leistungsstand zum Zeitpunkt der Kündigung (§ 648a Abs. 4 Satz 2)";
+    label en unofficial "the party bears the burden of proving the state of performance at the time of termination (§ 648a (4) sentence 2)";
+}
+
+@source(BGB_P648a)
+rule BeweislastLeistungsstand648aAbs4(w: Werkvertrag, p: Person) strict {
+    label de official "Verweigert eine Vertragspartei die Mitwirkung oder bleibt sie einem Termin zur Leistungsstandfeststellung fern, trifft sie die Beweislast für den Leistungsstand zum Zeitpunkt der Kündigung; dies gilt nicht bei nicht zu vertretendem und unverzüglich mitgeteiltem Fernbleiben (§ 648a Abs. 4 Satz 2, 3)";
+    label en unofficial "Where a party refuses to participate or fails to attend an appointment for determining the state of performance, that party bears the burden of proving the state of performance at the time of termination; this does not apply where the absence is not their responsibility and was communicated without undue delay (§ 648a (4) sentences 2, 3)";
+    when mitwirkung_an_leistungsstandfeststellung_verweigert_648a(w, p);
+    when not fernbleiben_nicht_zu_vertreten_und_mitgeteilt_648a(w, p);
+    then beweislast_fuer_leistungsstand_648a(w, p);
+}
+
+pub relation verguetung_fuer_erbrachten_teil_648a(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die auf den bis zur Kündigung erbrachten Teil des Werks entfallende Vergütung (§ 648a Abs. 5)";
+    label en unofficial "the compensation attributable to the part of the work performed up to the termination (§ 648a (5))";
+}
+pub relation verguetungsanspruch_nach_648a(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "der Unternehmer ist nur berechtigt, die auf den bis zur Kündigung erbrachten Teil des Werks entfallende Vergütung zu verlangen (§ 648a Abs. 5)";
+    label en unofficial "the contractor is entitled only to the compensation attributable to the part of the work performed up to the termination (§ 648a (5))";
+}
+
+@source(BGB_P648a)
+rule VerguetungNachKuendigung648aAbs5(w: Werkvertrag, k: Person, betrag: Money) strict {
+    label de official "Kündigt eine Vertragspartei aus wichtigem Grund, ist der Unternehmer nur berechtigt, die Vergütung zu verlangen, die auf den bis zur Kündigung erbrachten Teil des Werks entfällt (§ 648a Abs. 5)";
+    label en unofficial "Where a party terminates for good cause, the contractor is entitled only to the compensation attributable to the part of the work performed up to the termination (§ 648a (5))";
+    when kuendigung_aus_wichtigem_grund_zulaessig_648a(w, k);
+    when verguetung_fuer_erbrachten_teil_648a(w, betrag);
+    then verguetungsanspruch_nach_648a(w, betrag);
+}
+
+// --- § 649 Kostenanschlag -------------------------------------------------------------------------------------------
+
+pub relation kostenanschlag_ohne_gewaehr_649(w: Werkvertrag) kind empirical {
+    label de official "dem Vertrag ist ein Kostenanschlag zugrunde gelegt worden, ohne dass der Unternehmer die Gewähr für seine Richtigkeit übernommen hat (§ 649 Abs. 1)";
+    label en unofficial "a cost estimate was made the basis of the contract without the contractor guaranteeing its accuracy (§ 649 (1))";
+}
+@source(BGB_P649)
+pub external judgment relation wesentliche_ueberschreitung_des_anschlags_649(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 649 Abs. 1. Das Werk ist nicht ohne eine wesentliche Überschreitung des Kostenanschlags ausführbar";
+    label en unofficial "§ 649 (1). The work cannot be carried out without a substantial overrun of the cost estimate";
+}
+pub relation kuendigung_wegen_ueberschreitung_649(w: Werkvertrag) kind empirical {
+    label de official "der Besteller kündigt den Vertrag wegen der wesentlichen Überschreitung des Kostenanschlags (§ 649 Abs. 1)";
+    label en unofficial "the customer terminates the contract on account of the substantial overrun of the cost estimate (§ 649 (1))";
+}
+pub relation anzeige_der_ueberschreitung_erstattet_649(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat dem Besteller die zu erwartende Überschreitung angezeigt (§ 649 Abs. 2)";
+    label en unofficial "the contractor notified the customer of the expected overrun (§ 649 (2))";
+}
+pub relation nur_teilverguetungsanspruch_649(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "dem Unternehmer steht nur der in § 645 Abs. 1 bestimmte Anspruch zu (§ 649 Abs. 1)";
+    label en unofficial "the contractor is entitled only to the claim determined in § 645 (1) (§ 649 (1))";
+}
+
+@source(BGB_P649)
+rule Kostenanschlagsueberschreitung649Abs1(w: Werkvertrag, betrag: Money) strict {
+    label de official "Ergibt sich, dass das Werk nicht ohne eine wesentliche Überschreitung des ohne Gewähr zugrunde gelegten Kostenanschlags ausführbar ist, so steht dem Unternehmer, wenn der Besteller den Vertrag aus diesem Grund kündigt, nur der im § 645 Abs. 1 bestimmte Anspruch zu (§ 649 Abs. 1)";
+    label en unofficial "Where it turns out that the work cannot be carried out without a substantial overrun of the cost estimate made the basis of the contract without guarantee, the contractor, if the customer terminates on that ground, is entitled only to the claim determined in § 645 (1) (§ 649 (1))";
+    when kostenanschlag_ohne_gewaehr_649(w);
+    when wesentliche_ueberschreitung_des_anschlags_649(w);
+    when kuendigung_wegen_ueberschreitung_649(w);
+    when geleisteter_arbeit_entsprechender_teil_645(w, betrag);
+    then nur_teilverguetungsanspruch_649(w, betrag);
+}
+
+@source(BGB_P649)
+rule Anzeigepflicht649Abs2(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Ist eine wesentliche Überschreitung des Anschlags zu erwarten, so hat der Unternehmer dem Besteller unverzüglich Anzeige zu machen (§ 649 Abs. 2)";
+    label en unofficial "Where a substantial overrun of the estimate is to be expected, the contractor must notify the customer without undue delay (§ 649 (2))";
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when kostenanschlag_ohne_gewaehr_649(w);
+    when wesentliche_ueberschreitung_des_anschlags_649(w);
+    then duty UeberschreitungAnzeigen649 {
+        bearer u;
+        achieve anzeige_der_ueberschreitung_erstattet_649(w) during [schluss, infinity);
+    };
+}
+
+// --- § 650 Werklieferungsvertrag --------------------------------------------------------------------------------------
+
+pub relation lieferung_herzustellender_beweglicher_sachen_650(w: Werkvertrag) kind empirical {
+    label de official "der Vertrag hat die Lieferung herzustellender oder zu erzeugender beweglicher Sachen zum Gegenstand (§ 650 Abs. 1 Satz 1)";
+    label en unofficial "the contract has as its object the delivery of movable things to be produced or manufactured (§ 650 (1) sentence 1)";
+}
+pub relation kaufrecht_anwendbar_650(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "auf den Vertrag finden die Vorschriften über den Kauf Anwendung (§ 650 Abs. 1 Satz 1) — die Kaufregeln gehören de.bgb.kauf";
+    label en unofficial "the provisions on sale apply to the contract (§ 650 (1) sentence 1) — the rules on sale belong to de.bgb.kauf";
+}
+
+@source(BGB_P650)
+rule Werklieferungsvertrag650Abs1(w: Werkvertrag) strict {
+    label de official "Auf einen Vertrag, der die Lieferung herzustellender oder zu erzeugender beweglicher Sachen zum Gegenstand hat, finden die Vorschriften über den Kauf Anwendung (§ 650 Abs. 1 Satz 1)";
+    label en unofficial "The provisions on sale apply to a contract whose object is the delivery of movable things to be produced or manufactured (§ 650 (1) sentence 1)";
+    when lieferung_herzustellender_beweglicher_sachen_650(w);
+    then kaufrecht_anwendbar_650(w);
+}

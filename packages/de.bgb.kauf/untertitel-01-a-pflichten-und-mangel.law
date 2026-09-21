@@ -1,0 +1,682 @@
+// --- Untertitel 1 Allgemeine Vorschriften, erster Teil
+// --- Pflichten, Sachmangel, Rechtsmangel und Rechte des Käufers
+// --- (§§ 433–437, 442–445)
+//
+// BAU. § 434 bestimmt den Mangel NEGATIV: „Die Sache ist frei von
+// Sachmängeln, wenn sie … entspricht.“ Deshalb trägt jede der drei
+// Anforderungsgruppen (Absätze 2, 3, 4) ihre eigenen POSITIVEN Eingaben, und
+// der Mangel folgt aus deren ausdrücklicher Verneinung durch den Fall. Eine
+// Regel je Nummer des geschlossenen Katalogs: eine Disjunktion im Regelkörper
+// würde zu Regeln `Name/alt/N` absinken, auf die kein `applied(Name)` passt.
+//
+// DIE DREI SPERREN. §§ 442, 444 und 445 nehmen dem Käufer die Rechte des
+// § 437 wieder weg. Sie sind als POSITIVE institutionelle Relation
+// (`rechte_wegen_mangels_ausgeschlossen`) ausgeführt, die § 437 über `not`
+// liest: als negative Köpfe geschrieben gäben sie auf demselben Fall BOTH
+// (D-03-05 der Nachbarsitzung).
+
+// --- § 433 Vertragstypische Pflichten beim Kaufvertrag --------------------------------------------
+
+pub relation pflicht_uebergabe_und_eigentumsverschaffung(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, dem Käufer die Sache zu übergeben und das Eigentum an der Sache zu verschaffen (§ 433 Abs. 1 Satz 1)";
+    label en unofficial "seller's duty to deliver the thing to the buyer and to procure ownership of it (§ 433 (1) sentence 1)";
+}
+pub relation pflicht_mangelfreie_verschaffung(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, dem Käufer die Sache frei von Sach- und Rechtsmängeln zu verschaffen (§ 433 Abs. 1 Satz 2)";
+    label en unofficial "seller's duty to procure the thing free from material and legal defects (§ 433 (1) sentence 2)";
+}
+pub relation pflicht_kaufpreiszahlung_und_abnahme(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Pflicht des Käufers, den vereinbarten Kaufpreis zu zahlen und die gekaufte Sache abzunehmen (§ 433 Abs. 2)";
+    label en unofficial "buyer's duty to pay the agreed price and to accept the thing bought (§ 433 (2))";
+}
+
+@source(BGB_P433)
+rule Pflichten433Abs1Satz1(k: Kaufvertrag, v: Person) strict {
+    label de official "Durch den Kaufvertrag wird der Verkäufer einer Sache verpflichtet, dem Käufer die Sache zu übergeben und das Eigentum an der Sache zu verschaffen (§ 433 Abs. 1 Satz 1)";
+    label en unofficial "By the contract of sale the seller of a thing is obliged to deliver the thing to the buyer and to procure ownership of it (§ 433 (1) sentence 1)";
+    when verkaeufer(k, v);
+    then pflicht_uebergabe_und_eigentumsverschaffung(k, v);
+}
+
+@source(BGB_P433)
+rule Pflichten433Abs1Satz2(k: Kaufvertrag, v: Person) strict {
+    label de official "Der Verkäufer hat dem Käufer die Sache frei von Sach- und Rechtsmängeln zu verschaffen (§ 433 Abs. 1 Satz 2)";
+    label en unofficial "The seller must procure the thing for the buyer free from material and legal defects (§ 433 (1) sentence 2)";
+    when verkaeufer(k, v);
+    then pflicht_mangelfreie_verschaffung(k, v);
+}
+
+@source(BGB_P433)
+rule Pflichten433Abs2(k: Kaufvertrag, ka: Person) strict {
+    label de official "Der Käufer ist verpflichtet, dem Verkäufer den vereinbarten Kaufpreis zu zahlen und die gekaufte Sache abzunehmen (§ 433 Abs. 2)";
+    label en unofficial "The buyer is obliged to pay the seller the agreed purchase price and to accept the thing bought (§ 433 (2))";
+    when kaeufer(k, ka);
+    then pflicht_kaufpreiszahlung_und_abnahme(k, ka);
+}
+
+// --- § 433: normative positions, additive to the existing duty relations ----
+
+pub relation sache_uebergeben_und_eigentum_verschafft_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "die Sache wurde übergeben und das Eigentum verschafft (§ 433 Abs. 1 Satz 1)";
+    label en unofficial "the thing was delivered and ownership was procured (§ 433 (1) sentence 1)";
+}
+pub relation sache_mangelfrei_verschafft_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "die Sache wurde frei von Sach- und Rechtsmängeln verschafft (§ 433 Abs. 1 Satz 2)";
+    label en unofficial "the thing was procured free from material and legal defects (§ 433 (1) sentence 2)";
+}
+pub relation kaufpreis_gezahlt_und_sache_abgenommen_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Käufer hat den Kaufpreis gezahlt und die Sache abgenommen (§ 433 Abs. 2)";
+    label en unofficial "the buyer paid the purchase price and accepted the thing (§ 433 (2))";
+}
+
+@source(BGB_P433)
+rule Position433Abs1Satz1(k: Kaufvertrag, v: Person, ka: Person, beginn: Date) strict {
+    label de official "Der Verkäufer ist verpflichtet, dem Käufer die Sache zu übergeben und das Eigentum an der Sache zu verschaffen (§ 433 Abs. 1 Satz 1)";
+    label en unofficial "The seller is obliged to deliver the thing to the buyer and procure ownership of it (§ 433 (1) sentence 1)";
+    when verkaeufer(k, v);
+    when kaeufer(k, ka);
+    when vertragsschluss_am(k, beginn);
+    then duty Position433UebergabeEigentum {
+        bearer v;
+        beneficiary ka;
+        achieve sache_uebergeben_und_eigentum_verschafft_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P433)
+rule Position433Abs1Satz2(k: Kaufvertrag, v: Person, ka: Person, beginn: Date) strict {
+    label de official "Der Verkäufer ist verpflichtet, dem Käufer die Sache frei von Sach- und Rechtsmängeln zu verschaffen (§ 433 Abs. 1 Satz 2)";
+    label en unofficial "The seller is obliged to procure the thing for the buyer free from material and legal defects (§ 433 (1) sentence 2)";
+    when verkaeufer(k, v);
+    when kaeufer(k, ka);
+    when vertragsschluss_am(k, beginn);
+    then duty Position433Mangelfreiheit {
+        bearer v;
+        beneficiary ka;
+        achieve sache_mangelfrei_verschafft_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P433)
+rule Position433Abs2(k: Kaufvertrag, v: Person, ka: Person, beginn: Date) strict {
+    label de official "Der Käufer ist verpflichtet, dem Verkäufer den vereinbarten Kaufpreis zu zahlen und die gekaufte Sache abzunehmen (§ 433 Abs. 2)";
+    label en unofficial "The buyer is obliged to pay the agreed price and accept the thing bought (§ 433 (2))";
+    when verkaeufer(k, v);
+    when kaeufer(k, ka);
+    when vertragsschluss_am(k, beginn);
+    then duty Position433ZahlungAbnahme {
+        bearer ka;
+        beneficiary v;
+        achieve kaufpreis_gezahlt_und_sache_abgenommen_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+// --- § 434 Abs. 2: subjektive Anforderungen -------------------------------------------------------
+
+pub relation vereinbarte_beschaffenheit_vorhanden(k: Kaufvertrag) kind empirical {
+    label de official "die Sache hat die vereinbarte Beschaffenheit (§ 434 Abs. 2 Satz 1 Nr. 1); dazu gehören Art, Menge, Qualität, Funktionalität, Kompatibilität, Interoperabilität und sonstige vereinbarte Merkmale (Satz 2)";
+    label en unofficial "the thing has the agreed quality (§ 434 (2) sentence 1 no. 1); this covers kind, quantity, quality, functionality, compatibility, interoperability and other agreed features (sentence 2)";
+}
+pub relation eignung_fuer_vertraglich_vorausgesetzte_verwendung(k: Kaufvertrag) kind empirical {
+    label de official "die Sache eignet sich für die nach dem Vertrag vorausgesetzte Verwendung (§ 434 Abs. 2 Satz 1 Nr. 2)";
+    label en unofficial "the thing is fit for the use presupposed under the contract (§ 434 (2) sentence 1 no. 2)";
+}
+pub relation vereinbartes_zubehoer_uebergeben(k: Kaufvertrag) kind empirical {
+    label de official "die Sache wird mit dem vereinbarten Zubehör und den vereinbarten Anleitungen, einschließlich Montage- und Installationsanleitungen, übergeben (§ 434 Abs. 2 Satz 1 Nr. 3)";
+    label en unofficial "the thing is delivered with the agreed accessories and instructions, including assembly and installation instructions (§ 434 (2) sentence 1 no. 3)";
+}
+pub relation subjektive_anforderungen_erfuellt(k: Kaufvertrag) kind institutional {
+    label de official "die Sache entspricht den subjektiven Anforderungen (§ 434 Abs. 2)";
+    label en unofficial "the thing meets the subjective requirements (§ 434 (2))";
+}
+
+@source(BGB_P434)
+rule SubjektiveAnforderungen434Abs2(k: Kaufvertrag) strict {
+    label de official "Die Sache entspricht den subjektiven Anforderungen, wenn sie die vereinbarte Beschaffenheit hat, sich für die nach dem Vertrag vorausgesetzte Verwendung eignet und mit dem vereinbarten Zubehör und den vereinbarten Anleitungen übergeben wird (§ 434 Abs. 2 Satz 1)";
+    label en unofficial "The thing meets the subjective requirements where it has the agreed quality, is fit for the use presupposed under the contract and is delivered with the agreed accessories and instructions (§ 434 (2) sentence 1)";
+    when vereinbarte_beschaffenheit_vorhanden(k) and eignung_fuer_vertraglich_vorausgesetzte_verwendung(k)
+     and vereinbartes_zubehoer_uebergeben(k);
+    then subjektive_anforderungen_erfuellt(k);
+}
+
+// --- § 434 Abs. 3: objektive Anforderungen --------------------------------------------------------
+
+pub relation eignung_fuer_gewoehnliche_verwendung(k: Kaufvertrag) kind empirical {
+    label de official "die Sache eignet sich für die gewöhnliche Verwendung (§ 434 Abs. 3 Satz 1 Nr. 1)";
+    label en unofficial "the thing is fit for the customary use (§ 434 (3) sentence 1 no. 1)";
+}
+
+@source(BGB_P434)
+pub external judgment relation beschaffenheit_ueblich_und_erwartbar(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 434 Abs. 3 Satz 1 Nr. 2. Die Sache weist eine Beschaffenheit auf, die bei Sachen derselben Art üblich ist und die der Käufer erwarten kann unter Berücksichtigung der Art der Sache; zu der üblichen Beschaffenheit gehören Menge, Qualität und sonstige Merkmale einschließlich Haltbarkeit, Reparierbarkeit, Funktionalität, Kompatibilität und Sicherheit (Satz 2)";
+    label en unofficial "§ 434 (3) sentence 1 no. 2. The thing has a quality that is usual in things of the same kind and that the buyer can expect, having regard to the kind of the thing; usual quality covers quantity, quality and other features including durability, repairability, functionality, compatibility and safety (sentence 2)";
+}
+
+@source(BGB_P434)
+pub external judgment relation erhalt_des_zubehoers_erwartbar(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 434 Abs. 3 Satz 1 Nr. 4. Die Sache wird mit dem Zubehör einschließlich der Verpackung, der Montage- oder Installationsanleitung sowie anderen Anleitungen übergeben, deren Erhalt der Käufer erwarten kann";
+    label en unofficial "§ 434 (3) sentence 1 no. 4. The thing is delivered with the accessories, including packaging, assembly or installation instructions and other instructions, whose receipt the buyer can expect";
+}
+
+pub relation entspricht_probe_oder_muster(k: Kaufvertrag) kind empirical {
+    label de official "die Sache entspricht der Beschaffenheit einer Probe oder eines Musters, die oder das der Verkäufer dem Käufer vor Vertragsschluss zur Verfügung gestellt hat (§ 434 Abs. 3 Satz 1 Nr. 3)";
+    label en unofficial "the thing corresponds to the quality of a sample or specimen made available by the seller before the contract was concluded (§ 434 (3) sentence 1 no. 3)";
+}
+pub relation keine_abweichende_vereinbarung_ueber_objektive_anforderungen(k: Kaufvertrag) kind empirical {
+    label de official "über die objektiven Anforderungen ist nichts anderes wirksam vereinbart worden (§ 434 Abs. 3 Satz 1 Eingangssatz) — ausdrückliche Angabe des Falls; das Schweigen des Falls verneint nichts";
+    label en unofficial "nothing else has been validly agreed on the objective requirements (§ 434 (3) sentence 1 opening words) — express statement of the case; silence is not a denial";
+}
+pub relation objektive_anforderungen_erfuellt(k: Kaufvertrag) kind institutional {
+    label de official "die Sache entspricht den objektiven Anforderungen (§ 434 Abs. 3)";
+    label en unofficial "the thing meets the objective requirements (§ 434 (3))";
+}
+
+@source(BGB_P434)
+rule ObjektiveAnforderungen434Abs3(k: Kaufvertrag) strict {
+    label de official "Soweit nicht wirksam etwas anderes vereinbart wurde, entspricht die Sache den objektiven Anforderungen, wenn sie sich für die gewöhnliche Verwendung eignet, eine übliche und erwartbare Beschaffenheit aufweist, der Probe oder dem Muster entspricht und mit dem erwartbaren Zubehör übergeben wird (§ 434 Abs. 3 Satz 1 Nr. 1–4)";
+    label en unofficial "Unless otherwise validly agreed, the thing meets the objective requirements where it is fit for the customary use, has the usual and expectable quality, corresponds to the sample and is delivered with the expectable accessories (§ 434 (3) sentence 1 nos. 1–4)";
+    when keine_abweichende_vereinbarung_ueber_objektive_anforderungen(k)
+     and eignung_fuer_gewoehnliche_verwendung(k) and beschaffenheit_ueblich_und_erwartbar(k)
+     and entspricht_probe_oder_muster(k) and erhalt_des_zubehoers_erwartbar(k);
+    then objektive_anforderungen_erfuellt(k);
+}
+
+// § 434 Abs. 3 Satz 3: die öffentliche Äußerung bindet den Verkäufer NICHT in
+// drei vom Text selbst genannten Fällen. Die Bindung ist deshalb eine
+// poraussierbare Regel mit drei Angriffen, nicht eine Wertung.
+pub relation oeffentliche_aeusserung_der_vertragskette(k: Kaufvertrag) kind empirical {
+    label de official "eine öffentliche Äußerung des Verkäufers oder eines anderen Glieds der Vertragskette, insbesondere in der Werbung oder auf dem Etikett (§ 434 Abs. 3 Satz 1 Nr. 2 Buchst. b)";
+    label en unofficial "a public statement by the seller or another link in the contractual chain, in particular in advertising or on the label (§ 434 (3) sentence 1 no. 2 letter b)";
+}
+pub relation aeusserung_weder_gekannt_noch_kennbar(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer kannte die öffentliche Äußerung nicht und konnte sie auch nicht kennen (§ 434 Abs. 3 Satz 3 Alt. 1)";
+    label en unofficial "the seller neither knew nor could have known the public statement (§ 434 (3) sentence 3 alt. 1)";
+}
+pub relation aeusserung_bei_vertragsschluss_berichtigt(k: Kaufvertrag) kind empirical {
+    label de official "die Äußerung war im Zeitpunkt des Vertragsschlusses in derselben oder in gleichwertiger Weise berichtigt (§ 434 Abs. 3 Satz 3 Alt. 2)";
+    label en unofficial "the statement had been corrected in the same or an equivalent manner by the time the contract was concluded (§ 434 (3) sentence 3 alt. 2)";
+}
+pub relation aeusserung_ohne_einfluss_auf_die_kaufentscheidung(k: Kaufvertrag) kind empirical {
+    label de official "die Äußerung konnte die Kaufentscheidung nicht beeinflussen (§ 434 Abs. 3 Satz 3 Alt. 3)";
+    label en unofficial "the statement could not have influenced the decision to buy (§ 434 (3) sentence 3 alt. 3)";
+}
+pub relation verkaeufer_an_oeffentliche_aeusserung_gebunden(k: Kaufvertrag) kind institutional {
+    label de official "der Verkäufer ist an die öffentliche Äußerung gebunden (§ 434 Abs. 3 Satz 1 Nr. 2 Buchst. b, Satz 3)";
+    label en unofficial "the seller is bound by the public statement (§ 434 (3) sentence 1 no. 2 letter b, sentence 3)";
+}
+
+@source(BGB_P434)
+rule BindungAnOeffentlicheAeusserung(k: Kaufvertrag) defeasible {
+    label de official "Zu der erwartbaren Beschaffenheit gehören die öffentlichen Äußerungen der Vertragskette (§ 434 Abs. 3 Satz 1 Nr. 2 Buchst. b); der Verkäufer ist durch sie nicht gebunden, wenn er sie nicht kannte und auch nicht kennen konnte, wenn sie berichtigt war oder wenn sie die Kaufentscheidung nicht beeinflussen konnte (Satz 3)";
+    label en unofficial "The expectable quality includes public statements made in the contractual chain (§ 434 (3) sentence 1 no. 2 letter b); the seller is not bound where he neither knew nor could have known them, where they had been corrected or where they could not have influenced the decision to buy (sentence 3)";
+    when oeffentliche_aeusserung_der_vertragskette(k);
+    then verkaeufer_an_oeffentliche_aeusserung_gebunden(k);
+    unless aeusserung_weder_gekannt_noch_kennbar(k);
+    unless aeusserung_bei_vertragsschluss_berichtigt(k);
+    unless aeusserung_ohne_einfluss_auf_die_kaufentscheidung(k);
+}
+
+// --- § 434 Abs. 4: Montageanforderungen -----------------------------------------------------------
+
+pub relation montage_geschuldet(k: Kaufvertrag) kind empirical {
+    label de official "nach dem Vertrag ist eine Montage durchzuführen (§ 434 Abs. 4 Eingangssatz)";
+    label en unofficial "assembly is to be carried out under the contract (§ 434 (4) opening words)";
+}
+pub relation keine_montage_geschuldet(k: Kaufvertrag) kind empirical {
+    label de official "eine Montage ist nach dem Vertrag nicht durchzuführen (§ 434 Abs. 4 Eingangssatz) — ausdrückliche Angabe des Falls";
+    label en unofficial "no assembly is to be carried out under the contract (§ 434 (4) opening words) — express statement of the case";
+}
+pub relation montage_sachgemaess_durchgefuehrt(k: Kaufvertrag) kind empirical {
+    label de official "die Montage ist sachgemäß durchgeführt worden (§ 434 Abs. 4 Nr. 1)";
+    label en unofficial "the assembly was carried out properly (§ 434 (4) no. 1)";
+}
+pub relation unsachgemaesse_montage_ohne_zurechnung(k: Kaufvertrag) kind empirical {
+    label de official "die Montage ist zwar unsachgemäß durchgeführt worden, dies beruht jedoch weder auf einer unsachgemäßen Montage durch den Verkäufer noch auf einem Mangel in der vom Verkäufer übergebenen Anleitung (§ 434 Abs. 4 Nr. 2)";
+    label en unofficial "the assembly was carried out improperly, but this is due neither to improper assembly by the seller nor to a defect in the instructions supplied by him (§ 434 (4) no. 2)";
+}
+pub relation montageanforderungen_erfuellt(k: Kaufvertrag) kind institutional {
+    label de official "die Sache entspricht den Montageanforderungen (§ 434 Abs. 4)";
+    label en unofficial "the thing meets the assembly requirements (§ 434 (4))";
+}
+
+@source(BGB_P434)
+rule Montageanforderungen434Abs4Nr1(k: Kaufvertrag) strict {
+    label de official "Soweit eine Montage durchzuführen ist, entspricht die Sache den Montageanforderungen, wenn die Montage sachgemäß durchgeführt worden ist (§ 434 Abs. 4 Nr. 1)";
+    label en unofficial "In so far as assembly is to be carried out, the thing meets the assembly requirements where the assembly was carried out properly (§ 434 (4) no. 1)";
+    when montage_geschuldet(k) and montage_sachgemaess_durchgefuehrt(k);
+    then montageanforderungen_erfuellt(k);
+}
+
+@source(BGB_P434)
+rule Montageanforderungen434Abs4Nr2(k: Kaufvertrag) strict {
+    label de official "Die Sache entspricht den Montageanforderungen auch dann, wenn die Montage zwar unsachgemäß durchgeführt worden ist, dies jedoch weder auf einer unsachgemäßen Montage durch den Verkäufer noch auf einem Mangel in der vom Verkäufer übergebenen Anleitung beruht (§ 434 Abs. 4 Nr. 2)";
+    label en unofficial "The thing also meets the assembly requirements where the assembly was improper but this is due neither to improper assembly by the seller nor to a defect in his instructions (§ 434 (4) no. 2)";
+    when montage_geschuldet(k) and unsachgemaesse_montage_ohne_zurechnung(k);
+    then montageanforderungen_erfuellt(k);
+}
+
+@source(BGB_P434)
+rule MontageanforderungenOhneMontage(k: Kaufvertrag) strict {
+    label de official "Die Montageanforderungen gelten nur, „soweit eine Montage durchzuführen ist“ (§ 434 Abs. 4 Eingangssatz): ist keine Montage geschuldet, steht die Anforderungsgruppe der Mangelfreiheit nicht entgegen";
+    label en unofficial "The assembly requirements apply only in so far as assembly is to be carried out (§ 434 (4) opening words): where none is owed, this group of requirements does not stand in the way of conformity";
+    when keine_montage_geschuldet(k);
+    then montageanforderungen_erfuellt(k);
+}
+
+// --- § 434 Abs. 1 und Abs. 5: Mangelfreiheit und Aliud --------------------------------------------
+
+pub relation frei_von_sachmaengeln(k: Kaufvertrag) kind institutional {
+    label de official "die Sache ist frei von Sachmängeln (§ 434 Abs. 1)";
+    label en unofficial "the thing is free from material defects (§ 434 (1))";
+}
+pub relation sachmangel(k: Kaufvertrag) kind institutional {
+    label de official "die Sache ist mit einem Sachmangel behaftet (§ 434, § 475b)";
+    label en unofficial "the thing has a material defect (§ 434, § 475b)";
+}
+pub relation andere_als_geschuldete_sache_geliefert(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer liefert eine andere Sache als die vertraglich geschuldete Sache (§ 434 Abs. 5)";
+    label en unofficial "the seller delivers a thing other than the one owed under the contract (§ 434 (5))";
+}
+
+@source(BGB_P434)
+rule FreiVonSachmaengeln434Abs1(k: Kaufvertrag) strict {
+    label de official "Die Sache ist frei von Sachmängeln, wenn sie bei Gefahrübergang den subjektiven Anforderungen, den objektiven Anforderungen und den Montageanforderungen dieser Vorschrift entspricht (§ 434 Abs. 1)";
+    label en unofficial "The thing is free from material defects where, on the passing of risk, it meets the subjective, objective and assembly requirements of this provision (§ 434 (1))";
+    when subjektive_anforderungen_erfuellt(k) and objektive_anforderungen_erfuellt(k)
+     and montageanforderungen_erfuellt(k);
+    then frei_von_sachmaengeln(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs2Nr1(k: Kaufvertrag, v: Person) strict {
+    label de official "Fehlt die vereinbarte Beschaffenheit, so entspricht die Sache den subjektiven Anforderungen nicht und ist mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 2 Satz 1 Nr. 1)";
+    label en unofficial "Where the agreed quality is absent, the thing does not meet the subjective requirements and has a material defect (§ 434 (1), (2) sentence 1 no. 1)";
+    when verkaeufer(k, v) and not vereinbarte_beschaffenheit_vorhanden(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs2Nr2(k: Kaufvertrag, v: Person) strict {
+    label de official "Eignet sich die Sache nicht für die nach dem Vertrag vorausgesetzte Verwendung, so ist sie mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 2 Satz 1 Nr. 2)";
+    label en unofficial "Where the thing is not fit for the use presupposed under the contract it has a material defect (§ 434 (1), (2) sentence 1 no. 2)";
+    when verkaeufer(k, v) and not eignung_fuer_vertraglich_vorausgesetzte_verwendung(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs2Nr3(k: Kaufvertrag, v: Person) strict {
+    label de official "Wird die Sache ohne das vereinbarte Zubehör oder ohne die vereinbarten Anleitungen übergeben, so ist sie mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 2 Satz 1 Nr. 3)";
+    label en unofficial "Where the thing is delivered without the agreed accessories or instructions it has a material defect (§ 434 (1), (2) sentence 1 no. 3)";
+    when verkaeufer(k, v) and not vereinbartes_zubehoer_uebergeben(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs3Nr1(k: Kaufvertrag) strict {
+    label de official "Eignet sich die Sache nicht für die gewöhnliche Verwendung, so entspricht sie den objektiven Anforderungen nicht und ist mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 3 Satz 1 Nr. 1)";
+    label en unofficial "Where the thing is not fit for the customary use it does not meet the objective requirements and has a material defect (§ 434 (1), (3) sentence 1 no. 1)";
+    when keine_abweichende_vereinbarung_ueber_objektive_anforderungen(k) and not eignung_fuer_gewoehnliche_verwendung(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs3Nr2(k: Kaufvertrag) strict {
+    label de official "Weist die Sache nicht die bei Sachen derselben Art übliche und vom Käufer erwartbare Beschaffenheit auf, so ist sie mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 3 Satz 1 Nr. 2) — die Wertung trifft das Gericht";
+    label en unofficial "Where the thing does not have the quality usual in things of the same kind and expectable by the buyer it has a material defect (§ 434 (1), (3) sentence 1 no. 2) — the court makes the evaluation";
+    when keine_abweichende_vereinbarung_ueber_objektive_anforderungen(k) and not beschaffenheit_ueblich_und_erwartbar(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs3Nr3(k: Kaufvertrag) strict {
+    label de official "Entspricht die Sache nicht der Beschaffenheit der Probe oder des Musters, so ist sie mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 3 Satz 1 Nr. 3)";
+    label en unofficial "Where the thing does not correspond to the quality of the sample or specimen it has a material defect (§ 434 (1), (3) sentence 1 no. 3)";
+    when keine_abweichende_vereinbarung_ueber_objektive_anforderungen(k) and not entspricht_probe_oder_muster(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs3Nr4(k: Kaufvertrag) strict {
+    label de official "Wird die Sache ohne das Zubehör und die Anleitungen übergeben, deren Erhalt der Käufer erwarten kann, so ist sie mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 3 Satz 1 Nr. 4)";
+    label en unofficial "Where the thing is delivered without the accessories and instructions whose receipt the buyer can expect it has a material defect (§ 434 (1), (3) sentence 1 no. 4)";
+    when keine_abweichende_vereinbarung_ueber_objektive_anforderungen(k) and not erhalt_des_zubehoers_erwartbar(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs4(k: Kaufvertrag) strict {
+    label de official "Ist eine Montage durchzuführen und ist sie unsachgemäß durchgeführt worden, ohne dass Nummer 2 eingreift, so entspricht die Sache den Montageanforderungen nicht und ist mit einem Sachmangel behaftet (§ 434 Abs. 1, Abs. 4)";
+    label en unofficial "Where assembly is owed and was carried out improperly without no. 2 applying, the thing does not meet the assembly requirements and has a material defect (§ 434 (1), (4))";
+    when montage_geschuldet(k) and not montage_sachgemaess_durchgefuehrt(k)
+     and not unsachgemaesse_montage_ohne_zurechnung(k);
+    then sachmangel(k);
+}
+
+@source(BGB_P434)
+rule Sachmangel434Abs5Aliud(k: Kaufvertrag) strict {
+    label de official "Einem Sachmangel steht es gleich, wenn der Verkäufer eine andere Sache als die vertraglich geschuldete Sache liefert (§ 434 Abs. 5)";
+    label en unofficial "It is equivalent to a material defect if the seller delivers a thing other than the one owed under the contract (§ 434 (5))";
+    when andere_als_geschuldete_sache_geliefert(k);
+    then sachmangel(k);
+}
+
+// --- § 435 Rechtsmangel ---------------------------------------------------------------------------
+
+pub relation dritte_rechte_geltend_machbar(k: Kaufvertrag) kind empirical {
+    label de official "Dritte können in Bezug auf die Sache Rechte gegen den Käufer geltend machen, die im Kaufvertrag nicht übernommen worden sind (§ 435 Satz 1)";
+    label en unofficial "third parties can assert rights against the buyer in respect of the thing which were not assumed in the contract (§ 435 sentence 1)";
+}
+pub relation nicht_bestehendes_recht_im_grundbuch(k: Kaufvertrag) kind empirical {
+    label de official "im Grundbuch ist ein Recht eingetragen, das nicht besteht (§ 435 Satz 2)";
+    label en unofficial "a right which does not exist is registered in the land register (§ 435 sentence 2)";
+}
+pub relation rechtsmangel(k: Kaufvertrag) kind institutional {
+    label de official "die Sache ist mit einem Rechtsmangel behaftet (§ 435)";
+    label en unofficial "the thing has a legal defect (§ 435)";
+}
+pub relation frei_von_rechtsmaengeln(k: Kaufvertrag) kind institutional {
+    label de official "die Sache ist frei von Rechtsmängeln (§ 435 Satz 1)";
+    label en unofficial "the thing is free from legal defects (§ 435 sentence 1)";
+}
+pub relation mangel(k: Kaufvertrag) kind institutional {
+    label de official "die Sache ist mangelhaft: Sachmangel oder Rechtsmangel (§ 437 Eingangssatz)";
+    label en unofficial "the thing is defective: material or legal defect (§ 437 opening words)";
+}
+
+@source(BGB_P435)
+rule Rechtsmangel435Satz1(k: Kaufvertrag) strict {
+    label de official "Die Sache ist frei von Rechtsmängeln, wenn Dritte in Bezug auf die Sache keine oder nur die im Kaufvertrag übernommenen Rechte gegen den Käufer geltend machen können (§ 435 Satz 1) — im Umkehrschluss der Rechtsmangel";
+    label en unofficial "The thing is free from legal defects where third parties can assert no rights, or only the rights assumed in the contract, against the buyer (§ 435 sentence 1) — conversely, the legal defect";
+    when dritte_rechte_geltend_machbar(k);
+    then rechtsmangel(k);
+}
+
+@source(BGB_P435)
+rule Rechtsmangel435Satz2(k: Kaufvertrag) strict {
+    label de official "Einem Rechtsmangel steht es gleich, wenn im Grundbuch ein Recht eingetragen ist, das nicht besteht (§ 435 Satz 2)";
+    label en unofficial "It is equivalent to a legal defect if a right which does not exist is registered in the land register (§ 435 sentence 2)";
+    when nicht_bestehendes_recht_im_grundbuch(k);
+    then rechtsmangel(k);
+}
+
+@source(BGB_P435)
+rule FreiVonRechtsmaengeln435(k: Kaufvertrag, v: Person) strict {
+    label de official "Die Sache ist frei von Rechtsmängeln, wenn Dritte keine nicht übernommenen Rechte geltend machen können und kein nicht bestehendes Recht im Grundbuch eingetragen ist (§ 435)";
+    label en unofficial "The thing is free from legal defects where third parties can assert no rights not assumed and no non-existent right is registered (§ 435)";
+    when verkaeufer(k, v) and not dritte_rechte_geltend_machbar(k) and not nicht_bestehendes_recht_im_grundbuch(k);
+    then frei_von_rechtsmaengeln(k);
+}
+
+@source(BGB_P437)
+rule MangelhaftDurchSachmangel(k: Kaufvertrag) strict {
+    label de official "Ist die Sache mit einem Sachmangel behaftet, so ist sie mangelhaft (§ 437 Eingangssatz)";
+    label en unofficial "Where the thing has a material defect it is defective (§ 437 opening words)";
+    when sachmangel(k);
+    then mangel(k);
+}
+
+@source(BGB_P437)
+rule MangelhaftDurchRechtsmangel(k: Kaufvertrag) strict {
+    label de official "Ist die Sache mit einem Rechtsmangel behaftet, so ist sie mangelhaft (§ 437 Eingangssatz)";
+    label en unofficial "Where the thing has a legal defect it is defective (§ 437 opening words)";
+    when rechtsmangel(k);
+    then mangel(k);
+}
+
+// --- §§ 442, 444, 445: die drei Sperren der Käuferrechte ------------------------------------------
+
+pub relation kenntnis_des_mangels_bei_vertragsschluss(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer kennt den Mangel bei Vertragsschluss (§ 442 Abs. 1 Satz 1) — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "the buyer knows of the defect when the contract is concluded (§ 442 (1) sentence 1) — established fact, origin adjudicated";
+}
+
+@source(BGB_P442)
+pub external judgment relation unkenntnis_infolge_grober_fahrlaessigkeit(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 442 Abs. 1 Satz 2. Dem Käufer ist der Mangel infolge grober Fahrlässigkeit unbekannt geblieben";
+    label en unofficial "§ 442 (1) sentence 2. The defect remained unknown to the buyer as a result of gross negligence";
+}
+
+pub relation mangel_arglistig_verschwiegen(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer hat den Mangel arglistig verschwiegen (§§ 438 Abs. 3, 442 Abs. 1 Satz 2, 444, 445) — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "the seller fraudulently concealed the defect (§§ 438 (3), 442 (1) sentence 2, 444, 445) — established fact, origin adjudicated";
+}
+pub relation beschaffenheitsgarantie_uebernommen(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer hat eine Garantie für die Beschaffenheit der Sache übernommen (§§ 442 Abs. 1 Satz 2, 444, 445)";
+    label en unofficial "the seller has assumed a guarantee of the quality of the thing (§§ 442 (1) sentence 2, 444, 445)";
+}
+pub relation haftungsausschlussvereinbarung(k: Kaufvertrag) kind empirical {
+    label de official "eine Vereinbarung, durch welche die Rechte des Käufers wegen eines Mangels ausgeschlossen oder beschränkt werden (§ 444)";
+    label en unofficial "an agreement excluding or limiting the buyer's rights in respect of a defect (§ 444)";
+}
+pub relation kein_haftungsausschluss(k: Kaufvertrag) kind empirical {
+    label de official "eine Vereinbarung über den Ausschluss oder die Beschränkung der Mängelrechte besteht nicht (§ 444) — ausdrückliche Angabe des Falls";
+    label en unofficial "no agreement excluding or limiting the rights in respect of defects exists (§ 444) — express statement of the case";
+}
+pub relation pfandverkauf_in_oeffentlicher_versteigerung(k: Kaufvertrag) kind empirical {
+    label de official "die Sache wird auf Grund eines Pfandrechts in einer öffentlichen Versteigerung unter der Bezeichnung als Pfand verkauft (§ 445)";
+    label en unofficial "the thing is sold by virtue of a pledge at a public auction described as a pledge (§ 445)";
+}
+pub relation rechte_wegen_mangels_ausgeschlossen(k: Kaufvertrag) kind institutional {
+    label de official "die Rechte des Käufers wegen eines Mangels sind ausgeschlossen (§§ 442, 445)";
+    label en unofficial "the buyer's rights in respect of a defect are excluded (§§ 442, 445)";
+}
+pub relation berufung_auf_haftungsausschluss_unwirksam(k: Kaufvertrag) kind institutional {
+    label de official "der Verkäufer kann sich auf die Haftungsausschlussvereinbarung nicht berufen (§ 444)";
+    label en unofficial "the seller cannot rely on the agreement excluding liability (§ 444)";
+}
+
+@source(BGB_P442)
+rule Ausschluss442Abs1Satz1(k: Kaufvertrag) strict {
+    label de official "Die Rechte des Käufers wegen eines Mangels sind ausgeschlossen, wenn er bei Vertragsschluss den Mangel kennt (§ 442 Abs. 1 Satz 1)";
+    label en unofficial "The buyer's rights in respect of a defect are excluded where he knows of the defect when the contract is concluded (§ 442 (1) sentence 1)";
+    when kenntnis_des_mangels_bei_vertragsschluss(k);
+    then rechte_wegen_mangels_ausgeschlossen(k);
+}
+
+@source(BGB_P442)
+rule Ausschluss442Abs1Satz2(k: Kaufvertrag) strict {
+    label de official "Ist dem Käufer ein Mangel infolge grober Fahrlässigkeit unbekannt geblieben, kann er Rechte wegen dieses Mangels nur geltend machen, wenn der Verkäufer den Mangel arglistig verschwiegen oder eine Garantie für die Beschaffenheit der Sache übernommen hat (§ 442 Abs. 1 Satz 2)";
+    label en unofficial "Where the defect remained unknown to the buyer as a result of gross negligence he may assert rights only if the seller fraudulently concealed the defect or assumed a guarantee of quality (§ 442 (1) sentence 2)";
+    when unkenntnis_infolge_grober_fahrlaessigkeit(k) and not mangel_arglistig_verschwiegen(k)
+     and not beschaffenheitsgarantie_uebernommen(k);
+    then rechte_wegen_mangels_ausgeschlossen(k);
+}
+
+pub relation pflicht_zur_beseitigung_des_eingetragenen_rechts(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, ein im Grundbuch eingetragenes Recht zu beseitigen, auch wenn es der Käufer kennt (§ 442 Abs. 2)";
+    label en unofficial "seller's duty to remove a right registered in the land register even if the buyer knows of it (§ 442 (2))";
+}
+pub relation eingetragenes_recht_beseitigt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "das eingetragene Recht wurde beseitigt (§ 442 Abs. 2)";
+    label en unofficial "the registered right was removed (§ 442 (2))";
+}
+
+@source(BGB_P442)
+rule Beseitigungspflicht442Abs2(k: Kaufvertrag, v: Person) strict {
+    label de official "Ein im Grundbuch eingetragenes Recht hat der Verkäufer zu beseitigen, auch wenn es der Käufer kennt (§ 442 Abs. 2)";
+    label en unofficial "The seller must remove a right registered in the land register even if the buyer knows of it (§ 442 (2))";
+    when verkaeufer(k, v) and nicht_bestehendes_recht_im_grundbuch(k);
+    then pflicht_zur_beseitigung_des_eingetragenen_rechts(k, v);
+}
+
+@source(BGB_P442)
+rule Position442Beseitigung(k: Kaufvertrag, v: Person, beginn: Date) strict {
+    label de official "Der Verkäufer ist verpflichtet, ein im Grundbuch eingetragenes Recht zu beseitigen (§ 442 Abs. 2)";
+    label en unofficial "The seller is obliged to remove a registered right (§ 442 (2))";
+    when verkaeufer(k, v) and nicht_bestehendes_recht_im_grundbuch(k)
+     and vertragsschluss_am(k, beginn);
+    then duty Duty442Beseitigung {
+        bearer v;
+        achieve eingetragenes_recht_beseitigt_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P444)
+rule Haftungsausschluss444Arglist(k: Kaufvertrag) strict {
+    label de official "Auf eine Vereinbarung, durch welche die Rechte des Käufers wegen eines Mangels ausgeschlossen oder beschränkt werden, kann sich der Verkäufer nicht berufen, soweit er den Mangel arglistig verschwiegen hat (§ 444)";
+    label en unofficial "The seller cannot rely on an agreement excluding or limiting the buyer's rights in so far as he fraudulently concealed the defect (§ 444)";
+    when haftungsausschlussvereinbarung(k) and mangel_arglistig_verschwiegen(k);
+    then berufung_auf_haftungsausschluss_unwirksam(k);
+}
+
+@source(BGB_P444)
+rule Haftungsausschluss444Garantie(k: Kaufvertrag) strict {
+    label de official "Auf eine solche Vereinbarung kann sich der Verkäufer auch dann nicht berufen, soweit er eine Garantie für die Beschaffenheit der Sache übernommen hat (§ 444)";
+    label en unofficial "Nor can the seller rely on such an agreement in so far as he assumed a guarantee of the quality of the thing (§ 444)";
+    when haftungsausschlussvereinbarung(k) and beschaffenheitsgarantie_uebernommen(k);
+    then berufung_auf_haftungsausschluss_unwirksam(k);
+}
+
+@source(BGB_P445)
+rule Haftungsbegrenzung445(k: Kaufvertrag) strict {
+    label de official "Wird eine Sache auf Grund eines Pfandrechts in einer öffentlichen Versteigerung unter der Bezeichnung als Pfand verkauft, so stehen dem Käufer Rechte wegen eines Mangels nur zu, wenn der Verkäufer den Mangel arglistig verschwiegen oder eine Garantie übernommen hat (§ 445)";
+    label en unofficial "Where a thing is sold by virtue of a pledge at a public auction described as a pledge, the buyer has rights in respect of a defect only if the seller fraudulently concealed it or assumed a guarantee (§ 445)";
+    when pfandverkauf_in_oeffentlicher_versteigerung(k) and not mangel_arglistig_verschwiegen(k)
+     and not beschaffenheitsgarantie_uebernommen(k);
+    then rechte_wegen_mangels_ausgeschlossen(k);
+}
+
+// --- § 437 Rechte des Käufers bei Mängeln ---------------------------------------------------------
+
+pub relation recht_auf_nacherfuellung(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Recht des Käufers, nach § 439 Nacherfüllung zu verlangen (§ 437 Nr. 1)";
+    label en unofficial "buyer's right to demand cure under § 439 (§ 437 no. 1)";
+}
+pub relation recht_auf_ruecktritt(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Recht des Käufers, nach den §§ 440, 323 und 326 Abs. 5 von dem Vertrag zurückzutreten (§ 437 Nr. 2) — die Voraussetzungen des Rücktritts selbst bestimmt de.bgb.schuldrecht_at";
+    label en unofficial "buyer's right to withdraw from the contract under §§ 440, 323 and 326 (5) (§ 437 no. 2) — the requirements of withdrawal itself are governed by de.bgb.schuldrecht_at";
+}
+pub relation recht_auf_minderung(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Recht des Käufers, nach § 441 den Kaufpreis zu mindern (§ 437 Nr. 2)";
+    label en unofficial "buyer's right to reduce the purchase price under § 441 (§ 437 no. 2)";
+}
+pub relation recht_auf_schadensersatz(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Recht des Käufers, nach den §§ 440, 280, 281, 283 und 311a Schadensersatz zu verlangen (§ 437 Nr. 3)";
+    label en unofficial "buyer's right to claim damages under §§ 440, 280, 281, 283 and 311a (§ 437 no. 3)";
+}
+pub relation recht_auf_aufwendungsersatz(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Recht des Käufers, nach § 284 Ersatz vergeblicher Aufwendungen zu verlangen (§ 437 Nr. 3)";
+    label en unofficial "buyer's right to claim reimbursement of futile expenditure under § 284 (§ 437 no. 3)";
+}
+
+@source(BGB_P437)
+rule Recht437Nr1Nacherfuellung(k: Kaufvertrag, ka: Person) strict {
+    label de official "Ist die Sache mangelhaft, kann der Käufer nach § 439 Nacherfüllung verlangen (§ 437 Nr. 1)";
+    label en unofficial "Where the thing is defective the buyer may demand cure under § 439 (§ 437 no. 1)";
+    when mangel(k) and kaeufer(k, ka) and not_known(rechte_wegen_mangels_ausgeschlossen(k));
+    then recht_auf_nacherfuellung(k, ka);
+}
+
+@source(BGB_P437)
+rule Recht437Nr2Ruecktritt(k: Kaufvertrag, ka: Person) strict {
+    label de official "Ist die Sache mangelhaft, kann der Käufer nach den §§ 440, 323 und 326 Abs. 5 von dem Vertrag zurücktreten (§ 437 Nr. 2)";
+    label en unofficial "Where the thing is defective the buyer may withdraw from the contract under §§ 440, 323 and 326 (5) (§ 437 no. 2)";
+    when mangel(k) and kaeufer(k, ka) and not_known(rechte_wegen_mangels_ausgeschlossen(k));
+    then recht_auf_ruecktritt(k, ka);
+}
+
+@source(BGB_P437)
+rule Recht437Nr2Minderung(k: Kaufvertrag, ka: Person) strict {
+    label de official "Ist die Sache mangelhaft, kann der Käufer nach § 441 den Kaufpreis mindern (§ 437 Nr. 2)";
+    label en unofficial "Where the thing is defective the buyer may reduce the purchase price under § 441 (§ 437 no. 2)";
+    when mangel(k) and kaeufer(k, ka) and not_known(rechte_wegen_mangels_ausgeschlossen(k));
+    then recht_auf_minderung(k, ka);
+}
+
+@source(BGB_P437)
+rule Recht437Nr3Schadensersatz(k: Kaufvertrag, ka: Person) strict {
+    label de official "Ist die Sache mangelhaft, kann der Käufer nach den §§ 440, 280, 281, 283 und 311a Schadensersatz verlangen (§ 437 Nr. 3)";
+    label en unofficial "Where the thing is defective the buyer may claim damages under §§ 440, 280, 281, 283 and 311a (§ 437 no. 3)";
+    when mangel(k) and kaeufer(k, ka) and not_known(rechte_wegen_mangels_ausgeschlossen(k));
+    then recht_auf_schadensersatz(k, ka);
+}
+
+@source(BGB_P437)
+rule Recht437Nr3Aufwendungsersatz(k: Kaufvertrag, ka: Person) strict {
+    label de official "Ist die Sache mangelhaft, kann der Käufer nach § 284 Ersatz vergeblicher Aufwendungen verlangen (§ 437 Nr. 3)";
+    label en unofficial "Where the thing is defective the buyer may claim reimbursement of futile expenditure under § 284 (§ 437 no. 3)";
+    when mangel(k) and kaeufer(k, ka) and not_known(rechte_wegen_mangels_ausgeschlossen(k));
+    then recht_auf_aufwendungsersatz(k, ka);
+}
+
+// --- Brücke §§ 323, 218 zu de.bgb.schuldrecht_at (D-05-10) -----------------------------------------
+//
+// `recht_auf_ruecktritt` (§ 437 Nr. 2, oben) ist der ABSTRAKTE Verweis des
+// Überblicks — die eigentlichen Voraussetzungen bestimmt de.bgb.schuldrecht_at
+// (§§ 440, 323, 326 Abs. 5), wie der Kopf selbst sagt. Dieser Kopf hier ist
+// das KONKRETE Recht: es besteht nur, wenn das Rücktrittsrecht des § 323
+// tatsächlich hergeleitet ist (Fristsetzung erfolglos oder entbehrlich, Nr. 1–4)
+// und nicht nach § 323 Abs. 6 ausgeschlossen ist. Additiv, keine Ersetzung von
+// `recht_auf_ruecktritt`.
+
+pub relation vertrag_des_kaufvertrags(k: Kaufvertrag, v: Vertrag) kind empirical {
+    label de official "Der Vertrag (§§ 320 ff. — de.bgb.schuldrecht_at), der mit diesem Kaufvertrag abgeschlossen wurde — Korrelat der Brücke §§ 323, 218 (D-05-10)";
+    label en unofficial "the contract (§§ 320 ff. — de.bgb.schuldrecht_at) concluded as this Kaufvertrag — correlate of the bridge §§ 323, 218 (D-05-10)";
+}
+pub relation ruecktrittsrecht_des_kaeufers(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Das konkrete Rücktrittsrecht des Käufers besteht, weil die Voraussetzungen des § 323 tatsächlich erfüllt und nicht nach § 323 Abs. 6 ausgeschlossen sind (§§ 437 Nr. 2, 440, 323, 326 Abs. 5)";
+    label en unofficial "the buyer's concrete right of withdrawal exists because the requirements of § 323 are actually met and not excluded under § 323 (6) (§§ 437 no. 2, 440, 323, 326 (5))";
+}
+
+@source(BGB_P437)
+rule RuecktrittsrechtDesKaeufersAusSchuldrechtAt(k: Kaufvertrag, ka: Person, v: Vertrag) strict {
+    label de official "Das Rücktrittsrecht des Käufers besteht konkret, wenn die Sache mangelhaft ist, der Käufer Partei des zugrunde liegenden Vertrags ist und de.bgb.schuldrecht_at für diesen Vertrag ein Rücktrittsrecht des Käufers herleitet, das nicht ausgeschlossen ist (§§ 437 Nr. 2, 323)";
+    label en unofficial "The buyer's right of withdrawal exists concretely where the thing is defective, the buyer is a party to the underlying contract, and de.bgb.schuldrecht_at derives a right of withdrawal for that contract which is not excluded (§§ 437 no. 2, 323)";
+    when mangel(k);
+    when kaeufer(k, ka);
+    when vertrag_des_kaufvertrags(k, v);
+    when de.bgb.schuldrecht_at::ruecktrittsrecht(v, ka);
+    when not_known(de.bgb.schuldrecht_at::ruecktritt_ausgeschlossen(v));
+    then ruecktrittsrecht_des_kaeufers(k, ka);
+}
+
+// --- § 436 Öffentliche Lasten von Grundstücken ----------------------------------------------------
+
+pub relation massnahme_bautechnisch_begonnen_bis_vertragsschluss(k: Kaufvertrag) kind empirical {
+    label de official "die Maßnahme, für die Erschließungs- oder sonstige Anliegerbeiträge anfallen, ist bis zum Tage des Vertragsschlusses bautechnisch begonnen (§ 436 Abs. 1)";
+    label en unofficial "the measure for which development or other adjoining-owner contributions are payable had been begun in structural terms by the day the contract was concluded (§ 436 (1))";
+}
+pub relation abweichende_vereinbarung_ueber_anliegerbeitraege(k: Kaufvertrag) kind empirical {
+    label de official "über die Tragung der Erschließungs- und Anliegerbeiträge ist etwas anderes vereinbart (§ 436 Abs. 1: „Soweit nicht anders vereinbart“)";
+    label en unofficial "something else has been agreed on bearing the development and adjoining-owner contributions (§ 436 (1))";
+}
+relation anliegerbeitraege_vom_verkaeufer_zu_tragen(k: Kaufvertrag) kind institutional {
+    label de official "die Erschließungs- und sonstigen Anliegerbeiträge sind vom Verkäufer zu tragen (§ 436 Abs. 1) — einstelliger Kopf, weil die Ausnahmeklausel alle Variablen des Kopfes binden muss (§190)";
+    label en unofficial "the development and other adjoining-owner contributions are to be borne by the seller (§ 436 (1)) — one-place head, because the exception clause must bind every head variable (§190)";
+}
+pub relation pflicht_erschliessungsbeitraege(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers eines Grundstücks, Erschließungsbeiträge und sonstige Anliegerbeiträge zu tragen (§ 436 Abs. 1)";
+    label en unofficial "duty of the seller of land to bear development and other adjoining-owner contributions (§ 436 (1))";
+}
+pub relation keine_haftung_fuer_sonstige_oeffentliche_lasten(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "der Verkäufer eines Grundstücks haftet nicht für die Freiheit des Grundstücks von anderen öffentlichen Abgaben und Lasten, die zur Eintragung in das Grundbuch nicht geeignet sind (§ 436 Abs. 2)";
+    label en unofficial "the seller of land is not liable for the land being free from other public charges not capable of registration (§ 436 (2))";
+}
+
+@source(BGB_P436)
+rule Anliegerbeitraege436Abs1(k: Kaufvertrag) defeasible {
+    label de official "Soweit nicht anders vereinbart, ist der Verkäufer eines Grundstücks verpflichtet, Erschließungsbeiträge und sonstige Anliegerbeiträge für die Maßnahmen zu tragen, die bis zum Tage des Vertragsschlusses bautechnisch begonnen sind, unabhängig vom Zeitpunkt des Entstehens der Beitragsschuld (§ 436 Abs. 1)";
+    label en unofficial "Unless otherwise agreed, the seller of land must bear development and other adjoining-owner contributions for measures begun in structural terms by the day of conclusion of the contract, irrespective of when the liability arises (§ 436 (1))";
+    when grundstueckskauf(k) and massnahme_bautechnisch_begonnen_bis_vertragsschluss(k);
+    then anliegerbeitraege_vom_verkaeufer_zu_tragen(k);
+    unless abweichende_vereinbarung_ueber_anliegerbeitraege(k);
+}
+
+@source(BGB_P436)
+rule Anliegerbeitraege436Abs1Partei(k: Kaufvertrag, v: Person) defeasible {
+    label de official "Träger der Pflicht des § 436 Abs. 1 ist der Verkäufer des Grundstücks";
+    label en unofficial "The duty under § 436 (1) is borne by the seller of the land";
+    when anliegerbeitraege_vom_verkaeufer_zu_tragen(k) and verkaeufer(k, v);
+    then pflicht_erschliessungsbeitraege(k, v);
+}
+
+@source(BGB_P436)
+rule OeffentlicheLasten436Abs2(k: Kaufvertrag, v: Person) strict {
+    label de official "Der Verkäufer eines Grundstücks haftet nicht für die Freiheit des Grundstücks von anderen öffentlichen Abgaben und von anderen öffentlichen Lasten, die zur Eintragung in das Grundbuch nicht geeignet sind (§ 436 Abs. 2)";
+    label en unofficial "The seller of land is not liable for the land being free from other public charges and burdens not capable of registration in the land register (§ 436 (2))";
+    when grundstueckskauf(k) and verkaeufer(k, v);
+    then keine_haftung_fuer_sonstige_oeffentliche_lasten(k, v);
+}

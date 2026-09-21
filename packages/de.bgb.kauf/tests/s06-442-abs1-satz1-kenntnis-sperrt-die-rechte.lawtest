@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 442 Abs. 1 Satz 1: der Käufer kennt den Mangel bei Vertragsschluss — eine festgestellte Tatsache (origin adjudicated). Die Sache ist mangelhaft, die Rechte des § 437 stehen ihm gleichwohl nicht zu.
+test "§ 442 Abs. 1 Satz 1: Kenntnis bei Vertragsschluss schließt die Rechte aus" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:s06"), entity_ref("urn:de:bgb:kauf:s06:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:s06"), entity_ref("urn:de:bgb:kauf:s06:K")) { origin case_input; }
+        assert "f3": keine_abweichende_vereinbarung_ueber_objektive_anforderungen(entity_ref("urn:de:bgb:kauf:s06")) { origin case_input; }
+        assert "f4": not eignung_fuer_gewoehnliche_verwendung(entity_ref("urn:de:bgb:kauf:s06")) { origin case_input; }
+        assert "f5": kenntnis_des_mangels_bei_vertragsschluss(entity_ref("urn:de:bgb:kauf:s06")) { origin adjudicated; }
+    }
+    evaluate truth(sachmangel(entity_ref("urn:de:bgb:kauf:s06")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(rechte_wegen_mangels_ausgeschlossen(entity_ref("urn:de:bgb:kauf:s06")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(recht_auf_nacherfuellung(entity_ref("urn:de:bgb:kauf:s06"), entity_ref("urn:de:bgb:kauf:s06:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

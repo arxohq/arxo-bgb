@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 828 Abs. 2 Satz 1: achtjähriges Kind (geboren 10. Mai 2018, Handlung 1. Juni 2026) bei einem Unfall mit einem Kraftfahrzeug — das siebente, aber nicht das zehnte Lebensjahr ist vollendet; das Gericht hat den Vorsatz verneint.
+test "§ 828 Abs. 2: Kraftfahrzeugunfall zwischen dem siebenten und dem zehnten Lebensjahr" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "g1": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:bd:v03:S"), @2018-05-10) { origin case_input; }
+        assert "g2": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v03:S"), 7 calendar_year) { origin case_input; }
+        assert "g3": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v03:S"), 10 calendar_year) { origin case_input; }
+        assert "g4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v03:S"), 18 calendar_year) { origin case_input; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:v03")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:v03")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:v03")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:v03"), entity_ref("urn:de:bgb:bd:v03:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:v03"), entity_ref("urn:de:bgb:bd:v03:V")) { origin case_input; }
+        assert "f6": handlungstag(entity_ref("urn:de:bgb:bd:v03"), @2026-06-01) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:v03")) { origin adjudicated; }
+        assert "f7": unfall_mit_kraftfahrzeug_schienenbahn_oder_schwebebahn(entity_ref("urn:de:bgb:bd:v03")) { origin case_input; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:v03")) { origin adjudicated; }
+        assert "j3": not einsicht_fehlt(entity_ref("urn:de:bgb:bd:v03")) { origin adjudicated; }
+    }
+    evaluate truth(nicht_verantwortlich_828_abs2(entity_ref("urn:de:bgb:bd:v03")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(schadensersatzpflicht(entity_ref("urn:de:bgb:bd:v03"), entity_ref("urn:de:bgb:bd:v03:S"), entity_ref("urn:de:bgb:bd:v03:V")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 390 mit § 214 Abs. 1: die Verjährung gibt dem Schuldner das Recht, die
+// Leistung zu verweigern; der einredebehafteten Forderung steht damit eine
+// Einrede entgegen, und mit ihr kann nicht aufgerechnet werden. Der Tag des
+// Eintritts der Verjährung kommt aus dem Eigentümer der Fristen: der Anspruch
+// ist am 15. März 2020 entstanden, die Kenntnis wurde am selben Tag erlangt,
+// die regelmäßige Frist von drei Jahren lief mit dem Schluss des Jahres 2020
+// an und endete mit dem 31. Dezember 2023 (§§ 195, 199 Abs. 1); eine Hemmung
+// ist ausdrücklich nicht festgestellt.
+test "§ 390 mit de.bgb.fristen: mit der verjährten Forderung kann nicht aufgerechnet werden" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_SCHULDRECHT_AT_KALENDER; }
+        assert "a1": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:sr-at:e02:a1"), @2020-03-15) { origin case_input; }
+        assert "a2": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:sr-at:e02:a1"), @2020-03-15) { origin adjudicated; }
+        assert "a3": de.bgb.fristen::keine_hemmung(entity_ref("urn:de:bgb:sr-at:e02:a1")) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:sr-at:e02:a1"), @2023-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einrede_entgegenstehend(entity_ref("urn:de:bgb:sr-at:e02:a1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(aufrechnung_ausgeschlossen(entity_ref("urn:de:bgb:sr-at:e02:a1")));
+    expect truth_status == TRUE_ONLY;
+    expect applied(KeineAufrechnungMitEinredebehafteterForderung);
+}

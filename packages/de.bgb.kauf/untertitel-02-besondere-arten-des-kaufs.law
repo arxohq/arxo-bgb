@@ -1,0 +1,825 @@
+// --- Untertitel 2 Besondere Arten des Kaufs (§§ 454–473)
+// --- Kapitel 1 Kauf auf Probe, Kapitel 2 Wiederkauf, Kapitel 3 Vorkauf
+//
+// ZWEI AUSSCHLUSSFRISTEN MIT VERLEGUNG. § 462 (dreißig Jahre bei Grundstücken,
+// drei Jahre bei anderen Gegenständen) und § 469 Abs. 2 (zwei Monate, eine
+// Woche) sind Fristen, INNERHALB deren eine Willenserklärung abzugeben ist —
+// die Ausübung des Wiederkaufs- und des Vorkaufsrechts. Deshalb gilt § 193:
+// das kalendarische Ende wird auf den nächsten Werktag verlegt
+// (`add_business_days(Ende, 1 business_day)`, Kalender KALENDER_BUNDESWEIT aus
+// de.bgb.fristen). Dasselbe Kriterium hat BG-10 gemessen (D-10-05): verlegt
+// werden Klagefristen und Erklärungsfristen, nicht Erwerbsfristen.
+//
+// DIE VEREINBARTE FRIST GEHT VOR. §§ 462 Satz 2 und 469 Abs. 2 Satz 2 sagen
+// dasselbe: „Ist für die Ausübung eine Frist bestimmt, so tritt diese an die
+// Stelle der gesetzlichen Frist.“ Ausgeführt als poraussierbare Regel der
+// gesetzlichen Frist mit einem Angriff durch die vereinbarte.
+//
+// ZWEITE DIVISION DES PAKETS. § 467 Satz 1 („ein verhältnismäßiger Teil des
+// Gesamtpreises“) rechnet wie § 441 Abs. 3: Werte als ganze Zahlen, EINE
+// Rundung je Betrag (Ledger D-05-04).
+
+// --- Kapitel 1: Kauf auf Probe (§§ 454, 455) ------------------------------------------------------
+
+pub relation kauf_auf_probe_oder_besichtigung(k: Kaufvertrag) kind empirical {
+    label de official "Kauf auf Probe oder auf Besichtigung (§ 454 Abs. 1 Satz 1)";
+    label en unofficial "sale on approval or on inspection (§ 454 (1) sentence 1)";
+}
+pub relation abweichende_bedingungsvereinbarung(k: Kaufvertrag) kind empirical {
+    label de official "die Parteien haben den Kauf nicht unter der aufschiebenden Bedingung der Billigung geschlossen (§ 454 Abs. 1 Satz 2: „im Zweifel“)";
+    label en unofficial "the parties did not conclude the sale subject to the condition precedent of approval (§ 454 (1) sentence 2: “in case of doubt”)";
+}
+pub relation billigung_im_belieben_des_kaeufers(k: Kaufvertrag) kind institutional {
+    label de official "die Billigung des gekauften Gegenstandes steht im Belieben des Käufers (§ 454 Abs. 1 Satz 1)";
+    label en unofficial "approval of the object bought is at the buyer's discretion (§ 454 (1) sentence 1)";
+}
+pub relation kauf_unter_bedingung_der_billigung(k: Kaufvertrag) kind institutional {
+    label de official "der Kauf ist unter der aufschiebenden Bedingung der Billigung geschlossen (§ 454 Abs. 1 Satz 2)";
+    label en unofficial "the sale is concluded subject to the condition precedent of approval (§ 454 (1) sentence 2)";
+}
+pub relation pflicht_untersuchung_zu_gestatten(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, dem Käufer die Untersuchung des Gegenstandes zu gestatten (§ 454 Abs. 2)";
+    label en unofficial "seller's duty to permit the buyer to examine the object (§ 454 (2))";
+}
+
+@source(BGB_P454)
+rule KaufAufProbe454Abs1Satz1(k: Kaufvertrag) strict {
+    label de official "Bei einem Kauf auf Probe oder auf Besichtigung steht die Billigung des gekauften Gegenstandes im Belieben des Käufers (§ 454 Abs. 1 Satz 1)";
+    label en unofficial "On a sale on approval or on inspection the approval of the object bought is at the buyer's discretion (§ 454 (1) sentence 1)";
+    when kauf_auf_probe_oder_besichtigung(k);
+    then billigung_im_belieben_des_kaeufers(k);
+}
+
+@source(BGB_P454)
+rule KaufAufProbe454Abs1Satz2(k: Kaufvertrag) defeasible {
+    label de official "Der Kauf ist im Zweifel unter der aufschiebenden Bedingung der Billigung geschlossen (§ 454 Abs. 1 Satz 2)";
+    label en unofficial "In case of doubt the sale is concluded subject to the condition precedent of approval (§ 454 (1) sentence 2)";
+    when kauf_auf_probe_oder_besichtigung(k);
+    then kauf_unter_bedingung_der_billigung(k);
+    unless abweichende_bedingungsvereinbarung(k);
+}
+
+@source(BGB_P454)
+rule KaufAufProbe454Abs2(k: Kaufvertrag, v: Person) strict {
+    label de official "Der Verkäufer ist verpflichtet, dem Käufer die Untersuchung des Gegenstandes zu gestatten (§ 454 Abs. 2)";
+    label en unofficial "The seller is obliged to permit the buyer to examine the object (§ 454 (2))";
+    when kauf_auf_probe_oder_besichtigung(k) and verkaeufer(k, v);
+    then pflicht_untersuchung_zu_gestatten(k, v);
+}
+pub relation untersuchung_gegenstand_gestattet_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "die Untersuchung des Gegenstands wurde gestattet (§ 454 Abs. 2)";
+    label en unofficial "examination of the object was permitted (§ 454 (2))";
+}
+@source(BGB_P454)
+rule Position454Untersuchung(k: Kaufvertrag, v: Person, ka: Person, beginn: Date) strict {
+    label de official "Der Verkäufer ist verpflichtet, dem Käufer die Untersuchung zu gestatten (§ 454 Abs. 2)";
+    label en unofficial "The seller is obliged to permit the buyer to examine the object (§ 454 (2))";
+    when kauf_auf_probe_oder_besichtigung(k) and verkaeufer(k, v)
+     and kaeufer(k, ka) and vertragsschluss_am(k, beginn);
+    then duty Duty454Untersuchung {
+        bearer v;
+        beneficiary ka;
+        achieve untersuchung_gegenstand_gestattet_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+pub relation billigungsfrist_ende(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "letzter Tag der vereinbarten oder der vom Verkäufer bestimmten angemessenen Billigungsfrist (§ 455 Satz 1) — die Länge nennt der Text nicht; sie kommt aus der Vereinbarung oder der Bestimmung des Verkäufers";
+    label en unofficial "last day of the agreed period, or of the reasonable period fixed by the seller, for approval (§ 455 sentence 1) — the text names no length; it comes from the agreement or the seller's determination";
+}
+
+@source(BGB_P455)
+pub external judgment relation bestimmte_billigungsfrist_angemessen(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 455 Satz 1. Die vom Verkäufer bestimmte Frist ist eine dem Käufer angemessene Frist";
+    label en unofficial "§ 455 sentence 1. The period fixed by the seller is a period reasonable for the buyer";
+}
+
+pub relation billigung_erklaert_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem der Käufer die Billigung erklärt hat (§ 455 Satz 1)";
+    label en unofficial "day on which the buyer declared approval (§ 455 sentence 1)";
+}
+pub relation sache_zur_probe_uebergeben(k: Kaufvertrag) kind empirical {
+    label de official "die Sache war dem Käufer zum Zwecke der Probe oder der Besichtigung übergeben (§ 455 Satz 2)";
+    label en unofficial "the thing had been delivered to the buyer for the purpose of trial or inspection (§ 455 sentence 2)";
+}
+pub relation schweigen_des_kaeufers(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer hat sich innerhalb der Billigungsfrist nicht erklärt (§ 455 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the buyer made no declaration within the period for approval (§ 455 sentence 2) — express statement of the case";
+}
+pub relation billigung_wirksam(k: Kaufvertrag) kind institutional {
+    label de official "die Billigung ist wirksam erklärt oder gilt als erklärt (§ 455)";
+    label en unofficial "approval has been effectively declared or is deemed declared (§ 455)";
+}
+
+@source(BGB_P455)
+rule Billigung455Satz1(k: Kaufvertrag, e: Date, b: Date) strict {
+    label de official "Die Billigung eines auf Probe oder auf Besichtigung gekauften Gegenstandes kann nur innerhalb der vereinbarten Frist und in Ermangelung einer solchen nur bis zum Ablauf einer dem Käufer von dem Verkäufer bestimmten angemessenen Frist erklärt werden (§ 455 Satz 1)";
+    label en unofficial "Approval of an object bought on approval or on inspection may be declared only within the agreed period or, failing such, only up to the expiry of a reasonable period fixed for the buyer by the seller (§ 455 sentence 1)";
+    when kauf_auf_probe_oder_besichtigung(k) and billigungsfrist_ende(k, e) and billigung_erklaert_am(k, b) and b <= e;
+    then billigung_wirksam(k);
+}
+
+@source(BGB_P455)
+rule Billigung455Satz2Schweigen(k: Kaufvertrag) strict {
+    label de official "War die Sache dem Käufer zum Zwecke der Probe oder der Besichtigung übergeben, so gilt sein Schweigen als Billigung (§ 455 Satz 2)";
+    label en unofficial "Where the thing had been delivered to the buyer for trial or inspection, his silence is deemed to be approval (§ 455 sentence 2)";
+    when kauf_auf_probe_oder_besichtigung(k) and sache_zur_probe_uebergeben(k) and schweigen_des_kaeufers(k);
+    then billigung_wirksam(k);
+}
+
+// --- Kapitel 2: Wiederkauf (§§ 456–462) -----------------------------------------------------------
+
+pub relation wiederkaufsvorbehalt(w: Wiederkaufsrecht, k: Kaufvertrag) kind empirical {
+    key(w);
+    label de official "in dem Kaufvertrag vorbehaltenes Recht des Wiederkaufs (§ 456 Abs. 1 Satz 1)";
+    label en unofficial "right of repurchase reserved in the contract of sale (§ 456 (1) sentence 1)";
+}
+pub relation vorbehalt_vereinbart_am(w: Wiederkaufsrecht, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Vereinbarung des Wiederkaufsvorbehalts (§ 462 Satz 1)";
+    label en unofficial "day on which the reservation of repurchase was agreed (§ 462 sentence 1)";
+}
+pub relation wiederkauf_ausgeuebt_am(w: Wiederkaufsrecht, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Erklärung des Verkäufers gegenüber dem Käufer, dass er das Wiederkaufsrecht ausübe (§ 456 Abs. 1 Satz 1)";
+    label en unofficial "day of the seller's declaration to the buyer that he exercises the right of repurchase (§ 456 (1) sentence 1)";
+}
+pub relation ausuebungsfrist_wiederkauf_bestimmt(w: Wiederkaufsrecht) kind empirical {
+    label de official "für die Ausübung des Wiederkaufsrechts ist eine Frist bestimmt (§ 462 Satz 2) — ausdrückliche Angabe des Falls; ihr Fehlen muss der Fall ebenso ausdrücklich verneinen";
+    label en unofficial "a period is fixed for the exercise of the right of repurchase (§ 462 sentence 2) — express statement of the case; its absence must be stated just as expressly";
+}
+pub relation bestimmte_ausuebungsfrist_wiederkauf(w: Wiederkaufsrecht, tag: Date) kind empirical {
+    key(w);
+    label de official "letzter Tag der für die Ausübung bestimmten Frist, die an die Stelle der gesetzlichen Frist tritt (§ 462 Satz 2)";
+    label en unofficial "last day of the period fixed for exercise, which takes the place of the statutory period (§ 462 sentence 2)";
+}
+pub relation abweichender_wiederkaufpreis(w: Wiederkaufsrecht) kind empirical {
+    label de official "für den Wiederkauf ist ein anderer als der ursprüngliche Preis vereinbart (§ 456 Abs. 2: „im Zweifel“)";
+    label en unofficial "a price other than the original one is agreed for the repurchase (§ 456 (2): “in case of doubt”)";
+}
+relation gesetzliche_wiederkaufsfrist_kalenderende(w: Wiederkaufsrecht, tag: Date) kind institutional {
+    key(w);
+    label de official "kalendarisches Ende der gesetzlichen Ausschlussfrist des § 462 Satz 1 vor Anwendung des § 193";
+    label en unofficial "calendar end of the statutory time limit of § 462 sentence 1 before applying § 193";
+}
+pub relation wiederkaufsfrist_ende(w: Wiederkaufsrecht, tag: Date) kind institutional {
+    key(w);
+    label de official "letzter Tag, an dem das Wiederkaufsrecht ausgeübt werden kann (§ 462, § 193)";
+    label en unofficial "last day on which the right of repurchase may be exercised (§ 462, § 193)";
+}
+pub relation wiederkauf_zustande_gekommen(w: Wiederkaufsrecht, k: Kaufvertrag) kind institutional {
+    label de official "der Wiederkauf ist mit der Erklärung des Verkäufers zustande gekommen (§ 456 Abs. 1 Satz 1)";
+    label en unofficial "the repurchase has come into existence upon the seller's declaration (§ 456 (1) sentence 1)";
+}
+pub relation wiederkaufpreis(w: Wiederkaufsrecht, betrag: Money) kind institutional {
+    label de official "Preis, der für den Wiederkauf gilt (§ 456 Abs. 2)";
+    label en unofficial "price applying to the repurchase (§ 456 (2))";
+}
+
+@source(BGB_P462)
+rule Wiederkaufsfrist462Grundstueck(w: Wiederkaufsrecht, k: Kaufvertrag, t: Date) strict {
+    label de official "Das Wiederkaufsrecht kann bei Grundstücken nur bis zum Ablauf von 30 Jahren nach der Vereinbarung des Vorbehalts ausgeübt werden (§ 462 Satz 1)";
+    label en unofficial "In the case of land the right of repurchase may be exercised only up to the expiry of 30 years after the reservation was agreed (§ 462 sentence 1)";
+    when wiederkaufsvorbehalt(w, k) and grundstueckskauf(k) and vorbehalt_vereinbart_am(w, t);
+    then gesetzliche_wiederkaufsfrist_kalenderende(w, add_calendar_period(t, 30 calendar_year));
+}
+
+@source(BGB_P462)
+rule Wiederkaufsfrist462Andere(w: Wiederkaufsrecht, k: Kaufvertrag, t: Date) strict {
+    label de official "Bei anderen Gegenständen kann das Wiederkaufsrecht nur bis zum Ablauf von drei Jahren nach der Vereinbarung des Vorbehalts ausgeübt werden (§ 462 Satz 1)";
+    label en unofficial "In the case of other objects the right of repurchase may be exercised only up to the expiry of three years after the reservation was agreed (§ 462 sentence 1)";
+    when wiederkaufsvorbehalt(w, k) and not grundstueckskauf(k) and vorbehalt_vereinbart_am(w, t);
+    then gesetzliche_wiederkaufsfrist_kalenderende(w, add_calendar_period(t, 3 calendar_year));
+}
+
+@source(BGB_P462)
+rule Wiederkaufsfrist462Verlegung(w: Wiederkaufsrecht, e: Date) strict {
+    label de official "Das Wiederkaufsrecht wird durch Erklärung ausgeübt (§ 456 Abs. 1); fällt der letzte Tag der Frist auf einen Sonnabend, einen Sonntag oder einen anerkannten Feiertag, so tritt an seine Stelle der nächste Werktag (§ 193)";
+    label en unofficial "The right of repurchase is exercised by declaration (§ 456 (1)); where the last day of the period falls on a Saturday, a Sunday or a recognised public holiday, the next working day takes its place (§ 193)";
+    when gesetzliche_wiederkaufsfrist_kalenderende(w, e) and not ausuebungsfrist_wiederkauf_bestimmt(w);
+    then wiederkaufsfrist_ende(w, add_business_days(e, 1 business_day));
+}
+
+@source(BGB_P462)
+rule Wiederkaufsfrist462BestimmteFrist(w: Wiederkaufsrecht, t: Date) strict {
+    label de official "Ist für die Ausübung eine Frist bestimmt, so tritt diese an die Stelle der gesetzlichen Frist (§ 462 Satz 2)";
+    label en unofficial "Where a period is fixed for exercise, it takes the place of the statutory period (§ 462 sentence 2)";
+    when bestimmte_ausuebungsfrist_wiederkauf(w, t);
+    then wiederkaufsfrist_ende(w, t);
+}
+
+@source(BGB_P456)
+rule Wiederkauf456Abs1(w: Wiederkaufsrecht, k: Kaufvertrag, a: Date, e: Date) strict {
+    label de official "Hat sich der Verkäufer in dem Kaufvertrag das Recht des Wiederkaufs vorbehalten, so kommt der Wiederkauf mit der Erklärung des Verkäufers gegenüber dem Käufer, dass er das Wiederkaufsrecht ausübe, zustande; die Erklärung bedarf nicht der für den Kaufvertrag bestimmten Form (§ 456 Abs. 1)";
+    label en unofficial "Where the seller reserved a right of repurchase in the contract, the repurchase comes into existence upon his declaration to the buyer that he exercises the right; the declaration need not be in the form prescribed for the contract (§ 456 (1))";
+    when wiederkaufsvorbehalt(w, k) and wiederkauf_ausgeuebt_am(w, a) and wiederkaufsfrist_ende(w, e) and a <= e;
+    then wiederkauf_zustande_gekommen(w, k);
+}
+
+@source(BGB_P456)
+rule Wiederkaufpreis456Abs2(w: Wiederkaufsrecht, k: Kaufvertrag, p: Money) strict {
+    label de official "Der Preis, zu welchem verkauft worden ist, gilt im Zweifel auch für den Wiederkauf (§ 456 Abs. 2)";
+    label en unofficial "In case of doubt the price at which the thing was sold also applies to the repurchase (§ 456 (2))";
+    when wiederkauf_zustande_gekommen(w, k) and kaufpreis(k, p) and not abweichender_wiederkaufpreis(w);
+    then wiederkaufpreis(w, p);
+}
+
+pub relation herausgabepflicht_des_wiederverkaeufers(w: Wiederkaufsrecht, p: Person) kind institutional {
+    label de official "Pflicht des Wiederverkäufers, dem Wiederkäufer den gekauften Gegenstand nebst Zubehör herauszugeben (§ 457 Abs. 1)";
+    label en unofficial "duty of the reseller to surrender the object bought together with its accessories to the repurchaser (§ 457 (1))";
+}
+pub relation wiederverkaeufer(w: Wiederkaufsrecht, p: Person) kind empirical {
+    key(w);
+    label de official "der Wiederverkäufer, also der ursprüngliche Käufer (§ 457)";
+    label en unofficial "the reseller, that is the original buyer (§ 457)";
+}
+pub relation verschuldete_verschlechterung_oder_unmoeglichkeit(w: Wiederkaufsrecht) kind empirical {
+    label de official "der Wiederverkäufer hat vor der Ausübung des Wiederkaufsrechts eine Verschlechterung, den Untergang oder eine aus einem anderen Grund eingetretene Unmöglichkeit der Herausgabe verschuldet oder den Gegenstand wesentlich verändert (§ 457 Abs. 2 Satz 1)";
+    label en unofficial "before the right was exercised the reseller culpably caused deterioration, destruction or impossibility of surrender for another reason, or substantially altered the object (§ 457 (2) sentence 1)";
+}
+pub relation unverschuldete_oder_unwesentliche_veraenderung(w: Wiederkaufsrecht) kind empirical {
+    label de official "der Gegenstand ist ohne Verschulden des Wiederverkäufers verschlechtert oder nur unwesentlich verändert (§ 457 Abs. 2 Satz 2)";
+    label en unofficial "the object deteriorated without fault of the reseller or was only insubstantially altered (§ 457 (2) sentence 2)";
+}
+pub relation verantwortlichkeit_des_wiederverkaeufers(w: Wiederkaufsrecht, p: Person) kind institutional {
+    label de official "der Wiederverkäufer ist für den daraus entstehenden Schaden verantwortlich (§ 457 Abs. 2 Satz 1)";
+    label en unofficial "the reseller is answerable for the resulting damage (§ 457 (2) sentence 1)";
+}
+pub relation minderung_des_wiederkaufpreises_ausgeschlossen(w: Wiederkaufsrecht) kind institutional {
+    label de official "der Wiederkäufer kann Minderung des Kaufpreises nicht verlangen (§ 457 Abs. 2 Satz 2)";
+    label en unofficial "the repurchaser may not demand a reduction of the price (§ 457 (2) sentence 2)";
+}
+pub relation verfuegung_vor_ausuebung(w: Wiederkaufsrecht) kind empirical {
+    label de official "der Wiederverkäufer hat vor der Ausübung des Wiederkaufsrechts über den gekauften Gegenstand verfügt; einer Verfügung steht eine solche im Wege der Zwangsvollstreckung, der Arrestvollziehung oder durch den Insolvenzverwalter gleich (§ 458)";
+    label en unofficial "before the right was exercised the reseller disposed of the object; a disposition by way of execution, attachment or by the insolvency administrator is equivalent (§ 458)";
+}
+pub relation pflicht_rechte_dritter_zu_beseitigen(w: Wiederkaufsrecht, p: Person) kind institutional {
+    label de official "Pflicht des Wiederverkäufers, die durch seine Verfügung begründeten Rechte Dritter zu beseitigen (§ 458 Satz 1)";
+    label en unofficial "duty of the reseller to remove the third-party rights created by his disposition (§ 458 sentence 1)";
+}
+pub relation werterhoehende_verwendungen(w: Wiederkaufsrecht) kind empirical {
+    label de official "der Wiederverkäufer hat vor dem Wiederkauf Verwendungen auf den Gegenstand gemacht, durch die dessen Wert erhöht ist (§ 459 Satz 1)";
+    label en unofficial "before the repurchase the reseller made outlays on the object which increased its value (§ 459 sentence 1)";
+}
+pub relation verwendungsersatzanspruch(w: Wiederkaufsrecht, p: Person) kind institutional {
+    label de official "Anspruch des Wiederverkäufers auf Ersatz der Verwendungen, soweit der Wert des Gegenstandes durch sie erhöht ist (§ 459 Satz 1)";
+    label en unofficial "reseller's claim to reimbursement of outlays in so far as the value of the object was increased by them (§ 459 sentence 1)";
+}
+pub relation wegnahmerecht(w: Wiederkaufsrecht, p: Person) kind institutional {
+    label de official "Recht des Wiederverkäufers, eine Einrichtung wegzunehmen, mit der er die herauszugebende Sache versehen hat (§ 459 Satz 2)";
+    label en unofficial "reseller's right to remove a fixture with which he provided the thing to be surrendered (§ 459 sentence 2)";
+}
+pub relation wiederkauf_zum_schaetzungswert(w: Wiederkaufsrecht) kind empirical {
+    label de official "als Wiederkaufpreis ist der Schätzungswert vereinbart, den der Gegenstand zur Zeit des Wiederkaufs hat (§ 460)";
+    label en unofficial "the repurchase price agreed is the estimated value the object has at the time of the repurchase (§ 460)";
+}
+pub relation keine_verantwortlichkeit_beim_schaetzungswert(w: Wiederkaufsrecht) kind institutional {
+    label de official "der Wiederverkäufer ist für Verschlechterung, Untergang und Unmöglichkeit der Herausgabe nicht verantwortlich, weil als Wiederkaufpreis der Schätzungswert vereinbart ist (§ 460)";
+    label en unofficial "the reseller is not answerable for deterioration, destruction or impossibility of surrender because the repurchase price agreed is the estimated value (§ 460)";
+}
+pub relation kein_verwendungsersatz_beim_schaetzungswert(w: Wiederkaufsrecht) kind institutional {
+    label de official "der Wiederkäufer ist zum Ersatz von Verwendungen nicht verpflichtet, weil als Wiederkaufpreis der Schätzungswert vereinbart ist (§ 460)";
+    label en unofficial "the repurchaser is not obliged to reimburse outlays because the repurchase price agreed is the estimated value (§ 460)";
+}
+
+@source(BGB_P460)
+rule Schaetzungswert460Verantwortlichkeit(w: Wiederkaufsrecht) strict {
+    label de official "Ist als Wiederkaufpreis der Schätzungswert vereinbart, den der gekaufte Gegenstand zur Zeit des Wiederkaufs hat, so ist der Wiederverkäufer für eine Verschlechterung, den Untergang oder die aus einem anderen Grund eingetretene Unmöglichkeit der Herausgabe nicht verantwortlich (§ 460)";
+    label en unofficial "Where the repurchase price agreed is the estimated value of the object at the time of the repurchase, the reseller is not answerable for deterioration, destruction or impossibility of surrender (§ 460)";
+    when wiederkauf_zum_schaetzungswert(w);
+    then keine_verantwortlichkeit_beim_schaetzungswert(w);
+}
+
+@source(BGB_P460)
+rule Schaetzungswert460Verwendungen(w: Wiederkaufsrecht) strict {
+    label de official "In diesem Fall ist der Wiederkäufer zum Ersatz von Verwendungen nicht verpflichtet (§ 460)";
+    label en unofficial "In that case the repurchaser is not obliged to reimburse outlays (§ 460)";
+    when wiederkauf_zum_schaetzungswert(w);
+    then kein_verwendungsersatz_beim_schaetzungswert(w);
+}
+
+pub relation mehrere_wiederkaufsberechtigte(w: Wiederkaufsrecht) kind empirical {
+    label de official "das Wiederkaufsrecht steht mehreren gemeinschaftlich zu (§ 461 Satz 1)";
+    label en unofficial "the right of repurchase belongs to several persons jointly (§ 461 sentence 1)";
+}
+pub relation im_ganzen_ausgeuebt(w: Wiederkaufsrecht) kind empirical {
+    label de official "das Recht ist im Ganzen ausgeübt worden (§ 461 Satz 1, § 472 Satz 1)";
+    label en unofficial "the right was exercised as a whole (§ 461 sentence 1, § 472 sentence 1)";
+}
+pub relation recht_eines_berechtigten_erloschen_oder_nicht_ausgeuebt(w: Wiederkaufsrecht) kind empirical {
+    label de official "das Recht ist für einen der Berechtigten erloschen oder einer von ihnen übt es nicht aus (§ 461 Satz 2)";
+    label en unofficial "the right has lapsed for one of the entitled persons or one of them does not exercise it (§ 461 sentence 2)";
+}
+pub relation uebrige_berechtigt_im_ganzen(w: Wiederkaufsrecht) kind institutional {
+    label de official "die übrigen Berechtigten sind berechtigt, das Recht im Ganzen auszuüben (§ 461 Satz 2, § 472 Satz 2)";
+    label en unofficial "the remaining entitled persons may exercise the right as a whole (§ 461 sentence 2, § 472 sentence 2)";
+}
+
+@source(BGB_P457)
+rule Wiederkauf457Abs1(w: Wiederkaufsrecht, k: Kaufvertrag, p: Person) strict {
+    label de official "Der Wiederverkäufer ist verpflichtet, dem Wiederkäufer den gekauften Gegenstand nebst Zubehör herauszugeben (§ 457 Abs. 1)";
+    label en unofficial "The reseller is obliged to surrender the object bought together with its accessories to the repurchaser (§ 457 (1))";
+    when wiederkauf_zustande_gekommen(w, k) and wiederverkaeufer(w, p);
+    then herausgabepflicht_des_wiederverkaeufers(w, p);
+}
+pub relation gegenstand_wiederkauf_herausgegeben_am(w: Wiederkaufsrecht, tag: Date) kind empirical {
+    label de official "der gekaufte Gegenstand nebst Zubehör wurde herausgegeben (§ 457 Abs. 1)";
+    label en unofficial "the object bought and its accessories were surrendered (§ 457 (1))";
+}
+@source(BGB_P457)
+rule Position457Herausgabe(w: Wiederkaufsrecht, k: Kaufvertrag, p: Person, beginn: Date) strict {
+    label de official "Der Wiederverkäufer ist verpflichtet, den Gegenstand herauszugeben (§ 457 Abs. 1)";
+    label en unofficial "The reseller is obliged to surrender the object (§ 457 (1))";
+    when wiederkauf_zustande_gekommen(w, k) and wiederverkaeufer(w, p)
+     and vertragsschluss_am(k, beginn);
+    then duty Duty457Herausgabe {
+        bearer p;
+        achieve gegenstand_wiederkauf_herausgegeben_am(w, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P457)
+rule Wiederkauf457Abs2Satz1(w: Wiederkaufsrecht, p: Person) strict {
+    label de official "Hat der Wiederverkäufer vor der Ausübung des Wiederkaufsrechts eine Verschlechterung, den Untergang oder eine Unmöglichkeit der Herausgabe verschuldet oder den Gegenstand wesentlich verändert, so ist er für den daraus entstehenden Schaden verantwortlich (§ 457 Abs. 2 Satz 1)";
+    label en unofficial "Where before the exercise of the right the reseller culpably caused deterioration, destruction or impossibility of surrender, or substantially altered the object, he is answerable for the resulting damage (§ 457 (2) sentence 1)";
+    when verschuldete_verschlechterung_oder_unmoeglichkeit(w) and wiederverkaeufer(w, p)
+     and not_known(keine_verantwortlichkeit_beim_schaetzungswert(w));
+    then verantwortlichkeit_des_wiederverkaeufers(w, p);
+}
+
+@source(BGB_P457)
+rule Wiederkauf457Abs2Satz2(w: Wiederkaufsrecht) strict {
+    label de official "Ist der Gegenstand ohne Verschulden des Wiederverkäufers verschlechtert oder ist er nur unwesentlich verändert, so kann der Wiederkäufer Minderung des Kaufpreises nicht verlangen (§ 457 Abs. 2 Satz 2)";
+    label en unofficial "Where the object deteriorated without the reseller's fault or was only insubstantially altered, the repurchaser may not demand a reduction of the price (§ 457 (2) sentence 2)";
+    when unverschuldete_oder_unwesentliche_veraenderung(w);
+    then minderung_des_wiederkaufpreises_ausgeschlossen(w);
+}
+
+@source(BGB_P458)
+rule Wiederkauf458(w: Wiederkaufsrecht, p: Person) strict {
+    label de official "Hat der Wiederverkäufer vor der Ausübung des Wiederkaufsrechts über den gekauften Gegenstand verfügt, so ist er verpflichtet, die dadurch begründeten Rechte Dritter zu beseitigen (§ 458 Satz 1)";
+    label en unofficial "Where the reseller disposed of the object before the right was exercised he must remove the third-party rights thereby created (§ 458 sentence 1)";
+    when verfuegung_vor_ausuebung(w) and wiederverkaeufer(w, p);
+    then pflicht_rechte_dritter_zu_beseitigen(w, p);
+}
+pub relation rechte_dritter_wiederkauf_beseitigt_am(w: Wiederkaufsrecht, tag: Date) kind empirical {
+    label de official "die durch die Verfügung begründeten Rechte Dritter wurden beseitigt (§ 458 Satz 1)";
+    label en unofficial "third-party rights created by the disposition were removed (§ 458 sentence 1)";
+}
+@source(BGB_P458)
+rule Position458Beseitigung(w: Wiederkaufsrecht, p: Person, beginn: Date) strict {
+    label de official "Der Wiederverkäufer ist verpflichtet, Rechte Dritter zu beseitigen (§ 458 Satz 1)";
+    label en unofficial "The reseller is obliged to remove third-party rights (§ 458 sentence 1)";
+    when verfuegung_vor_ausuebung(w) and wiederverkaeufer(w, p)
+     and wiederkauf_ausgeuebt_am(w, beginn);
+    then duty Duty458Beseitigung {
+        bearer p;
+        achieve rechte_dritter_wiederkauf_beseitigt_am(w, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P459)
+rule Wiederkauf459Satz1(w: Wiederkaufsrecht, p: Person) strict {
+    label de official "Der Wiederverkäufer kann für Verwendungen, die er auf den gekauften Gegenstand vor dem Wiederkauf gemacht hat, insoweit Ersatz verlangen, als der Wert des Gegenstandes durch die Verwendungen erhöht ist (§ 459 Satz 1)";
+    label en unofficial "The reseller may demand reimbursement of outlays made on the object before the repurchase in so far as the value of the object was increased by them (§ 459 sentence 1)";
+    when werterhoehende_verwendungen(w) and wiederverkaeufer(w, p)
+     and not_known(kein_verwendungsersatz_beim_schaetzungswert(w));
+    then verwendungsersatzanspruch(w, p);
+}
+
+@source(BGB_P459)
+rule Wiederkauf459Satz2(w: Wiederkaufsrecht, p: Person) strict {
+    label de official "Eine Einrichtung, mit der er die herauszugebende Sache versehen hat, kann der Wiederverkäufer wegnehmen (§ 459 Satz 2)";
+    label en unofficial "The reseller may remove a fixture with which he provided the thing to be surrendered (§ 459 sentence 2)";
+    when wiederverkaeufer(w, p) and herausgabepflicht_des_wiederverkaeufers(w, p);
+    then wegnahmerecht(w, p);
+}
+
+@source(BGB_P461)
+rule Wiederkauf461Satz1(w: Wiederkaufsrecht, k: Kaufvertrag, a: Date, e: Date) strict {
+    label de official "Steht das Wiederkaufsrecht mehreren gemeinschaftlich zu, so kann es nur im Ganzen ausgeübt werden (§ 461 Satz 1)";
+    label en unofficial "Where the right of repurchase belongs to several persons jointly it may be exercised only as a whole (§ 461 sentence 1)";
+    when wiederkaufsvorbehalt(w, k) and mehrere_wiederkaufsberechtigte(w) and im_ganzen_ausgeuebt(w)
+     and wiederkauf_ausgeuebt_am(w, a) and wiederkaufsfrist_ende(w, e) and a <= e;
+    then wiederkauf_zustande_gekommen(w, k);
+}
+
+@source(BGB_P461)
+rule Wiederkauf461Satz2(w: Wiederkaufsrecht) strict {
+    label de official "Ist das Wiederkaufsrecht für einen der Berechtigten erloschen oder übt einer von ihnen sein Recht nicht aus, so sind die übrigen berechtigt, das Wiederkaufsrecht im Ganzen auszuüben (§ 461 Satz 2)";
+    label en unofficial "Where the right has lapsed for one of the entitled persons or one of them does not exercise it, the others may exercise the right as a whole (§ 461 sentence 2)";
+    when mehrere_wiederkaufsberechtigte(w) and recht_eines_berechtigten_erloschen_oder_nicht_ausgeuebt(w);
+    then uebrige_berechtigt_im_ganzen(w);
+}
+
+// --- Kapitel 3: Vorkauf (§§ 463–473) --------------------------------------------------------------
+
+pub relation vorkaufsberechtigter(vk: Vorkaufsrecht, p: Person) kind empirical {
+    key(vk);
+    label de official "wer in Ansehung eines Gegenstandes zum Vorkauf berechtigt ist (§ 463)";
+    label en unofficial "the person entitled to pre-emption in respect of an object (§ 463)";
+}
+pub relation vorkaufsverpflichteter(vk: Vorkaufsrecht, p: Person) kind empirical {
+    key(vk);
+    label de official "der Verpflichtete des Vorkaufsrechts (§ 463)";
+    label en unofficial "the person bound by the right of pre-emption (§ 463)";
+}
+pub relation drittkaufvertrag(vk: Vorkaufsrecht, k: Kaufvertrag) kind empirical {
+    key(vk);
+    label de official "der Kaufvertrag, den der Verpflichtete mit einem Dritten über den Gegenstand geschlossen hat (§ 463)";
+    label en unofficial "the contract of sale concluded by the person bound with a third party over the object (§ 463)";
+}
+pub relation vorkaufsgegenstand_ist_grundstueck(vk: Vorkaufsrecht) kind empirical {
+    label de official "Gegenstand des Vorkaufs ist ein Grundstück, ein eingetragenes Schiff oder Schiffsbauwerk (§ 468 Abs. 2, § 469 Abs. 2)";
+    label en unofficial "the object of pre-emption is land, a registered ship or a ship under construction (§ 468 (2), § 469 (2))";
+}
+pub relation mitteilung_empfangen_am(vk: Vorkaufsrecht, tag: Date) kind empirical {
+    key(vk);
+    label de official "Tag des Empfangs der Mitteilung über den Inhalt des mit dem Dritten geschlossenen Vertrags (§ 469 Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "day of receipt of the notification of the content of the contract concluded with the third party (§ 469 (1), (2) sentence 1)";
+}
+pub relation vorkauf_ausgeuebt_am(vk: Vorkaufsrecht, tag: Date) kind empirical {
+    key(vk);
+    label de official "Tag der Erklärung des Vorkaufsberechtigten gegenüber dem Verpflichteten (§ 464 Abs. 1)";
+    label en unofficial "day of the declaration by the person entitled to the person bound (§ 464 (1))";
+}
+pub relation ausuebungsfrist_vorkauf_bestimmt(vk: Vorkaufsrecht) kind empirical {
+    label de official "für die Ausübung des Vorkaufsrechts ist eine Frist bestimmt (§ 469 Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "a period is fixed for the exercise of the right of pre-emption (§ 469 (2) sentence 2) — express statement of the case";
+}
+pub relation bestimmte_ausuebungsfrist_vorkauf(vk: Vorkaufsrecht, tag: Date) kind empirical {
+    key(vk);
+    label de official "letzter Tag der für die Ausübung bestimmten Frist, die an die Stelle der gesetzlichen Frist tritt (§ 469 Abs. 2 Satz 2)";
+    label en unofficial "last day of the period fixed for exercise, which takes the place of the statutory period (§ 469 (2) sentence 2)";
+}
+pub relation verkauf_an_gesetzlichen_erben_mit_ruecksicht_auf_erbrecht(vk: Vorkaufsrecht) kind empirical {
+    label de official "der Verkauf erfolgt mit Rücksicht auf ein künftiges Erbrecht an einen gesetzlichen Erben (§ 470)";
+    label en unofficial "the sale is made to an intestate heir with regard to a future right of succession (§ 470)";
+}
+pub relation erstreckung_auf_erbenverkauf_vereinbart(vk: Vorkaufsrecht) kind empirical {
+    label de official "die Erstreckung des Vorkaufsrechts auf den Verkauf an einen gesetzlichen Erben ist vereinbart (§ 470: „im Zweifel“)";
+    label en unofficial "extension of the right of pre-emption to a sale to an intestate heir has been agreed (§ 470: “in case of doubt”)";
+}
+pub relation vorkaufsrecht_ausuebbar(vk: Vorkaufsrecht) kind institutional {
+    label de official "das Vorkaufsrecht kann ausgeübt werden (§ 463)";
+    label en unofficial "the right of pre-emption may be exercised (§ 463)";
+}
+pub relation vorkaufsrecht_ausgeschlossen(vk: Vorkaufsrecht) kind institutional {
+    label de official "das Vorkaufsrecht ist ausgeschlossen (§§ 466 Satz 2, 470, 471)";
+    label en unofficial "the right of pre-emption is excluded (§§ 466 sentence 2, 470, 471)";
+}
+relation gesetzliche_vorkaufsfrist_kalenderende(vk: Vorkaufsrecht, tag: Date) kind institutional {
+    key(vk);
+    label de official "kalendarisches Ende der gesetzlichen Ausübungsfrist des § 469 Abs. 2 Satz 1 vor Anwendung des § 193";
+    label en unofficial "calendar end of the statutory period of exercise under § 469 (2) sentence 1 before applying § 193";
+}
+pub relation vorkaufsfrist_ende(vk: Vorkaufsrecht, tag: Date) kind institutional {
+    key(vk);
+    label de official "letzter Tag, an dem das Vorkaufsrecht ausgeübt werden kann (§ 469 Abs. 2, § 193)";
+    label en unofficial "last day on which the right of pre-emption may be exercised (§ 469 (2), § 193)";
+}
+pub relation vorkauf_zustande_gekommen(vk: Vorkaufsrecht, k: Kaufvertrag) kind institutional {
+    label de official "mit der Ausübung des Vorkaufsrechts kommt der Kauf zwischen dem Berechtigten und dem Verpflichteten unter den mit dem Dritten vereinbarten Bestimmungen zustande (§ 464 Abs. 2)";
+    label en unofficial "upon exercise of the right of pre-emption the sale comes into existence between the entitled and the bound person on the terms agreed with the third party (§ 464 (2))";
+}
+pub relation mitteilungspflicht_des_verpflichteten(vk: Vorkaufsrecht, p: Person) kind institutional {
+    label de official "Pflicht des Verpflichteten, dem Vorkaufsberechtigten den Inhalt des mit dem Dritten geschlossenen Vertrags unverzüglich mitzuteilen (§ 469 Abs. 1 Satz 1)";
+    label en unofficial "duty of the person bound to notify the person entitled without undue delay of the content of the contract concluded with the third party (§ 469 (1) sentence 1)";
+}
+
+@source(BGB_P469)
+pub external judgment relation mitteilung_unverzueglich_erfolgt(vk: Vorkaufsrecht) {
+    authority Court;
+    label de official "§ 469 Abs. 1 Satz 1. Die Mitteilung ist unverzüglich, also ohne schuldhaftes Zögern, erfolgt — eine Wertung, keine Frist von null Tagen";
+    label en unofficial "§ 469 (1) sentence 1. The notification was made without undue delay — an evaluation, not a period of zero days";
+}
+
+@source(BGB_P463)
+rule Vorkauf463(vk: Vorkaufsrecht, k: Kaufvertrag) strict {
+    label de official "Wer in Ansehung eines Gegenstandes zum Vorkauf berechtigt ist, kann das Vorkaufsrecht ausüben, sobald der Verpflichtete mit einem Dritten einen Kaufvertrag über den Gegenstand geschlossen hat (§ 463)";
+    label en unofficial "A person entitled to pre-emption in respect of an object may exercise the right as soon as the person bound has concluded a contract of sale over the object with a third party (§ 463)";
+    when drittkaufvertrag(vk, k) and not verkauf_im_wege_der_zwangsvollstreckung(k)
+     and not verkauf_auf_gesetzlichen_auftrag_oder_aus_insolvenzmasse(k)
+     and not verkauf_an_gesetzlichen_erben_mit_ruecksicht_auf_erbrecht(vk);
+    then vorkaufsrecht_ausuebbar(vk);
+}
+
+@source(BGB_P469)
+rule Mitteilungspflicht469Abs1(vk: Vorkaufsrecht, k: Kaufvertrag, p: Person) strict {
+    label de official "Der Verpflichtete hat dem Vorkaufsberechtigten den Inhalt des mit dem Dritten geschlossenen Vertrags unverzüglich mitzuteilen; die Mitteilung des Verpflichteten wird durch die Mitteilung des Dritten ersetzt (§ 469 Abs. 1)";
+    label en unofficial "The person bound must notify the person entitled without undue delay of the content of the contract concluded with the third party; his notification is replaced by that of the third party (§ 469 (1))";
+    when drittkaufvertrag(vk, k) and vorkaufsverpflichteter(vk, p);
+    then mitteilungspflicht_des_verpflichteten(vk, p);
+}
+
+@source(BGB_P469)
+rule Vorkaufsfrist469Grundstueck(vk: Vorkaufsrecht, t: Date) strict {
+    label de official "Das Vorkaufsrecht kann bei Grundstücken nur bis zum Ablauf von zwei Monaten nach dem Empfang der Mitteilung ausgeübt werden (§ 469 Abs. 2 Satz 1)";
+    label en unofficial "In the case of land the right of pre-emption may be exercised only up to the expiry of two months after receipt of the notification (§ 469 (2) sentence 1)";
+    when vorkaufsgegenstand_ist_grundstueck(vk) and mitteilung_empfangen_am(vk, t);
+    then gesetzliche_vorkaufsfrist_kalenderende(vk, add_calendar_period(t, 2 calendar_month));
+}
+
+@source(BGB_P469)
+rule Vorkaufsfrist469Andere(vk: Vorkaufsrecht, t: Date) strict {
+    label de official "Bei anderen Gegenständen kann das Vorkaufsrecht nur bis zum Ablauf einer Woche nach dem Empfang der Mitteilung ausgeübt werden (§ 469 Abs. 2 Satz 1)";
+    label en unofficial "In the case of other objects the right of pre-emption may be exercised only up to the expiry of one week after receipt of the notification (§ 469 (2) sentence 1)";
+    when not vorkaufsgegenstand_ist_grundstueck(vk) and mitteilung_empfangen_am(vk, t);
+    then gesetzliche_vorkaufsfrist_kalenderende(vk, add_calendar_period(t, 1 calendar_week));
+}
+
+@source(BGB_P469)
+rule Vorkaufsfrist469Verlegung(vk: Vorkaufsrecht, e: Date) strict {
+    label de official "Das Vorkaufsrecht wird durch Erklärung ausgeübt (§ 464 Abs. 1); fällt der letzte Tag der Frist auf einen Sonnabend, einen Sonntag oder einen anerkannten Feiertag, so tritt an seine Stelle der nächste Werktag (§ 193)";
+    label en unofficial "The right of pre-emption is exercised by declaration (§ 464 (1)); where the last day of the period falls on a Saturday, a Sunday or a recognised public holiday, the next working day takes its place (§ 193)";
+    when gesetzliche_vorkaufsfrist_kalenderende(vk, e) and not ausuebungsfrist_vorkauf_bestimmt(vk);
+    then vorkaufsfrist_ende(vk, add_business_days(e, 1 business_day));
+}
+
+@source(BGB_P469)
+rule Vorkaufsfrist469BestimmteFrist(vk: Vorkaufsrecht, t: Date) strict {
+    label de official "Ist für die Ausübung eine Frist bestimmt, so tritt diese an die Stelle der gesetzlichen Frist (§ 469 Abs. 2 Satz 2)";
+    label en unofficial "Where a period is fixed for exercise, it takes the place of the statutory period (§ 469 (2) sentence 2)";
+    when bestimmte_ausuebungsfrist_vorkauf(vk, t);
+    then vorkaufsfrist_ende(vk, t);
+}
+
+@source(BGB_P464)
+rule Vorkauf464(vk: Vorkaufsrecht, k: Kaufvertrag, a: Date, e: Date) strict {
+    label de official "Die Ausübung des Vorkaufsrechts erfolgt durch Erklärung gegenüber dem Verpflichteten; mit ihr kommt der Kauf zwischen dem Berechtigten und dem Verpflichteten unter den Bestimmungen zustande, welche der Verpflichtete mit dem Dritten vereinbart hat (§ 464)";
+    label en unofficial "The right of pre-emption is exercised by declaration to the person bound; upon it the sale comes into existence between the entitled and the bound person on the terms agreed with the third party (§ 464)";
+    when vorkaufsrecht_ausuebbar(vk) and drittkaufvertrag(vk, k) and vorkauf_ausgeuebt_am(vk, a)
+     and vorkaufsfrist_ende(vk, e) and a <= e;
+    then vorkauf_zustande_gekommen(vk, k);
+}
+
+pub relation vereinbarung_ueber_nichtausuebung_oder_ruecktritt(vk: Vorkaufsrecht) kind empirical {
+    label de official "eine Vereinbarung des Verpflichteten mit dem Dritten, durch welche der Kauf von der Nichtausübung des Vorkaufsrechts abhängig gemacht oder dem Verpflichteten für den Fall der Ausübung der Rücktritt vorbehalten wird (§ 465)";
+    label en unofficial "an agreement between the person bound and the third party making the sale dependent on the non-exercise of the right or reserving withdrawal in the event of its exercise (§ 465)";
+}
+pub relation vereinbarung_dem_vorkaufsberechtigten_gegenueber_unwirksam(vk: Vorkaufsrecht) kind institutional {
+    label de official "die Vereinbarung ist dem Vorkaufsberechtigten gegenüber unwirksam (§ 465)";
+    label en unofficial "the agreement is ineffective as against the person entitled to pre-emption (§ 465)";
+}
+pub relation nebenleistung_des_dritten(vk: Vorkaufsrecht) kind empirical {
+    label de official "der Dritte hat sich in dem Vertrag zu einer Nebenleistung verpflichtet, die der Vorkaufsberechtigte zu bewirken außerstande ist (§ 466 Satz 1)";
+    label en unofficial "the third party undertook an ancillary performance in the contract which the person entitled to pre-emption is unable to render (§ 466 sentence 1)";
+}
+pub relation nebenleistung_in_geld_schaetzbar(vk: Vorkaufsrecht) kind empirical {
+    label de official "die Nebenleistung lässt sich in Geld schätzen (§ 466 Satz 1, 2)";
+    label en unofficial "the ancillary performance can be estimated in money (§ 466 sentences 1, 2)";
+}
+pub relation vertrag_auch_ohne_nebenleistung_geschlossen(vk: Vorkaufsrecht) kind empirical {
+    label de official "der Vertrag mit dem Dritten würde auch ohne die Nebenleistung geschlossen sein (§ 466 Satz 2 Halbsatz 2)";
+    label en unofficial "the contract with the third party would have been concluded even without the ancillary performance (§ 466 sentence 2 second half)";
+}
+pub relation wert_der_nebenleistung_zu_entrichten(vk: Vorkaufsrecht) kind institutional {
+    label de official "der Vorkaufsberechtigte hat statt der Nebenleistung ihren Wert zu entrichten (§ 466 Satz 1)";
+    label en unofficial "the person entitled must pay the value of the ancillary performance instead of rendering it (§ 466 sentence 1)";
+}
+pub relation nebenleistung_kommt_nicht_in_betracht(vk: Vorkaufsrecht) kind institutional {
+    label de official "die Vereinbarung der Nebenleistung kommt nicht in Betracht (§ 466 Satz 2 Halbsatz 2)";
+    label en unofficial "the agreement on the ancillary performance is disregarded (§ 466 sentence 2 second half)";
+}
+pub relation gesamtpreis_in_cent(vk: Vorkaufsrecht, wert: Integer) kind empirical {
+    key(vk);
+    label de official "Gesamtpreis, zu dem der Dritte den Gegenstand mit anderen Gegenständen gekauft hat, in Cent (§ 467 Satz 1)";
+    label en unofficial "total price at which the third party bought the object together with other objects, in cents (§ 467 sentence 1)";
+}
+pub relation wert_des_vorkaufsgegenstandes_in_cent(vk: Vorkaufsrecht, wert: Integer) kind empirical {
+    key(vk);
+    label de official "Wert des Gegenstandes, auf den sich das Vorkaufsrecht bezieht, in Cent — Grundlage des verhältnismäßigen Teils (§ 467 Satz 1)";
+    label en unofficial "value of the object to which the right of pre-emption relates, in cents — basis of the proportionate part (§ 467 sentence 1)";
+}
+pub relation wert_aller_gegenstaende_in_cent(vk: Vorkaufsrecht, wert: Integer) kind empirical {
+    key(vk);
+    label de official "Wert aller mit dem Gesamtpreis gekauften Gegenstände, in Cent (§ 467 Satz 1)";
+    label en unofficial "value of all objects bought at the total price, in cents (§ 467 sentence 1)";
+}
+pub relation verhaeltnismaessiger_teil_des_gesamtpreises(vk: Vorkaufsrecht, betrag: Money) kind institutional {
+    label de official "der verhältnismäßige Teil des Gesamtpreises, den der Vorkaufsberechtigte zu entrichten hat (§ 467 Satz 1), einmal auf den Cent gerundet";
+    label en unofficial "the proportionate part of the total price payable by the person entitled to pre-emption (§ 467 sentence 1), rounded once to the cent";
+}
+pub relation gesamtpreis_betrag(vk: Vorkaufsrecht, betrag: Money) kind empirical {
+    key(vk);
+    label de official "Gesamtpreis als Geldbetrag (§ 467 Satz 1)";
+    label en unofficial "total price as a sum of money (§ 467 sentence 1)";
+}
+pub relation erstreckung_auf_untrennbare_sachen_verlangt(vk: Vorkaufsrecht) kind empirical {
+    label de official "der Verpflichtete verlangt, dass der Vorkauf auf alle Sachen erstreckt wird, die nicht ohne Nachteil für ihn getrennt werden können (§ 467 Satz 2)";
+    label en unofficial "the person bound demands that the pre-emption be extended to all things which cannot be separated without detriment to him (§ 467 sentence 2)";
+}
+pub relation vorkauf_auf_alle_sachen_erstreckt(vk: Vorkaufsrecht) kind institutional {
+    label de official "der Vorkauf wird auf alle nicht ohne Nachteil trennbaren Sachen erstreckt (§ 467 Satz 2)";
+    label en unofficial "the pre-emption is extended to all things not separable without detriment (§ 467 sentence 2)";
+}
+pub relation kaufpreis_dem_dritten_gestundet(vk: Vorkaufsrecht) kind empirical {
+    label de official "dem Dritten ist in dem Vertrag der Kaufpreis gestundet worden (§ 468 Abs. 1)";
+    label en unofficial "payment of the price was deferred for the third party in the contract (§ 468 (1))";
+}
+pub relation sicherheit_fuer_gestundeten_betrag_geleistet(vk: Vorkaufsrecht) kind empirical {
+    label de official "der Vorkaufsberechtigte hat für den gestundeten Betrag Sicherheit geleistet (§ 468 Abs. 1)";
+    label en unofficial "the person entitled provided security for the deferred amount (§ 468 (1))";
+}
+pub relation hypothek_fuer_gestundeten_kaufpreis(vk: Vorkaufsrecht) kind empirical {
+    label de official "für den gestundeten Kaufpreis ist die Bestellung einer Hypothek an dem Grundstück vereinbart oder in Anrechnung auf den Kaufpreis eine hypothekarisch gesicherte Schuld übernommen worden (§ 468 Abs. 2)";
+    label en unofficial "the creation of a mortgage on the land was agreed for the deferred price, or a debt secured by a mortgage was assumed and set off against the price (§ 468 (2))";
+}
+pub relation stundung_in_anspruch_nehmbar(vk: Vorkaufsrecht) kind institutional {
+    label de official "der Vorkaufsberechtigte kann die Stundung in Anspruch nehmen (§ 468)";
+    label en unofficial "the person entitled may take advantage of the deferral (§ 468)";
+}
+pub relation mehrere_vorkaufsberechtigte(vk: Vorkaufsrecht) kind empirical {
+    label de official "das Vorkaufsrecht steht mehreren gemeinschaftlich zu (§ 472 Satz 1)";
+    label en unofficial "the right of pre-emption belongs to several persons jointly (§ 472 sentence 1)";
+}
+pub relation recht_eines_vorkaufsberechtigten_erloschen(vk: Vorkaufsrecht) kind empirical {
+    label de official "das Recht ist für einen der Berechtigten erloschen oder einer von ihnen übt es nicht aus (§ 472 Satz 2)";
+    label en unofficial "the right has lapsed for one of the entitled persons or one of them does not exercise it (§ 472 sentence 2)";
+}
+pub relation uebrige_vorkaufsberechtigte_im_ganzen(vk: Vorkaufsrecht) kind institutional {
+    label de official "die übrigen Berechtigten sind berechtigt, das Vorkaufsrecht im Ganzen auszuüben (§ 472 Satz 2)";
+    label en unofficial "the remaining entitled persons may exercise the right of pre-emption as a whole (§ 472 sentence 2)";
+}
+pub relation vorkaufsrecht_zeitlich_beschraenkt(vk: Vorkaufsrecht) kind empirical {
+    label de official "das Vorkaufsrecht ist auf eine bestimmte Zeit beschränkt (§ 473 Satz 2)";
+    label en unofficial "the right of pre-emption is limited to a fixed period (§ 473 sentence 2)";
+}
+pub relation anderes_ueber_uebertragbarkeit_bestimmt(vk: Vorkaufsrecht) kind empirical {
+    label de official "über die Übertragbarkeit oder die Vererblichkeit des Vorkaufsrechts ist ein anderes bestimmt (§ 473 Satz 1)";
+    label en unofficial "something else is provided as to the transferability or heritability of the right of pre-emption (§ 473 sentence 1)";
+}
+pub relation vorkaufsrecht_unuebertragbar(vk: Vorkaufsrecht) kind institutional {
+    label de official "das Vorkaufsrecht ist nicht übertragbar und geht nicht auf die Erben des Berechtigten über (§ 473 Satz 1)";
+    label en unofficial "the right of pre-emption is not transferable and does not pass to the heirs of the person entitled (§ 473 sentence 1)";
+}
+pub relation vorkaufsrecht_vererblich(vk: Vorkaufsrecht) kind institutional {
+    label de official "das auf eine bestimmte Zeit beschränkte Vorkaufsrecht ist im Zweifel vererblich (§ 473 Satz 2)";
+    label en unofficial "a right of pre-emption limited to a fixed period is heritable in case of doubt (§ 473 sentence 2)";
+}
+
+@source(BGB_P465)
+rule Vorkauf465(vk: Vorkaufsrecht) strict {
+    label de official "Eine Vereinbarung des Verpflichteten mit dem Dritten, durch welche der Kauf von der Nichtausübung des Vorkaufsrechts abhängig gemacht oder dem Verpflichteten für den Fall der Ausübung der Rücktritt vorbehalten wird, ist dem Vorkaufsberechtigten gegenüber unwirksam (§ 465)";
+    label en unofficial "An agreement between the person bound and the third party making the sale dependent on non-exercise of the right, or reserving withdrawal in the event of exercise, is ineffective as against the person entitled (§ 465)";
+    when vereinbarung_ueber_nichtausuebung_oder_ruecktritt(vk);
+    then vereinbarung_dem_vorkaufsberechtigten_gegenueber_unwirksam(vk);
+}
+
+@source(BGB_P466)
+rule Vorkauf466Satz1(vk: Vorkaufsrecht) strict {
+    label de official "Hat sich der Dritte in dem Vertrag zu einer Nebenleistung verpflichtet, die der Vorkaufsberechtigte zu bewirken außerstande ist, so hat der Vorkaufsberechtigte statt der Nebenleistung ihren Wert zu entrichten (§ 466 Satz 1)";
+    label en unofficial "Where the third party undertook an ancillary performance which the person entitled is unable to render, the latter must pay its value instead (§ 466 sentence 1)";
+    when nebenleistung_des_dritten(vk) and nebenleistung_in_geld_schaetzbar(vk);
+    then wert_der_nebenleistung_zu_entrichten(vk);
+}
+pub relation wert_nebenleistung_entrichtet_am(vk: Vorkaufsrecht, tag: Date) kind empirical {
+    label de official "der Wert der Nebenleistung wurde entrichtet (§ 466 Satz 1)";
+    label en unofficial "the value of the ancillary performance was paid (§ 466 sentence 1)";
+}
+@source(BGB_P466)
+rule Position466Nebenleistung(vk: Vorkaufsrecht, p: Person, beginn: Date) strict {
+    label de official "Der Vorkaufsberechtigte ist verpflichtet, den Wert der Nebenleistung zu entrichten (§ 466 Satz 1)";
+    label en unofficial "The person entitled to pre-emption is obliged to pay the value of the ancillary performance (§ 466 sentence 1)";
+    when nebenleistung_des_dritten(vk) and nebenleistung_in_geld_schaetzbar(vk)
+     and vorkaufsberechtigter(vk, p) and vorkauf_ausgeuebt_am(vk, beginn);
+    then duty Duty466Nebenleistung {
+        bearer p;
+        achieve wert_nebenleistung_entrichtet_am(vk, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P466)
+rule Vorkauf466Satz2Ausschluss(vk: Vorkaufsrecht) strict {
+    label de official "Lässt sich die Nebenleistung nicht in Geld schätzen, so ist die Ausübung des Vorkaufsrechts ausgeschlossen (§ 466 Satz 2 Halbsatz 1)";
+    label en unofficial "Where the ancillary performance cannot be estimated in money, the exercise of the right of pre-emption is excluded (§ 466 sentence 2 first half)";
+    when nebenleistung_des_dritten(vk) and not nebenleistung_in_geld_schaetzbar(vk)
+     and not vertrag_auch_ohne_nebenleistung_geschlossen(vk);
+    then vorkaufsrecht_ausgeschlossen(vk);
+}
+
+@source(BGB_P466)
+rule Vorkauf466Satz2Ausnahme(vk: Vorkaufsrecht) strict {
+    label de official "Die Vereinbarung der Nebenleistung kommt jedoch nicht in Betracht, wenn der Vertrag mit dem Dritten auch ohne sie geschlossen sein würde (§ 466 Satz 2 Halbsatz 2)";
+    label en unofficial "The agreement on the ancillary performance is, however, disregarded where the contract with the third party would have been concluded without it (§ 466 sentence 2 second half)";
+    when nebenleistung_des_dritten(vk) and vertrag_auch_ohne_nebenleistung_geschlossen(vk);
+    then nebenleistung_kommt_nicht_in_betracht(vk);
+}
+
+@source(BGB_P467)
+rule Vorkauf467Satz1(vk: Vorkaufsrecht, preis: Money, teil: Integer, ganz: Integer) strict {
+    label de official "Hat der Dritte den Gegenstand, auf den sich das Vorkaufsrecht bezieht, mit anderen Gegenständen zu einem Gesamtpreis gekauft, so hat der Vorkaufsberechtigte einen verhältnismäßigen Teil des Gesamtpreises zu entrichten (§ 467 Satz 1) — eine Division je Betrag, kaufmännisch auf den Cent gerundet";
+    label en unofficial "Where the third party bought the object of the pre-emption together with other objects at a total price, the person entitled must pay a proportionate part of that price (§ 467 sentence 1) — one division per amount, rounded commercially to the cent";
+    when gesamtpreis_betrag(vk, preis) and wert_des_vorkaufsgegenstandes_in_cent(vk, teil)
+     and wert_aller_gegenstaende_in_cent(vk, ganz);
+    then verhaeltnismaessiger_teil_des_gesamtpreises(vk, div_round(preis * teil, ganz * 1.0, 2, "HALF_UP"));
+}
+pub relation anteil_gesamtpreis_entrichtet_am(vk: Vorkaufsrecht, tag: Date) kind empirical {
+    label de official "der verhältnismäßige Teil des Gesamtpreises wurde entrichtet (§ 467 Satz 1)";
+    label en unofficial "the proportionate part of the total price was paid (§ 467 sentence 1)";
+}
+@source(BGB_P467)
+rule Position467Teilpreis(vk: Vorkaufsrecht, p: Person, beginn: Date) strict {
+    label de official "Der Vorkaufsberechtigte ist verpflichtet, den verhältnismäßigen Teil des Gesamtpreises zu entrichten (§ 467 Satz 1)";
+    label en unofficial "The person entitled to pre-emption is obliged to pay the proportionate part of the total price (§ 467 sentence 1)";
+    when vorkaufsberechtigter(vk, p) and vorkauf_ausgeuebt_am(vk, beginn);
+    then duty Duty467Teilpreis {
+        bearer p;
+        achieve anteil_gesamtpreis_entrichtet_am(vk, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P467)
+rule Vorkauf467Satz2(vk: Vorkaufsrecht) strict {
+    label de official "Der Verpflichtete kann verlangen, dass der Vorkauf auf alle Sachen erstreckt wird, die nicht ohne Nachteil für ihn getrennt werden können (§ 467 Satz 2)";
+    label en unofficial "The person bound may demand that the pre-emption be extended to all things which cannot be separated without detriment to him (§ 467 sentence 2)";
+    when erstreckung_auf_untrennbare_sachen_verlangt(vk);
+    then vorkauf_auf_alle_sachen_erstreckt(vk);
+}
+pub relation vorkauf_auf_alle_sachen_erstreckt_am(vk: Vorkaufsrecht, tag: Date) kind empirical {
+    label de official "der Vorkauf wurde auf alle untrennbaren Sachen erstreckt (§ 467 Satz 2)";
+    label en unofficial "the pre-emption was extended to all inseparable things (§ 467 sentence 2)";
+}
+@source(BGB_P467)
+rule Position467Erstreckung(vk: Vorkaufsrecht, p: Person, beginn: Date) strict {
+    label de official "Der Verpflichtete kann die Erstreckung des Vorkaufs verlangen (§ 467 Satz 2)";
+    label en unofficial "The person bound may demand extension of the pre-emption (§ 467 sentence 2)";
+    when erstreckung_auf_untrennbare_sachen_verlangt(vk)
+     and vorkaufsverpflichteter(vk, p) and vorkauf_ausgeuebt_am(vk, beginn);
+    then duty Duty467Erstreckung {
+        bearer p;
+        achieve vorkauf_auf_alle_sachen_erstreckt_am(vk, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P468)
+rule Vorkauf468Abs1(vk: Vorkaufsrecht) strict {
+    label de official "Ist dem Dritten in dem Vertrag der Kaufpreis gestundet worden, so kann der Vorkaufsberechtigte die Stundung nur in Anspruch nehmen, wenn er für den gestundeten Betrag Sicherheit leistet (§ 468 Abs. 1)";
+    label en unofficial "Where payment was deferred for the third party, the person entitled may take advantage of the deferral only if he provides security for the deferred amount (§ 468 (1))";
+    when kaufpreis_dem_dritten_gestundet(vk) and sicherheit_fuer_gestundeten_betrag_geleistet(vk);
+    then stundung_in_anspruch_nehmbar(vk);
+}
+
+@source(BGB_P468)
+rule Vorkauf468Abs2(vk: Vorkaufsrecht) strict {
+    label de official "Ist ein Grundstück Gegenstand des Vorkaufs, so bedarf es der Sicherheitsleistung insoweit nicht, als für den gestundeten Kaufpreis eine Hypothek vereinbart oder eine hypothekarisch gesicherte Schuld übernommen worden ist; Entsprechendes gilt für eingetragene Schiffe und Schiffsbauwerke (§ 468 Abs. 2)";
+    label en unofficial "Where land is the object of the pre-emption, no security is required in so far as a mortgage was agreed for the deferred price or a debt secured by a mortgage was assumed; the same applies to registered ships and ships under construction (§ 468 (2))";
+    when kaufpreis_dem_dritten_gestundet(vk) and vorkaufsgegenstand_ist_grundstueck(vk)
+     and hypothek_fuer_gestundeten_kaufpreis(vk);
+    then stundung_in_anspruch_nehmbar(vk);
+}
+
+@source(BGB_P470)
+rule Vorkauf470(vk: Vorkaufsrecht) defeasible {
+    label de official "Das Vorkaufsrecht erstreckt sich im Zweifel nicht auf einen Verkauf, der mit Rücksicht auf ein künftiges Erbrecht an einen gesetzlichen Erben erfolgt (§ 470)";
+    label en unofficial "In case of doubt the right of pre-emption does not extend to a sale made to an intestate heir with regard to a future right of succession (§ 470)";
+    when verkauf_an_gesetzlichen_erben_mit_ruecksicht_auf_erbrecht(vk);
+    then vorkaufsrecht_ausgeschlossen(vk);
+    unless erstreckung_auf_erbenverkauf_vereinbart(vk);
+}
+
+@source(BGB_P471)
+rule Vorkauf471Zwangsvollstreckung(vk: Vorkaufsrecht, k: Kaufvertrag) strict {
+    label de official "Das Vorkaufsrecht ist ausgeschlossen, wenn der Verkauf im Wege der Zwangsvollstreckung erfolgt (§ 471)";
+    label en unofficial "The right of pre-emption is excluded where the sale takes place by way of execution (§ 471)";
+    when drittkaufvertrag(vk, k) and verkauf_im_wege_der_zwangsvollstreckung(k);
+    then vorkaufsrecht_ausgeschlossen(vk);
+}
+
+@source(BGB_P471)
+rule Vorkauf471Insolvenz(vk: Vorkaufsrecht, k: Kaufvertrag) strict {
+    label de official "Das Vorkaufsrecht ist ausgeschlossen, wenn der Verkauf aus einer Insolvenzmasse erfolgt (§ 471)";
+    label en unofficial "The right of pre-emption is excluded where the sale is made from an insolvency estate (§ 471)";
+    when drittkaufvertrag(vk, k) and verkauf_auf_gesetzlichen_auftrag_oder_aus_insolvenzmasse(k);
+    then vorkaufsrecht_ausgeschlossen(vk);
+}
+
+@source(BGB_P472)
+rule Vorkauf472Satz2(vk: Vorkaufsrecht) strict {
+    label de official "Ist das Vorkaufsrecht für einen der Berechtigten erloschen oder übt einer von ihnen sein Recht nicht aus, so sind die übrigen berechtigt, das Vorkaufsrecht im Ganzen auszuüben (§ 472 Satz 2)";
+    label en unofficial "Where the right has lapsed for one of the entitled persons or one of them does not exercise it, the others may exercise the right as a whole (§ 472 sentence 2)";
+    when mehrere_vorkaufsberechtigte(vk) and recht_eines_vorkaufsberechtigten_erloschen(vk);
+    then uebrige_vorkaufsberechtigte_im_ganzen(vk);
+}
+
+@source(BGB_P473)
+rule Vorkauf473Satz1(vk: Vorkaufsrecht, p: Person) defeasible {
+    label de official "Das Vorkaufsrecht ist nicht übertragbar und geht nicht auf die Erben des Berechtigten über, sofern nicht ein anderes bestimmt ist (§ 473 Satz 1)";
+    label en unofficial "The right of pre-emption is not transferable and does not pass to the heirs of the person entitled unless otherwise provided (§ 473 sentence 1)";
+    when vorkaufsberechtigter(vk, p);
+    then vorkaufsrecht_unuebertragbar(vk);
+    unless anderes_ueber_uebertragbarkeit_bestimmt(vk);
+    unless vorkaufsrecht_zeitlich_beschraenkt(vk);
+}
+
+@source(BGB_P473)
+rule Vorkauf473Satz2(vk: Vorkaufsrecht) defeasible {
+    label de official "Ist das Recht auf eine bestimmte Zeit beschränkt, so ist es im Zweifel vererblich (§ 473 Satz 2)";
+    label en unofficial "Where the right is limited to a fixed period it is heritable in case of doubt (§ 473 sentence 2)";
+    when vorkaufsrecht_zeitlich_beschraenkt(vk);
+    then vorkaufsrecht_vererblich(vk);
+    unless anderes_ueber_uebertragbarkeit_bestimmt(vk);
+}

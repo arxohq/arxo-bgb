@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 462 Satz 1: bei anderen Gegenständen als Grundstücken kann das Wiederkaufsrecht nur bis zum Ablauf von drei Jahren nach der Vereinbarung des Vorbehalts ausgeübt werden. Vereinbart am 16. Juni 2022, letzter Tag ist Montag, der 16. Juni 2025 — ein Werktag, § 193 verlegt nichts. Die Erklärung an diesem Tag lässt den Wiederkauf zustande kommen (§ 456 Abs. 1), und der ursprüngliche Preis gilt auch für ihn (Abs. 2).
+test "§ 462: drei Jahre — Ausübung am letzten Tag ist rechtzeitig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:w01"), entity_ref("urn:de:bgb:kauf:w01:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:w01"), entity_ref("urn:de:bgb:kauf:w01:K")) { origin case_input; }
+        assert "f3": kaufpreis(entity_ref("urn:de:bgb:kauf:w01"), 12000.00 EUR) { origin case_input; }
+        assert "f4": not grundstueckskauf(entity_ref("urn:de:bgb:kauf:w01")) { origin case_input; }
+        assert "f5": wiederkaufsvorbehalt(entity_ref("urn:de:bgb:kauf:w01:W"), entity_ref("urn:de:bgb:kauf:w01")) { origin case_input; }
+        assert "f6": vorbehalt_vereinbart_am(entity_ref("urn:de:bgb:kauf:w01:W"), @2022-06-16) { origin case_input; }
+        assert "f7": not ausuebungsfrist_wiederkauf_bestimmt(entity_ref("urn:de:bgb:kauf:w01:W")) { origin case_input; }
+        assert "f8": wiederkauf_ausgeuebt_am(entity_ref("urn:de:bgb:kauf:w01:W"), @2025-06-16) { origin case_input; }
+        assert "f9": not mehrere_wiederkaufsberechtigte(entity_ref("urn:de:bgb:kauf:w01:W")) { origin case_input; }
+        assert "f10": not abweichender_wiederkaufpreis(entity_ref("urn:de:bgb:kauf:w01:W")) { origin case_input; }
+    }
+    evaluate truth(wiederkaufsfrist_ende(entity_ref("urn:de:bgb:kauf:w01:W"), @2025-06-16));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(wiederkauf_zustande_gekommen(entity_ref("urn:de:bgb:kauf:w01:W"), entity_ref("urn:de:bgb:kauf:w01")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(wiederkaufpreis(entity_ref("urn:de:bgb:kauf:w01:W"), 12000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

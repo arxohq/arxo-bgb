@@ -1,0 +1,1063 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 2 TITEL 1 — ANNAHME UND
+// AUSSCHLAGUNG DER ERBSCHAFT, FÜRSORGE DES NACHLASSGERICHTS (§§ 1942–1966).
+//
+// FRISTEN. Eine einzige Kalenderpolitik `BGB_ERBFOLGE_KALENDER` für das
+// ganze Paket (§ 168.2, Feldsatz wie BGB_FRISTEN_KALENDER): Wochen, Monate
+// und Jahre werden auf den Tag genau gerechnet (§ 188 Abs. 2, 3). § 193 wird
+// AUSDRÜCKLICH gerechnet (`add_business_days(Ende, 1 business_day)` über dem
+// Kalender KALENDER_BUNDESWEIT des Pakets `de.bgb.fristen`), weil innerhalb
+// der Ausschlagungs- und der Anfechtungsfrist eine ERKLÄRUNG gegenüber dem
+// Nachlassgericht abzugeben ist (Ledger D-10-05, D-11-04).
+//
+// ZWEI FRISTBEGINNE (§ 1944 Abs. 2): Kenntnis von Anfall und Berufungsgrund
+// (Satz 1) und Bekanntgabe der Verfügung von Todes wegen (Satz 2). Der
+// SPÄTERE gewinnt — zwei Regeln mit Garde, nicht `max` (der v1-Flächenterm
+// `max` über Daten ist nicht genannt). Satz 3 verweist auf §§ 206, 210: die
+// Hemmung wird als Zahl der Hemmungstage geführt und an das Ende gehängt
+// (Ledger D-04, D-15-03).
+//
+// WEGFALL. § 1953 Abs. 2 sagt, die Erbschaft falle demjenigen an, „welcher
+// berufen sein würde, wenn der Ausschlagende zur Zeit des Erbfalls nicht
+// gelebt hätte“. Deshalb trägt das Paket EIN Prädikat `weggefallen` mit vier
+// Erzeugern: Vorversterben, Ausschlagung (§ 1953), Erbunwürdigkeit (§ 2344)
+// und Erbverzicht (§ 2346); die letzten beiden sind Eingaben des Falls,
+// ihre Normen stehen bei `de.bgb.verfuegungen`. Die Stämme des Piloten lesen
+// `weggefallen` statt `vorverstorben`.
+
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// KALENDERKNOTEN DES PAKETS (§85, Ledger D-04-03): die Politik des § 86 wird
+// in dem Paket erklärt, das den Fall ausführt, und ohne Kalenderknoten in
+// derselben Programmfläche bleibt die Ausführung NON_EXECUTABLE. Datensatz
+// und Hash sind dieselben wie bei `de.bgb.fristen` und `de.bgb.ehe`
+// (corpus/gen_kz_clir.py, `de_bgb_feiertage_calendar_dataset`); der eigene
+// Knoten macht die Achse `calendar` des Falls eindeutig, wo mehrere Pakete
+// des Weltausschnitts je einen Schnappschuss tragen (AMBIGUOUS_CALENDAR).
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// Wochen-, Monats- und Jahresfrist des Erbrechts (§ 188 Abs. 2, 3);
+// § 193 wird ausdrücklich gerechnet, deshalb `roll no_roll`.
+deadline policy BGB_ERBFOLGE_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// --- Wegfall eines Erben: ein Prädikat, vier Erzeuger ------------------------------------------------
+
+pub relation ausgeschlagen(e: Erbfall, p: Person) kind derived {
+    label de official "Der Erbe hat die Erbschaft ausgeschlagen (§§ 1945, 1953)";
+    label en unofficial "The heir has disclaimed the inheritance (§§ 1945, 1953)";
+}
+pub relation erbunwuerdig_erklaert(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe ist für erbunwürdig erklärt (§ 2344; Norm bei de.bgb.verfuegungen) — Eingabe des Falls, origin adjudicated";
+    label en unofficial "The heir has been declared unworthy to inherit (§ 2344; rule in de.bgb.verfuegungen) — case input, origin adjudicated";
+}
+pub relation erbverzicht_geschlossen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Verwandte oder Ehegatte hat mit dem Erblasser einen Erbverzicht geschlossen (§ 2346; Norm bei de.bgb.verfuegungen) — Eingabe des Falls";
+    label en unofficial "The relative or spouse has concluded a waiver of inheritance with the decedent (§ 2346; rule in de.bgb.verfuegungen) — case input";
+}
+pub relation weggefallen(e: Erbfall, p: Person) kind derived {
+    label de official "Der Erbe ist weggefallen: er lebte beim Erbfall nicht mehr, hat ausgeschlagen (§ 1953), ist erbunwürdig (§ 2344) oder hat verzichtet (§ 2346); die Erbschaft fällt demjenigen an, welcher berufen wäre, wenn er zur Zeit des Erbfalls nicht gelebt hätte (§ 1953 Abs. 2)";
+    label en unofficial "The heir has fallen away: he was no longer alive at the devolution, has disclaimed (§ 1953), is unworthy (§ 2344) or has waived (§ 2346); the estate devolves on the person who would be called had he not been alive at the devolution (§ 1953 (2))";
+}
+
+@source(BGB_P1953) {
+    rule WegfallDurchVorversterben(e: Erbfall, p: Person) strict {
+        label de official "Wer zur Zeit des Erbfalls nicht mehr lebte, ist weggefallen; an seine Stelle treten seine Abkömmlinge (§ 1924 Abs. 3, § 1953 Abs. 2 im selben Maßstab)";
+        label en unofficial "A person no longer alive at the devolution has fallen away; his descendants take his place (§ 1924 (3), § 1953 (2) by the same measure)";
+        when vorverstorben(e, p);
+        then weggefallen(e, p);
+    }
+    rule WegfallDurchAusschlagung(e: Erbfall, p: Person) strict {
+        label de official "Wird die Erbschaft ausgeschlagen, so gilt der Anfall an den Ausschlagenden als nicht erfolgt; die Erbschaft fällt demjenigen an, welcher berufen sein würde, wenn der Ausschlagende zur Zeit des Erbfalls nicht gelebt hätte (§ 1953 Abs. 1, 2)";
+        label en unofficial "If the inheritance is disclaimed, the devolution on the disclaiming person is deemed not to have occurred; it devolves on the person who would be called had he not been alive at the devolution (§ 1953 (1), (2))";
+        when ausgeschlagen(e, p);
+        then weggefallen(e, p);
+    }
+    rule WegfallDurchErbunwuerdigkeit(e: Erbfall, p: Person) strict {
+        label de official "Der für erbunwürdig Erklärte ist weggefallen; der Anfall an ihn gilt als nicht erfolgt (§ 2344 Abs. 1, 2 in der Wirkung des § 1953)";
+        label en unofficial "A person declared unworthy has fallen away; the devolution on him is deemed not to have occurred (§ 2344 (1), (2) with the effect of § 1953)";
+        when erbunwuerdig_erklaert(e, p);
+        then weggefallen(e, p);
+    }
+    rule WegfallDurchErbverzicht(e: Erbfall, p: Person) strict {
+        label de official "Der Verzichtende ist von der gesetzlichen Erbfolge ausgeschlossen, wie wenn er zur Zeit des Erbfalls nicht mehr lebte (§ 2346 Abs. 1 Satz 2 in der Wirkung des § 1953)";
+        label en unofficial "The waiving person is excluded from statutory succession as if he were no longer alive at the devolution (§ 2346 (1) sentence 2 with the effect of § 1953)";
+        when erbverzicht_geschlossen(e, p);
+        then weggefallen(e, p);
+    }
+    rule GesetzlicherErbeWeggefallen(e: Erbfall, p: Person) strict {
+        label de official "Ein gesetzlicher Erbe ist vor oder nach dem Erbfall weggefallen (§ 1935 Satz 1, § 1953)";
+        label en unofficial "A statutory heir has fallen away before or after the devolution (§ 1935 sentence 1, § 1953)";
+        when weggefallen(e, p);
+        then gesetzlicher_erbe_weggefallen(e, p);
+    }
+    rule AnfallGiltAlsNichtErfolgt(e: Erbfall, p: Person) strict {
+        label de official "Wird die Erbschaft ausgeschlagen, so gilt der Anfall an den Ausschlagenden als nicht erfolgt (§ 1953 Abs. 1)";
+        label en unofficial "If the inheritance is disclaimed, the devolution on the disclaiming person is deemed not to have occurred (§ 1953 (1))";
+        when ausgeschlagen(e, p);
+        then anfall_gilt_als_nicht_erfolgt(e, p);
+    }
+    rule MitteilungAnDenNaechsten(e: Erbfall, p: Person, naechster: Person) strict {
+        label de official "Das Nachlassgericht soll die Ausschlagung demjenigen mitteilen, welchem die Erbschaft infolge der Ausschlagung angefallen ist (§ 1953 Abs. 3 Satz 1)";
+        label en unofficial "The probate court shall notify the disclaimer to the person to whom the estate has devolved as a result (§ 1953 (3) sentence 1)";
+        when ausgeschlagen(e, p) and erbschaft_angefallen(e, naechster) and naechster != p;
+        then mitteilung_der_ausschlagung_geschuldet(e, naechster);
+    }
+}
+
+pub relation anfall_gilt_als_nicht_erfolgt(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Anfall an den Ausschlagenden gilt als nicht erfolgt (§ 1953 Abs. 1)";
+    label en unofficial "The devolution on the disclaiming person is deemed not to have occurred (§ 1953 (1))";
+}
+pub relation mitteilung_der_ausschlagung_geschuldet(e: Erbfall, p: Person) kind institutional {
+    label de official "Dem Angefallenen ist die Ausschlagung mitzuteilen (§ 1953 Abs. 3 Satz 1)";
+    label en unofficial "The disclaimer is to be notified to the person on whom the estate devolved (§ 1953 (3) sentence 1)";
+}
+
+// --- § 1942 Anfall und Ausschlagung ------------------------------------------------------------------
+
+pub relation fiskus_als_gesetzlicher_erbe(e: Erbfall, p: Person) kind derived {
+    label de official "Der Fiskus (Land oder Bund) ist gesetzlicher Erbe (§ 1936, § 1942 Abs. 2)";
+    label en unofficial "The treasury (Land or Federation) is statutory heir (§ 1936, § 1942 (2))";
+}
+pub relation erbschaft_angefallen(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Erbschaft ist dem berufenen Erben angefallen (§ 1942 Abs. 1)";
+    label en unofficial "The inheritance has devolved on the heir called (§ 1942 (1))";
+}
+pub relation ausschlagungsrecht(e: Erbfall, p: Person) kind institutional {
+    label de official "Recht des Erben, die Erbschaft auszuschlagen (§ 1942 Abs. 1); der Fiskus hat es nicht (Abs. 2)";
+    label en unofficial "right of the heir to disclaim the inheritance (§ 1942 (1)); the treasury does not have it ((2))";
+}
+
+@source(BGB_P1942) {
+    rule AnfallDerErbschaft(e: Erbfall, p: Person, z: Integer, n: Integer) strict {
+        label de official "Die Erbschaft geht auf den berufenen Erben unbeschadet des Rechts über, sie auszuschlagen (Anfall der Erbschaft, § 1942 Abs. 1)";
+        label en unofficial "The inheritance passes to the heir called without prejudice to the right to disclaim it (§ 1942 (1))";
+        when gesamterbteil_bruch(e, p, z, n);
+        then erbschaft_angefallen(e, p);
+    }
+    rule AnfallAnGewillkuertenErben(e: Erbfall, p: Person) strict {
+        label de official "Auch dem durch Verfügung von Todes wegen berufenen Erben fällt die Erbschaft an (§ 1942 Abs. 1, §§ 1937, 1941)";
+        label en unofficial "The inheritance also devolves on the heir called by disposition mortis causa (§ 1942 (1), §§ 1937, 1941)";
+        when gewillkuerter_erbe(e, p);
+        then erbschaft_angefallen(e, p);
+    }
+    rule FiskusAlsErbeLand(e: Erbfall, land: Person) strict {
+        label de official "Der Fiskus als gesetzlicher Erbe: das erbende Land (§ 1936 Satz 1, § 1942 Abs. 2)";
+        label en unofficial "The treasury as statutory heir: the inheriting Land (§ 1936 sentence 1, § 1942 (2))";
+        when erbrecht_des_landes(e, land);
+        then fiskus_als_gesetzlicher_erbe(e, land);
+    }
+    rule AusschlagungsrechtDesErben(e: Erbfall, p: Person) strict {
+        label de official "Die Erbschaft geht auf den berufenen Erben unbeschadet des Rechts über, sie auszuschlagen (§ 1942 Abs. 1); der Fiskus kann die ihm als gesetzlichem Erben angefallene Erbschaft nicht ausschlagen (Abs. 2)";
+        label en unofficial "The inheritance passes to the heir called without prejudice to the right to disclaim (§ 1942 (1)); the treasury cannot disclaim an inheritance devolved on it as statutory heir ((2))";
+        when erbschaft_angefallen(e, p) and not_known(fiskus_als_gesetzlicher_erbe(e, p));
+        then ausschlagungsrecht(e, p);
+    }
+}
+
+// --- § 1943 Annahme; Fristablauf ---------------------------------------------------------------------
+
+pub relation erbschaft_angenommen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat die Erbschaft angenommen (§ 1943)";
+    label en unofficial "The heir has accepted the inheritance (§ 1943)";
+}
+pub relation ausschlagung_erklaert_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem die Ausschlagung gegenüber dem Nachlassgericht erklärt worden ist (§ 1945 Abs. 1)";
+    label en unofficial "day on which the disclaimer was declared to the probate court (§ 1945 (1))";
+}
+pub relation ausschlagung_nicht_mehr_moeglich(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe kann die Erbschaft nicht mehr ausschlagen (§ 1943 Halbsatz 1)";
+    label en unofficial "The heir can no longer disclaim the inheritance (§ 1943 first half-sentence)";
+}
+pub relation erbschaft_gilt_als_angenommen(e: Erbfall, p: Person) kind institutional {
+    label de official "Mit dem Ablauf der Ausschlagungsfrist gilt die Erbschaft als angenommen (§ 1943 Halbsatz 2)";
+    label en unofficial "On expiry of the disclaimer period the inheritance is deemed accepted (§ 1943 second half-sentence)";
+}
+pub relation ausschlagungsfrist_verstrichen(e: Erbfall, p: Person) kind derived {
+    label de official "Die für die Ausschlagung vorgeschriebene Frist ist verstrichen (§ 1943, § 1944)";
+    label en unofficial "The period prescribed for the disclaimer has elapsed (§ 1943, § 1944)";
+}
+
+@source(BGB_P1943) {
+    rule AusschlagungNachAnnahmeAusgeschlossen(e: Erbfall, p: Person) strict {
+        label de official "Der Erbe kann die Erbschaft nicht mehr ausschlagen, wenn er sie angenommen hat (§ 1943 Halbsatz 1)";
+        label en unofficial "The heir can no longer disclaim the inheritance once he has accepted it (§ 1943 first half-sentence)";
+        when erbschaft_angenommen(e, p);
+        then ausschlagung_nicht_mehr_moeglich(e, p);
+    }
+    rule AusschlagungNachFristablaufAusgeschlossen(e: Erbfall, p: Person) strict {
+        label de official "Der Erbe kann die Erbschaft nicht mehr ausschlagen, wenn die für die Ausschlagung vorgeschriebene Frist verstrichen ist (§ 1943 Halbsatz 1)";
+        label en unofficial "The heir can no longer disclaim once the prescribed period has elapsed (§ 1943 first half-sentence)";
+        when ausschlagungsfrist_verstrichen(e, p);
+        then ausschlagung_nicht_mehr_moeglich(e, p);
+    }
+    rule FristablaufGiltAlsAnnahme(e: Erbfall, p: Person) strict {
+        label de official "Mit dem Ablauf der Frist gilt die Erbschaft als angenommen (§ 1943 Halbsatz 2)";
+        label en unofficial "On expiry of the period the inheritance is deemed accepted (§ 1943 second half-sentence)";
+        when ausschlagungsfrist_verstrichen(e, p);
+        then erbschaft_gilt_als_angenommen(e, p);
+    }
+}
+
+// --- § 1944 Ausschlagungsfrist -------------------------------------------------------------------------
+
+pub relation kenntnis_von_anfall_und_grund_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Zeitpunkt, in welchem der Erbe von dem Anfall und dem Grunde der Berufung Kenntnis erlangt (§ 1944 Abs. 2 Satz 1)";
+    label en unofficial "point in time at which the heir learns of the devolution and the ground of his being called (§ 1944 (2) sentence 1)";
+}
+pub relation bekanntgabe_der_verfuegung_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag der Bekanntgabe der Verfügung von Todes wegen durch das Nachlassgericht (§ 1944 Abs. 2 Satz 2)";
+    label en unofficial "day on which the probate court announced the disposition mortis causa (§ 1944 (2) sentence 2)";
+}
+pub relation erblasser_wohnsitz_nur_im_ausland(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hat seinen letzten Wohnsitz nur im Ausland gehabt (§ 1944 Abs. 3)";
+    label en unofficial "The decedent had his last domicile only abroad (§ 1944 (3))";
+}
+pub relation erbe_bei_fristbeginn_im_ausland(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hält sich bei dem Beginn der Frist im Ausland auf (§ 1944 Abs. 3)";
+    label en unofficial "The heir is abroad at the beginning of the period (§ 1944 (3))";
+}
+pub relation hemmungstage_der_ausschlagungsfrist(e: Erbfall, p: Person, tage: Integer) kind empirical {
+    key(e, p);
+    label de official "Zahl der Tage, um die der Lauf der Ausschlagungsfrist nach den entsprechend anwendbaren §§ 206, 210 gehemmt war (§ 1944 Abs. 2 Satz 3) — festgestellte Tatsache des Falls";
+    label en unofficial "number of days by which the running of the disclaimer period was suspended under §§ 206, 210 applied accordingly (§ 1944 (2) sentence 3) — established fact of the case";
+}
+pub relation keine_hemmung_der_ausschlagungsfrist(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Lauf der Ausschlagungsfrist war nicht gehemmt (§ 1944 Abs. 2 Satz 3) — ausdrückliche Eingabe, denn das Fehlen einer Tatsache ist nicht ihre Verneinung";
+    label en unofficial "The running of the disclaimer period was not suspended (§ 1944 (2) sentence 3) — explicit input: the absence of a fact is not its denial";
+}
+pub relation verfuegung_bekannt_gegeben(e: Erbfall, p: Person) kind derived {
+    label de official "Der Erbe ist durch Verfügung von Todes wegen berufen und die Verfügung ist bekannt gegeben (§ 1944 Abs. 2 Satz 2)";
+    label en unofficial "The heir is called by disposition mortis causa and the disposition has been announced (§ 1944 (2) sentence 2)";
+}
+pub relation ausschlagungsfrist_beginn(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Beginn der Ausschlagungsfrist: der spätere der beiden Zeitpunkte des § 1944 Abs. 2";
+    label en unofficial "beginning of the disclaimer period: the later of the two points in time of § 1944 (2)";
+}
+pub relation auslandsfall_1944(e: Erbfall, p: Person) kind derived {
+    label de official "Fall des § 1944 Abs. 3: Wohnsitz des Erblassers nur im Ausland oder Aufenthalt des Erben im Ausland bei Fristbeginn";
+    label en unofficial "case of § 1944 (3): the decedent's domicile only abroad, or the heir abroad at the beginning of the period";
+}
+pub relation ausschlagungsfrist_ende_kalender(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Kalendarisches Ende der Ausschlagungsfrist vor Anwendung des § 193 (§ 1944 Abs. 1, 3, § 188 Abs. 2, 3)";
+    label en unofficial "calendar end of the disclaimer period before applying § 193 (§ 1944 (1), (3), § 188 (2), (3))";
+}
+pub relation ausschlagungsfrist_ende_gehemmt(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ende der Ausschlagungsfrist nach Zurechnung der Hemmungstage (§ 1944 Abs. 2 Satz 3, §§ 206, 210)";
+    label en unofficial "end of the disclaimer period after adding the days of suspension (§ 1944 (2) sentence 3, §§ 206, 210)";
+}
+pub relation ausschlagungsfrist_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Letzter Tag der Ausschlagungsfrist nach § 193 (§ 1944 mit § 193)";
+    label en unofficial "last day of the disclaimer period after § 193 (§ 1944 with § 193)";
+}
+
+@source(BGB_P1944) {
+    rule VerfuegungBekanntGegeben(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Ist der Erbe durch Verfügung von Todes wegen berufen, beginnt die Frist nicht vor Bekanntgabe der Verfügung durch das Nachlassgericht (§ 1944 Abs. 2 Satz 2)";
+        label en unofficial "Where the heir is called by disposition mortis causa, the period does not begin before the probate court announces the disposition (§ 1944 (2) sentence 2)";
+        when bekanntgabe_der_verfuegung_am(e, p, tag);
+        then verfuegung_bekannt_gegeben(e, p);
+    }
+    rule FristbeginnNurKenntnis(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beginnt mit dem Zeitpunkt, in welchem der Erbe von dem Anfall und dem Grunde der Berufung Kenntnis erlangt (§ 1944 Abs. 2 Satz 1)";
+        label en unofficial "The period begins at the time the heir learns of the devolution and the ground of his being called (§ 1944 (2) sentence 1)";
+        when kenntnis_von_anfall_und_grund_am(e, p, tag) and not_known(verfuegung_bekannt_gegeben(e, p));
+        then ausschlagungsfrist_beginn(e, p, tag);
+    }
+    rule FristbeginnBekanntgabeSpaeter(e: Erbfall, p: Person, kenntnis: Date, bekannt: Date) strict {
+        label de official "Die Frist beginnt nicht vor Bekanntgabe der Verfügung von Todes wegen (§ 1944 Abs. 2 Satz 2): liegt die Bekanntgabe später als die Kenntnis, so beginnt die Frist mit der Bekanntgabe";
+        label en unofficial "The period does not begin before the disposition is announced (§ 1944 (2) sentence 2): where the announcement is later than the knowledge, the period begins with the announcement";
+        when kenntnis_von_anfall_und_grund_am(e, p, kenntnis) and bekanntgabe_der_verfuegung_am(e, p, bekannt)
+            and bekannt > kenntnis;
+        then ausschlagungsfrist_beginn(e, p, bekannt);
+    }
+    rule FristbeginnKenntnisSpaeter(e: Erbfall, p: Person, kenntnis: Date, bekannt: Date) strict {
+        label de official "Liegt die Kenntnis nicht vor der Bekanntgabe, so bleibt es beim Zeitpunkt der Kenntnis (§ 1944 Abs. 2 Satz 1, 2)";
+        label en unofficial "Where the knowledge is not earlier than the announcement, the time of knowledge remains decisive (§ 1944 (2) sentences 1, 2)";
+        when kenntnis_von_anfall_und_grund_am(e, p, kenntnis) and bekanntgabe_der_verfuegung_am(e, p, bekannt)
+            and bekannt <= kenntnis;
+        then ausschlagungsfrist_beginn(e, p, kenntnis);
+    }
+    rule Auslandsfall1944Wohnsitz(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beträgt sechs Monate, wenn der Erblasser seinen letzten Wohnsitz nur im Ausland gehabt hat (§ 1944 Abs. 3)";
+        label en unofficial "The period is six months where the decedent had his last domicile only abroad (§ 1944 (3))";
+        when erblasser_wohnsitz_nur_im_ausland(e) and ausschlagungsfrist_beginn(e, p, tag);
+        then auslandsfall_1944(e, p);
+    }
+    rule Auslandsfall1944Aufenthalt(e: Erbfall, p: Person) strict {
+        label de official "Die Frist beträgt sechs Monate, wenn sich der Erbe bei dem Beginn der Frist im Ausland aufhält (§ 1944 Abs. 3)";
+        label en unofficial "The period is six months where the heir is abroad at the beginning of the period (§ 1944 (3))";
+        when erbe_bei_fristbeginn_im_ausland(e, p);
+        then auslandsfall_1944(e, p);
+    }
+    rule AusschlagungsfristSechsWochen(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Ausschlagung kann nur binnen sechs Wochen erfolgen (§ 1944 Abs. 1); das Ende ist der Tag, der durch seine Zahl dem Beginn entspricht (§ 188 Abs. 2)";
+        label en unofficial "The disclaimer may be made only within six weeks (§ 1944 (1)); the end is the day corresponding by number to the beginning (§ 188 (2))";
+        when ausschlagungsfrist_beginn(e, p, tag) and not_known(auslandsfall_1944(e, p));
+        then ausschlagungsfrist_ende_kalender(e, p, add_calendar_period(tag, 6 calendar_week));
+    }
+    rule AusschlagungsfristSechsMonate(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beträgt sechs Monate, wenn der Erblasser seinen letzten Wohnsitz nur im Ausland gehabt hat oder wenn sich der Erbe bei dem Beginn der Frist im Ausland aufhält (§ 1944 Abs. 3)";
+        label en unofficial "The period is six months where the decedent's last domicile was only abroad or the heir is abroad at the beginning of the period (§ 1944 (3))";
+        when ausschlagungsfrist_beginn(e, p, tag) and auslandsfall_1944(e, p);
+        then ausschlagungsfrist_ende_kalender(e, p, add_calendar_period(tag, 6 calendar_month));
+    }
+    rule AusschlagungsfristOhneHemmung(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "War der Lauf der Frist nicht gehemmt, so bleibt es beim kalendarischen Ende (§ 1944 Abs. 2 Satz 3)";
+        label en unofficial "Where the running of the period was not suspended, the calendar end remains (§ 1944 (2) sentence 3)";
+        when ausschlagungsfrist_ende_kalender(e, p, tag) and keine_hemmung_der_ausschlagungsfrist(e, p);
+        then ausschlagungsfrist_ende_gehemmt(e, p, tag);
+    }
+    rule AusschlagungsfristMitHemmung(e: Erbfall, p: Person, tag: Date, tage: Integer) strict {
+        label de official "Auf den Lauf der Frist finden die für die Verjährung geltenden Vorschriften der §§ 206, 210 entsprechende Anwendung (§ 1944 Abs. 2 Satz 3): der Zeitraum der Hemmung wird in die Frist nicht eingerechnet und verschiebt ihr Ende um so viele Tage";
+        label en unofficial "§§ 206, 210 on limitation apply accordingly to the running of the period (§ 1944 (2) sentence 3): the period of suspension is not counted and shifts the end by that many days";
+        when ausschlagungsfrist_ende_kalender(e, p, tag) and hemmungstage_der_ausschlagungsfrist(e, p, tage) and tage >= 1;
+        then ausschlagungsfrist_ende_gehemmt(e, p, add_calendar_period(tag, with_unit(tage, "calendar_day")));
+    }
+    rule AusschlagungsfristEndeNach193(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Ist innerhalb einer Frist eine Willenserklärung abzugeben und fällt der letzte Tag auf einen Sonntag, einen staatlich anerkannten allgemeinen Feiertag oder einen Sonnabend, so tritt an die Stelle eines solchen Tages der nächste Werktag (§ 193): die Ausschlagung ist gegenüber dem Nachlassgericht zu erklären (§ 1945 Abs. 1)";
+        label en unofficial "If a declaration is to be made within a period and the last day falls on a Sunday, a recognised public holiday or a Saturday, the next working day takes its place (§ 193): the disclaimer is declared to the probate court (§ 1945 (1))";
+        when ausschlagungsfrist_ende_gehemmt(e, p, tag);
+        then ausschlagungsfrist_ende(e, p, add_business_days(tag, 1 business_day));
+    }
+    rule AusschlagungsfristVerstrichen(e: Erbfall, p: Person, ende: Date, erklaert: Date) strict {
+        label de official "Die Frist ist verstrichen, wenn die Ausschlagung nicht bis zu ihrem letzten Tag erklärt worden ist (§ 1944 Abs. 1, § 1943)";
+        label en unofficial "The period has elapsed where the disclaimer was not declared by its last day (§ 1944 (1), § 1943)";
+        when ausschlagungsfrist_ende(e, p, ende) and ausschlagung_erklaert_am(e, p, erklaert) and erklaert > ende;
+        then ausschlagungsfrist_verstrichen(e, p);
+    }
+}
+
+// --- § 1945 Form der Ausschlagung ------------------------------------------------------------------------
+
+pub relation erklaerung_zur_niederschrift_des_nachlassgerichts(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Ausschlagungserklärung ist zur Niederschrift des Nachlassgerichts abgegeben (§ 1945 Abs. 1, 2)";
+    label en unofficial "The disclaimer was declared for the record of the probate court (§ 1945 (1), (2))";
+}
+pub relation erklaerung_in_oeffentlich_beglaubigter_form(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Ausschlagungserklärung ist in öffentlich beglaubigter Form abgegeben (§ 1945 Abs. 1)";
+    label en unofficial "The disclaimer was declared in publicly certified form (§ 1945 (1))";
+}
+pub relation bevollmaechtigter_mit_beglaubigter_vollmacht(e: Erbfall, p: Person) kind empirical {
+    label de official "Ein Bevollmächtigter hat mit öffentlich beglaubigter Vollmacht oder notarieller Bescheinigung erklärt; die Vollmacht ist beigefügt oder innerhalb der Ausschlagungsfrist nachgebracht (§ 1945 Abs. 3)";
+    label en unofficial "An authorised representative declared with a publicly certified power of attorney or notarial certificate attached or supplied within the disclaimer period (§ 1945 (3))";
+}
+pub relation ausschlagung_formgerecht(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Ausschlagung ist formgerecht erklärt (§ 1945)";
+    label en unofficial "The disclaimer was declared in due form (§ 1945)";
+}
+
+@source(BGB_P1945) {
+    rule FormNiederschrift(e: Erbfall, p: Person) strict {
+        label de official "Die Ausschlagung erfolgt durch Erklärung gegenüber dem Nachlassgericht; die Erklärung ist zur Niederschrift des Nachlassgerichts abzugeben (§ 1945 Abs. 1); die Niederschrift wird nach den Vorschriften des Beurkundungsgesetzes errichtet (Abs. 2)";
+        label en unofficial "The disclaimer is made by declaration to the probate court, for its record (§ 1945 (1)); the record is drawn up under the Notarial Recording Act ((2))";
+        when erklaerung_zur_niederschrift_des_nachlassgerichts(e, p);
+        then ausschlagung_formgerecht(e, p);
+    }
+    rule FormBeglaubigt(e: Erbfall, p: Person) strict {
+        label de official "Die Erklärung kann auch in öffentlich beglaubigter Form abgegeben werden (§ 1945 Abs. 1)";
+        label en unofficial "The declaration may also be made in publicly certified form (§ 1945 (1))";
+        when erklaerung_in_oeffentlich_beglaubigter_form(e, p);
+        then ausschlagung_formgerecht(e, p);
+    }
+    rule FormBevollmaechtigter(e: Erbfall, p: Person) strict {
+        label de official "Ein Bevollmächtigter bedarf einer öffentlich beglaubigten Vollmacht; sie muss der Erklärung beigefügt oder innerhalb der Ausschlagungsfrist nachgebracht werden (§ 1945 Abs. 3)";
+        label en unofficial "An authorised representative needs a publicly certified power of attorney, attached or supplied within the disclaimer period (§ 1945 (3))";
+        when bevollmaechtigter_mit_beglaubigter_vollmacht(e, p);
+        then ausschlagung_formgerecht(e, p);
+    }
+    rule AusschlagungWirksam(e: Erbfall, p: Person, tag: Date, ende: Date) strict {
+        label de official "Die rechtzeitig und formgerecht erklärte Ausschlagung ist wirksam (§§ 1944, 1945, 1953)";
+        label en unofficial "A disclaimer declared in time and in due form is effective (§§ 1944, 1945, 1953)";
+        when ausschlagung_formgerecht(e, p) and ausschlagung_erklaert_am(e, p, tag) and ausschlagungsfrist_ende(e, p, ende)
+            and tag <= ende and not_known(ausschlagung_nicht_mehr_moeglich(e, p));
+        then ausgeschlagen(e, p);
+    }
+}
+
+// --- §§ 1946–1952 Zeitpunkt, Bedingung, Berufungsgründe, Teilung, Vererblichkeit -------------------------
+
+pub relation erbfall_eingetreten(e: Erbfall) kind derived {
+    label de official "Der Erbfall ist eingetreten (§ 1946, § 1922 Abs. 1)";
+    label en unofficial "The devolution has occurred (§ 1946, § 1922 (1))";
+}
+pub relation annahme_oder_ausschlagung_moeglich(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe kann die Erbschaft annehmen oder ausschlagen, sobald der Erbfall eingetreten ist (§ 1946)";
+    label en unofficial "The heir may accept or disclaim the inheritance as soon as the devolution has occurred (§ 1946)";
+}
+pub relation unter_bedingung_oder_zeitbestimmung_erklaert(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Annahme oder die Ausschlagung ist unter einer Bedingung oder einer Zeitbestimmung erklärt worden (§ 1947)";
+    label en unofficial "The acceptance or disclaimer was declared subject to a condition or a time stipulation (§ 1947)";
+}
+pub relation erklaerung_unwirksam(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Erklärung über Annahme oder Ausschlagung ist unwirksam (§ 1947, § 1950 Satz 2)";
+    label en unofficial "The declaration on acceptance or disclaimer is ineffective (§ 1947, § 1950 sentence 2)";
+}
+pub relation als_eingesetzter_erbe_ausgeschlagen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat die Erbschaft als eingesetzter Erbe ausgeschlagen (§ 1948 Abs. 1)";
+    label en unofficial "The heir disclaimed the inheritance as appointed heir (§ 1948 (1))";
+}
+pub relation ohne_verfuegung_gesetzlicher_erbe(e: Erbfall, p: Person) kind derived {
+    label de official "Der Erbe würde ohne die Verfügung als gesetzlicher Erbe berufen sein (§ 1948 Abs. 1)";
+    label en unofficial "The heir would be called as statutory heir without the disposition (§ 1948 (1))";
+}
+pub relation annahme_als_gesetzlicher_erbe_moeglich(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe kann die Erbschaft als eingesetzter Erbe ausschlagen und als gesetzlicher Erbe annehmen (§ 1948 Abs. 1)";
+    label en unofficial "The heir may disclaim as appointed heir and accept as statutory heir (§ 1948 (1))";
+}
+pub relation durch_testament_und_erbvertrag_berufen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe ist durch Testament und durch Erbvertrag als Erbe berufen (§ 1948 Abs. 2)";
+    label en unofficial "The heir is called both by will and by contract of inheritance (§ 1948 (2))";
+}
+pub relation getrennte_erklaerung_je_berufungsgrund(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe kann die Erbschaft aus dem einen Berufungsgrund annehmen und aus dem anderen ausschlagen (§ 1948 Abs. 2)";
+    label en unofficial "The heir may accept on one ground and disclaim on the other (§ 1948 (2))";
+}
+pub relation irrtum_ueber_den_berufungsgrund(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe war über den Berufungsgrund im Irrtum (§ 1949 Abs. 1)";
+    label en unofficial "The heir was in error about the ground of his being called (§ 1949 (1))";
+}
+pub relation annahme_gilt_als_nicht_erfolgt(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Annahme gilt als nicht erfolgt (§ 1949 Abs. 1)";
+    label en unofficial "The acceptance is deemed not to have occurred (§ 1949 (1))";
+}
+pub relation berufungsgrund_bei_erklaerung_bekannt(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Berufungsgrund war dem Erben zur Zeit der Erklärung bekannt (§ 1949 Abs. 2)";
+    label en unofficial "The ground of being called was known to the heir at the time of the declaration (§ 1949 (2))";
+}
+pub relation ausschlagung_erstreckt_sich_auf_grund(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Ausschlagung erstreckt sich im Zweifel auf alle Berufungsgründe, die dem Erben zur Zeit der Erklärung bekannt sind (§ 1949 Abs. 2)";
+    label en unofficial "In case of doubt the disclaimer extends to all grounds known to the heir at the time of declaration (§ 1949 (2))";
+}
+pub relation abweichender_wille_bei_der_ausschlagung(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat bei der Ausschlagung einen abweichenden Willen erklärt (§ 1949 Abs. 2, „im Zweifel“)";
+    label en unofficial "The heir declared a divergent intention on disclaiming (§ 1949 (2), \"in case of doubt\")";
+}
+pub relation auf_einen_teil_beschraenkt_erklaert(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Annahme oder die Ausschlagung ist auf einen Teil der Erbschaft beschränkt worden (§ 1950 Satz 1)";
+    label en unofficial "The acceptance or disclaimer was limited to a part of the inheritance (§ 1950 sentence 1)";
+}
+pub relation zu_mehreren_erbteilen_berufen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe ist zu mehreren Erbteilen berufen (§ 1951 Abs. 1, § 1927, § 1934)";
+    label en unofficial "The heir is called to several shares of the estate (§ 1951 (1), § 1927, § 1934)";
+}
+pub relation berufung_auf_verschiedenen_gruenden(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Berufung zu den mehreren Erbteilen beruht auf verschiedenen Gründen (§ 1951 Abs. 1)";
+    label en unofficial "The calling to the several shares rests on different grounds (§ 1951 (1))";
+}
+pub relation getrennte_erklaerung_je_erbteil(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe kann den einen Erbteil annehmen und den anderen ausschlagen (§ 1951 Abs. 1, Abs. 3)";
+    label en unofficial "The heir may accept one share and disclaim the other (§ 1951 (1), (3))";
+}
+pub relation erklaerung_gilt_fuer_alle_erbteile(e: Erbfall, p: Person) kind institutional {
+    label de official "Beruht die Berufung auf demselben Grund, so gilt die Annahme oder Ausschlagung des einen Erbteils auch für den anderen (§ 1951 Abs. 2)";
+    label en unofficial "Where the calling rests on the same ground, acceptance or disclaimer of one share applies to the other (§ 1951 (2))";
+}
+pub relation gestattung_getrennter_erklaerung(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat durch Verfügung von Todes wegen gestattet, den einen Erbteil anzunehmen und den anderen auszuschlagen (§ 1951 Abs. 3)";
+    label en unofficial "The decedent permitted by disposition mortis causa accepting one share and disclaiming the other (§ 1951 (3))";
+}
+pub relation erbe_vor_fristablauf_gestorben(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe ist vor dem Ablauf der Ausschlagungsfrist gestorben (§ 1952 Abs. 2)";
+    label en unofficial "The heir died before expiry of the disclaimer period (§ 1952 (2))";
+}
+pub relation ausschlagungsfrist_des_erbeserben_ende(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Ende der für die Erbschaft des Erben vorgeschriebenen Ausschlagungsfrist (§ 1952 Abs. 2) — Frist des zweiten Erbfalls, Eingabe dieses Falls";
+    label en unofficial "end of the disclaimer period prescribed for the heir's own estate (§ 1952 (2)) — period of the second devolution, input of this case";
+}
+pub relation ausschlagungsrecht_vererblich(e: Erbfall, p: Person) kind institutional {
+    label de official "Das Recht des Erben, die Erbschaft auszuschlagen, ist vererblich (§ 1952 Abs. 1)";
+    label en unofficial "The heir's right to disclaim the inheritance is inheritable (§ 1952 (1))";
+}
+pub relation teilausschlagung_durch_erbeserben(e: Erbfall, p: Person) kind institutional {
+    label de official "Von mehreren Erben des Erben kann jeder den seinem Erbteil entsprechenden Teil der Erbschaft ausschlagen (§ 1952 Abs. 3)";
+    label en unofficial "Of several heirs of the heir each may disclaim the part corresponding to his share (§ 1952 (3))";
+}
+
+@source(BGB_P1946) {
+    rule ErbfallEingetreten(e: Erbfall, tag: Date) strict {
+        label de official "Der Erbfall ist mit dem Tode des Erblassers eingetreten (§ 1946, § 1922 Abs. 1)";
+        label en unofficial "The devolution occurred with the decedent's death (§ 1946, § 1922 (1))";
+        when erbfall_am(e, tag);
+        then erbfall_eingetreten(e);
+    }
+    rule AnnahmeOderAusschlagungMoeglich(e: Erbfall, p: Person) strict {
+        label de official "Der Erbe kann die Erbschaft annehmen oder ausschlagen, sobald der Erbfall eingetreten ist (§ 1946)";
+        label en unofficial "The heir may accept or disclaim the inheritance as soon as the devolution has occurred (§ 1946)";
+        when erbschaft_angefallen(e, p) and erbfall_eingetreten(e);
+        then annahme_oder_ausschlagung_moeglich(e, p);
+    }
+}
+
+@source(BGB_P1947)
+rule BedingungUnwirksam(e: Erbfall, p: Person) strict {
+    label de official "Die Annahme und die Ausschlagung können nicht unter einer Bedingung oder einer Zeitbestimmung erfolgen (§ 1947)";
+    label en unofficial "Acceptance and disclaimer cannot be made subject to a condition or a time stipulation (§ 1947)";
+    when unter_bedingung_oder_zeitbestimmung_erklaert(e, p);
+    then erklaerung_unwirksam(e, p);
+}
+
+@source(BGB_P1948) {
+    rule OhneVerfuegungGesetzlicherErbe(e: Erbfall, p: Person, st: Person, z: Integer, n: Integer) strict {
+        label de official "Wer durch Verfügung von Todes wegen als Erbe berufen ist, kann, wenn er ohne die Verfügung als gesetzlicher Erbe berufen sein würde, die Erbschaft als eingesetzter Erbe ausschlagen und als gesetzlicher Erbe annehmen (§ 1948 Abs. 1)";
+        label en unofficial "A person called by disposition mortis causa who would be called as statutory heir without it may disclaim as appointed heir and accept as statutory heir (§ 1948 (1))";
+        when gewillkuerter_erbe(e, p) and erbteil_aus_stamm(e, p, st, z, n);
+        then ohne_verfuegung_gesetzlicher_erbe(e, p);
+    }
+    rule AnnahmeAlsGesetzlicherErbe(e: Erbfall, p: Person) strict {
+        label de official "Der als eingesetzter Erbe Ausschlagende kann die Erbschaft als gesetzlicher Erbe annehmen (§ 1948 Abs. 1)";
+        label en unofficial "A person disclaiming as appointed heir may accept as statutory heir (§ 1948 (1))";
+        when als_eingesetzter_erbe_ausgeschlagen(e, p) and ohne_verfuegung_gesetzlicher_erbe(e, p);
+        then annahme_als_gesetzlicher_erbe_moeglich(e, p);
+    }
+    rule ZweiBerufungsgruende(e: Erbfall, p: Person) strict {
+        label de official "Wer durch Testament und durch Erbvertrag als Erbe berufen ist, kann die Erbschaft aus dem einen Berufungsgrund annehmen und aus dem anderen ausschlagen (§ 1948 Abs. 2)";
+        label en unofficial "A person called both by will and by contract of inheritance may accept on one ground and disclaim on the other (§ 1948 (2))";
+        when durch_testament_und_erbvertrag_berufen(e, p);
+        then getrennte_erklaerung_je_berufungsgrund(e, p);
+    }
+}
+
+@source(BGB_P1949) {
+    rule IrrtumUeberBerufungsgrund(e: Erbfall, p: Person) strict {
+        label de official "Die Annahme gilt als nicht erfolgt, wenn der Erbe über den Berufungsgrund im Irrtum war (§ 1949 Abs. 1)";
+        label en unofficial "The acceptance is deemed not to have occurred where the heir was in error about the ground of his being called (§ 1949 (1))";
+        when erbschaft_angenommen(e, p) and irrtum_ueber_den_berufungsgrund(e, p);
+        then annahme_gilt_als_nicht_erfolgt(e, p);
+    }
+    presumption AusschlagungErfasstAlleBekanntenGruende(e: Erbfall, p: Person) {
+        label de official "Die Ausschlagung erstreckt sich IM ZWEIFEL auf alle Berufungsgründe, die dem Erben zur Zeit der Erklärung bekannt sind (§ 1949 Abs. 2): Auslegungsregel, widerlegbar durch den erklärten abweichenden Willen";
+        label en unofficial "IN CASE OF DOUBT the disclaimer extends to all grounds known to the heir at the time of declaration (§ 1949 (2)): rule of construction, rebutted by a declared divergent intention";
+        when ausgeschlagen(e, p) and berufungsgrund_bei_erklaerung_bekannt(e, p);
+        presume ausschlagung_erstreckt_sich_auf_grund(e, p);
+        unless abweichender_wille_bei_der_ausschlagung(e, p);
+    }
+}
+
+@source(BGB_P1950)
+rule TeilannahmeUnwirksam(e: Erbfall, p: Person) strict {
+    label de official "Die Annahme und die Ausschlagung können nicht auf einen Teil der Erbschaft beschränkt werden; die Annahme oder Ausschlagung eines Teils ist unwirksam (§ 1950)";
+    label en unofficial "Acceptance and disclaimer cannot be limited to a part of the inheritance; acceptance or disclaimer of a part is ineffective (§ 1950)";
+    when auf_einen_teil_beschraenkt_erklaert(e, p);
+    then erklaerung_unwirksam(e, p);
+}
+
+@source(BGB_P1951) {
+    rule GetrennteErklaerungBeiVerschiedenenGruenden(e: Erbfall, p: Person) strict {
+        label de official "Wer zu mehreren Erbteilen berufen ist, kann, wenn die Berufung auf verschiedenen Gründen beruht, den einen Erbteil annehmen und den anderen ausschlagen (§ 1951 Abs. 1)";
+        label en unofficial "A person called to several shares may, where the calling rests on different grounds, accept one and disclaim the other (§ 1951 (1))";
+        when zu_mehreren_erbteilen_berufen(e, p) and berufung_auf_verschiedenen_gruenden(e, p);
+        then getrennte_erklaerung_je_erbteil(e, p);
+    }
+    rule EinheitlicheErklaerungBeiGleichemGrund(e: Erbfall, p: Person) strict {
+        label de official "Beruht die Berufung auf demselben Grund, so gilt die Annahme oder Ausschlagung des einen Erbteils auch für den anderen, selbst wenn der andere erst später anfällt (§ 1951 Abs. 2)";
+        label en unofficial "Where the calling rests on the same ground, acceptance or disclaimer of one share applies to the other, even if the other devolves later (§ 1951 (2))";
+        when zu_mehreren_erbteilen_berufen(e, p) and not_known(berufung_auf_verschiedenen_gruenden(e, p))
+            and not_known(gestattung_getrennter_erklaerung(e, p));
+        then erklaerung_gilt_fuer_alle_erbteile(e, p);
+    }
+    rule GestattungDurchDenErblasser(e: Erbfall, p: Person) strict {
+        label de official "Setzt der Erblasser einen Erben auf mehrere Erbteile ein, so kann er ihm durch Verfügung von Todes wegen gestatten, den einen Erbteil anzunehmen und den anderen auszuschlagen (§ 1951 Abs. 3)";
+        label en unofficial "Where the decedent appoints an heir to several shares he may permit him by disposition to accept one and disclaim the other (§ 1951 (3))";
+        when zu_mehreren_erbteilen_berufen(e, p) and gestattung_getrennter_erklaerung(e, p);
+        then getrennte_erklaerung_je_erbteil(e, p);
+    }
+}
+
+@source(BGB_P1952) {
+    rule AusschlagungsrechtVererblich(e: Erbfall, p: Person) strict {
+        label de official "Das Recht des Erben, die Erbschaft auszuschlagen, ist vererblich (§ 1952 Abs. 1)";
+        label en unofficial "The heir's right to disclaim the inheritance is inheritable (§ 1952 (1))";
+        when ausschlagungsrecht(e, p);
+        then ausschlagungsrecht_vererblich(e, p);
+    }
+    rule FristEndetNichtVorDerZweitenFrist(e: Erbfall, p: Person, eigene: Date, zweite: Date) strict {
+        label de official "Stirbt der Erbe vor dem Ablauf der Ausschlagungsfrist, so endigt die Frist nicht vor dem Ablauf der für die Erbschaft des Erben vorgeschriebenen Ausschlagungsfrist (§ 1952 Abs. 2): der spätere der beiden Tage";
+        label en unofficial "If the heir dies before expiry of the disclaimer period, the period does not end before the period prescribed for the heir's own estate (§ 1952 (2)): the later of the two days";
+        when erbe_vor_fristablauf_gestorben(e, p) and ausschlagungsfrist_ende_gehemmt(e, p, eigene)
+            and ausschlagungsfrist_des_erbeserben_ende(e, p, zweite) and zweite > eigene;
+        then ausschlagungsfrist_ende(e, p, add_business_days(zweite, 1 business_day));
+    }
+    rule TeilausschlagungDurchErbeserben(e: Erbfall, p: Person) strict {
+        label de official "Von mehreren Erben des Erben kann jeder den seinem Erbteil entsprechenden Teil der Erbschaft ausschlagen (§ 1952 Abs. 3)";
+        label en unofficial "Of several heirs of the heir each may disclaim the part corresponding to his share (§ 1952 (3))";
+        when erbe_vor_fristablauf_gestorben(e, p) and ausschlagungsrecht_vererblich(e, p);
+        then teilausschlagung_durch_erbeserben(e, p);
+    }
+}
+
+// --- §§ 1954–1957 Anfechtung der Annahme oder Ausschlagung ----------------------------------------------
+
+pub relation annahme_oder_ausschlagung_anfechtbar(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Annahme oder die Ausschlagung ist anfechtbar (§ 1954 Abs. 1)";
+    label en unofficial "The acceptance or disclaimer is voidable (§ 1954 (1))";
+}
+pub relation anfechtbarkeit_wegen_drohung(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Anfechtbarkeit beruht auf Drohung (§ 1954 Abs. 2 Halbsatz 1)";
+    label en unofficial "The voidability rests on duress (§ 1954 (2) first half-sentence)";
+}
+pub relation zwangslage_endete_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Zeitpunkt, in welchem die Zwangslage aufhört (§ 1954 Abs. 2 Halbsatz 1)";
+    label en unofficial "point in time at which the duress ends (§ 1954 (2) first half-sentence)";
+}
+pub relation kenntnis_vom_anfechtungsgrund_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Zeitpunkt, in welchem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt (§ 1954 Abs. 2 Halbsatz 2)";
+    label en unofficial "point in time at which the person entitled learns of the ground for avoidance (§ 1954 (2) second half-sentence)";
+}
+pub relation annahme_oder_ausschlagung_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag der Annahme oder der Ausschlagung (§ 1954 Abs. 4)";
+    label en unofficial "day of the acceptance or the disclaimer (§ 1954 (4))";
+}
+pub relation anfechtungsfrist_beginn(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Beginn der Anfechtungsfrist (§ 1954 Abs. 2)";
+    label en unofficial "beginning of the period for avoidance (§ 1954 (2))";
+}
+pub relation anfechtungsfrist_ende_kalender(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Kalendarisches Ende der Anfechtungsfrist (§ 1954 Abs. 1, 3, § 188 Abs. 2, 3)";
+    label en unofficial "calendar end of the period for avoidance (§ 1954 (1), (3), § 188 (2), (3))";
+}
+pub relation anfechtungsfrist_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Letzter Tag der Anfechtungsfrist nach § 193 (§ 1954, § 1955 mit § 193)";
+    label en unofficial "last day of the period for avoidance after § 193 (§ 1954, § 1955 with § 193)";
+}
+pub relation dreissigjahresfrist_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf der dreißig Jahre seit der Annahme oder der Ausschlagung (§ 1954 Abs. 4)";
+    label en unofficial "expiry of the thirty years since the acceptance or the disclaimer (§ 1954 (4))";
+}
+pub relation anfechtung_ausgeschlossen(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn seit der Annahme oder der Ausschlagung 30 Jahre verstrichen sind (§ 1954 Abs. 4)";
+    label en unofficial "Avoidance is excluded once thirty years have elapsed since the acceptance or disclaimer (§ 1954 (4))";
+}
+pub relation anfechtung_erklaert_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem die Anfechtung gegenüber dem Nachlassgericht erklärt worden ist (§ 1955)";
+    label en unofficial "day on which the avoidance was declared to the probate court (§ 1955)";
+}
+pub relation anfechtung_formgerecht(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Anfechtung ist gegenüber dem Nachlassgericht in der Form des § 1945 erklärt (§ 1955)";
+    label en unofficial "The avoidance was declared to the probate court in the form of § 1945 (§ 1955)";
+}
+pub relation fristversaeumung_angefochten(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Versäumung der Ausschlagungsfrist ist angefochten worden (§ 1956)";
+    label en unofficial "The failure to observe the disclaimer period has been avoided (§ 1956)";
+}
+pub relation anfechtung_der_annahme_wirksam(e: Erbfall, p: Person) kind derived {
+    label de official "Die Anfechtung der Annahme ist rechtzeitig und formgerecht erklärt (§§ 1954, 1955)";
+    label en unofficial "The avoidance of the acceptance was declared in time and in due form (§§ 1954, 1955)";
+}
+pub relation anfechtung_der_ausschlagung_wirksam(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Anfechtung der Ausschlagung ist rechtzeitig und formgerecht erklärt (§§ 1954, 1955) — Eingabe des Falls";
+    label en unofficial "The avoidance of the disclaimer was declared in time and in due form (§§ 1954, 1955) — case input";
+}
+
+@source(BGB_P1954) {
+    rule AnfechtungsfristBeginnDrohung(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beginnt im Falle der Anfechtbarkeit wegen Drohung mit dem Zeitpunkt, in welchem die Zwangslage aufhört (§ 1954 Abs. 2 Halbsatz 1)";
+        label en unofficial "In case of voidability for duress the period begins when the duress ends (§ 1954 (2) first half-sentence)";
+        when annahme_oder_ausschlagung_anfechtbar(e, p) and anfechtbarkeit_wegen_drohung(e, p)
+            and zwangslage_endete_am(e, p, tag);
+        then anfechtungsfrist_beginn(e, p, tag);
+    }
+    rule AnfechtungsfristBeginnKenntnis(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "In den übrigen Fällen beginnt die Frist mit dem Zeitpunkt, in welchem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt (§ 1954 Abs. 2 Halbsatz 2)";
+        label en unofficial "In the other cases the period begins when the person entitled learns of the ground for avoidance (§ 1954 (2) second half-sentence)";
+        when annahme_oder_ausschlagung_anfechtbar(e, p) and kenntnis_vom_anfechtungsgrund_am(e, p, tag)
+            and not_known(anfechtbarkeit_wegen_drohung(e, p));
+        then anfechtungsfrist_beginn(e, p, tag);
+    }
+    rule AnfechtungsfristSechsWochen(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Ist die Annahme oder die Ausschlagung anfechtbar, so kann die Anfechtung nur binnen sechs Wochen erfolgen (§ 1954 Abs. 1)";
+        label en unofficial "Where the acceptance or disclaimer is voidable, avoidance may be declared only within six weeks (§ 1954 (1))";
+        when anfechtungsfrist_beginn(e, p, tag) and not_known(auslandsfall_1944(e, p));
+        then anfechtungsfrist_ende_kalender(e, p, add_calendar_period(tag, 6 calendar_week));
+    }
+    rule AnfechtungsfristSechsMonate(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beträgt sechs Monate, wenn der Erblasser seinen letzten Wohnsitz nur im Ausland gehabt hat oder wenn sich der Erbe bei dem Beginn der Frist im Ausland aufhält (§ 1954 Abs. 3)";
+        label en unofficial "The period is six months where the decedent's last domicile was only abroad or the heir is abroad at the beginning of the period (§ 1954 (3))";
+        when anfechtungsfrist_beginn(e, p, tag) and auslandsfall_1944(e, p);
+        then anfechtungsfrist_ende_kalender(e, p, add_calendar_period(tag, 6 calendar_month));
+    }
+    rule AnfechtungsfristEndeNach193(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Anfechtung ist gegenüber dem Nachlassgericht zu erklären (§ 1955); fällt der letzte Tag der Frist auf einen Sonntag, Feiertag oder Sonnabend, so tritt der nächste Werktag an seine Stelle (§ 193)";
+        label en unofficial "The avoidance is declared to the probate court (§ 1955); if the last day falls on a Sunday, holiday or Saturday, the next working day takes its place (§ 193)";
+        when anfechtungsfrist_ende_kalender(e, p, tag);
+        then anfechtungsfrist_ende(e, p, add_business_days(tag, 1 business_day));
+    }
+    rule DreissigJahre(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Anfechtung ist ausgeschlossen, wenn seit der Annahme oder der Ausschlagung 30 Jahre verstrichen sind (§ 1954 Abs. 4)";
+        label en unofficial "Avoidance is excluded once thirty years have elapsed since the acceptance or disclaimer (§ 1954 (4))";
+        when annahme_oder_ausschlagung_am(e, p, tag);
+        then dreissigjahresfrist_ende(e, p, add_calendar_period(tag, 30 calendar_year));
+    }
+    rule AnfechtungNachDreissigJahrenAusgeschlossen(e: Erbfall, p: Person, ende: Date, erklaert: Date) strict {
+        label de official "Nach dem Ablauf der dreißig Jahre ist die Anfechtung ausgeschlossen (§ 1954 Abs. 4)";
+        label en unofficial "After the thirty years have elapsed avoidance is excluded (§ 1954 (4))";
+        when dreissigjahresfrist_ende(e, p, ende) and anfechtung_erklaert_am(e, p, erklaert) and erklaert > ende;
+        then anfechtung_ausgeschlossen(e, p);
+    }
+}
+
+@source(BGB_P1955) {
+    rule AnfechtungForm(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Anfechtung der Annahme oder der Ausschlagung erfolgt durch Erklärung gegenüber dem Nachlassgericht; für die Erklärung gelten die Vorschriften des § 1945 (§ 1955)";
+        label en unofficial "Avoidance of acceptance or disclaimer is declared to the probate court; § 1945 applies to the declaration (§ 1955)";
+        when anfechtung_erklaert_am(e, p, tag) and erklaerung_in_oeffentlich_beglaubigter_form(e, p);
+        then anfechtung_formgerecht(e, p);
+    }
+    rule AnfechtungDerAnnahmeWirksam(e: Erbfall, p: Person, tag: Date, ende: Date) strict {
+        label de official "Die rechtzeitig und formgerecht erklärte Anfechtung der Annahme ist wirksam (§§ 1954, 1955)";
+        label en unofficial "Avoidance of the acceptance declared in time and in due form is effective (§§ 1954, 1955)";
+        when anfechtung_formgerecht(e, p) and erbschaft_angenommen(e, p) and anfechtung_erklaert_am(e, p, tag)
+            and anfechtungsfrist_ende(e, p, ende) and tag <= ende and not_known(anfechtung_ausgeschlossen(e, p));
+        then anfechtung_der_annahme_wirksam(e, p);
+    }
+}
+
+@source(BGB_P1956)
+rule AnfechtungDerFristversaeumung(e: Erbfall, p: Person) strict {
+    label de official "Die Versäumung der Ausschlagungsfrist kann in gleicher Weise wie die Annahme angefochten werden (§ 1956)";
+    label en unofficial "Failure to observe the disclaimer period may be avoided in the same way as the acceptance (§ 1956)";
+    when ausschlagungsfrist_verstrichen(e, p) and fristversaeumung_angefochten(e, p) and anfechtung_formgerecht(e, p);
+    then anfechtung_der_annahme_wirksam(e, p);
+}
+
+@source(BGB_P1957) {
+    rule AnfechtungDerAnnahmeGiltAlsAusschlagung(e: Erbfall, p: Person) strict {
+        label de official "Die Anfechtung der Annahme gilt als Ausschlagung (§ 1957 Abs. 1)";
+        label en unofficial "Avoidance of the acceptance counts as a disclaimer (§ 1957 (1))";
+        when anfechtung_der_annahme_wirksam(e, p);
+        then ausgeschlagen(e, p);
+    }
+    rule AnfechtungDerAusschlagungGiltAlsAnnahme(e: Erbfall, p: Person) strict {
+        label de official "Die Anfechtung der Ausschlagung gilt als Annahme (§ 1957 Abs. 1); das Nachlassgericht soll sie demjenigen mitteilen, welchem die Erbschaft infolge der Ausschlagung angefallen war (Abs. 2)";
+        label en unofficial "Avoidance of the disclaimer counts as an acceptance (§ 1957 (1)); the probate court shall notify it to the person on whom the estate had devolved ((2))";
+        when anfechtung_der_ausschlagung_wirksam(e, p);
+        then erbschaft_gilt_als_angenommen(e, p);
+    }
+}
+
+// --- §§ 1958–1966 Klage, Geschäftsführung, Nachlasspflegschaft, Fiskus -----------------------------------
+
+pub relation anspruch_gegen_den_nachlass(e: Erbfall, glaeubiger: Person) kind empirical {
+    label de official "Ein Anspruch, der sich gegen den Nachlass richtet (§ 1958, § 1967)";
+    label en unofficial "a claim directed against the estate (§ 1958, § 1967)";
+}
+pub relation gerichtliche_geltendmachung_ausgeschlossen(e: Erbfall, glaeubiger: Person) kind institutional {
+    label de official "Vor der Annahme der Erbschaft kann ein Anspruch, der sich gegen den Nachlass richtet, nicht gegen den Erben gerichtlich geltend gemacht werden (§ 1958)";
+    label en unofficial "Before acceptance of the inheritance a claim against the estate cannot be asserted in court against the heir (§ 1958)";
+}
+pub relation erbschaftliche_geschaefte_vor_ausschlagung_besorgt(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat vor der Ausschlagung erbschaftliche Geschäfte besorgt (§ 1959 Abs. 1)";
+    label en unofficial "The heir conducted business of the estate before the disclaimer (§ 1959 (1))";
+}
+pub relation verfuegung_vor_ausschlagung_unaufschiebbar(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat vor der Ausschlagung über einen Nachlassgegenstand verfügt, und die Verfügung konnte nicht ohne Nachteil für den Nachlass verschoben werden (§ 1959 Abs. 2)";
+    label en unofficial "The heir disposed of an object of the estate before the disclaimer and the disposition could not be postponed without detriment to the estate (§ 1959 (2))";
+}
+pub relation rechtsgeschaeft_gegenueber_dem_ausschlagenden(e: Erbfall, p: Person) kind empirical {
+    label de official "Ein Rechtsgeschäft, das gegenüber dem Erben als solchem vorgenommen werden muss, ist vor der Ausschlagung dem Ausschlagenden gegenüber vorgenommen worden (§ 1959 Abs. 3)";
+    label en unofficial "A transaction that must be effected vis-à-vis the heir as such was effected vis-à-vis the disclaiming person before the disclaimer (§ 1959 (3))";
+}
+pub relation haftet_wie_geschaeftsfuehrer_ohne_auftrag(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe ist demjenigen gegenüber, welcher Erbe wird, wie ein Geschäftsführer ohne Auftrag berechtigt und verpflichtet (§ 1959 Abs. 1)";
+    label en unofficial "The heir has the rights and duties of an agent without mandate towards the person who becomes heir (§ 1959 (1))";
+}
+pub relation verfuegung_bleibt_wirksam(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Wirksamkeit der Verfügung wird durch die Ausschlagung nicht berührt (§ 1959 Abs. 2); dasselbe gilt für das Rechtsgeschäft nach Abs. 3";
+    label en unofficial "The effectiveness of the disposition is not affected by the disclaimer (§ 1959 (2)); the same applies to the transaction under (3)";
+}
+pub relation sicherungsbeduerfnis_des_nachlasses(e: Erbfall) kind empirical {
+    label de official "Für die Sicherung des Nachlasses besteht ein Bedürfnis; der Erbe ist unbekannt oder es ist ungewiss, ob er die Erbschaft angenommen hat (§ 1960 Abs. 1) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "There is a need to secure the estate; the heir is unknown or it is uncertain whether he has accepted (§ 1960 (1)) — established fact, origin adjudicated";
+}
+pub relation nachlasspfleger_bestellt(e: Erbfall, pfleger: Person) kind empirical {
+    label de official "Das Nachlassgericht hat einen Nachlasspfleger bestellt (§ 1960 Abs. 2, § 1961) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "The probate court has appointed an administrator of the estate (§ 1960 (2), § 1961) — established fact, origin adjudicated";
+}
+pub relation bestellung_zur_geltendmachung_beantragt(e: Erbfall, glaeubiger: Person) kind empirical {
+    label de official "Die Bestellung eines Nachlasspflegers ist zum Zwecke der gerichtlichen Geltendmachung eines Anspruchs von dem Berechtigten beantragt (§ 1961)";
+    label en unofficial "The appointment of an administrator was applied for by the entitled person for the purpose of asserting a claim in court (§ 1961)";
+}
+pub relation sicherung_des_nachlasses_geschuldet(e: Erbfall) kind institutional {
+    label de official "Bis zur Annahme der Erbschaft hat das Nachlassgericht für die Sicherung des Nachlasses zu sorgen (§ 1960 Abs. 1)";
+    label en unofficial "Until acceptance of the inheritance the probate court must provide for securing the estate (§ 1960 (1))";
+}
+pub relation nachlasspfleger_zu_bestellen(e: Erbfall) kind institutional {
+    label de official "Das Nachlassgericht hat einen Nachlasspfleger zu bestellen (§ 1961)";
+    label en unofficial "The probate court must appoint an administrator of the estate (§ 1961)";
+}
+pub relation paragraph_1958_gilt_nicht_fuer_pfleger(e: Erbfall, pfleger: Person) kind institutional {
+    label de official "Die Vorschrift des § 1958 findet auf den Nachlasspfleger keine Anwendung (§ 1960 Abs. 3)";
+    label en unofficial "§ 1958 does not apply to the administrator of the estate (§ 1960 (3))";
+}
+pub relation nachlassgericht_zustaendig_statt_familiengericht(e: Erbfall) kind institutional {
+    label de official "Für die Nachlasspflegschaft tritt an die Stelle des Familiengerichts oder Betreuungsgerichts das Nachlassgericht (§ 1962)";
+    label en unofficial "For the administration of the estate the probate court takes the place of the family court or the custody court (§ 1962)";
+}
+pub relation geburt_eines_erben_zu_erwarten(e: Erbfall, mutter: Person) kind empirical {
+    label de official "Zur Zeit des Erbfalls ist die Geburt eines Erben zu erwarten (§ 1963 Satz 1)";
+    label en unofficial "At the devolution the birth of an heir is expected (§ 1963 sentence 1)";
+}
+pub relation mutter_ausserstande_sich_zu_unterhalten(e: Erbfall, mutter: Person) kind empirical {
+    label de official "Die Mutter ist außerstande, sich selbst zu unterhalten (§ 1963 Satz 1)";
+    label en unofficial "The mother is unable to maintain herself (§ 1963 sentence 1)";
+}
+pub external judgment relation angemessener_unterhalt_der_mutter(mutter: Person, betrag: Money) {
+    authority Court;
+    label de official "Angemessener Unterhalt der werdenden Mutter aus dem Nachlass bis zur Entbindung (§ 1963 Satz 1) — Wertung, Kanal §47.3";
+    label en unofficial "appropriate maintenance of the expectant mother from the estate until confinement (§ 1963 sentence 1) — evaluative standard, channel §47.3";
+}
+pub relation unterhaltsanspruch_der_werdenden_mutter(e: Erbfall, mutter: Person, betrag: Money) kind institutional {
+    key(e, mutter);
+    label de official "Anspruch der werdenden Mutter auf angemessenen Unterhalt aus dem Nachlass oder aus dem Erbteil des Kindes bis zur Entbindung (§ 1963 Satz 1)";
+    label en unofficial "claim of the expectant mother to appropriate maintenance from the estate or from the child's share until confinement (§ 1963 sentence 1)";
+}
+pub relation bemessung_nach_einem_kind(e: Erbfall, mutter: Person) kind institutional {
+    label de official "Bei der Bemessung des Erbteils ist anzunehmen, dass nur ein Kind geboren wird (§ 1963 Satz 2)";
+    label en unofficial "In assessing the share it is to be assumed that only one child is born (§ 1963 sentence 2)";
+}
+pub relation erbe_nicht_ermittelt(e: Erbfall) kind empirical {
+    label de official "Der Erbe ist nicht innerhalb einer den Umständen entsprechenden Frist ermittelt worden (§ 1964 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "The heir was not ascertained within a period appropriate to the circumstances (§ 1964 (1)) — established fact";
+}
+pub relation feststellung_des_nachlassgerichts(e: Erbfall) kind empirical {
+    label de official "Das Nachlassgericht hat festgestellt, dass ein anderer Erbe als der Fiskus nicht vorhanden ist (§ 1964 Abs. 1) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "The probate court has established that no heir other than the treasury exists (§ 1964 (1)) — established fact, origin adjudicated";
+}
+pub relation feststellung_geschuldet(e: Erbfall) kind institutional {
+    label de official "Das Nachlassgericht hat festzustellen, dass ein anderer Erbe als der Fiskus nicht vorhanden ist (§ 1964 Abs. 1)";
+    label en unofficial "The probate court must establish that no heir other than the treasury exists (§ 1964 (1))";
+}
+pub relation fiskus_ist_gesetzlicher_erbe_vermutet(e: Erbfall) kind institutional {
+    label de official "Die Feststellung begründet die Vermutung, dass der Fiskus gesetzlicher Erbe sei (§ 1964 Abs. 2)";
+    label en unofficial "The finding gives rise to the presumption that the treasury is statutory heir (§ 1964 (2))";
+}
+pub relation anderer_erbe_nachgewiesen(e: Erbfall, p: Person) kind empirical {
+    label de official "Es ist nachgewiesen, dass ein anderes Erbrecht besteht (§ 1965 Abs. 2, § 1964 Abs. 2)";
+    label en unofficial "It has been proved that another right of succession exists (§ 1965 (2), § 1964 (2))";
+}
+pub relation anmeldungsfrist_ende(e: Erbfall, tag: Date) kind empirical {
+    key(e);
+    label de official "Ablauf der im Aufgebot bestimmten Anmeldungsfrist für die Erbrechte (§ 1965 Abs. 1) — Dauer nach den Vorschriften des Aufgebotsverfahrens, Eingabe des Falls";
+    label en unofficial "expiry of the registration period fixed in the public notice for rights of succession (§ 1965 (1)) — duration under the rules on public notice proceedings, case input";
+}
+pub relation nachweisfrist_ende(e: Erbfall, tag: Date) kind derived {
+    key(e);
+    label de official "Ablauf der drei Monate nach dem Ende der Anmeldungsfrist, binnen deren das Erbrecht nachzuweisen ist (§ 1965 Abs. 2 Satz 1)";
+    label en unofficial "expiry of the three months after the end of the registration period within which the right must be proved (§ 1965 (2) sentence 1)";
+}
+pub relation kosten_unverhaeltnismaessig_gross(e: Erbfall) kind empirical {
+    label de official "Die Kosten der öffentlichen Aufforderung sind dem Bestand des Nachlasses gegenüber unverhältnismäßig groß (§ 1965 Abs. 1 Satz 2) — festgestellte Tatsache";
+    label en unofficial "The costs of the public notice are disproportionately large compared with the estate (§ 1965 (1) sentence 2) — established fact";
+}
+pub relation aufforderung_darf_unterbleiben(e: Erbfall) kind institutional {
+    label de official "Die Aufforderung darf unterbleiben, wenn die Kosten dem Bestand des Nachlasses gegenüber unverhältnismäßig groß sind (§ 1965 Abs. 1 Satz 2)";
+    label en unofficial "The notice may be omitted where the costs are disproportionately large compared with the estate (§ 1965 (1) sentence 2)";
+}
+pub relation erbrecht_bleibt_unberuecksichtigt(e: Erbfall, p: Person) kind institutional {
+    label de official "Ein Erbrecht bleibt unberücksichtigt, wenn es nicht binnen drei Monaten nach dem Ablauf der Anmeldungsfrist nachgewiesen wird (§ 1965 Abs. 2 Satz 1)";
+    label en unofficial "A right of succession is disregarded where it is not proved within three months after the end of the registration period (§ 1965 (2) sentence 1)";
+}
+pub relation nachweis_des_erbrechts_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem dem Nachlassgericht nachgewiesen worden ist, dass das Erbrecht besteht oder gegen den Fiskus im Wege der Klage geltend gemacht ist (§ 1965 Abs. 2 Satz 1)";
+    label en unofficial "day on which it was proved to the probate court that the right exists or has been asserted against the treasury by action (§ 1965 (2) sentence 1)";
+}
+pub relation recht_gegen_fiskus_geltend_machbar(e: Erbfall) kind institutional {
+    label de official "Von dem Fiskus als gesetzlichem Erben und gegen ihn kann ein Recht erst geltend gemacht werden, nachdem festgestellt worden ist, dass ein anderer Erbe nicht vorhanden ist (§ 1966)";
+    label en unofficial "A right may be asserted by and against the treasury as statutory heir only after it has been established that no other heir exists (§ 1966)";
+}
+
+@source(BGB_P1958)
+rule KeineKlageVorAnnahme(e: Erbfall, glaeubiger: Person) strict {
+    label de official "Vor der Annahme der Erbschaft kann ein Anspruch, der sich gegen den Nachlass richtet, nicht gegen den Erben gerichtlich geltend gemacht werden (§ 1958)";
+    label en unofficial "Before acceptance a claim against the estate cannot be asserted in court against the heir (§ 1958)";
+    when anspruch_gegen_den_nachlass(e, glaeubiger) and not_known(annahme_erfolgt(e));
+    then gerichtliche_geltendmachung_ausgeschlossen(e, glaeubiger);
+}
+
+pub relation annahme_erfolgt(e: Erbfall) kind derived {
+    label de official "Die Erbschaft ist angenommen oder gilt als angenommen (§§ 1943, 1958)";
+    label en unofficial "The inheritance has been accepted or is deemed accepted (§§ 1943, 1958)";
+}
+
+@source(BGB_P1943)
+rule AnnahmeErfolgt(e: Erbfall, p: Person) strict {
+    label de official "Die Erbschaft ist angenommen oder gilt mit dem Ablauf der Ausschlagungsfrist als angenommen (§ 1943)";
+    label en unofficial "The inheritance is accepted or is deemed accepted on expiry of the disclaimer period (§ 1943)";
+    when erbschaft_angenommen(e, p);
+    then annahme_erfolgt(e);
+}
+
+@source(BGB_P1959) {
+    rule GeschaeftsfuehrungVorAusschlagung(e: Erbfall, p: Person) strict {
+        label de official "Besorgt der Erbe vor der Ausschlagung erbschaftliche Geschäfte, so ist er demjenigen gegenüber, welcher Erbe wird, wie ein Geschäftsführer ohne Auftrag berechtigt und verpflichtet (§ 1959 Abs. 1)";
+        label en unofficial "If the heir conducts business of the estate before the disclaimer he has the rights and duties of an agent without mandate towards the person who becomes heir (§ 1959 (1))";
+        when erbschaftliche_geschaefte_vor_ausschlagung_besorgt(e, p) and ausgeschlagen(e, p);
+        then haftet_wie_geschaeftsfuehrer_ohne_auftrag(e, p);
+    }
+    rule UnaufschiebbareVerfuegungBleibtWirksam(e: Erbfall, p: Person) strict {
+        label de official "Verfügt der Erbe vor der Ausschlagung über einen Nachlassgegenstand, so wird die Wirksamkeit der Verfügung durch die Ausschlagung nicht berührt, wenn die Verfügung nicht ohne Nachteil für den Nachlass verschoben werden konnte (§ 1959 Abs. 2)";
+        label en unofficial "If the heir disposes of an object of the estate before the disclaimer, the disposition's effectiveness is not affected where it could not be postponed without detriment to the estate (§ 1959 (2))";
+        when verfuegung_vor_ausschlagung_unaufschiebbar(e, p) and ausgeschlagen(e, p);
+        then verfuegung_bleibt_wirksam(e, p);
+    }
+    rule RechtsgeschaeftBleibtWirksam(e: Erbfall, p: Person) strict {
+        label de official "Ein Rechtsgeschäft, das gegenüber dem Erben als solchem vorgenommen werden muss, bleibt, wenn es vor der Ausschlagung dem Ausschlagenden gegenüber vorgenommen wird, auch nach der Ausschlagung wirksam (§ 1959 Abs. 3)";
+        label en unofficial "A transaction that must be effected vis-à-vis the heir as such remains effective after the disclaimer where it was effected vis-à-vis the disclaiming person before it (§ 1959 (3))";
+        when rechtsgeschaeft_gegenueber_dem_ausschlagenden(e, p) and ausgeschlagen(e, p);
+        then verfuegung_bleibt_wirksam(e, p);
+    }
+}
+
+@source(BGB_P1960) {
+    rule SicherungDesNachlasses(e: Erbfall) strict {
+        label de official "Bis zur Annahme der Erbschaft hat das Nachlassgericht für die Sicherung des Nachlasses zu sorgen, soweit ein Bedürfnis besteht; das Gleiche gilt, wenn der Erbe unbekannt oder ungewiss ist, ob er angenommen hat (§ 1960 Abs. 1, 2)";
+        label en unofficial "Until acceptance the probate court must secure the estate where there is a need; the same applies where the heir is unknown or it is uncertain whether he has accepted (§ 1960 (1), (2))";
+        when sicherungsbeduerfnis_des_nachlasses(e) and not_known(annahme_erfolgt(e));
+        then sicherung_des_nachlasses_geschuldet(e);
+    }
+    rule PflegerOhneParagraph1958(e: Erbfall, pfleger: Person) strict {
+        label de official "Die Vorschrift des § 1958 findet auf den Nachlasspfleger keine Anwendung (§ 1960 Abs. 3)";
+        label en unofficial "§ 1958 does not apply to the administrator of the estate (§ 1960 (3))";
+        when nachlasspfleger_bestellt(e, pfleger);
+        then paragraph_1958_gilt_nicht_fuer_pfleger(e, pfleger);
+    }
+}
+
+@source(BGB_P1961)
+rule NachlasspflegerAufAntrag(e: Erbfall, glaeubiger: Person) strict {
+    label de official "Das Nachlassgericht hat in den Fällen des § 1960 Abs. 1 einen Nachlasspfleger zu bestellen, wenn die Bestellung zum Zwecke der gerichtlichen Geltendmachung eines Anspruchs von dem Berechtigten beantragt wird (§ 1961)";
+    label en unofficial "In the cases of § 1960 (1) the probate court must appoint an administrator where the appointment is applied for by the entitled person to assert a claim in court (§ 1961)";
+    when sicherung_des_nachlasses_geschuldet(e) and bestellung_zur_geltendmachung_beantragt(e, glaeubiger);
+    then nachlasspfleger_zu_bestellen(e);
+}
+
+@source(BGB_P1962)
+rule ZustaendigkeitDesNachlassgerichts(e: Erbfall, pfleger: Person) strict {
+    label de official "Für die Nachlasspflegschaft tritt an die Stelle des Familiengerichts oder Betreuungsgerichts das Nachlassgericht (§ 1962)";
+    label en unofficial "For the administration of the estate the probate court takes the place of the family court or the custody court (§ 1962)";
+    when nachlasspfleger_bestellt(e, pfleger);
+    then nachlassgericht_zustaendig_statt_familiengericht(e);
+}
+
+@source(BGB_P1963) {
+    rule UnterhaltDerWerdendenMutter(e: Erbfall, mutter: Person, betrag: Money) strict {
+        label de official "Ist zur Zeit des Erbfalls die Geburt eines Erben zu erwarten, so kann die Mutter, falls sie außerstande ist, sich selbst zu unterhalten, bis zur Entbindung angemessenen Unterhalt aus dem Nachlass verlangen (§ 1963 Satz 1)";
+        label en unofficial "If the birth of an heir is expected at the devolution, the mother, if unable to maintain herself, may demand appropriate maintenance from the estate until confinement (§ 1963 sentence 1)";
+        when geburt_eines_erben_zu_erwarten(e, mutter) and mutter_ausserstande_sich_zu_unterhalten(e, mutter)
+            and angemessener_unterhalt_der_mutter(mutter, betrag);
+        then unterhaltsanspruch_der_werdenden_mutter(e, mutter, betrag);
+    }
+    rule BemessungNachEinemKind(e: Erbfall, mutter: Person) strict {
+        label de official "Bei der Bemessung des Erbteils ist anzunehmen, dass nur ein Kind geboren wird (§ 1963 Satz 2)";
+        label en unofficial "In assessing the share it is to be assumed that only one child is born (§ 1963 sentence 2)";
+        when geburt_eines_erben_zu_erwarten(e, mutter);
+        then bemessung_nach_einem_kind(e, mutter);
+    }
+}
+
+@source(BGB_P1964) {
+    rule FeststellungGeschuldet(e: Erbfall) strict {
+        label de official "Wird der Erbe nicht innerhalb einer den Umständen entsprechenden Frist ermittelt, so hat das Nachlassgericht festzustellen, dass ein anderer Erbe als der Fiskus nicht vorhanden ist (§ 1964 Abs. 1)";
+        label en unofficial "If the heir is not ascertained within a period appropriate to the circumstances, the probate court must establish that no heir other than the treasury exists (§ 1964 (1))";
+        when erbe_nicht_ermittelt(e);
+        then feststellung_geschuldet(e);
+    }
+    presumption FiskusVermutung(e: Erbfall) {
+        label de official "Die Feststellung begründet die VERMUTUNG, dass der Fiskus gesetzlicher Erbe sei (§ 1964 Abs. 2); sie wird durch den Nachweis eines anderen Erbrechts widerlegt";
+        label en unofficial "The finding gives rise to the PRESUMPTION that the treasury is statutory heir (§ 1964 (2)); it is rebutted by proof of another right of succession";
+        when feststellung_des_nachlassgerichts(e);
+        presume fiskus_ist_gesetzlicher_erbe_vermutet(e);
+        unless anderes_erbrecht_nachgewiesen(e);
+    }
+}
+
+pub relation anderes_erbrecht_nachgewiesen(e: Erbfall) kind derived {
+    label de official "Ein anderes Erbrecht als das des Fiskus ist nachgewiesen (§ 1964 Abs. 2, § 1965 Abs. 2)";
+    label en unofficial "a right of succession other than the treasury's has been proved (§ 1964 (2), § 1965 (2))";
+}
+
+@source(BGB_P1965) {
+    rule AnderesErbrechtNachgewiesen(e: Erbfall, p: Person, tag: Date, ende: Date) strict {
+        label de official "Ein Erbrecht wird berücksichtigt, wenn dem Nachlassgericht binnen drei Monaten nach dem Ablauf der Anmeldungsfrist nachgewiesen wird, dass es besteht oder gegen den Fiskus im Wege der Klage geltend gemacht ist (§ 1965 Abs. 2 Satz 1)";
+        label en unofficial "A right of succession is taken into account where within three months after the end of the registration period it is proved to the probate court that it exists or has been asserted against the treasury (§ 1965 (2) sentence 1)";
+        when anderer_erbe_nachgewiesen(e, p) and nachweis_des_erbrechts_am(e, p, tag) and nachweisfrist_ende(e, ende)
+            and tag <= ende;
+        then anderes_erbrecht_nachgewiesen(e);
+    }
+    rule Nachweisfrist(e: Erbfall, tag: Date) strict {
+        label de official "Binnen drei Monaten nach dem Ablauf der Anmeldungsfrist ist das Erbrecht nachzuweisen (§ 1965 Abs. 2 Satz 1)";
+        label en unofficial "The right of succession must be proved within three months after the end of the registration period (§ 1965 (2) sentence 1)";
+        when anmeldungsfrist_ende(e, tag);
+        then nachweisfrist_ende(e, add_calendar_period(tag, 3 calendar_month));
+    }
+    rule ErbrechtUnberuecksichtigt(e: Erbfall, p: Person, tag: Date, ende: Date) strict {
+        label de official "Ein Erbrecht bleibt unberücksichtigt, wenn der Nachweis nicht binnen drei Monaten nach dem Ablauf der Anmeldungsfrist geführt wird (§ 1965 Abs. 2 Satz 1)";
+        label en unofficial "A right of succession is disregarded where the proof is not furnished within three months after the end of the registration period (§ 1965 (2) sentence 1)";
+        when anderer_erbe_nachgewiesen(e, p) and nachweis_des_erbrechts_am(e, p, tag) and nachweisfrist_ende(e, ende)
+            and tag > ende;
+        then erbrecht_bleibt_unberuecksichtigt(e, p);
+    }
+    rule AufforderungDarfUnterbleiben(e: Erbfall) strict {
+        label de official "Die Aufforderung darf unterbleiben, wenn die Kosten dem Bestand des Nachlasses gegenüber unverhältnismäßig groß sind (§ 1965 Abs. 1 Satz 2)";
+        label en unofficial "The notice may be omitted where the costs are disproportionately large compared with the estate (§ 1965 (1) sentence 2)";
+        when feststellung_geschuldet(e) and kosten_unverhaeltnismaessig_gross(e);
+        then aufforderung_darf_unterbleiben(e);
+    }
+}
+
+@source(BGB_P1966)
+rule RechtGegenFiskus(e: Erbfall) strict {
+    label de official "Von dem Fiskus als gesetzlichem Erben und gegen den Fiskus als gesetzlichen Erben kann ein Recht erst geltend gemacht werden, nachdem von dem Nachlassgericht festgestellt worden ist, dass ein anderer Erbe nicht vorhanden ist (§ 1966)";
+    label en unofficial "A right may be asserted by and against the treasury as statutory heir only after the probate court has established that no other heir exists (§ 1966)";
+    when feststellung_des_nachlassgerichts(e);
+    then recht_gegen_fiskus_geltend_machbar(e);
+}

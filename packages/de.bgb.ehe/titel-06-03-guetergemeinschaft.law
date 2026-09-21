@@ -1,0 +1,1353 @@
+// TITEL 6, UNTERTITEL 2, KAPITEL 2 — GÜTERGEMEINSCHAFT (§§ 1415–1482)
+//
+// Die Gütergemeinschaft ist im BGB in DREI Schichten geschrieben, und das
+// Paket hält sie getrennt:
+//
+//   1. WAS ZUM GESAMTGUT GEHÖRT (§§ 1415–1420): Gesamtgut kraft Gesetzes
+//      (§ 1416), Sondergut (§ 1417), Vorbehaltsgut (§ 1418), die
+//      Gesamthandsbindung (§ 1419), der Vorrang der Einkünfte (§ 1420).
+//   2. WER VERWALTET (§§ 1421–1470): entweder EIN Ehegatte (§§ 1422–1449)
+//      oder BEIDE gemeinsam (§§ 1450–1470). Die beiden Regelkreise sind vom
+//      Gesetz fast parallel geschrieben (§ 1437 zu § 1459, § 1441 zu § 1463,
+//      § 1447 zu § 1469 …), und das Paket bildet sie auch parallel ab: ein
+//      Kopf, zwei Regeln, unterschieden durch `verwaltung_durch_einen_ehegatten`
+//      oder `gemeinschaftliche_verwaltung`.
+//   3. WIE AUSEINANDERGESETZT WIRD (§§ 1471–1482): Berichtigung der
+//      Verbindlichkeiten (§ 1475), Teilung zu gleichen Teilen (§ 1476),
+//      Rückerstattung des Eingebrachten nach Scheidung (§ 1478).
+//
+// GLEICHE TEILE (§ 1476 Abs. 1). „Der Überschuss … gebührt den Ehegatten zu
+// gleichen Teilen“ — die Hälfte, EINMAL kaufmännisch auf den Cent geteilt
+// (Ledger D-12-06, wie § 1378 Abs. 1).
+//
+// § 1478 ABS. 1 IST EINE QUOTE AUS DEM TEXT. Reicht der Wert des Gesamtguts
+// zur Rückerstattung des Eingebrachten nicht aus, „so ist der Fehlbetrag von
+// den Ehegatten nach dem Verhältnis des Wertes des von ihnen Eingebrachten zu
+// tragen“ — eine Verhältnisrechnung, deren Zähler und Nenner der Text selbst
+// benennt. Ein `div_round` je Ehegatte, kaufmännisch auf den Cent.
+//
+// VERWEISUNGEN, DIE NICHT NACHGEBAUT WERDEN. §§ 1434 und 1457 verweisen auf
+// das Bereicherungsrecht (§§ 812 ff., `de.bgb.bereicherung_delikt`), § 1480
+// auf die §§ 1990, 1991 (`de.bgb.erbfolge`), § 1473 Abs. 2 auf die §§ 406 bis
+// 408 (`de.bgb.schuldrecht_at`). Die Regeln stellen fest, DASS verwiesen wird,
+// und nennen das Ziel in ihrer Marke (Ledger D-13-08).
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+pub entity Verbindlichkeit {
+    label de official "Verbindlichkeit eines Ehegatten oder des Gesamtguts (§§ 1437–1446, 1459–1468, 1475–1481)";
+    label en unofficial "liability of a spouse or of the community property (§§ 1437–1446, 1459–1468, 1475–1481)";
+}
+
+// --- Eingänge des Falls: Bestand -------------------------------------------------------------------
+
+pub relation gesamtgutsgegenstand(ehe: Ehe, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenstand, der zum Gesamtgut gehört (§ 1416 Abs. 1, 2)";
+    label en unofficial "object belonging to the community property (§ 1416 (1), (2))";
+}
+relation nicht_uebertragbarer_gegenstand(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenstand, der nicht durch Rechtsgeschäft übertragen werden kann (§ 1417 Abs. 2)";
+    label en unofficial "object which cannot be transferred by legal transaction (§ 1417 (2))";
+}
+relation durch_ehevertrag_zum_vorbehaltsgut_erklaert(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenstand, der durch Ehevertrag zum Vorbehaltsgut eines Ehegatten erklärt ist (§ 1418 Abs. 2 Nr. 1)";
+    label en unofficial "object declared reserved property of a spouse by marriage contract (§ 1418 (2) no. 1)";
+}
+relation erwerb_mit_vorbehaltsbestimmung(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenstand, den ein Ehegatte von Todes wegen erwirbt oder der ihm unentgeltlich zugewendet wird, wenn der Erblasser oder der Dritte bestimmt hat, dass der Erwerb Vorbehaltsgut sein soll (§ 1418 Abs. 2 Nr. 2)";
+    label en unofficial "object acquired on death or by gratuitous disposition where the testator or donor stipulated that it be reserved property (§ 1418 (2) no. 2)";
+}
+relation surrogat_des_vorbehaltsguts(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenstand, den ein Ehegatte auf Grund eines zum Vorbehaltsgut gehörenden Rechts, als Ersatz für einen Vorbehaltsgutsgegenstand oder durch ein sich auf das Vorbehaltsgut beziehendes Rechtsgeschäft erwirbt (§ 1418 Abs. 2 Nr. 3)";
+    label en unofficial "object acquired by virtue of a right belonging to the reserved property, as a substitute for it or through a transaction relating to it (§ 1418 (2) no. 3)";
+}
+relation surrogat_des_gesamtguts(ehe: Ehe, s: de.bgb.core::Sache) kind empirical {
+    label de official "Was auf Grund eines zum Gesamtgut gehörenden Rechts, als Ersatz für einen Gesamtgutsgegenstand oder durch ein sich auf das Gesamtgut beziehendes Rechtsgeschäft erworben wird (§ 1473 Abs. 1)";
+    label en unofficial "what is acquired by virtue of a right belonging to the community property, as a substitute for it or through a transaction relating to it (§ 1473 (1))";
+}
+relation verfuegung_ueber_den_anteil_am_gesamtgut(ehe: Ehe, p: Person) kind empirical {
+    label de official "Ein Ehegatte verfügt über seinen Anteil am Gesamtgut oder an einem einzelnen Gegenstand oder verlangt Teilung (§ 1419 Abs. 1)";
+    label en unofficial "a spouse disposes of his share in the community property or demands division (§ 1419 (1))";
+}
+relation aufrechnung_gegen_eine_gesamtgutsforderung(ehe: Ehe, schuldner: Person) kind empirical {
+    label de official "Der Schuldner rechnet gegen eine zum Gesamtgut gehörende Forderung auf (§ 1419 Abs. 2)";
+    label en unofficial "the debtor sets off against a claim belonging to the community property (§ 1419 (2))";
+}
+relation berichtigung_aus_dem_gesamtgut_verlangbar(ehe: Ehe, schuldner: Person) kind empirical {
+    label de official "Der Schuldner kann die Berichtigung seiner Gegenforderung aus dem Gesamtgut verlangen (§ 1419 Abs. 2)";
+    label en unofficial "the debtor may demand satisfaction of his counterclaim out of the community property (§ 1419 (2))";
+}
+relation einkuenfte_des_gesamtguts(ehe: Ehe, wert: Money) kind empirical {
+    key(ehe);
+    label de official "Einkünfte, die in das Gesamtgut fallen (§ 1420)";
+    label en unofficial "income falling into the community property (§ 1420)";
+}
+
+// --- Eingänge des Falls: Verwaltung ------------------------------------------------------------------
+
+pub relation verwalter_des_gesamtguts(ehe: Ehe, p: Person) kind empirical {
+    key(ehe);
+    label de official "Der Ehegatte, der das Gesamtgut allein verwaltet (§ 1421 Satz 1, §§ 1422 ff.)";
+    label en unofficial "the spouse who administers the community property alone (§ 1421 sentence 1, §§ 1422 et seq.)";
+}
+relation ehevertrag_ohne_bestimmung_der_verwaltung(ehe: Ehe) kind empirical {
+    label de official "Der Ehevertrag enthält keine Bestimmung darüber, wer das Gesamtgut verwaltet (§ 1421 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the marriage contract contains no provision on who administers the community property (§ 1421 sentence 2) — explicit input";
+}
+relation verfuegung_ueber_das_gesamtgut_im_ganzen(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) kind empirical {
+    label de official "Der verwaltende Ehegatte verpflichtet sich, über das Gesamtgut im Ganzen zu verfügen (§ 1423)";
+    label en unofficial "the administering spouse undertakes to dispose of the community property as a whole (§ 1423)";
+}
+relation verfuegung_ueber_grundstueck_oder_schiff(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) kind empirical {
+    label de official "Verfügung über ein zum Gesamtgut gehörendes Grundstück, ein eingetragenes Schiff oder ein Schiffsbauwerk (§ 1424)";
+    label en unofficial "disposition of land, a registered ship or a ship under construction belonging to the community property (§ 1424)";
+}
+relation schenkung_aus_dem_gesamtgut(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) kind empirical {
+    label de official "Der verwaltende Ehegatte verschenkt Gegenstände aus dem Gesamtgut oder verspricht dies (§ 1425 Abs. 1)";
+    label en unofficial "the administering spouse gives away objects from the community property or promises to do so (§ 1425 (1))";
+}
+relation pflicht_oder_anstandsschenkung(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Schenkung, durch die einer sittlichen Pflicht oder einer auf den Anstand zu nehmenden Rücksicht entsprochen wird (§ 1425 Abs. 2)";
+    label en unofficial "gift complying with a moral duty or with considerations of decency (§ 1425 (2))";
+}
+relation verwalter_durch_krankheit_oder_abwesenheit_verhindert(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Ehegatte ist durch Krankheit oder Abwesenheit verhindert, ein Rechtsgeschäft vorzunehmen, das sich auf das Gesamtgut bezieht (§§ 1429, 1454)";
+    label en unofficial "the spouse is prevented by illness or absence from undertaking a transaction relating to the community property (§§ 1429, 1454)";
+}
+relation aufschub_mit_gefahr_verbunden(ehe: Ehe) kind empirical {
+    label de official "Mit dem Aufschub ist Gefahr verbunden (§§ 1429, 1454, 1455 Nr. 10)";
+    label en unofficial "delay entails danger (§§ 1429, 1454, 1455 no. 10)";
+}
+relation einwilligung_in_selbstaendiges_erwerbsgeschaeft(ehe: Ehe, einwilligender: Person, betreiber: Person) kind empirical {
+    label de official "Ein Ehegatte hat darin eingewilligt, dass der andere selbständig ein Erwerbsgeschäft betreibt (§ 1431 Abs. 1, § 1456 Abs. 1)";
+    label en unofficial "a spouse consented to the other running a business independently (§ 1431 (1), § 1456 (1))";
+}
+relation kenntnis_ohne_einspruch(ehe: Ehe, wissender: Person, betreiber: Person) kind empirical {
+    label de official "Der Ehegatte weiß, dass der andere ein Erwerbsgeschäft betreibt, und hat hiergegen keinen Einspruch eingelegt (§ 1431 Abs. 2, § 1456 Abs. 2)";
+    label en unofficial "the spouse knows that the other runs a business and has raised no objection (§ 1431 (2), § 1456 (2))";
+}
+relation erbschaft_oder_vermaechtnis_angefallen(ehe: Ehe, p: Person) kind empirical {
+    label de official "Dem Ehegatten ist eine Erbschaft oder ein Vermächtnis angefallen (§ 1432 Abs. 1, § 1455 Nr. 1)";
+    label en unofficial "an inheritance or legacy has devolved on the spouse (§ 1432 (1), § 1455 no. 1)";
+}
+relation rechtsstreit_beim_eintritt_der_guetergemeinschaft_anhaengig(ehe: Ehe, p: Person) kind empirical {
+    label de official "Beim Eintritt der Gütergemeinschaft war ein Rechtsstreit anhängig (§ 1433, § 1455 Nr. 7)";
+    label en unofficial "proceedings were pending when the community of property began (§ 1433, § 1455 no. 7)";
+}
+relation gesamtgut_durch_zustimmungsloses_geschaeft_bereichert(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Durch ein Rechtsgeschäft ohne die erforderliche Zustimmung ist das Gesamtgut bereichert (§ 1434, § 1457)";
+    label en unofficial "the community property has been enriched by a transaction lacking the required consent (§ 1434, § 1457)";
+}
+relation gesamtgut_gemindert_durch_verschulden_oder_zustimmungsloses_geschaeft(ehe: Ehe, verwalter: Person) kind empirical {
+    label de official "Das Gesamtgut hat sich gemindert, und der Verwalter hat den Verlust verschuldet oder durch ein Rechtsgeschäft ohne die erforderliche Zustimmung herbeigeführt (§ 1435 Satz 3)";
+    label en unofficial "the community property has diminished and the administrator caused the loss culpably or by a transaction without the required consent (§ 1435 sentence 3)";
+}
+relation verwaltung_im_aufgabenkreis_des_betreuers(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Verwaltung des Gesamtguts fällt in den Aufgabenkreis des Betreuers eines Ehegatten (§ 1436, § 1447 Nr. 4, § 1469 Nr. 5)";
+    label en unofficial "the administration of the community property falls within the remit of a spouse's custodian (§ 1436, § 1447 no. 4, § 1469 no. 5)";
+}
+relation verbindlichkeit_eines_ehegatten(ehe: Ehe, vb: Verbindlichkeit, schuldner: Person) kind empirical {
+    label de official "Verbindlichkeit, die in der Person eines Ehegatten entstanden ist (§§ 1437, 1441, 1459, 1463)";
+    label en unofficial "liability arising in the person of a spouse (§§ 1437, 1441, 1459, 1463)";
+}
+relation verbindlichkeit_aus_rechtsgeschaeft_waehrend_der_guetergemeinschaft(ehe: Ehe, vb: Verbindlichkeit, handelnder: Person) kind empirical {
+    label de official "Verbindlichkeit aus einem Rechtsgeschäft, das während der Gütergemeinschaft vorgenommen wird (§ 1438 Abs. 1, § 1460 Abs. 1)";
+    label en unofficial "liability from a transaction undertaken during the community of property (§ 1438 (1), § 1460 (1))";
+}
+relation zustimmung_des_verwalters(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Der verwaltende Ehegatte hat dem Rechtsgeschäft zugestimmt oder es selbst vorgenommen (§ 1438 Abs. 1, § 1460 Abs. 1)";
+    label en unofficial "the administering spouse consented to or himself undertook the transaction (§ 1438 (1), § 1460 (1))";
+}
+relation verbindlichkeit_aus_dem_erwerb_einer_erbschaft(ehe: Ehe, vb: Verbindlichkeit, erbe: Person) kind empirical {
+    label de official "Verbindlichkeit, die durch den Erwerb einer Erbschaft oder eines Vermächtnisses entsteht, das als Vorbehaltsgut oder Sondergut erworben wird (§ 1439, § 1461)";
+    label en unofficial "liability arising from acquiring an inheritance or legacy acquired as reserved or separate property (§ 1439, § 1461)";
+}
+relation verbindlichkeit_aus_vorbehalts_oder_sondergut(ehe: Ehe, vb: Verbindlichkeit, p: Person) kind empirical {
+    label de official "Verbindlichkeit, die infolge eines zum Vorbehaltsgut oder Sondergut gehörenden Rechts oder des Besitzes einer dazu gehörenden Sache entsteht (§ 1440, § 1462)";
+    label en unofficial "liability arising from a right belonging to the reserved or separate property or from possession of such a thing (§ 1440, § 1462)";
+}
+relation gehoert_zum_erwerbsgeschaeft(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Das Recht oder die Sache gehört zu einem Erwerbsgeschäft, das der Ehegatte mit Einwilligung des anderen selbständig betreibt (§ 1440 Satz 2, § 1462 Satz 2)";
+    label en unofficial "the right or thing belongs to a business run independently with the other's consent (§ 1440 sentence 2, § 1462 sentence 2)";
+}
+relation lasten_des_sonderguts_aus_den_einkuenften(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Die Verbindlichkeit gehört zu den Lasten des Sonderguts, die aus den Einkünften beglichen zu werden pflegen (§ 1440 Satz 2, § 1442 Satz 1, § 1462 Satz 2, § 1464 Satz 1)";
+    label en unofficial "the liability belongs to the charges on the separate property customarily met out of its income (§ 1440, § 1442, § 1462, § 1464)";
+}
+relation verbindlichkeit_aus_unerlaubter_handlung(ehe: Ehe, vb: Verbindlichkeit, taeter: Person) kind empirical {
+    label de official "Verbindlichkeit aus einer unerlaubten Handlung, die der Ehegatte nach Eintritt der Gütergemeinschaft begeht, oder aus einem deswegen gegen ihn gerichteten Strafverfahren (§ 1441 Nr. 1, § 1463 Nr. 1)";
+    label en unofficial "liability from a tort committed after the community began or from criminal proceedings for it (§ 1441 no. 1, § 1463 no. 1)";
+}
+relation verbindlichkeit_aus_vorbehalts_oder_sondergutsverhaeltnis(ehe: Ehe, vb: Verbindlichkeit, p: Person) kind empirical {
+    label de official "Verbindlichkeit aus einem sich auf das Vorbehaltsgut oder Sondergut beziehenden Rechtsverhältnis (§ 1441 Nr. 2, § 1463 Nr. 2)";
+    label en unofficial "liability from a legal relationship concerning the reserved or separate property (§ 1441 no. 2, § 1463 no. 2)";
+}
+relation kosten_eines_rechtsstreits_der_ehegatten(ehe: Ehe, vb: Verbindlichkeit, kostenpflichtiger: Person) kind empirical {
+    label de official "Kosten eines Rechtsstreits, den die Ehegatten miteinander führen (§ 1443 Abs. 1, § 1465 Abs. 1)";
+    label en unofficial "costs of proceedings which the spouses conduct against each other (§ 1443 (1), § 1465 (1))";
+}
+relation kosten_eines_rechtsstreits_mit_einem_dritten(ehe: Ehe, vb: Verbindlichkeit, fuehrender: Person) kind empirical {
+    label de official "Kosten eines Rechtsstreits, den ein Ehegatte mit einem Dritten führt (§ 1443 Abs. 2, § 1465 Abs. 2)";
+    label en unofficial "costs of proceedings which a spouse conducts against a third party (§ 1443 (2), § 1465 (2))";
+}
+relation urteil_dem_gesamtgut_gegenueber_wirksam(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Das Urteil ist dem Gesamtgut gegenüber wirksam (§ 1443 Abs. 2 Satz 2, § 1465 Abs. 2 Satz 2)";
+    label en unofficial "the judgment is effective as against the community property (§ 1443 (2) sentence 2, § 1465 (2) sentence 2)";
+}
+relation ausstattung_an_gemeinschaftliches_kind(ehe: Ehe, geber: Person, kind: Person, wert: Money) kind empirical {
+    label de official "Der verwaltende Ehegatte verspricht oder gewährt einem gemeinschaftlichen Kind aus dem Gesamtgut eine Ausstattung (§ 1444 Abs. 1)";
+    label en unofficial "the administering spouse promises or grants an endowment to a common child out of the community property (§ 1444 (1))";
+}
+relation ausstattung_uebersteigt_das_dem_gesamtgut_entsprechende_mass(ehe: Ehe, geber: Person, kind: Person) kind empirical {
+    label de official "Die Ausstattung übersteigt das Maß, das dem Gesamtgut entspricht (§ 1444 Abs. 1, Abs. 2)";
+    label en unofficial "the endowment exceeds the measure corresponding to the community property (§ 1444 (1), (2))";
+}
+relation ausstattung_an_nicht_gemeinschaftliches_kind(ehe: Ehe, geber: Person, kind: Person, wert: Money) kind empirical {
+    label de official "Der verwaltende Ehegatte verspricht oder gewährt einem NICHT gemeinschaftlichen Kind eine Ausstattung aus dem Gesamtgut (§ 1444 Abs. 2, § 1466)";
+    label en unofficial "the administering spouse promises or grants an endowment to a child who is NOT common out of the community property (§ 1444 (2), § 1466)";
+}
+relation elternteil_des_kindes(ehe: Ehe, kind: Person, elternteil: Person) kind empirical {
+    label de official "Vater oder Mutter des Kindes (§ 1444 Abs. 2, § 1466)";
+    label en unofficial "father or mother of the child (§ 1444 (2), § 1466)";
+}
+relation verwendung_von_gesamtgut_in_das_eigene_gut(ehe: Ehe, p: Person, wert: Money) kind empirical {
+    label de official "Ein Ehegatte verwendet Gesamtgut in sein Vorbehaltsgut oder in sein Sondergut (§ 1445 Abs. 1, § 1467 Abs. 1)";
+    label en unofficial "a spouse applies community property to his reserved or separate property (§ 1445 (1), § 1467 (1))";
+}
+relation verwendung_von_eigenem_gut_in_das_gesamtgut(ehe: Ehe, p: Person, wert: Money) kind empirical {
+    label de official "Ein Ehegatte verwendet Vorbehaltsgut oder Sondergut in das Gesamtgut (§ 1445 Abs. 2, § 1467 Abs. 2)";
+    label en unofficial "a spouse applies reserved or separate property to the community property (§ 1445 (2), § 1467 (2))";
+}
+relation guetergemeinschaft_beendet_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der Beendigung der Gütergemeinschaft (§§ 1446, 1468, 1471)";
+    label en unofficial "day on which the community of property ended (§§ 1446, 1468, 1471)";
+}
+relation vorbehalts_und_sondergut_reichen_aus(ehe: Ehe, p: Person) kind empirical {
+    label de official "Das Vorbehaltsgut und das Sondergut des Schuldners reichen zur Berichtigung der Schuld aus (§ 1446 Abs. 2 Satz 2, § 1468)";
+    label en unofficial "the debtor's reserved and separate property suffice to satisfy the debt (§ 1446 (2) sentence 2, § 1468)";
+}
+relation aufhebungsentscheidung_guetergemeinschaft_rechtskraeftig_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der Rechtskraft der richterlichen Entscheidung, die die Gütergemeinschaft aufhebt (§ 1449 Abs. 1, § 1470 Abs. 1, § 1496)";
+    label en unofficial "day on which the judicial decision terminating the community of property became final (§ 1449 (1), § 1470 (1), § 1496)";
+}
+relation aufhebung_der_guetergemeinschaft_beantragt_am(ehe: Ehe, antragsteller: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Antrag auf Aufhebung der Gütergemeinschaft gestellt ist (§§ 1447, 1448, 1469, 1479)";
+    label en unofficial "day on which the application to terminate the community of property was made (§§ 1447, 1448, 1469, 1479)";
+}
+relation willenserklaerung_gegenueber_einem_ehegatten_abgegeben(ehe: Ehe, empfaenger: Person) kind empirical {
+    label de official "Eine Willenserklärung ist gegenüber einem der Ehegatten abgegeben (§ 1450 Abs. 2)";
+    label en unofficial "a declaration of intent has been made to one of the spouses (§ 1450 (2))";
+}
+relation verwaltungshandlung_des_1455(ehe: Ehe, p: Person, nummer: Integer) kind empirical {
+    label de official "Verwaltungshandlung, die ein Ehegatte nach § 1455 Nr. 1 bis 10 ohne Mitwirkung des anderen vornehmen kann";
+    label en unofficial "act of administration which a spouse may undertake without the other under § 1455 nos. 1 to 10";
+}
+relation gesamtgutsverbindlichkeit_beim_teilen_unberichtigt(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Das Gesamtgut wird geteilt, bevor die Gesamtgutsverbindlichkeit berichtigt ist (§§ 1480, 1481)";
+    label en unofficial "the community property is divided before the liability has been satisfied (§§ 1480, 1481)";
+}
+relation eingebrachter_wert(ehe: Ehe, p: Person, wert: Money) kind empirical {
+    label de official "Wert dessen, was ein Ehegatte in die Gütergemeinschaft eingebracht hat, bestimmt nach der Zeit der Einbringung (§ 1478 Abs. 2, 3)";
+    label en unofficial "value of what a spouse brought into the community, determined as at the time of bringing in (§ 1478 (2), (3))";
+}
+relation ueberschuss_des_gesamtguts(ehe: Ehe, wert: Money) kind empirical {
+    key(ehe);
+    label de official "Überschuss, der nach der Berichtigung der Gesamtgutsverbindlichkeiten verbleibt (§ 1476 Abs. 1)";
+    label en unofficial "surplus remaining after satisfaction of the community liabilities (§ 1476 (1))";
+}
+relation zum_persoenlichen_gebrauch_bestimmter_gegenstand(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Sache, die ausschließlich zum persönlichen Gebrauch eines Ehegatten bestimmt ist, insbesondere Kleider, Schmucksachen und Arbeitsgeräte (§ 1477 Abs. 2 Satz 1)";
+    label en unofficial "thing intended exclusively for a spouse's personal use, in particular clothes, jewellery and tools (§ 1477 (2) sentence 1)";
+}
+relation eingebrachter_gegenstand(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenstand, den ein Ehegatte in die Gütergemeinschaft eingebracht oder während ihrer Dauer durch Erbfolge, Vermächtnis, Schenkung oder als Ausstattung erworben hat (§ 1477 Abs. 2 Satz 2)";
+    label en unofficial "object which a spouse brought into the community or acquired during it by succession, legacy, gift or endowment (§ 1477 (2) sentence 2)";
+}
+relation ehe_geschieden_vor_beendigung_der_auseinandersetzung(ehe: Ehe) kind empirical {
+    label de official "Die Ehe ist geschieden, bevor die Auseinandersetzung beendet ist (§ 1478 Abs. 1)";
+    label en unofficial "the marriage was dissolved before the division was completed (§ 1478 (1))";
+}
+relation rueckerstattung_verlangt(ehe: Ehe, verlangender: Person) kind empirical {
+    label de official "Ein Ehegatte verlangt die Rückerstattung des Wertes des von ihm Eingebrachten (§ 1478 Abs. 1)";
+    label en unofficial "a spouse demands restitution of the value of what he brought in (§ 1478 (1))";
+}
+relation wert_des_gesamtguts_bei_der_auseinandersetzung(ehe: Ehe, wert: Money) kind empirical {
+    key(ehe);
+    label de official "Wert des Gesamtguts, aus dem die Rückerstattung des Eingebrachten zu leisten ist (§ 1478 Abs. 1)";
+    label en unofficial "value of the community property from which the restitution is to be made (§ 1478 (1))";
+}
+relation eingebrachte_summe(ehe: Ehe, wert: Money) kind empirical {
+    key(ehe);
+    label de official "Summe der Werte dessen, was BEIDE Ehegatten in die Gütergemeinschaft eingebracht haben (§ 1478 Abs. 1): der Nenner der Quote des Halbsatzes 2";
+    label en unofficial "sum of the values which BOTH spouses brought into the community (§ 1478 (1)): the denominator of the proportion";
+}
+relation eingebrachter_wert_in_cent(ehe: Ehe, p: Person, cent: Integer) kind empirical {
+    label de official "Wert des von diesem Ehegatten Eingebrachten in Cent — der ZÄHLER der Quote des § 1478 Abs. 1 Halbsatz 2. Das Verhältnis zweier Geldbeträge ist das Verhältnis ihrer Centbeträge; §58 kennt kein Produkt zweier Geldbeträge, wohl aber das Produkt von Geld mit einem Integer (Ledger D-12-10)";
+    label en unofficial "value brought in by this spouse in cents — the NUMERATOR of the proportion of § 1478 (1); §58 knows no product of two money amounts but does know money times an integer";
+}
+relation eingebrachte_summe_in_cent(ehe: Ehe, cent: Integer) kind empirical {
+    key(ehe);
+    label de official "Summe der Werte des von beiden Ehegatten Eingebrachten in Cent — der NENNER der Quote des § 1478 Abs. 1 Halbsatz 2";
+    label en unofficial "sum of the values brought in by both spouses in cents — the DENOMINATOR of the proportion of § 1478 (1)";
+}
+relation ehe_durch_tod_aufgeloest(ehe: Ehe, verstorbener: Person) kind empirical {
+    label de official "Die Ehe ist durch den Tod eines Ehegatten aufgelöst (§ 1482)";
+    label en unofficial "the marriage was dissolved by the death of a spouse (§ 1482)";
+}
+
+// --- Kanäle der Wertung (§47.3) --------------------------------------------------------------------
+
+pub external judgment relation ordnungsmaessige_verwaltung_des_gesamtguts(ehe: Ehe, g: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 1426, § 1452 Abs. 1. Das Rechtsgeschäft oder die Führung des Rechtsstreits ist zur ordnungsmäßigen Verwaltung des Gesamtguts erforderlich, und der andere Ehegatte verweigert die Zustimmung ohne ausreichenden Grund oder ist verhindert";
+    label en unofficial "§ 1426, § 1452 (1). The transaction is necessary for the proper administration of the community property and consent is refused without sufficient ground or prevented";
+}
+pub external judgment relation zustimmung_ohne_ausreichenden_grund_verweigert(ehe: Ehe, verweigerer: Person) {
+    authority Court;
+    label de official "§ 1430, § 1452 Abs. 2, § 1469 Nr. 2. Der Ehegatte verweigert ohne ausreichenden Grund die Zustimmung zu einem Rechtsgeschäft, das der andere zur ordnungsmäßigen Besorgung seiner persönlichen Angelegenheiten vornehmen muss, oder weigert sich beharrlich mitzuwirken";
+    label en unofficial "§ 1430, § 1452 (2), § 1469 no. 2. The spouse refuses consent without sufficient ground or persistently refuses to cooperate";
+}
+pub external judgment relation erhebliche_gefaehrdung_der_rechte(ehe: Ehe, gefaehrdeter: Person) {
+    authority Court;
+    label de official "§ 1447 Nr. 1, 3, § 1448, § 1469 Nr. 1, 4, § 1495 Nr. 1. Die Rechte des Ehegatten oder des Abkömmlings können für die Zukunft erheblich gefährdet werden — durch Unfähigkeit oder Missbrauch der Verwaltung oder durch Überschuldung des Gesamtguts";
+    label en unofficial "§ 1447 nos. 1, 3, § 1448, § 1469 nos. 1, 4, § 1495 no. 1. The rights may be seriously endangered in future";
+}
+pub external judgment relation unterhaltspflicht_verletzt_und_gefaehrdung_zu_besorgen(ehe: Ehe, verletzer: Person) {
+    authority Court;
+    label de official "§ 1447 Nr. 2, § 1469 Nr. 3, § 1495 Nr. 2. Der Ehegatte hat seine Verpflichtung, zum Familienunterhalt beizutragen, verletzt, und für die Zukunft ist eine erhebliche Gefährdung des Unterhalts zu besorgen";
+    label en unofficial "§ 1447 no. 2, § 1469 no. 3, § 1495 no. 2. The spouse breached the duty to contribute to family maintenance and future endangerment is to be feared";
+}
+pub external judgment relation aufwendung_der_kosten_geboten(ehe: Ehe, vb: Verbindlichkeit) {
+    authority Court;
+    label de official "§ 1443 Abs. 2 Satz 2, § 1465 Abs. 2 Satz 2. Der Rechtsstreit betrifft eine persönliche Angelegenheit oder eine Gesamtgutsverbindlichkeit des Ehegatten, und die Aufwendung der Kosten war den Umständen nach geboten";
+    label en unofficial "§ 1443 (2) sentence 2, § 1465 (2) sentence 2. The proceedings concern a personal matter or a community liability and incurring the costs was warranted";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation gesamtgut(ehe: Ehe, s: de.bgb.core::Sache) kind institutional {
+    label de official "Der Gegenstand gehört zum Gesamtgut: das jeweilige Vermögen der Ehegatten wird durch die Gütergemeinschaft gemeinschaftliches Vermögen beider Ehegatten, und die einzelnen Gegenstände werden gemeinschaftlich, ohne dass sie durch Rechtsgeschäft übertragen werden müssen (§ 1416 Abs. 1, 2)";
+    label en unofficial "The object belongs to the community property (§ 1416 (1), (2))";
+}
+pub relation sondergut(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind institutional {
+    label de official "Sondergut sind die Gegenstände, die nicht durch Rechtsgeschäft übertragen werden können; sie sind vom Gesamtgut ausgeschlossen und werden für Rechnung des Gesamtguts selbständig verwaltet (§ 1417)";
+    label en unofficial "Separate property consists of objects that cannot be transferred by transaction (§ 1417)";
+}
+pub relation vorbehaltsgut(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind institutional {
+    label de official "Vorbehaltsgut ist vom Gesamtgut ausgeschlossen und wird für eigene Rechnung selbständig verwaltet (§ 1418)";
+    label en unofficial "Reserved property is excluded from the community property and administered independently for the spouse's own account (§ 1418)";
+}
+relation grundbuchberichtigung_verlangbar(ehe: Ehe, verlangender: Person, s: de.bgb.core::Sache) kind institutional {
+    label de official "Wird ein im Grundbuch eingetragenes Recht gemeinschaftlich, so kann jeder Ehegatte von dem anderen verlangen, dass er zur Berichtigung des Grundbuchs mitwirke (§ 1416 Abs. 3)";
+    label en unofficial "Where a registered right becomes joint, each spouse may demand the other's cooperation in correcting the land register (§ 1416 (3))";
+}
+relation verfuegung_ueber_den_anteil_unwirksam(ehe: Ehe, p: Person) kind institutional {
+    label de official "Ein Ehegatte kann nicht über seinen Anteil am Gesamtgut und an den einzelnen Gegenständen verfügen; er ist nicht berechtigt, Teilung zu verlangen (§ 1419 Abs. 1)";
+    label en unofficial "A spouse cannot dispose of his share in the community property and is not entitled to demand division (§ 1419 (1))";
+}
+relation aufrechnung_zulaessig(ehe: Ehe, schuldner: Person) kind institutional {
+    label de official "Gegen eine Forderung, die zum Gesamtgut gehört, kann der Schuldner nur mit einer Forderung aufrechnen, deren Berichtigung er aus dem Gesamtgut verlangen kann (§ 1419 Abs. 2)";
+    label en unofficial "Against a claim belonging to the community property the debtor may set off only a claim satisfiable out of the community property (§ 1419 (2))";
+}
+relation vorrang_der_einkuenfte_des_gesamtguts(ehe: Ehe) kind institutional {
+    label de official "Die Einkünfte, die in das Gesamtgut fallen, sind vor den Einkünften des Vorbehaltsguts, der Stamm des Gesamtguts ist vor dem Stamm des Vorbehaltsguts oder des Sonderguts für den Unterhalt der Familie zu verwenden (§ 1420)";
+    label en unofficial "Income falling into the community property is to be used for the family's maintenance before income of the reserved property (§ 1420)";
+}
+pub relation gemeinschaftliche_verwaltung(ehe: Ehe) kind institutional {
+    label de official "Enthält der Ehevertrag keine Bestimmung darüber, wer das Gesamtgut verwaltet, so verwalten die Ehegatten das Gesamtgut gemeinschaftlich (§ 1421 Satz 2)";
+    label en unofficial "Where the contract contains no provision, the spouses administer the community property jointly (§ 1421 sentence 2)";
+}
+relation verwaltungsrecht_des_verwalters(ehe: Ehe, verwalter: Person) kind institutional {
+    label de official "Der Ehegatte, der das Gesamtgut verwaltet, ist berechtigt, die zum Gesamtgut gehörenden Sachen in Besitz zu nehmen und über das Gesamtgut zu verfügen; er führt Rechtsstreitigkeiten im eigenen Namen, und der andere Ehegatte wird durch die Verwaltungshandlungen nicht persönlich verpflichtet (§ 1422)";
+    label en unofficial "The administering spouse may take possession of and dispose of the community property and conducts proceedings in his own name (§ 1422)";
+}
+relation notverwaltungsrecht(ehe: Ehe, handelnder: Person) kind institutional {
+    label de official "Ist der Ehegatte durch Krankheit oder Abwesenheit verhindert, so kann der andere das Rechtsgeschäft vornehmen, wenn mit dem Aufschub Gefahr verbunden ist; er kann im eigenen Namen oder im Namen des anderen handeln (§ 1429, § 1454)";
+    label en unofficial "Where a spouse is prevented by illness or absence, the other may undertake the transaction if delay entails danger (§ 1429, § 1454)";
+}
+relation zustimmung_zu_erwerbsgeschaeften_entbehrlich(ehe: Ehe, betreiber: Person) kind institutional {
+    label de official "Hat der Ehegatte in das selbständige Erwerbsgeschäft eingewilligt, so ist seine Zustimmung zu solchen Rechtsgeschäften und Rechtsstreitigkeiten nicht erforderlich, die der Geschäftsbetrieb mit sich bringt (§ 1431 Abs. 1, § 1456 Abs. 1)";
+    label en unofficial "Where a spouse consented to the independent business, his consent to transactions arising from it is not required (§ 1431 (1), § 1456 (1))";
+}
+relation ohne_zustimmung_zulaessige_handlung(ehe: Ehe, p: Person, gegenstand: Text) kind institutional {
+    label de official "Handlung, die der Ehegatte ohne Zustimmung oder Mitwirkung des anderen vornehmen kann (§§ 1432, 1433, 1455)";
+    label en unofficial "Act which the spouse may undertake without the other's consent or cooperation (§§ 1432, 1433, 1455)";
+}
+relation bereicherung_aus_dem_gesamtgut_herauszugeben(ehe: Ehe, g: Rechtsgeschaeft) kind institutional {
+    label de official "Wird durch ein Rechtsgeschäft ohne die erforderliche Zustimmung das Gesamtgut bereichert, so ist die Bereicherung nach den Vorschriften über die ungerechtfertigte Bereicherung (§§ 812 ff., de.bgb.bereicherung_delikt) aus dem Gesamtgut herauszugeben (§ 1434, § 1457)";
+    label en unofficial "Where such a transaction enriches the community property, the enrichment is to be surrendered under the rules on unjust enrichment (§ 1434, § 1457)";
+}
+relation verwalterpflichten(ehe: Ehe, verwalter: Person) kind institutional {
+    label de official "Der Ehegatte hat das Gesamtgut ordnungsmäßig zu verwalten, den anderen über die Verwaltung zu unterrichten und ihm auf Verlangen Auskunft zu erteilen (§ 1435 Sätze 1, 2)";
+    label en unofficial "The spouse must administer the community property properly and inform the other about it (§ 1435 sentences 1, 2)";
+}
+relation ersatzpflicht_des_verwalters(ehe: Ehe, verwalter: Person) kind institutional {
+    label de official "Mindert sich das Gesamtgut, so muss der Verwalter Ersatz leisten, wenn er den Verlust verschuldet oder durch ein Rechtsgeschäft ohne die erforderliche Zustimmung herbeigeführt hat (§ 1435 Satz 3)";
+    label en unofficial "If the community property diminishes, the administrator must make good the loss if he caused it culpably or by a transaction without the required consent (§ 1435 sentence 3)";
+}
+relation betreuer_vertritt_in_der_verwaltung(ehe: Ehe, p: Person) kind institutional {
+    label de official "Fällt die Verwaltung des Gesamtguts in den Aufgabenkreis des Betreuers eines Ehegatten, so hat der Betreuer diesen in den Rechten und Pflichten der Verwaltung zu vertreten; dies gilt auch, wenn der andere Ehegatte zum Betreuer bestellt ist (§ 1436)";
+    label en unofficial "Where the administration falls within the custodian's remit, the custodian represents the spouse in the rights and duties of administration (§ 1436)";
+}
+pub relation gesamtgutsverbindlichkeit(ehe: Ehe, vb: Verbindlichkeit) kind institutional {
+    label de official "Verbindlichkeit, aus der die Gläubiger Befriedigung aus dem Gesamtgut verlangen können (§ 1437 Abs. 1, § 1459 Abs. 1)";
+    label en unofficial "Liability from which the creditors may demand satisfaction out of the community property (§ 1437 (1), § 1459 (1))";
+}
+relation persoenliche_haftung_als_gesamtschuldner(ehe: Ehe, haftender: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Für die Gesamtgutsverbindlichkeiten haftet der Ehegatte auch persönlich als Gesamtschuldner (§ 1437 Abs. 2 Satz 1, § 1459 Abs. 2 Satz 1)";
+    label en unofficial "For community liabilities the spouse is also personally liable as joint and several debtor (§ 1437 (2), § 1459 (2))";
+}
+relation gesamtgut_haftet_nicht(ehe: Ehe, vb: Verbindlichkeit) kind institutional {
+    label de official "Das Gesamtgut haftet für diese Verbindlichkeit nicht (§§ 1438 bis 1440, §§ 1460 bis 1462)";
+    label en unofficial "The community property is not liable for this liability (§§ 1438 to 1440, §§ 1460 to 1462)";
+}
+relation verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe: Ehe, p: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Im Verhältnis der Ehegatten zueinander fällt die Gesamtgutsverbindlichkeit dem Ehegatten zur Last, in dessen Person sie entsteht (§ 1441, § 1463)";
+    label en unofficial "Between the spouses the community liability falls to the spouse in whose person it arises (§ 1441, § 1463)";
+}
+relation verbindlichkeit_faellt_dem_gesamtgut_zur_last(ehe: Ehe, vb: Verbindlichkeit) kind institutional {
+    label de official "Die Verbindlichkeit fällt im Verhältnis der Ehegatten zueinander dem Gesamtgut zur Last (§ 1442, § 1443 Abs. 2 Satz 2, § 1464, § 1465 Abs. 2 Satz 2)";
+    label en unofficial "Between the spouses the liability falls to the community property (§ 1442, § 1443 (2), § 1464, § 1465 (2))";
+}
+relation ausstattung_faellt_zur_last(ehe: Ehe, traeger: Person, kind: Person) kind institutional {
+    label de official "Im Verhältnis der Ehegatten zueinander fällt die Ausstattung dem benannten Ehegatten zur Last (§ 1444, § 1466)";
+    label en unofficial "Between the spouses the endowment falls to the named spouse (§ 1444, § 1466)";
+}
+relation ersatz_zum_gesamtgut_geschuldet(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    label de official "Verwendet ein Ehegatte Gesamtgut in sein Vorbehaltsgut oder Sondergut, so hat er den Wert des Verwendeten zum Gesamtgut zu ersetzen (§ 1445 Abs. 1, § 1467 Abs. 1)";
+    label en unofficial "Where a spouse applies community property to his own property he must replace its value (§ 1445 (1), § 1467 (1))";
+}
+relation ersatz_aus_dem_gesamtgut_verlangbar(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    label de official "Verwendet ein Ehegatte Vorbehaltsgut oder Sondergut in das Gesamtgut, so kann er Ersatz aus dem Gesamtgut verlangen (§ 1445 Abs. 2, § 1467 Abs. 2)";
+    label en unofficial "Where a spouse applies his own property to the community property he may claim reimbursement from it (§ 1445 (2), § 1467 (2))";
+}
+relation ausgleichsanspruch_erst_nach_beendigung_faellig(ehe: Ehe, p: Person, tag: Date) kind institutional {
+    label de official "Was ein Ehegatte zum Gesamtgut schuldet, braucht er erst nach der Beendigung der Gütergemeinschaft zu leisten; was er aus dem Gesamtgut zu fordern hat, kann er erst dann fordern (§ 1446, § 1468)";
+    label en unofficial "What a spouse owes to the community property is due only after the community has ended (§ 1446, § 1468)";
+}
+relation ausgleichsanspruch_schon_vorher_zu_berichtigen(ehe: Ehe, p: Person) kind institutional {
+    label de official "Der nicht verwaltende Ehegatte hat die Schuld schon vorher zu berichtigen, soweit sein Vorbehaltsgut und sein Sondergut hierzu ausreichen (§ 1446 Abs. 2 Satz 2, § 1468)";
+    label en unofficial "The non-administering spouse must satisfy the debt earlier in so far as his reserved and separate property suffice (§ 1446 (2) sentence 2, § 1468)";
+}
+pub relation aufhebung_der_guetergemeinschaft_beantragbar(ehe: Ehe, antragsteller: Person, nummer: Integer) kind institutional {
+    label de official "Der Ehegatte kann die Aufhebung der Gütergemeinschaft beantragen (§ 1447 Nr. 1 bis 4, § 1448, § 1469 Nr. 1 bis 5)";
+    label en unofficial "The spouse may apply for the termination of the community of property (§ 1447, § 1448, § 1469)";
+}
+pub relation guetergemeinschaft_aufgehoben_am(ehe: Ehe, tag: Date) kind institutional {
+    key(ehe);
+    label de official "Mit der Rechtskraft der richterlichen Entscheidung ist die Gütergemeinschaft aufgehoben; für die Zukunft gilt Gütertrennung (§ 1449 Abs. 1, § 1470 Abs. 1)";
+    label en unofficial "Upon the decision becoming final the community of property is terminated; separation of property applies for the future (§ 1449 (1), § 1470 (1))";
+}
+relation aufhebung_wirkt_gegen_dritte(ehe: Ehe) kind institutional {
+    label de official "Dritten gegenüber ist die Aufhebung der Gütergemeinschaft nur nach Maßgabe des § 1412 wirksam (§ 1449 Abs. 2, § 1470 Abs. 2)";
+    label en unofficial "As against third parties the termination is effective only under § 1412 (§ 1449 (2), § 1470 (2))";
+}
+relation nur_gemeinschaftliche_verfuegung(ehe: Ehe) kind institutional {
+    label de official "Wird das Gesamtgut von den Ehegatten gemeinschaftlich verwaltet, so sind sie nur gemeinschaftlich berechtigt, über das Gesamtgut zu verfügen und Rechtsstreitigkeiten zu führen; der Besitz gebührt ihnen gemeinschaftlich (§ 1450 Abs. 1)";
+    label en unofficial "Where the spouses administer jointly, they are entitled only jointly to dispose and to conduct proceedings (§ 1450 (1))";
+}
+relation abgabe_gegenueber_einem_ehegatten_genuegt(ehe: Ehe, empfaenger: Person) kind institutional {
+    label de official "Ist eine Willenserklärung den Ehegatten gegenüber abzugeben, so genügt die Abgabe gegenüber einem Ehegatten (§ 1450 Abs. 2)";
+    label en unofficial "Where a declaration is to be made to the spouses, making it to one of them suffices (§ 1450 (2))";
+}
+relation mitwirkungspflicht(ehe: Ehe, p: Person) kind institutional {
+    label de official "Jeder Ehegatte ist dem anderen gegenüber verpflichtet, zu Maßregeln mitzuwirken, die zur ordnungsmäßigen Verwaltung des Gesamtguts erforderlich sind (§ 1451, § 1472 Abs. 3 Satz 1)";
+    label en unofficial "Each spouse is bound to the other to cooperate in measures necessary for the proper administration (§ 1451, § 1472 (3))";
+}
+relation auseinandersetzung_geschuldet(ehe: Ehe) kind institutional {
+    label de official "Nach der Beendigung der Gütergemeinschaft setzen sich die Ehegatten über das Gesamtgut auseinander; bis zur Auseinandersetzung gilt § 1419 (§ 1471)";
+    label en unofficial "After the community ends the spouses divide the community property; until then § 1419 applies (§ 1471)";
+}
+relation verwaltung_bis_zur_auseinandersetzung_gemeinschaftlich(ehe: Ehe) kind institutional {
+    label de official "Bis zur Auseinandersetzung verwalten die Ehegatten das Gesamtgut gemeinschaftlich; endet die Gütergemeinschaft durch den Tod eines Ehegatten, so hat der überlebende Ehegatte die unaufschiebbaren Geschäfte zu führen, bis der Erbe anderweit Fürsorge treffen kann (§ 1472 Abs. 1, 4)";
+    label en unofficial "Until the division the spouses administer jointly; on death the survivor conducts the urgent business until the heir provides otherwise (§ 1472 (1), (4))";
+}
+relation unmittelbare_ersetzung(ehe: Ehe, s: de.bgb.core::Sache) kind institutional {
+    label de official "Was auf Grund eines zum Gesamtgut gehörenden Rechts, als Ersatz oder durch ein sich auf das Gesamtgut beziehendes Rechtsgeschäft erworben wird, wird Gesamtgut; für Forderungen gelten die §§ 406 bis 408 entsprechend (§ 1473)";
+    label en unofficial "What is acquired by virtue of a right of the community property, as a substitute or through a related transaction becomes community property (§ 1473)";
+}
+relation auseinandersetzung_nach_1475_bis_1481(ehe: Ehe) kind institutional {
+    label de official "Die Ehegatten setzen sich, soweit sie nichts anderes vereinbaren, nach den §§ 1475 bis 1481 auseinander (§ 1474)";
+    label en unofficial "Unless otherwise agreed, the spouses divide under §§ 1475 to 1481 (§ 1474)";
+}
+relation verbindlichkeiten_zuerst_zu_berichtigen(ehe: Ehe) kind institutional {
+    label de official "Die Ehegatten haben zunächst die Gesamtgutsverbindlichkeiten zu berichtigen; ist eine Verbindlichkeit noch nicht fällig oder streitig, so ist das Erforderliche zurückzubehalten, und das Gesamtgut ist in Geld umzusetzen, soweit dies zur Berichtigung erforderlich ist (§ 1475 Abs. 1, 3)";
+    label en unofficial "The spouses must first satisfy the community liabilities; the community property is to be converted into money in so far as necessary (§ 1475 (1), (3))";
+}
+relation keine_berichtigung_aus_dem_gesamtgut_verlangbar(ehe: Ehe, p: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Fällt eine Gesamtgutsverbindlichkeit im Verhältnis der Ehegatten zueinander einem der Ehegatten allein zur Last, so kann dieser nicht verlangen, dass sie aus dem Gesamtgut berichtigt wird (§ 1475 Abs. 2)";
+    label en unofficial "Where a liability falls solely to one spouse, he cannot demand that it be satisfied out of the community property (§ 1475 (2))";
+}
+pub relation anteil_am_ueberschuss(ehe: Ehe, p: Person, betrag: Money) kind institutional {
+    label de official "Der Überschuss, der nach der Berichtigung der Gesamtgutsverbindlichkeiten verbleibt, gebührt den Ehegatten zu GLEICHEN TEILEN (§ 1476 Abs. 1); geteilt wird EINMAL, kaufmännisch auf den Cent";
+    label en unofficial "The surplus remaining after satisfaction of the community liabilities accrues to the spouses in EQUAL SHARES (§ 1476 (1))";
+}
+relation ersatz_auf_den_teil_anzurechnen(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    label de official "Was einer der Ehegatten zum Gesamtgut zu ersetzen hat, muss er sich auf seinen Teil anrechnen lassen; soweit er den Ersatz nicht auf diese Weise leistet, bleibt er dem anderen Ehegatten verpflichtet (§ 1476 Abs. 2)";
+    label en unofficial "What a spouse must replace is set off against his share; in so far as he does not, he remains liable to the other (§ 1476 (2))";
+}
+relation uebernahmerecht_gegen_wertersatz(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind institutional {
+    label de official "Jeder Ehegatte kann gegen Ersatz des Wertes die Sachen übernehmen, die ausschließlich zu seinem persönlichen Gebrauch bestimmt sind, und die von ihm eingebrachten oder während der Gütergemeinschaft durch Erbfolge, Vermächtnis, Schenkung oder als Ausstattung erworbenen Gegenstände (§ 1477 Abs. 2)";
+    label en unofficial "Each spouse may take over, against replacement of value, things intended for his personal use and objects he brought in or acquired by succession, legacy, gift or endowment (§ 1477 (2))";
+}
+pub relation rueckerstattung_des_eingebrachten(ehe: Ehe, p: Person, betrag: Money) kind institutional {
+    label de official "Ist die Ehe geschieden, bevor die Auseinandersetzung beendet ist, so ist auf Verlangen eines Ehegatten jedem von ihnen der Wert des von ihm Eingebrachten zurückzuerstatten (§ 1478 Abs. 1 Halbsatz 1)";
+    label en unofficial "Where the marriage was dissolved before the division was completed, each spouse is on demand to be repaid the value of what he brought in (§ 1478 (1))";
+}
+relation fehlbetrag(ehe: Ehe, betrag: Money) kind institutional {
+    key(ehe);
+    label de official "Fehlbetrag: der Teil der Summe des Eingebrachten, den der Wert des Gesamtguts nicht deckt (§ 1478 Abs. 1 Halbsatz 2)";
+    label en unofficial "shortfall: the part of the sum brought in which the value of the community property does not cover (§ 1478 (1))";
+}
+pub relation anteil_am_fehlbetrag(ehe: Ehe, p: Person, betrag: Money) kind institutional {
+    label de official "Reicht der Wert des Gesamtguts zur Rückerstattung nicht aus, so ist der Fehlbetrag von den Ehegatten nach dem VERHÄLTNIS des Wertes des von ihnen Eingebrachten zu tragen (§ 1478 Abs. 1 Halbsatz 2); die Quote nennt der Text selbst, gerechnet wird EINMAL je Ehegatte";
+    label en unofficial "If the value of the community property does not suffice, the shortfall is borne in PROPORTION to the values brought in (§ 1478 (1))";
+}
+relation auseinandersetzung_auf_den_antragstag_zurueckbezogen(ehe: Ehe, antragsteller: Person, tag: Date) kind institutional {
+    label de official "Wird die Gütergemeinschaft durch richterliche Entscheidung aufgehoben, so kann der Ehegatte, der sie erwirkt hat, verlangen, dass die Auseinandersetzung so erfolgt, wie wenn der Anspruch in dem Zeitpunkt rechtshängig geworden wäre, in dem der Antrag gestellt ist (§ 1479)";
+    label en unofficial "Where the community was terminated by judicial decision, the spouse who obtained it may demand that the division be made as if the claim had become pending when the application was made (§ 1479)";
+}
+relation persoenliche_haftung_nach_der_teilung(ehe: Ehe, haftender: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Wird das Gesamtgut geteilt, bevor eine Gesamtgutsverbindlichkeit berichtigt ist, so haftet dem Gläubiger auch der Ehegatte persönlich als Gesamtschuldner, für den zur Zeit der Teilung eine solche Haftung nicht besteht; seine Haftung beschränkt sich auf die ihm zugeteilten Gegenstände, und die §§ 1990, 1991 gelten entsprechend (§ 1480)";
+    label en unofficial "Where the community property is divided before a liability is satisfied, the spouse not previously liable is also personally liable as joint debtor, limited to the objects allotted to him (§ 1480)";
+}
+relation einstandspflicht_unter_den_ehegatten(ehe: Ehe, einstehender: Person, beguenstigter: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Der Ehegatte, der das Gesamtgut allein verwaltet hat, hat dem anderen dafür einzustehen, dass dieser weder über die Hälfte der Verbindlichkeit noch über das aus dem Gesamtgut Erlangte hinaus in Anspruch genommen wird; bei gemeinschaftlicher Verwaltung steht jeder dem anderen für die Hälfte ein; fällt die Verbindlichkeit einem Ehegatten zur Last, so hat dieser dafür einzustehen, dass der andere nicht in Anspruch genommen wird (§ 1481)";
+    label en unofficial "The sole administrator must ensure that the other is not held liable beyond half the liability or beyond what he obtained (§ 1481)";
+}
+pub relation anteil_am_gesamtgut_faellt_in_den_nachlass(ehe: Ehe, verstorbener: Person) kind institutional {
+    label de official "Wird die Ehe durch den Tod eines Ehegatten aufgelöst, so gehört der Anteil des verstorbenen Ehegatten am Gesamtgut zum Nachlass; der verstorbene Ehegatte wird nach den allgemeinen Vorschriften beerbt (§ 1482)";
+    label en unofficial "Where the marriage is dissolved by death, the deceased spouse's share in the community property forms part of the estate (§ 1482)";
+}
+
+// --- Regeln: Bestand des Gesamtguts -------------------------------------------------------------------
+
+@source(BGB_P1415)
+rule GuetergemeinschaftDurchEhevertrag(ehe: Ehe) strict {
+    label de official "Vereinbaren die Ehegatten durch Ehevertrag Gütergemeinschaft, so gelten die nachstehenden Vorschriften (§ 1415)";
+    label en unofficial "Where the spouses agree community of property by marriage contract, the following provisions apply (§ 1415)";
+    when ehevertrag_gueterstand(ehe, Guetergemeinschaft);
+    then gueterstand(ehe, Guetergemeinschaft);
+}
+
+@source(BGB_P1416) {
+    rule GesamtgutKraftGesetzes(ehe: Ehe, s: de.bgb.core::Sache) strict {
+        label de official "Das jeweilige Vermögen der Ehegatten wird durch die Gütergemeinschaft gemeinschaftliches Vermögen beider Ehegatten (Gesamtgut); die einzelnen Gegenstände werden gemeinschaftlich und brauchen nicht durch Rechtsgeschäft übertragen zu werden (§ 1416 Abs. 1, 2)";
+        label en unofficial "The respective assets become the joint assets of both spouses (community property); the individual objects become joint without transfer (§ 1416 (1), (2))";
+        when gueterstand(ehe, Guetergemeinschaft) and gesamtgutsgegenstand(ehe, s);
+        then gesamtgut(ehe, s);
+    }
+    rule GrundbuchberichtigungVerlangbar(ehe: Ehe, a: Person, b: Person, s: de.bgb.core::Sache) strict {
+        label de official "Wird ein Recht gemeinschaftlich, das im Grundbuch eingetragen ist oder eingetragen werden kann, so kann jeder Ehegatte von dem anderen verlangen, dass er zur Berichtigung des Grundbuchs mitwirke; Entsprechendes gilt für das Schiffsregister und das Schiffsbauregister (§ 1416 Abs. 3)";
+        label en unofficial "Where a registrable right becomes joint, each spouse may demand the other's cooperation in correcting the register (§ 1416 (3))";
+        when gesamtgut(ehe, s) and ehegatten(ehe, a, b);
+        then grundbuchberichtigung_verlangbar(ehe, a, s);
+    }
+}
+
+@source(BGB_P1417)
+rule SondergutIstNichtUebertragbar(ehe: Ehe, p: Person, s: de.bgb.core::Sache) strict {
+    label de official "Vom Gesamtgut ist das Sondergut ausgeschlossen; Sondergut sind die Gegenstände, die nicht durch Rechtsgeschäft übertragen werden können; jeder Ehegatte verwaltet sein Sondergut selbständig, aber für Rechnung des Gesamtguts (§ 1417)";
+    label en unofficial "Separate property is excluded from the community property; it consists of objects that cannot be transferred by transaction (§ 1417)";
+    when gueterstand(ehe, Guetergemeinschaft) and nicht_uebertragbarer_gegenstand(ehe, p, s);
+    then sondergut(ehe, p, s);
+}
+
+@source(BGB_P1418) {
+    rule VorbehaltsgutDurchEhevertrag(ehe: Ehe, p: Person, s: de.bgb.core::Sache) strict {
+        label de official "Vorbehaltsgut sind die Gegenstände, die durch Ehevertrag zum Vorbehaltsgut eines Ehegatten erklärt sind (§ 1418 Abs. 2 Nr. 1)";
+        label en unofficial "Reserved property comprises objects declared such by marriage contract (§ 1418 (2) no. 1)";
+        when gueterstand(ehe, Guetergemeinschaft) and durch_ehevertrag_zum_vorbehaltsgut_erklaert(ehe, p, s);
+        then vorbehaltsgut(ehe, p, s);
+    }
+    rule VorbehaltsgutDurchBestimmungDesZuwendenden(ehe: Ehe, p: Person, s: de.bgb.core::Sache) strict {
+        label de official "Vorbehaltsgut sind die Gegenstände, die ein Ehegatte von Todes wegen erwirbt oder die ihm von einem Dritten unentgeltlich zugewendet werden, wenn der Erblasser oder der Dritte bestimmt hat, dass der Erwerb Vorbehaltsgut sein soll (§ 1418 Abs. 2 Nr. 2)";
+        label en unofficial "Reserved property comprises objects acquired on death or gratuitously where the testator or donor so stipulated (§ 1418 (2) no. 2)";
+        when gueterstand(ehe, Guetergemeinschaft) and erwerb_mit_vorbehaltsbestimmung(ehe, p, s);
+        then vorbehaltsgut(ehe, p, s);
+    }
+    rule VorbehaltsgutDurchSurrogation(ehe: Ehe, p: Person, s: de.bgb.core::Sache) strict {
+        label de official "Vorbehaltsgut sind die Gegenstände, die ein Ehegatte auf Grund eines zum Vorbehaltsgut gehörenden Rechts, als Ersatz für dessen Zerstörung, Beschädigung oder Entziehung oder durch ein sich auf das Vorbehaltsgut beziehendes Rechtsgeschäft erwirbt (§ 1418 Abs. 2 Nr. 3); Dritten gegenüber wirkt dies nur nach Maßgabe des § 1412 (Abs. 4)";
+        label en unofficial "Reserved property comprises objects acquired by virtue of a right belonging to it, as a substitute or through a related transaction (§ 1418 (2) no. 3)";
+        when gueterstand(ehe, Guetergemeinschaft) and surrogat_des_vorbehaltsguts(ehe, p, s);
+        then vorbehaltsgut(ehe, p, s);
+    }
+}
+
+@source(BGB_P1419) {
+    rule KeineVerfuegungUeberDenAnteil(ehe: Ehe, p: Person) strict {
+        label de official "Ein Ehegatte kann nicht über seinen Anteil am Gesamtgut und an den einzelnen Gegenständen verfügen, die zum Gesamtgut gehören; er ist nicht berechtigt, Teilung zu verlangen (§ 1419 Abs. 1)";
+        label en unofficial "A spouse cannot dispose of his share in the community property and may not demand division (§ 1419 (1))";
+        when gueterstand(ehe, Guetergemeinschaft) and verfuegung_ueber_den_anteil_am_gesamtgut(ehe, p);
+        then verfuegung_ueber_den_anteil_unwirksam(ehe, p);
+    }
+    rule AufrechnungNurGegenGesamtgutsforderung(ehe: Ehe, schuldner: Person) strict {
+        label de official "Gegen eine Forderung, die zum Gesamtgut gehört, kann der Schuldner nur mit einer Forderung aufrechnen, deren Berichtigung er aus dem Gesamtgut verlangen kann (§ 1419 Abs. 2)";
+        label en unofficial "Against a claim of the community property the debtor may set off only a claim satisfiable out of it (§ 1419 (2))";
+        when aufrechnung_gegen_eine_gesamtgutsforderung(ehe, schuldner)
+         and berichtigung_aus_dem_gesamtgut_verlangbar(ehe, schuldner);
+        then aufrechnung_zulaessig(ehe, schuldner);
+    }
+}
+
+@source(BGB_P1420)
+rule VorrangDerEinkuenfteFuerDenUnterhalt(ehe: Ehe, wert: Money) strict {
+    label de official "Die Einkünfte, die in das Gesamtgut fallen, sind vor den Einkünften, die in das Vorbehaltsgut fallen, der Stamm des Gesamtguts ist vor dem Stamm des Vorbehaltsguts oder des Sonderguts für den Unterhalt der Familie zu verwenden (§ 1420)";
+    label en unofficial "Income falling into the community property is to be used for the family's maintenance before income of the reserved property (§ 1420)";
+    when gueterstand(ehe, Guetergemeinschaft) and einkuenfte_des_gesamtguts(ehe, wert);
+    then vorrang_der_einkuenfte_des_gesamtguts(ehe);
+}
+
+// --- Regeln: Verwaltung durch einen Ehegatten (§§ 1421–1449) -------------------------------------------
+
+@source(BGB_P1421)
+rule GemeinschaftlicheVerwaltungOhneBestimmung(ehe: Ehe) strict {
+    label de official "Die Ehegatten sollen in dem Ehevertrag bestimmen, welcher der Ehegatten das Gesamtgut verwaltet oder ob es gemeinschaftlich verwaltet wird; enthält der Ehevertrag keine Bestimmung hierüber, so verwalten die Ehegatten das Gesamtgut gemeinschaftlich (§ 1421)";
+    label en unofficial "The spouses should determine in the contract who administers the community property; failing that, they administer it jointly (§ 1421)";
+    when gueterstand(ehe, Guetergemeinschaft) and ehevertrag_ohne_bestimmung_der_verwaltung(ehe);
+    then gemeinschaftliche_verwaltung(ehe);
+}
+
+@source(BGB_P1422)
+rule InhaltDesVerwaltungsrechts(ehe: Ehe, verwalter: Person) strict {
+    label de official "Der Ehegatte, der das Gesamtgut verwaltet, ist insbesondere berechtigt, die zum Gesamtgut gehörenden Sachen in Besitz zu nehmen und über das Gesamtgut zu verfügen; er führt Rechtsstreitigkeiten im eigenen Namen, und der andere Ehegatte wird durch die Verwaltungshandlungen nicht persönlich verpflichtet (§ 1422)";
+    label en unofficial "The administering spouse may take possession of and dispose of the community property and conducts proceedings in his own name (§ 1422)";
+    when verwalter_des_gesamtguts(ehe, verwalter);
+    then verwaltungsrecht_des_verwalters(ehe, verwalter);
+}
+
+@source(BGB_P1423)
+rule VerfuegungUeberDasGesamtgutImGanzen(ehe: Ehe, g: Rechtsgeschaeft, verwalter: Person, anderer: Person) strict {
+    label de official "Der Ehegatte, der das Gesamtgut verwaltet, kann sich nur mit Einwilligung des anderen Ehegatten verpflichten, über das Gesamtgut im Ganzen zu verfügen (§ 1423)";
+    label en unofficial "The administering spouse may undertake to dispose of the community property as a whole only with the other's consent (§ 1423)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and verfuegung_ueber_das_gesamtgut_im_ganzen(ehe, g, verwalter)
+     and anderer_ehegatte(ehe, verwalter, anderer);
+    then zustimmung_erforderlich(ehe, g, anderer);
+}
+
+@source(BGB_P1424)
+rule VerfuegungUeberGrundstueckeUndSchiffe(ehe: Ehe, g: Rechtsgeschaeft, verwalter: Person, anderer: Person) strict {
+    label de official "Der Ehegatte, der das Gesamtgut verwaltet, kann nur mit Einwilligung des anderen Ehegatten über ein zum Gesamtgut gehörendes Grundstück verfügen; dasselbe gilt für ein eingetragenes Schiff oder Schiffsbauwerk (§ 1424)";
+    label en unofficial "The administering spouse may dispose of land, a registered ship or ship under construction only with the other's consent (§ 1424)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and verfuegung_ueber_grundstueck_oder_schiff(ehe, g, verwalter)
+     and anderer_ehegatte(ehe, verwalter, anderer);
+    then zustimmung_erforderlich(ehe, g, anderer);
+}
+
+@source(BGB_P1425) {
+    rule SchenkungAusDemGesamtgut(ehe: Ehe, g: Rechtsgeschaeft, verwalter: Person, anderer: Person) strict {
+        label de official "Der Ehegatte, der das Gesamtgut verwaltet, kann nur mit Einwilligung des anderen Ehegatten Gegenstände aus dem Gesamtgut verschenken (§ 1425 Abs. 1); ausgenommen sind Schenkungen, durch die einer sittlichen Pflicht oder einer auf den Anstand zu nehmenden Rücksicht entsprochen wird (Abs. 2)";
+        label en unofficial "The administering spouse may give away objects from the community property only with the other's consent ((1)); gifts complying with a moral duty or decency are excepted ((2))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and schenkung_aus_dem_gesamtgut(ehe, g, verwalter)
+         and anderer_ehegatte(ehe, verwalter, anderer)
+         and not_known(pflicht_oder_anstandsschenkung(ehe, g));
+        then zustimmung_erforderlich(ehe, g, anderer);
+    }
+}
+
+@source(BGB_P1426)
+rule ErsetzungDerZustimmungBeiDerVerwaltung(ehe: Ehe, g: Rechtsgeschaeft) strict {
+    label de official "Ist ein Rechtsgeschäft, das nach den §§ 1423, 1424 nur mit Einwilligung des anderen Ehegatten vorgenommen werden kann, zur ordnungsmäßigen Verwaltung des Gesamtguts erforderlich, so kann das Familiengericht auf Antrag die Zustimmung ersetzen (§ 1426)";
+    label en unofficial "Where a transaction under §§ 1423, 1424 is necessary for proper administration, the family court may replace the consent (§ 1426)";
+    when ordnungsmaessige_verwaltung_des_gesamtguts(ehe, g) and zustimmung_durch_familiengericht_ersetzt(ehe, g);
+    then rechtsgeschaeft_wirksam(ehe, g);
+}
+
+@source(BGB_P1427) {
+    rule FolgenFehlenderEinwilligung(ehe: Ehe, g: Rechtsgeschaeft, verwalter: Person) strict {
+        label de official "Nimmt der Ehegatte, der das Gesamtgut verwaltet, ein Rechtsgeschäft ohne die erforderliche Einwilligung des anderen Ehegatten vor, so gelten die Vorschriften des § 1366 Abs. 1, 3, 4 und des § 1367 entsprechend (§ 1427 Abs. 1)";
+        label en unofficial "Where the administering spouse acts without the required consent, § 1366 (1), (3), (4) and § 1367 apply accordingly ((1))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and genehmigung_verweigert(ehe, g);
+        then rechtsgeschaeft_unwirksam(ehe, g);
+    }
+    rule WiderrufDesDrittenBeiGuetergemeinschaft(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Hat der Dritte gewusst, dass der Ehegatte in Gütergemeinschaft lebt, so kann er nur widerrufen, wenn dieser wahrheitswidrig behauptet hat, der andere Ehegatte habe eingewilligt; er kann auch dann nicht widerrufen, wenn ihm das Fehlen der Einwilligung bekannt war (§ 1427 Abs. 2)";
+        label en unofficial "Where the third party knew of the community of property, he may revoke only on an untruthful assertion of consent ((2))";
+        when gueterstand(ehe, Guetergemeinschaft) and dritter_kannte_die_ehe(ehe, g)
+         and not_known(wahrheitswidrige_behauptung_der_einwilligung(ehe, g));
+        then widerruf_des_dritten_ausgeschlossen(ehe, g);
+    }
+}
+
+@source(BGB_P1428)
+rule GeltendmachungDurchDenNichtVerwaltendenEhegatten(ehe: Ehe, g: Rechtsgeschaeft, verwalter: Person, dritter: Person, anderer: Person) strict {
+    label de official "Verfügt der Ehegatte, der das Gesamtgut verwaltet, ohne die erforderliche Zustimmung des anderen Ehegatten über ein zum Gesamtgut gehörendes Recht, so kann dieser das Recht gegen Dritte gerichtlich geltend machen; der verwaltende Ehegatte braucht hierzu nicht mitzuwirken (§ 1428)";
+    label en unofficial "Where the administering spouse disposes of a right of the community property without the required consent, the other may assert it against third parties (§ 1428)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and verfuegung_ohne_zustimmung(ehe, g, verwalter, dritter)
+     and anderer_ehegatte(ehe, verwalter, anderer);
+    then unwirksamkeit_auch_vom_anderen_geltend_zu_machen(ehe, anderer, dritter);
+}
+
+@source(BGB_P1429)
+rule NotverwaltungsrechtDesNichtVerwaltenden(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+    label de official "Ist der Ehegatte, der das Gesamtgut verwaltet, durch Krankheit oder Abwesenheit verhindert, ein Rechtsgeschäft vorzunehmen, das sich auf das Gesamtgut bezieht, so kann der andere Ehegatte es vornehmen, wenn mit dem Aufschub Gefahr verbunden ist; das Gleiche gilt für die Führung eines Rechtsstreits (§ 1429)";
+    label en unofficial "Where the administering spouse is prevented by illness or absence, the other may act if delay entails danger (§ 1429)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and verwalter_durch_krankheit_oder_abwesenheit_verhindert(ehe, verwalter)
+     and aufschub_mit_gefahr_verbunden(ehe) and anderer_ehegatte(ehe, verwalter, anderer);
+    then notverwaltungsrecht(ehe, anderer);
+}
+
+@source(BGB_P1430)
+rule ErsetzungDerZustimmungDesVerwalters(ehe: Ehe, g: Rechtsgeschaeft, verwalter: Person) strict {
+    label de official "Verweigert der Ehegatte, der das Gesamtgut verwaltet, ohne ausreichenden Grund die Zustimmung zu einem Rechtsgeschäft, das der andere Ehegatte zur ordnungsmäßigen Besorgung seiner persönlichen Angelegenheiten vornehmen muss, so kann das Familiengericht die Zustimmung auf Antrag ersetzen (§ 1430)";
+    label en unofficial "Where the administering spouse refuses consent without sufficient ground to a transaction the other must undertake for his personal affairs, the court may replace it (§ 1430)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and zustimmung_ohne_ausreichenden_grund_verweigert(ehe, verwalter)
+     and zustimmung_durch_familiengericht_ersetzt(ehe, g);
+    then rechtsgeschaeft_wirksam(ehe, g);
+}
+
+@source(BGB_P1431) {
+    rule ErwerbsgeschaeftMitEinwilligung(ehe: Ehe, verwalter: Person, betreiber: Person) strict {
+        label de official "Hat der Ehegatte, der das Gesamtgut verwaltet, darin eingewilligt, dass der andere Ehegatte selbständig ein Erwerbsgeschäft betreibt, so ist seine Zustimmung zu solchen Rechtsgeschäften und Rechtsstreitigkeiten nicht erforderlich, die der Geschäftsbetrieb mit sich bringt (§ 1431 Abs. 1)";
+        label en unofficial "Where the administering spouse consented to the other's independent business, his consent to transactions arising from it is not required ((1))";
+        when verwalter_des_gesamtguts(ehe, verwalter)
+         and einwilligung_in_selbstaendiges_erwerbsgeschaeft(ehe, verwalter, betreiber);
+        then zustimmung_zu_erwerbsgeschaeften_entbehrlich(ehe, betreiber);
+    }
+    rule KenntnisOhneEinspruchStehtDerEinwilligungGleich(ehe: Ehe, verwalter: Person, betreiber: Person) strict {
+        label de official "Weiß der Ehegatte, der das Gesamtgut verwaltet, dass der andere Ehegatte ein Erwerbsgeschäft betreibt, und hat er hiergegen keinen Einspruch eingelegt, so steht dies einer Einwilligung gleich; Dritten gegenüber ist ein Einspruch und der Widerruf der Einwilligung nur nach Maßgabe des § 1412 wirksam (§ 1431 Abs. 2, 3)";
+        label en unofficial "Knowledge without objection is equivalent to consent; as against third parties an objection or revocation takes effect only under § 1412 ((2), (3))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and kenntnis_ohne_einspruch(ehe, verwalter, betreiber);
+        then zustimmung_zu_erwerbsgeschaeften_entbehrlich(ehe, betreiber);
+    }
+}
+
+@source(BGB_P1432)
+rule AnnahmeUndAusschlagungOhneZustimmung(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+    label de official "Ist dem Ehegatten, der das Gesamtgut nicht verwaltet, eine Erbschaft oder ein Vermächtnis angefallen, so ist nur er berechtigt, sie anzunehmen oder auszuschlagen; das Gleiche gilt vom Verzicht auf den Pflichtteil oder auf den Ausgleich eines Zugewinns sowie von der Ablehnung eines Vertragsantrags oder einer Schenkung; ein Inventar kann er ohne Zustimmung errichten (§ 1432)";
+    label en unofficial "Where an inheritance or legacy devolves on the non-administering spouse, only he may accept or disclaim it (§ 1432)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+     and erbschaft_oder_vermaechtnis_angefallen(ehe, anderer);
+    then ohne_zustimmung_zulaessige_handlung(ehe, anderer, "§ 1432: Annahme oder Ausschlagung einer Erbschaft oder eines Vermächtnisses");
+}
+
+@source(BGB_P1433)
+rule FortsetzungEinesRechtsstreits(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+    label de official "Der Ehegatte, der das Gesamtgut nicht verwaltet, kann ohne Zustimmung des anderen Ehegatten einen Rechtsstreit fortsetzen, der beim Eintritt der Gütergemeinschaft anhängig war (§ 1433)";
+    label en unofficial "The non-administering spouse may continue without the other's consent proceedings pending when the community began (§ 1433)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+     and rechtsstreit_beim_eintritt_der_guetergemeinschaft_anhaengig(ehe, anderer);
+    then ohne_zustimmung_zulaessige_handlung(ehe, anderer, "§ 1433: Fortsetzung eines beim Eintritt der Gütergemeinschaft anhängigen Rechtsstreits");
+}
+
+@source(BGB_P1434)
+rule BereicherungDesGesamtgutsHerauszugeben(ehe: Ehe, g: Rechtsgeschaeft) strict {
+    label de official "Wird durch ein Rechtsgeschäft, das ein Ehegatte ohne die erforderliche Zustimmung des anderen Ehegatten vornimmt, das Gesamtgut bereichert, so ist die Bereicherung nach den Vorschriften über die ungerechtfertigte Bereicherung aus dem Gesamtgut herauszugeben (§ 1434); der Umfang folgt den §§ 812 ff. (de.bgb.bereicherung_delikt)";
+    label en unofficial "Where such a transaction enriches the community property, the enrichment is to be surrendered under the rules on unjust enrichment (§ 1434)";
+    when gesamtgut_durch_zustimmungsloses_geschaeft_bereichert(ehe, g);
+    then bereicherung_aus_dem_gesamtgut_herauszugeben(ehe, g);
+}
+
+@source(BGB_P1435) {
+    rule PflichtenDesVerwalters(ehe: Ehe, verwalter: Person) strict {
+        label de official "Der Ehegatte hat das Gesamtgut ordnungsmäßig zu verwalten; er hat den anderen Ehegatten über die Verwaltung zu unterrichten und ihm auf Verlangen über den Stand der Verwaltung Auskunft zu erteilen (§ 1435 Sätze 1, 2)";
+        label en unofficial "The spouse must administer the community property properly and keep the other informed (§ 1435 sentences 1, 2)";
+        when verwalter_des_gesamtguts(ehe, verwalter);
+        then verwalterpflichten(ehe, verwalter);
+    }
+    rule ErsatzpflichtDesVerwalters(ehe: Ehe, verwalter: Person) strict {
+        label de official "Mindert sich das Gesamtgut, so muss der Verwalter zu dem Gesamtgut Ersatz leisten, wenn er den Verlust verschuldet oder durch ein Rechtsgeschäft herbeigeführt hat, das er ohne die erforderliche Zustimmung vorgenommen hat (§ 1435 Satz 3)";
+        label en unofficial "If the community property diminishes, the administrator must make good the loss if culpable or caused by an unconsented transaction (§ 1435 sentence 3)";
+        when verwalter_des_gesamtguts(ehe, verwalter)
+         and gesamtgut_gemindert_durch_verschulden_oder_zustimmungsloses_geschaeft(ehe, verwalter);
+        then ersatzpflicht_des_verwalters(ehe, verwalter);
+    }
+}
+
+@source(BGB_P1436)
+rule VerwaltungDurchEinenBetreuer(ehe: Ehe, p: Person) strict {
+    label de official "Fällt die Verwaltung des Gesamtguts in den Aufgabenkreis des Betreuers eines Ehegatten, so hat der Betreuer diesen in den Rechten und Pflichten zu vertreten, die sich aus der Verwaltung ergeben; dies gilt auch dann, wenn der andere Ehegatte zum Betreuer bestellt ist (§ 1436)";
+    label en unofficial "Where the administration falls within a custodian's remit, he represents the spouse in the rights and duties of administration (§ 1436)";
+    when verwaltung_im_aufgabenkreis_des_betreuers(ehe, p);
+    then betreuer_vertritt_in_der_verwaltung(ehe, p);
+}
+
+@source(BGB_P1437) {
+    rule GesamtgutsverbindlichkeitBeiEinzelverwaltung(ehe: Ehe, vb: Verbindlichkeit, verwalter: Person) strict {
+        label de official "Aus dem Gesamtgut können die Gläubiger des verwaltenden Ehegatten und, soweit sich aus den §§ 1438 bis 1440 nichts anderes ergibt, auch die Gläubiger des anderen Ehegatten Befriedigung verlangen (§ 1437 Abs. 1)";
+        label en unofficial "The creditors of the administering spouse and, subject to §§ 1438 to 1440, of the other spouse may demand satisfaction from the community property ((1))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and verbindlichkeit_eines_ehegatten(ehe, vb, verwalter);
+        then gesamtgutsverbindlichkeit(ehe, vb);
+    }
+    rule PersoenlicheHaftungDesVerwalters(ehe: Ehe, vb: Verbindlichkeit, verwalter: Person, anderer: Person) strict {
+        label de official "Der Ehegatte, der das Gesamtgut verwaltet, haftet für die Verbindlichkeiten des anderen Ehegatten, die Gesamtgutsverbindlichkeiten sind, auch persönlich als Gesamtschuldner (§ 1437 Abs. 2 Satz 1)";
+        label en unofficial "The administering spouse is also personally liable as joint debtor for the other's community liabilities ((2) sentence 1)";
+        when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+         and verbindlichkeit_eines_ehegatten(ehe, vb, anderer) and gesamtgutsverbindlichkeit(ehe, vb);
+        then persoenliche_haftung_als_gesamtschuldner(ehe, verwalter, vb);
+    }
+}
+
+@source(BGB_P1438)
+rule HaftungDesGesamtgutsBeiEinzelverwaltung(ehe: Ehe, vb: Verbindlichkeit, handelnder: Person) strict {
+    label de official "Das Gesamtgut haftet für eine Verbindlichkeit aus einem Rechtsgeschäft, das während der Gütergemeinschaft vorgenommen wird, nur dann, wenn der verwaltende Ehegatte es vornimmt, ihm zustimmt oder es ohne seine Zustimmung für das Gesamtgut wirksam ist; für die Kosten eines Rechtsstreits haftet das Gesamtgut auch dann, wenn das Urteil ihm gegenüber nicht wirksam ist (§ 1438)";
+    label en unofficial "The community property is liable for a transaction liability only where the administering spouse acts or consents (§ 1438)";
+    when verbindlichkeit_aus_rechtsgeschaeft_waehrend_der_guetergemeinschaft(ehe, vb, handelnder)
+     and zustimmung_des_verwalters(ehe, vb);
+    then gesamtgutsverbindlichkeit(ehe, vb);
+}
+
+@source(BGB_P1439)
+rule KeineHaftungBeiErwerbEinerErbschaftAlsVorbehaltsgut(ehe: Ehe, vb: Verbindlichkeit, erbe: Person, verwalter: Person) strict {
+    label de official "Das Gesamtgut haftet nicht für Verbindlichkeiten, die durch den Erwerb einer Erbschaft entstehen, wenn der Ehegatte, der Erbe ist, das Gesamtgut nicht verwaltet und die Erbschaft während der Gütergemeinschaft als Vorbehaltsgut oder als Sondergut erwirbt; das Gleiche gilt beim Erwerb eines Vermächtnisses (§ 1439)";
+    label en unofficial "The community property is not liable for liabilities from acquiring an inheritance as reserved or separate property by the non-administering spouse (§ 1439)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, erbe)
+     and verbindlichkeit_aus_dem_erwerb_einer_erbschaft(ehe, vb, erbe);
+    then gesamtgut_haftet_nicht(ehe, vb);
+}
+
+@source(BGB_P1440)
+rule KeineHaftungFuerVorbehaltsOderSondergut(ehe: Ehe, vb: Verbindlichkeit, p: Person, verwalter: Person) strict {
+    label de official "Das Gesamtgut haftet nicht für eine Verbindlichkeit, die infolge eines zum Vorbehaltsgut oder Sondergut gehörenden Rechts oder des Besitzes einer dazu gehörenden Sache in der Person des nicht verwaltenden Ehegatten entsteht; es haftet jedoch, wenn das Recht oder die Sache zu einem mit Einwilligung betriebenen Erwerbsgeschäft gehört oder die Verbindlichkeit zu den aus den Einkünften zu begleichenden Lasten des Sonderguts gehört (§ 1440)";
+    label en unofficial "The community property is not liable for liabilities arising from reserved or separate property of the non-administering spouse, subject to the two exceptions (§ 1440)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, p)
+     and verbindlichkeit_aus_vorbehalts_oder_sondergut(ehe, vb, p)
+     and not_known(gehoert_zum_erwerbsgeschaeft(ehe, vb))
+     and not_known(lasten_des_sonderguts_aus_den_einkuenften(ehe, vb));
+    then gesamtgut_haftet_nicht(ehe, vb);
+}
+
+@source(BGB_P1441) {
+    rule InnenlastAusUnerlaubterHandlung(ehe: Ehe, vb: Verbindlichkeit, taeter: Person) strict {
+        label de official "Im Verhältnis der Ehegatten zueinander fallen die Verbindlichkeiten aus einer unerlaubten Handlung, die der Ehegatte nach Eintritt der Gütergemeinschaft begeht, oder aus einem deswegen gegen ihn gerichteten Strafverfahren dem Ehegatten zur Last, in dessen Person sie entstehen (§ 1441 Nr. 1)";
+        label en unofficial "Between the spouses, liabilities from a tort committed after the community began fall to the spouse in whose person they arise (§ 1441 no. 1)";
+        when verbindlichkeit_aus_unerlaubter_handlung(ehe, vb, taeter);
+        then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, taeter, vb);
+    }
+    rule InnenlastAusVorbehaltsOderSondergutsverhaeltnis(ehe: Ehe, vb: Verbindlichkeit, p: Person) strict {
+        label de official "Dem Ehegatten fallen auch die Verbindlichkeiten aus einem sich auf sein Vorbehaltsgut oder sein Sondergut beziehenden Rechtsverhältnis zur Last, auch wenn sie vor Eintritt der Gütergemeinschaft entstanden sind, sowie die Kosten eines Rechtsstreits darüber (§ 1441 Nr. 2, 3)";
+        label en unofficial "Liabilities from a legal relationship concerning his reserved or separate property, and the costs of proceedings about them, also fall to him (§ 1441 nos. 2, 3)";
+        when verbindlichkeit_aus_vorbehalts_oder_sondergutsverhaeltnis(ehe, vb, p)
+         and not_known(lasten_des_sonderguts_aus_den_einkuenften(ehe, vb))
+         and not_known(gehoert_zum_erwerbsgeschaeft(ehe, vb));
+        then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, p, vb);
+    }
+}
+
+@source(BGB_P1442)
+rule AusnahmeFuerLastenDesSondergutsUndDesErwerbsgeschaefts(ehe: Ehe, vb: Verbindlichkeit) strict {
+    label de official "Die Vorschrift des § 1441 Nr. 2, 3 gilt nicht, wenn die Verbindlichkeiten zu den Lasten des Sonderguts gehören, die aus den Einkünften beglichen zu werden pflegen, oder wenn sie durch den Betrieb eines für Rechnung des Gesamtguts geführten Erwerbsgeschäfts entstehen (§ 1442)";
+    label en unofficial "§ 1441 nos. 2, 3 does not apply to charges on the separate property met out of income or to liabilities from a business run for the community's account (§ 1442)";
+    when lasten_des_sonderguts_aus_den_einkuenften(ehe, vb);
+    then verbindlichkeit_faellt_dem_gesamtgut_zur_last(ehe, vb);
+}
+
+@source(BGB_P1443) {
+    rule ProzesskostenDerEhegattenUntereinander(ehe: Ehe, vb: Verbindlichkeit, kostenpflichtiger: Person) strict {
+        label de official "Im Verhältnis der Ehegatten zueinander fallen die Kosten eines Rechtsstreits, den die Ehegatten miteinander führen, dem Ehegatten zur Last, der sie nach allgemeinen Vorschriften zu tragen hat (§ 1443 Abs. 1)";
+        label en unofficial "Between the spouses the costs of proceedings against each other fall to the spouse who bears them under the general rules ((1))";
+        when kosten_eines_rechtsstreits_der_ehegatten(ehe, vb, kostenpflichtiger);
+        then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, kostenpflichtiger, vb);
+    }
+    rule ProzesskostenDesNichtVerwaltendenGegenDritte(ehe: Ehe, vb: Verbindlichkeit, fuehrender: Person, verwalter: Person) strict {
+        label de official "Führt der Ehegatte, der das Gesamtgut nicht verwaltet, einen Rechtsstreit mit einem Dritten, so fallen die Kosten im Verhältnis der Ehegatten zueinander diesem Ehegatten zur Last (§ 1443 Abs. 2 Satz 1)";
+        label en unofficial "Where the non-administering spouse litigates against a third party, the costs fall to him ((2) sentence 1)";
+        when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, fuehrender)
+         and kosten_eines_rechtsstreits_mit_einem_dritten(ehe, vb, fuehrender)
+         and not_known(urteil_dem_gesamtgut_gegenueber_wirksam(ehe, vb))
+         and not_known(aufwendung_der_kosten_geboten(ehe, vb));
+        then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, fuehrender, vb);
+    }
+    rule ProzesskostenFallenDemGesamtgutZurLast(ehe: Ehe, vb: Verbindlichkeit, fuehrender: Person) strict {
+        label de official "Die Kosten fallen jedoch dem Gesamtgut zur Last, wenn das Urteil dem Gesamtgut gegenüber wirksam ist oder wenn der Rechtsstreit eine persönliche Angelegenheit oder eine Gesamtgutsverbindlichkeit betrifft und die Aufwendung der Kosten den Umständen nach geboten ist (§ 1443 Abs. 2 Satz 2)";
+        label en unofficial "The costs fall to the community property where the judgment is effective against it or the proceedings concern a personal matter or a community liability and incurring them was warranted ((2) sentence 2)";
+        when kosten_eines_rechtsstreits_mit_einem_dritten(ehe, vb, fuehrender)
+         and urteil_dem_gesamtgut_gegenueber_wirksam(ehe, vb);
+        then verbindlichkeit_faellt_dem_gesamtgut_zur_last(ehe, vb);
+    }
+}
+
+@source(BGB_P1444) {
+    rule AusstattungAnGemeinschaftlichesKind(ehe: Ehe, verwalter: Person, kind: Person, wert: Money) strict {
+        label de official "Verspricht oder gewährt der Ehegatte, der das Gesamtgut verwaltet, einem gemeinschaftlichen Kind aus dem Gesamtgut eine Ausstattung, so fällt sie ihm im Verhältnis der Ehegatten zueinander zur Last, soweit sie das Maß übersteigt, das dem Gesamtgut entspricht (§ 1444 Abs. 1)";
+        label en unofficial "An endowment to a common child falls to the administering spouse in so far as it exceeds the measure corresponding to the community property ((1))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and ausstattung_an_gemeinschaftliches_kind(ehe, verwalter, kind, wert)
+         and ausstattung_uebersteigt_das_dem_gesamtgut_entsprechende_mass(ehe, verwalter, kind);
+        then ausstattung_faellt_zur_last(ehe, verwalter, kind);
+    }
+    rule AusstattungAnNichtGemeinschaftlichesKind(ehe: Ehe, verwalter: Person, kind: Person, elternteil: Person, wert: Money) strict {
+        label de official "Verspricht oder gewährt der verwaltende Ehegatte einem NICHT gemeinschaftlichen Kind eine Ausstattung aus dem Gesamtgut, so fällt sie im Verhältnis der Ehegatten zueinander dem Vater oder der Mutter zur Last (§ 1444 Abs. 2)";
+        label en unofficial "An endowment to a child who is not common falls to the child's father or mother ((2))";
+        when verwalter_des_gesamtguts(ehe, verwalter)
+         and ausstattung_an_nicht_gemeinschaftliches_kind(ehe, verwalter, kind, wert)
+         and elternteil_des_kindes(ehe, kind, elternteil);
+        then ausstattung_faellt_zur_last(ehe, elternteil, kind);
+    }
+}
+
+@source(BGB_P1445) {
+    rule ErsatzZumGesamtgutBeiEinzelverwaltung(ehe: Ehe, verwalter: Person, wert: Money) strict {
+        label de official "Verwendet der Ehegatte, der das Gesamtgut verwaltet, Gesamtgut in sein Vorbehaltsgut oder in sein Sondergut, so hat er den Wert des Verwendeten zum Gesamtgut zu ersetzen (§ 1445 Abs. 1)";
+        label en unofficial "Where the administering spouse applies community property to his own property, he must replace its value ((1))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and verwendung_von_gesamtgut_in_das_eigene_gut(ehe, verwalter, wert);
+        then ersatz_zum_gesamtgut_geschuldet(ehe, verwalter, wert);
+    }
+    rule ErsatzAusDemGesamtgutBeiEinzelverwaltung(ehe: Ehe, verwalter: Person, wert: Money) strict {
+        label de official "Verwendet er Vorbehaltsgut oder Sondergut in das Gesamtgut, so kann er Ersatz aus dem Gesamtgut verlangen (§ 1445 Abs. 2)";
+        label en unofficial "Where he applies his own property to the community property, he may claim reimbursement ((2))";
+        when verwalter_des_gesamtguts(ehe, verwalter) and verwendung_von_eigenem_gut_in_das_gesamtgut(ehe, verwalter, wert);
+        then ersatz_aus_dem_gesamtgut_verlangbar(ehe, verwalter, wert);
+    }
+}
+
+@source(BGB_P1446) {
+    rule FaelligkeitErstNachBeendigung(ehe: Ehe, p: Person, t: Date) strict {
+        label de official "Was der Ehegatte zum Gesamtgut schuldet, braucht er erst nach der Beendigung der Gütergemeinschaft zu leisten; was er aus dem Gesamtgut zu fordern hat, kann er erst nach der Beendigung fordern (§ 1446 Abs. 1, 2 Satz 1)";
+        label en unofficial "What a spouse owes to the community property is due only after the community has ended ((1), (2) sentence 1)";
+        when ehegatte(ehe, p) and guetergemeinschaft_beendet_am(ehe, t);
+        then ausgleichsanspruch_erst_nach_beendigung_faellig(ehe, p, t);
+    }
+    rule FruehereBerichtigungAusEigenemGut(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+        label de official "Der Ehegatte, der das Gesamtgut nicht verwaltet, hat die Schuld jedoch schon vorher zu berichtigen, soweit sein Vorbehaltsgut und sein Sondergut hierzu ausreichen (§ 1446 Abs. 2 Satz 2)";
+        label en unofficial "The non-administering spouse must satisfy the debt earlier in so far as his own property suffices ((2) sentence 2)";
+        when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+         and vorbehalts_und_sondergut_reichen_aus(ehe, anderer);
+        then ausgleichsanspruch_schon_vorher_zu_berichtigen(ehe, anderer);
+    }
+}
+
+@source(BGB_P1447) {
+    rule AufhebungWegenGefaehrdungDerRechte(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+        label de official "Der Ehegatte, der das Gesamtgut nicht verwaltet, kann die Aufhebung der Gütergemeinschaft beantragen, wenn seine Rechte für die Zukunft dadurch erheblich gefährdet werden können, dass der andere Ehegatte zur Verwaltung unfähig ist oder sein Verwaltungsrecht missbraucht (§ 1447 Nr. 1)";
+        label en unofficial "The non-administering spouse may apply for termination where his rights may be seriously endangered by the other's incapacity or abuse (§ 1447 no. 1)";
+        when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+         and erhebliche_gefaehrdung_der_rechte(ehe, anderer);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, anderer, 1);
+    }
+    rule AufhebungWegenVerletzungDerUnterhaltspflicht(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+        label de official "Der nicht verwaltende Ehegatte kann die Aufhebung beantragen, wenn der andere seine Verpflichtung, zum Familienunterhalt beizutragen, verletzt hat und für die Zukunft eine erhebliche Gefährdung des Unterhalts zu besorgen ist (§ 1447 Nr. 2)";
+        label en unofficial "He may apply where the other breached the duty to contribute to family maintenance and future endangerment is to be feared (§ 1447 no. 2)";
+        when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+         and unterhaltspflicht_verletzt_und_gefaehrdung_zu_besorgen(ehe, verwalter);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, anderer, 2);
+    }
+    rule AufhebungWegenVerwaltungDurchDenBetreuer(ehe: Ehe, verwalter: Person, anderer: Person) strict {
+        label de official "Der nicht verwaltende Ehegatte kann die Aufhebung beantragen, wenn die Verwaltung des Gesamtguts in den Aufgabenkreis des Betreuers des anderen Ehegatten fällt (§ 1447 Nr. 4)";
+        label en unofficial "He may apply where the administration falls within the remit of the other's custodian (§ 1447 no. 4)";
+        when verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer)
+         and verwaltung_im_aufgabenkreis_des_betreuers(ehe, verwalter);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, anderer, 4);
+    }
+}
+
+@source(BGB_P1448)
+rule AufhebungsantragDesVerwalters(ehe: Ehe, verwalter: Person) strict {
+    label de official "Der Ehegatte, der das Gesamtgut verwaltet, kann die Aufhebung der Gütergemeinschaft beantragen, wenn das Gesamtgut infolge von Verbindlichkeiten des anderen Ehegatten, die diesem zur Last fallen, in solchem Maße überschuldet ist, dass ein späterer Erwerb erheblich gefährdet wird (§ 1448)";
+    label en unofficial "The administering spouse may apply for termination where the community property is so encumbered by the other's liabilities that future acquisitions are seriously endangered (§ 1448)";
+    when verwalter_des_gesamtguts(ehe, verwalter) and erhebliche_gefaehrdung_der_rechte(ehe, verwalter);
+    then aufhebung_der_guetergemeinschaft_beantragbar(ehe, verwalter, 1);
+}
+
+@source(BGB_P1449) {
+    rule WirkungDerAufhebungsentscheidung(ehe: Ehe, t: Date) strict {
+        label de official "Mit der Rechtskraft der richterlichen Entscheidung ist die Gütergemeinschaft aufgehoben; für die Zukunft gilt Gütertrennung (§ 1449 Abs. 1)";
+        label en unofficial "Upon the decision becoming final the community of property is terminated; separation of property applies for the future ((1))";
+        when aufhebungsentscheidung_guetergemeinschaft_rechtskraeftig_am(ehe, t);
+        then guetergemeinschaft_aufgehoben_am(ehe, t);
+    }
+    rule AufhebungGegenueberDritten(ehe: Ehe, t: Date) strict {
+        label de official "Dritten gegenüber ist die Aufhebung der Gütergemeinschaft nur nach Maßgabe des § 1412 wirksam (§ 1449 Abs. 2)";
+        label en unofficial "As against third parties the termination is effective only under § 1412 ((2))";
+        when guetergemeinschaft_aufgehoben_am(ehe, t) and eintragung_im_gueterrechtsregister(ehe);
+        then aufhebung_wirkt_gegen_dritte(ehe);
+    }
+}
+
+// --- Regeln: gemeinschaftliche Verwaltung (§§ 1450–1470) ----------------------------------------------
+
+@source(BGB_P1450) {
+    rule NurGemeinschaftlicheVerfuegung(ehe: Ehe) strict {
+        label de official "Wird das Gesamtgut von den Ehegatten gemeinschaftlich verwaltet, so sind die Ehegatten insbesondere nur gemeinschaftlich berechtigt, über das Gesamtgut zu verfügen und Rechtsstreitigkeiten zu führen; der Besitz an den zum Gesamtgut gehörenden Sachen gebührt ihnen gemeinschaftlich (§ 1450 Abs. 1)";
+        label en unofficial "Where administration is joint, the spouses are entitled only jointly to dispose and to litigate ((1))";
+        when gemeinschaftliche_verwaltung(ehe);
+        then nur_gemeinschaftliche_verfuegung(ehe);
+    }
+    rule AbgabeGegenueberEinemEhegattenGenuegt(ehe: Ehe, empfaenger: Person) strict {
+        label de official "Ist eine Willenserklärung den Ehegatten gegenüber abzugeben, so genügt die Abgabe gegenüber einem Ehegatten (§ 1450 Abs. 2)";
+        label en unofficial "Where a declaration is to be made to the spouses, making it to one suffices ((2))";
+        when gemeinschaftliche_verwaltung(ehe) and willenserklaerung_gegenueber_einem_ehegatten_abgegeben(ehe, empfaenger);
+        then abgabe_gegenueber_einem_ehegatten_genuegt(ehe, empfaenger);
+    }
+}
+
+@source(BGB_P1451)
+rule MitwirkungspflichtBeiderEhegatten(ehe: Ehe, p: Person) strict {
+    label de official "Jeder Ehegatte ist dem anderen gegenüber verpflichtet, zu Maßregeln mitzuwirken, die zur ordnungsmäßigen Verwaltung des Gesamtguts erforderlich sind (§ 1451)";
+    label en unofficial "Each spouse is bound to the other to cooperate in measures necessary for proper administration (§ 1451)";
+    when gemeinschaftliche_verwaltung(ehe) and ehegatte(ehe, p);
+    then mitwirkungspflicht(ehe, p);
+}
+
+@source(BGB_P1452) {
+    rule ErsetzungDerZustimmungBeiGemeinschaftlicherVerwaltung(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Ist zur ordnungsmäßigen Verwaltung des Gesamtguts die Vornahme eines Rechtsgeschäfts oder die Führung eines Rechtsstreits erforderlich, so kann das Familiengericht auf Antrag eines Ehegatten die Zustimmung des anderen ersetzen, wenn dieser sie ohne ausreichenden Grund verweigert (§ 1452 Abs. 1)";
+        label en unofficial "Where a transaction is necessary for proper administration, the family court may replace the other's consent ((1))";
+        when gemeinschaftliche_verwaltung(ehe) and ordnungsmaessige_verwaltung_des_gesamtguts(ehe, g)
+         and zustimmung_durch_familiengericht_ersetzt(ehe, g);
+        then rechtsgeschaeft_wirksam(ehe, g);
+    }
+}
+
+@source(BGB_P1453)
+rule VerfuegungOhneEinwilligungBeiGemeinschaftlicherVerwaltung(ehe: Ehe, g: Rechtsgeschaeft) strict {
+    label de official "Verfügt ein Ehegatte ohne die erforderliche Einwilligung des anderen Ehegatten über das Gesamtgut, so gelten die Vorschriften des § 1366 Abs. 1, 3, 4 und des § 1367 entsprechend (§ 1453 Abs. 1); den Widerruf des Dritten regelt Absatz 2 wie § 1427 Abs. 2";
+    label en unofficial "Where a spouse disposes without the required consent, § 1366 (1), (3), (4) and § 1367 apply accordingly ((1))";
+    when gemeinschaftliche_verwaltung(ehe) and genehmigung_verweigert(ehe, g);
+    then rechtsgeschaeft_unwirksam(ehe, g);
+}
+
+@source(BGB_P1454)
+rule NotverwaltungsrechtBeiGemeinschaftlicherVerwaltung(ehe: Ehe, verhinderter: Person, handelnder: Person) strict {
+    label de official "Ist ein Ehegatte durch Krankheit oder Abwesenheit verhindert, bei einem Rechtsgeschäft mitzuwirken, das sich auf das Gesamtgut bezieht, so kann der andere Ehegatte es vornehmen, wenn mit dem Aufschub Gefahr verbunden ist; er kann im eigenen Namen oder im Namen beider Ehegatten handeln (§ 1454)";
+    label en unofficial "Where a spouse is prevented by illness or absence from cooperating, the other may act if delay entails danger (§ 1454)";
+    when gemeinschaftliche_verwaltung(ehe) and verwalter_durch_krankheit_oder_abwesenheit_verhindert(ehe, verhinderter)
+     and aufschub_mit_gefahr_verbunden(ehe) and anderer_ehegatte(ehe, verhinderter, handelnder);
+    then notverwaltungsrecht(ehe, handelnder);
+}
+
+@source(BGB_P1455)
+rule VerwaltungshandlungenOhneMitwirkung(ehe: Ehe, p: Person, nr: Integer) strict {
+    label de official "Jeder Ehegatte kann ohne Mitwirkung des anderen Ehegatten die in § 1455 Nr. 1 bis 10 aufgezählten Handlungen vornehmen — von der Annahme einer Erbschaft (Nr. 1) bis zu den zur Erhaltung des Gesamtguts notwendigen Maßnahmen bei Gefahr im Verzug (Nr. 10)";
+    label en unofficial "Each spouse may undertake without the other's cooperation the acts listed in § 1455 nos. 1 to 10";
+    when gemeinschaftliche_verwaltung(ehe) and verwaltungshandlung_des_1455(ehe, p, nr);
+    then ohne_zustimmung_zulaessige_handlung(ehe, p, "§ 1455: Verwaltungshandlung ohne Mitwirkung des anderen Ehegatten");
+}
+
+@source(BGB_P1456) {
+    rule ErwerbsgeschaeftBeiGemeinschaftlicherVerwaltung(ehe: Ehe, einwilligender: Person, betreiber: Person) strict {
+        label de official "Hat ein Ehegatte darin eingewilligt, dass der andere selbständig ein Erwerbsgeschäft betreibt, so ist seine Zustimmung zu den Rechtsgeschäften und Rechtsstreitigkeiten des Geschäftsbetriebs nicht erforderlich; Kenntnis ohne Einspruch steht der Einwilligung gleich (§ 1456 Abs. 1, 2)";
+        label en unofficial "Where a spouse consented to the other's independent business, his consent to its transactions is not required; knowledge without objection is equivalent ((1), (2))";
+        when gemeinschaftliche_verwaltung(ehe)
+         and einwilligung_in_selbstaendiges_erwerbsgeschaeft(ehe, einwilligender, betreiber);
+        then zustimmung_zu_erwerbsgeschaeften_entbehrlich(ehe, betreiber);
+    }
+    rule KenntnisOhneEinspruchBeiGemeinschaftlicherVerwaltung(ehe: Ehe, wissender: Person, betreiber: Person) strict {
+        label de official "Weiß ein Ehegatte, dass der andere ein Erwerbsgeschäft betreibt, und hat er hiergegen keinen Einspruch eingelegt, so steht dies einer Einwilligung gleich (§ 1456 Abs. 2); Dritten gegenüber wirkt ein Einspruch nur nach Maßgabe des § 1412 (Abs. 3)";
+        label en unofficial "Knowledge without objection is equivalent to consent ((2)); as against third parties an objection takes effect only under § 1412 ((3))";
+        when gemeinschaftliche_verwaltung(ehe) and kenntnis_ohne_einspruch(ehe, wissender, betreiber);
+        then zustimmung_zu_erwerbsgeschaeften_entbehrlich(ehe, betreiber);
+    }
+}
+
+@source(BGB_P1457)
+rule BereicherungBeiGemeinschaftlicherVerwaltung(ehe: Ehe, g: Rechtsgeschaeft) strict {
+    label de official "Wird durch ein Rechtsgeschäft, das ein Ehegatte ohne die erforderliche Zustimmung des anderen vornimmt, das Gesamtgut bereichert, so ist die Bereicherung nach den Vorschriften über die ungerechtfertigte Bereicherung aus dem Gesamtgut herauszugeben (§ 1457)";
+    label en unofficial "Where such a transaction enriches the community property, the enrichment is to be surrendered under the rules on unjust enrichment (§ 1457)";
+    when gemeinschaftliche_verwaltung(ehe) and gesamtgut_durch_zustimmungsloses_geschaeft_bereichert(ehe, g);
+    then bereicherung_aus_dem_gesamtgut_herauszugeben(ehe, g);
+}
+
+@source(BGB_P1459) {
+    rule GesamtgutsverbindlichkeitBeiGemeinschaftlicherVerwaltung(ehe: Ehe, vb: Verbindlichkeit, p: Person) strict {
+        label de official "Die Gläubiger eines Ehegatten können, soweit sich aus den §§ 1460 bis 1462 nichts anderes ergibt, aus dem Gesamtgut Befriedigung verlangen (§ 1459 Abs. 1)";
+        label en unofficial "Subject to §§ 1460 to 1462 the creditors of a spouse may demand satisfaction from the community property ((1))";
+        when gemeinschaftliche_verwaltung(ehe) and verbindlichkeit_eines_ehegatten(ehe, vb, p);
+        then gesamtgutsverbindlichkeit(ehe, vb);
+    }
+    rule PersoenlicheHaftungBeiderEhegatten(ehe: Ehe, vb: Verbindlichkeit, p: Person) strict {
+        label de official "Für die Gesamtgutsverbindlichkeiten haften die Ehegatten auch persönlich als Gesamtschuldner; fallen die Verbindlichkeiten im Verhältnis der Ehegatten zueinander einem von ihnen zur Last, so erlischt die Verbindlichkeit des anderen mit der Beendigung der Gütergemeinschaft (§ 1459 Abs. 2)";
+        label en unofficial "For community liabilities the spouses are also personally liable as joint debtors ((2))";
+        when gemeinschaftliche_verwaltung(ehe) and gesamtgutsverbindlichkeit(ehe, vb) and ehegatte(ehe, p);
+        then persoenliche_haftung_als_gesamtschuldner(ehe, p, vb);
+    }
+}
+
+@source(BGB_P1460)
+rule HaftungDesGesamtgutsBeiGemeinschaftlicherVerwaltung(ehe: Ehe, vb: Verbindlichkeit, handelnder: Person) strict {
+    label de official "Das Gesamtgut haftet für eine Verbindlichkeit aus einem Rechtsgeschäft, das ein Ehegatte während der Gütergemeinschaft vornimmt, nur dann, wenn der andere Ehegatte zustimmt oder wenn das Rechtsgeschäft ohne seine Zustimmung für das Gesamtgut wirksam ist; für die Kosten eines Rechtsstreits haftet das Gesamtgut auch dann, wenn das Urteil ihm gegenüber nicht wirksam ist (§ 1460)";
+    label en unofficial "The community property is liable for such a transaction only with the other's consent (§ 1460)";
+    when gemeinschaftliche_verwaltung(ehe)
+     and verbindlichkeit_aus_rechtsgeschaeft_waehrend_der_guetergemeinschaft(ehe, vb, handelnder)
+     and zustimmung_des_verwalters(ehe, vb);
+    then gesamtgutsverbindlichkeit(ehe, vb);
+}
+
+@source(BGB_P1461)
+rule KeineHaftungBeiErbschaftserwerbGemeinschaftlich(ehe: Ehe, vb: Verbindlichkeit, erbe: Person) strict {
+    label de official "Das Gesamtgut haftet nicht für Verbindlichkeiten eines Ehegatten, die durch den Erwerb einer Erbschaft oder eines Vermächtnisses entstehen, wenn der Ehegatte sie während der Gütergemeinschaft als Vorbehaltsgut oder als Sondergut erwirbt (§ 1461)";
+    label en unofficial "The community property is not liable for liabilities from acquiring an inheritance as reserved or separate property (§ 1461)";
+    when gemeinschaftliche_verwaltung(ehe) and verbindlichkeit_aus_dem_erwerb_einer_erbschaft(ehe, vb, erbe);
+    then gesamtgut_haftet_nicht(ehe, vb);
+}
+
+@source(BGB_P1462)
+rule KeineHaftungFuerVorbehaltsgutGemeinschaftlich(ehe: Ehe, vb: Verbindlichkeit, p: Person) strict {
+    label de official "Das Gesamtgut haftet nicht für eine Verbindlichkeit eines Ehegatten, die infolge eines zum Vorbehaltsgut oder zum Sondergut gehörenden Rechts oder des Besitzes einer dazu gehörenden Sache entsteht; es haftet jedoch in den beiden Fällen des Satzes 2 (§ 1462)";
+    label en unofficial "The community property is not liable for liabilities arising from reserved or separate property, subject to the two exceptions (§ 1462)";
+    when gemeinschaftliche_verwaltung(ehe) and verbindlichkeit_aus_vorbehalts_oder_sondergut(ehe, vb, p)
+     and not_known(gehoert_zum_erwerbsgeschaeft(ehe, vb))
+     and not_known(lasten_des_sonderguts_aus_den_einkuenften(ehe, vb));
+    then gesamtgut_haftet_nicht(ehe, vb);
+}
+
+@source(BGB_P1463)
+rule InnenlastBeiGemeinschaftlicherVerwaltung(ehe: Ehe, vb: Verbindlichkeit, p: Person) strict {
+    label de official "Im Verhältnis der Ehegatten zueinander fallen die Verbindlichkeiten aus einer unerlaubten Handlung nach Eintritt der Gütergemeinschaft, aus einem sich auf das Vorbehalts- oder Sondergut beziehenden Rechtsverhältnis und die Kosten eines Rechtsstreits darüber dem Ehegatten zur Last, in dessen Person sie entstehen (§ 1463 Nr. 1 bis 3)";
+    label en unofficial "Between the spouses these liabilities fall to the spouse in whose person they arise (§ 1463 nos. 1 to 3)";
+    when gemeinschaftliche_verwaltung(ehe) and verbindlichkeit_aus_unerlaubter_handlung(ehe, vb, p);
+    then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, p, vb);
+}
+
+@source(BGB_P1464)
+rule AusnahmeVonDerInnenlastGemeinschaftlich(ehe: Ehe, vb: Verbindlichkeit) strict {
+    label de official "Die Vorschrift des § 1463 Nr. 2, 3 gilt nicht, wenn die Verbindlichkeiten zu den aus den Einkünften zu begleichenden Lasten des Sonderguts gehören oder durch den Betrieb eines für Rechnung des Gesamtguts geführten Erwerbsgeschäfts entstehen (§ 1464)";
+    label en unofficial "§ 1463 nos. 2, 3 does not apply to charges on the separate property met out of income or to liabilities from a business run for the community's account (§ 1464)";
+    when gemeinschaftliche_verwaltung(ehe) and lasten_des_sonderguts_aus_den_einkuenften(ehe, vb);
+    then verbindlichkeit_faellt_dem_gesamtgut_zur_last(ehe, vb);
+}
+
+@source(BGB_P1465) {
+    rule ProzesskostenGemeinschaftlichUntereinander(ehe: Ehe, vb: Verbindlichkeit, kostenpflichtiger: Person) strict {
+        label de official "Im Verhältnis der Ehegatten zueinander fallen die Kosten eines Rechtsstreits, den die Ehegatten miteinander führen, dem Ehegatten zur Last, der sie nach allgemeinen Vorschriften zu tragen hat (§ 1465 Abs. 1)";
+        label en unofficial "Between the spouses the costs of proceedings against each other fall to the spouse who bears them under the general rules ((1))";
+        when gemeinschaftliche_verwaltung(ehe) and kosten_eines_rechtsstreits_der_ehegatten(ehe, vb, kostenpflichtiger);
+        then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, kostenpflichtiger, vb);
+    }
+    rule ProzesskostenGemeinschaftlichGegenDritte(ehe: Ehe, vb: Verbindlichkeit, fuehrender: Person) strict {
+        label de official "Führt ein Ehegatte einen Rechtsstreit mit einem Dritten, so fallen die Kosten im Verhältnis der Ehegatten zueinander dem Ehegatten zur Last, der den Rechtsstreit führt; sie fallen jedoch dem Gesamtgut zur Last, wenn das Urteil ihm gegenüber wirksam ist oder die Aufwendung der Kosten geboten war (§ 1465 Abs. 2)";
+        label en unofficial "Where a spouse litigates against a third party, the costs fall to him, unless the judgment is effective against the community property ((2))";
+        when gemeinschaftliche_verwaltung(ehe) and kosten_eines_rechtsstreits_mit_einem_dritten(ehe, vb, fuehrender)
+         and not_known(urteil_dem_gesamtgut_gegenueber_wirksam(ehe, vb))
+         and not_known(aufwendung_der_kosten_geboten(ehe, vb));
+        then verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, fuehrender, vb);
+    }
+}
+
+@source(BGB_P1466)
+rule AusstattungAnNichtGemeinschaftlichesKindGemeinschaftlich(ehe: Ehe, kind: Person, elternteil: Person, geber: Person, wert: Money) strict {
+    label de official "Im Verhältnis der Ehegatten zueinander fallen die Kosten der Ausstattung eines nicht gemeinschaftlichen Kindes dem Vater oder der Mutter des Kindes zur Last (§ 1466)";
+    label en unofficial "Between the spouses the costs of endowing a child who is not common fall to the child's father or mother (§ 1466)";
+    when gemeinschaftliche_verwaltung(ehe) and ausstattung_an_nicht_gemeinschaftliches_kind(ehe, geber, kind, wert)
+     and elternteil_des_kindes(ehe, kind, elternteil);
+    then ausstattung_faellt_zur_last(ehe, elternteil, kind);
+}
+
+@source(BGB_P1467) {
+    rule ErsatzZumGesamtgutGemeinschaftlich(ehe: Ehe, p: Person, wert: Money) strict {
+        label de official "Verwendet ein Ehegatte Gesamtgut in sein Vorbehaltsgut oder in sein Sondergut, so hat er den Wert des Verwendeten zum Gesamtgut zu ersetzen (§ 1467 Abs. 1)";
+        label en unofficial "Where a spouse applies community property to his own property, he must replace its value ((1))";
+        when gemeinschaftliche_verwaltung(ehe) and verwendung_von_gesamtgut_in_das_eigene_gut(ehe, p, wert);
+        then ersatz_zum_gesamtgut_geschuldet(ehe, p, wert);
+    }
+    rule ErsatzAusDemGesamtgutGemeinschaftlich(ehe: Ehe, p: Person, wert: Money) strict {
+        label de official "Verwendet ein Ehegatte Vorbehaltsgut oder Sondergut in das Gesamtgut, so kann er Ersatz aus dem Gesamtgut verlangen (§ 1467 Abs. 2)";
+        label en unofficial "Where a spouse applies his own property to the community property, he may claim reimbursement ((2))";
+        when gemeinschaftliche_verwaltung(ehe) and verwendung_von_eigenem_gut_in_das_gesamtgut(ehe, p, wert);
+        then ersatz_aus_dem_gesamtgut_verlangbar(ehe, p, wert);
+    }
+}
+
+@source(BGB_P1468) {
+    rule FaelligkeitGemeinschaftlich(ehe: Ehe, p: Person, t: Date) strict {
+        label de official "Was ein Ehegatte zum Gesamtgut oder zum Vorbehaltsgut oder Sondergut des anderen schuldet, braucht er erst nach Beendigung der Gütergemeinschaft zu leisten; soweit jedoch sein Vorbehaltsgut und sein Sondergut ausreichen, hat er die Schuld schon vorher zu berichtigen (§ 1468)";
+        label en unofficial "What a spouse owes is due only after the community ends; in so far as his own property suffices, he must satisfy it earlier (§ 1468)";
+        when gemeinschaftliche_verwaltung(ehe) and ehegatte(ehe, p) and guetergemeinschaft_beendet_am(ehe, t);
+        then ausgleichsanspruch_erst_nach_beendigung_faellig(ehe, p, t);
+    }
+    rule FruehereBerichtigungGemeinschaftlich(ehe: Ehe, p: Person) strict {
+        label de official "Soweit das Vorbehaltsgut und das Sondergut des Schuldners ausreichen, hat er die Schuld schon vor der Beendigung der Gütergemeinschaft zu berichtigen (§ 1468 Halbsatz 2)";
+        label en unofficial "In so far as the debtor's own property suffices, he must satisfy the debt before the community ends (§ 1468)";
+        when gemeinschaftliche_verwaltung(ehe) and vorbehalts_und_sondergut_reichen_aus(ehe, p);
+        then ausgleichsanspruch_schon_vorher_zu_berichtigen(ehe, p);
+    }
+}
+
+@source(BGB_P1469) {
+    rule AufhebungGemeinschaftlichWegenGefaehrdung(ehe: Ehe, antragsteller: Person) strict {
+        label de official "Jeder Ehegatte kann die Aufhebung der Gütergemeinschaft beantragen, wenn seine Rechte für die Zukunft dadurch erheblich gefährdet werden können, dass der andere Ehegatte ohne seine Mitwirkung Verwaltungshandlungen vornimmt, die nur gemeinschaftlich vorgenommen werden dürfen (§ 1469 Nr. 1), oder wenn das Gesamtgut in solchem Maße überschuldet ist (Nr. 4)";
+        label en unofficial "Each spouse may apply for termination where his rights may be seriously endangered (§ 1469 nos. 1, 4)";
+        when gemeinschaftliche_verwaltung(ehe) and erhebliche_gefaehrdung_der_rechte(ehe, antragsteller);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, antragsteller, 1);
+    }
+    rule AufhebungGemeinschaftlichWegenVerweigerterMitwirkung(ehe: Ehe, antragsteller: Person, verweigerer: Person) strict {
+        label de official "Jeder Ehegatte kann die Aufhebung beantragen, wenn der andere sich ohne ausreichenden Grund beharrlich weigert, zur ordnungsmäßigen Verwaltung des Gesamtguts mitzuwirken (§ 1469 Nr. 2)";
+        label en unofficial "Each spouse may apply where the other persistently refuses without sufficient ground to cooperate (§ 1469 no. 2)";
+        when gemeinschaftliche_verwaltung(ehe) and anderer_ehegatte(ehe, antragsteller, verweigerer)
+         and zustimmung_ohne_ausreichenden_grund_verweigert(ehe, verweigerer);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, antragsteller, 2);
+    }
+    rule AufhebungGemeinschaftlichWegenUnterhaltsverletzung(ehe: Ehe, antragsteller: Person, verletzer: Person) strict {
+        label de official "Jeder Ehegatte kann die Aufhebung beantragen, wenn der andere seine Verpflichtung, zum Familienunterhalt beizutragen, verletzt hat und für die Zukunft eine erhebliche Gefährdung des Unterhalts zu besorgen ist (§ 1469 Nr. 3)";
+        label en unofficial "Each spouse may apply where the other breached the maintenance duty and future endangerment is to be feared (§ 1469 no. 3)";
+        when gemeinschaftliche_verwaltung(ehe) and anderer_ehegatte(ehe, antragsteller, verletzer)
+         and unterhaltspflicht_verletzt_und_gefaehrdung_zu_besorgen(ehe, verletzer);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, antragsteller, 3);
+    }
+    rule AufhebungGemeinschaftlichWegenBetreuung(ehe: Ehe, antragsteller: Person, betreuter: Person) strict {
+        label de official "Jeder Ehegatte kann die Aufhebung beantragen, wenn die Wahrnehmung eines Rechts des anderen Ehegatten, das sich aus der Gütergemeinschaft ergibt, vom Aufgabenkreis eines Betreuers erfasst wird (§ 1469 Nr. 5)";
+        label en unofficial "Each spouse may apply where the exercise of the other's right from the community falls within a custodian's remit (§ 1469 no. 5)";
+        when gemeinschaftliche_verwaltung(ehe) and anderer_ehegatte(ehe, antragsteller, betreuter)
+         and verwaltung_im_aufgabenkreis_des_betreuers(ehe, betreuter);
+        then aufhebung_der_guetergemeinschaft_beantragbar(ehe, antragsteller, 5);
+    }
+}
+
+@source(BGB_P1470) {
+    rule WirkungDerAufhebungGemeinschaftlich(ehe: Ehe, t: Date) strict {
+        label de official "Mit der Rechtskraft der richterlichen Entscheidung ist die Gütergemeinschaft aufgehoben; für die Zukunft gilt Gütertrennung (§ 1470 Abs. 1); Dritten gegenüber wirkt die Aufhebung nur nach Maßgabe des § 1412 (Abs. 2)";
+        label en unofficial "Upon the decision becoming final the community is terminated; separation of property applies for the future ((1))";
+        when gemeinschaftliche_verwaltung(ehe) and aufhebungsentscheidung_guetergemeinschaft_rechtskraeftig_am(ehe, t);
+        then guetergemeinschaft_aufgehoben_am(ehe, t);
+    }
+}
+
+// --- Regeln: Auseinandersetzung (§§ 1471–1482) --------------------------------------------------------
+
+@source(BGB_P1471)
+rule BeginnDerAuseinandersetzung(ehe: Ehe, t: Date) strict {
+    label de official "Nach der Beendigung der Gütergemeinschaft setzen sich die Ehegatten über das Gesamtgut auseinander; bis zur Auseinandersetzung gilt für das Gesamtgut die Vorschrift des § 1419 (§ 1471)";
+    label en unofficial "After the community ends the spouses divide the community property; until then § 1419 applies (§ 1471)";
+    when guetergemeinschaft_beendet_am(ehe, t);
+    then auseinandersetzung_geschuldet(ehe);
+}
+
+@source(BGB_P1472)
+rule VerwaltungBisZurAuseinandersetzung(ehe: Ehe) strict {
+    label de official "Bis zur Auseinandersetzung verwalten die Ehegatten das Gesamtgut gemeinschaftlich; jeder darf es in derselben Weise wie vorher verwalten, bis er von der Beendigung Kenntnis erlangt; endet die Gütergemeinschaft durch den Tod eines Ehegatten, so hat der überlebende Ehegatte die unaufschiebbaren Geschäfte zu führen (§ 1472)";
+    label en unofficial "Until the division the spouses administer jointly; on death the survivor conducts urgent business (§ 1472)";
+    when auseinandersetzung_geschuldet(ehe);
+    then verwaltung_bis_zur_auseinandersetzung_gemeinschaftlich(ehe);
+}
+
+@source(BGB_P1473)
+rule UnmittelbareErsetzung(ehe: Ehe, s: de.bgb.core::Sache) strict {
+    label de official "Was auf Grund eines zum Gesamtgut gehörenden Rechts oder als Ersatz für die Zerstörung, Beschädigung oder Entziehung eines Gesamtgutsgegenstands oder durch ein sich auf das Gesamtgut beziehendes Rechtsgeschäft erworben wird, wird Gesamtgut; für erworbene Forderungen gelten die §§ 406 bis 408 entsprechend (§ 1473)";
+    label en unofficial "What is acquired by virtue of a right of the community property, as a substitute or through a related transaction becomes community property (§ 1473)";
+    when surrogat_des_gesamtguts(ehe, s);
+    then unmittelbare_ersetzung(ehe, s);
+}
+
+@source(BGB_P1474)
+rule DurchfuehrungDerAuseinandersetzung(ehe: Ehe) strict {
+    label de official "Die Ehegatten setzen sich, soweit sie nichts anderes vereinbaren, nach den §§ 1475 bis 1481 auseinander (§ 1474)";
+    label en unofficial "Unless otherwise agreed, the spouses divide under §§ 1475 to 1481 (§ 1474)";
+    when auseinandersetzung_geschuldet(ehe);
+    then auseinandersetzung_nach_1475_bis_1481(ehe);
+}
+
+@source(BGB_P1475) {
+    rule BerichtigungDerVerbindlichkeitenZuerst(ehe: Ehe) strict {
+        label de official "Die Ehegatten haben zunächst die Gesamtgutsverbindlichkeiten zu berichtigen; ist eine Verbindlichkeit noch nicht fällig oder streitig, so ist das Erforderliche zurückzubehalten; das Gesamtgut ist in Geld umzusetzen, soweit dies erforderlich ist (§ 1475 Abs. 1, 3)";
+        label en unofficial "The spouses must first satisfy the community liabilities; the property is converted into money as necessary ((1), (3))";
+        when auseinandersetzung_nach_1475_bis_1481(ehe);
+        then verbindlichkeiten_zuerst_zu_berichtigen(ehe);
+    }
+    rule KeineBerichtigungAusDemGesamtgut(ehe: Ehe, p: Person, vb: Verbindlichkeit) strict {
+        label de official "Fällt eine Gesamtgutsverbindlichkeit im Verhältnis der Ehegatten zueinander einem der Ehegatten allein zur Last, so kann dieser nicht verlangen, dass sie aus dem Gesamtgut berichtigt wird (§ 1475 Abs. 2)";
+        label en unofficial "Where a liability falls solely to one spouse, he cannot demand satisfaction out of the community property ((2))";
+        when auseinandersetzung_nach_1475_bis_1481(ehe) and verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, p, vb);
+        then keine_berichtigung_aus_dem_gesamtgut_verlangbar(ehe, p, vb);
+    }
+}
+
+@source(BGB_P1476) {
+    rule TeilungDesUeberschussesZuGleichenTeilen(ehe: Ehe, p: Person, u: Money) strict {
+        label de official "Der Überschuss, der nach der Berichtigung der Gesamtgutsverbindlichkeiten verbleibt, gebührt den Ehegatten zu GLEICHEN TEILEN (§ 1476 Abs. 1); geteilt wird EINMAL, kaufmännisch auf den Cent";
+        label en unofficial "The surplus remaining accrues to the spouses in EQUAL SHARES ((1)); the division is made ONCE, commercially rounded to the cent";
+        when ueberschuss_des_gesamtguts(ehe, u) and ehegatte(ehe, p);
+        then anteil_am_ueberschuss(ehe, p, div_round(u, 2 * 1.0, 2, "HALF_UP"));
+    }
+    rule ErsatzAufDenTeilAnzurechnen(ehe: Ehe, p: Person, wert: Money) strict {
+        label de official "Was einer der Ehegatten zum Gesamtgut zu ersetzen hat, muss er sich auf seinen Teil anrechnen lassen; soweit er den Ersatz nicht auf diese Weise leistet, bleibt er dem anderen Ehegatten verpflichtet (§ 1476 Abs. 2)";
+        label en unofficial "What a spouse must replace is set off against his share; otherwise he remains liable to the other ((2))";
+        when ersatz_zum_gesamtgut_geschuldet(ehe, p, wert);
+        then ersatz_auf_den_teil_anzurechnen(ehe, p, wert);
+    }
+}
+
+@source(BGB_P1477) {
+    rule UebernahmeDerPersoenlichenSachen(ehe: Ehe, p: Person, s: de.bgb.core::Sache) strict {
+        label de official "Jeder Ehegatte kann gegen Ersatz des Wertes die Sachen übernehmen, die ausschließlich zu seinem persönlichen Gebrauch bestimmt sind, insbesondere Kleider, Schmucksachen und Arbeitsgeräte (§ 1477 Abs. 2 Satz 1); der Überschuss wird im Übrigen nach den Vorschriften über die Gemeinschaft geteilt (Abs. 1)";
+        label en unofficial "Each spouse may take over, against replacement of value, things intended for his personal use ((2) sentence 1)";
+        when auseinandersetzung_nach_1475_bis_1481(ehe) and zum_persoenlichen_gebrauch_bestimmter_gegenstand(ehe, p, s);
+        then uebernahmerecht_gegen_wertersatz(ehe, p, s);
+    }
+    rule UebernahmeDesEingebrachten(ehe: Ehe, p: Person, s: de.bgb.core::Sache) strict {
+        label de official "Das Gleiche gilt für die Gegenstände, die ein Ehegatte in die Gütergemeinschaft eingebracht oder während ihrer Dauer durch Erbfolge, Vermächtnis, mit Rücksicht auf ein künftiges Erbrecht, durch Schenkung oder als Ausstattung erworben hat (§ 1477 Abs. 2 Satz 2)";
+        label en unofficial "The same applies to objects brought in or acquired by succession, legacy, gift or endowment ((2) sentence 2)";
+        when auseinandersetzung_nach_1475_bis_1481(ehe) and eingebrachter_gegenstand(ehe, p, s);
+        then uebernahmerecht_gegen_wertersatz(ehe, p, s);
+    }
+}
+
+@source(BGB_P1478) {
+    rule RueckerstattungDesEingebrachten(ehe: Ehe, verlangender: Person, p: Person, eingebracht: Money, gesamt: Money, summe: Money) strict {
+        label de official "Ist die Ehe geschieden, bevor die Auseinandersetzung beendet ist, so ist auf Verlangen eines Ehegatten jedem von ihnen der Wert des von ihm Eingebrachten zurückzuerstatten, soweit der Wert des Gesamtguts hierzu ausreicht (§ 1478 Abs. 1 Halbsatz 1)";
+        label en unofficial "Where the marriage was dissolved before the division was completed, each spouse is on demand repaid the value he brought in, in so far as the community property suffices ((1))";
+        when ehe_geschieden_vor_beendigung_der_auseinandersetzung(ehe) and rueckerstattung_verlangt(ehe, verlangender)
+         and eingebrachter_wert(ehe, p, eingebracht) and wert_des_gesamtguts_bei_der_auseinandersetzung(ehe, gesamt)
+         and eingebrachte_summe(ehe, summe) and gesamt >= summe;
+        then rueckerstattung_des_eingebrachten(ehe, p, eingebracht);
+    }
+    rule Fehlbetrag(ehe: Ehe, gesamt: Money, summe: Money) strict {
+        label de official "Reicht der Wert des Gesamtguts zur Rückerstattung nicht aus, so ist der Fehlbetrag der Unterschied zwischen der Summe des Eingebrachten und dem Wert des Gesamtguts (§ 1478 Abs. 1 Halbsatz 2)";
+        label en unofficial "If the value of the community property does not suffice, the shortfall is the difference between the sum brought in and that value ((1))";
+        when wert_des_gesamtguts_bei_der_auseinandersetzung(ehe, gesamt) and eingebrachte_summe(ehe, summe)
+         and gesamt < summe;
+        then fehlbetrag(ehe, summe - gesamt);
+    }
+    rule AnteilAmFehlbetrag(ehe: Ehe, verlangender: Person, p: Person, gesamt: Money, summe: Money, fehl: Money, zaehler: Integer, nenner: Integer) strict {
+        label de official "Reicht der Wert des Gesamtguts zur Rückerstattung nicht aus, so ist der Fehlbetrag von den Ehegatten nach dem VERHÄLTNIS des Wertes des von ihnen Eingebrachten zu tragen (§ 1478 Abs. 1 Halbsatz 2); Zähler und Nenner der Quote nennt der Text selbst, gerechnet wird einmal je Ehegatte";
+        label en unofficial "If the community property does not suffice, the shortfall is borne in PROPORTION to the values brought in ((1))";
+        when ehe_geschieden_vor_beendigung_der_auseinandersetzung(ehe) and rueckerstattung_verlangt(ehe, verlangender)
+         and eingebrachter_wert_in_cent(ehe, p, zaehler) and eingebrachte_summe_in_cent(ehe, nenner)
+         and wert_des_gesamtguts_bei_der_auseinandersetzung(ehe, gesamt) and eingebrachte_summe(ehe, summe)
+         and gesamt < summe and fehlbetrag(ehe, fehl);
+        then anteil_am_fehlbetrag(ehe, p, div_round(fehl * zaehler, nenner * 1.0, 2, "HALF_UP"));
+    }
+}
+
+@source(BGB_P1479)
+rule AuseinandersetzungNachRichterlicherAufhebung(ehe: Ehe, antragsteller: Person, t: Date) strict {
+    label de official "Wird die Gütergemeinschaft auf Grund der §§ 1447, 1448 oder des § 1469 durch richterliche Entscheidung aufgehoben, so kann der Ehegatte, der die Entscheidung erwirkt hat, verlangen, dass die Auseinandersetzung so erfolgt, wie wenn der Anspruch in dem Zeitpunkt rechtshängig geworden wäre, in dem der Antrag auf Aufhebung gestellt ist (§ 1479)";
+    label en unofficial "Where the community was terminated by judicial decision, the successful spouse may demand that the division be made as at the date of the application (§ 1479)";
+    when aufhebung_der_guetergemeinschaft_beantragt_am(ehe, antragsteller, t);
+    then auseinandersetzung_auf_den_antragstag_zurueckbezogen(ehe, antragsteller, t);
+}
+
+@source(BGB_P1480)
+rule HaftungNachDerTeilungGegenueberDritten(ehe: Ehe, vb: Verbindlichkeit, p: Person) strict {
+    label de official "Wird das Gesamtgut geteilt, bevor eine Gesamtgutsverbindlichkeit berichtigt ist, so haftet dem Gläubiger auch der Ehegatte persönlich als Gesamtschuldner, für den zur Zeit der Teilung eine solche Haftung nicht besteht; seine Haftung beschränkt sich auf die ihm zugeteilten Gegenstände, und die §§ 1990, 1991 sind entsprechend anzuwenden (§ 1480)";
+    label en unofficial "Where the property is divided before a liability is satisfied, the spouse not previously liable is also liable as joint debtor, limited to the objects allotted to him (§ 1480)";
+    when gesamtgutsverbindlichkeit_beim_teilen_unberichtigt(ehe, vb) and ehegatte(ehe, p);
+    then persoenliche_haftung_nach_der_teilung(ehe, p, vb);
+}
+
+@source(BGB_P1481) {
+    rule EinstandspflichtDesAlleinverwalters(ehe: Ehe, vb: Verbindlichkeit, verwalter: Person, anderer: Person) strict {
+        label de official "Wird das Gesamtgut geteilt, bevor eine dem Gesamtgut zur Last fallende Verbindlichkeit berichtigt ist, so hat der Ehegatte, der das Gesamtgut allein verwaltet hat, dem anderen dafür einzustehen, dass dieser weder über die Hälfte der Verbindlichkeit noch über das aus dem Gesamtgut Erlangte hinaus in Anspruch genommen wird (§ 1481 Abs. 1)";
+        label en unofficial "The sole administrator must ensure that the other is not held liable beyond half the liability or what he obtained ((1))";
+        when gesamtgutsverbindlichkeit_beim_teilen_unberichtigt(ehe, vb)
+         and verbindlichkeit_faellt_dem_gesamtgut_zur_last(ehe, vb)
+         and verwalter_des_gesamtguts(ehe, verwalter) and anderer_ehegatte(ehe, verwalter, anderer);
+        then einstandspflicht_unter_den_ehegatten(ehe, verwalter, anderer, vb);
+    }
+    rule EinstandspflichtBeiGemeinschaftlicherVerwaltung(ehe: Ehe, vb: Verbindlichkeit, a: Person, b: Person) strict {
+        label de official "Haben die Ehegatten das Gesamtgut gemeinschaftlich verwaltet, so hat jeder Ehegatte dem anderen dafür einzustehen, dass dieser von dem Gläubiger nicht über die Hälfte der Verbindlichkeit hinaus in Anspruch genommen wird (§ 1481 Abs. 2)";
+        label en unofficial "Where administration was joint, each spouse must ensure the other is not held liable beyond half ((2))";
+        when gemeinschaftliche_verwaltung(ehe) and gesamtgutsverbindlichkeit_beim_teilen_unberichtigt(ehe, vb)
+         and ehegatten(ehe, a, b);
+        then einstandspflicht_unter_den_ehegatten(ehe, a, b, vb);
+    }
+    rule EinstandspflichtBeiInnenlast(ehe: Ehe, vb: Verbindlichkeit, traeger: Person, anderer: Person) strict {
+        label de official "Fällt die Verbindlichkeit im Verhältnis der Ehegatten zueinander einem der Ehegatten zur Last, so hat dieser dem anderen dafür einzustehen, dass der andere Ehegatte von dem Gläubiger nicht in Anspruch genommen wird (§ 1481 Abs. 3)";
+        label en unofficial "Where the liability falls to one spouse, he must ensure the other is not held liable at all ((3))";
+        when gesamtgutsverbindlichkeit_beim_teilen_unberichtigt(ehe, vb)
+         and verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, traeger, vb)
+         and anderer_ehegatte(ehe, traeger, anderer);
+        then einstandspflicht_unter_den_ehegatten(ehe, traeger, anderer, vb);
+    }
+}
+
+@source(BGB_P1482)
+rule EheaufloesungDurchTod(ehe: Ehe, verstorbener: Person) strict {
+    label de official "Wird die Ehe durch den Tod eines Ehegatten aufgelöst, so gehört der Anteil des verstorbenen Ehegatten am Gesamtgut zum Nachlass; der verstorbene Ehegatte wird nach den allgemeinen Vorschriften beerbt (§ 1482). Haben die Ehegatten die Fortsetzung der Gütergemeinschaft vereinbart, so geht § 1483 Abs. 1 Satz 3 vor: dann gehört der Anteil gerade NICHT zum Nachlass";
+    label en unofficial "Where the marriage is dissolved by death, the deceased spouse's share in the community property forms part of the estate (§ 1482)";
+    when gueterstand(ehe, Guetergemeinschaft) and ehe_durch_tod_aufgeloest(ehe, verstorbener)
+     and not_known(fortsetzung_durch_ehevertrag_vereinbart(ehe));
+    then anteil_am_gesamtgut_faellt_in_den_nachlass(ehe, verstorbener);
+}

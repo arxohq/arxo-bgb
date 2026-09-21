@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// §§ 868, 871: der Mieter besitzt unmittelbar; der Vermieter M ist mittelbarer Besitzer; steht M zu D in einem Verhältnis der in § 868 bezeichneten Art, so ist auch D mittelbarer Besitzer (mehrstufiger mittelbarer Besitz).
+test "§§ 868, 871: mittelbarer Besitz über zwei Stufen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:m:besitz-mieter"), entity_ref("urn:de:bgb:be:m:maschine")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:m:besitz-mieter"), entity_ref("urn:de:bgb:be:m:mieter")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:m:besitz-mieter"), @2026-02-01) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:m:besitz-mieter")) { origin case_input; }
+        assert "f5": besitzmittlungsverhaeltnis_zu(entity_ref("urn:de:bgb:be:m:besitz-mieter"), entity_ref("urn:de:bgb:be:m:M")) { origin case_input; }
+        assert "f6": verhaeltnis_des_mittelbaren_besitzers_zu_drittem(entity_ref("urn:de:bgb:be:m:maschine"), entity_ref("urn:de:bgb:be:m:M"), entity_ref("urn:de:bgb:be:m:D")) { origin case_input; }
+    }
+    evaluate truth(besitzer(entity_ref("urn:de:bgb:be:m:maschine"), entity_ref("urn:de:bgb:be:m:mieter")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(mittelbarer_besitzer(entity_ref("urn:de:bgb:be:m:maschine"), entity_ref("urn:de:bgb:be:m:M")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(mittelbarer_besitzer(entity_ref("urn:de:bgb:be:m:maschine"), entity_ref("urn:de:bgb:be:m:D")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

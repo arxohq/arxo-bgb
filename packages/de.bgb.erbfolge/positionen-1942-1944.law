@@ -1,0 +1,14 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+pub relation position_trigger_1942(e: Erbfall, p: Person, tag: Date) kind empirical { label de official "Anfall der Erbschaft nach § 1942"; label en unofficial "devolution of the inheritance under § 1942"; }
+pub relation position_trigger_1943(e: Erbfall, p: Person, tag: Date) kind empirical { label de official "Annahme oder Fristablauf nach § 1943"; label en unofficial "acceptance or expiry under § 1943"; }
+pub relation position_trigger_1944(e: Erbfall, p: Person, tag: Date) kind empirical { label de official "Beginn der Ausschlagungsfrist nach § 1944"; label en unofficial "start of the disclaimer period under § 1944"; }
+
+@source(BGB_P1942)
+rule PositionAusschlagungsrecht1942(e: Erbfall, p: Person, tag: Date) strict { label de official "Der berufene Erbe darf die Erbschaft ausschlagen (§ 1942)"; label en unofficial "The heir called may disclaim the inheritance (§ 1942)"; when position_trigger_1942(e, p, tag); then liberty Ausschlagungsrecht1942 { holder p; action ausschlagungsrecht(e, p); window [tag, infinity); }; }
+@source(BGB_P1943)
+rule PositionAusschlagungAusgeschlossen1943(e: Erbfall, p: Person, tag: Date) strict { label de official "Nach Annahme oder Fristablauf kann der Erbe nicht mehr ausschlagen (§ 1943)"; label en unofficial "After acceptance or expiry the heir can no longer disclaim (§ 1943)"; when position_trigger_1943(e, p, tag); then immunity AusschlagungAusgeschlossen1943 { holder p; against e; protected_effect ausschlagung_nicht_mehr_moeglich(e, p); window [tag, infinity); }; }
+@source(BGB_P1944)
+rule PositionAusschlagungsfrist1944(e: Erbfall, p: Person, tag: Date) strict { label de official "Der Erbe darf die Ausschlagung innerhalb der gesetzlichen Frist erklären (§ 1944)"; label en unofficial "The heir may disclaim within the statutory period (§ 1944)"; when position_trigger_1944(e, p, tag); then liberty Ausschlagungsfrist1944 { holder p; action ausschlagungsrecht(e, p); window [tag, infinity); }; }

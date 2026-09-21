@@ -1,0 +1,16 @@
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+// § 1877 Absatz 4, andere Seite: gerichtliche Geltendmachung am letzten Tag der Fünfzehn-Monats-Frist — der Anspruch erlischt nicht.
+test "§ 1877 Absatz 4: rechtzeitige gerichtliche Geltendmachung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_BETREUUNG_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:bt:j02:A"), @2026-01-15) { origin case_input; }
+        assert "f2": aufwendungsersatzfrist_betrifft_anspruch(entity_ref("urn:de:bgb:bt:j02:F"), entity_ref("urn:de:bgb:bt:j02:A")) { origin case_input; }
+        assert "f3": aufwendungsersatzfrist_1877(entity_ref("urn:de:bgb:bt:j02:F")) { origin case_input; }
+        assert "f4": gerichtlich_geltend_gemacht_bis(entity_ref("urn:de:bgb:bt:j02:F"), @2027-04-15) { origin case_input; }
+    }
+    evaluate truth(aufwendungsersatzanspruch_erloschen(entity_ref("urn:de:bgb:bt:j02:A"), entity_ref("urn:de:bgb:bt:j02:F")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

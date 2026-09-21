@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1202 Abs. 1, Abs. 2: Der Eigentümer kündigt die Rentenschuld am 15.03.2026; das Ablösungsrecht kann er nach sechs Monaten, mit dem Ablauf des 15.09.2026, ausüben. Eine Beschränkung des Kündigungsrechts auf 35 Jahre ist unzulässig — zulässig ist sie nur soweit, dass nach 30 Jahren gekündigt werden kann.
+test "§ 1202: sechs Monate bis zum Ablösungsrecht; Beschränkung auf 35 Jahre unzulässig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:g05:rs"), entity_ref("urn:de:bgb:dr:g05:grundstueck")) { origin case_input; }
+        assert "f2": art_des_grundpfandrechts(entity_ref("urn:de:bgb:dr:g05:rs"), Rentenschuld) { origin case_input; }
+        assert "f3": berechtigter(entity_ref("urn:de:bgb:dr:g05:rs"), entity_ref("urn:de:bgb:dr:g05:glaeubiger")) { origin case_input; }
+        assert "f4": wiederkehrende_geldsumme(entity_ref("urn:de:bgb:dr:g05:rs"), 1200.00 EUR) { origin adjudicated; }
+        assert "f5": abloesungssumme_im_grundbuch_angegeben(entity_ref("urn:de:bgb:dr:g05:rs"), 24000.00 EUR) { origin adjudicated; }
+        assert "f6": kuendigungsfrist_der_rentenschuld(entity_ref("urn:de:bgb:dr:g05:rs"), entity_ref("urn:de:bgb:dr:g05:frist")) { origin case_input; }
+        assert "f7": kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(entity_ref("urn:de:bgb:dr:g05:rs"), @2026-03-15) { origin adjudicated; }
+        assert "f8": beschraenkung_des_kuendigungsrechts_jahre(entity_ref("urn:de:bgb:dr:g05:rs"), 35) { origin case_input; }
+        assert "f9": eigentuemer_des_belasteten_grundstuecks(entity_ref("urn:de:bgb:dr:g05:rs"), entity_ref("urn:de:bgb:dr:g05:eigentuemer")) { origin case_input; }
+    }
+    evaluate truth(abloesungsrecht_ausuebbar_am(entity_ref("urn:de:bgb:dr:g05:rs"), @2026-09-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(beschraenkung_des_kuendigungsrechts_unzulaessig(entity_ref("urn:de:bgb:dr:g05:rs")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(abloesungsrecht_des_eigentuemers(entity_ref("urn:de:bgb:dr:g05:rs"), entity_ref("urn:de:bgb:dr:g05:eigentuemer")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

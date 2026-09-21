@@ -1,0 +1,471 @@
+// --- Untertitel 4 Architektenvertrag und Ingenieurvertrag, Bauträgervertrag (§§ 650p–651) -------------
+//
+// KORRIDOR 2018 (Ledger D-07-08). Der Untertitel 4 ist durch das Gesetz zur
+// Reform des Bauvertragsrechts vom 28. April 2017 (BGBl. I S. 969) eingefügt
+// worden und gilt nach Art. 229 § 39 EGBGB für Schuldverhältnisse ab dem
+// 1. Januar 2018; jede Regel trägt `effective [@2018-01-01, infinity)`.
+// § 651 trägt in der geltenden Fassung keinen eigenen Inhalt mehr: die Norm
+// steht seit dem 1. Januar 2018 als § 650 (Art. 1 Nr. 24 desselben
+// Gesetzes). Sie ist eine Fundstellenangabe, keine Regel.
+//
+// FRIST. § 650r Abs. 1 Satz 2: das Kündigungsrecht erlischt ZWEI WOCHEN nach
+// Vorlage der Unterlagen. Die Kündigung ist eine Erklärung INNERHALB der
+// Frist; die Verlegung des § 193 wird deshalb ausdrücklich gerechnet
+// (`add_business_days(kalendarisches Ende, 1 business_day)`, derselbe
+// Ausdruck wie im Eigentümerpaket `de.bgb.fristen`). Zeile: DEADLINES.json,
+// BG-07.
+//
+// WAS DIESER UNTERTITEL NICHT TUT:
+// 1. § 650q Abs. 2 verweist für die Vergütungsanpassung auf die
+//    Honorarordnung für Architekten und Ingenieure — eine Verordnung, die
+//    dieses Paket nur benennt (SOURCES.json, external). Der Auffangsatz
+//    („im Übrigen gilt § 650c entsprechend") ist abgesenkt.
+// 2. § 650u Abs. 1 Satz 3 verweist für den Anspruch auf Eigentums- oder
+//    Erbbaurechtsübertragung auf das Kaufrecht (`de.bgb.kauf`); § 650v auf
+//    eine Verordnung nach Artikel 244 EGBGB — beides fremde Ordnungen.
+
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// --- § 650p Vertragstypische Pflichten aus Architekten- und Ingenieurverträgen -------------------------
+
+pub relation architekten_oder_ingenieurvertrag_650p(w: Werkvertrag) kind empirical {
+    label de official "der Vertrag ist ein Architekten- oder Ingenieurvertrag (§ 650p Abs. 1)";
+    label en unofficial "the contract is an architect's or engineer's contract (§ 650p (1))";
+}
+pub relation planungs_und_ueberwachungsziele_vereinbart_650p(w: Werkvertrag) kind empirical {
+    label de official "die wesentlichen Planungs- und Überwachungsziele sind zwischen den Parteien vereinbart (§ 650p Abs. 1, 2)";
+    label en unofficial "the essential planning and supervision objectives have been agreed between the parties (§ 650p (1), (2))";
+}
+pub relation planungs_und_ueberwachungsziele_nicht_vereinbart_650p(w: Werkvertrag) kind empirical {
+    label de official "wesentliche Planungs- und Überwachungsziele sind noch nicht vereinbart (§ 650p Abs. 2 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "essential planning and supervision objectives have not yet been agreed (§ 650p (2) sentence 1) — express statement of the case";
+}
+pub relation erforderliche_leistungen_erbracht_650p(w: Werkvertrag) kind empirical {
+    label de official "die nach dem jeweiligen Stand der Planung und Ausführung erforderlichen Leistungen wurden erbracht (§ 650p Abs. 1)";
+    label en unofficial "the services required at the respective stage of planning and execution have been rendered (§ 650p (1))";
+}
+pub relation planungsgrundlage_mit_kosteneinschaetzung_vorgelegt_650p(w: Werkvertrag) kind empirical {
+    label de official "die Planungsgrundlage wurde dem Besteller zusammen mit einer Kosteneinschätzung zur Zustimmung vorgelegt (§ 650p Abs. 2 Satz 2)";
+    label en unofficial "the planning basis has been submitted to the customer for approval together with a cost estimate (§ 650p (2) sentence 2)";
+}
+pub relation unterlagen_vorgelegt_am_650p(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Vorlage der Unterlagen nach § 650p Abs. 2 (§ 650r Abs. 1)";
+    label en unofficial "day the documents under § 650p (2) were submitted (§ 650r (1))";
+}
+
+@source(BGB_P650p)
+rule Leistungspflicht650pAbs1(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Durch einen Architekten- oder Ingenieurvertrag wird der Unternehmer verpflichtet, die Leistungen zu erbringen, die nach dem jeweiligen Stand der Planung und Ausführung des Bauwerks oder der Außenanlage erforderlich sind, um die vereinbarten Planungs- und Überwachungsziele zu erreichen (§ 650p Abs. 1)";
+    label en unofficial "By an architect's or engineer's contract the contractor is obliged to render the services required at the respective stage of planning and execution of the building or outdoor facility in order to achieve the agreed planning and supervision objectives (§ 650p (1))";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when planungs_und_ueberwachungsziele_vereinbart_650p(w);
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty ErforderlicheLeistungenErbringen650p {
+        bearer u;
+        achieve erforderliche_leistungen_erbracht_650p(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P650p)
+rule Planungsgrundlage650pAbs2(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Soweit wesentliche Planungs- und Überwachungsziele noch nicht vereinbart sind, hat der Unternehmer zunächst eine Planungsgrundlage zur Ermittlung dieser Ziele zu erstellen und sie dem Besteller zusammen mit einer Kosteneinschätzung zur Zustimmung vorzulegen (§ 650p Abs. 2)";
+    label en unofficial "In so far as essential planning and supervision objectives have not yet been agreed, the contractor must first prepare a planning basis for determining those objectives and submit it to the customer for approval together with a cost estimate (§ 650p (2))";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when planungs_und_ueberwachungsziele_nicht_vereinbart_650p(w);
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    then duty PlanungsgrundlageVorlegen650p {
+        bearer u;
+        achieve planungsgrundlage_mit_kosteneinschaetzung_vorgelegt_650p(w) during [schluss, infinity);
+    };
+}
+
+// --- § 650q Anwendbare Vorschriften -----------------------------------------------------------------------
+
+pub relation kapitel1_und_bauvertragsregeln_anwendbar_650q(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "für den Architekten- oder Ingenieurvertrag gelten die Vorschriften des Kapitels 1 des Untertitels 3 sowie die §§ 650b, 650e bis 650h entsprechend (§ 650q Abs. 1)";
+    label en unofficial "the provisions of Chapter 1 of sub-title 3 and §§ 650b, 650e to 650h apply accordingly to the architect's or engineer's contract (§ 650q (1))";
+}
+pub relation honorarordnung_erfasst_die_leistung_650q(w: Werkvertrag) kind empirical {
+    label de official "die infolge der Anordnung zu erbringenden oder entfallenden Leistungen werden vom Anwendungsbereich der Honorarordnung für Architekten und Ingenieure erfasst (§ 650q Abs. 2 Satz 1)";
+    label en unofficial "the services to be rendered or dropped as a result of the order fall within the scope of the fee schedule for architects and engineers (§ 650q (2) sentence 1)";
+}
+pub relation honorarordnung_erfasst_die_leistung_nicht_650q(w: Werkvertrag) kind empirical {
+    label de official "die Leistungen werden vom Anwendungsbereich der Honorarordnung nicht erfasst (§ 650q Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the services do not fall within the scope of the fee schedule (§ 650q (2) sentence 2) — express statement of the case";
+}
+pub relation verguetungsanpassung_nach_honorarordnung_650q(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Vergütungsanpassung richtet sich nach den Entgeltberechnungsregeln der Honorarordnung für Architekten und Ingenieure (§ 650q Abs. 2 Satz 1) — die Verordnung selbst ist eine benannte Grenze";
+    label en unofficial "the adjustment of compensation follows the fee calculation rules of the fee schedule for architects and engineers (§ 650q (2) sentence 1) — the regulation itself is a named boundary";
+}
+pub relation verguetungsanpassung_nach_650c_entsprechend_650q(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "im Übrigen gilt § 650c entsprechend (§ 650q Abs. 2 Satz 2)";
+    label en unofficial "otherwise § 650c applies accordingly (§ 650q (2) sentence 2)";
+}
+
+@source(BGB_P650q)
+rule AnwendbareVorschriften650qAbs1(w: Werkvertrag) strict {
+    label de official "Für Architekten- und Ingenieurverträge gelten die Vorschriften des Kapitels 1 des Untertitels sowie die §§ 650b, 650e bis 650h entsprechend, soweit sich aus diesem Untertitel nichts anderes ergibt (§ 650q Abs. 1)";
+    label en unofficial "The provisions of Chapter 1 of the sub-title and §§ 650b, 650e to 650h apply accordingly to architect's and engineer's contracts, unless otherwise provided in this sub-title (§ 650q (1))";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    then kapitel1_und_bauvertragsregeln_anwendbar_650q(w);
+}
+
+@source(BGB_P650q)
+rule VerguetungsanpassungHonorarordnung650qAbs2Satz1(w: Werkvertrag) strict {
+    label de official "Für die Vergütungsanpassung im Fall von Anordnungen nach § 650b Abs. 2 gelten die Entgeltberechnungsregeln der Honorarordnung für Architekten und Ingenieure, soweit die Leistungen von ihrem Anwendungsbereich erfasst werden (§ 650q Abs. 2 Satz 1)";
+    label en unofficial "For the adjustment of compensation in the case of orders under § 650b (2), the fee calculation rules of the fee schedule for architects and engineers apply in so far as the services fall within its scope (§ 650q (2) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when anordnungsrecht_650b(w);
+    when honorarordnung_erfasst_die_leistung_650q(w);
+    then verguetungsanpassung_nach_honorarordnung_650q(w);
+}
+
+pub relation verguetungsanpassung_nach_honorarordnung_geleistet_650q(w: Werkvertrag) kind empirical {
+    label de official "die Vergütung wurde nach der Honorarordnung angepasst (§ 650q Abs. 2 Satz 1)";
+    label en unofficial "the compensation was adjusted under the fee schedule (§ 650q (2) sentence 1)";
+}
+
+@source(BGB_P650q)
+rule PositionVerguetungsanpassungHonorarordnung650qAbs2Satz1(w: Werkvertrag, u: Person, beginn: Date) strict {
+    label de official "Die Vergütung muss nach der Honorarordnung angepasst werden (§ 650q Abs. 2 Satz 1) — normative Position";
+    label en unofficial "the compensation must be adjusted under the fee schedule (§ 650q (2) sentence 1) — normative position";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when anordnungsrecht_650b(w);
+    when honorarordnung_erfasst_die_leistung_650q(w);
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, beginn);
+    then duty VerguetungsanpassungHonorarordnung650qAbs2Satz1Position {
+        bearer u;
+        achieve verguetungsanpassung_nach_honorarordnung_geleistet_650q(w) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P650q)
+rule VerguetungsanpassungImUebrigen650qAbs2Satz2(w: Werkvertrag) strict {
+    label de official "Im Übrigen gilt § 650c entsprechend (§ 650q Abs. 2 Satz 2)";
+    label en unofficial "Otherwise § 650c applies accordingly (§ 650q (2) sentence 2)";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when anordnungsrecht_650b(w);
+    when honorarordnung_erfasst_die_leistung_nicht_650q(w);
+    then verguetungsanpassung_nach_650c_entsprechend_650q(w);
+}
+
+// --- § 650r Sonderkündigungsrecht -----------------------------------------------------------------------------
+
+pub relation sonderkuendigungsfrist_kalenderende_650r(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "kalendarisches Ende der Zweiwochenfrist des Sonderkündigungsrechts (§ 650r Abs. 1 Satz 2) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "calendar end of the two-week period of the special right of termination (§ 650r (1) sentence 2) — policy BGB_DIENST_WERK_KALENDER";
+}
+pub relation sonderkuendigungsfrist_ende_650r(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "letzter Tag der Ausübung des Sonderkündigungsrechts nach der Verlegung des § 193 — die Kündigung ist INNERHALB der Frist zu erklären";
+    label en unofficial "last day for exercising the special right of termination after the postponement under § 193 — the termination must be declared WITHIN the period";
+}
+pub relation besteller_ist_verbraucher_650r(w: Werkvertrag) kind empirical {
+    label de official "der Besteller des Architekten- oder Ingenieurvertrags ist ein Verbraucher (§ 650r Abs. 1 Satz 2)";
+    label en unofficial "the customer under the architect's or engineer's contract is a consumer (§ 650r (1) sentence 2)";
+}
+pub relation besteller_ist_kein_verbraucher_650r(w: Werkvertrag) kind empirical {
+    label de official "der Besteller ist kein Verbraucher (§ 650r Abs. 1 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the customer is not a consumer (§ 650r (1) sentence 2) — express statement of the case";
+}
+pub relation unterrichtung_ueber_kuendigungsrecht_in_textform_650r(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat den Verbraucher bei der Vorlage der Unterlagen in Textform über das Kündigungsrecht, die Frist und die Rechtsfolgen unterrichtet (§ 650r Abs. 1 Satz 2)";
+    label en unofficial "on submitting the documents the contractor informed the consumer in text form of the right of termination, the period and the legal consequences (§ 650r (1) sentence 2)";
+}
+pub relation sonderkuendigung_erklaert_am_650r(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Erklärung der Sonderkündigung durch den Besteller (§ 650r Abs. 1 Satz 1)";
+    label en unofficial "day the customer declared the special termination (§ 650r (1) sentence 1)";
+}
+pub relation sonderkuendigung_650r_wirksam(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Sonderkündigung des Bestellers ist rechtzeitig erklärt (§ 650r Abs. 1)";
+    label en unofficial "the customer's special termination was declared in time (§ 650r (1))";
+}
+
+@source(BGB_P650r)
+rule SonderkuendigungsfristKalenderende650r(w: Werkvertrag, vorlage: Date) strict {
+    label de official "Das Kündigungsrecht erlischt zwei Wochen nach Vorlage der Unterlagen (§ 650r Abs. 1 Satz 2) — kalendarisches Ende unter BGB_DIENST_WERK_KALENDER";
+    label en unofficial "The right of termination lapses two weeks after the documents are submitted (§ 650r (1) sentence 2) — calendar end under BGB_DIENST_WERK_KALENDER";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when unterlagen_vorgelegt_am_650p(w, vorlage);
+    then sonderkuendigungsfrist_kalenderende_650r(w, add_calendar_period(vorlage, 2 calendar_week));
+}
+
+@source(BGB_P650r)
+rule Verlegung193Sonderkuendigungsfrist650r(w: Werkvertrag, k: Date) strict {
+    label de official "Ist die Kündigung innerhalb der Frist zu erklären und fällt der letzte Tag auf einen Sonntag, einen anerkannten Feiertag oder einen Sonnabend, so tritt an seine Stelle der nächste Werktag (§ 193)";
+    label en unofficial "Where the termination must be declared within the period and the last day falls on a Sunday, a recognised public holiday or a Saturday, the next working day takes its place (§ 193)";
+    effective [@2018-01-01, infinity);
+    when sonderkuendigungsfrist_kalenderende_650r(w, k);
+    then sonderkuendigungsfrist_ende_650r(w, add_business_days(k, 1 business_day));
+}
+
+@source(BGB_P650r)
+rule Sonderkuendigung650rAbs1Unternehmerbesteller(w: Werkvertrag, erklaerung: Date, ende: Date) strict {
+    label de official "Nach Vorlage von Unterlagen gemäß § 650p Abs. 2 kann der Besteller den Vertrag kündigen; das Kündigungsrecht erlischt zwei Wochen nach Vorlage (§ 650r Abs. 1) — Besteller ist kein Verbraucher";
+    label en unofficial "After submission of the documents under § 650p (2) the customer may terminate the contract; the right lapses two weeks after submission (§ 650r (1)) — the customer is not a consumer";
+    effective [@2018-01-01, infinity);
+    when sonderkuendigung_erklaert_am_650r(w, erklaerung);
+    when sonderkuendigungsfrist_ende_650r(w, ende);
+    when besteller_ist_kein_verbraucher_650r(w);
+    when erklaerung <= ende;
+    then sonderkuendigung_650r_wirksam(w);
+}
+
+@source(BGB_P650r)
+rule Sonderkuendigung650rAbs1Verbraucher(w: Werkvertrag, erklaerung: Date, ende: Date) strict {
+    label de official "Bei einem Verbraucher erlischt das Kündigungsrecht nur dann zwei Wochen nach Vorlage, wenn der Unternehmer ihn bei der Vorlage in Textform über das Kündigungsrecht, die Frist und die Rechtsfolgen unterrichtet hat (§ 650r Abs. 1 Satz 2)";
+    label en unofficial "For a consumer the right of termination lapses two weeks after submission only if the contractor informed them in text form, on submission, of the right, the period and the legal consequences (§ 650r (1) sentence 2)";
+    effective [@2018-01-01, infinity);
+    when sonderkuendigung_erklaert_am_650r(w, erklaerung);
+    when sonderkuendigungsfrist_ende_650r(w, ende);
+    when besteller_ist_verbraucher_650r(w);
+    when unterrichtung_ueber_kuendigungsrecht_in_textform_650r(w);
+    when erklaerung <= ende;
+    then sonderkuendigung_650r_wirksam(w);
+}
+
+@source(BGB_P650r)
+rule SonderkuendigungVerbraucherOhneUnterrichtung650r(w: Werkvertrag, erklaerung: Date, ende: Date) strict {
+    label de official "Hat der Unternehmer den Verbraucher nicht unterrichtet, erlischt dessen Kündigungsrecht nicht mit dem Ablauf der zwei Wochen; die spätere Kündigung bleibt wirksam (§ 650r Abs. 1 Satz 2)";
+    label en unofficial "Where the contractor did not so inform the consumer, the consumer's right of termination does not lapse on the expiry of the two weeks; a later termination remains effective (§ 650r (1) sentence 2)";
+    effective [@2018-01-01, infinity);
+    when sonderkuendigung_erklaert_am_650r(w, erklaerung);
+    when sonderkuendigungsfrist_ende_650r(w, ende);
+    when besteller_ist_verbraucher_650r(w);
+    when not unterrichtung_ueber_kuendigungsrecht_in_textform_650r(w);
+    when erklaerung > ende;
+    then sonderkuendigung_650r_wirksam(w);
+}
+
+pub relation zustimmungsfrist_ablauf_650r(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "letzter Tag der vom Unternehmer für die Zustimmung nach § 650p Abs. 2 Satz 2 gesetzten angemessenen Frist (§ 650r Abs. 2 Satz 1)";
+    label en unofficial "last day of the appropriate period set by the contractor for the approval under § 650p (2) sentence 2 (§ 650r (2) sentence 1)";
+}
+pub relation zustimmung_verweigert_oder_keine_erklaerung_650r(w: Werkvertrag) kind empirical {
+    label de official "der Besteller verweigert die Zustimmung oder gibt innerhalb der Frist keine Erklärung zu den Unterlagen ab (§ 650r Abs. 2 Satz 2)";
+    label en unofficial "the customer refuses approval or makes no statement on the documents within the period (§ 650r (2) sentence 2)";
+}
+pub relation kuendigungsrecht_des_unternehmers_650r(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann den Vertrag kündigen (§ 650r Abs. 2 Satz 2)";
+    label en unofficial "the contractor may terminate the contract (§ 650r (2) sentence 2)";
+}
+pub relation verguetung_fuer_erbrachte_leistungen_650r(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die auf die bis zur Kündigung erbrachten Leistungen entfallende Vergütung (§ 650r Abs. 3)";
+    label en unofficial "the compensation attributable to the services rendered up to the termination (§ 650r (3))";
+}
+pub relation verguetungsanspruch_nach_650r(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "der Unternehmer ist nur berechtigt, die auf die bis zur Kündigung erbrachten Leistungen entfallende Vergütung zu verlangen (§ 650r Abs. 3)";
+    label en unofficial "the contractor is entitled only to the compensation attributable to the services rendered up to the termination (§ 650r (3))";
+}
+
+@source(BGB_P650r)
+rule KuendigungDurchUnternehmer650rAbs2(w: Werkvertrag, ablauf: Date) strict {
+    label de official "Der Unternehmer kann den Vertrag kündigen, wenn der Besteller die Zustimmung verweigert oder innerhalb der gesetzten angemessenen Frist keine Erklärung zu den Unterlagen abgibt (§ 650r Abs. 2)";
+    label en unofficial "The contractor may terminate the contract where the customer refuses approval or makes no statement on the documents within the appropriate period set (§ 650r (2))";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when zustimmungsfrist_ablauf_650r(w, ablauf);
+    when zustimmung_verweigert_oder_keine_erklaerung_650r(w);
+    then kuendigungsrecht_des_unternehmers_650r(w);
+}
+
+@source(BGB_P650r)
+rule VerguetungNachSonderkuendigung650rAbs3(w: Werkvertrag, betrag: Money) strict {
+    label de official "Wird der Vertrag nach Absatz 1 gekündigt, ist der Unternehmer nur berechtigt, die Vergütung zu verlangen, die auf die bis zur Kündigung erbrachten Leistungen entfällt (§ 650r Abs. 3)";
+    label en unofficial "Where the contract is terminated under (1), the contractor is entitled only to the compensation attributable to the services rendered up to the termination (§ 650r (3))";
+    effective [@2018-01-01, infinity);
+    when sonderkuendigung_650r_wirksam(w);
+    when verguetung_fuer_erbrachte_leistungen_650r(w, betrag);
+    then verguetungsanspruch_nach_650r(w, betrag);
+}
+
+@source(BGB_P650r)
+rule VerguetungNachUnternehmerkuendigung650rAbs3(w: Werkvertrag, betrag: Money) strict {
+    label de official "Wird der Vertrag nach Absatz 2 gekündigt, ist der Unternehmer nur berechtigt, die Vergütung zu verlangen, die auf die bis zur Kündigung erbrachten Leistungen entfällt (§ 650r Abs. 3)";
+    label en unofficial "Where the contract is terminated under (2), the contractor is entitled only to the compensation attributable to the services rendered up to the termination (§ 650r (3))";
+    effective [@2018-01-01, infinity);
+    when kuendigungsrecht_des_unternehmers_650r(w);
+    when verguetung_fuer_erbrachte_leistungen_650r(w, betrag);
+    then verguetungsanspruch_nach_650r(w, betrag);
+}
+
+pub relation verguetung_nach_unternehmerkuendigung_geleistet_650r(w: Werkvertrag, betrag: Money) kind empirical {
+    label de official "die Vergütung für die bis zur Kündigung erbrachten Leistungen wurde geleistet (§ 650r Abs. 3)";
+    label en unofficial "the compensation for services rendered before termination was paid (§ 650r (3))";
+}
+
+@source(BGB_P650r)
+rule PositionVerguetungNachUnternehmerkuendigung650rAbs3(w: Werkvertrag, u: Person, b: Person, beginn: Date, betrag: Money) strict {
+    label de official "Der Besteller muss die Vergütung für die erbrachten Leistungen entrichten (§ 650r Abs. 3) — normative Position";
+    label en unofficial "the customer must pay compensation for services rendered (§ 650r (3)) — normative position";
+    effective [@2018-01-01, infinity);
+    when kuendigungsrecht_des_unternehmers_650r(w);
+    when verguetung_fuer_erbrachte_leistungen_650r(w, betrag);
+    when unternehmer(w, u);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, beginn);
+    then duty VerguetungNachUnternehmerkuendigung650rAbs3Position {
+        bearer b;
+        beneficiary u;
+        achieve verguetung_nach_unternehmerkuendigung_geleistet_650r(w, betrag) during [beginn, infinity);
+    };
+}
+
+// --- § 650s Teilabnahme -----------------------------------------------------------------------------------------
+
+pub relation letzte_leistung_des_bauausfuehrenden_abgenommen_650s(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Abnahme der letzten Leistung des bauausführenden Unternehmers (§ 650s)";
+    label en unofficial "day the last service of the executing construction contractor was accepted (§ 650s)";
+}
+pub relation teilabnahmeanspruch_650s(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann eine Teilabnahme der von ihm bis dahin erbrachten Leistungen verlangen (§ 650s)";
+    label en unofficial "the contractor may demand partial acceptance of the services rendered by them up to that point (§ 650s)";
+}
+
+@source(BGB_P650s)
+rule Teilabnahme650s(w: Werkvertrag, tag: Date) strict {
+    label de official "Der Unternehmer kann ab der Abnahme der letzten Leistung des bauausführenden Unternehmers eine Teilabnahme der von ihm bis dahin erbrachten Leistungen verlangen (§ 650s)";
+    label en unofficial "From the acceptance of the last service of the executing construction contractor, the contractor may demand partial acceptance of the services rendered by them up to that point (§ 650s)";
+    effective [@2018-01-01, infinity);
+    when architekten_oder_ingenieurvertrag_650p(w);
+    when letzte_leistung_des_bauausfuehrenden_abgenommen_650s(w, tag);
+    then teilabnahmeanspruch_650s(w);
+}
+
+// --- § 650t Gesamtschuldnerische Haftung mit dem bauausführenden Unternehmer ----------------------------------------
+
+pub relation inanspruchnahme_wegen_ueberwachungsfehlers_650t(w: Werkvertrag) kind empirical {
+    label de official "der Besteller nimmt den Unternehmer wegen eines Überwachungsfehlers in Anspruch, der zu einem Mangel an dem Bauwerk oder an der Außenanlage geführt hat (§ 650t)";
+    label en unofficial "the customer holds the contractor liable for a supervision error that led to a defect in the building or outdoor facility (§ 650t)";
+}
+pub relation bauausfuehrender_haftet_ebenfalls_650t(w: Werkvertrag) kind empirical {
+    label de official "auch der ausführende Bauunternehmer haftet für den Mangel (§ 650t)";
+    label en unofficial "the executing construction contractor is also liable for the defect (§ 650t)";
+}
+pub relation keine_erfolglose_nacherfuellungsfrist_gegen_bauausfuehrenden_650t(w: Werkvertrag) kind empirical {
+    label de official "der Besteller hat dem bauausführenden Unternehmer noch nicht erfolglos eine angemessene Frist zur Nacherfüllung bestimmt (§ 650t) — ausdrückliche Angabe des Falls";
+    label en unofficial "the customer has not yet set the executing construction contractor an appropriate period for cure that expired without success (§ 650t) — express statement of the case";
+}
+pub relation leistungsverweigerungsrecht_650t(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann die Leistung verweigern (§ 650t)";
+    label en unofficial "the contractor may refuse performance (§ 650t)";
+}
+
+@source(BGB_P650t)
+rule Leistungsverweigerung650t(w: Werkvertrag) strict {
+    label de official "Nimmt der Besteller den Unternehmer wegen eines Überwachungsfehlers in Anspruch, der zu einem Mangel geführt hat, kann der Unternehmer die Leistung verweigern, wenn auch der ausführende Bauunternehmer für den Mangel haftet und der Besteller diesem noch nicht erfolglos eine angemessene Frist zur Nacherfüllung bestimmt hat (§ 650t)";
+    label en unofficial "Where the customer holds the contractor liable for a supervision error that led to a defect, the contractor may refuse performance if the executing construction contractor is also liable and the customer has not yet set that contractor an appropriate period for cure that expired without success (§ 650t)";
+    effective [@2018-01-01, infinity);
+    when inanspruchnahme_wegen_ueberwachungsfehlers_650t(w);
+    when bauausfuehrender_haftet_ebenfalls_650t(w);
+    when keine_erfolglose_nacherfuellungsfrist_gegen_bauausfuehrenden_650t(w);
+    then leistungsverweigerungsrecht_650t(w);
+}
+
+// --- § 650u Bauträgervertrag und § 650v Abschlagszahlungen ---------------------------------------------------------
+
+pub relation errichtung_oder_umbau_eines_hauses_650u(w: Werkvertrag) kind empirical {
+    label de official "der Vertrag hat die Errichtung oder den Umbau eines Hauses oder eines vergleichbaren Bauwerks zum Gegenstand (§ 650u Abs. 1 Satz 1)";
+    label en unofficial "the contract has as its object the erection or conversion of a house or a comparable building (§ 650u (1) sentence 1)";
+}
+pub relation pflicht_zur_eigentums_oder_erbbaurechtsuebertragung_650u(w: Werkvertrag) kind empirical {
+    label de official "der Vertrag enthält zugleich die Verpflichtung des Unternehmers, dem Besteller das Eigentum an dem Grundstück zu übertragen oder ein Erbbaurecht zu bestellen oder zu übertragen (§ 650u Abs. 1 Satz 1)";
+    label en unofficial "the contract also contains the contractor's obligation to transfer ownership of the land to the customer, or to create or transfer a heritable building right (§ 650u (1) sentence 1)";
+}
+pub relation bautraegervertrag_650u(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Vertrag ist ein Bauträgervertrag (§ 650u Abs. 1 Satz 1)";
+    label en unofficial "the contract is a property developer contract (§ 650u (1) sentence 1)";
+}
+pub relation kaufrecht_fuer_grundstuecksuebertragung_650u(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "hinsichtlich des Anspruchs auf Übertragung des Eigentums oder auf Bestellung oder Übertragung des Erbbaurechts finden die Vorschriften über den Kauf Anwendung (§ 650u Abs. 1 Satz 3) — die Kaufregeln gehören de.bgb.kauf";
+    label en unofficial "the provisions on sale apply to the claim for transfer of ownership or for the creation or transfer of the heritable building right (§ 650u (1) sentence 3) — the rules on sale belong to de.bgb.kauf";
+}
+pub relation vorschriften_648_bis_650m_ausgeschlossen_650u(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "keine Anwendung finden die §§ 648, 648a, 650b bis 650e, 650k Abs. 1 sowie die §§ 650l und 650m Abs. 1 (§ 650u Abs. 2)";
+    label en unofficial "§§ 648, 648a, 650b to 650e, 650k (1) and §§ 650l and 650m (1) do not apply (§ 650u (2))";
+}
+
+@source(BGB_P650u)
+rule Bautraegervertrag650uAbs1(w: Werkvertrag) strict {
+    label de official "Ein Bauträgervertrag ist ein Vertrag, der die Errichtung oder den Umbau eines Hauses oder eines vergleichbaren Bauwerks zum Gegenstand hat und der zugleich die Verpflichtung des Unternehmers enthält, dem Besteller das Eigentum an dem Grundstück zu übertragen oder ein Erbbaurecht zu bestellen oder zu übertragen (§ 650u Abs. 1 Satz 1)";
+    label en unofficial "A property developer contract is a contract whose object is the erection or conversion of a house or comparable building and which also contains the contractor's obligation to transfer ownership of the land to the customer or to create or transfer a heritable building right (§ 650u (1) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when errichtung_oder_umbau_eines_hauses_650u(w);
+    when pflicht_zur_eigentums_oder_erbbaurechtsuebertragung_650u(w);
+    then bautraegervertrag_650u(w);
+}
+
+@source(BGB_P650u)
+rule KaufrechtFuerUebertragung650uAbs1Satz3(w: Werkvertrag) strict {
+    label de official "Hinsichtlich des Anspruchs auf Übertragung des Eigentums an dem Grundstück oder auf Übertragung oder Bestellung des Erbbaurechts finden die Vorschriften über den Kauf Anwendung (§ 650u Abs. 1 Satz 3)";
+    label en unofficial "The provisions on sale apply to the claim for transfer of ownership of the land or for the transfer or creation of the heritable building right (§ 650u (1) sentence 3)";
+    effective [@2018-01-01, infinity);
+    when bautraegervertrag_650u(w);
+    then kaufrecht_fuer_grundstuecksuebertragung_650u(w);
+}
+
+@source(BGB_P650u)
+rule AusgeschlosseneVorschriften650uAbs2(w: Werkvertrag) strict {
+    label de official "Keine Anwendung finden die §§ 648, 648a, 650b bis 650e, 650k Abs. 1 sowie die §§ 650l und 650m Abs. 1 (§ 650u Abs. 2)";
+    label en unofficial "§§ 648, 648a, 650b to 650e, 650k (1) and §§ 650l and 650m (1) do not apply (§ 650u (2))";
+    effective [@2018-01-01, infinity);
+    when bautraegervertrag_650u(w);
+    then vorschriften_648_bis_650m_ausgeschlossen_650u(w);
+}
+
+pub relation abschlagszahlungen_nach_verordnung_vereinbart_650v(w: Werkvertrag) kind empirical {
+    label de official "die Abschlagszahlungen sind gemäß einer Verordnung auf Grund von Artikel 244 EGBGB vereinbart (§ 650v) — die Verordnung selbst ist eine benannte Grenze";
+    label en unofficial "the interim payments are agreed in accordance with a regulation under Article 244 of the Introductory Act to the Civil Code (§ 650v) — the regulation itself is a named boundary";
+}
+pub relation abschlagszahlungsanspruch_650v(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann Abschlagszahlungen verlangen (§ 650v)";
+    label en unofficial "the contractor may demand interim payments (§ 650v)";
+}
+
+@source(BGB_P650v)
+rule Abschlagszahlungen650v(w: Werkvertrag) strict {
+    label de official "Der Unternehmer kann von dem Besteller Abschlagszahlungen nur verlangen, soweit sie gemäß einer Verordnung auf Grund von Artikel 244 des Einführungsgesetzes zum Bürgerlichen Gesetzbuche vereinbart sind (§ 650v)";
+    label en unofficial "The contractor may demand interim payments from the customer only in so far as they are agreed in accordance with a regulation under Article 244 of the Introductory Act to the Civil Code (§ 650v)";
+    effective [@2018-01-01, infinity);
+    when bautraegervertrag_650u(w);
+    when abschlagszahlungen_nach_verordnung_vereinbart_650v(w);
+    then abschlagszahlungsanspruch_650v(w);
+}
+
+// --- § 651 (jetzt § 650) ---------------------------------------------------------------------------------------------
+//
+// Die Vorschrift trägt in der geltenden Fassung keinen eigenen Inhalt: ihr
+// Text ist die Fundstellenangabe „jetzt § 650" (Art. 1 Nr. 24 des Gesetzes
+// vom 28. April 2017, in Kraft seit dem 1. Januar 2018). Der Inhalt ist in
+// `untertitel-03-a-werkvertrag.law` unter § 650 abgesenkt; eine eigene Regel
+// hätte hier keinen Anknüpfungspunkt.

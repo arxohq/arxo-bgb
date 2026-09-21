@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1573 Abs. 2: der volle Unterhalt nach den ehelichen Lebensverhältnissen beträgt 2 400,00 € (§ 1578 Abs. 1 — der Betrag kommt aus dem Fall, das Paket erfindet keine Quote). Die Einkünfte des Berechtigten aus angemessener Erwerbstätigkeit betragen 900,00 €. Der Unterschiedsbetrag — reine Subtraktion, keine Rundung — ist 1 500,00 €.
+test "§ 1573 Abs. 2: der Unterschiedsbetrag zum vollen Unterhalt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:A"), entity_ref("urn:de:bgb:ehe:u03:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:u03:E")) { origin case_input; }
+        assert "f3": geschiedener_ehegatte(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:B")) { origin case_input; }
+        assert "f4": ehelicher_bedarf(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:B"), 2400.00 EUR) { origin case_input; }
+        assert "f5": einkuenfte_aus_angemessener_erwerbstaetigkeit(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:B"), 900.00 EUR) { origin case_input; }
+    }
+    evaluate truth(voller_unterhalt(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:B"), 2400.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aufstockungsbetrag(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:B"), 1500.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nachehelicher_unterhaltsanspruch(entity_ref("urn:de:bgb:ehe:u03:E"), entity_ref("urn:de:bgb:ehe:u03:B"), entity_ref("urn:de:bgb:ehe:u03:A"), Aufstockung_1573_Abs_2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

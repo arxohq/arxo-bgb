@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+// § 1830 Absatz 2 Satz 2, Gegenprobe: Sterilisation genau am Fristende (04.01.2026, dem Sonntag selbst) — nicht mehr "vor Ablauf", daher nicht unzulässig nach dieser Norm.
+test "§ 1830 Absatz 2: rollfrei — Sterilisation am Fristende selbst nicht unzulässig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_BETREUUNG_TAG_ROLLFREI; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": sterilisationsgenehmigung_wirksam_am(entity_ref("urn:de:bgb:bt:m57:SB"), entity_ref("urn:de:bgb:bt:m57:X"), entity_ref("urn:de:bgb:bt:m57:F")) { origin case_input; }
+        assert "f2": genehmigung_wirksam_am(entity_ref("urn:de:bgb:bt:m57:F"), @2025-12-21) { origin case_input; }
+        assert "f3": sterilisation_vorgesehen_am(entity_ref("urn:de:bgb:bt:m57:F"), @2026-01-04) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::frist_ende(entity_ref("urn:de:bgb:bt:m57:F"), @2026-01-04));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(sterilisation_vor_fristablauf_unzulaessig(entity_ref("urn:de:bgb:bt:m57:SB"), entity_ref("urn:de:bgb:bt:m57:X"), entity_ref("urn:de:bgb:bt:m57:F")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

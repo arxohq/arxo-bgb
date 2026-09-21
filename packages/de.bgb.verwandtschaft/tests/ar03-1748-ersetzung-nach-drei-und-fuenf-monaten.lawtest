@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1748 Abs. 2: wegen Gleichgültigkeit darf die Einwilligung erst ersetzt werden, wenn seit der Belehrung durch das Jugendamt wenigstens DREI MONATE verstrichen sind (Satz 1) und die Fristen frühestens FÜNF MONATE nach der Geburt ablaufen (Satz 3). Geburt am 10.01.2025 → 10.06.2025; Belehrung am 01.02.2025 → 01.05.2025. Der Entscheidungstag 01.07.2025 liegt nach beiden Tagen.
+test "§ 1748 Abs. 2: Ersetzung wegen Gleichgültigkeit erst nach drei und fünf Monaten" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": geburt_des_kindes_am(entity_ref("urn:de:bgb:vw:ar03:K"), @2025-01-10) { origin case_input; }
+        assert "f2": belehrung_durch_das_jugendamt_am(entity_ref("urn:de:bgb:vw:ar03:K"), entity_ref("urn:de:bgb:vw:ar03:E"), @2025-02-01) { origin case_input; }
+        assert "f3": ersetzung_beantragt(entity_ref("urn:de:bgb:vw:ar03:K"), entity_ref("urn:de:bgb:vw:ar03:E")) { origin case_input; }
+        assert "f4": gleichgueltigkeit_gegenueber_dem_kind(entity_ref("urn:de:bgb:vw:ar03:K"), entity_ref("urn:de:bgb:vw:ar03:E")) { origin case_input; }
+        assert "f5": unterbleiben_gereicht_zu_unverhaeltnismaessigem_nachteil(entity_ref("urn:de:bgb:vw:ar03:K")) { origin adjudicated; }
+        assert "f6": entscheidungstag_ueber_die_ersetzung(entity_ref("urn:de:bgb:vw:ar03:K"), @2025-07-01) { origin case_input; }
+    }
+    evaluate truth(drei_monate_nach_der_belehrung(entity_ref("urn:de:bgb:vw:ar03:K"), entity_ref("urn:de:bgb:vw:ar03:E"), @2025-05-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(fuenf_monate_nach_der_geburt(entity_ref("urn:de:bgb:vw:ar03:K"), @2025-06-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einwilligung_zu_ersetzen(entity_ref("urn:de:bgb:vw:ar03:K"), entity_ref("urn:de:bgb:vw:ar03:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

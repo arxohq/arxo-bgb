@@ -1,0 +1,1162 @@
+// BUCH 1 ABSCHNITT 3 TITEL 2 — WILLENSERKLÄRUNG (§§ 116–144)
+//
+// KANÄLE (DECISION-0194).
+//   Wertung des Gerichts (§47.3): „anzunehmen ist, dass er sie … nicht
+//   abgegeben haben würde“ (§ 119 Abs. 1, § 139, § 140), verkehrswesentliche
+//   Eigenschaften (§ 119 Abs. 2), „ohne schuldhaftes Zögern (unverzüglich)“
+//   (§ 121 Abs. 1), gute Sitten und auffälliges Missverhältnis (§ 138).
+//   Festgestellte Tatsache: Kenntnis des Vorbehalts (§ 116 Satz 2), Kenntnis
+//   der Täuschung (§ 123 Abs. 2), Tag der Entdeckung der Täuschung und Ende
+//   der Zwangslage (§ 124 Abs. 2), Zugang (§ 130).
+//   Auseinandergehende Lesarten (§152): die Auslegung nach § 133 — wirklicher
+//   Wille oder objektiver Empfängerhorizont (Gruppe `any_of`).
+//
+// FRISTEN (DEADLINES.json, BG-03): § 121 Abs. 2 zehn Jahre seit der Abgabe;
+// § 124 Abs. 1, 2 ein Jahr von der Entdeckung der Täuschung bzw. vom Ende der
+// Zwangslage; § 124 Abs. 3 zehn Jahre seit der Abgabe. Gerechnet von
+// `de.bgb.fristen` nach § 187 Abs. 1, § 188 Abs. 2 und § 193; die Anfechtung
+// ist eine Willenserklärung, die innerhalb der Frist abzugeben ist, deshalb
+// gilt § 193 (Ledger D-03-01).
+//
+// § 124 Abs. 2 Satz 2 („auf den Lauf der Frist finden die §§ 206, 210, 211
+// entsprechende Anwendung“) ist NICHT ausgeführt: Hemmung und Ablaufhemmung
+// gehören `de.bgb.fristen` und stehen dort als TODO der Welle B2.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+// --- §§ 116–118 Geheimer Vorbehalt, Scheingeschäft, Mangel der Ernstlichkeit -------------------------
+
+pub relation geheimer_vorbehalt(w: Willenserklaerung) kind empirical {
+    label de official "der Erklärende behält sich insgeheim vor, das Erklärte nicht zu wollen (§ 116 Satz 1)";
+    label en unofficial "the declaring party secretly reserves not to intend what is declared (§ 116 sentence 1)";
+}
+pub relation empfaenger_kennt_den_vorbehalt(w: Willenserklaerung) kind empirical {
+    label de official "die Erklärung ist einem anderen gegenüber abzugeben und dieser kennt den Vorbehalt (§ 116 Satz 2) — festgestellte Tatsache";
+    label en unofficial "the declaration is to be made to another who knows of the reservation (§ 116 sentence 2) — established fact";
+}
+pub relation zum_schein_abgegeben(w: Willenserklaerung) kind empirical {
+    label de official "die Willenserklärung wird mit dem Einverständnis des anderen nur zum Schein abgegeben (§ 117 Abs. 1)";
+    label en unofficial "the declaration is made only for appearance with the other party's agreement (§ 117 (1))";
+}
+pub relation verdecktes_rechtsgeschaeft(schein: Rechtsgeschaeft, verdeckt: Rechtsgeschaeft) kind empirical {
+    label de official "durch das Scheingeschäft wird ein anderes Rechtsgeschäft verdeckt (§ 117 Abs. 2)";
+    label en unofficial "another transaction is concealed by the sham transaction (§ 117 (2))";
+}
+pub relation vorschriften_des_verdeckten_geschaefts_anwendbar(verdeckt: Rechtsgeschaeft) kind institutional {
+    label de official "auf das verdeckte Rechtsgeschäft finden die für dieses geltenden Vorschriften Anwendung (§ 117 Abs. 2)";
+    label en unofficial "the provisions governing the concealed transaction apply to it (§ 117 (2))";
+}
+pub relation nicht_ernstlich_gemeint_in_erwartung_des_erkennens(w: Willenserklaerung) kind empirical {
+    label de official "die nicht ernstlich gemeinte Willenserklärung wird in der Erwartung abgegeben, der Mangel der Ernstlichkeit werde nicht verkannt werden (§ 118)";
+    label en unofficial "the declaration not seriously intended is made in the expectation that the lack of seriousness will not be misunderstood (§ 118)";
+}
+pub relation nicht_nichtig_wegen_vorbehalts(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung ist nicht deshalb nichtig, weil sich der Erklärende insgeheim vorbehält, das Erklärte nicht zu wollen (§ 116 Satz 1)";
+    label en unofficial "the declaration is not void merely because of a secret reservation (§ 116 sentence 1)";
+}
+
+@source(BGB_P116)
+rule GeheimerVorbehaltMachtNichtNichtig(w: Willenserklaerung) strict {
+    label de official "Eine Willenserklärung ist nicht deshalb nichtig, weil sich der Erklärende insgeheim vorbehält, das Erklärte nicht zu wollen (§ 116 Satz 1)";
+    label en unofficial "A declaration of intent is not void merely because the declaring party secretly reserves not to intend what is declared (§ 116 sentence 1)";
+    when geheimer_vorbehalt(w) and not empfaenger_kennt_den_vorbehalt(w);
+    then nicht_nichtig_wegen_vorbehalts(w);
+}
+
+@source(BGB_P116)
+rule VorbehaltBeiKenntnisNichtig(w: Willenserklaerung) strict {
+    label de official "Die Erklärung ist nichtig, wenn sie einem anderen gegenüber abzugeben ist und dieser den Vorbehalt kennt (§ 116 Satz 2)";
+    label en unofficial "The declaration is void if it is to be made to another who knows of the reservation (§ 116 sentence 2)";
+    when geheimer_vorbehalt(w) and empfaenger_kennt_den_vorbehalt(w);
+    then willenserklaerung_nichtig(w);
+}
+
+@source(BGB_P117)
+rule ScheingeschaeftNichtig(w: Willenserklaerung) strict {
+    label de official "Wird eine Willenserklärung, die einem anderen gegenüber abzugeben ist, mit dessen Einverständnis nur zum Schein abgegeben, so ist sie nichtig (§ 117 Abs. 1)";
+    label en unofficial "A declaration made to another only for appearance, with their agreement, is void (§ 117 (1))";
+    when zum_schein_abgegeben(w);
+    then willenserklaerung_nichtig(w);
+}
+
+@source(BGB_P117)
+rule VerdecktesGeschaeftNachSeinenVorschriften(schein: Rechtsgeschaeft, verdeckt: Rechtsgeschaeft) strict {
+    label de official "Wird durch ein Scheingeschäft ein anderes Rechtsgeschäft verdeckt, so finden die für das verdeckte Rechtsgeschäft geltenden Vorschriften Anwendung (§ 117 Abs. 2)";
+    label en unofficial "If a sham transaction conceals another transaction, the provisions applying to the concealed transaction apply (§ 117 (2))";
+    when verdecktes_rechtsgeschaeft(schein, verdeckt);
+    then vorschriften_des_verdeckten_geschaefts_anwendbar(verdeckt);
+}
+
+@source(BGB_P118)
+rule MangelDerErnstlichkeitNichtig(w: Willenserklaerung) strict {
+    label de official "Eine nicht ernstlich gemeinte Willenserklärung, die in der Erwartung abgegeben wird, der Mangel der Ernstlichkeit werde nicht verkannt werden, ist nichtig (§ 118)";
+    label en unofficial "A declaration not seriously intended, made in the expectation that this will not be misunderstood, is void (§ 118)";
+    when nicht_ernstlich_gemeint_in_erwartung_des_erkennens(w);
+    then willenserklaerung_nichtig(w);
+}
+
+// --- §§ 119–122 Anfechtung wegen Irrtums ------------------------------------------------------------------
+
+pub relation irrtum_ueber_den_inhalt(w: Willenserklaerung) kind empirical {
+    label de official "der Erklärende war bei der Abgabe über den Inhalt der Erklärung im Irrtum oder wollte eine Erklärung dieses Inhalts überhaupt nicht abgeben (§ 119 Abs. 1)";
+    label en unofficial "the declaring party was mistaken about the content or did not intend to make a declaration of that content (§ 119 (1))";
+}
+pub relation irrtum_ueber_eigenschaften(w: Willenserklaerung) kind empirical {
+    label de official "Irrtum über solche Eigenschaften der Person oder der Sache, die im Verkehr als wesentlich angesehen werden (§ 119 Abs. 2)";
+    label en unofficial "mistake about characteristics of a person or thing regarded as essential in trade (§ 119 (2))";
+}
+pub relation unrichtig_uebermittelt(w: Willenserklaerung) kind empirical {
+    label de official "die Willenserklärung ist durch die zur Übermittlung verwendete Person oder Einrichtung unrichtig übermittelt worden (§ 120)";
+    label en unofficial "the declaration was incorrectly transmitted by the person or facility used (§ 120)";
+}
+
+@source(BGB_P119)
+pub external judgment relation bei_kenntnis_nicht_abgegeben(w: Willenserklaerung) {
+    authority Court;
+    label de official "§ 119 Abs. 1: es ist anzunehmen, dass der Erklärende die Erklärung bei Kenntnis der Sachlage und bei verständiger Würdigung des Falles nicht abgegeben haben würde";
+    label en unofficial "§ 119 (1): it is to be assumed that the declaring party would not have made the declaration with knowledge of the facts and a reasonable appraisal of the case";
+}
+
+@source(BGB_P119)
+pub external judgment relation eigenschaft_im_verkehr_wesentlich(w: Willenserklaerung) {
+    authority Court;
+    label de official "§ 119 Abs. 2: die Eigenschaft der Person oder der Sache wird im Verkehr als wesentlich angesehen";
+    label en unofficial "§ 119 (2): the characteristic of the person or thing is regarded as essential in trade";
+}
+
+pub relation anfechtbar_wegen_irrtums(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung ist wegen Irrtums anfechtbar (§§ 119, 120)";
+    label en unofficial "the declaration may be avoided for mistake (§§ 119, 120)";
+}
+pub relation anfechtbar_wegen_taeuschung_oder_drohung(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung ist wegen arglistiger Täuschung oder widerrechtlicher Drohung anfechtbar (§ 123)";
+    label en unofficial "the declaration may be avoided for deceit or unlawful duress (§ 123)";
+}
+
+@source(BGB_P119)
+rule AnfechtbarWegenInhaltsirrtums(w: Willenserklaerung) strict {
+    label de official "Wer bei der Abgabe einer Willenserklärung über deren Inhalt im Irrtum war oder eine Erklärung dieses Inhalts überhaupt nicht abgeben wollte, kann die Erklärung anfechten, wenn anzunehmen ist, dass er sie bei Kenntnis der Sachlage und bei verständiger Würdigung des Falles nicht abgegeben haben würde (§ 119 Abs. 1)";
+    label en unofficial "A party mistaken about the content of their declaration may avoid it if it is to be assumed they would not have made it with knowledge of the facts (§ 119 (1))";
+    when irrtum_ueber_den_inhalt(w) and bei_kenntnis_nicht_abgegeben(w);
+    then anfechtbar_wegen_irrtums(w);
+}
+
+@source(BGB_P119)
+rule AnfechtbarWegenEigenschaftsirrtums(w: Willenserklaerung) strict {
+    label de official "Als Irrtum über den Inhalt der Erklärung gilt auch der Irrtum über solche Eigenschaften der Person oder der Sache, die im Verkehr als wesentlich angesehen werden (§ 119 Abs. 2)";
+    label en unofficial "A mistake about characteristics regarded as essential in trade counts as a mistake about the content (§ 119 (2))";
+    when irrtum_ueber_eigenschaften(w)
+        and eigenschaft_im_verkehr_wesentlich(w)
+        and bei_kenntnis_nicht_abgegeben(w);
+    then anfechtbar_wegen_irrtums(w);
+}
+
+@source(BGB_P120)
+rule AnfechtbarWegenFalscherUebermittlung(w: Willenserklaerung) strict {
+    label de official "Eine Willenserklärung, welche durch die zur Übermittlung verwendete Person oder Einrichtung unrichtig übermittelt worden ist, kann unter der gleichen Voraussetzung angefochten werden wie nach § 119 eine irrtümlich abgegebene Willenserklärung (§ 120)";
+    label en unofficial "A declaration incorrectly transmitted may be avoided on the same conditions as a mistaken declaration under § 119 (§ 120)";
+    when unrichtig_uebermittelt(w) and bei_kenntnis_nicht_abgegeben(w);
+    then anfechtbar_wegen_irrtums(w);
+}
+
+// § 121 Anfechtungsfrist.
+pub relation anfechtungsgrund_kenntnis_erlangt_am(w: Willenserklaerung, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag, an dem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt hat (§ 121 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "day on which the person entitled to avoid learned of the ground of avoidance (§ 121 (1)) — established fact";
+}
+pub relation anfechtung_erklaert_am(w: Willenserklaerung, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag, an dem die Anfechtung erklärt worden ist (§ 143 Abs. 1)";
+    label en unofficial "day on which avoidance was declared (§ 143 (1))";
+}
+pub relation anfechtungserklaerung_unverzueglich_abgesendet(w: Willenserklaerung) kind empirical {
+    label de official "die einem Abwesenden gegenüber erfolgte Anfechtungserklärung ist unverzüglich abgesendet worden (§ 121 Abs. 1 Satz 2)";
+    label en unofficial "the declaration of avoidance to an absent party was dispatched without undue delay (§ 121 (1) sentence 2)";
+}
+pub relation hoechstfrist_121(w: Willenserklaerung, f: Frist) kind empirical {
+    key(w);
+    label de official "Frist der zehn Jahre seit der Abgabe der Willenserklärung (§ 121 Abs. 2)";
+    label en unofficial "the ten-year period since the declaration was made (§ 121 (2))";
+}
+pub relation hoechstfrist_121_ende(w: Willenserklaerung, tag: Date) kind institutional {
+    key(w);
+    label de official "Tag, mit dessen Ablauf die Zehnjahresfrist des § 121 Abs. 2 endet";
+    label en unofficial "day at whose end the ten-year period of § 121 (2) ends";
+}
+pub relation anfechtung_rechtzeitig(w: Willenserklaerung) kind institutional {
+    label de official "die Anfechtung ist rechtzeitig erfolgt (§ 121 Abs. 1, § 124 Abs. 1)";
+    label en unofficial "avoidance was declared in time (§ 121 (1), § 124 (1))";
+}
+pub relation anfechtung_ausgeschlossen(w: Willenserklaerung) kind institutional {
+    label de official "die Anfechtung ist ausgeschlossen (§ 121 Abs. 2, § 124 Abs. 3, § 144)";
+    label en unofficial "avoidance is excluded (§ 121 (2), § 124 (3), § 144)";
+}
+
+@source(BGB_P121)
+pub external judgment relation anfechtung_ohne_schuldhaftes_zoegern(w: Willenserklaerung) {
+    authority Court;
+    label de official "§ 121 Abs. 1 Satz 1: die Anfechtung ist ohne schuldhaftes Zögern (unverzüglich) erfolgt, nachdem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt hat";
+    label en unofficial "§ 121 (1) sentence 1: avoidance was declared without culpable delay after the entitled party learned of the ground";
+}
+
+@source(BGB_P121)
+rule AnfechtungWegenIrrtumsRechtzeitig(w: Willenserklaerung, k: Date, a: Date) strict {
+    label de official "Die Anfechtung muss in den Fällen der §§ 119, 120 ohne schuldhaftes Zögern (unverzüglich) erfolgen, nachdem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt hat (§ 121 Abs. 1 Satz 1)";
+    label en unofficial "In the cases of §§ 119, 120 avoidance must be declared without culpable delay after the entitled party learns of the ground (§ 121 (1) sentence 1)";
+    when anfechtbar_wegen_irrtums(w)
+        and anfechtungsgrund_kenntnis_erlangt_am(w, k)
+        and anfechtung_erklaert_am(w, a)
+        and a >= k
+        and anfechtung_ohne_schuldhaftes_zoegern(w);
+    then anfechtung_rechtzeitig(w);
+}
+
+@source(BGB_P121)
+rule AnfechtungGegenueberAbwesendenRechtzeitigAbgesendet(w: Willenserklaerung) strict {
+    label de official "Die einem Abwesenden gegenüber erfolgte Anfechtung gilt als rechtzeitig erfolgt, wenn die Anfechtungserklärung unverzüglich abgesendet worden ist (§ 121 Abs. 1 Satz 2)";
+    label en unofficial "Avoidance towards an absent party is deemed timely if the declaration was dispatched without undue delay (§ 121 (1) sentence 2)";
+    when anfechtbar_wegen_irrtums(w)
+        and anfechtungserklaerung_unverzueglich_abgesendet(w)
+        and anfechtung_ohne_schuldhaftes_zoegern(w);
+    then anfechtung_rechtzeitig(w);
+}
+
+@source(BGB_P121)
+rule HoechstfristEreignis121(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn seit der Abgabe der Willenserklärung zehn Jahre verstrichen sind (§ 121 Abs. 2) — Ereignis der Frist ist die Abgabe (§ 187 Abs. 1)";
+    label en unofficial "Avoidance is excluded once ten years have elapsed since the declaration was made (§ 121 (2)) — the event is the making of the declaration";
+    when hoechstfrist_121(w, f) and erklaerung_abgegeben_am(w, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P121)
+rule HoechstfristDauer121(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Frist des § 121 Abs. 2 beträgt zehn Jahre (§ 188 Abs. 2)";
+    label en unofficial "The period of § 121 (2) is ten years (§ 188 (2))";
+    when hoechstfrist_121(w, f) and erklaerung_abgegeben_am(w, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+}
+
+@source(BGB_P121)
+rule HoechstfristEnde121(w: Willenserklaerung, f: Frist, e: Date) strict {
+    label de official "Das Ende der Zehnjahresfrist berechnet sich nach den §§ 187 Abs. 1, 188 Abs. 2, 193 (de.bgb.fristen)";
+    label en unofficial "The end of the ten-year period is computed under §§ 187 (1), 188 (2), 193";
+    when hoechstfrist_121(w, f) and de.bgb.fristen::frist_ende(f, e);
+    then hoechstfrist_121_ende(w, e);
+}
+
+@source(BGB_P121)
+rule AnfechtungNachZehnJahrenAusgeschlossen(w: Willenserklaerung, e: Date, a: Date) strict {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn seit der Abgabe der Willenserklärung zehn Jahre verstrichen sind (§ 121 Abs. 2)";
+    label en unofficial "Avoidance is excluded once ten years have elapsed since the declaration (§ 121 (2))";
+    when hoechstfrist_121_ende(w, e) and anfechtung_erklaert_am(w, a) and a > e;
+    then anfechtung_ausgeschlossen(w);
+}
+
+// § 122 Schadensersatzpflicht des Anfechtenden.
+pub relation vertrauensschaden(w: Willenserklaerung, geschaedigter: Person, betrag: Money) kind empirical {
+    key(w, geschaedigter);
+    label de official "Schaden, den der andere oder der Dritte dadurch erleidet, dass er auf die Gültigkeit der Erklärung vertraut (§ 122 Abs. 1)";
+    label en unofficial "loss suffered by the other party or a third party from relying on the validity of the declaration (§ 122 (1))";
+}
+pub relation erfuellungsinteresse(w: Willenserklaerung, geschaedigter: Person, betrag: Money) kind empirical {
+    key(w, geschaedigter);
+    label de official "Betrag des Interesses, welches der andere oder der Dritte an der Gültigkeit der Erklärung hat (§ 122 Abs. 1)";
+    label en unofficial "amount of the interest the other or third party has in the validity of the declaration (§ 122 (1))";
+}
+pub relation grund_der_nichtigkeit_gekannt_oder_kennen_muessen(w: Willenserklaerung, geschaedigter: Person) kind empirical {
+    label de official "der Beschädigte kannte den Grund der Nichtigkeit oder der Anfechtbarkeit oder kannte ihn infolge von Fahrlässigkeit nicht (§ 122 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "the injured party knew or negligently did not know the ground of nullity or avoidability (§ 122 (2)) — established fact";
+}
+pub relation anfechtung_erfolgt(w: Willenserklaerung) kind institutional {
+    label de official "die Anfechtung ist erfolgt (§§ 142, 143)";
+    label en unofficial "avoidance has been declared (§§ 142, 143)";
+}
+pub relation schadensersatz_nach_122(w: Willenserklaerung, geschaedigter: Person, betrag: Money) kind institutional {
+    key(w, geschaedigter);
+    label de official "Schadensersatz des Erklärenden nach § 122 Abs. 1, begrenzt auf den Betrag des Interesses an der Gültigkeit der Erklärung";
+    label en unofficial "damages of the declaring party under § 122 (1), capped at the interest in the validity of the declaration";
+}
+
+@source(BGB_P122)
+rule SchadensersatzNachAnfechtung(w: Willenserklaerung, g: Person, schaden: Money, interesse: Money) strict {
+    label de official "Ist eine Willenserklärung nach § 118 nichtig oder auf Grund der §§ 119, 120 angefochten, so hat der Erklärende den Schaden zu ersetzen, den der andere oder der Dritte dadurch erleidet, dass er auf die Gültigkeit der Erklärung vertraut, jedoch nicht über den Betrag des Interesses hinaus (§ 122 Abs. 1)";
+    label en unofficial "Where a declaration is void under § 118 or avoided under §§ 119, 120, the declaring party must compensate the reliance loss, but not beyond the interest in validity (§ 122 (1))";
+    when anfechtung_erfolgt(w)
+        and vertrauensschaden(w, g, schaden)
+        and erfuellungsinteresse(w, g, interesse)
+        and schaden <= interesse
+        and not grund_der_nichtigkeit_gekannt_oder_kennen_muessen(w, g);
+    then schadensersatz_nach_122(w, g, schaden);
+}
+
+@source(BGB_P122)
+rule SchadensersatzBegrenztAufDasInteresse(w: Willenserklaerung, g: Person, schaden: Money, interesse: Money) strict {
+    label de official "Der Ersatz geht nicht über den Betrag des Interesses hinaus, welches der andere oder der Dritte an der Gültigkeit der Erklärung hat (§ 122 Abs. 1 Halbsatz 2)";
+    label en unofficial "Compensation does not exceed the interest the other or third party has in the validity of the declaration (§ 122 (1))";
+    when anfechtung_erfolgt(w)
+        and vertrauensschaden(w, g, schaden)
+        and erfuellungsinteresse(w, g, interesse)
+        and schaden > interesse
+        and not grund_der_nichtigkeit_gekannt_oder_kennen_muessen(w, g);
+    then schadensersatz_nach_122(w, g, interesse);
+}
+
+@source(BGB_P122)
+rule KeinSchadensersatzBeiKenntnisDesGrundes(w: Willenserklaerung, g: Person, schaden: Money) strict {
+    label de official "Die Schadensersatzpflicht tritt nicht ein, wenn der Beschädigte den Grund der Nichtigkeit oder der Anfechtbarkeit kannte oder infolge von Fahrlässigkeit nicht kannte (§ 122 Abs. 2)";
+    label en unofficial "There is no duty to compensate if the injured party knew or negligently did not know the ground (§ 122 (2))";
+    when anfechtung_erfolgt(w)
+        and vertrauensschaden(w, g, schaden)
+        and grund_der_nichtigkeit_gekannt_oder_kennen_muessen(w, g);
+    then not schadensersatz_nach_122(w, g, schaden);
+}
+
+// --- §§ 123, 124 Täuschung und Drohung -----------------------------------------------------------------
+
+pub relation arglistige_taeuschung(w: Willenserklaerung) kind empirical {
+    label de official "der Erklärende ist zur Abgabe der Willenserklärung durch arglistige Täuschung bestimmt worden (§ 123 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "the declaring party was induced to make the declaration by deceit (§ 123 (1)) — established fact";
+}
+pub relation widerrechtliche_drohung(w: Willenserklaerung) kind empirical {
+    label de official "der Erklärende ist zur Abgabe der Willenserklärung widerrechtlich durch Drohung bestimmt worden (§ 123 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "the declaring party was unlawfully induced by duress (§ 123 (1)) — established fact";
+}
+pub relation taeuschung_durch_dritten(w: Willenserklaerung) kind empirical {
+    label de official "ein Dritter hat die Täuschung verübt (§ 123 Abs. 2 Satz 1)";
+    label en unofficial "a third party committed the deceit (§ 123 (2) sentence 1)";
+}
+pub relation empfaenger_kannte_die_taeuschung(w: Willenserklaerung) kind empirical {
+    label de official "derjenige, welchem gegenüber die Erklärung abzugeben war, kannte die Täuschung oder musste sie kennen (§ 123 Abs. 2 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the addressee knew or ought to have known of the deceit (§ 123 (2) sentence 1) — established fact";
+}
+
+@source(BGB_P123)
+rule AnfechtbarWegenTaeuschung(w: Willenserklaerung) strict {
+    label de official "Wer zur Abgabe einer Willenserklärung durch arglistige Täuschung bestimmt worden ist, kann die Erklärung anfechten (§ 123 Abs. 1)";
+    label en unofficial "A party induced to declare by deceit may avoid the declaration (§ 123 (1))";
+    when arglistige_taeuschung(w) and not taeuschung_durch_dritten(w);
+    then anfechtbar_wegen_taeuschung_oder_drohung(w);
+}
+
+@source(BGB_P123)
+rule AnfechtbarWegenDrohung(w: Willenserklaerung) strict {
+    label de official "Wer zur Abgabe einer Willenserklärung widerrechtlich durch Drohung bestimmt worden ist, kann die Erklärung anfechten (§ 123 Abs. 1)";
+    label en unofficial "A party unlawfully induced to declare by duress may avoid the declaration (§ 123 (1))";
+    when widerrechtliche_drohung(w);
+    then anfechtbar_wegen_taeuschung_oder_drohung(w);
+}
+
+@source(BGB_P123)
+rule TaeuschungDurchDrittenNurBeiKenntnis(w: Willenserklaerung) strict {
+    label de official "Hat ein Dritter die Täuschung verübt, so ist eine Erklärung, die einem anderen gegenüber abzugeben war, nur dann anfechtbar, wenn dieser die Täuschung kannte oder kennen musste (§ 123 Abs. 2 Satz 1)";
+    label en unofficial "Where a third party committed the deceit, a declaration made to another is avoidable only if that person knew or ought to have known of it (§ 123 (2) sentence 1)";
+    when arglistige_taeuschung(w) and taeuschung_durch_dritten(w) and empfaenger_kannte_die_taeuschung(w);
+    then anfechtbar_wegen_taeuschung_oder_drohung(w);
+}
+
+// § 124 Anfechtungsfrist bei Täuschung und Drohung.
+pub relation jahresfrist_124(w: Willenserklaerung, f: Frist) kind empirical {
+    key(w);
+    label de official "Jahresfrist des § 124 Abs. 1 zur Anfechtung einer nach § 123 anfechtbaren Willenserklärung";
+    label en unofficial "the one-year period of § 124 (1) for avoiding a declaration voidable under § 123";
+}
+pub relation taeuschung_entdeckt_am(w: Willenserklaerung, tag: Date) kind empirical {
+    key(w);
+    label de official "Zeitpunkt, in welchem der Anfechtungsberechtigte die Täuschung entdeckt (§ 124 Abs. 2 Satz 1) — festgestellte Tatsache";
+    label en unofficial "point in time at which the entitled party discovers the deceit (§ 124 (2)) — established fact";
+}
+pub relation zwangslage_hoert_auf_am(w: Willenserklaerung, tag: Date) kind empirical {
+    key(w);
+    label de official "Zeitpunkt, in welchem die Zwangslage aufhört (§ 124 Abs. 2 Satz 1) — festgestellte Tatsache";
+    label en unofficial "point in time at which the duress ends (§ 124 (2)) — established fact";
+}
+pub relation jahresfrist_124_ende(w: Willenserklaerung, tag: Date) kind institutional {
+    key(w);
+    label de official "Tag, mit dessen Ablauf die Jahresfrist des § 124 Abs. 1 endet (§§ 187 Abs. 1, 188 Abs. 2, 193)";
+    label en unofficial "day at whose end the one-year period of § 124 (1) ends";
+}
+pub relation hoechstfrist_124(w: Willenserklaerung, f: Frist) kind empirical {
+    key(w);
+    label de official "Frist der zehn Jahre seit der Abgabe der Willenserklärung (§ 124 Abs. 3)";
+    label en unofficial "the ten-year period since the declaration was made (§ 124 (3))";
+}
+pub relation hoechstfrist_124_ende(w: Willenserklaerung, tag: Date) kind institutional {
+    key(w);
+    label de official "Tag, mit dessen Ablauf die Zehnjahresfrist des § 124 Abs. 3 endet";
+    label en unofficial "day at whose end the ten-year period of § 124 (3) ends";
+}
+
+@source(BGB_P124)
+rule JahresfristEreignisTaeuschung(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Frist beginnt im Falle der arglistigen Täuschung mit dem Zeitpunkt, in welchem der Anfechtungsberechtigte die Täuschung entdeckt (§ 124 Abs. 2 Satz 1)";
+    label en unofficial "The period begins, in the case of deceit, when the entitled party discovers it (§ 124 (2))";
+    when jahresfrist_124(w, f) and taeuschung_entdeckt_am(w, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P124)
+rule JahresfristEreignisDrohung(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Frist beginnt im Falle der Drohung mit dem Zeitpunkt, in welchem die Zwangslage aufhört (§ 124 Abs. 2 Satz 1)";
+    label en unofficial "The period begins, in the case of duress, when the situation of constraint ends (§ 124 (2))";
+    when jahresfrist_124(w, f) and zwangslage_hoert_auf_am(w, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P124)
+rule JahresfristDauerTaeuschung(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Anfechtung einer nach § 123 anfechtbaren Willenserklärung kann nur binnen Jahresfrist erfolgen (§ 124 Abs. 1) — Täuschung";
+    label en unofficial "A declaration voidable under § 123 may be avoided only within one year (§ 124 (1)) — deceit";
+    when jahresfrist_124(w, f) and taeuschung_entdeckt_am(w, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+}
+
+@source(BGB_P124)
+rule JahresfristDauerDrohung(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Anfechtung einer nach § 123 anfechtbaren Willenserklärung kann nur binnen Jahresfrist erfolgen (§ 124 Abs. 1) — Drohung";
+    label en unofficial "A declaration voidable under § 123 may be avoided only within one year (§ 124 (1)) — duress";
+    when jahresfrist_124(w, f) and zwangslage_hoert_auf_am(w, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+}
+
+@source(BGB_P124)
+rule JahresfristEnde124(w: Willenserklaerung, f: Frist, e: Date) strict {
+    label de official "Das Ende der Jahresfrist berechnet sich nach den §§ 187 Abs. 1, 188 Abs. 2, 193 (de.bgb.fristen)";
+    label en unofficial "The end of the one-year period is computed under §§ 187 (1), 188 (2), 193";
+    when jahresfrist_124(w, f) and de.bgb.fristen::frist_ende(f, e);
+    then jahresfrist_124_ende(w, e);
+}
+
+@source(BGB_P124)
+rule AnfechtungWegenTaeuschungRechtzeitig(w: Willenserklaerung, e: Date, a: Date) strict {
+    label de official "Die Anfechtung einer nach § 123 anfechtbaren Willenserklärung kann nur binnen Jahresfrist erfolgen (§ 124 Abs. 1): innerhalb der Frist erklärt, ist sie rechtzeitig";
+    label en unofficial "A declaration voidable under § 123 may only be avoided within one year (§ 124 (1)): declared within the period, avoidance is timely";
+    when anfechtbar_wegen_taeuschung_oder_drohung(w)
+        and jahresfrist_124_ende(w, e)
+        and anfechtung_erklaert_am(w, a)
+        and a <= e;
+    then anfechtung_rechtzeitig(w);
+}
+
+@source(BGB_P124)
+rule AnfechtungNachJahresfristAusgeschlossen(w: Willenserklaerung, e: Date, a: Date) strict {
+    label de official "Nach dem Ablauf der Jahresfrist ist die Anfechtung nicht mehr möglich (§ 124 Abs. 1)";
+    label en unofficial "After the one-year period avoidance is no longer possible (§ 124 (1))";
+    when anfechtbar_wegen_taeuschung_oder_drohung(w)
+        and jahresfrist_124_ende(w, e)
+        and anfechtung_erklaert_am(w, a)
+        and a > e;
+    then anfechtung_ausgeschlossen(w);
+}
+
+@source(BGB_P124)
+rule HoechstfristEreignis124(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn seit der Abgabe der Willenserklärung zehn Jahre verstrichen sind (§ 124 Abs. 3) — Ereignis ist die Abgabe";
+    label en unofficial "Avoidance is excluded once ten years have elapsed since the declaration (§ 124 (3))";
+    when hoechstfrist_124(w, f) and erklaerung_abgegeben_am(w, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P124)
+rule HoechstfristDauer124(w: Willenserklaerung, f: Frist, d: Date) strict {
+    label de official "Die Frist des § 124 Abs. 3 beträgt zehn Jahre (§ 188 Abs. 2)";
+    label en unofficial "The period of § 124 (3) is ten years (§ 188 (2))";
+    when hoechstfrist_124(w, f) and erklaerung_abgegeben_am(w, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+}
+
+@source(BGB_P124)
+rule HoechstfristEnde124(w: Willenserklaerung, f: Frist, e: Date) strict {
+    label de official "Das Ende der Zehnjahresfrist des § 124 Abs. 3 berechnet sich nach den §§ 187 Abs. 1, 188 Abs. 2, 193";
+    label en unofficial "The end of the ten-year period of § 124 (3) is computed under §§ 187 (1), 188 (2), 193";
+    when hoechstfrist_124(w, f) and de.bgb.fristen::frist_ende(f, e);
+    then hoechstfrist_124_ende(w, e);
+}
+
+@source(BGB_P124)
+rule AnfechtungNachZehnJahrenAusgeschlossen124(w: Willenserklaerung, e: Date, a: Date) strict {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn seit der Abgabe der Willenserklärung zehn Jahre verstrichen sind (§ 124 Abs. 3)";
+    label en unofficial "Avoidance is excluded once ten years have elapsed since the declaration (§ 124 (3))";
+    when hoechstfrist_124_ende(w, e) and anfechtung_erklaert_am(w, a) and a > e;
+    then anfechtung_ausgeschlossen(w);
+}
+
+// --- §§ 125–129 Form ---------------------------------------------------------------------------------------
+
+pub enum Formerfordernis {
+    label de official "durch Gesetz oder Rechtsgeschäft vorgeschriebene Form (§§ 125–129)";
+    label en unofficial "form prescribed by statute or by transaction (§§ 125–129)";
+    SchriftlicheForm,
+    ElektronischeForm,
+    Textform,
+    NotarielleBeurkundung,
+    OeffentlicheBeglaubigung
+}
+pub relation gesetzliche_form_vorgeschrieben(r: Rechtsgeschaeft, form: Formerfordernis) kind empirical {
+    label de official "durch Gesetz vorgeschriebene Form des Rechtsgeschäfts (§ 125 Satz 1)";
+    label en unofficial "form prescribed by statute for the transaction (§ 125 sentence 1)";
+}
+pub relation rechtsgeschaeftliche_form_bestimmt(r: Rechtsgeschaeft, form: Formerfordernis) kind empirical {
+    label de official "durch Rechtsgeschäft bestimmte Form (§ 125 Satz 2, § 127 Abs. 1)";
+    label en unofficial "form determined by the transaction itself (§ 125 sentence 2, § 127 (1))";
+}
+pub relation form_gewahrt(r: Rechtsgeschaeft, form: Formerfordernis) kind institutional {
+    label de official "die vorgeschriebene Form ist gewahrt (§§ 126–129)";
+    label en unofficial "the prescribed form is observed (§§ 126–129)";
+}
+pub relation eigenhaendige_namensunterschrift(r: Rechtsgeschaeft) kind empirical {
+    label de official "die Urkunde ist von dem Aussteller eigenhändig durch Namensunterschrift oder mittels notariell beglaubigten Handzeichens unterzeichnet (§ 126 Abs. 1)";
+    label en unofficial "the document is signed by the issuer in their own hand or with a notarially certified mark (§ 126 (1))";
+}
+pub relation unterzeichnung_auf_derselben_urkunde(r: Rechtsgeschaeft) kind empirical {
+    label de official "bei einem Vertrag ist die Unterzeichnung der Parteien auf derselben Urkunde erfolgt oder jede Partei hat die für die andere bestimmte Urkunde unterzeichnet (§ 126 Abs. 2)";
+    label en unofficial "the parties signed the same document, or each signed the copy intended for the other (§ 126 (2))";
+}
+pub relation qualifizierte_elektronische_signatur(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Aussteller hat der Erklärung seinen Namen hinzugefügt und das elektronische Dokument mit seiner qualifizierten elektronischen Signatur versehen (§ 126a Abs. 1)";
+    label en unofficial "the issuer added their name and signed the electronic document with a qualified electronic signature (§ 126a (1))";
+}
+pub relation lesbare_erklaerung_auf_dauerhaftem_datentraeger(r: Rechtsgeschaeft) kind empirical {
+    label de official "lesbare Erklärung, in der die Person des Erklärenden genannt ist, auf einem dauerhaften Datenträger (§ 126b Satz 1)";
+    label en unofficial "legible declaration naming the declaring person on a durable medium (§ 126b sentence 1)";
+}
+pub relation notariell_beurkundet(r: Rechtsgeschaeft) kind empirical {
+    label de official "das Rechtsgeschäft ist notariell beurkundet (§ 128, § 126 Abs. 5)";
+    label en unofficial "the transaction has been notarially recorded (§ 128, § 126 (5))";
+}
+pub relation oeffentlich_beglaubigt(r: Rechtsgeschaeft) kind empirical {
+    label de official "die Erklärung ist öffentlich beglaubigt (§ 129 Abs. 1)";
+    label en unofficial "the declaration has been publicly certified (§ 129 (1))";
+}
+pub relation telekommunikative_uebermittlung_oder_briefwechsel(r: Rechtsgeschaeft) kind empirical {
+    label de official "telekommunikative Übermittlung und bei einem Vertrag der Briefwechsel (§ 127 Abs. 2)";
+    label en unofficial "transmission by telecommunication and, in the case of a contract, exchange of letters (§ 127 (2))";
+}
+pub relation anderer_wille_anzunehmen(r: Rechtsgeschaeft) kind empirical {
+    label de official "ein anderer Wille ist anzunehmen (§ 127 Abs. 2, 3) — Angabe des Falls";
+    label en unofficial "a different intention is to be assumed (§ 127 (2), (3)) — case input";
+}
+pub relation gerichtlicher_vergleich_protokolliert(r: Rechtsgeschaeft) kind empirical {
+    label de official "die Erklärungen sind bei einem gerichtlichen Vergleich in ein nach den Vorschriften der Zivilprozessordnung errichtetes Protokoll aufgenommen (§ 127a)";
+    label en unofficial "the declarations were recorded in a court settlement protocol under the Code of Civil Procedure (§ 127a)";
+}
+pub relation antrag_und_annahme_nacheinander_beurkundet(r: Rechtsgeschaeft) kind empirical {
+    label de official "zunächst der Antrag und sodann die Annahme des Antrags sind von einem Notar beurkundet (§ 128)";
+    label en unofficial "first the offer and then the acceptance were recorded by a notary (§ 128)";
+}
+
+@source(BGB_P125)
+rule FormmangelMachtNichtig(r: Rechtsgeschaeft, form: Formerfordernis) strict {
+    label de official "Ein Rechtsgeschäft, welches der durch Gesetz vorgeschriebenen Form ermangelt, ist nichtig (§ 125 Satz 1)";
+    label en unofficial "A transaction lacking the form prescribed by statute is void (§ 125 sentence 1)";
+    when gesetzliche_form_vorgeschrieben(r, form) and not_known(form_gewahrt(r, form));
+    then nichtig(r);
+}
+
+@source(BGB_P125)
+rule MangelDerVereinbartenFormMachtImZweifelNichtig(r: Rechtsgeschaeft, form: Formerfordernis) strict {
+    label de official "Der Mangel der durch Rechtsgeschäft bestimmten Form hat im Zweifel gleichfalls Nichtigkeit zur Folge (§ 125 Satz 2)";
+    label en unofficial "Lack of the form determined by the transaction likewise results, in case of doubt, in nullity (§ 125 sentence 2)";
+    when rechtsgeschaeftliche_form_bestimmt(r, form)
+        and not_known(form_gewahrt(r, form))
+        and not anderer_wille_anzunehmen(r);
+    then nichtig(r);
+}
+
+@source(BGB_P126)
+rule SchriftformDurchUnterschrift(r: Rechtsgeschaeft) strict {
+    label de official "Ist durch Gesetz schriftliche Form vorgeschrieben, so muss die Urkunde von dem Aussteller eigenhändig durch Namensunterschrift oder mittels notariell beglaubigten Handzeichens unterzeichnet werden; bei einem Vertrag muss die Unterzeichnung der Parteien auf derselben Urkunde erfolgen (§ 126 Abs. 1, 2)";
+    label en unofficial "Where written form is prescribed, the document must be signed by hand; for a contract both parties must sign the same document (§ 126 (1), (2))";
+    when eigenhaendige_namensunterschrift(r) and unterzeichnung_auf_derselben_urkunde(r);
+    then form_gewahrt(r, SchriftlicheForm);
+}
+
+@source(BGB_P126)
+rule SchriftformDurchNotarielleBeurkundung(r: Rechtsgeschaeft) strict {
+    label de official "Die schriftliche Form wird durch die notarielle Beurkundung ersetzt (§ 126 Abs. 5)";
+    label en unofficial "Written form is replaced by notarial recording (§ 126 (5))";
+    when notariell_beurkundet(r);
+    then form_gewahrt(r, SchriftlicheForm);
+}
+
+@source(BGB_P126)
+rule SchriftformDurchOeffentlicheBeglaubigung(r: Rechtsgeschaeft) strict {
+    label de official "Als Erklärung in schriftlicher Form gilt auch eine öffentlich beglaubigte Erklärung nach § 129 Absatz 1 Satz 1 Nummer 2 oder eine Erklärung nach § 129 Absatz 3 (§ 126 Abs. 4)";
+    label en unofficial "A publicly certified declaration under § 129 also counts as a declaration in written form (§ 126 (4))";
+    when oeffentlich_beglaubigt(r);
+    then form_gewahrt(r, SchriftlicheForm);
+}
+
+@source(BGB_P126a)
+rule ElektronischeForm(r: Rechtsgeschaeft) strict {
+    label de official "Soll die gesetzlich vorgeschriebene schriftliche Form durch die elektronische Form ersetzt werden, so muss der Aussteller der Erklärung dieser seinen Namen hinzufügen und das elektronische Dokument mit seiner qualifizierten elektronischen Signatur versehen (§ 126a Abs. 1)";
+    label en unofficial "To replace statutory written form by electronic form, the issuer must add their name and a qualified electronic signature (§ 126a (1))";
+    when qualifizierte_elektronische_signatur(r);
+    then form_gewahrt(r, ElektronischeForm);
+}
+
+@source(BGB_P126)
+rule SchriftformDurchElektronischeForm(r: Rechtsgeschaeft) strict {
+    label de official "Die schriftliche Form kann durch die elektronische Form ersetzt werden, wenn sich nicht aus dem Gesetz ein anderes ergibt (§ 126 Abs. 3)";
+    label en unofficial "Written form may be replaced by electronic form unless the statute provides otherwise (§ 126 (3))";
+    when monotone(form_gewahrt(r, ElektronischeForm)) and not anderer_wille_anzunehmen(r);
+    then form_gewahrt(r, SchriftlicheForm);
+}
+
+@source(BGB_P126b)
+rule Textform(r: Rechtsgeschaeft) strict {
+    label de official "Ist durch Gesetz Textform vorgeschrieben, so muss eine lesbare Erklärung, in der die Person des Erklärenden genannt ist, auf einem dauerhaften Datenträger abgegeben werden (§ 126b Satz 1)";
+    label en unofficial "Where text form is prescribed, a legible declaration naming the declaring person must be made on a durable medium (§ 126b sentence 1)";
+    when lesbare_erklaerung_auf_dauerhaftem_datentraeger(r);
+    then form_gewahrt(r, Textform);
+}
+
+@source(BGB_P127)
+rule VereinbarteSchriftformDurchTelekommunikation(r: Rechtsgeschaeft) strict {
+    label de official "Zur Wahrung der durch Rechtsgeschäft bestimmten schriftlichen Form genügt, soweit nicht ein anderer Wille anzunehmen ist, die telekommunikative Übermittlung und bei einem Vertrag der Briefwechsel (§ 127 Abs. 2 Satz 1)";
+    label en unofficial "For a written form agreed by the parties, transmission by telecommunication and exchange of letters suffice unless a different intention is to be assumed (§ 127 (2))";
+    when rechtsgeschaeftliche_form_bestimmt(r, SchriftlicheForm)
+        and telekommunikative_uebermittlung_oder_briefwechsel(r)
+        and not anderer_wille_anzunehmen(r);
+    then form_gewahrt(r, SchriftlicheForm);
+}
+
+@source(BGB_P127a)
+rule GerichtlicherVergleichErsetztBeurkundung(r: Rechtsgeschaeft) strict {
+    label de official "Die notarielle Beurkundung wird bei einem gerichtlichen Vergleich durch die Aufnahme der Erklärungen in ein nach den Vorschriften der Zivilprozessordnung errichtetes Protokoll ersetzt (§ 127a)";
+    label en unofficial "Notarial recording is replaced, in a court settlement, by recording the declarations in a protocol under the Code of Civil Procedure (§ 127a)";
+    when gerichtlicher_vergleich_protokolliert(r);
+    then form_gewahrt(r, NotarielleBeurkundung);
+}
+
+@source(BGB_P128)
+rule BeurkundungVonAntragUndAnnahme(r: Rechtsgeschaeft) strict {
+    label de official "Ist durch Gesetz notarielle Beurkundung eines Vertrags vorgeschrieben, so genügt es, wenn zunächst der Antrag und sodann die Annahme des Antrags von einem Notar beurkundet wird (§ 128)";
+    label en unofficial "Where notarial recording of a contract is prescribed, it suffices that first the offer and then the acceptance are recorded by a notary (§ 128)";
+    when antrag_und_annahme_nacheinander_beurkundet(r);
+    then form_gewahrt(r, NotarielleBeurkundung);
+}
+
+@source(BGB_P128)
+rule NotarielleBeurkundungGewahrt(r: Rechtsgeschaeft) strict {
+    label de official "Die notarielle Beurkundung des Rechtsgeschäfts wahrt die Form der notariellen Beurkundung (§ 128)";
+    label en unofficial "Notarial recording of the transaction observes the form of notarial recording (§ 128)";
+    when notariell_beurkundet(r);
+    then form_gewahrt(r, NotarielleBeurkundung);
+}
+
+@source(BGB_P129)
+rule OeffentlicheBeglaubigungGewahrt(r: Rechtsgeschaeft) strict {
+    label de official "Ist für eine Erklärung durch Gesetz öffentliche Beglaubigung vorgeschrieben, so muss die Erklärung in schriftlicher oder elektronischer Form abgefasst und die Unterschrift oder die qualifizierte elektronische Signatur des Erklärenden von einem Notar beglaubigt werden (§ 129 Abs. 1)";
+    label en unofficial "Where public certification is prescribed, the declaration must be drawn up in written or electronic form and the signature certified by a notary (§ 129 (1))";
+    when oeffentlich_beglaubigt(r);
+    then form_gewahrt(r, OeffentlicheBeglaubigung);
+}
+
+@source(BGB_P129)
+rule BeurkundungErsetztBeglaubigung(r: Rechtsgeschaeft) strict {
+    label de official "Die öffentliche Beglaubigung wird durch die notarielle Beurkundung ersetzt (§ 129 Abs. 4)";
+    label en unofficial "Public certification is replaced by notarial recording (§ 129 (4))";
+    when notariell_beurkundet(r);
+    then form_gewahrt(r, OeffentlicheBeglaubigung);
+}
+
+// --- §§ 130–132 Wirksamwerden der Willenserklärung ------------------------------------------------------
+
+pub relation zugegangen_am(w: Willenserklaerung, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag, an dem die Willenserklärung dem anderen zugeht (§ 130 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "day on which the declaration reaches the other party (§ 130 (1)) — established fact";
+}
+pub relation widerruf_geht_vorher_oder_gleichzeitig_zu(w: Willenserklaerung) kind empirical {
+    label de official "dem anderen geht vorher oder gleichzeitig ein Widerruf zu (§ 130 Abs. 1 Satz 2)";
+    label en unofficial "a revocation reaches the other party earlier or at the same time (§ 130 (1) sentence 2)";
+}
+pub relation beglaubigte_abschrift_zugegangen(w: Willenserklaerung) kind empirical {
+    label de official "dem Erklärungsempfänger geht eine öffentlich beglaubigte Abschrift der Urschrift zu (§ 130 Abs. 2)";
+    label en unofficial "a publicly certified copy of the original reaches the addressee (§ 130 (2))";
+}
+pub relation erklaerender_stirbt_oder_wird_geschaeftsunfaehig_nach_abgabe(w: Willenserklaerung) kind empirical {
+    label de official "der Erklärende stirbt nach der Abgabe oder wird geschäftsunfähig (§ 130 Abs. 2 bzw. Abs. 3)";
+    label en unofficial "the declaring party dies after making the declaration or loses capacity (§ 130 (3))";
+}
+pub relation zustellung_durch_gerichtsvollzieher(w: Willenserklaerung) kind empirical {
+    label de official "die Willenserklärung ist durch Vermittlung eines Gerichtsvollziehers zugestellt worden (§ 132 Abs. 1)";
+    label en unofficial "the declaration was served through a bailiff (§ 132 (1))";
+}
+pub relation oeffentliche_zustellung_bewilligt(w: Willenserklaerung) kind empirical {
+    label de official "die öffentliche Zustellung ist nach den Vorschriften der Zivilprozessordnung bewilligt und erfolgt (§ 132 Abs. 2)";
+    label en unofficial "service by public notice was authorised and effected (§ 132 (2))";
+}
+pub relation zugang_an_gesetzlichen_vertreter(w: Willenserklaerung) kind empirical {
+    label de official "die Willenserklärung geht dem gesetzlichen Vertreter zu (§ 131 Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "the declaration reaches the legal representative (§ 131 (1), (2))";
+}
+pub relation wirksamkeit_setzt_zugang_an_vertreter_voraus(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung wird nicht wirksam, bevor sie dem gesetzlichen Vertreter zugeht (§ 131 Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "the declaration does not become effective before it reaches the legal representative (§ 131 (1), (2))";
+}
+pub relation willenserklaerung_wirksam(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung ist wirksam geworden (§§ 130–132)";
+    label en unofficial "the declaration of intent has become effective (§§ 130–132)";
+}
+pub relation zugegangen(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung gilt als zugegangen (§§ 130, 132)";
+    label en unofficial "the declaration is deemed to have reached the addressee (§§ 130, 132)";
+}
+
+@source(BGB_P130)
+rule WirksamMitZugang(w: Willenserklaerung, t: Date) strict {
+    label de official "Eine Willenserklärung, die einem anderen gegenüber abzugeben ist, wird, wenn sie in dessen Abwesenheit abgegeben wird, in dem Zeitpunkt wirksam, in welchem sie ihm zugeht; sie wird nicht wirksam, wenn dem anderen vorher oder gleichzeitig ein Widerruf zugeht (§ 130 Abs. 1)";
+    label en unofficial "A declaration to an absent party becomes effective when it reaches them; not if a revocation reaches them earlier or at the same time (§ 130 (1))";
+    when zugegangen_am(w, t)
+        and not widerruf_geht_vorher_oder_gleichzeitig_zu(w)
+        and not_known(wirksamkeit_setzt_zugang_an_vertreter_voraus(w));
+    then willenserklaerung_wirksam(w);
+}
+
+@source(BGB_P130)
+rule KeineWirksamkeitBeiVorherigemWiderruf(w: Willenserklaerung, t: Date) strict {
+    label de official "Die Willenserklärung wird nicht wirksam, wenn dem anderen vorher oder gleichzeitig ein Widerruf zugeht (§ 130 Abs. 1 Satz 2)";
+    label en unofficial "The declaration does not become effective if a revocation reaches the addressee earlier or simultaneously (§ 130 (1) sentence 2)";
+    when zugegangen_am(w, t) and widerruf_geht_vorher_oder_gleichzeitig_zu(w);
+    then not willenserklaerung_wirksam(w);
+}
+
+@source(BGB_P130)
+rule WirksamDurchBeglaubigteAbschrift(w: Willenserklaerung) strict {
+    label de official "Eine Willenserklärung, die notariell beurkundet oder öffentlich beglaubigt wurde, wird auch wirksam, wenn dem Erklärungsempfänger eine öffentlich beglaubigte Abschrift der Urschrift zugeht (§ 130 Abs. 2)";
+    label en unofficial "A notarially recorded or publicly certified declaration also becomes effective when a certified copy reaches the addressee (§ 130 (2))";
+    when beglaubigte_abschrift_zugegangen(w);
+    then willenserklaerung_wirksam(w);
+}
+
+@source(BGB_P130)
+rule TodOderGeschaeftsunfaehigkeitNachAbgabeOhneEinfluss(w: Willenserklaerung, t: Date) strict {
+    label de official "Auf die Wirksamkeit der Willenserklärung ist es ohne Einfluss, wenn der Erklärende nach der Abgabe stirbt oder geschäftsunfähig wird (§ 130 Abs. 3)";
+    label en unofficial "It does not affect the effectiveness of the declaration if the declaring party dies or loses capacity after making it (§ 130 (3))";
+    when zugegangen_am(w, t)
+        and erklaerender_stirbt_oder_wird_geschaeftsunfaehig_nach_abgabe(w)
+        and not widerruf_geht_vorher_oder_gleichzeitig_zu(w)
+        and not_known(wirksamkeit_setzt_zugang_an_vertreter_voraus(w));
+    then willenserklaerung_wirksam(w);
+}
+
+@source(BGB_P131)
+rule WirksamkeitGegenueberGeschaeftsunfaehigem(w: Willenserklaerung, p: Person, t: Date) strict {
+    label de official "Wird die Willenserklärung einem Geschäftsunfähigen gegenüber abgegeben, so wird sie nicht wirksam, bevor sie dem gesetzlichen Vertreter zugeht (§ 131 Abs. 1)";
+    label en unofficial "A declaration made to a person lacking capacity does not become effective before it reaches their legal representative (§ 131 (1))";
+    when erklaerungsempfaenger(w, p)
+        and erklaerung_abgegeben_am(w, t)
+        and geschaeftsunfaehig_am(p, t)
+        and not zugang_an_gesetzlichen_vertreter(w);
+    then wirksamkeit_setzt_zugang_an_vertreter_voraus(w);
+}
+
+@source(BGB_P131)
+rule WirksamkeitGegenueberBeschraenktGeschaeftsfaehigem(w: Willenserklaerung, p: Person, t: Date) strict {
+    label de official "Bringt die Erklärung der in der Geschäftsfähigkeit beschränkten Person lediglich einen rechtlichen Vorteil oder hat der gesetzliche Vertreter seine Einwilligung erteilt, so wird die Erklärung in dem Zeitpunkt wirksam, in welchem sie ihr zugeht (§ 131 Abs. 2 Satz 2)";
+    label en unofficial "If the declaration brings the person of limited capacity only a legal advantage, or the representative consented, it becomes effective on reaching them (§ 131 (2) sentence 2)";
+    when erklaerungsempfaenger(w, p)
+        and erklaerung_abgegeben_am(w, t)
+        and beschraenkt_geschaeftsfaehig_am(p, t)
+        and zugegangen_am(w, t)
+        and lediglich_rechtlicher_vorteil(w);
+    then willenserklaerung_wirksam(w);
+}
+
+@source(BGB_P132)
+rule ZustellungErsetztZugang(w: Willenserklaerung) strict {
+    label de official "Eine Willenserklärung gilt auch dann als zugegangen, wenn sie durch Vermittlung eines Gerichtsvollziehers zugestellt worden ist (§ 132 Abs. 1)";
+    label en unofficial "A declaration is also deemed to have been received if served through a bailiff (§ 132 (1))";
+    when zustellung_durch_gerichtsvollzieher(w);
+    then zugegangen(w);
+}
+
+@source(BGB_P132)
+rule OeffentlicheZustellung(w: Willenserklaerung) strict {
+    label de official "Befindet sich der Erklärende über die Person des Empfängers in einer nicht auf Fahrlässigkeit beruhenden Unkenntnis oder ist der Aufenthalt dieser Person unbekannt, so kann die Zustellung nach den für die öffentliche Zustellung geltenden Vorschriften der Zivilprozessordnung erfolgen (§ 132 Abs. 2)";
+    label en unofficial "Where the declaring party is non-negligently unaware of the addressee or their whereabouts, service by public notice may be effected (§ 132 (2))";
+    when oeffentliche_zustellung_bewilligt(w);
+    then zugegangen(w);
+}
+
+// --- § 133 Auslegung: zwei Lesarten (§152) -------------------------------------------------------------------
+//
+// Der Text nennt den wirklichen Willen und verbietet das Haften am
+// buchstäblichen Sinn; wie weit der objektive Empfängerhorizont daneben
+// tritt, ist Sache der Auslegung selbst. Beide Lesarten stehen als
+// `interpretation` in einer Gruppe `any_of` (§152/§155): die unstreitigen
+// Fragen des Pakets antworten ohne Wahl, und die Lesarten widersprechen
+// einander nur dort, wo Wille und Empfängerhorizont auseinanderfallen.
+
+pub entity Erklaerungsinhalt {
+    label de official "Inhalt, mit dem die Willenserklärung gilt (§§ 133, 157)";
+    label en unofficial "content with which the declaration applies (§§ 133, 157)";
+}
+pub relation wirklicher_wille(w: Willenserklaerung, inhalt: Erklaerungsinhalt) kind empirical {
+    label de official "der wirkliche Wille des Erklärenden (§ 133) — festgestellte Tatsache";
+    label en unofficial "the true intention of the declaring party (§ 133) — established fact";
+}
+pub relation buchstaeblicher_sinn(w: Willenserklaerung, inhalt: Erklaerungsinhalt) kind empirical {
+    label de official "der buchstäbliche Sinn des Ausdrucks (§ 133)";
+    label en unofficial "the literal meaning of the expression (§ 133)";
+}
+pub relation verstaendnis_des_empfaengers(w: Willenserklaerung, inhalt: Erklaerungsinhalt) kind empirical {
+    label de official "Inhalt, wie ihn der Empfänger nach Treu und Glauben mit Rücksicht auf die Verkehrssitte verstehen musste (§§ 133, 157)";
+    label en unofficial "content as the addressee had to understand it in good faith with regard to common usage (§§ 133, 157)";
+}
+pub relation erklaerungsinhalt(w: Willenserklaerung, inhalt: Erklaerungsinhalt) kind institutional {
+    label de official "Inhalt, mit dem die Willenserklärung gilt (§ 133, § 157)";
+    label en unofficial "content with which the declaration applies (§ 133, § 157)";
+}
+
+pub relation buchstabe_nicht_allein_massgeblich(w: Willenserklaerung) kind institutional {
+    label de official "bei der Auslegung ist nicht an dem buchstäblichen Sinne des Ausdrucks zu haften (§ 133 Halbsatz 2)";
+    label en unofficial "in interpreting, the literal meaning of the expression is not to be adhered to (§ 133)";
+}
+
+@source(BGB_P133)
+rule NichtAmBuchstabenHaften(w: Willenserklaerung, i: Erklaerungsinhalt) strict {
+    label de official "Bei der Auslegung einer Willenserklärung ist der wirkliche Wille zu erforschen und nicht an dem buchstäblichen Sinne des Ausdrucks zu haften (§ 133)";
+    label en unofficial "In interpreting a declaration of intent the true intention is to be ascertained and the literal meaning not adhered to (§ 133)";
+    when buchstaeblicher_sinn(w, i);
+    then buchstabe_nicht_allein_massgeblich(w);
+}
+
+interpretation WirklicherWilleMassgeblich of BGB_P133 {
+    status disputed;
+    label de official "§ 133: bei der Auslegung einer Willenserklärung ist der wirkliche Wille zu erforschen und nicht an dem buchstäblichen Sinne des Ausdrucks zu haften — der ermittelte wirkliche Wille entscheidet";
+    label en unofficial "§ 133: the true intention is to be ascertained and the literal meaning not adhered to — the ascertained true intention prevails";
+
+    @source(BGB_P133)
+    rule InhaltNachWirklichemWillen(w: Willenserklaerung, i: Erklaerungsinhalt) strict {
+        label de official "§ 133: die Willenserklärung gilt mit dem ermittelten wirklichen Willen des Erklärenden";
+        label en unofficial "§ 133: the declaration applies with the ascertained true intention of the declaring party";
+        when wirklicher_wille(w, i);
+        then erklaerungsinhalt(w, i);
+    }
+}
+
+interpretation ObjektiverEmpfaengerhorizontMassgeblich of BGB_P133 {
+    status disputed;
+    label de official "§ 133 in Verbindung mit § 157: bei einer empfangsbedürftigen Erklärung entscheidet, wie der Empfänger sie nach Treu und Glauben mit Rücksicht auf die Verkehrssitte verstehen musste";
+    label en unofficial "§ 133 with § 157: for a declaration requiring receipt, what the addressee had to understand in good faith prevails";
+
+    @source(BGB_P133)
+    rule InhaltNachEmpfaengerhorizont(w: Willenserklaerung, i: Erklaerungsinhalt) strict {
+        label de official "§§ 133, 157: die empfangsbedürftige Willenserklärung gilt mit dem Inhalt, den der Empfänger nach Treu und Glauben mit Rücksicht auf die Verkehrssitte annehmen musste";
+        label en unofficial "§§ 133, 157: the declaration applies with the content the addressee had to assume in good faith";
+        when verstaendnis_des_empfaengers(w, i);
+        then erklaerungsinhalt(w, i);
+    }
+}
+
+interpretation_group AuslegungDerWillenserklaerung {
+    alternatives WirklicherWilleMassgeblich, ObjektiverEmpfaengerhorizontMassgeblich;
+    selection any_of;
+}
+
+// --- §§ 134–137 Verbotene Rechtsgeschäfte --------------------------------------------------------------------
+
+pub relation verstoss_gegen_gesetzliches_verbot(r: Rechtsgeschaeft) kind empirical {
+    label de official "das Rechtsgeschäft verstößt gegen ein gesetzliches Verbot (§ 134) — der Inhalt des Verbots steht außerhalb dieses Pakets";
+    label en unofficial "the transaction violates a statutory prohibition (§ 134) — the content of the prohibition is outside this package";
+}
+pub relation gesetz_ordnet_andere_folge_an(r: Rechtsgeschaeft) kind empirical {
+    label de official "aus dem Gesetz ergibt sich eine andere Folge als die Nichtigkeit (§ 134 Halbsatz 2) — Angabe des Falls";
+    label en unofficial "the statute provides a consequence other than nullity (§ 134) — case input";
+}
+pub relation verstoss_gegen_gesetzliches_veraeusserungsverbot(r: Rechtsgeschaeft, geschuetzter: Person) kind empirical {
+    label de official "die Verfügung über einen Gegenstand verstößt gegen ein gesetzliches Veräußerungsverbot, das nur den Schutz bestimmter Personen bezweckt (§ 135 Abs. 1 Satz 1)";
+    label en unofficial "the disposition violates a statutory prohibition of disposal protecting only certain persons (§ 135 (1))";
+}
+pub relation behoerdliches_veraeusserungsverbot(r: Rechtsgeschaeft, geschuetzter: Person) kind empirical {
+    label de official "ein Veräußerungsverbot, das von einem Gericht oder von einer anderen Behörde innerhalb ihrer Zuständigkeit erlassen wird (§ 136)";
+    label en unofficial "a prohibition of disposal issued by a court or authority within its competence (§ 136)";
+}
+pub relation relativ_unwirksam_gegenueber(r: Rechtsgeschaeft, geschuetzter: Person) kind institutional {
+    label de official "die Verfügung ist nur den geschützten Personen gegenüber unwirksam (§ 135 Abs. 1 Satz 1, § 136)";
+    label en unofficial "the disposition is ineffective only as against the protected persons (§ 135 (1), § 136)";
+}
+pub relation rechtsgeschaeftliches_verfuegungsverbot_vereinbart(r: Rechtsgeschaeft) kind empirical {
+    label de official "die Befugnis zur Verfügung über ein veräußerliches Recht soll durch Rechtsgeschäft ausgeschlossen oder beschränkt werden (§ 137 Satz 1)";
+    label en unofficial "the power to dispose of an alienable right is to be excluded or restricted by transaction (§ 137 sentence 1)";
+}
+pub relation verpflichtung_nicht_zu_verfuegen(r: Rechtsgeschaeft) kind empirical {
+    label de official "Verpflichtung, über ein veräußerliches Recht nicht zu verfügen (§ 137 Satz 2)";
+    label en unofficial "obligation not to dispose of an alienable right (§ 137 sentence 2)";
+}
+pub relation verfuegungsbefugnis_bleibt_bestehen(r: Rechtsgeschaeft) kind institutional {
+    label de official "die Befugnis zur Verfügung kann nicht durch Rechtsgeschäft ausgeschlossen oder beschränkt werden (§ 137 Satz 1)";
+    label en unofficial "the power of disposal cannot be excluded or restricted by transaction (§ 137 sentence 1)";
+}
+
+@source(BGB_P134)
+rule VerstossGegenGesetzlichesVerbot(r: Rechtsgeschaeft) strict {
+    label de official "Ein Rechtsgeschäft, das gegen ein gesetzliches Verbot verstößt, ist nichtig, wenn sich nicht aus dem Gesetz ein anderes ergibt (§ 134)";
+    label en unofficial "A transaction violating a statutory prohibition is void unless the statute provides otherwise (§ 134)";
+    when verstoss_gegen_gesetzliches_verbot(r) and not gesetz_ordnet_andere_folge_an(r);
+    then nichtig(r);
+}
+
+@source(BGB_P135)
+rule RelativeUnwirksamkeitBeiVeraeusserungsverbot(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Verstößt die Verfügung über einen Gegenstand gegen ein gesetzliches Veräußerungsverbot, das nur den Schutz bestimmter Personen bezweckt, so ist sie nur diesen Personen gegenüber unwirksam (§ 135 Abs. 1 Satz 1)";
+    label en unofficial "A disposition violating a prohibition protecting certain persons is ineffective only as against them (§ 135 (1))";
+    when verstoss_gegen_gesetzliches_veraeusserungsverbot(r, p);
+    then relativ_unwirksam_gegenueber(r, p);
+}
+
+@source(BGB_P136)
+rule BehoerdlichesVerbotStehtGleich(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Ein Veräußerungsverbot, das von einem Gericht oder von einer anderen Behörde innerhalb ihrer Zuständigkeit erlassen wird, steht einem gesetzlichen Veräußerungsverbot der in § 135 bezeichneten Art gleich (§ 136)";
+    label en unofficial "A prohibition issued by a court or authority is equivalent to a statutory prohibition of the kind described in § 135 (§ 136)";
+    when behoerdliches_veraeusserungsverbot(r, p);
+    then relativ_unwirksam_gegenueber(r, p);
+}
+
+@source(BGB_P137)
+rule VerfuegungsverbotUnwirksam(r: Rechtsgeschaeft) strict {
+    label de official "Die Befugnis zur Verfügung über ein veräußerliches Recht kann nicht durch Rechtsgeschäft ausgeschlossen oder beschränkt werden (§ 137 Satz 1)";
+    label en unofficial "The power to dispose of an alienable right cannot be excluded or restricted by transaction (§ 137 sentence 1)";
+    when rechtsgeschaeftliches_verfuegungsverbot_vereinbart(r);
+    then verfuegungsbefugnis_bleibt_bestehen(r);
+}
+
+@source(BGB_P137)
+rule VerpflichtungNichtZuVerfuegenBleibtWirksam(r: Rechtsgeschaeft) strict {
+    label de official "Die Wirksamkeit einer Verpflichtung, über ein solches Recht nicht zu verfügen, wird durch § 137 Satz 1 nicht berührt (§ 137 Satz 2)";
+    label en unofficial "The effectiveness of an obligation not to dispose of such a right is not affected (§ 137 sentence 2)";
+    when verpflichtung_nicht_zu_verfuegen(r);
+    then wirksam(r);
+}
+
+// --- § 138 Sittenwidriges Rechtsgeschäft; Wucher ----------------------------------------------------------------
+
+@source(BGB_P138)
+pub external judgment relation verstoss_gegen_die_guten_sitten(r: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 138 Abs. 1: das Rechtsgeschäft verstößt gegen die guten Sitten";
+    label en unofficial "§ 138 (1): the transaction is contrary to public policy (good morals)";
+}
+
+@source(BGB_P138)
+pub external judgment relation auffaelliges_missverhaeltnis(r: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 138 Abs. 2: die versprochenen oder gewährten Vermögensvorteile stehen in einem auffälligen Missverhältnis zu der Leistung";
+    label en unofficial "§ 138 (2): the pecuniary advantages promised or granted are strikingly disproportionate to the performance";
+}
+
+pub relation ausbeutung_einer_schwaeche(r: Rechtsgeschaeft) kind empirical {
+    label de official "Ausbeutung der Zwangslage, der Unerfahrenheit, des Mangels an Urteilsvermögen oder der erheblichen Willensschwäche eines anderen (§ 138 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "exploitation of a predicament, inexperience, lack of judgement or considerable weakness of will (§ 138 (2)) — established fact";
+}
+pub relation wucher(r: Rechtsgeschaeft) kind institutional {
+    label de official "Wucher (§ 138 Abs. 2)";
+    label en unofficial "usury (§ 138 (2))";
+}
+
+@source(BGB_P138)
+rule SittenwidrigesRechtsgeschaeftNichtig(r: Rechtsgeschaeft) strict {
+    label de official "Ein Rechtsgeschäft, das gegen die guten Sitten verstößt, ist nichtig (§ 138 Abs. 1)";
+    label en unofficial "A transaction contrary to public policy is void (§ 138 (1))";
+    when verstoss_gegen_die_guten_sitten(r);
+    then nichtig(r);
+}
+
+@source(BGB_P138)
+rule WucherIstNichtig(r: Rechtsgeschaeft) strict {
+    label de official "Nichtig ist insbesondere ein Rechtsgeschäft, durch das jemand unter Ausbeutung der Zwangslage, der Unerfahrenheit, des Mangels an Urteilsvermögen oder der erheblichen Willensschwäche eines anderen sich oder einem Dritten für eine Leistung Vermögensvorteile versprechen oder gewähren lässt, die in einem auffälligen Missverhältnis zu der Leistung stehen (§ 138 Abs. 2)";
+    label en unofficial "A transaction is void where someone, exploiting another's predicament, inexperience, lack of judgement or weakness of will, has pecuniary advantages promised or granted that are strikingly disproportionate (§ 138 (2))";
+    when ausbeutung_einer_schwaeche(r) and auffaelliges_missverhaeltnis(r);
+    then wucher(r);
+}
+
+@source(BGB_P138)
+rule WucherMachtNichtig(r: Rechtsgeschaeft) strict {
+    label de official "Der Wucher des § 138 Abs. 2 macht das Rechtsgeschäft nichtig (§ 138 Abs. 2 in Verbindung mit Abs. 1)";
+    label en unofficial "Usury under § 138 (2) renders the transaction void";
+    when wucher(r);
+    then nichtig(r);
+}
+
+// --- §§ 139–141 Teilnichtigkeit, Umdeutung, Bestätigung ------------------------------------------------------
+
+pub relation teil_des_rechtsgeschaefts_nichtig(ganzes: Rechtsgeschaeft, teil: Rechtsgeschaeft) kind empirical {
+    label de official "ein Teil eines Rechtsgeschäfts ist nichtig (§ 139)";
+    label en unofficial "part of a transaction is void (§ 139)";
+}
+
+@source(BGB_P139)
+pub external judgment relation auch_ohne_den_nichtigen_teil_vorgenommen(ganzes: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 139: es ist anzunehmen, dass das Rechtsgeschäft auch ohne den nichtigen Teil vorgenommen sein würde";
+    label en unofficial "§ 139: it is to be assumed that the transaction would have been effected even without the void part";
+}
+
+@source(BGB_P140)
+pub external judgment relation geltung_des_anderen_geschaefts_gewollt(nichtiges: Rechtsgeschaeft, anderes: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 140: es ist anzunehmen, dass die Geltung des anderen Rechtsgeschäfts bei Kenntnis der Nichtigkeit gewollt sein würde";
+    label en unofficial "§ 140: it is to be assumed that the validity of the other transaction would have been intended had the nullity been known";
+}
+
+pub relation entspricht_erfordernissen_eines_anderen_geschaefts(nichtiges: Rechtsgeschaeft, anderes: Rechtsgeschaeft) kind empirical {
+    label de official "das nichtige Rechtsgeschäft entspricht den Erfordernissen eines anderen Rechtsgeschäfts (§ 140)";
+    label en unofficial "the void transaction meets the requirements of another transaction (§ 140)";
+}
+pub relation umdeutung(nichtiges: Rechtsgeschaeft, anderes: Rechtsgeschaeft) kind institutional {
+    label de official "das andere Rechtsgeschäft gilt (§ 140)";
+    label en unofficial "the other transaction applies (§ 140)";
+}
+pub relation bestaetigung_des_nichtigen_geschaefts(r: Rechtsgeschaeft) kind empirical {
+    label de official "das nichtige Rechtsgeschäft wird von demjenigen, welcher es vorgenommen hat, bestätigt (§ 141 Abs. 1)";
+    label en unofficial "the void transaction is confirmed by the person who effected it (§ 141 (1))";
+}
+pub relation als_erneute_vornahme_zu_beurteilen(r: Rechtsgeschaeft) kind institutional {
+    label de official "die Bestätigung ist als erneute Vornahme zu beurteilen (§ 141 Abs. 1)";
+    label en unofficial "the confirmation is to be treated as a fresh effecting of the transaction (§ 141 (1))";
+}
+pub relation bestaetigung_eines_nichtigen_vertrags(r: Rechtsgeschaeft) kind empirical {
+    label de official "ein nichtiger Vertrag wird von den Parteien bestätigt (§ 141 Abs. 2)";
+    label en unofficial "a void contract is confirmed by the parties (§ 141 (2))";
+}
+pub relation verpflichtung_wie_bei_anfaenglicher_gueltigkeit(r: Rechtsgeschaeft) kind institutional {
+    label de official "die Parteien sind im Zweifel verpflichtet, einander zu gewähren, was sie haben würden, wenn der Vertrag von Anfang an gültig gewesen wäre (§ 141 Abs. 2)";
+    label en unofficial "in case of doubt the parties must grant each other what they would have had if the contract had been valid from the outset (§ 141 (2))";
+}
+
+@source(BGB_P139)
+rule TeilnichtigkeitErgreiftDasGanze(ganzes: Rechtsgeschaeft, teil: Rechtsgeschaeft) strict {
+    label de official "Ist ein Teil eines Rechtsgeschäfts nichtig, so ist das ganze Rechtsgeschäft nichtig, wenn nicht anzunehmen ist, dass es auch ohne den nichtigen Teil vorgenommen sein würde (§ 139)";
+    label en unofficial "If part of a transaction is void, the whole is void unless it is to be assumed it would have been effected without the void part (§ 139)";
+    when teil_des_rechtsgeschaefts_nichtig(ganzes, teil)
+        and not auch_ohne_den_nichtigen_teil_vorgenommen(ganzes);
+    then nichtig(ganzes);
+}
+
+@source(BGB_P140)
+rule Umdeutung(nichtiges: Rechtsgeschaeft, anderes: Rechtsgeschaeft) strict {
+    label de official "Entspricht ein nichtiges Rechtsgeschäft den Erfordernissen eines anderen Rechtsgeschäfts, so gilt das letztere, wenn anzunehmen ist, dass dessen Geltung bei Kenntnis der Nichtigkeit gewollt sein würde (§ 140)";
+    label en unofficial "If a void transaction meets the requirements of another, the latter applies if its validity would have been intended (§ 140)";
+    when nichtig(nichtiges)
+        and entspricht_erfordernissen_eines_anderen_geschaefts(nichtiges, anderes)
+        and geltung_des_anderen_geschaefts_gewollt(nichtiges, anderes);
+    then umdeutung(nichtiges, anderes);
+}
+
+@source(BGB_P141)
+rule BestaetigungAlsErneuteVornahme(r: Rechtsgeschaeft) strict {
+    label de official "Wird ein nichtiges Rechtsgeschäft von demjenigen, welcher es vorgenommen hat, bestätigt, so ist die Bestätigung als erneute Vornahme zu beurteilen (§ 141 Abs. 1)";
+    label en unofficial "Confirmation of a void transaction by the person who effected it is to be treated as a fresh effecting (§ 141 (1))";
+    when nichtig(r) and bestaetigung_des_nichtigen_geschaefts(r);
+    then als_erneute_vornahme_zu_beurteilen(r);
+}
+
+@source(BGB_P141)
+rule BestaetigungEinesNichtigenVertrags(r: Rechtsgeschaeft) strict {
+    label de official "Wird ein nichtiger Vertrag von den Parteien bestätigt, so sind diese im Zweifel verpflichtet, einander zu gewähren, was sie haben würden, wenn der Vertrag von Anfang an gültig gewesen wäre (§ 141 Abs. 2)";
+    label en unofficial "If the parties confirm a void contract, in case of doubt they must grant each other what they would have had if it had been valid from the outset (§ 141 (2))";
+    when nichtig(r) and bestaetigung_eines_nichtigen_vertrags(r);
+    then verpflichtung_wie_bei_anfaenglicher_gueltigkeit(r);
+}
+
+// --- §§ 142–144 Wirkung, Erklärung und Ausschluss der Anfechtung -------------------------------------------------
+
+pub relation von_anfang_an_nichtig(r: Rechtsgeschaeft) kind institutional {
+    label de official "das angefochtene Rechtsgeschäft ist als von Anfang an nichtig anzusehen (§ 142 Abs. 1)";
+    label en unofficial "the avoided transaction is regarded as void from the outset (§ 142 (1))";
+}
+pub relation kannte_die_anfechtbarkeit(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "die Person kannte die Anfechtbarkeit oder musste sie kennen (§ 142 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "the person knew or ought to have known of the avoidability (§ 142 (2)) — established fact";
+}
+pub relation wie_kenntnis_der_nichtigkeit_zu_behandeln(r: Rechtsgeschaeft, p: Person) kind institutional {
+    label de official "wer die Anfechtbarkeit kannte oder kennen musste, wird bei erfolgter Anfechtung so behandelt, wie wenn er die Nichtigkeit gekannt hätte (§ 142 Abs. 2)";
+    label en unofficial "a person who knew of the avoidability is treated, once avoidance occurs, as if they had known of the nullity (§ 142 (2))";
+}
+pub relation anfechtungsgegner(r: Rechtsgeschaeft, p: Person) kind institutional {
+    label de official "Anfechtungsgegner (§ 143 Abs. 2–4)";
+    label en unofficial "the party against whom avoidance is declared (§ 143 (2)–(4))";
+}
+pub relation anderer_teil_des_vertrags(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "der andere Teil des Vertrags (§ 143 Abs. 2)";
+    label en unofficial "the other party to the contract (§ 143 (2))";
+}
+pub relation unmittelbar_rechtlichen_vorteil_erlangt(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "die Person hat auf Grund des einseitigen Rechtsgeschäfts unmittelbar einen rechtlichen Vorteil erlangt (§ 143 Abs. 4 Satz 1)";
+    label en unofficial "the person obtained a direct legal advantage from the unilateral transaction (§ 143 (4))";
+}
+pub relation anfechtungserklaerung_gegenueber(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "die Anfechtung ist gegenüber dieser Person erklärt worden (§ 143 Abs. 1)";
+    label en unofficial "avoidance was declared to this person (§ 143 (1))";
+}
+pub relation bestaetigung_des_anfechtbaren_geschaefts(r: Rechtsgeschaeft) kind empirical {
+    label de official "das anfechtbare Rechtsgeschäft wird von dem Anfechtungsberechtigten bestätigt (§ 144 Abs. 1)";
+    label en unofficial "the voidable transaction is confirmed by the person entitled to avoid it (§ 144 (1))";
+}
+
+@source(BGB_P143)
+rule AnfechtungsgegnerBeimVertrag(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Anfechtungsgegner ist bei einem Vertrag der andere Teil (§ 143 Abs. 2)";
+    label en unofficial "In the case of a contract, avoidance is declared to the other party (§ 143 (2))";
+    when geschaeftsart(r, Vertrag) and anderer_teil_des_vertrags(r, p);
+    then anfechtungsgegner(r, p);
+}
+
+@source(BGB_P143)
+rule AnfechtungsgegnerBeimEinseitigenGeschaeft(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Bei einem einseitigen Rechtsgeschäft anderer Art ist Anfechtungsgegner jeder, der auf Grund des Rechtsgeschäfts unmittelbar einen rechtlichen Vorteil erlangt hat (§ 143 Abs. 4 Satz 1)";
+    label en unofficial "For a unilateral transaction of another kind, avoidance may be declared to anyone who obtained a direct legal advantage (§ 143 (4))";
+    when geschaeftsart(r, EinseitigesRechtsgeschaeft) and unmittelbar_rechtlichen_vorteil_erlangt(r, p);
+    then anfechtungsgegner(r, p);
+}
+
+@source(BGB_P143)
+rule AnfechtungDurchErklaerungGegenueberDemGegner(r: Rechtsgeschaeft, w: Willenserklaerung, p: Person, a: Date) strict {
+    label de official "Die Anfechtung erfolgt durch Erklärung gegenüber dem Anfechtungsgegner (§ 143 Abs. 1)";
+    label en unofficial "Avoidance is effected by declaration to the party against whom it is directed (§ 143 (1))";
+    when erklaerung_gehoert_zu(w, r)
+        and anfechtung_rechtzeitig(w)
+        and anfechtung_erklaert_am(w, a)
+        and anfechtungsgegner(r, p)
+        and anfechtungserklaerung_gegenueber(r, p)
+        and not_known(anfechtung_ausgeschlossen(w));
+    then anfechtung_erfolgt(w);
+}
+
+@source(BGB_P142)
+rule AnfechtungMachtVonAnfangAnNichtig(r: Rechtsgeschaeft, w: Willenserklaerung) strict {
+    label de official "Wird ein anfechtbares Rechtsgeschäft angefochten, so ist es als von Anfang an nichtig anzusehen (§ 142 Abs. 1)";
+    label en unofficial "An avoided transaction is regarded as void from the outset (§ 142 (1))";
+    when erklaerung_gehoert_zu(w, r) and anfechtung_erfolgt(w);
+    then von_anfang_an_nichtig(r);
+}
+
+@source(BGB_P142)
+rule AngefochtenesGeschaeftIstNichtig(r: Rechtsgeschaeft) strict {
+    label de official "Das als von Anfang an nichtig anzusehende Rechtsgeschäft ist nichtig (§ 142 Abs. 1)";
+    label en unofficial "A transaction regarded as void from the outset is void (§ 142 (1))";
+    when von_anfang_an_nichtig(r);
+    then nichtig(r);
+}
+
+@source(BGB_P142)
+rule KenntnisDerAnfechtbarkeitStehtKenntnisDerNichtigkeitGleich(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Wer die Anfechtbarkeit kannte oder kennen musste, wird, wenn die Anfechtung erfolgt, so behandelt, wie wenn er die Nichtigkeit des Rechtsgeschäfts gekannt hätte oder hätte kennen müssen (§ 142 Abs. 2)";
+    label en unofficial "A person who knew of the avoidability is treated, once avoidance occurs, as if they had known of the nullity (§ 142 (2))";
+    when von_anfang_an_nichtig(r) and kannte_die_anfechtbarkeit(r, p);
+    then wie_kenntnis_der_nichtigkeit_zu_behandeln(r, p);
+}
+
+@source(BGB_P144)
+rule BestaetigungSchliesstAnfechtungAus(r: Rechtsgeschaeft, w: Willenserklaerung) strict {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn das anfechtbare Rechtsgeschäft von dem Anfechtungsberechtigten bestätigt wird; die Bestätigung bedarf nicht der für das Rechtsgeschäft bestimmten Form (§ 144)";
+    label en unofficial "Avoidance is excluded if the voidable transaction is confirmed by the person entitled to avoid it; the confirmation requires no particular form (§ 144)";
+    when erklaerung_gehoert_zu(w, r) and bestaetigung_des_anfechtbaren_geschaefts(r);
+    then anfechtung_ausgeschlossen(w);
+}

@@ -1,0 +1,35 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Querschnitt Widerruf/Fristen — erklärte Grenze (README, Abschnitt
+// „Was das Paket nicht tut“): Erhalt Donnerstag, 21. Mai 2026; die 14 Tage
+// laufen kalendarisch bis Donnerstag, 4. Juni 2026 — Fronleichnam, ein in
+// einigen, nicht allen Ländern anerkannter Feiertag (Landesfeiertag). Der
+// Kalenderschnappschuss KALENDER_BUNDESWEIT
+// (corpus/clir/de-feiertage-bundesweit.calendar.json) kennt nur
+// die bundesweit anerkannten Feiertage; Fronleichnam ist dort NICHT
+// eingetragen. § 193 verlegt daher NICHT: das Fristende bleibt der
+// 4. Juni 2026 selbst, obwohl der Leistungsort (Fall) in einem Land mit
+// gesetzlichem Fronleichnam liegen könnte — diese Verlegung nach dem
+// Leistungsort verlangt einen Länderkalender, den dieses Paket nicht führt
+// (Ledger D-02-01, Grenze „bundesweit“). Von Hand am Kalender geprüft.
+test "Querschnitt, Grenze: Fronleichnam (Landesfeiertag) verlegt das Ende NICHT — KALENDER_BUNDESWEIT kennt ihn nicht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_SCHULDRECHT_AT_TAG; }
+        assert "a1": widerrufsrecht_eingeraeumt(entity_ref("urn:de:bgb:sr-at:wq07:v1"), entity_ref("urn:de:bgb:sr-at:wq07:p1")) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:sr-at:wq07:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a3": de.bgb.allgemeiner_teil::zweck_ueberwiegend_nicht_gewerblich(entity_ref("urn:de:bgb:sr-at:wq07:p1"), entity_ref("urn:de:bgb:sr-at:wq07:r1")) { origin adjudicated; }
+        assert "a4": rechtsgeschaeft_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq07:v1"), entity_ref("urn:de:bgb:sr-at:wq07:r1")) { origin case_input; }
+        assert "a5": widerrufsfrist_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq07:v1"), entity_ref("urn:de:bgb:sr-at:wq07:f1")) { origin case_input; }
+        assert "a6": erhalt_der_ware(entity_ref("urn:de:bgb:sr-at:wq07:v1"), @2026-05-21) { origin case_input; }
+        assert "a7": keine_spaetere_unterrichtung(entity_ref("urn:de:bgb:sr-at:wq07:v1")) { origin case_input; }
+        assert "a8": widerruf_erklaert_am(entity_ref("urn:de:bgb:sr-at:wq07:v1"), @2026-06-04) { origin case_input; }
+    }
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:sr-at:wq07:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::frist_ende(entity_ref("urn:de:bgb:sr-at:wq07:f1"), @2026-06-04));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(widerruf_fristgerecht(entity_ref("urn:de:bgb:sr-at:wq07:v1")));
+    expect truth_status == TRUE_ONLY;
+}

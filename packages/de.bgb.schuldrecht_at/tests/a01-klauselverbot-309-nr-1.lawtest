@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 309 Nr. 1 ohne Wertungsmöglichkeit: die Klausel sieht eine Preiserhöhung
+// für Waren vor, die innerhalb von vier Monaten nach Vertragsschluss geliefert
+// werden sollen, und es liegt kein Dauerschuldverhältnis vor. Die Klausel ist
+// unwirksam; der Vertrag bleibt im Übrigen wirksam (§ 306 Abs. 1) und sein
+// Inhalt richtet sich nach den gesetzlichen Vorschriften (Abs. 2).
+test "§ 309 Nr. 1: kurzfristige Preiserhöhung ist unwirksam, der Vertrag bleibt wirksam" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": klausel_des_vertrags(entity_ref("urn:de:bgb:sr-at:a01:k1"), entity_ref("urn:de:bgb:sr-at:a01:v1")) { origin case_input; }
+        assert "a2": preiserhoehung_innerhalb_von_vier_monaten(entity_ref("urn:de:bgb:sr-at:a01:k1")) { origin case_input; }
+    }
+    evaluate truth(klausel_unwirksam(entity_ref("urn:de:bgb:sr-at:a01:k1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    expect applied(Klauselverbot309Nr1KurzfristigePreiserhoehung);
+    evaluate truth(vertrag_im_uebrigen_wirksam_agb(entity_ref("urn:de:bgb:sr-at:a01:v1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(inhalt_richtet_sich_nach_den_gesetzlichen_vorschriften(entity_ref("urn:de:bgb:sr-at:a01:v1"), entity_ref("urn:de:bgb:sr-at:a01:k1")));
+    expect truth_status == TRUE_ONLY;
+}

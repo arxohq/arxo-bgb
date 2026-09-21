@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 651u Abs. 1, 3, 4: der mindestens dreimonatige Gastschulaufenthalt; die Unterrichtung am 1. Juni 2026 wahrt die Zweiwochengrenze zum Reisebeginn am 20. Juni; nach der Kündigung schuldet der Reisende den Reisepreis abzüglich ersparter Aufwendungen (3 000 − 400 = 2 600 EUR).
+
+test "urn:query:bgb-dw-t143-651u-gastschulaufenthalt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": gastschulaufenthalt_mindestens_drei_monate_651u(entity_ref("urn:de:bgb:dw:t143")) { origin case_input; }
+        assert "f2": unterrichtung_ueber_gastfamilie_am_651u(entity_ref("urn:de:bgb:dw:t143"), @2026-06-01) { origin case_input; }
+        assert "f3": reisebeginn_am(entity_ref("urn:de:bgb:dw:t143"), @2026-06-20) { origin case_input; }
+        assert "f4": gastschulkuendigung_erklaert_651u(entity_ref("urn:de:bgb:dw:t143")) { origin case_input; }
+        assert "f5": reisepreis(entity_ref("urn:de:bgb:dw:t143"), 3000 EUR) { origin case_input; }
+        assert "f6": ersparte_aufwendungen_651u(entity_ref("urn:de:bgb:dw:t143"), 400 EUR) { origin case_input; }
+    }
+    evaluate truth(unterrichtung_plus_zwei_wochen_651u(entity_ref("urn:de:bgb:dw:t143"), @2026-06-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(entschaedigungsregeln_651h_anwendbar_651u(entity_ref("urn:de:bgb:dw:t143")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verguetungsanspruch_nach_gastschulkuendigung_651u(entity_ref("urn:de:bgb:dw:t143"), 2600 EUR));
+    expect truth_status == TRUE_ONLY;
+}

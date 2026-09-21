@@ -1,0 +1,195 @@
+// §§ 189–192: Hilfsdefinitionen der Fristberechnung, die neben §§ 186–188 und
+// § 193 stehen. Jede Norm speist die vorhandene Maschinerie (`frist_dauer_tage`,
+// `frist_dauer_kalender`, `frist_ende_kalender`) statt eine parallele
+// Endberechnung zu bauen: § 189 Abs. 1 benennt nur andere Zahlen für dieselben
+// beiden Fristarten (Tage- bzw. Kalenderfrist), § 190 setzt lediglich den
+// Ereignistag der neuen Frist, § 192 liefert das kalendarische Ende, das
+// § 193 danach wie jedes andere prüft. § 191 steht für sich: ein
+// NICHT zusammenhängender Zeitraum ist keine Frist mit Ereignis und Ende,
+// sondern eine reine Tageszahl (eigene Entität `Zeitraum`).
+
+// --- § 189 Abs. 1: benannte Fristdauern -----------------------------------------------------------
+
+pub enum BenannteFristdauer {
+    label de official "Frist, die das Gesetz mit einem Wort statt einer Zahl benennt (§ 189 Abs. 1)";
+    label en unofficial "period the statute names with a word rather than a number (§ 189 (1))";
+    HalbesJahr,
+    Vierteljahr,
+    HalberMonat
+}
+
+pub relation frist_dauer_benannt(f: Frist, dauer: BenannteFristdauer) kind empirical {
+    key(f);
+    label de official "Fristdauer, benannt als halbes Jahr, Vierteljahr oder halber Monat (§ 189 Abs. 1)";
+    label en unofficial "period duration named as half a year, a quarter year or half a month (§ 189 (1))";
+}
+
+@source(BGB_P189)
+rule BenannteFristdauerHalbesJahr(f: Frist) strict {
+    label de official "Unter einem halben Jahr wird eine Frist von sechs Monaten verstanden (§ 189 Abs. 1) — Kalenderfrist nach § 188 Abs. 2";
+    label en unofficial "Half a year means a period of six months (§ 189 (1)) — a calendar period under § 188 (2)";
+    when frist_dauer_benannt(f, HalbesJahr);
+    then frist_dauer_kalender(f, 6 calendar_month);
+}
+
+@source(BGB_P189)
+rule BenannteFristdauerVierteljahr(f: Frist) strict {
+    label de official "Unter einem Vierteljahr wird eine Frist von drei Monaten verstanden (§ 189 Abs. 1) — Kalenderfrist nach § 188 Abs. 2";
+    label en unofficial "A quarter year means a period of three months (§ 189 (1)) — a calendar period under § 188 (2)";
+    when frist_dauer_benannt(f, Vierteljahr);
+    then frist_dauer_kalender(f, 3 calendar_month);
+}
+
+@source(BGB_P189)
+rule BenannteFristdauerHalberMonat(f: Frist) strict {
+    label de official "Unter einem halben Monat wird eine Frist von 15 Tagen verstanden (§ 189 Abs. 1) — Tagesfrist nach § 188 Abs. 1";
+    label en unofficial "Half a month means a period of 15 days (§ 189 (1)) — a period fixed by days under § 188 (1)";
+    when frist_dauer_benannt(f, HalberMonat);
+    then frist_dauer_tage(f, 15 calendar_day);
+}
+
+// --- § 189 Abs. 2: ganze Monate und ein halber Monat, 15 Tage zuletzt -------------------------------
+
+pub relation frist_dauer_monate_und_halber_monat(f: Frist, monate: Quantity) kind empirical {
+    key(f);
+    label de official "Frist auf einen oder mehrere ganze Monate und einen halben Monat gestellt (§ 189 Abs. 2), Zahl der ganzen Monate";
+    label en unofficial "period fixed at one or more whole months plus half a month (§ 189 (2)), number of whole months";
+}
+
+@source(BGB_P189)
+rule BenannteFristdauerMonateUndHalberMonat(f: Frist, e: Date, m: Quantity) strict {
+    label de official "Ist eine Frist auf ganze Monate und einen halben Monat gestellt, so sind die 15 Tage zuletzt zu zählen (§ 189 Abs. 2): erst der Kalenderschritt der ganzen Monate (§ 188 Abs. 2), dann 15 Tage";
+    label en unofficial "Where a period is fixed at whole months plus half a month, the 15 days are counted last (§ 189 (2)): first the calendar step of the whole months (§ 188 (2)), then 15 days";
+    when frist_ereignis(f, e) and frist_dauer_monate_und_halber_monat(f, m);
+    then frist_ende_kalender(f, add_calendar_period(add_calendar_period(e, m), 15 calendar_day));
+}
+
+// --- § 190: Fristverlängerung -----------------------------------------------------------------------
+//
+// `frist_ereignis(f_neu, …)` bleibt EMPIRISCHE Eingabe wie bei jeder Frist
+// (der Fall gibt den Ereignistag der neuen Frist an); § 190 selbst wird als
+// TERMINALE Folgeprämisse geprüft, nicht als Ableitung von `frist_ereignis`
+// aus `frist_ende`: eine Ableitung würde `frist_ereignis` von `frist_ende`
+// desselben Prädikatnetzes abhängig machen und mit § 188/§ 193
+// (`frist_ereignis` → `frist_ende_kalender` → `frist_ende`) einen
+// Prädikatzyklus schließen (LDC-E4102). Die Norm bleibt dennoch ausführbar:
+// sie stellt fest, ob der vom Fall angegebene Ereignistag der neuen Frist
+// tatsächlich der Ablauf der vorigen Frist ist.
+
+pub relation frist_verlaengert_aus(f_neu: Frist, f_alt: Frist) kind empirical {
+    key(f_neu);
+    label de official "die Frist ist die Verlängerung einer vorigen Frist (§ 190)";
+    label en unofficial "the period is the extension of a previous period (§ 190)";
+}
+
+pub relation frist_verlaengerung_korrekt_berechnet(f_neu: Frist) kind institutional {
+    key(f_neu);
+    label de official "die neue Frist ist, wie § 190 verlangt, von dem Ablauf der vorigen Frist an berechnet: ihr Ereignistag ist der Ablauf der vorigen Frist";
+    label en unofficial "the new period is, as § 190 requires, computed from the end of the previous period: its event day is the end of the previous period";
+}
+
+@source(BGB_P190)
+rule Fristverlaengerung(f_neu: Frist, f_alt: Frist, e_neu: Date, ende_alt: Date) strict {
+    label de official "Im Falle der Verlängerung einer Frist wird die neue Frist von dem Ablauf der vorigen Frist an berechnet (§ 190)";
+    label en unofficial "In the case of an extension the new period is computed from the end of the previous period (§ 190)";
+    when frist_verlaengert_aus(f_neu, f_alt) and frist_ereignis(f_neu, e_neu) and frist_ende(f_alt, ende_alt) and e_neu == ende_alt;
+    then frist_verlaengerung_korrekt_berechnet(f_neu);
+}
+
+// --- § 191: Berechnung von Zeiträumen (nicht zusammenhängend) ---------------------------------------
+//
+// Eigene Entität, weil ein solcher Zeitraum kein Ereignis und kein
+// Fristende im Sinne der §§ 186–193 hat — nur eine Zahl von Tagen, die
+// Monat oder Jahr GLEICHGESETZT wird, unabhängig vom Kalender.
+
+pub entity Zeitraum {
+    label de official "nicht zusammenhängend zu verlaufender Zeitraum, nach Monaten oder Jahren bestimmt (§ 191)";
+    label en unofficial "period fixed by months or years that need not run contiguously (§ 191)";
+}
+
+pub enum ZeitraumEinheit {
+    label de official "Einheit, in der ein Zeitraum nach § 191 bestimmt ist";
+    label en unofficial "unit in which a § 191 period is fixed";
+    Monat,
+    Jahr
+}
+
+pub relation zeitraum_dauer(z: Zeitraum, einheit: ZeitraumEinheit, anzahl: Integer) kind empirical {
+    key(z);
+    label de official "Zeitraum nach Monaten oder Jahren bestimmt, in dem Sinne, dass er nicht zusammenhängend zu verlaufen braucht (§ 191)";
+    label en unofficial "period fixed by months or years, in the sense that it need not run contiguously (§ 191)";
+}
+
+pub relation zeitraum_tage(z: Zeitraum, tage: Integer) kind institutional {
+    key(z);
+    label de official "Zahl der Tage des Zeitraums (§ 191): der Monat zu 30, das Jahr zu 365 Tagen gerechnet";
+    label en unofficial "number of days of the period (§ 191): the month reckoned at 30, the year at 365 days";
+}
+
+@source(BGB_P191)
+rule ZeitraumTageMonat(z: Zeitraum, n: Integer) strict {
+    label de official "Der Monat wird zu 30 Tagen gerechnet (§ 191)";
+    label en unofficial "The month is reckoned at 30 days (§ 191)";
+    when zeitraum_dauer(z, Monat, n);
+    then zeitraum_tage(z, n * 30);
+}
+
+@source(BGB_P191)
+rule ZeitraumTageJahr(z: Zeitraum, n: Integer) strict {
+    label de official "Das Jahr wird zu 365 Tagen gerechnet (§ 191)";
+    label en unofficial "The year is reckoned at 365 days (§ 191)";
+    when zeitraum_dauer(z, Jahr, n);
+    then zeitraum_tage(z, n * 365);
+}
+
+// --- § 192: Anfang, Mitte, Ende des Monats -----------------------------------------------------------
+//
+// `monat_referenz` benennt den Monat (ein beliebiger Tag darin), dessen
+// Anfang, Mitte oder Ende gemeint ist — unabhängig vom Ereignistag der Frist
+// im Sinne § 187, weil § 192 selbst kein Ereignis kennt. Das Ergebnis speist
+// `frist_ende_kalender`, sodass § 193 (Verlegung193) es wie jedes andere
+// kalendarische Fristende prüft.
+
+pub enum Monatsbezeichnung {
+    label de official "Anfang, Mitte oder Ende des Monats (§ 192)";
+    label en unofficial "beginning, middle or end of the month (§ 192)";
+    Anfang,
+    Mitte,
+    Ende
+}
+
+pub relation monat_referenz(f: Frist, bezug: Date) kind empirical {
+    key(f);
+    label de official "ein Tag innerhalb des Monats, dessen Anfang, Mitte oder Ende gemeint ist (§ 192)";
+    label en unofficial "a day within the month whose beginning, middle or end is meant (§ 192)";
+}
+
+pub relation frist_dauer_monatsbezeichnung(f: Frist, bez: Monatsbezeichnung) kind empirical {
+    key(f);
+    label de official "das Fristende ist als Anfang, Mitte oder Ende des Monats bestimmt (§ 192)";
+    label en unofficial "the end of the period is fixed as the beginning, middle or end of the month (§ 192)";
+}
+
+@source(BGB_P192)
+rule MonatsbezeichnungAnfang(f: Frist, bezug: Date) strict {
+    label de official "Unter Anfang des Monats wird der erste Tag des Monats verstanden (§ 192)";
+    label en unofficial "The beginning of the month means the first day of the month (§ 192)";
+    when monat_referenz(f, bezug) and frist_dauer_monatsbezeichnung(f, Anfang);
+    then frist_ende_kalender(f, month_start_of(bezug));
+}
+
+@source(BGB_P192)
+rule MonatsbezeichnungMitte(f: Frist, bezug: Date) strict {
+    label de official "Unter Mitte des Monats wird der 15. Tag des Monats verstanden (§ 192)";
+    label en unofficial "The middle of the month means the 15th day of the month (§ 192)";
+    when monat_referenz(f, bezug) and frist_dauer_monatsbezeichnung(f, Mitte);
+    then frist_ende_kalender(f, add_calendar_period(month_start_of(bezug), with_unit(14, "calendar_day")));
+}
+
+@source(BGB_P192)
+rule MonatsbezeichnungEnde(f: Frist, bezug: Date) strict {
+    label de official "Unter Ende des Monats wird der letzte Tag des Monats verstanden (§ 192)";
+    label en unofficial "The end of the month means the last day of the month (§ 192)";
+    when monat_referenz(f, bezug) and frist_dauer_monatsbezeichnung(f, Ende);
+    then frist_ende_kalender(f, month_end_of(bezug));
+}

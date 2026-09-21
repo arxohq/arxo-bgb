@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Kanarienvogel zu § 1121 Abs. 1 — eine Bedingung weniger: dieselbe Lage, aber die Entfernung am 25.03.2026 erfolgt NACH der Beschlagnahme vom 20.03.2026. Die Enthaftung tritt nicht ein.
+test "Kanarienvogel § 1121 Abs. 1: Entfernung nach der Beschlagnahme — keine Enthaftung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:h07:hyp"), entity_ref("urn:de:bgb:dr:h07:grundstueck")) { origin case_input; }
+        assert "f2": gegenstand_des_grundstuecks(entity_ref("urn:de:bgb:dr:h07:maschine"), entity_ref("urn:de:bgb:dr:h07:grundstueck")) { origin case_input; }
+        assert "f3": zubehoerstueck(entity_ref("urn:de:bgb:dr:h07:maschine")) { origin case_input; }
+        assert "f4": not zubehoer_nicht_im_eigentum_des_grundstueckseigentuemers(entity_ref("urn:de:bgb:dr:h07:maschine")) { origin adjudicated; }
+        assert "f5": veraeussert_am(entity_ref("urn:de:bgb:dr:h07:maschine"), @2026-03-10) { origin adjudicated; }
+        assert "f6": vom_grundstueck_entfernt_am(entity_ref("urn:de:bgb:dr:h07:maschine"), @2026-03-25) { origin adjudicated; }
+        assert "f7": beschlagnahme_am(entity_ref("urn:de:bgb:dr:h07:maschine"), @2026-03-20) { origin adjudicated; }
+    }
+    evaluate truth(enthaftung_nach_1121(entity_ref("urn:de:bgb:dr:h07:maschine"), entity_ref("urn:de:bgb:dr:h07:hyp")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Kanal § 47.3 ohne Antwort des Gerichts: dieselben Tatsachen ohne die
+// Feststellung des Mitverschuldens. Das Mitverschulden ist eine Wertung
+// (§ 254 Abs. 1) und wird nicht als flache Tatsache des Falls vorgelegt; ohne
+// Urteil bleibt der gekürzte Ersatz offen und das Gericht wird gefragt.
+// Der volle Ersatz folgt erst aus der ausdrücklichen Angabe, dass kein
+// Mitverschulden mitgewirkt hat — sie fehlt hier.
+test "§ 254: ohne Urteil über das Mitverschulden bleibt der Ersatzbetrag offen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": geschaedigter(entity_ref("urn:de:bgb:sr-at:s02:sch1"), entity_ref("urn:de:bgb:sr-at:s02:p1")) { origin case_input; }
+        assert "a2": schadensbetrag(entity_ref("urn:de:bgb:sr-at:s02:sch1"), 9000.00 EUR) { origin case_input; }
+        assert "a3": kein_entgangener_gewinn_geltend_gemacht(entity_ref("urn:de:bgb:sr-at:s02:sch1")) { origin case_input; }
+    }
+    evaluate truth(ersatzbetrag_nach_mitverschulden(entity_ref("urn:de:bgb:sr-at:s02:sch1"), 6000.00 EUR));
+    expect truth_status == NEITHER;
+    evaluate truth(zu_ersetzender_schaden(entity_ref("urn:de:bgb:sr-at:s02:sch1"), 9000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

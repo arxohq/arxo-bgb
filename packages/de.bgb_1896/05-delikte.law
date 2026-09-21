@@ -1,0 +1,48 @@
+// ZWEITES BUCH, TITEL 25 — unlawful acts: one who intentionally or negligently
+// unlawfully infringes another’s right must compensate the harm (§ 823); a
+// child under seven is not responsible, from seven to eighteen only if lacking
+// the insight required (§ 828); one who appoints another to a task is liable
+// for harm caused in performing it unless the care required in traffic is
+// proved (§ 831); one bound to supervise a minor is liable for the minor’s
+// harm unless the duty of supervision is proved discharged (§ 832); the keeper
+// of an animal is liable for harm it causes (§ 833).
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+relation unerlaubte_handlung(taeter: Persona, verletzter: Persona, causa: Causa) kind institutional { label de official "unerlaubte Handlung"; label en unofficial "an unlawful infringement of another’s right (§ 823)"; }
+relation ohne_verschulden(causa: Causa) kind empirical { label de official "weder vorsätzlich noch fahrlässig"; label en unofficial "neither intent nor negligence of the actor (§ 823)"; }
+relation ersatzpflichtig(pflichtiger: Persona, verletzter: Persona, causa: Causa) kind institutional { label de official "zum Ersatze des Schadens verpflichtet"; label en unofficial "the person is bound to compensate the injured party (§§ 823, 831–833)"; }
+relation unter_sieben_bei_tat(taeter: Persona) kind empirical { label de official "hat das siebente Lebensjahr nicht vollendet"; label en unofficial "the actor has not completed the seventh year of age (§ 828)"; }
+relation verrichtungsgehilfe(gehilfe: Persona, geschaeftsherr: Persona) kind institutional { label de official "zu einer Verrichtung bestellt"; label en unofficial "a person appointed another to a task — the employee acting in the performance of that task (§ 831)"; }
+relation sorgfalt_bei_auswahl_bewiesen(causa: Causa) kind empirical { label de official "die im Verkehr erforderliche Sorgfalt beobachtet"; label en unofficial "the principal has proved the care required in traffic in selecting (§ 831)"; }
+relation aufsicht_genuegt_bewiesen(causa: Causa) kind empirical { label de official "seiner Aufsichtspflicht genügt"; label en unofficial "the person bound to supervise has proved that the duty of supervision was discharged (§ 832)"; }
+relation tierhalter(halter: Persona, tier: Res) kind institutional { label de official "Thierhalter"; label en unofficial "the person keeps the animal (§ 833)"; }
+
+@source(BGB_P823)
+rule UnerlaubteHandlung(a: Persona, l: Persona, c: Causa) strict { label de official "Wer vorsätzlich oder fahrlässig das Eigenthum oder ein sonstiges Recht eines Anderen widerrechtlich verletzt"; label en unofficial "Unlawfully caused harm is an unlawful act (§ 823)"; when doctrine.ius_privatum::damnum_datum(a, l, c); then unerlaubte_handlung(a, l, c); }
+@source(BGB_P823)
+rule TaeterErsatzpflichtig(a: Persona, l: Persona, c: Causa) defeasible { label de official "ist dem Anderen zum Ersatze des daraus entstehenden Schadens verpflichtet"; label en unofficial "The actor is bound to compensate the harm (§ 823 (1))"; when unerlaubte_handlung(a, l, c); then ersatzpflichtig(a, l, c); }
+@source(BGB_P823)
+rule OhneVerschulden(a: Persona, l: Persona, c: Causa) defeasible { label de official "vorsätzlich oder fahrlässig"; label en unofficial "Without intent or negligence there is no compensation under § 823"; when unerlaubte_handlung(a, l, c) and ohne_verschulden(c); then not ersatzpflichtig(a, l, c); }
+priority OhneVerschuldenUeberTaeter { label en unofficial "Absence of fault prevails over the general ground (§ 823)"; prefer OhneVerschulden over TaeterErsatzpflichtig; reason explicit_exception; }
+@source(BGB_P828)
+rule KindNichtVerantwortlich(a: Persona, l: Persona, c: Causa) defeasible { label de official "Wer nicht das siebente Lebensjahr vollendet hat, ist für einen Schaden nicht verantwortlich"; label en unofficial "A child under seven is not responsible for harm (§ 828)"; when unerlaubte_handlung(a, l, c) and unter_sieben_bei_tat(a); then not ersatzpflichtig(a, l, c); }
+priority KindUeberTaeter { label en unofficial "Infancy prevails over the general ground (§ 828)"; prefer KindNichtVerantwortlich over TaeterErsatzpflichtig; reason explicit_exception; }
+@source(BGB_P831)
+rule Verrichtungsgehilfe(w: Persona, e: Persona) strict { label de official "Wer einen Anderen zu einer Verrichtung bestellt"; label en unofficial "An employee acting in the performance of the task entrusted is a Verrichtungsgehilfe (§ 831)"; when doctrine.ius_privatum::famulus(w, e); then verrichtungsgehilfe(w, e); }
+@source(BGB_P831)
+rule GeschaeftsherrErsatzpflichtig(w: Persona, e: Persona, l: Persona, c: Causa) defeasible { label de official "ist zum Ersatze des Schadens verpflichtet, den der Andere in Ausführung der Verrichtung einem Dritten widerrechtlich zufügt"; label en unofficial "The principal is liable for harm caused by the employee in performing the task (§ 831 sentence 1)"; when unerlaubte_handlung(w, l, c) and verrichtungsgehilfe(w, e); then ersatzpflichtig(e, l, c); }
+@source(BGB_P831)
+rule SorgfaltEntlastet(w: Persona, e: Persona, l: Persona, c: Causa) defeasible { label de official "Die Ersatzpflicht tritt nicht ein, wenn der Geschäftsherr bei der Auswahl die im Verkehr erforderliche Sorgfalt beobachtet"; label en unofficial "Proved care in selection relieves the principal (§ 831 sentence 2)"; when unerlaubte_handlung(w, l, c) and verrichtungsgehilfe(w, e) and sorgfalt_bei_auswahl_bewiesen(c); then not ersatzpflichtig(e, l, c); }
+priority SorgfaltUeberGeschaeftsherr { label en unofficial "Relief prevails over the principal’s liability (§ 831)"; prefer SorgfaltEntlastet over GeschaeftsherrErsatzpflichtig; reason explicit_exception; }
+@source(BGB_P832)
+rule AufsichtspflichtigerErsatzpflichtig(s: Persona, p: Persona, l: Persona, c: Causa) defeasible { label de official "Wer kraft Gesetzes zur Führung der Aufsicht über eine Person verpflichtet ist, die wegen Minderjährigkeit der Beaufsichtigung bedarf, ist zum Ersatze des Schadens verpflichtet"; label en unofficial "A person bound by law to supervise a minor is liable for the minor’s harm (§ 832 sentence 1)"; when unerlaubte_handlung(s, l, c) and minderjaehrig_unter_aufsicht(s, p); then ersatzpflichtig(p, l, c); }
+@source(BGB_P832)
+rule AufsichtEntlastet(s: Persona, p: Persona, l: Persona, c: Causa) defeasible { label de official "Die Ersatzpflicht tritt nicht ein, wenn er seiner Aufsichtspflicht genügt"; label en unofficial "Proved discharge of the duty of supervision relieves (§ 832 sentence 2)"; when unerlaubte_handlung(s, l, c) and minderjaehrig_unter_aufsicht(s, p) and aufsicht_genuegt_bewiesen(c); then not ersatzpflichtig(p, l, c); }
+priority AufsichtUeberAufsichtspflichtiger { label en unofficial "Relief prevails over liability for supervision (§ 832)"; prefer AufsichtEntlastet over AufsichtspflichtigerErsatzpflichtig; reason explicit_exception; }
+@source(BGB_P833)
+rule Tierhalter(t: Res, d: Persona) strict { label de official "derjenige, welcher das Thier hält"; label en unofficial "The keeper of the animal in the case is its keeper (§ 833)"; when doctrine.ius_privatum::animal_domini(t, d); then tierhalter(d, t); }
+@source(BGB_P833)
+rule TierhalterErsatzpflichtig(t: Res, d: Persona, l: Persona, c: Causa) strict { label de official "Wird durch ein Thier eine Sache beschädigt, so ist derjenige, welcher das Thier hält, verpflichtet, dem Verletzten den Schaden zu ersetzen"; label en unofficial "The keeper of an animal is liable for harm it causes (§ 833)"; when doctrine.ius_privatum::damnum_ab_animali(t, l, c) and tierhalter(d, t); then ersatzpflichtig(d, l, c); }

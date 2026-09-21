@@ -1,0 +1,58 @@
+// --- Querschnitt: Ehe → Zugewinn § 1378 (mit Obergrenze und Vermutung
+// --- § 1377 Abs. 3) → Scheidung §§ 1564–1566 → Unterhalt (§ 1612a
+// --- Kindesunterhalt hier, nachehelicher Unterhalt bei de.bgb.ehe)
+// --- (MULTISESSION-PROMPT.ru.md §10 Nr. 7)
+//
+// Dieses Paket (BG-13) importiert de.bgb.ehe bereits transitiv (§ 1606
+// Abs. 3, Gesamtgut-Unterhalt, `titel-03-unterhalt.law`); ein Zyklus
+// `de.bgb.ehe → de.bgb.verwandtschaft` besteht nicht (BG-12 hat keine
+// Abhängigkeit auf BG-13). Daher liegt das Zuhause dieser Familie hier
+// (Ledger D-13-12), nicht bei BG-12.
+//
+// Die Regel unten liest VIER bereits institutionelle Ergebnisse zusammen:
+// die wirksame Scheidung (`de.bgb.ehe::ehe_geschieden_am`, §§ 1564–1566),
+// die Zugewinnausgleichsforderung (`de.bgb.ehe::ausgleichsforderung`,
+// § 1378 Abs. 1, 2 — trägt bereits die Obergrenze und, über
+// `de.bgb.ehe::ueberschuss`, die Vermutung des § 1377 Abs. 3), den
+// nachehelichen Unterhalt (`de.bgb.ehe::nachehelicher_unterhaltsanspruch`,
+// §§ 1570 ff.) und den Mindestunterhalt eines gemeinsamen minderjährigen
+// Kindes (`mindestunterhaltsanspruch`, § 1612a, dieses Paket). Vorbild für
+// das `when` auf das berechnete Ergebnis des Nachbarn statt auf einen
+// Fall-Fakt: `de.bgb.verfuegungen` auf `de.bgb.erbfolge::
+// gesetzlicher_erbteil_bruch`, D-13-02 (Brücke, keine Neuformulierung).
+//
+// Die drei Geldbeträge werden NICHT addiert: der Zugewinnausgleich ist eine
+// EINMALIGE Ausgleichsforderung (§ 1378 Abs. 3 Satz 1), nachehelicher und
+// Kindesunterhalt sind WIEDERKEHRENDE monatliche Ansprüche unterschiedlicher
+// Berechtigter (der geschiedene Ehegatte bzw. das Kind) — eine Summe wäre
+// erfunden, der Text nennt keine. Das Paket hält sie als drei Felder
+// desselben Befundes fest (Vorbild § 852: mehrere unabhängige Fragen über
+// demselben Anspruch, in de.bgb.bereicherung_delikt/D-09-08 fortgeführt).
+
+pub relation familienrechtliche_lage_nach_scheidung(
+    ehe: de.bgb.ehe::Ehe,
+    kind: Person,
+    berechtigter: Person,
+    pflichtiger: Person,
+    scheidung_wirksam_am: Date,
+    zugewinnausgleich: Money,
+    nachehelicher_unterhalt_grund: de.bgb.ehe::Unterhaltsgrund,
+    kindesunterhalt: Money
+) kind institutional {
+    label de official "Zusammenfassung der Geldfolgen einer Scheidung: Zugewinnausgleichsforderung (§ 1378), Grund des nachehelichen Unterhalts (§§ 1570 ff.) und Mindestunterhalt eines gemeinsamen minderjährigen Kindes (§ 1612a) — drei unabhängige Ansprüche, nicht addiert";
+    label en unofficial "summary of the money consequences of a divorce: the equalisation claim (§ 1378), the ground of post-marital maintenance (§§ 1570 et seq.) and the minimum maintenance of a common minor child (§ 1612a) — three independent claims, not summed";
+}
+
+@source(BGB_P1612a)
+rule FamilienrechtlicheLageNachScheidungBerechnen(
+    ehe: de.bgb.ehe::Ehe, kind: Person, berechtigter: Person, pflichtiger: Person,
+    tag: Date, zugewinn: Money, grund: de.bgb.ehe::Unterhaltsgrund, kbetrag: Money
+) strict {
+    label de official "Nach wirksamer Scheidung (§§ 1564–1566) bestehen nebeneinander die Zugewinnausgleichsforderung (§ 1378), der nacheheliche Unterhalt (§§ 1570 ff.) und, für ein gemeinsames minderjähriges Kind, der Mindestunterhalt (§ 1612a)";
+    label en unofficial "After an effective divorce (§§ 1564–1566) the equalisation claim (§ 1378), post-marital maintenance (§§ 1570 et seq.) and, for a common minor child, minimum maintenance (§ 1612a) coexist";
+    when de.bgb.ehe::ehe_geschieden_am(ehe, tag)
+     and de.bgb.ehe::ausgleichsforderung(ehe, berechtigter, pflichtiger, zugewinn)
+     and de.bgb.ehe::nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+     and mindestunterhaltsanspruch(kind, pflichtiger, kbetrag);
+    then familienrechtliche_lage_nach_scheidung(ehe, kind, berechtigter, pflichtiger, tag, zugewinn, grund, kbetrag);
+}

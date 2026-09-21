@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 823 Abs. 1: fahrlässige widerrechtliche Körperverletzung. Das Gericht hat die Fahrlässigkeit festgestellt und den Vorsatz verneint; die Verantwortlichkeit ist durch nichts ausgeschlossen.
+test "§ 823 Abs. 1: fahrlässige Körperverletzung begründet die Ersatzpflicht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:h01")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:h01")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:h01")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:h01"), entity_ref("urn:de:bgb:bd:h01:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:h01"), entity_ref("urn:de:bgb:bd:h01:V")) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:h01")) { origin adjudicated; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:h01")) { origin adjudicated; }
+    }
+    evaluate truth(rechtsgutverletzung(entity_ref("urn:de:bgb:bd:h01")));
+    expect truth_status == TRUE_ONLY;
+    expect applied(RechtsgutKoerper);
+    evaluate truth(haftungsgrund_823_abs1(entity_ref("urn:de:bgb:bd:h01")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(schadensersatzpflicht(entity_ref("urn:de:bgb:bd:h01"), entity_ref("urn:de:bgb:bd:h01:S"), entity_ref("urn:de:bgb:bd:h01:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 367 Abs. 1: Hauptleistung mit Zinsen von 120,00 EUR und Kosten von
+// 80,00 EUR; der Schuldner leistet 500,00 EUR. Die Leistung wird zunächst auf
+// die Kosten, dann auf die Zinsen und zuletzt auf die Hauptleistung
+// angerechnet: 500,00 − 80,00 − 120,00 = 300,00 EUR entfallen auf die
+// Hauptleistung.
+test "§ 367 Abs. 1: von 500,00 EUR entfallen nach Kosten und Zinsen 300,00 EUR auf die Hauptleistung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": zinsen_und_kosten_geschuldet(entity_ref("urn:de:bgb:sr-at:e01:a1"), 80.00 EUR, 120.00 EUR) { origin case_input; }
+        assert "a2": geleisteter_betrag(entity_ref("urn:de:bgb:sr-at:e01:a1"), 500.00 EUR) { origin case_input; }
+    }
+    evaluate truth(anrechnung_zuerst_auf_kosten_dann_zinsen(entity_ref("urn:de:bgb:sr-at:e01:a1"), 300.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    expect applied(AnrechnungAufKostenZinsenUndHauptleistung);
+}

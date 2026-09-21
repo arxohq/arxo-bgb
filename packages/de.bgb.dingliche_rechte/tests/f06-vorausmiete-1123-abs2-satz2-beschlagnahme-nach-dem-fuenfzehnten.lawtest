@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1123 Abs. 2 Satz 2: Die Miete ist im Voraus zu entrichten; die Beschlagnahme erfolgt am 20.04.2026, also nach dem 15. Tage des Monats. Die Befreiung erstreckt sich auch auf den Mietzins für den folgenden Kalendermonat, also bis zum 31.05.2026.
+test "§ 1123 Abs. 2 Satz 2: Beschlagnahme nach dem 15. — Befreiung bis zum Ende des Folgemonats" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:f06:hyp"), entity_ref("urn:de:bgb:dr:f06:grundstueck")) { origin case_input; }
+        assert "f2": grundstueck_vermietet_oder_verpachtet(entity_ref("urn:de:bgb:dr:f06:grundstueck")) { origin case_input; }
+        assert "f3": gegenstand_des_grundstuecks(entity_ref("urn:de:bgb:dr:f06:miete"), entity_ref("urn:de:bgb:dr:f06:grundstueck")) { origin case_input; }
+        assert "f4": miet_oder_pachtforderung(entity_ref("urn:de:bgb:dr:f06:miete")) { origin case_input; }
+        assert "f5": miete_im_voraus_zu_entrichten(entity_ref("urn:de:bgb:dr:f06:miete")) { origin case_input; }
+        assert "f6": beschlagnahme_am(entity_ref("urn:de:bgb:dr:f06:miete"), @2026-04-20) { origin adjudicated; }
+    }
+    evaluate truth(befreiung_reicht_bis(entity_ref("urn:de:bgb:dr:f06:miete"), @2026-05-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

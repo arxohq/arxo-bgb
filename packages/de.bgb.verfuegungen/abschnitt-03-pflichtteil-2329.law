@@ -1,0 +1,77 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 3 TITEL 3 — § 2329 ANSPRUCH
+// GEGEN DEN BESCHENKTEN (subsidiäre Haftung des Beschenkten).
+//
+// § 2332 (package.law) liest den Anspruch nach § 2329 bereits als
+// `anspruch_gegen_beschenkten_2329(a, e, p)` — dort als Eingabe des Falls
+// (kind empirical), weil § 2329 selbst noch nicht formalisiert war. Diese
+// Runde formalisiert § 2329 SELBST mit eigenen, additiven Prädikaten
+// (`_2329_voraussetzung`, `_2329_entstanden` usw.) und lässt die
+// bestehende Eingabe von § 2332 unverändert (kind empirical bleibt kind
+// empirical — eine Umwidmung zu `derived` würde bestehende Fallangaben
+// widersprüchlich machen). Der fehlende Betrag selbst (wie viel der Erbe
+// nicht leisten kann) bleibt Fallangabe, wie an anderen Geldstellen des
+// Pakets ohne eigenen Ergänzungsrechner über mehrere Ansprüche hinweg.
+
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+pub relation erbe_zur_ergaenzung_nicht_verpflichtet_2329(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe ist zur Ergänzung des Pflichtteils nicht (oder nicht vollständig) verpflichtet (§ 2329 Abs. 1 Satz 1)";
+    label en unofficial "the heir is not (or not fully) obliged to supplement the compulsory portion (§ 2329 (1) sentence 1)";
+}
+pub relation schenkung_beschenkter_fuer_2329(e: Erbfall, s: Schenkung, beschenkter: Person) kind empirical {
+    label de official "Der Beschenkte hat vom Erblasser die für § 2329 maßgebliche Schenkung erhalten (§ 2329 Abs. 1 Satz 1)";
+    label en unofficial "the donee received from the testator the gift relevant under § 2329 (§ 2329 (1) sentence 1)";
+}
+pub relation herausgabe_zum_zwecke_der_befriedigung_forderbar_2329(e: Erbfall, p: Person, s: Schenkung, beschenkter: Person) kind derived {
+    label de official "Der Pflichtteilsberechtigte kann vom Beschenkten Herausgabe des Geschenks nach Bereicherungsrecht wegen des fehlenden Betrags fordern (§ 2329 Abs. 1 Satz 1)";
+    label en unofficial "the beneficiary may demand return of the gift from the donee under unjust-enrichment rules for the missing amount (§ 2329 (1) sentence 1)";
+}
+pub relation pflichtteilsberechtigter_alleiniger_erbe_2329(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Pflichtteilsberechtigte ist alleiniger Erbe (§ 2329 Abs. 1 Satz 2)";
+    label en unofficial "the beneficiary is the sole heir (§ 2329 (1) sentence 2)";
+}
+pub relation gleiches_recht_als_alleiniger_erbe_2329(e: Erbfall, p: Person, s: Schenkung, beschenkter: Person) kind derived {
+    label de official "Ist der Pflichtteilsberechtigte alleiniger Erbe, steht ihm dasselbe Recht zu (§ 2329 Abs. 1 Satz 2)";
+    label en unofficial "where the beneficiary is the sole heir, the same right belongs to them (§ 2329 (1) sentence 2)";
+}
+pub relation beschenkter_zahlt_fehlenden_betrag_2329(e: Erbfall, s: Schenkung, beschenkter: Person) kind empirical {
+    label de official "Der Beschenkte zahlt den fehlenden Betrag (§ 2329 Abs. 2)";
+    label en unofficial "the donee pays the missing amount (§ 2329 (2))";
+}
+pub relation herausgabe_durch_zahlung_abgewendet_2329(e: Erbfall, s: Schenkung, beschenkter: Person) kind derived {
+    label de official "Der Beschenkte wendet die Herausgabe durch Zahlung des fehlenden Betrags ab (§ 2329 Abs. 2)";
+    label en unofficial "the donee averts the return by paying the missing amount (§ 2329 (2))";
+}
+pub relation mehrere_beschenkte_frueher_und_spaeter_2329(e: Erbfall, frueher: Person, spaeter: Person) kind empirical {
+    label de official "Unter mehreren Beschenkten steht ein früher und ein später Beschenkter fest (§ 2329 Abs. 3)";
+    label en unofficial "among several donees, an earlier and a later donee are established (§ 2329 (3))";
+}
+pub relation spaeter_beschenkter_verpflichtet_2329(e: Erbfall, frueher: Person, spaeter: Person) kind empirical {
+    label de official "Der später Beschenkte ist (voll) verpflichtet (§ 2329 Abs. 3, Gegenausnahme)";
+    label en unofficial "the later donee is (fully) obliged (§ 2329 (3), counter-exception)";
+}
+pub relation fruehere_beschenkte_haftung_subsidiaer_vermutet_2329(e: Erbfall, frueher: Person, spaeter: Person) kind derived {
+    label de official "Der früher Beschenkte haftet im Zweifel nur insoweit, als der später Beschenkte nicht verpflichtet ist (§ 2329 Abs. 3)";
+    label en unofficial "the earlier donee is in case of doubt liable only to the extent the later donee is not obliged (§ 2329 (3))";
+}
+
+@source(BGB_P2329) {
+    rule HerausgabeZumZweckeDerBefriedigung(e: Erbfall, p: Person, s: Schenkung, beschenkter: Person) strict {
+        label de official "Soweit der Erbe zur Ergänzung nicht verpflichtet ist, kann der Pflichtteilsberechtigte vom Beschenkten Herausgabe nach Bereicherungsrecht fordern (§ 2329 Abs. 1 Satz 1)"; label en unofficial "To the extent the heir is not obliged to supplement, the beneficiary may demand return from the donee under unjust-enrichment rules (§ 2329 (1) sentence 1)";
+        when erbe_zur_ergaenzung_nicht_verpflichtet_2329(e, p) and schenkung_beschenkter_fuer_2329(e, s, beschenkter); then herausgabe_zum_zwecke_der_befriedigung_forderbar_2329(e, p, s, beschenkter);
+    }
+    rule GleichesRechtAlsAlleinigerErbe(e: Erbfall, p: Person, s: Schenkung, beschenkter: Person) strict {
+        label de official "Ist der Pflichtteilsberechtigte alleiniger Erbe, steht ihm dasselbe Recht zu (§ 2329 Abs. 1 Satz 2)"; label en unofficial "Where the beneficiary is the sole heir, they have the same right (§ 2329 (1) sentence 2)";
+        when pflichtteilsberechtigter_alleiniger_erbe_2329(e, p) and schenkung_beschenkter_fuer_2329(e, s, beschenkter); then gleiches_recht_als_alleiniger_erbe_2329(e, p, s, beschenkter);
+    }
+    rule AbwendungDurchZahlung(e: Erbfall, s: Schenkung, beschenkter: Person) strict {
+        label de official "Der Beschenkte kann die Herausgabe durch Zahlung des fehlenden Betrags abwenden (§ 2329 Abs. 2)"; label en unofficial "The donee may avert the return by paying the missing amount (§ 2329 (2))";
+        when beschenkter_zahlt_fehlenden_betrag_2329(e, s, beschenkter); then herausgabe_durch_zahlung_abgewendet_2329(e, s, beschenkter);
+    }
+    presumption FruehereBeschenkteHaftungSubsidiaer(e: Erbfall, frueher: Person, spaeter: Person) {
+        label de official "Unter mehreren Beschenkten haftet der früher Beschenkte im Zweifel nur insoweit, als der später Beschenkte nicht verpflichtet ist (§ 2329 Abs. 3)"; label en unofficial "Among several donees, the earlier donee is in case of doubt liable only to the extent the later donee is not obliged (§ 2329 (3))";
+        when mehrere_beschenkte_frueher_und_spaeter_2329(e, frueher, spaeter); presume fruehere_beschenkte_haftung_subsidiaer_vermutet_2329(e, frueher, spaeter); unless spaeter_beschenkter_verpflichtet_2329(e, frueher, spaeter);
+    }
+}

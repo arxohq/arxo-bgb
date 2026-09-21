@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// Korridor 2009 (Gesetz vom 6. Juli 2009, BGBl. I S. 1696): § 1374 Abs. 3 lässt Verbindlichkeiten über die Höhe des Vermögens hinaus abziehen — das Anfangsvermögen kann NEGATIV sein, und die Tilgung von Schulden während der Ehe ist Zugewinn. A beginnt mit −80 000,00 € und endet mit 20 000,00 €: sein Zugewinn ist 100 000,00 €. Vor der Reform wäre das Anfangsvermögen mit null angesetzt worden und der Zugewinn nur 20 000,00 € — diese frühere Lesart gehört zum Übergangspaket `de.bgb.uebergang` und steht nicht hier.
+test "§ 1374 Abs. 3: negatives Anfangsvermögen (Reform 2009)" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A"), entity_ref("urn:de:bgb:ehe:t01:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:t01:E")) { origin case_input; }
+        assert "f3": gueterstand_beendet_am(entity_ref("urn:de:bgb:ehe:t01:E"), @2025-09-30) { origin case_input; }
+        assert "f4": gueterstand_auf_andere_weise_als_durch_tod_beendet(entity_ref("urn:de:bgb:ehe:t01:E")) { origin case_input; }
+        assert "f5": vermoegen_beim_eintritt_des_gueterstands(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A"), -80000.00 EUR) { origin case_input; }
+        assert "f6": vermoegen_beim_eintritt_des_gueterstands(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:B"), 0.00 EUR) { origin case_input; }
+        assert "f7": vermoegen_bei_beendigung_des_gueterstands(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A"), 20000.00 EUR) { origin case_input; }
+        assert "f8": vermoegen_bei_beendigung_des_gueterstands(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:B"), 0.00 EUR) { origin case_input; }
+        assert "f9": keine_hinzurechnung_zum_anfangsvermoegen(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A")) { origin case_input; }
+        assert "f10": keine_hinzurechnung_zum_anfangsvermoegen(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:B")) { origin case_input; }
+        assert "f11": keine_illoyale_minderung(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A")) { origin case_input; }
+        assert "f12": keine_illoyale_minderung(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:B")) { origin case_input; }
+    }
+    evaluate truth(anfangsvermoegen(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A"), -80000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(zugewinn(entity_ref("urn:de:bgb:ehe:t01:E"), entity_ref("urn:de:bgb:ehe:t01:A"), 100000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

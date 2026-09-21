@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1207 über § 932: Die Sache gehört dem Verpfänder nicht. Weiß der Pfandgläubiger das, so ist der Erwerb ausgeschlossen (§ 932 Abs. 2). Die Vermutung des § 1248 (der Verpfänder gelte als Eigentümer) ist durch dieselbe Kenntnis widerlegt.
+test "§ 1207, § 1248: Kenntnis vom fehlenden Eigentum schließt Erwerb und Vermutung aus" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:p03:pfand"), entity_ref("urn:de:bgb:dr:p03:uhr")) { origin case_input; }
+        assert "f2": de.bgb.besitz_eigentum::bewegliche_sache(entity_ref("urn:de:bgb:dr:p03:uhr")) { origin case_input; }
+        assert "f3": pfandglaeubiger(entity_ref("urn:de:bgb:dr:p03:pfand"), entity_ref("urn:de:bgb:dr:p03:bank")) { origin case_input; }
+        assert "f4": verpfaender(entity_ref("urn:de:bgb:dr:p03:pfand"), entity_ref("urn:de:bgb:dr:p03:v")) { origin case_input; }
+        assert "f5": einigung_ueber_das_pfandrecht(entity_ref("urn:de:bgb:dr:p03:pfand")) { origin adjudicated; }
+        assert "f6": sache_dem_glaeubiger_uebergeben(entity_ref("urn:de:bgb:dr:p03:pfand")) { origin adjudicated; }
+        assert "f7": sache_gehoert_dem_verpfaender_nicht(entity_ref("urn:de:bgb:dr:p03:pfand")) { origin adjudicated; }
+        assert "f8": kenntnis_vom_fehlenden_eigentum_des_verpfaenders(entity_ref("urn:de:bgb:dr:p03:pfand")) { origin adjudicated; }
+    }
+    evaluate truth(gutglaeubiger_pfandrechtserwerb_ausgeschlossen(entity_ref("urn:de:bgb:dr:p03:pfand")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verpfaender_gilt_als_eigentuemer(entity_ref("urn:de:bgb:dr:p03:pfand"), entity_ref("urn:de:bgb:dr:p03:v")));
+    expect truth_status == FALSE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

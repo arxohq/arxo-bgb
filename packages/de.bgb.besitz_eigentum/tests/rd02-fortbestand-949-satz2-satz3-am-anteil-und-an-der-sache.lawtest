@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 949 Satz 2: erwirbt der Eigentümer Miteigentum, besteht das Recht des Dritten am Anteil fort. Satz 3: wird er Alleineigentümer, erstreckt sich das Recht auf die hinzutretende Sache. Kanarei zu rd01: dieselbe Sache mit anderen Folgetatsachen kippt beide Ergebnisse.
+test "§ 949 Satz 2, 3: Fortbestand am Anteil und Erstreckung auf die hinzutretende Sache" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": recht_dritter_an_sache(entity_ref("urn:de:bgb:be:rd02:sache-a"), entity_ref("urn:de:bgb:be:rd02:dritter")) { origin case_input; }
+        assert "f2": eigentuemer_von_s_erwirbt_miteigentum_am_anteil(entity_ref("urn:de:bgb:be:rd02:sache-a"), entity_ref("urn:de:bgb:be:rd02:neu-a")) { origin adjudicated; }
+        assert "f3": recht_dritter_an_sache(entity_ref("urn:de:bgb:be:rd02:sache-b"), entity_ref("urn:de:bgb:be:rd02:dritter")) { origin case_input; }
+        assert "f4": eigentuemer_von_s_wird_alleineigentuemer_von(entity_ref("urn:de:bgb:be:rd02:sache-b"), entity_ref("urn:de:bgb:be:rd02:neu-b")) { origin adjudicated; }
+    }
+    evaluate truth(recht_dritter_besteht_am_anteil_fort(entity_ref("urn:de:bgb:be:rd02:sache-a"), entity_ref("urn:de:bgb:be:rd02:dritter"), entity_ref("urn:de:bgb:be:rd02:neu-a")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(recht_dritter_erstreckt_sich_auf_hinzutretende_sache(entity_ref("urn:de:bgb:be:rd02:sache-b"), entity_ref("urn:de:bgb:be:rd02:dritter"), entity_ref("urn:de:bgb:be:rd02:neu-b")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(recht_dritter_erloschen(entity_ref("urn:de:bgb:be:rd02:sache-a"), entity_ref("urn:de:bgb:be:rd02:dritter")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

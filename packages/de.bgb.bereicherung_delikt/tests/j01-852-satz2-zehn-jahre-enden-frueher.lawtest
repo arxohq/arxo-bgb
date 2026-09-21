@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 852 Satz 2: der Herausgabeanspruch ist am 1. Juni 2015 entstanden (zehn Jahre → 1. Juni 2025), die Verletzungshandlung liegt am 1. Juni 2010 (dreißig Jahre → 1. Juni 2040). Die zehnjährige Frist endet früher und bestimmt die Verjährung.
+test "§ 852 Satz 2: die zehnjährige Frist endet früher als die dreißigjährige" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": etwas_auf_kosten_des_verletzten_erlangt(entity_ref("urn:de:bgb:bd:j01")) { origin case_input; }
+        assert "f2": restanspruch_entstanden_am(entity_ref("urn:de:bgb:bd:j01"), @2015-06-01) { origin case_input; }
+        assert "f3": handlungstag(entity_ref("urn:de:bgb:bd:j01"), @2010-06-01) { origin case_input; }
+    }
+    evaluate truth(restanspruch_frist_zehn_jahre(entity_ref("urn:de:bgb:bd:j01"), @2025-06-01));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(restanspruch_frist_dreissig_jahre(entity_ref("urn:de:bgb:bd:j01"), @2040-06-01));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(restanspruch_verjaehrt_am(entity_ref("urn:de:bgb:bd:j01"), @2025-06-01));
+    expect truth_status == TRUE_ONLY;
+    expect applied(Restanspruch852VerjaehrtZehnJahre);
+    evaluate truth(restanspruch_verjaehrt_am(entity_ref("urn:de:bgb:bd:j01"), @2040-06-01));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

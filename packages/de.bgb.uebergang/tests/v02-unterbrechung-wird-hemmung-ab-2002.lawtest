@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.uebergang version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-uebergang";
+// Art. 229 § 6 Abs. 2: wie u01 (entstanden 10.3.1995, alte Frist 30 Jahre, neue Frist 3 Jahre, vollendet ohne weiteres mit Ablauf des 31.12.2004); eine am 31.12.2001 noch nicht beendigte Unterbrechung wird ab 1.1.2002 zur Hemmung bis 30.4.2002 (120 Tage) — verschiebt die Vollendung auf den 30.4.2005.
+test "Art. 229 § 6 Abs. 2: Unterbrechung wird zur Hemmung ab dem 1. Januar 2002" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_UEBERGANG_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:uebergang:pilot:v02"), @1995-03-10) { origin case_input; }
+        assert "b": alte_verjaehrung_begann_am(entity_ref("urn:de:bgb:uebergang:pilot:v02"), @1995-03-10) { origin case_input; }
+        assert "alt": alte_verjaehrungsfrist(entity_ref("urn:de:bgb:uebergang:pilot:v02"), 30 calendar_year) { origin case_input; }
+        assert "neu": neue_verjaehrungsfrist(entity_ref("urn:de:bgb:uebergang:pilot:v02"), 3 calendar_year) { origin case_input; }
+        assert "u": unterbrechung_alt_nicht_beendet_am_31_12_2001(entity_ref("urn:de:bgb:uebergang:pilot:v02")) { origin case_input; }
+        assert "ke": korridor_hemmung_ende_am(entity_ref("urn:de:bgb:uebergang:pilot:v02"), @2002-04-30) { origin case_input; }
+    }
+    evaluate truth(korridor_hemmungstage(entity_ref("urn:de:bgb:uebergang:pilot:v02"), 120));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_vollendet_am(entity_ref("urn:de:bgb:uebergang:pilot:v02"), @2004-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_vollendet_am_mit_korridor_hemmung(entity_ref("urn:de:bgb:uebergang:pilot:v02"), @2005-04-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

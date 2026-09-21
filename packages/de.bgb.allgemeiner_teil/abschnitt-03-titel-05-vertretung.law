@@ -1,0 +1,509 @@
+// BUCH 1 ABSCHNITT 3 TITEL 5 — VERTRETUNG, VOLLMACHT (§§ 164–181)
+//
+// KANÄLE (DECISION-0194). Kenntnis und Kennenmüssen (§§ 166, 169, 173, 179
+// Abs. 3) sind FESTGESTELLTE TATSACHEN; die Unverzüglichkeit der Zurückweisung
+// (§ 174 Satz 1) ist eine WERTUNG des Gerichts (Kanal wie § 111 Satz 2).
+//
+// FRIST DES § 177 Abs. 2 und des § 176 Abs. 1 Satz 2: zwei Wochen nach dem
+// Empfang der Aufforderung bzw. ein Monat nach der letzten Einrückung —
+// gerechnet von `de.bgb.fristen` (§§ 187 Abs. 1, 188 Abs. 2, 193); Zeilen in
+// DEADLINES.json, BG-03.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+pub entity Vollmacht {
+    label de official "durch Rechtsgeschäft erteilte Vertretungsmacht (Vollmacht, § 166 Abs. 2 Satz 1)";
+    label en unofficial "authority granted by transaction (power of attorney, § 166 (2))";
+}
+
+pub relation vertreter(r: Rechtsgeschaeft, v: Person) kind empirical {
+    key(r);
+    label de official "Person, die die Willenserklärung als Vertreter abgibt (§ 164 Abs. 1)";
+    label en unofficial "person making the declaration as representative (§ 164 (1))";
+}
+pub relation vertretener(r: Rechtsgeschaeft, p: Person) kind empirical {
+    key(r);
+    label de official "Person, in deren Namen der Vertreter handelt (§ 164 Abs. 1)";
+    label en unofficial "person in whose name the representative acts (§ 164 (1))";
+}
+pub relation im_namen_des_vertretenen(r: Rechtsgeschaeft) kind empirical {
+    label de official "die Erklärung erfolgt ausdrücklich im Namen des Vertretenen oder die Umstände ergeben, dass sie in dessen Namen erfolgen soll (§ 164 Abs. 1 Satz 2)";
+    label en unofficial "the declaration is made expressly in the name of the principal or the circumstances show it is to be so made (§ 164 (1) sentence 2)";
+}
+pub relation wille_in_fremdem_namen_nicht_erkennbar(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Wille, in fremdem Namen zu handeln, tritt nicht erkennbar hervor (§ 164 Abs. 2)";
+    label en unofficial "the intention to act in another's name is not apparent (§ 164 (2))";
+}
+pub relation vertretungsmacht_fuer_insichgeschaeft_ausgeschlossen(r: Rechtsgeschaeft, v: Person) kind institutional {
+    label de official "für dieses Insichgeschäft besteht keine Vertretungsmacht (§ 181)";
+    label en unofficial "there is no authority for this transaction with oneself (§ 181)";
+}
+pub relation vertretungsmacht(r: Rechtsgeschaeft, v: Person) kind institutional {
+    label de official "dem Vertreter zustehende Vertretungsmacht (§§ 164, 167–172)";
+    label en unofficial "authority vested in the representative (§§ 164, 167–172)";
+}
+pub relation wirkt_fuer_und_gegen_den_vertretenen(r: Rechtsgeschaeft, p: Person) kind institutional {
+    label de official "die Willenserklärung wirkt unmittelbar für und gegen den Vertretenen (§ 164 Abs. 1 Satz 1)";
+    label en unofficial "the declaration takes effect directly for and against the principal (§ 164 (1))";
+}
+pub relation mangel_des_eigengeschaeftswillens_unbeachtlich(r: Rechtsgeschaeft) kind institutional {
+    label de official "der Mangel des Willens, im eigenen Namen zu handeln, kommt nicht in Betracht (§ 164 Abs. 2)";
+    label en unofficial "the lack of intention to act in one's own name is not taken into account (§ 164 (2))";
+}
+
+@source(BGB_P164)
+rule WirkungDerErklaerungDesVertreters(r: Rechtsgeschaeft, v: Person, p: Person) strict {
+    label de official "Eine Willenserklärung, die jemand innerhalb der ihm zustehenden Vertretungsmacht im Namen des Vertretenen abgibt, wirkt unmittelbar für und gegen den Vertretenen (§ 164 Abs. 1 Satz 1)";
+    label en unofficial "A declaration made by a person within their authority in the name of the principal takes effect directly for and against the principal (§ 164 (1))";
+    when vertreter(r, v) and vertretener(r, p) and im_namen_des_vertretenen(r) and vertretungsmacht(r, v);
+    then wirkt_fuer_und_gegen_den_vertretenen(r, p);
+}
+
+@source(BGB_P164)
+rule VerdeckterMangelDesEigengeschaeftswillens(r: Rechtsgeschaeft) strict {
+    label de official "Tritt der Wille, in fremdem Namen zu handeln, nicht erkennbar hervor, so kommt der Mangel des Willens, im eigenen Namen zu handeln, nicht in Betracht (§ 164 Abs. 2)";
+    label en unofficial "If the intention to act in another's name is not apparent, the lack of intention to act in one's own name is disregarded (§ 164 (2))";
+    when wille_in_fremdem_namen_nicht_erkennbar(r);
+    then mangel_des_eigengeschaeftswillens_unbeachtlich(r);
+}
+
+@source(BGB_P165)
+rule BeschraenktGeschaeftsfaehigerVertreter(r: Rechtsgeschaeft, v: Person, p: Person, t: Date) strict {
+    label de official "Die Wirksamkeit einer von oder gegenüber einem Vertreter abgegebenen Willenserklärung wird nicht dadurch beeinträchtigt, dass der Vertreter in der Geschäftsfähigkeit beschränkt ist (§ 165)";
+    label en unofficial "The effectiveness of a declaration made by or to a representative is not impaired by the representative's limited capacity (§ 165)";
+    when vertreter(r, v)
+        and vertretener(r, p)
+        and im_namen_des_vertretenen(r)
+        and vertretungsmacht(r, v)
+        and beschraenkt_geschaeftsfaehig_am(v, t);
+    then wirkt_fuer_und_gegen_den_vertretenen(r, p);
+}
+
+// § 166 Willensmängel; Wissenszurechnung.
+pub relation kenntnis_des_vertreters(r: Rechtsgeschaeft, v: Person) kind empirical {
+    label de official "Kenntnis oder Kennenmüssen gewisser Umstände in der Person des Vertreters (§ 166 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "knowledge or imputed knowledge in the person of the representative (§ 166 (1)) — established fact";
+}
+pub relation kenntnis_des_vollmachtgebers(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "Umstände, die der Vollmachtgeber selbst kannte oder kennen musste (§ 166 Abs. 2)";
+    label en unofficial "circumstances the principal knew or ought to have known (§ 166 (2))";
+}
+pub relation nach_weisungen_gehandelt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Vertreter hat nach bestimmten Weisungen des Vollmachtgebers gehandelt (§ 166 Abs. 2 Satz 1)";
+    label en unofficial "the representative acted on specific instructions of the principal (§ 166 (2))";
+}
+pub relation kenntnis_zugerechnet(r: Rechtsgeschaeft, p: Person) kind institutional {
+    label de official "die Kenntnis, auf die es ankommt, wird dieser Person zugerechnet (§ 166)";
+    label en unofficial "the relevant knowledge is imputed to this person (§ 166)";
+}
+
+@source(BGB_P166)
+rule WissenszurechnungDesVertreters(r: Rechtsgeschaeft, v: Person) strict {
+    label de official "Soweit die rechtlichen Folgen einer Willenserklärung durch Willensmängel oder durch die Kenntnis oder das Kennenmüssen gewisser Umstände beeinflusst werden, kommt nicht die Person des Vertretenen, sondern die des Vertreters in Betracht (§ 166 Abs. 1)";
+    label en unofficial "Where the legal consequences depend on defects of intention or on knowledge, the person of the representative, not of the principal, is relevant (§ 166 (1))";
+    when vertreter(r, v) and kenntnis_des_vertreters(r, v);
+    then kenntnis_zugerechnet(r, v);
+}
+
+@source(BGB_P166)
+rule KeineBerufungAufUnkenntnisDesVertreters(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Hat im Falle einer durch Rechtsgeschäft erteilten Vertretungsmacht der Vertreter nach bestimmten Weisungen des Vollmachtgebers gehandelt, so kann sich dieser in Ansehung solcher Umstände, die er selbst kannte, nicht auf die Unkenntnis des Vertreters berufen (§ 166 Abs. 2)";
+    label en unofficial "Where the representative acted on specific instructions, the principal cannot rely on the representative's ignorance of circumstances the principal knew (§ 166 (2))";
+    when vertretener(r, p) and nach_weisungen_gehandelt(r) and kenntnis_des_vollmachtgebers(r, p);
+    then kenntnis_zugerechnet(r, p);
+}
+
+// §§ 167–176 Vollmacht.
+pub relation vollmacht_erteilt(vm: Vollmacht, vollmachtgeber: Person, bevollmaechtigter: Person) kind empirical {
+    key(vm);
+    label de official "Erteilung der Vollmacht durch Erklärung gegenüber dem zu Bevollmächtigenden oder dem Dritten (§ 167 Abs. 1)";
+    label en unofficial "grant of authority by declaration to the person to be authorised or to the third party (§ 167 (1))";
+}
+pub relation vollmacht_gegenueber_drittem_erteilt(vm: Vollmacht, dritter: Person) kind empirical {
+    label de official "die Vollmacht ist durch Erklärung gegenüber einem Dritten erteilt worden (§ 167 Abs. 1, § 170)";
+    label en unofficial "the authority was granted by declaration to a third party (§ 167 (1), § 170)";
+}
+pub relation vollmacht_des_rechtsgeschaefts(r: Rechtsgeschaeft, vm: Vollmacht) kind empirical {
+    key(r);
+    label de official "Vollmacht, auf die der Vertreter sein Handeln stützt (§§ 164, 167)";
+    label en unofficial "authority on which the representative relies (§§ 164, 167)";
+}
+pub relation grundverhaeltnis_beendet(vm: Vollmacht) kind empirical {
+    label de official "das der Erteilung der Vollmacht zugrunde liegende Rechtsverhältnis ist beendet (§ 168 Satz 1)";
+    label en unofficial "the legal relationship underlying the grant of authority has ended (§ 168 sentence 1)";
+}
+pub relation vollmacht_widerrufen_am(vm: Vollmacht, tag: Date) kind empirical {
+    key(vm);
+    label de official "Tag des Widerrufs der Vollmacht (§ 168 Satz 2, 3)";
+    label en unofficial "day of revocation of the authority (§ 168 sentences 2, 3)";
+}
+pub relation widerruflichkeit_ausgeschlossen(vm: Vollmacht) kind empirical {
+    label de official "aus dem zugrunde liegenden Rechtsverhältnis ergibt sich die Unwiderruflichkeit (§ 168 Satz 2 Halbsatz 2)";
+    label en unofficial "the underlying relationship excludes revocability (§ 168 sentence 2)";
+}
+pub relation vollmacht_erloschen(vm: Vollmacht) kind institutional {
+    label de official "die Vollmacht ist erloschen (§ 168)";
+    label en unofficial "the authority has lapsed (§ 168)";
+}
+pub relation erloeschen_bekannt_oder_kennen_muessen(vm: Vollmacht, dritter: Person) kind empirical {
+    label de official "der Dritte kennt das Erlöschen der Vertretungsmacht bei der Vornahme des Rechtsgeschäfts oder muss es kennen (§§ 169, 173) — festgestellte Tatsache";
+    label en unofficial "the third party knows or ought to know of the lapse of authority (§§ 169, 173) — established fact";
+}
+pub relation erloeschen_angezeigt(vm: Vollmacht, dritter: Person) kind empirical {
+    label de official "dem Dritten ist das Erlöschen von dem Vollmachtgeber angezeigt worden (§ 170)";
+    label en unofficial "the lapse has been notified to the third party by the principal (§ 170)";
+}
+pub relation kundgebung_der_bevollmaechtigung(vm: Vollmacht, dritter: Person) kind empirical {
+    label de official "der Vollmachtgeber hat durch besondere Mitteilung an einen Dritten oder durch öffentliche Bekanntmachung kundgegeben, dass er einen anderen bevollmächtigt habe (§ 171 Abs. 1)";
+    label en unofficial "the principal announced by special notice or public notice that they have authorised another (§ 171 (1))";
+}
+pub relation kundgebung_widerrufen(vm: Vollmacht) kind empirical {
+    label de official "die Kundgebung ist in derselben Weise, wie sie erfolgt ist, widerrufen worden (§ 171 Abs. 2)";
+    label en unofficial "the announcement has been revoked in the same manner (§ 171 (2))";
+}
+pub relation vollmachtsurkunde_ausgehaendigt(vm: Vollmacht) kind empirical {
+    label de official "der Vollmachtgeber hat dem Vertreter eine Vollmachtsurkunde ausgehändigt (§ 172 Abs. 1)";
+    label en unofficial "the principal handed the representative a document of authority (§ 172 (1))";
+}
+pub relation urkunde_dem_dritten_vorgelegt(vm: Vollmacht, dritter: Person) kind empirical {
+    label de official "der Vertreter legt die Vollmachtsurkunde dem Dritten vor (§ 172 Abs. 1)";
+    label en unofficial "the representative presents the document of authority to the third party (§ 172 (1))";
+}
+pub relation urkunde_zurueckgegeben_oder_kraftlos(vm: Vollmacht) kind empirical {
+    label de official "die Vollmachtsurkunde ist dem Vollmachtgeber zurückgegeben oder für kraftlos erklärt worden (§ 172 Abs. 2, § 176)";
+    label en unofficial "the document of authority has been returned or declared void (§ 172 (2), § 176)";
+}
+pub relation vertretungsmacht_gegenueber_drittem(vm: Vollmacht, dritter: Person) kind institutional {
+    label de official "die Vertretungsmacht besteht dem Dritten gegenüber fort (§§ 170–172)";
+    label en unofficial "the authority continues to exist as against the third party (§§ 170–172)";
+}
+
+@source(BGB_P167)
+rule VollmachtDurchErklaerung(vm: Vollmacht, g: Person, b: Person, r: Rechtsgeschaeft) strict {
+    label de official "Die Erteilung der Vollmacht erfolgt durch Erklärung gegenüber dem zu Bevollmächtigenden oder dem Dritten, dem gegenüber die Vertretung stattfinden soll; die Erklärung bedarf nicht der Form, welche für das Rechtsgeschäft bestimmt ist, auf das sich die Vollmacht bezieht (§ 167)";
+    label en unofficial "Authority is granted by declaration to the person to be authorised or to the third party; the declaration requires no particular form (§ 167)";
+    when vollmacht_erteilt(vm, g, b)
+        and vollmacht_des_rechtsgeschaefts(r, vm)
+        and vertreter(r, b)
+        and not_known(vollmacht_erloschen(vm))
+        and not_known(vertretungsmacht_fuer_insichgeschaeft_ausgeschlossen(r, b));
+    then vertretungsmacht(r, b);
+}
+
+@source(BGB_P168)
+rule VollmachtErlischtMitDemGrundverhaeltnis(vm: Vollmacht) strict {
+    label de official "Das Erlöschen der Vollmacht bestimmt sich nach dem ihrer Erteilung zugrunde liegenden Rechtsverhältnis (§ 168 Satz 1)";
+    label en unofficial "The lapse of authority is governed by the underlying legal relationship (§ 168 sentence 1)";
+    when grundverhaeltnis_beendet(vm);
+    then vollmacht_erloschen(vm);
+}
+
+@source(BGB_P168)
+rule VollmachtErlischtDurchWiderruf(vm: Vollmacht, t: Date) strict {
+    label de official "Die Vollmacht ist auch bei dem Fortbestehen des Rechtsverhältnisses widerruflich, sofern sich nicht aus diesem ein anderes ergibt (§ 168 Satz 2)";
+    label en unofficial "The authority is revocable even while the relationship continues, unless the relationship provides otherwise (§ 168 sentence 2)";
+    when vollmacht_widerrufen_am(vm, t) and not widerruflichkeit_ausgeschlossen(vm);
+    then vollmacht_erloschen(vm);
+}
+
+@source(BGB_P169)
+rule ErloscheneVollmachtDesBeauftragtenWirktNichtBeiKenntnis(vm: Vollmacht, d: Person) strict {
+    label de official "Soweit nach den §§ 674, 729 die erloschene Vollmacht eines Beauftragten oder eines geschäftsführenden Gesellschafters als fortbestehend gilt, wirkt sie nicht zugunsten eines Dritten, der bei der Vornahme eines Rechtsgeschäfts das Erlöschen kennt oder kennen muss (§ 169)";
+    label en unofficial "Authority deemed to continue under §§ 674, 729 does not operate in favour of a third party who knows or ought to know of its lapse (§ 169)";
+    when vollmacht_erloschen(vm) and erloeschen_bekannt_oder_kennen_muessen(vm, d);
+    then not vertretungsmacht_gegenueber_drittem(vm, d);
+}
+
+@source(BGB_P170)
+rule WirkungsdauerBeiErteilungGegenueberDrittem(vm: Vollmacht, d: Person) strict {
+    label de official "Wird die Vollmacht durch Erklärung gegenüber einem Dritten erteilt, so bleibt sie diesem gegenüber in Kraft, bis ihm das Erlöschen von dem Vollmachtgeber angezeigt wird (§ 170)";
+    label en unofficial "Authority granted by declaration to a third party remains in force as against them until the principal notifies them of its lapse (§ 170)";
+    when vollmacht_gegenueber_drittem_erteilt(vm, d)
+        and not erloeschen_angezeigt(vm, d)
+        and not erloeschen_bekannt_oder_kennen_muessen(vm, d);
+    then vertretungsmacht_gegenueber_drittem(vm, d);
+}
+
+@source(BGB_P171)
+rule WirkungsdauerBeiKundgebung(vm: Vollmacht, d: Person) strict {
+    label de official "Hat jemand durch besondere Mitteilung an einen Dritten oder durch öffentliche Bekanntmachung kundgegeben, dass er einen anderen bevollmächtigt habe, so ist dieser auf Grund der Kundgebung zur Vertretung befugt; die Vertretungsmacht bleibt bestehen, bis die Kundgebung in derselben Weise widerrufen wird (§ 171)";
+    label en unofficial "Where the principal announced the authorisation, the representative is authorised on that basis until the announcement is revoked in the same manner (§ 171)";
+    when kundgebung_der_bevollmaechtigung(vm, d)
+        and not kundgebung_widerrufen(vm)
+        and not erloeschen_bekannt_oder_kennen_muessen(vm, d);
+    then vertretungsmacht_gegenueber_drittem(vm, d);
+}
+
+@source(BGB_P172)
+rule WirkungsdauerBeiVollmachtsurkunde(vm: Vollmacht, d: Person) strict {
+    label de official "Der besonderen Mitteilung einer Bevollmächtigung steht es gleich, wenn der Vollmachtgeber dem Vertreter eine Vollmachtsurkunde ausgehändigt hat und der Vertreter sie dem Dritten vorlegt; die Vertretungsmacht bleibt bestehen, bis die Urkunde zurückgegeben oder für kraftlos erklärt wird (§ 172)";
+    label en unofficial "Handing over and presenting a document of authority is equivalent to a special notice; the authority continues until the document is returned or declared void (§ 172)";
+    when vollmachtsurkunde_ausgehaendigt(vm)
+        and urkunde_dem_dritten_vorgelegt(vm, d)
+        and not urkunde_zurueckgegeben_oder_kraftlos(vm)
+        and not erloeschen_bekannt_oder_kennen_muessen(vm, d);
+    then vertretungsmacht_gegenueber_drittem(vm, d);
+}
+
+@source(BGB_P173)
+rule KeinVertrauensschutzBeiKenntnis(vm: Vollmacht, d: Person) strict {
+    label de official "Die Vorschriften des § 170, des § 171 Abs. 2 und des § 172 Abs. 2 finden keine Anwendung, wenn der Dritte das Erlöschen der Vertretungsmacht bei der Vornahme des Rechtsgeschäfts kennt oder kennen muss (§ 173)";
+    label en unofficial "§§ 170, 171 (2) and 172 (2) do not apply if the third party knows or ought to know of the lapse of authority (§ 173)";
+    when vollmacht_erloschen(vm) and erloeschen_bekannt_oder_kennen_muessen(vm, d);
+    then not vertretungsmacht_gegenueber_drittem(vm, d);
+}
+
+@source(BGB_P174)
+rule EinseitigesGeschaeftDesBevollmaechtigtenZurueckgewiesen(r: Rechtsgeschaeft, vm: Vollmacht) strict {
+    label de official "Ein einseitiges Rechtsgeschäft, das ein Bevollmächtigter einem anderen gegenüber vornimmt, ist unwirksam, wenn der Bevollmächtigte eine Vollmachtsurkunde nicht vorlegt und der andere das Rechtsgeschäft aus diesem Grunde unverzüglich zurückweist; die Zurückweisung ist ausgeschlossen, wenn der Vollmachtgeber den anderen von der Bevollmächtigung in Kenntnis gesetzt hatte (§ 174)";
+    label en unofficial "A unilateral transaction by an authorised representative is ineffective if no document of authority is presented and the other party rejects it without undue delay, unless they had been informed of the authorisation (§ 174)";
+    when geschaeftsart(r, EinseitigesRechtsgeschaeft)
+        and vollmacht_des_rechtsgeschaefts(r, vm)
+        and not vollmachtsurkunde_ausgehaendigt(vm)
+        and zurueckweisung_erklaert(r)
+        and zurueckweisung_unverzueglich(r)
+        and not von_der_einwilligung_in_kenntnis_gesetzt(r);
+    then unwirksam(r);
+}
+
+pub relation urkunde_zurueckgegeben(vm: Vollmacht) kind empirical {
+    label de official "der Bevollmächtigte hat die Vollmachtsurkunde dem Vollmachtgeber zurückgegeben (§ 175)";
+    label en unofficial "the representative has returned the document of authority to the principal (§ 175)";
+}
+pub relation rueckgabepflicht(vm: Vollmacht, b: Person) kind institutional {
+    label de official "nach dem Erlöschen der Vollmacht hat der Bevollmächtigte die Vollmachtsurkunde zurückzugeben; ein Zurückbehaltungsrecht steht ihm nicht zu (§ 175)";
+    label en unofficial "after the authority lapses the representative must return the document; no right of retention (§ 175)";
+}
+
+@source(BGB_P175)
+rule RueckgabeDerVollmachtsurkunde(vm: Vollmacht, g: Person, b: Person) strict {
+    label de official "Nach dem Erlöschen der Vollmacht hat der Bevollmächtigte die Vollmachtsurkunde dem Vollmachtgeber zurückzugeben; ein Zurückbehaltungsrecht steht ihm nicht zu (§ 175)";
+    label en unofficial "After the authority lapses the representative must return the document to the principal; they have no right of retention (§ 175)";
+    when vollmacht_erloschen(vm) and vollmacht_erteilt(vm, g, b);
+    then rueckgabepflicht(vm, b);
+}
+
+// § 176 Kraftloserklärung der Vollmachtsurkunde.
+pub relation kraftloserklaerung_veroeffentlicht_am(vm: Vollmacht, tag: Date) kind empirical {
+    key(vm);
+    label de official "Tag der letzten Einrückung der öffentlichen Bekanntmachung der Kraftloserklärung (§ 176 Abs. 1 Satz 1)";
+    label en unofficial "day of the last insertion of the public notice declaring the document void (§ 176 (1))";
+}
+pub relation kraftloserklaerungsfrist(vm: Vollmacht, f: Frist) kind empirical {
+    key(vm);
+    label de official "Monatsfrist nach der letzten Einrückung, mit deren Ablauf die Kraftloserklärung wirksam wird (§ 176 Abs. 1 Satz 2)";
+    label en unofficial "the one-month period after the last insertion, on whose expiry the declaration becomes effective (§ 176 (1) sentence 2)";
+}
+pub relation kraftloserklaerung_wirksam_ab(vm: Vollmacht, tag: Date) kind institutional {
+    key(vm);
+    label de official "Tag, von dem an die Kraftloserklärung wirksam ist (§ 176 Abs. 1 Satz 2: mit dem Ablauf eines Monats nach der letzten Einrückung)";
+    label en unofficial "day from which the declaration of voidness is effective (§ 176 (1) sentence 2)";
+}
+pub relation vollmacht_nicht_widerruflich(vm: Vollmacht) kind empirical {
+    label de official "der Vollmachtgeber kann die Vollmacht nicht widerrufen (§ 176 Abs. 3)";
+    label en unofficial "the principal cannot revoke the authority (§ 176 (3))";
+}
+
+@source(BGB_P176)
+rule KraftloserklaerungsfristEreignis(vm: Vollmacht, f: Frist, d: Date) strict {
+    label de official "Mit dem Ablauf eines Monats nach der letzten Einrückung in die öffentlichen Blätter wird die Kraftloserklärung wirksam (§ 176 Abs. 1 Satz 2) — Ereignis ist die letzte Einrückung (§ 187 Abs. 1)";
+    label en unofficial "The declaration becomes effective on expiry of one month after the last insertion (§ 176 (1)) — the event is the last insertion";
+    when kraftloserklaerungsfrist(vm, f) and kraftloserklaerung_veroeffentlicht_am(vm, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P176)
+rule KraftloserklaerungsfristDauer(vm: Vollmacht, f: Frist, d: Date) strict {
+    label de official "Die Frist des § 176 Abs. 1 Satz 2 beträgt einen Monat (§ 188 Abs. 2)";
+    label en unofficial "The period of § 176 (1) sentence 2 is one month (§ 188 (2))";
+    when kraftloserklaerungsfrist(vm, f) and kraftloserklaerung_veroeffentlicht_am(vm, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_month);
+}
+
+@source(BGB_P176)
+rule KraftloserklaerungWirksam(vm: Vollmacht, f: Frist, e: Date) strict {
+    label de official "Die Kraftloserklärung ist mit dem Ablauf der Monatsfrist wirksam; unwirksam ist sie, wenn der Vollmachtgeber die Vollmacht nicht widerrufen kann (§ 176 Abs. 1 Satz 2, Abs. 3)";
+    label en unofficial "The declaration becomes effective on expiry of the month; it is ineffective if the principal cannot revoke the authority (§ 176 (1), (3))";
+    when kraftloserklaerungsfrist(vm, f)
+        and de.bgb.fristen::frist_ende_kalender(f, e)
+        and not vollmacht_nicht_widerruflich(vm);
+    then kraftloserklaerung_wirksam_ab(vm, add_calendar_period(e, 1 calendar_day));
+}
+
+// §§ 177–179 Vertreter ohne Vertretungsmacht.
+pub relation ohne_vertretungsmacht_gehandelt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Vertreter hat ohne Vertretungsmacht im Namen eines anderen gehandelt (§ 177 Abs. 1, § 179 Abs. 1)";
+    label en unofficial "the representative acted without authority in the name of another (§ 177 (1), § 179 (1))";
+}
+pub relation genehmigung_des_vertretenen(r: Rechtsgeschaeft) kind empirical {
+    label de official "Genehmigung des Vertretenen (§ 177 Abs. 1)";
+    label en unofficial "approval of the principal (§ 177 (1))";
+}
+pub relation genehmigung_verweigert_durch_vertretenen(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Vertretene verweigert die Genehmigung des Vertrags (§ 177 Abs. 2, § 179 Abs. 1)";
+    label en unofficial "the principal refuses approval of the contract (§ 177 (2), § 179 (1))";
+}
+pub relation mangel_der_vertretungsmacht_gekannt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der andere Teil hat den Mangel der Vertretungsmacht bei dem Abschluss des Vertrags gekannt oder musste ihn kennen (§ 178 Satz 1, § 179 Abs. 3 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the other party knew or ought to have known of the lack of authority (§ 178, § 179 (3)) — established fact";
+}
+pub relation vertreter_kannte_den_mangel(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Vertreter hat den Mangel der Vertretungsmacht gekannt (§ 179 Abs. 2 im Umkehrschluss)";
+    label en unofficial "the representative knew of the lack of authority (§ 179 (2) a contrario)";
+}
+pub relation vertreter_haftet_auf_erfuellung_oder_schadensersatz(r: Rechtsgeschaeft, v: Person) kind institutional {
+    label de official "der Vertreter ist dem anderen Teil nach dessen Wahl zur Erfüllung oder zum Schadensersatz verpflichtet (§ 179 Abs. 1)";
+    label en unofficial "the representative is liable to the other party, at their choice, for performance or damages (§ 179 (1))";
+}
+pub relation vertreter_haftet_auf_vertrauensschaden(r: Rechtsgeschaeft, v: Person) kind institutional {
+    label de official "der Vertreter, der den Mangel der Vertretungsmacht nicht kannte, ist nur zum Ersatz des Vertrauensschadens verpflichtet, nicht über das Erfüllungsinteresse hinaus (§ 179 Abs. 2)";
+    label en unofficial "a representative unaware of the lack of authority owes only reliance damages, capped at the expectation interest (§ 179 (2))";
+}
+pub relation vertreter_haftet_nicht(r: Rechtsgeschaeft, v: Person) kind institutional {
+    label de official "der Vertreter haftet nicht (§ 179 Abs. 3)";
+    label en unofficial "the representative is not liable (§ 179 (3))";
+}
+
+@source(BGB_P177)
+rule VertragOhneVertretungsmachtSchwebendUnwirksam(r: Rechtsgeschaeft) strict {
+    label de official "Schließt jemand ohne Vertretungsmacht im Namen eines anderen einen Vertrag, so hängt die Wirksamkeit des Vertrags für und gegen den Vertretenen von dessen Genehmigung ab (§ 177 Abs. 1)";
+    label en unofficial "Where someone concludes a contract in another's name without authority, its effectiveness depends on the principal's approval (§ 177 (1))";
+    when geschaeftsart(r, Vertrag) and ohne_vertretungsmacht_gehandelt(r) and not genehmigung_des_vertretenen(r);
+    then schwebend_unwirksam(r);
+}
+
+@source(BGB_P177)
+rule GenehmigungDesVertretenenMachtWirksam(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Die Genehmigung des Vertretenen macht den ohne Vertretungsmacht geschlossenen Vertrag wirksam (§ 177 Abs. 1 mit § 184 Abs. 1)";
+    label en unofficial "The principal's approval makes the contract concluded without authority effective (§ 177 (1) with § 184 (1))";
+    when ohne_vertretungsmacht_gehandelt(r) and vertretener(r, p) and genehmigung_des_vertretenen(r);
+    then wirksam(r);
+}
+
+@source(BGB_P177)
+rule GenehmigungsfristDesVertretenen(r: Rechtsgeschaeft, e: Date, g: Date) strict {
+    label de official "Die Genehmigung kann nur bis zum Ablauf von zwei Wochen nach dem Empfang der Aufforderung erklärt werden; wird sie nicht erklärt, so gilt sie als verweigert (§ 177 Abs. 2 Satz 2)";
+    label en unofficial "Approval may only be declared within two weeks of receipt of the request; otherwise it is deemed refused (§ 177 (2) sentence 2)";
+    when ohne_vertretungsmacht_gehandelt(r)
+        and genehmigungsfrist_ende(r, e)
+        and genehmigung_erklaert_am(r, g)
+        and g > e;
+    then genehmigung_verweigert(r);
+}
+
+@source(BGB_P178)
+rule WiderrufsrechtDesAnderenTeils(r: Rechtsgeschaeft) strict {
+    label de official "Bis zur Genehmigung des Vertrags ist der andere Teil zum Widerruf berechtigt, es sei denn, dass er den Mangel der Vertretungsmacht bei dem Abschluss des Vertrags gekannt hat (§ 178 Satz 1)";
+    label en unofficial "Until approval the other party may revoke, unless they knew of the lack of authority at conclusion (§ 178 sentence 1)";
+    when ohne_vertretungsmacht_gehandelt(r)
+        and not genehmigung_des_vertretenen(r)
+        and not mangel_der_vertretungsmacht_gekannt(r);
+    then widerruf_berechtigt(r);
+}
+
+@source(BGB_P179)
+rule HaftungDesVertretersOhneVertretungsmacht(r: Rechtsgeschaeft, v: Person) strict {
+    label de official "Wer als Vertreter einen Vertrag geschlossen hat, ist, sofern er nicht seine Vertretungsmacht nachweist, dem anderen Teil nach dessen Wahl zur Erfüllung oder zum Schadensersatz verpflichtet, wenn der Vertretene die Genehmigung des Vertrags verweigert (§ 179 Abs. 1)";
+    label en unofficial "A representative who cannot prove authority is liable, at the other party's choice, for performance or damages if the principal refuses approval (§ 179 (1))";
+    when ohne_vertretungsmacht_gehandelt(r)
+        and vertreter(r, v)
+        and genehmigung_verweigert_durch_vertretenen(r)
+        and vertreter_kannte_den_mangel(r)
+        and not mangel_der_vertretungsmacht_gekannt(r);
+    then vertreter_haftet_auf_erfuellung_oder_schadensersatz(r, v);
+}
+
+@source(BGB_P179)
+rule HaftungDesGutglaeubigenVertreters(r: Rechtsgeschaeft, v: Person) strict {
+    label de official "Hat der Vertreter den Mangel der Vertretungsmacht nicht gekannt, so ist er nur zum Ersatz desjenigen Schadens verpflichtet, welchen der andere Teil dadurch erleidet, dass er auf die Vertretungsmacht vertraut, jedoch nicht über den Betrag des Interesses hinaus (§ 179 Abs. 2)";
+    label en unofficial "A representative unaware of the lack of authority owes only the reliance loss, capped at the interest in the contract (§ 179 (2))";
+    when ohne_vertretungsmacht_gehandelt(r)
+        and vertreter(r, v)
+        and genehmigung_verweigert_durch_vertretenen(r)
+        and not vertreter_kannte_den_mangel(r)
+        and not mangel_der_vertretungsmacht_gekannt(r);
+    then vertreter_haftet_auf_vertrauensschaden(r, v);
+}
+
+@source(BGB_P179)
+rule KeineHaftungBeiKenntnisDesAnderenTeils(r: Rechtsgeschaeft, v: Person) strict {
+    label de official "Der Vertreter haftet nicht, wenn der andere Teil den Mangel der Vertretungsmacht kannte oder kennen musste (§ 179 Abs. 3 Satz 1)";
+    label en unofficial "The representative is not liable if the other party knew or ought to have known of the lack of authority (§ 179 (3))";
+    when ohne_vertretungsmacht_gehandelt(r) and vertreter(r, v) and mangel_der_vertretungsmacht_gekannt(r);
+    then vertreter_haftet_nicht(r, v);
+}
+
+@source(BGB_P179)
+rule KeineHaftungDesBeschraenktGeschaeftsfaehigenVertreters(r: Rechtsgeschaeft, v: Person, t: Date) strict {
+    label de official "Der Vertreter haftet auch dann nicht, wenn er in der Geschäftsfähigkeit beschränkt war, es sei denn, dass er mit Zustimmung seines gesetzlichen Vertreters gehandelt hat (§ 179 Abs. 3 Satz 2)";
+    label en unofficial "The representative is also not liable if they had limited capacity, unless they acted with their legal representative's consent (§ 179 (3) sentence 2)";
+    when ohne_vertretungsmacht_gehandelt(r)
+        and vertreter(r, v)
+        and vornahme_des_rechtsgeschaefts_am(r, t)
+        and beschraenkt_geschaeftsfaehig_am(v, t)
+        and not einwilligung_des_gesetzlichen_vertreters_des_vertreters(r);
+    then vertreter_haftet_nicht(r, v);
+}
+
+pub relation einwilligung_des_gesetzlichen_vertreters_des_vertreters(r: Rechtsgeschaeft) kind empirical {
+    label de official "der beschränkt geschäftsfähige Vertreter hat mit Zustimmung seines gesetzlichen Vertreters gehandelt (§ 179 Abs. 3 Satz 2)";
+    label en unofficial "the representative with limited capacity acted with their legal representative's consent (§ 179 (3) sentence 2)";
+}
+
+// § 180 Einseitiges Rechtsgeschäft ohne Vertretungsmacht.
+pub relation vertretungsmacht_nicht_beanstandet(r: Rechtsgeschaeft) kind empirical {
+    label de official "derjenige, welchem gegenüber das einseitige Rechtsgeschäft vorzunehmen war, hat die behauptete Vertretungsmacht nicht beanstandet oder war mit dem Handeln ohne Vertretungsmacht einverstanden (§ 180 Sätze 2, 3)";
+    label en unofficial "the addressee did not object to the alleged authority or agreed to the representative acting without authority (§ 180 sentences 2, 3)";
+}
+pub relation vertretung_unzulaessig(r: Rechtsgeschaeft) kind institutional {
+    label de official "bei einem einseitigen Rechtsgeschäft ist Vertretung ohne Vertretungsmacht unzulässig (§ 180 Satz 1)";
+    label en unofficial "for a unilateral transaction, representation without authority is not permitted (§ 180 sentence 1)";
+}
+
+@source(BGB_P180)
+rule VertretungOhneVertretungsmachtBeiEinseitigemGeschaeftUnzulaessig(r: Rechtsgeschaeft) strict {
+    label de official "Bei einem einseitigen Rechtsgeschäft ist Vertretung ohne Vertretungsmacht unzulässig (§ 180 Satz 1)";
+    label en unofficial "For a unilateral transaction, representation without authority is not permitted (§ 180 sentence 1)";
+    when geschaeftsart(r, EinseitigesRechtsgeschaeft)
+        and ohne_vertretungsmacht_gehandelt(r)
+        and not vertretungsmacht_nicht_beanstandet(r);
+    then vertretung_unzulaessig(r);
+}
+
+@source(BGB_P180)
+rule EinseitigesGeschaeftWieVertragBeiEinverstaendnis(r: Rechtsgeschaeft) strict {
+    label de official "Hat der Erklärungsempfänger die behauptete Vertretungsmacht nicht beanstandet oder war er mit dem Handeln ohne Vertretungsmacht einverstanden, so finden die Vorschriften über Verträge entsprechende Anwendung (§ 180 Sätze 2, 3)";
+    label en unofficial "If the addressee did not object or agreed, the provisions on contracts apply accordingly (§ 180 sentences 2, 3)";
+    when geschaeftsart(r, EinseitigesRechtsgeschaeft)
+        and ohne_vertretungsmacht_gehandelt(r)
+        and vertretungsmacht_nicht_beanstandet(r)
+        and not genehmigung_des_vertretenen(r);
+    then schwebend_unwirksam(r);
+}
+
+// § 181 Insichgeschäft.
+pub relation insichgeschaeft(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Vertreter nimmt im Namen des Vertretenen mit sich im eigenen Namen oder als Vertreter eines Dritten ein Rechtsgeschäft vor (§ 181)";
+    label en unofficial "the representative effects a transaction with themselves or as representative of a third party (§ 181)";
+}
+pub relation insichgeschaeft_gestattet(r: Rechtsgeschaeft) kind empirical {
+    label de official "dem Vertreter ist das Insichgeschäft gestattet (§ 181 Halbsatz 1)";
+    label en unofficial "the representative is permitted to effect the transaction with themselves (§ 181)";
+}
+pub relation erfuellung_einer_verbindlichkeit(r: Rechtsgeschaeft) kind empirical {
+    label de official "das Rechtsgeschäft besteht ausschließlich in der Erfüllung einer Verbindlichkeit (§ 181 Halbsatz 2)";
+    label en unofficial "the transaction consists exclusively in the performance of an obligation (§ 181)";
+}
+
+@source(BGB_P181)
+rule InsichgeschaeftUnzulaessig(r: Rechtsgeschaeft, v: Person) strict {
+    label de official "Ein Vertreter kann, soweit nicht ein anderes ihm gestattet ist, im Namen des Vertretenen mit sich im eigenen Namen oder als Vertreter eines Dritten ein Rechtsgeschäft nicht vornehmen, es sei denn, dass das Rechtsgeschäft ausschließlich in der Erfüllung einer Verbindlichkeit besteht (§ 181)";
+    label en unofficial "A representative may not effect a transaction with themselves or as representative of a third party, unless permitted or the transaction consists only in performing an obligation (§ 181)";
+    when insichgeschaeft(r)
+        and vertreter(r, v)
+        and not insichgeschaeft_gestattet(r)
+        and not erfuellung_einer_verbindlichkeit(r);
+    then vertretungsmacht_fuer_insichgeschaeft_ausgeschlossen(r, v);
+}

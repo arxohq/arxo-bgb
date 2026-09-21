@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1207(pf: Pfandrecht, verpfaender: Person, tag: Date) kind empirical { label de official "Eingang des Falls zum Ausschluss gutgläubigen Pfandrechterwerbs (§ 1207)"; label en unofficial "case input for exclusion of good-faith acquisition of the pledge (§ 1207)"; }
+pub relation erwerb_1207_unwirksam(pf: Pfandrecht) kind empirical { label de official "Der Pfandrechterwerb ist wegen fehlenden guten Glaubens ausgeschlossen (§ 1207)"; label en unofficial "Acquisition of the pledge is excluded for lack of good faith (§ 1207)"; }
+pub relation position_trigger_1218(pf: Pfandrecht, verpfaender: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Rückgabe gegen Sicherheitsleistung (§ 1218)"; label en unofficial "case input for return against security (§ 1218)"; }
+pub relation rueckgabe_1218_ausuebbar(pf: Pfandrecht, verpfaender: Person) kind empirical { label de official "Der Verpfänder darf Rückgabe gegen anderweitige Sicherheit verlangen (§ 1218)"; label en unofficial "The pledgor may demand return against other security (§ 1218)"; }
+pub relation position_trigger_1234(pf: Pfandrecht, verpfaender: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Verkaufswartefrist (§ 1234)"; label en unofficial "case input for the sale waiting period (§ 1234)"; }
+pub relation verkauf_1234_vorfristig(pf: Pfandrecht) kind empirical { label de official "Der Verkauf vor Ablauf der Monatsfrist wird vorgenommen (§ 1234)"; label en unofficial "Sale is attempted before expiry of the one-month period (§ 1234)"; }
+
+@source(BGB_P1207)
+rule PositionGutglaeubiger1207(pf: Pfandrecht, verpfaender: Person, tag: Date) strict { label de official "Der gutgläubige Erwerb des Pfandrechts ist ausgeschlossen (§ 1207)"; label en unofficial "Good-faith acquisition of the pledge is excluded (§ 1207)"; when position_trigger_1207(pf, verpfaender, tag); then immunity Gutglaeubiger1207 { holder verpfaender; against pf; protected_effect erwerb_1207_unwirksam(pf); window [tag, infinity); }; }
+@source(BGB_P1218)
+rule PositionRueckgabe1218(pf: Pfandrecht, verpfaender: Person, tag: Date) strict { label de official "Der Verpfänder darf Rückgabe gegen anderweitige Sicherheit verlangen (§ 1218)"; label en unofficial "The pledgor may demand return against other security (§ 1218)"; when position_trigger_1218(pf, verpfaender, tag); then power Rueckgabe1218 { holder verpfaender; over pf; exercise rueckgabe_1218_ausuebbar(pf, verpfaender); valid_when rueckgabe_1218_ausuebbar(pf, verpfaender); effect create(rueckgabe_1218_ausuebbar(pf, verpfaender)); window [tag, infinity); }; }
+@source(BGB_P1234)
+rule PositionVerkaufswartefrist1234(pf: Pfandrecht, verpfaender: Person, tag: Date) strict { label de official "Der Verkauf ist bis zum Ablauf der Monatsfrist zu unterlassen (§ 1234)"; label en unofficial "The sale must be withheld until expiry of the one-month period (§ 1234)"; when position_trigger_1234(pf, verpfaender, tag); then duty Verkaufswartefrist1234 { bearer verpfaender; achieve verkauf_1234_vorfristig(pf) during [tag, infinity); }; }

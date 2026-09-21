@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 833 Satz 2: dasselbe Geschehen, aber das Tier ist ein Haustier, das dem Beruf des Halters zu dienen bestimmt ist, und das Gericht hat die beobachtete Sorgfalt festgestellt — die Ersatzpflicht tritt nicht ein.
+test "§ 833 Satz 2: Nutztier und beobachtete Sorgfalt nehmen die Haftung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": tier_der_handlung(entity_ref("urn:de:bgb:bd:p05"), entity_ref("urn:de:bgb:bd:p05:T")) { origin case_input; }
+        assert "f2": koerper_durch_tier_verletzt(entity_ref("urn:de:bgb:bd:p05")) { origin case_input; }
+        assert "f3": tierhalter(entity_ref("urn:de:bgb:bd:p05"), entity_ref("urn:de:bgb:bd:p05:H")) { origin case_input; }
+        assert "f4": verletzter(entity_ref("urn:de:bgb:bd:p05"), entity_ref("urn:de:bgb:bd:p05:V")) { origin case_input; }
+        assert "f5": nutztier(entity_ref("urn:de:bgb:bd:p05")) { origin case_input; }
+        assert "j1": sorgfalt_bei_beaufsichtigung_des_tieres_beobachtet(entity_ref("urn:de:bgb:bd:p05")) { origin adjudicated; }
+        assert "j2": not schaden_auch_bei_sorgfalt_entstanden_833(entity_ref("urn:de:bgb:bd:p05")) { origin adjudicated; }
+    }
+    evaluate truth(entlastung_nutztier(entity_ref("urn:de:bgb:bd:p05")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(haftung_des_tierhalters(entity_ref("urn:de:bgb:bd:p05")));
+    expect truth_status == NEITHER;
+    evaluate truth(haftung_833(entity_ref("urn:de:bgb:bd:p05"), entity_ref("urn:de:bgb:bd:p05:H"), entity_ref("urn:de:bgb:bd:p05:V")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

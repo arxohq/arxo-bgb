@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// § 234 Abs. 1, 3: das Inhaberpapier gehört zu einer Gattung der Rechtsverordnung nach § 240a, die Scheine sind mithinterlegt; mit Wertpapieren kann Sicherheit nur in Höhe von drei Vierteln des Kurswerts geleistet werden: 1 234,56 € × 3 / 4 = 925,92 €.
+test "§ 234 Abs. 3: Sicherheit nur in Höhe von drei Vierteln des Kurswerts" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "a1": inhaber_oder_orderpapier_mit_blankoindossament(entity_ref("urn:de:bgb:at:si01:sicherheit")) { origin case_input; }
+        assert "a2": gattung_der_rechtsverordnung_nach_240a(entity_ref("urn:de:bgb:at:si01:sicherheit")) { origin case_input; }
+        assert "a3": kurswert(entity_ref("urn:de:bgb:at:si01:sicherheit"), 1234.56 EUR) { origin case_input; }
+        assert "a4": zins_renten_gewinnanteil_und_erneuerungsscheine_hinterlegt(entity_ref("urn:de:bgb:at:si01:sicherheit")) { origin case_input; }
+    }
+    evaluate truth(wertpapier_geeignet(entity_ref("urn:de:bgb:at:si01:sicherheit")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(sicherheit_hoechstens_in_hoehe_von(entity_ref("urn:de:bgb:at:si01:sicherheit"), 925.92 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

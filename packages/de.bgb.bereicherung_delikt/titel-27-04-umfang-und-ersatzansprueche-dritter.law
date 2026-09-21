@@ -1,0 +1,340 @@
+// --- Titel 27, vierter Teil: Umfang der Ersatzpflicht bei Verletzung einer
+// --- Person, Geldrente, Ersatzansprüche Dritter und Mitverschulden
+// --- (§§ 842–846)
+//
+// GELD. Die Beträge dieses Teils nennt der Fall: den Erwerbsschaden (§ 843
+// Abs. 1), die Beerdigungskosten (§ 844 Abs. 1), den entzogenen Unterhalt
+// (§ 844 Abs. 2) und den Wert der entgehenden Dienste (§ 845). Das BGB nennt
+// hier weder Satz noch Rundung, und keiner wird erfunden. Die EINZIGE Division
+// des Pakets steht bei § 846 i. V. m. § 254: die Quote des Mitverschuldens
+// kommt als Paar ganzer Zahlen vom Gericht, und der geminderte Betrag wird
+// EINMAL je Anspruch gerundet — `div_round(Betrag × (Nenner − Zähler),
+// Nenner × 1.0, 2, "HALF_UP")` (Ledger D-09-02).
+//
+// § 254 SELBST gehört de.bgb.schuldrecht_at (BG-04). Bis zur Zusammenführung
+// erklärt dieses Paket die Quote lokal als Urteilsanfrage; die Regel nennt
+// § 846 als Anker, weil nur § 846 in diesem Paket steht (Ledger D-09-01).
+
+// --- § 842 Umfang der Ersatzpflicht bei Verletzung einer Person ------------------------------------
+
+pub relation gegen_die_person_gerichtete_handlung(h: Handlung) kind empirical {
+    label de official "die unerlaubte Handlung war gegen die Person gerichtet (§ 842)";
+    label en unofficial "the tort was directed against the person (§ 842)";
+}
+pub relation nachteil_fuer_erwerb_oder_fortkommen(h: Handlung) kind empirical {
+    label de official "die Handlung führt Nachteile für den Erwerb oder das Fortkommen des Verletzten herbei (§ 842)";
+    label en unofficial "the act causes detriments to the injured party's livelihood or advancement (§ 842)";
+}
+pub relation ersatzpflicht_erstreckt_sich_auf_erwerbsnachteile(h: Handlung) kind institutional {
+    label de official "die Verpflichtung zum Schadensersatz erstreckt sich auf die Nachteile für Erwerb und Fortkommen (§ 842)";
+    label en unofficial "the duty to compensate extends to the detriments to livelihood and advancement (§ 842)";
+}
+
+@source(BGB_P842)
+rule Umfang842(h: Handlung) defeasible {
+    label de official "Die Verpflichtung zum Schadensersatz wegen einer gegen die Person gerichteten unerlaubten Handlung erstreckt sich auf die Nachteile, welche die Handlung für den Erwerb oder das Fortkommen des Verletzten herbeiführt (§ 842)";
+    label en unofficial "The duty to compensate for a tort directed against the person extends to the detriments which the act causes to the injured party's livelihood or advancement (§ 842)";
+    when ersatzpflicht_dem_grunde_nach(h) and gegen_die_person_gerichtete_handlung(h) and nachteil_fuer_erwerb_oder_fortkommen(h);
+    then ersatzpflicht_erstreckt_sich_auf_erwerbsnachteile(h);
+}
+
+// --- § 843 Geldrente oder Kapitalabfindung ---------------------------------------------------------
+
+pub relation erwerbsfaehigkeit_aufgehoben_oder_gemindert(h: Handlung) kind empirical {
+    label de official "infolge einer Verletzung des Körpers oder der Gesundheit ist die Erwerbsfähigkeit des Verletzten aufgehoben oder gemindert (§ 843 Abs. 1)";
+    label en unofficial "as a result of injury to body or health the injured party's earning capacity is destroyed or reduced (§ 843 (1))";
+}
+pub relation vermehrung_der_beduerfnisse(h: Handlung) kind empirical {
+    label de official "es tritt eine Vermehrung der Bedürfnisse des Verletzten ein (§ 843 Abs. 1)";
+    label en unofficial "the injured party's needs increase (§ 843 (1))";
+}
+pub relation rentenbetrag(h: Handlung, betrag: Money) kind empirical {
+    key(h);
+    label de official "Betrag der Geldrente nach § 843 Abs. 1, wie ihn der Fall beziffert";
+    label en unofficial "amount of the money annuity under § 843 (1) as stated by the case";
+}
+pub relation unterhalt_durch_anderen(h: Handlung) kind empirical {
+    label de official "ein anderer hat dem Verletzten Unterhalt zu gewähren (§ 843 Abs. 4)";
+    label en unofficial "another person owes maintenance to the injured party (§ 843 (4))";
+}
+@source(BGB_P843)
+pub external judgment relation wichtiger_grund_fuer_kapitalabfindung(h: Handlung) {
+    authority Court;
+    label de official "§ 843 Abs. 3. Ein wichtiger Grund liegt vor, der es dem Verletzten erlaubt, statt der Rente eine Abfindung in Kapital zu verlangen";
+    label en unofficial "§ 843 (3). A compelling reason exists which allows the injured party to demand a lump-sum settlement instead of the annuity";
+}
+@source(BGB_P843)
+pub external judgment relation sicherheit_zu_leisten(h: Handlung, betrag: Money) {
+    authority Court;
+    label de official "§ 843 Abs. 2 Satz 2. Ob, in welcher Art und für welchen Betrag der Ersatzpflichtige Sicherheit zu leisten hat, bestimmt sich nach den Umständen";
+    label en unofficial "§ 843 (2) sentence 2. Whether, in what manner and for what amount the liable party must give security is determined by the circumstances";
+}
+
+pub relation rentengrund_843(h: Handlung) kind institutional {
+    label de official "Grund der Geldrente: aufgehobene oder geminderte Erwerbsfähigkeit oder Vermehrung der Bedürfnisse (§ 843 Abs. 1)";
+    label en unofficial "ground for the annuity: destroyed or reduced earning capacity, or increased needs (§ 843 (1))";
+}
+pub relation geldrente(h: Handlung, verletzter: Person, betrag: Money) kind institutional {
+    label de official "dem Verletzten ist durch Entrichtung einer Geldrente Schadensersatz zu leisten (§ 843 Abs. 1)";
+    label en unofficial "compensation is to be made to the injured party by payment of a money annuity (§ 843 (1))";
+}
+pub relation kapitalabfindung_verlangbar(h: Handlung, verletzter: Person) kind institutional {
+    label de official "statt der Rente kann der Verletzte eine Abfindung in Kapital verlangen (§ 843 Abs. 3)";
+    label en unofficial "instead of the annuity the injured party may demand a lump-sum settlement (§ 843 (3))";
+}
+pub relation rentenanspruch_nicht_ausgeschlossen(h: Handlung) kind institutional {
+    label de official "der Anspruch wird nicht dadurch ausgeschlossen, dass ein anderer dem Verletzten Unterhalt zu gewähren hat (§ 843 Abs. 4)";
+    label en unofficial "the claim is not excluded by the fact that another person owes maintenance to the injured party (§ 843 (4))";
+}
+
+@source(BGB_P843)
+rule Rentengrund843Erwerbsfaehigkeit(h: Handlung) strict {
+    label de official "Wird infolge einer Verletzung des Körpers oder der Gesundheit die Erwerbsfähigkeit des Verletzten aufgehoben oder gemindert (§ 843 Abs. 1 Alternative 1)";
+    label en unofficial "Where as a result of injury to body or health the injured party's earning capacity is destroyed or reduced (§ 843 (1) alternative 1)";
+    when erwerbsfaehigkeit_aufgehoben_oder_gemindert(h);
+    then rentengrund_843(h);
+}
+@source(BGB_P843)
+rule Rentengrund843Beduerfnisse(h: Handlung) strict {
+    label de official "Tritt eine Vermehrung der Bedürfnisse des Verletzten ein (§ 843 Abs. 1 Alternative 2)";
+    label en unofficial "Where the injured party's needs increase (§ 843 (1) alternative 2)";
+    when vermehrung_der_beduerfnisse(h);
+    then rentengrund_843(h);
+}
+@source(BGB_P843)
+rule Geldrente843(h: Handlung, v: Person, betrag: Money) defeasible {
+    label de official "So ist dem Verletzten durch Entrichtung einer Geldrente Schadensersatz zu leisten (§ 843 Abs. 1)";
+    label en unofficial "Compensation is then to be made to the injured party by payment of a money annuity (§ 843 (1))";
+    when ersatzpflicht_dem_grunde_nach(h) and rentengrund_843(h) and verletzter(h, v) and rentenbetrag(h, betrag);
+    then geldrente(h, v, betrag);
+}
+@source(BGB_P843)
+rule Kapitalabfindung843Abs3(h: Handlung, v: Person, betrag: Money) defeasible {
+    label de official "Statt der Rente kann der Verletzte eine Abfindung in Kapital verlangen, wenn ein wichtiger Grund vorliegt (§ 843 Abs. 3)";
+    label en unofficial "Instead of the annuity the injured party may demand a lump-sum settlement if there is a compelling reason (§ 843 (3))";
+    when geldrente(h, v, betrag) and wichtiger_grund_fuer_kapitalabfindung(h);
+    then kapitalabfindung_verlangbar(h, v);
+}
+@source(BGB_P843)
+rule Rentenanspruch843Abs4(h: Handlung, v: Person, betrag: Money) defeasible {
+    label de official "Der Anspruch wird nicht dadurch ausgeschlossen, dass ein anderer dem Verletzten Unterhalt zu gewähren hat (§ 843 Abs. 4)";
+    label en unofficial "The claim is not excluded by the fact that another person owes maintenance to the injured party (§ 843 (4))";
+    when geldrente(h, v, betrag) and unterhalt_durch_anderen(h);
+    then rentenanspruch_nicht_ausgeschlossen(h);
+}
+
+// --- § 844 Ersatzansprüche Dritter bei Tötung, § 845 entgangene Dienste ----------------------------
+
+pub relation toetung(h: Handlung) kind empirical {
+    label de official "im Falle der Tötung (§ 844 Abs. 1)";
+    label en unofficial "in the case of killing (§ 844 (1))";
+}
+pub relation beerdigungskostenpflichtiger(h: Handlung, p: Person) kind empirical {
+    label de official "derjenige, welchem die Verpflichtung obliegt, die Kosten der Beerdigung zu tragen (§ 844 Abs. 1)";
+    label en unofficial "the person under a duty to bear the funeral costs (§ 844 (1))";
+}
+pub relation beerdigungskosten(h: Handlung, betrag: Money) kind empirical {
+    key(h);
+    label de official "Kosten der Beerdigung (§ 844 Abs. 1)";
+    label en unofficial "costs of the funeral (§ 844 (1))";
+}
+pub relation gesetzlich_unterhaltsberechtigter_dritter(h: Handlung, p: Person) kind empirical {
+    label de official "der Dritte, dem gegenüber der Getötete kraft Gesetzes unterhaltspflichtig war oder werden konnte und dem das Recht auf den Unterhalt entzogen ist (§ 844 Abs. 2 Satz 1)";
+    label en unofficial "the third party to whom the deceased owed or could have owed statutory maintenance and who is deprived of that right (§ 844 (2) sentence 1)";
+}
+pub relation bei_der_verletzung_gezeugt_aber_nicht_geboren(h: Handlung, p: Person) kind empirical {
+    label de official "der Dritte war zur Zeit der Verletzung gezeugt, aber noch nicht geboren (§ 844 Abs. 2 Satz 2)";
+    label en unofficial "the third party was conceived but not yet born at the time of the injury (§ 844 (2) sentence 2)";
+}
+pub relation entzogener_unterhalt(h: Handlung, p: Person, betrag: Money) kind empirical {
+    label de official "Betrag des Unterhalts, zu dessen Gewährung der Getötete während der mutmaßlichen Dauer seines Lebens verpflichtet gewesen sein würde (§ 844 Abs. 2 Satz 1)";
+    label en unofficial "amount of maintenance the deceased would have owed during the probable duration of his life (§ 844 (2) sentence 1)";
+}
+pub relation hinterbliebener(h: Handlung, p: Person) kind empirical {
+    label de official "Hinterbliebener, dem seelisches Leid zugefügt wurde (§ 844 Abs. 3 Satz 1)";
+    label en unofficial "surviving dependant to whom mental suffering was inflicted (§ 844 (3) sentence 1)";
+}
+pub relation hinterbliebener_ehegatte(h: Handlung, p: Person) kind empirical {
+    label de official "der Hinterbliebene war der Ehegatte des Getöteten (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "the surviving dependant was the deceased's spouse (§ 844 (3) sentence 2)";
+}
+pub relation hinterbliebener_lebenspartner(h: Handlung, p: Person) kind empirical {
+    label de official "der Hinterbliebene war der Lebenspartner des Getöteten (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "the surviving dependant was the deceased's civil partner (§ 844 (3) sentence 2)";
+}
+pub relation hinterbliebener_elternteil(h: Handlung, p: Person) kind empirical {
+    label de official "der Hinterbliebene war ein Elternteil des Getöteten (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "the surviving dependant was a parent of the deceased (§ 844 (3) sentence 2)";
+}
+pub relation hinterbliebenes_kind(h: Handlung, p: Person) kind empirical {
+    label de official "der Hinterbliebene war ein Kind des Getöteten (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "the surviving dependant was a child of the deceased (§ 844 (3) sentence 2)";
+}
+@source(BGB_P844)
+pub external judgment relation naeheverhaeltnis_festgestellt(h: Handlung, p: Person) {
+    authority Court;
+    label de official "§ 844 Abs. 3 Satz 1. Der Hinterbliebene stand zur Zeit der Verletzung zu dem Getöteten in einem besonderen persönlichen Näheverhältnis";
+    label en unofficial "§ 844 (3) sentence 1. At the time of the injury the surviving dependant stood in a particularly close personal relationship to the deceased";
+}
+@source(BGB_P844)
+pub external judgment relation kein_besonderes_naeheverhaeltnis(h: Handlung, p: Person) {
+    authority Court;
+    label de official "§ 844 Abs. 3 Satz 2. Die Vermutung des besonderen persönlichen Näheverhältnisses ist widerlegt";
+    label en unofficial "§ 844 (3) sentence 2. The presumption of a particularly close personal relationship is rebutted";
+}
+@source(BGB_P844)
+pub external judgment relation angemessene_entschaedigung_in_geld(h: Handlung, p: Person, betrag: Money) {
+    authority Court;
+    label de official "§ 844 Abs. 3 Satz 1. Angemessene Entschädigung in Geld für das dem Hinterbliebenen zugefügte seelische Leid";
+    label en unofficial "§ 844 (3) sentence 1. Reasonable monetary compensation for the mental suffering inflicted on the surviving dependant";
+}
+pub relation dienstverpflichtung_kraft_gesetzes(h: Handlung, p: Person) kind empirical {
+    label de official "der Verletzte war kraft Gesetzes einem Dritten zur Leistung von Diensten in dessen Hauswesen oder Gewerbe verpflichtet (§ 845 Satz 1)";
+    label en unofficial "the injured party was obliged by law to render services to a third party in his household or business (§ 845 sentence 1)";
+}
+pub relation freiheitsentziehung(h: Handlung) kind empirical {
+    label de official "im Falle der Freiheitsentziehung (§ 845 Satz 1)";
+    label en unofficial "in the case of deprivation of liberty (§ 845 sentence 1)";
+}
+pub relation wert_der_entgehenden_dienste(h: Handlung, p: Person, betrag: Money) kind empirical {
+    label de official "Betrag der Geldrente für die entgehenden Dienste (§ 845 Satz 1)";
+    label en unofficial "amount of the annuity for the services lost (§ 845 sentence 1)";
+}
+
+pub relation naeheverhaeltnis_grund(h: Handlung, p: Person) kind institutional {
+    label de official "einer der in § 844 Abs. 3 Satz 2 genannten Fälle, in denen das besondere persönliche Näheverhältnis vermutet wird";
+    label en unofficial "one of the cases of § 844 (3) sentence 2 in which the close personal relationship is presumed";
+}
+pub relation besonderes_naeheverhaeltnis(h: Handlung, p: Person) kind institutional {
+    label de official "besonderes persönliches Näheverhältnis des Hinterbliebenen zu dem Getöteten (§ 844 Abs. 3)";
+    label en unofficial "particularly close personal relationship of the surviving dependant to the deceased (§ 844 (3))";
+}
+pub relation ersatzanspruch_dritter(h: Handlung, dritter: Person, betrag: Money) kind institutional {
+    label de official "Ersatzanspruch eines Dritten aus §§ 844, 845";
+    label en unofficial "third party's claim for compensation under §§ 844, 845";
+}
+pub relation hinterbliebenengeld(h: Handlung, hinterbliebener: Person, betrag: Money) kind institutional {
+    label de official "Entschädigung in Geld für das seelische Leid des Hinterbliebenen (§ 844 Abs. 3)";
+    label en unofficial "monetary compensation for the mental suffering of the surviving dependant (§ 844 (3))";
+}
+
+@source(BGB_P844)
+rule Beerdigungskosten844Abs1(h: Handlung, p: Person, betrag: Money) defeasible {
+    label de official "Im Falle der Tötung hat der Ersatzpflichtige die Kosten der Beerdigung demjenigen zu ersetzen, welchem die Verpflichtung obliegt, diese Kosten zu tragen (§ 844 Abs. 1)";
+    label en unofficial "In the case of killing, the liable party must reimburse the funeral costs to the person under a duty to bear them (§ 844 (1))";
+    when ersatzpflicht_dem_grunde_nach(h) and toetung(h) and beerdigungskostenpflichtiger(h, p) and beerdigungskosten(h, betrag);
+    then ersatzanspruch_dritter(h, p, betrag);
+}
+@source(BGB_P844)
+rule Unterhaltsrente844Abs2(h: Handlung, p: Person, betrag: Money) defeasible {
+    label de official "Stand der Getötete zu einem Dritten in einem Verhältnis, vermöge dessen er diesem gegenüber kraft Gesetzes unterhaltspflichtig war oder werden konnte, und ist dem Dritten infolge der Tötung das Recht auf den Unterhalt entzogen, so hat der Ersatzpflichtige dem Dritten durch Entrichtung einer Geldrente Schadensersatz zu leisten (§ 844 Abs. 2 Satz 1)";
+    label en unofficial "Where the deceased stood to a third party in a relationship by virtue of which he owed or could have owed statutory maintenance, and the third party is deprived of that right by the killing, the liable party must compensate the third party by payment of an annuity (§ 844 (2) sentence 1)";
+    when ersatzpflicht_dem_grunde_nach(h) and toetung(h)
+     and gesetzlich_unterhaltsberechtigter_dritter(h, p) and entzogener_unterhalt(h, p, betrag);
+    then ersatzanspruch_dritter(h, p, betrag);
+}
+@source(BGB_P844)
+rule Unterhaltsrente844Abs2Nasciturus(h: Handlung, p: Person, betrag: Money) defeasible {
+    label de official "Die Ersatzpflicht tritt auch dann ein, wenn der Dritte zur Zeit der Verletzung gezeugt, aber noch nicht geboren war (§ 844 Abs. 2 Satz 2)";
+    label en unofficial "Liability also arises where the third party was conceived but not yet born at the time of the injury (§ 844 (2) sentence 2)";
+    when ersatzpflicht_dem_grunde_nach(h) and toetung(h)
+     and bei_der_verletzung_gezeugt_aber_nicht_geboren(h, p) and entzogener_unterhalt(h, p, betrag);
+    then ersatzanspruch_dritter(h, p, betrag);
+}
+@source(BGB_P845)
+rule EntgangeneDienste845Toetung(h: Handlung, p: Person, betrag: Money) defeasible {
+    label de official "Im Falle der Tötung hat der Ersatzpflichtige, wenn der Verletzte kraft Gesetzes einem Dritten zur Leistung von Diensten in dessen Hauswesen oder Gewerbe verpflichtet war, dem Dritten für die entgehenden Dienste durch Entrichtung einer Geldrente Ersatz zu leisten (§ 845 Satz 1)";
+    label en unofficial "In the case of killing, where the injured party was obliged by law to render services to a third party in his household or business, the liable party must compensate the third party for the services lost by payment of an annuity (§ 845 sentence 1)";
+    when ersatzpflicht_dem_grunde_nach(h) and toetung(h)
+     and dienstverpflichtung_kraft_gesetzes(h, p) and wert_der_entgehenden_dienste(h, p, betrag);
+    then ersatzanspruch_dritter(h, p, betrag);
+}
+@source(BGB_P845)
+rule EntgangeneDienste845Freiheitsentziehung(h: Handlung, p: Person, betrag: Money) defeasible {
+    label de official "Im Falle der Freiheitsentziehung gilt dasselbe (§ 845 Satz 1)";
+    label en unofficial "The same applies in the case of deprivation of liberty (§ 845 sentence 1)";
+    when ersatzpflicht_dem_grunde_nach(h) and freiheitsentziehung(h)
+     and dienstverpflichtung_kraft_gesetzes(h, p) and wert_der_entgehenden_dienste(h, p, betrag);
+    then ersatzanspruch_dritter(h, p, betrag);
+}
+
+@source(BGB_P844)
+rule NaeheverhaeltnisGrundEhegatte(h: Handlung, p: Person) strict {
+    label de official "Ein besonderes persönliches Näheverhältnis wird vermutet, wenn der Hinterbliebene der Ehegatte des Getöteten war (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "A particularly close personal relationship is presumed where the surviving dependant was the deceased's spouse (§ 844 (3) sentence 2)";
+    when hinterbliebener_ehegatte(h, p);
+    then naeheverhaeltnis_grund(h, p);
+}
+@source(BGB_P844)
+rule NaeheverhaeltnisGrundLebenspartner(h: Handlung, p: Person) strict {
+    label de official "Ein besonderes persönliches Näheverhältnis wird vermutet, wenn der Hinterbliebene der Lebenspartner des Getöteten war (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "A particularly close personal relationship is presumed where the surviving dependant was the deceased's civil partner (§ 844 (3) sentence 2)";
+    when hinterbliebener_lebenspartner(h, p);
+    then naeheverhaeltnis_grund(h, p);
+}
+@source(BGB_P844)
+rule NaeheverhaeltnisGrundElternteil(h: Handlung, p: Person) strict {
+    label de official "Ein besonderes persönliches Näheverhältnis wird vermutet, wenn der Hinterbliebene ein Elternteil des Getöteten war (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "A particularly close personal relationship is presumed where the surviving dependant was a parent of the deceased (§ 844 (3) sentence 2)";
+    when hinterbliebener_elternteil(h, p);
+    then naeheverhaeltnis_grund(h, p);
+}
+@source(BGB_P844)
+rule NaeheverhaeltnisGrundKind(h: Handlung, p: Person) strict {
+    label de official "Ein besonderes persönliches Näheverhältnis wird vermutet, wenn der Hinterbliebene ein Kind des Getöteten war (§ 844 Abs. 3 Satz 2)";
+    label en unofficial "A particularly close personal relationship is presumed where the surviving dependant was a child of the deceased (§ 844 (3) sentence 2)";
+    when hinterbliebenes_kind(h, p);
+    then naeheverhaeltnis_grund(h, p);
+}
+
+@source(BGB_P844)
+presumption BesonderesNaeheverhaeltnis(h: Handlung, p: Person) {
+    label de official "§ 844 Abs. 3 Satz 2. Ein besonderes persönliches Näheverhältnis wird vermutet, wenn der Hinterbliebene der Ehegatte, der Lebenspartner, ein Elternteil oder ein Kind des Getöteten war; die Vermutung ist widerleglich";
+    label en unofficial "§ 844 (3) sentence 2. A particularly close personal relationship is presumed where the surviving dependant was the deceased's spouse, civil partner, parent or child; the presumption is rebuttable";
+    when naeheverhaeltnis_grund(h, p);
+    presume besonderes_naeheverhaeltnis(h, p);
+    unless kein_besonderes_naeheverhaeltnis(h, p);
+}
+
+@source(BGB_P844)
+rule NaeheverhaeltnisDurchFeststellung(h: Handlung, p: Person) strict {
+    label de official "Auch ohne die Vermutung des Satzes 2 kann das Gericht das besondere persönliche Näheverhältnis feststellen (§ 844 Abs. 3 Satz 1)";
+    label en unofficial "Even without the presumption of sentence 2 the court may find the particularly close personal relationship (§ 844 (3) sentence 1)";
+    when naeheverhaeltnis_festgestellt(h, p);
+    then besonderes_naeheverhaeltnis(h, p);
+}
+
+@source(BGB_P844)
+rule Hinterbliebenengeld844Abs3(h: Handlung, p: Person, betrag: Money) defeasible {
+    label de official "Der Ersatzpflichtige hat dem Hinterbliebenen, der zur Zeit der Verletzung zu dem Getöteten in einem besonderen persönlichen Näheverhältnis stand, für das ihm zugefügte seelische Leid eine angemessene Entschädigung in Geld zu leisten (§ 844 Abs. 3 Satz 1)";
+    label en unofficial "The liable party must pay reasonable monetary compensation for the mental suffering of a surviving dependant who at the time of the injury stood in a particularly close personal relationship to the deceased (§ 844 (3) sentence 1)";
+    when ersatzpflicht_dem_grunde_nach(h) and toetung(h) and hinterbliebener(h, p)
+     and besonderes_naeheverhaeltnis(h, p) and angemessene_entschaedigung_in_geld(h, p, betrag);
+    then hinterbliebenengeld(h, p, betrag);
+}
+
+// --- § 846 Mitverschulden des Verletzten -----------------------------------------------------------
+
+pub relation verschulden_des_verletzten_mitgewirkt(h: Handlung) kind empirical {
+    label de official "bei der Entstehung des Schadens, den der Dritte erleidet, hat ein Verschulden des Verletzten mitgewirkt (§ 846)";
+    label en unofficial "fault of the injured party contributed to the damage suffered by the third party (§ 846)";
+}
+@source(BGB_P846)
+pub external judgment relation mitverschuldensquote(h: Handlung, zaehler: Integer, nenner: Integer) {
+    authority Court;
+    label de official "§ 846 i. V. m. § 254 Abs. 1. Anteil, den das mitwirkende Verschulden des Verletzten an der Entstehung des Schadens hat, als Bruch (Zähler, Nenner)";
+    label en unofficial "§ 846 in conjunction with § 254 (1). Share attributable to the injured party's contributory fault, as a fraction (numerator, denominator)";
+}
+pub relation geminderter_ersatzanspruch_dritter(h: Handlung, dritter: Person, betrag: Money) kind institutional {
+    label de official "um die Quote des mitwirkenden Verschuldens geminderter Ersatzanspruch des Dritten (§ 846 i. V. m. § 254)";
+    label en unofficial "third party's claim reduced by the share of contributory fault (§ 846 in conjunction with § 254)";
+}
+
+@source(BGB_P846)
+rule Mitverschulden846(h: Handlung, d: Person, betrag: Money, z: Integer, n: Integer) defeasible {
+    label de official "Hat in den Fällen der §§ 844, 845 bei der Entstehung des Schadens, den der Dritte erleidet, ein Verschulden des Verletzten mitgewirkt, so findet auf den Anspruch des Dritten die Vorschrift des § 254 Anwendung (§ 846) — der Betrag wird um die vom Gericht bestimmte Quote gemindert und einmal auf den Cent gerundet";
+    label en unofficial "Where in the cases of §§ 844, 845 fault of the injured party contributed to the damage suffered by the third party, § 254 applies to the third party's claim (§ 846) — the amount is reduced by the share determined by the court and rounded once to the cent";
+    when ersatzanspruch_dritter(h, d, betrag) and verschulden_des_verletzten_mitgewirkt(h)
+     and mitverschuldensquote(h, z, n);
+    then geminderter_ersatzanspruch_dritter(h, d, div_round(betrag * (n - z), n * 1.0, 2, "HALF_UP"));
+}

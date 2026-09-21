@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// Kanarienvogel zu ar01: dieselbe Einwilligung, aber der Ausspruch der Annahme fällt auf den 01.03.2025 — den letzten Tag der drei Jahre. Die Einwilligung behält ihre Kraft.
+test "§ 1750 Abs. 4: am letzten Tag der drei Jahre behält die Einwilligung ihre Kraft" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": einwilligung_dem_gericht_zugegangen_am(entity_ref("urn:de:bgb:vw:ar02:K"), entity_ref("urn:de:bgb:vw:ar02:E"), @2022-03-01) { origin case_input; }
+        assert "f2": einwilligung_notariell_beurkundet(entity_ref("urn:de:bgb:vw:ar02:K"), entity_ref("urn:de:bgb:vw:ar02:E")) { origin case_input; }
+        assert "f3": annahme_ausgesprochen_am(entity_ref("urn:de:bgb:vw:ar02:K"), @2025-03-01) { origin case_input; }
+    }
+    evaluate truth(einwilligung_verliert_ihre_kraft(entity_ref("urn:de:bgb:vw:ar02:K"), entity_ref("urn:de:bgb:vw:ar02:E")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einwilligung_unwiderruflich(entity_ref("urn:de:bgb:vw:ar02:K"), entity_ref("urn:de:bgb:vw:ar02:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,29 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// §§ 123, 124: die Täuschung wird am 28. Februar 2026 entdeckt; die Jahresfrist endet kalendarisch am Sonntag, 28. Februar 2027, nach § 193 am Montag, 1. März 2027. Die an diesem Montag erklärte Anfechtung ist rechtzeitig; das Rechtsgeschäft ist von Anfang an nichtig (§ 142 Abs. 1).
+test "§ 124 Abs. 1, 2 mit § 193: die am Montag erklärte Anfechtung ist rechtzeitig" {
+    given {
+        context { legal_time @2027-09-17; decision_time @2027-09-17T09:00:00Z; knowledge_time @2027-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "w1": erklaerung_gehoert_zu(entity_ref("urn:de:bgb:at:r04:we"), entity_ref("urn:de:bgb:at:r04:vertrag")) { origin case_input; }
+        assert "w2": erklaerung_abgegeben_am(entity_ref("urn:de:bgb:at:r04:we"), @2026-01-15) { origin case_input; }
+        assert "w3": geschaeftsart(entity_ref("urn:de:bgb:at:r04:vertrag"), Vertrag) { origin case_input; }
+        assert "t1": arglistige_taeuschung(entity_ref("urn:de:bgb:at:r04:we")) { origin adjudicated; }
+        assert "t2": not taeuschung_durch_dritten(entity_ref("urn:de:bgb:at:r04:we")) { origin case_input; }
+        assert "f1": jahresfrist_124(entity_ref("urn:de:bgb:at:r04:we"), entity_ref("urn:de:bgb:at:r04:frist")) { origin case_input; }
+        assert "f2": taeuschung_entdeckt_am(entity_ref("urn:de:bgb:at:r04:we"), @2026-02-28) { origin adjudicated; }
+        assert "f3": anfechtung_erklaert_am(entity_ref("urn:de:bgb:at:r04:we"), @2027-03-01) { origin case_input; }
+        assert "g1": anderer_teil_des_vertrags(entity_ref("urn:de:bgb:at:r04:vertrag"), entity_ref("urn:de:bgb:at:r04:gegner")) { origin case_input; }
+        assert "g2": anfechtungserklaerung_gegenueber(entity_ref("urn:de:bgb:at:r04:vertrag"), entity_ref("urn:de:bgb:at:r04:gegner")) { origin case_input; }
+        assert "b1": not bestaetigung_des_anfechtbaren_geschaefts(entity_ref("urn:de:bgb:at:r04:vertrag")) { origin case_input; }
+    }
+    evaluate truth(jahresfrist_124_ende(entity_ref("urn:de:bgb:at:r04:we"), @2027-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anfechtung_rechtzeitig(entity_ref("urn:de:bgb:at:r04:we")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nichtig(entity_ref("urn:de:bgb:at:r04:vertrag")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

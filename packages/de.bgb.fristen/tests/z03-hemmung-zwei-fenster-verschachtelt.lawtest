@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 209: das zweite Fenster (1.-30. Juni 2022, 30 Tage) liegt vollständig im ersten (1. Januar-31. Dezember 2022, 365 Tage) — Vereinigung bleibt 365 Tage; Ende verschiebt sich auf den 30. Dezember 2024.
+test "§ 209: ein verschachteltes Hemmungsfenster ändert die Vereinigung nicht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:z03"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:z03"), @2020-03-15) { origin adjudicated; }
+        assert "f": hemmung_zwei_fenster(entity_ref("urn:de:bgb:fristen:pilot:z03"), @2022-01-01, @2022-12-31, @2022-06-01, @2022-06-30) { origin case_input; }
+        assert "g": hemmungsgrund(entity_ref("urn:de:bgb:fristen:pilot:z03"), Rechtsverfolgung) { origin case_input; }
+    }
+    evaluate truth(fenstertage_gesamt(entity_ref("urn:de:bgb:fristen:pilot:z03"), 365));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:z03"), @2024-12-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

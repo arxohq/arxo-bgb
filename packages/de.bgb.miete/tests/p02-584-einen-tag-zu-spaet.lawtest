@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// Die andere Seite derselben Schwelle: derselbe Fall wie p01, aber die Kündigung geht am Freitag, dem 4. Juli 2025, zu — einen Tag nach dem dritten Werktag. Sie ist nicht fristgerecht (NEITHER), und das Pachtverhältnis endet nicht mit dem Ablauf des Pachtjahrs 2025.
+test "§ 584 Abs. 1: einen Tag nach dem dritten Werktag ist die Kündigung verspätet" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:p02"), entity_ref("urn:de:bgb:miete:p02:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:p02"), entity_ref("urn:de:bgb:miete:p02:P")) { origin case_input; }
+        assert "f3": vertragsart(entity_ref("urn:de:bgb:miete:p02"), Pacht) { origin case_input; }
+        assert "f4": gegenstandsart(entity_ref("urn:de:bgb:miete:p02"), Grundstueck) { origin case_input; }
+        assert "f5": pachtzeit_nicht_bestimmt(entity_ref("urn:de:bgb:miete:p02")) { origin case_input; }
+        assert "f6": pachtjahr_ende(entity_ref("urn:de:bgb:miete:p02"), @2025-12-31) { origin case_input; }
+        assert "f7": kuendigung_des(entity_ref("urn:de:bgb:miete:p02:K"), entity_ref("urn:de:bgb:miete:p02")) { origin case_input; }
+        assert "f8": halbjahr_beginn(entity_ref("urn:de:bgb:miete:p02:K"), @2025-07-01) { origin case_input; }
+        assert "f9": kuendigung_erklaert_am(entity_ref("urn:de:bgb:miete:p02:K"), @2025-07-04) { origin case_input; }
+        assert "f10": kuendigung_schriftlich(entity_ref("urn:de:bgb:miete:p02:K")) { origin case_input; }
+    }
+    evaluate truth(dritter_werktag_des_halben_jahres(entity_ref("urn:de:bgb:miete:p02:K"), @2025-07-03));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(pachtkuendigung_fristgerecht(entity_ref("urn:de:bgb:miete:p02:K")));
+    expect truth_status == NEITHER;
+    evaluate truth(beendigung_durch_kuendigung_am(entity_ref("urn:de:bgb:miete:p02:K"), @2025-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

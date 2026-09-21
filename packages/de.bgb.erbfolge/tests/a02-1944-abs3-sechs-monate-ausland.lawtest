@@ -1,0 +1,38 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1944 Abs. 3: Der Erblasser hatte seinen letzten Wohnsitz nur im Ausland,
+// deshalb betraegt die Frist sechs Monate. Kenntnis am 7. Maerz 2026; sechs
+// Monate enden nach § 188 Abs. 2 am 7. September 2026, einem Montag und Werktag,
+// so dass § 193 nichts verschiebt. Zugleich: die Bekanntgabe der Verfuegung von
+// Todes wegen am 20. Maerz 2026 ist SPAETER als die Kenntnis und setzt deshalb
+// den Fristbeginn (Abs. 2 Satz 2) — Ende: 20. September 2026, ein Sonntag, an
+// dessen Stelle nach § 193 Montag, der 21. September 2026 tritt.
+test "§ 1944 Abs. 2 Satz 2, Abs. 3: der spaetere Fristbeginn und die Sechsmonatsfrist" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:a02:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:a02:F"), entity_ref("urn:de:bgb:e:a02:D"), entity_ref("urn:de:bgb:e:a02:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K")) { origin case_input; }
+        assert "f6": kenntnis_von_anfall_und_grund_am(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K"), @2026-03-07) { origin case_input; }
+        assert "f7": bekanntgabe_der_verfuegung_am(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K"), @2026-03-20) { origin case_input; }
+        assert "f8": erblasser_wohnsitz_nur_im_ausland(entity_ref("urn:de:bgb:e:a02:E")) { origin case_input; }
+        assert "f9": keine_hemmung_der_ausschlagungsfrist(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K")) { origin case_input; }
+    }
+    evaluate truth(ausschlagungsfrist_beginn(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K"), @2026-03-20));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(auslandsfall_1944(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausschlagungsfrist_ende_kalender(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K"), @2026-09-20));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausschlagungsfrist_ende(entity_ref("urn:de:bgb:e:a02:E"), entity_ref("urn:de:bgb:e:a02:K"), @2026-09-21));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

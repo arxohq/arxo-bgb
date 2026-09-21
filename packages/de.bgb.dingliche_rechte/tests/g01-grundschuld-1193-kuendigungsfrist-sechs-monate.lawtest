@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1193 Abs. 1: Der Eigentümer kündigt die Grundschuld am 15.03.2026. Die Kündigungsfrist beträgt sechs Monate; das Kapital wird mit dem Ablauf des 15.09.2026 fällig (§ 188 Abs. 2). Die Wartefrist kennt die Verlegung des § 193 nicht (Ledger D-11-04).
+test "§ 1193 Abs. 1: sechs Monate Kündigungsfrist — das Kapital wird am 15.09.2026 fällig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:g01:gs"), entity_ref("urn:de:bgb:dr:g01:grundstueck")) { origin case_input; }
+        assert "f2": art_des_grundpfandrechts(entity_ref("urn:de:bgb:dr:g01:gs"), Grundschuld) { origin case_input; }
+        assert "f3": kuendigungsfrist_der_grundschuld(entity_ref("urn:de:bgb:dr:g01:gs"), entity_ref("urn:de:bgb:dr:g01:frist")) { origin case_input; }
+        assert "f4": kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(entity_ref("urn:de:bgb:dr:g01:gs"), @2026-03-15) { origin adjudicated; }
+        assert "f5": not abweichende_bestimmung_zulaessig(entity_ref("urn:de:bgb:dr:g01:gs")) { origin adjudicated; }
+    }
+    evaluate truth(kapital_faellig_am(entity_ref("urn:de:bgb:dr:g01:gs"), @2026-09-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

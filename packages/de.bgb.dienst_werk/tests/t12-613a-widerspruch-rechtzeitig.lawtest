@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 613a Abs. 6 Satz 1: Widerspruch am letzten Tag der Monatsfrist ist noch
+// rechtzeitig. Boundary zu t13 (einen Tag später).
+
+test "urn:query:bgb-dw-t12-613a-rechtzeitig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": unterrichtung_zugegangen_am_613a(entity_ref("urn:de:bgb:dw:t12"), entity_ref("urn:de:bgb:dw:t12:AN"), @2026-01-10) { origin case_input; }
+        assert "f2": widerspruch_gegen_uebergang(entity_ref("urn:de:bgb:dw:t12"), entity_ref("urn:de:bgb:dw:t12:AN"), @2026-02-10) { origin case_input; }
+    }
+    evaluate truth(widerspruchsfrist_ende_613a(entity_ref("urn:de:bgb:dw:t12"), entity_ref("urn:de:bgb:dw:t12:AN"), @2026-02-10));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(widerspruch_613a_rechtzeitig(entity_ref("urn:de:bgb:dw:t12"), entity_ref("urn:de:bgb:dw:t12:AN")));
+    expect truth_status == TRUE_ONLY;
+}

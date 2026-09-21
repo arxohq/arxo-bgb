@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 573c Abs. 3: ein möbliertes Zimmer in der Vermieterwohnung kann bis zum 15. gekündigt werden.
+test "§ 573c Abs. 3: möbliertes Zimmer zum Monatsende" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:k07"), entity_ref("urn:de:bgb:miete:k07:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:k07"), entity_ref("urn:de:bgb:miete:k07:M")) { origin case_input; }
+        assert "f3": gegenstandsart(entity_ref("urn:de:bgb:miete:k07"), Wohnraum) { origin case_input; }
+        assert "f4": kuendigung_des(entity_ref("urn:de:bgb:miete:k07:K"), entity_ref("urn:de:bgb:miete:k07")) { origin case_input; }
+        assert "f5": teil_der_vermieterwohnung_moebliert(entity_ref("urn:de:bgb:miete:k07")) { origin case_input; }
+        assert "f6": kuendigungsmonat_beginn(entity_ref("urn:de:bgb:miete:k07:K"), @2025-04-01) { origin case_input; }
+        assert "f7": kuendigung_erklaert_am(entity_ref("urn:de:bgb:miete:k07:K"), @2025-04-15) { origin case_input; }
+    }
+    evaluate truth(fuenfzehnter_des_kuendigungsmonats(entity_ref("urn:de:bgb:miete:k07:K"), @2025-04-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(beendigung_durch_kuendigung_am(entity_ref("urn:de:bgb:miete:k07:K"), @2025-04-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// Kanal §47.3: „vorsätzlich oder fahrlässig“ ist eine Wertung des Gerichts. Alle Tatsachen liegen vor, eine Antwort des Gerichts fehlt — der Haftungsgrund bleibt offen und die Frage ist an das Gericht gerichtet.
+test "§ 823 Abs. 1: ohne Antwort des Gerichts zum Verschulden bleibt der Haftungsgrund offen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:h02")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:h02")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:h02")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:h02"), entity_ref("urn:de:bgb:bd:h02:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:h02"), entity_ref("urn:de:bgb:bd:h02:V")) { origin case_input; }
+    }
+    evaluate truth(haftungsgrund_823_abs1(entity_ref("urn:de:bgb:bd:h02")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == REQUIRES_JUDGMENT;
+    expect judgment_request(vorsatz, Court);
+    expect judgment_request(fahrlaessigkeit, Court);
+}

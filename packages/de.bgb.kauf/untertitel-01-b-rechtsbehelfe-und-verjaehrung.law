@@ -1,0 +1,868 @@
+// --- Untertitel 1 Allgemeine Vorschriften, zweiter Teil
+// --- Verjährung der Mängelansprüche, Nacherfüllung, Minderung und Rückgriff
+// --- (§§ 438–441, 445a–445c)
+//
+// DIE FRISTEN DES § 438. Absatz 1 nennt drei Dauern (30, 5, 2 Jahre), Absatz 2
+// zwei Anfänge (Übergabe bei Grundstücken, sonst Ablieferung). Gerechnet wird
+// mit dem Kalenderschritt des § 188 Abs. 2 unter der Politik
+// BGB_KAUF_KALENDER: `same_day` gibt genau den Tag, „welcher durch seine Zahl
+// dem Tag des Ereignisses entspricht“, also den letzten Tag der Frist. § 193
+// wird hier NICHT gerollt: die Verjährung tritt mit Zeitablauf ein, sie
+// verlangt keine Erklärung innerhalb der Frist.
+//
+// DIE KATEGORIEN SIND GESTUFT. „Im Übrigen“ (Nr. 3) heißt: weder Nr. 1 noch
+// Nr. 2. Deshalb liest Nr. 2 die Eingaben der Nr. 1 mit `not` und Nr. 3 die
+// Eingaben beider. So trägt jeder Anspruch genau eine Dauer und der
+// Schlüssel `key(a)` kann bleiben.
+//
+// ARGLIST (Abs. 3). Sie verdrängt Nr. 2 und Nr. 3 und führt in die
+// regelmäßige Verjährungsfrist, die de.bgb.fristen rechnet (§§ 195, 199
+// Abs. 1 mit dem Ultimo). Satz 2 verlangt für den Fall der Nr. 2 den Vergleich
+// beider Enden — ausgeführt mit zwei einander ausschließenden Gardes, weil der
+// Termvergleich zweier Daten die Fläche v1 verlässt.
+//
+// GELD. Die einzige Division des Pakets steht bei § 441 Abs. 3. Werte sind
+// ganze Zahlen (Cent), weil der Text weder Einheit noch Bewertungsverfahren
+// nennt und `Money / Money` in §58 nicht genannt ist; der Preis wird EINMAL je
+// Anspruch gerundet (Ledger D-05-04).
+
+// --- Träger des Mängelanspruchs -------------------------------------------------------------------
+
+pub relation maengelanspruch(a: Anspruch, k: Kaufvertrag) kind empirical {
+    key(a);
+    label de official "Anspruch des Käufers aus § 437 Nr. 1 oder Nr. 3 (Nacherfüllung, Schadensersatz, Aufwendungsersatz) aus diesem Kaufvertrag — nur diese Ansprüche verjähren nach § 438 Abs. 1";
+    label en unofficial "buyer's claim under § 437 no. 1 or no. 3 (cure, damages, futile expenditure) arising from this contract — only these claims are subject to limitation under § 438 (1)";
+}
+
+// --- § 438 Abs. 1: die drei Dauern ----------------------------------------------------------------
+
+pub relation mangel_in_dinglichem_herausgaberecht(k: Kaufvertrag) kind empirical {
+    label de official "der Mangel besteht in einem dinglichen Recht eines Dritten, auf Grund dessen Herausgabe der Kaufsache verlangt werden kann (§ 438 Abs. 1 Nr. 1 Buchst. a)";
+    label en unofficial "the defect consists in a third party's right in rem on the basis of which surrender of the thing may be demanded (§ 438 (1) no. 1 letter a)";
+}
+pub relation mangel_in_eingetragenem_recht(k: Kaufvertrag) kind empirical {
+    label de official "der Mangel besteht in einem sonstigen Recht, das im Grundbuch eingetragen ist (§ 438 Abs. 1 Nr. 1 Buchst. b)";
+    label en unofficial "the defect consists in another right which is registered in the land register (§ 438 (1) no. 1 letter b)";
+}
+pub relation bauwerk(k: Kaufvertrag) kind empirical {
+    label de official "der Kaufgegenstand ist ein Bauwerk (§ 438 Abs. 1 Nr. 2 Buchst. a)";
+    label en unofficial "the object of the sale is a building (§ 438 (1) no. 2 letter a)";
+}
+pub relation baustoff_mit_verursachter_mangelhaftigkeit(k: Kaufvertrag) kind empirical {
+    label de official "der Kaufgegenstand ist eine Sache, die entsprechend ihrer üblichen Verwendungsweise für ein Bauwerk verwendet worden ist und dessen Mangelhaftigkeit verursacht hat (§ 438 Abs. 1 Nr. 2 Buchst. b)";
+    label en unofficial "the object of the sale is a thing used for a building in accordance with its customary use and which has caused the building's defectiveness (§ 438 (1) no. 2 letter b)";
+}
+relation verjaehrungsdauer_438(a: Anspruch, dauer: Quantity) kind institutional {
+    key(a);
+    label de official "Dauer der Verjährungsfrist der Mängelansprüche (§ 438 Abs. 1)";
+    label en unofficial "length of the limitation period for claims in respect of defects (§ 438 (1))";
+}
+pub relation verjaehrungsbeginn_438(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dem die Verjährung der Mängelansprüche beginnt (§ 438 Abs. 2)";
+    label en unofficial "day on which limitation of the claims in respect of defects begins (§ 438 (2))";
+}
+pub relation regelfrist_ende_438(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Frist des § 438 Abs. 1 und 2 ohne Arglist endet (§ 188 Abs. 2)";
+    label en unofficial "day at whose end the period under § 438 (1) and (2) ends absent fraudulent concealment (§ 188 (2))";
+}
+pub relation fuenfjahresende_438(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Ablauf der fünfjährigen Frist des § 438 Abs. 1 Nr. 2, die auch bei Arglist nicht unterschritten wird (Abs. 3 Satz 2)";
+    label en unofficial "expiry of the five-year period of § 438 (1) no. 2, which is not undercut even in the case of fraudulent concealment ((3) sentence 2)";
+}
+pub relation frist_ende_438(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Mängelansprüche verjähren (§ 438)";
+    label en unofficial "day at whose end the claims in respect of defects become time-barred (§ 438)";
+}
+
+@source(BGB_P438)
+rule Verjaehrungsdauer438Nr1Buchstabea(a: Anspruch, k: Kaufvertrag) strict {
+    label de official "Die in § 437 Nr. 1 und 3 bezeichneten Ansprüche verjähren in 30 Jahren, wenn der Mangel in einem dinglichen Recht eines Dritten besteht, auf Grund dessen Herausgabe der Kaufsache verlangt werden kann (§ 438 Abs. 1 Nr. 1 Buchst. a)";
+    label en unofficial "The claims designated in § 437 nos. 1 and 3 become time-barred in 30 years where the defect consists in a third party's right in rem allowing surrender of the thing to be demanded (§ 438 (1) no. 1 letter a)";
+    when maengelanspruch(a, k) and mangel_in_dinglichem_herausgaberecht(k);
+    then verjaehrungsdauer_438(a, 30 calendar_year);
+}
+
+@source(BGB_P438)
+rule Verjaehrungsdauer438Nr1Buchstabeb(a: Anspruch, k: Kaufvertrag) strict {
+    label de official "Die Ansprüche verjähren in 30 Jahren auch dann, wenn der Mangel in einem sonstigen Recht besteht, das im Grundbuch eingetragen ist (§ 438 Abs. 1 Nr. 1 Buchst. b)";
+    label en unofficial "The claims also become time-barred in 30 years where the defect consists in another right registered in the land register (§ 438 (1) no. 1 letter b)";
+    when maengelanspruch(a, k) and mangel_in_eingetragenem_recht(k) and not mangel_in_dinglichem_herausgaberecht(k);
+    then verjaehrungsdauer_438(a, 30 calendar_year);
+}
+
+@source(BGB_P438)
+rule Verjaehrungsdauer438Nr2Buchstabea(a: Anspruch, k: Kaufvertrag) strict {
+    label de official "Die Ansprüche verjähren in fünf Jahren bei einem Bauwerk (§ 438 Abs. 1 Nr. 2 Buchst. a)";
+    label en unofficial "The claims become time-barred in five years in the case of a building (§ 438 (1) no. 2 letter a)";
+    when maengelanspruch(a, k) and bauwerk(k) and not mangel_in_dinglichem_herausgaberecht(k)
+     and not mangel_in_eingetragenem_recht(k);
+    then verjaehrungsdauer_438(a, 5 calendar_year);
+}
+
+@source(BGB_P438)
+rule Verjaehrungsdauer438Nr2Buchstabeb(a: Anspruch, k: Kaufvertrag) strict {
+    label de official "Die Ansprüche verjähren in fünf Jahren bei einer Sache, die entsprechend ihrer üblichen Verwendungsweise für ein Bauwerk verwendet worden ist und dessen Mangelhaftigkeit verursacht hat (§ 438 Abs. 1 Nr. 2 Buchst. b)";
+    label en unofficial "The claims become time-barred in five years in the case of a thing used for a building in accordance with its customary use which has caused its defectiveness (§ 438 (1) no. 2 letter b)";
+    when maengelanspruch(a, k) and baustoff_mit_verursachter_mangelhaftigkeit(k) and not bauwerk(k)
+     and not mangel_in_dinglichem_herausgaberecht(k) and not mangel_in_eingetragenem_recht(k);
+    then verjaehrungsdauer_438(a, 5 calendar_year);
+}
+
+@source(BGB_P438)
+rule Verjaehrungsdauer438Nr3(a: Anspruch, k: Kaufvertrag) strict {
+    label de official "Im Übrigen verjähren die Ansprüche in zwei Jahren (§ 438 Abs. 1 Nr. 3) — weder ein Fall der Nummer 1 noch einer der Nummer 2";
+    label en unofficial "Otherwise the claims become time-barred in two years (§ 438 (1) no. 3) — neither a case of no. 1 nor one of no. 2";
+    when maengelanspruch(a, k) and not mangel_in_dinglichem_herausgaberecht(k)
+     and not mangel_in_eingetragenem_recht(k) and not bauwerk(k)
+     and not baustoff_mit_verursachter_mangelhaftigkeit(k);
+    then verjaehrungsdauer_438(a, 2 calendar_year);
+}
+
+// --- § 438 Abs. 2: der Anfang ---------------------------------------------------------------------
+
+@source(BGB_P438)
+rule Verjaehrungsbeginn438Grundstueck(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Die Verjährung beginnt bei Grundstücken mit der Übergabe (§ 438 Abs. 2)";
+    label en unofficial "Limitation begins, in the case of land, with the handover (§ 438 (2))";
+    when maengelanspruch(a, k) and grundstueckskauf(k) and uebergabe_am(k, t);
+    then verjaehrungsbeginn_438(a, t);
+}
+
+@source(BGB_P438)
+rule Verjaehrungsbeginn438Ablieferung(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Im Übrigen beginnt die Verjährung mit der Ablieferung der Sache (§ 438 Abs. 2); der Tag der Ablieferung wird nicht mitgerechnet (§ 187 Abs. 1), die Frist endet mit dem Tag, der ihm durch seine Zahl entspricht (§ 188 Abs. 2)";
+    label en unofficial "Otherwise limitation begins with delivery of the thing (§ 438 (2)); the day of delivery is not counted (§ 187 (1)) and the period ends on the day corresponding to it by its number (§ 188 (2))";
+    when maengelanspruch(a, k) and not grundstueckskauf(k) and ablieferung_am(k, t);
+    then verjaehrungsbeginn_438(a, t);
+}
+
+@source(BGB_P438)
+rule Regelfristende438(a: Anspruch, b: Date, d: Quantity) strict {
+    label de official "Die Frist des § 438 Abs. 1 endet mit dem Ablauf des Tages, welcher durch seine Zahl dem Tag des Fristbeginns entspricht (§ 188 Abs. 2, Politik BGB_KAUF_KALENDER)";
+    label en unofficial "The period of § 438 (1) ends with the expiry of the day corresponding by its number to the day on which it began (§ 188 (2), policy BGB_KAUF_KALENDER)";
+    when verjaehrungsbeginn_438(a, b) and verjaehrungsdauer_438(a, d);
+    then regelfrist_ende_438(a, add_calendar_period(b, d));
+}
+
+@source(BGB_P438)
+rule Fuenfjahresende438(a: Anspruch, k: Kaufvertrag, b: Date) strict {
+    label de official "Ablauf der in § 438 Abs. 1 Nr. 2 bestimmten Frist, gerechnet vom Beginn des Absatzes 2 an — sie wird auch bei Arglist nicht unterschritten (Abs. 3 Satz 2)";
+    label en unofficial "Expiry of the period determined in § 438 (1) no. 2, computed from the beginning under (2) — it is not undercut even in the case of fraud ((3) sentence 2)";
+    when maengelanspruch(a, k) and bauwerk(k) and verjaehrungsbeginn_438(a, b);
+    then fuenfjahresende_438(a, add_calendar_period(b, 5 calendar_year));
+}
+
+@source(BGB_P438)
+rule Fuenfjahresende438Baustoff(a: Anspruch, k: Kaufvertrag, b: Date) strict {
+    label de official "Dasselbe gilt für die Sache, die für ein Bauwerk verwendet worden ist und dessen Mangelhaftigkeit verursacht hat (§ 438 Abs. 1 Nr. 2 Buchst. b, Abs. 3 Satz 2)";
+    label en unofficial "The same applies to the thing used for a building which caused its defectiveness (§ 438 (1) no. 2 letter b, (3) sentence 2)";
+    when maengelanspruch(a, k) and baustoff_mit_verursachter_mangelhaftigkeit(k) and not bauwerk(k)
+     and verjaehrungsbeginn_438(a, b);
+    then fuenfjahresende_438(a, add_calendar_period(b, 5 calendar_year));
+}
+
+// --- § 438 Abs. 3: Arglist ------------------------------------------------------------------------
+
+@source(BGB_P438)
+rule Fristende438OhneArglist(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Ohne arglistiges Verschweigen bleibt es bei der Frist der Absätze 1 und 2 (§ 438)";
+    label en unofficial "Absent fraudulent concealment the period of subsections (1) and (2) applies (§ 438)";
+    when maengelanspruch(a, k) and not mangel_arglistig_verschwiegen(k) and regelfrist_ende_438(a, t);
+    then frist_ende_438(a, t);
+}
+
+@source(BGB_P438)
+rule Fristende438ArglistNr1(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Absatz 3 weicht nur von Absatz 1 Nr. 2 und 3 und von Absatz 2 ab; im Fall der Nummer 1 (dreißig Jahre) bleibt es auch bei Arglist bei der Frist des Absatzes 1 (§ 438 Abs. 3 Satz 1)";
+    label en unofficial "Subsection (3) derogates only from (1) nos. 2 and 3 and from (2); in the case of no. 1 (thirty years) the period of subsection (1) applies even where there was fraud (§ 438 (3) sentence 1)";
+    when maengelanspruch(a, k) and mangel_arglistig_verschwiegen(k) and mangel_in_dinglichem_herausgaberecht(k)
+     and regelfrist_ende_438(a, t);
+    then frist_ende_438(a, t);
+}
+
+@source(BGB_P438)
+rule Fristende438ArglistNr1Eingetragen(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Dasselbe gilt für den im Grundbuch eingetragenen Mangel (§ 438 Abs. 1 Nr. 1 Buchst. b, Abs. 3 Satz 1)";
+    label en unofficial "The same applies to the defect registered in the land register (§ 438 (1) no. 1 letter b, (3) sentence 1)";
+    when maengelanspruch(a, k) and mangel_arglistig_verschwiegen(k) and mangel_in_eingetragenem_recht(k)
+     and not mangel_in_dinglichem_herausgaberecht(k) and regelfrist_ende_438(a, t);
+    then frist_ende_438(a, t);
+}
+
+@source(BGB_P438)
+rule Fristende438ArglistNr3(a: Anspruch, k: Kaufvertrag, r: Date) strict {
+    label de official "Abweichend von Absatz 1 Nr. 3 und Absatz 2 verjähren die Ansprüche in der regelmäßigen Verjährungsfrist, wenn der Verkäufer den Mangel arglistig verschwiegen hat (§ 438 Abs. 3 Satz 1) — die regelmäßige Frist rechnet de.bgb.fristen (§§ 195, 199 Abs. 1)";
+    label en unofficial "By derogation from (1) no. 3 and (2) the claims become time-barred within the regular limitation period where the seller fraudulently concealed the defect (§ 438 (3) sentence 1) — the regular period is computed by de.bgb.fristen (§§ 195, 199 (1))";
+    when maengelanspruch(a, k) and mangel_arglistig_verschwiegen(k)
+     and not mangel_in_dinglichem_herausgaberecht(k) and not mangel_in_eingetragenem_recht(k)
+     and not bauwerk(k) and not baustoff_mit_verursachter_mangelhaftigkeit(k)
+     and de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(a, r);
+    then frist_ende_438(a, r);
+}
+
+@source(BGB_P438)
+rule Fristende438ArglistNr2RegelfristSpaeter(a: Anspruch, k: Kaufvertrag, r: Date, f: Date) strict {
+    label de official "Im Falle des Absatzes 1 Nr. 2 tritt die Verjährung jedoch nicht vor Ablauf der dort bestimmten Frist ein (§ 438 Abs. 3 Satz 2) — endet die regelmäßige Frist später, so ist sie maßgebend";
+    label en unofficial "In the case of (1) no. 2 limitation does not occur before the expiry of the period determined there (§ 438 (3) sentence 2) — where the regular period ends later, it governs";
+    when maengelanspruch(a, k) and mangel_arglistig_verschwiegen(k) and fuenfjahresende_438(a, f)
+     and de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(a, r) and r >= f;
+    then frist_ende_438(a, r);
+}
+
+@source(BGB_P438)
+rule Fristende438ArglistNr2FuenfJahre(a: Anspruch, k: Kaufvertrag, r: Date, f: Date) strict {
+    label de official "Endet die regelmäßige Frist früher, so tritt die Verjährung erst mit Ablauf der fünfjährigen Frist des Absatzes 1 Nr. 2 ein (§ 438 Abs. 3 Satz 2)";
+    label en unofficial "Where the regular period ends earlier, limitation occurs only upon expiry of the five-year period of (1) no. 2 (§ 438 (3) sentence 2)";
+    when maengelanspruch(a, k) and mangel_arglistig_verschwiegen(k) and fuenfjahresende_438(a, f)
+     and de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(a, r) and r < f;
+    then frist_ende_438(a, f);
+}
+
+// --- § 438 Abs. 4 und 5: Rücktritt und Minderung trotz Verjährung ---------------------------------
+
+pub relation ruecktritt_nach_218_unwirksam(k: Kaufvertrag) kind empirical {
+    label de official "der Rücktritt ist nach § 218 Abs. 1 unwirksam, weil der Nacherfüllungsanspruch verjährt ist und der Verkäufer sich darauf beruft (§ 438 Abs. 4 Satz 1) — die Wirksamkeit des Rücktritts bestimmt de.bgb.schuldrecht_at";
+    label en unofficial "the withdrawal is ineffective under § 218 (1) because the claim to cure is time-barred and the seller relies on this (§ 438 (4) sentence 1) — the effectiveness of withdrawal is governed by de.bgb.schuldrecht_at";
+}
+pub relation zahlungsverweigerungsrecht_trotz_unwirksamen_ruecktritts(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Recht des Käufers, die Zahlung des Kaufpreises insoweit zu verweigern, als er auf Grund des Rücktritts dazu berechtigt wäre (§ 438 Abs. 4 Satz 2)";
+    label en unofficial "buyer's right to refuse payment of the price in so far as he would be entitled to do so on the basis of the withdrawal (§ 438 (4) sentence 2)";
+}
+pub relation ruecktrittsrecht_des_verkaeufers_438(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Recht des Verkäufers, vom Vertrag zurückzutreten, wenn der Käufer von seinem Zahlungsverweigerungsrecht Gebrauch macht (§ 438 Abs. 4 Satz 3)";
+    label en unofficial "seller's right to withdraw from the contract where the buyer exercises his right to refuse payment (§ 438 (4) sentence 3)";
+}
+pub relation zahlungsverweigerung_ausgeuebt(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer macht von dem Recht des § 438 Abs. 4 Satz 2 Gebrauch";
+    label en unofficial "the buyer exercises the right under § 438 (4) sentence 2";
+}
+pub relation minderung_nach_218_unwirksam(k: Kaufvertrag) kind empirical {
+    label de official "die Minderung ist nach § 218 in entsprechender Anwendung unwirksam (§ 438 Abs. 5)";
+    label en unofficial "the reduction is ineffective under § 218 applied with the necessary modifications (§ 438 (5))";
+}
+
+@source(BGB_P438)
+rule Zahlungsverweigerung438Abs4Satz2(k: Kaufvertrag, ka: Person) strict {
+    label de official "Der Käufer kann trotz einer Unwirksamkeit des Rücktritts nach § 218 Abs. 1 die Zahlung des Kaufpreises insoweit verweigern, als er auf Grund des Rücktritts dazu berechtigt sein würde (§ 438 Abs. 4 Satz 2)";
+    label en unofficial "Despite the ineffectiveness of the withdrawal under § 218 (1) the buyer may refuse payment of the price in so far as he would be entitled to do so on the basis of the withdrawal (§ 438 (4) sentence 2)";
+    when ruecktritt_nach_218_unwirksam(k) and kaeufer(k, ka);
+    then zahlungsverweigerungsrecht_trotz_unwirksamen_ruecktritts(k, ka);
+}
+
+@source(BGB_P438)
+rule Zahlungsverweigerung438Abs5(k: Kaufvertrag, ka: Person) strict {
+    label de official "Auf das in § 437 bezeichnete Minderungsrecht finden § 218 und Absatz 4 Satz 2 entsprechende Anwendung (§ 438 Abs. 5)";
+    label en unofficial "§ 218 and subsection (4) sentence 2 apply with the necessary modifications to the right of reduction designated in § 437 (§ 438 (5))";
+    when minderung_nach_218_unwirksam(k) and kaeufer(k, ka);
+    then zahlungsverweigerungsrecht_trotz_unwirksamen_ruecktritts(k, ka);
+}
+
+@source(BGB_P438)
+rule Ruecktrittsrecht438Abs4Satz3(k: Kaufvertrag, v: Person) strict {
+    label de official "Macht der Käufer von diesem Recht Gebrauch, kann der Verkäufer vom Vertrag zurücktreten (§ 438 Abs. 4 Satz 3)";
+    label en unofficial "Where the buyer exercises this right the seller may withdraw from the contract (§ 438 (4) sentence 3)";
+    when zahlungsverweigerung_ausgeuebt(k) and verkaeufer(k, v);
+    then ruecktrittsrecht_des_verkaeufers_438(k, v);
+}
+
+// --- Brücke § 218 zu de.bgb.fristen (D-05-10) ------------------------------------------------------
+//
+// § 218 selbst steht bei de.bgb.fristen (BG-02, wirkung-214-218.law), nicht
+// bei de.bgb.schuldrecht_at — gemessen bei der Vorbereitung dieser Brücke.
+// Der Mängelanspruch dieses Pakets trägt bereits GENAU EINEN `Anspruch a`
+// (`maengelanspruch(a, k)`, D-05-01); die Brücke braucht daher kein eigenes
+// Korrelat. Additiv: der bestehende lokale Eingang `ruecktritt_nach_218_
+// unwirksam(k)` (Zeile oben) bleibt zweiter Produzent, unverändert.
+
+@source(BGB_P218)
+rule Ruecktritt218UnwirksamAusFristen(k: Kaufvertrag, a: Anspruch) strict {
+    label de official "Der Rücktritt wegen des Nacherfüllungsanspruchs ist unwirksam, wenn dieser Anspruch verjährt ist und der Verkäufer sich hierauf beruft (§ 438 Abs. 4 Satz 1 mit § 218 Abs. 1) — hergeleitet aus dem Kopf des § 218 bei de.bgb.fristen, additiv zum lokalen Eingang";
+    label en unofficial "Withdrawal for the claim to cure is ineffective where that claim is time-barred and the seller relies on this (§ 438 (4) sentence 1 with § 218 (1)) — derived from § 218's head at de.bgb.fristen, additive to the local input";
+    when maengelanspruch(a, k);
+    when de.bgb.fristen::ruecktritt_unwirksam_wegen_verjaehrung(a);
+    then ruecktritt_nach_218_unwirksam(k);
+}
+
+// --- Brücke der Sonderfrist des § 438 zu de.bgb.fristen (D-02-05) ---------------------------------
+//
+// Ohne diese Brücke erreichte die Frist des § 438 die gemeinsame Linie der
+// Hemmung (§§ 203-213) und der Wirkung der Verjährung (§§ 214-218) NICHT: der
+// Kopf `verjaehrung_eingetreten_am` bei de.bgb.fristen wurde allein aus der
+// regelmäßigen Verjährung gespeist, und § 218 war für den Regelfall des § 438
+// (zwei Jahre ab Ablieferung) nur über einen lokalen Falleingang erreichbar
+// (gemessen D-05-11). Dieses Paket sagt jetzt, was seine Norm bestimmt — den
+// Beginn (§ 438 Abs. 2) und die Dauer (§ 438 Abs. 1 Nr. 1 bis 3) —, und
+// de.bgb.fristen rechnet daraus das Ende (§ 188 Abs. 2), die Hemmung (§ 209),
+// die Mindestfrist (§ 203 Satz 2) und die Wirkung (§§ 214-218).
+//
+// DER GATE IST DERSELBE WIE BEI `Fristende438OhneArglist`: nur ohne
+// arglistiges Verschweigen. Im Fall der Arglist tritt nach § 438 Abs. 3 Satz 1
+// die REGELMÄSSIGE Verjährungsfrist an die Stelle der Absätze 1 Nr. 3 und 2 —
+// dann speist bereits die regelmäßige Linie von de.bgb.fristen dieselben Köpfe,
+// und ein zweiter Wert desselben Schlüssels wäre ein KEY_CONFLICT. Der lokale
+// Eingang `frist_ende_438` bleibt unverändert: er ist weiterhin der Kopf, den
+// die §§ 439 ff. und die Szenarien v01-v05 dieses Pakets lesen.
+
+@source(BGB_P438)
+rule Sonderverjaehrung438Beginn(a: Anspruch, k: Kaufvertrag, b: Date) strict {
+    label de official "Der Beginn der Verjährung der Mängelansprüche (§ 438 Abs. 2: Übergabe beim Grundstück, sonst Ablieferung) ist der Beginn einer besonderen Verjährungsfrist im Sinne des § 200 Satz 1 Halbsatz 2 und wird als solcher an die Fristenmechanik der §§ 187-218 übergeben";
+    label en unofficial "The commencement of limitation of the claims in respect of defects (§ 438 (2): handover for land, otherwise delivery) is the commencement of a special limitation period within the meaning of § 200 sentence 1 and is handed over as such to the machinery of §§ 187-218";
+    when maengelanspruch(a, k) and not mangel_arglistig_verschwiegen(k) and verjaehrungsbeginn_438(a, b);
+    then de.bgb.fristen::sonderverjaehrung_beginn(a, b);
+}
+
+@source(BGB_P438)
+rule Sonderverjaehrung438Dauer(a: Anspruch, k: Kaufvertrag, d: Quantity) strict {
+    label de official "Die Dauer der Verjährungsfrist der Mängelansprüche (§ 438 Abs. 1 Nr. 1 bis 3: 30, fünf oder zwei Jahre) ist die Dauer einer besonderen Verjährungsfrist und wird als solche an die Fristenmechanik der §§ 187-218 übergeben";
+    label en unofficial "The length of the limitation period for the claims in respect of defects (§ 438 (1) nos. 1 to 3: 30, five or two years) is the length of a special limitation period and is handed over as such to the machinery of §§ 187-218";
+    when maengelanspruch(a, k) and not mangel_arglistig_verschwiegen(k) and verjaehrungsdauer_438(a, d);
+    then de.bgb.fristen::sonderverjaehrung_dauer(a, d);
+}
+
+// --- § 439 Nacherfüllung --------------------------------------------------------------------------
+
+pub enum Nacherfuellungsart {
+    label de official "Art der Nacherfüllung nach der Wahl des Käufers (§ 439 Abs. 1)";
+    label en unofficial "kind of cure chosen by the buyer (§ 439 (1))";
+    Mangelbeseitigung,
+    Ersatzlieferung
+}
+
+pub relation nacherfuellung_gewaehlt(k: Kaufvertrag, art: Nacherfuellungsart) kind empirical {
+    label de official "der Käufer hat diese Art der Nacherfüllung gewählt (§ 439 Abs. 1)";
+    label en unofficial "the buyer has chosen this kind of cure (§ 439 (1))";
+}
+pub relation anspruch_auf_nacherfuellung(k: Kaufvertrag, art: Nacherfuellungsart) kind institutional {
+    label de official "Anspruch des Käufers auf die gewählte Art der Nacherfüllung (§ 439 Abs. 1)";
+    label en unofficial "buyer's claim to the chosen kind of cure (§ 439 (1))";
+}
+pub relation pflicht_aufwendungen_der_nacherfuellung(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, die zum Zwecke der Nacherfüllung erforderlichen Aufwendungen, insbesondere Transport-, Wege-, Arbeits- und Materialkosten, zu tragen (§ 439 Abs. 2)";
+    label en unofficial "seller's duty to bear the expenses necessary for cure, in particular transport, travel, labour and material costs (§ 439 (2))";
+}
+pub relation sache_vor_offenbarwerden_eingebaut(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer hat die mangelhafte Sache gemäß ihrer Art und ihrem Verwendungszweck in eine andere Sache eingebaut oder an eine andere Sache angebracht, bevor der Mangel offenbar wurde (§ 439 Abs. 3)";
+    label en unofficial "the buyer installed or attached the defective thing to another thing in accordance with its kind and purpose before the defect became apparent (§ 439 (3))";
+}
+pub relation pflicht_aus_und_einbaukosten(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, die erforderlichen Aufwendungen für das Entfernen der mangelhaften und den Einbau der mangelfreien Sache zu ersetzen (§ 439 Abs. 3)";
+    label en unofficial "seller's duty to reimburse the expenses necessary for removing the defective thing and installing the conforming one (§ 439 (3))";
+}
+
+@source(BGB_P439)
+pub external judgment relation nacherfuellung_nur_mit_unverhaeltnismaessigen_kosten(k: Kaufvertrag, art: Nacherfuellungsart) {
+    authority Court;
+    label de official "§ 439 Abs. 4 Satz 1, 2. Die vom Käufer gewählte Art der Nacherfüllung ist nur mit unverhältnismäßigen Kosten möglich; zu berücksichtigen sind insbesondere der Wert der Sache in mangelfreiem Zustand, die Bedeutung des Mangels und die Frage, ob auf die andere Art ohne erhebliche Nachteile für den Käufer zurückgegriffen werden könnte";
+    label en unofficial "§ 439 (4) sentences 1, 2. The kind of cure chosen by the buyer is possible only at disproportionate cost; regard is to be had in particular to the value of the thing if free from defects, the significance of the defect and whether recourse could be had to the other kind without significant detriment to the buyer";
+}
+
+pub relation verweigerungsrecht_der_nacherfuellung(k: Kaufvertrag, art: Nacherfuellungsart) kind institutional {
+    label de official "Recht des Verkäufers, die vom Käufer gewählte Art der Nacherfüllung zu verweigern (§ 439 Abs. 4 Satz 1)";
+    label en unofficial "seller's right to refuse the kind of cure chosen by the buyer (§ 439 (4) sentence 1)";
+}
+pub relation pflicht_zur_verfuegungstellung(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "Pflicht des Käufers, dem Verkäufer die Sache zum Zweck der Nacherfüllung zur Verfügung zu stellen (§ 439 Abs. 5)";
+    label en unofficial "buyer's duty to make the thing available to the seller for the purpose of cure (§ 439 (5))";
+}
+
+pub relation nacherfuellung_durchgefuehrt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "die Nacherfüllung wurde durchgeführt (§ 439 Abs. 1)";
+    label en unofficial "the cure was carried out (§ 439 (1))";
+}
+pub relation aufwendungen_nacherfuellung_getragen_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Verkäufer hat die erforderlichen Aufwendungen der Nacherfüllung getragen (§ 439 Abs. 2)";
+    label en unofficial "the seller bore the necessary expenses of cure (§ 439 (2))";
+}
+pub relation aus_und_einbaukosten_ersetzt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Verkäufer hat die erforderlichen Aus- und Einbaukosten ersetzt (§ 439 Abs. 3)";
+    label en unofficial "the seller reimbursed the necessary removal and installation expenses (§ 439 (3))";
+}
+pub relation sache_zur_nacherfuellung_bereitgestellt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Käufer hat die Sache zur Nacherfüllung bereitgestellt (§ 439 Abs. 5)";
+    label en unofficial "the buyer made the thing available for cure (§ 439 (5))";
+}
+pub relation ruecktritt_wirksam(k: Kaufvertrag) kind institutional {
+    label de official "der Rücktritt des Käufers ist wirksam ausgeübt (§ 437 Nr. 2, §§ 440, 323)";
+    label en unofficial "the buyer's withdrawal was validly exercised (§ 437 no. 2, §§ 440, 323)";
+}
+pub relation mangelfreie_sache_nachgeliefert(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer hat zum Zwecke der Nacherfüllung eine mangelfreie Sache geliefert (§ 439 Abs. 6 Satz 1)";
+    label en unofficial "the seller delivered a conforming thing for the purpose of cure (§ 439 (6) sentence 1)";
+}
+pub relation rueckgewaehranspruch_des_verkaeufers(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Anspruch des Verkäufers auf Rückgewähr der mangelhaften Sache nach Maßgabe der §§ 346 bis 348 (§ 439 Abs. 6 Satz 1)";
+    label en unofficial "seller's claim to the return of the defective thing in accordance with §§ 346 to 348 (§ 439 (6) sentence 1)";
+}
+pub relation pflicht_ruecknahme_auf_eigene_kosten(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "Pflicht des Verkäufers, die ersetzte Sache auf seine Kosten zurückzunehmen (§ 439 Abs. 6 Satz 2)";
+    label en unofficial "seller's duty to take back the replaced thing at his own expense (§ 439 (6) sentence 2)";
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs1(k: Kaufvertrag, ka: Person, art: Nacherfuellungsart) strict {
+    label de official "Der Käufer kann als Nacherfüllung nach seiner Wahl die Beseitigung des Mangels oder die Lieferung einer mangelfreien Sache verlangen (§ 439 Abs. 1)";
+    label en unofficial "As cure the buyer may demand, at his choice, removal of the defect or delivery of a thing free from defects (§ 439 (1))";
+    when recht_auf_nacherfuellung(k, ka) and nacherfuellung_gewaehlt(k, art);
+    then anspruch_auf_nacherfuellung(k, art);
+}
+
+@source(BGB_P439)
+rule Position439Nacherfuellung(k: Kaufvertrag, ka: Person, v: Person, beginn: Date, art: Nacherfuellungsart) strict {
+    label de official "Der Verkäufer ist zur Nacherfüllung verpflichtet, wenn der Käufer sie nach seiner Wahl verlangt (§ 439 Abs. 1)";
+    label en unofficial "The seller is obliged to provide cure where the buyer demands it at his choice (§ 439 (1))";
+    when recht_auf_nacherfuellung(k, ka) and nacherfuellung_gewaehlt(k, art)
+     and kaeufer(k, ka) and verkaeufer(k, v) and vertragsschluss_am(k, beginn);
+    then duty Duty439Nacherfuellung {
+        bearer v;
+        beneficiary ka;
+        achieve nacherfuellung_durchgefuehrt_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P439)
+rule Position439Aufwendungen(k: Kaufvertrag, ka: Person, v: Person, beginn: Date, art: Nacherfuellungsart) strict {
+    label de official "Der Verkäufer ist verpflichtet, die erforderlichen Aufwendungen der Nacherfüllung zu tragen (§ 439 Abs. 2)";
+    label en unofficial "The seller is obliged to bear the necessary expenses of cure (§ 439 (2))";
+    when anspruch_auf_nacherfuellung(k, art) and verkaeufer(k, v) and kaeufer(k, ka)
+     and vertragsschluss_am(k, beginn);
+    then duty Duty439Aufwendungen {
+        bearer v;
+        beneficiary ka;
+        achieve aufwendungen_nacherfuellung_getragen_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P439)
+rule Position439AusEinbau(k: Kaufvertrag, ka: Person, v: Person, beginn: Date, art: Nacherfuellungsart) strict {
+    label de official "Der Verkäufer ist verpflichtet, die erforderlichen Aus- und Einbaukosten zu ersetzen (§ 439 Abs. 3)";
+    label en unofficial "The seller is obliged to reimburse the necessary removal and installation expenses (§ 439 (3))";
+    when anspruch_auf_nacherfuellung(k, art) and sache_vor_offenbarwerden_eingebaut(k)
+     and verkaeufer(k, v) and kaeufer(k, ka) and vertragsschluss_am(k, beginn);
+    then duty Duty439AusEinbau {
+        bearer v;
+        beneficiary ka;
+        achieve aus_und_einbaukosten_ersetzt_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P439)
+rule Position439Bereitstellung(k: Kaufvertrag, ka: Person, v: Person, beginn: Date, art: Nacherfuellungsart) strict {
+    label de official "Der Käufer ist verpflichtet, die Sache zum Zweck der Nacherfüllung zur Verfügung zu stellen (§ 439 Abs. 5)";
+    label en unofficial "The buyer is obliged to make the thing available for cure (§ 439 (5))";
+    when anspruch_auf_nacherfuellung(k, art) and kaeufer(k, ka) and verkaeufer(k, v)
+     and vertragsschluss_am(k, beginn);
+    then duty Duty439Bereitstellung {
+        bearer ka;
+        beneficiary v;
+        achieve sache_zur_nacherfuellung_bereitgestellt_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P437)
+rule Position437Ruecktritt(k: Kaufvertrag, ka: Person, v: Person, beginn: Date) strict {
+    label de official "Der Käufer hat die Befugnis, den Kaufvertrag durch Rücktritt zu beenden (§ 437 Nr. 2)";
+    label en unofficial "The buyer has the power to terminate the sale by withdrawal (§ 437 no. 2)";
+    when recht_auf_ruecktritt(k, ka) and kaeufer(k, ka) and verkaeufer(k, v)
+     and vertragsschluss_am(k, beginn);
+    then power Power437Ruecktritt {
+        holder ka;
+        over v;
+        exercise ruecktritt_vom_vertrag_erklaert(k);
+        valid_when recht_auf_ruecktritt(k, ka);
+        effect create(ruecktritt_wirksam(k));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P441)
+rule Position441Minderung(k: Kaufvertrag, ka: Person, v: Person, beginn: Date) strict {
+    label de official "Der Käufer hat die Befugnis, den Kaufpreis durch Erklärung zu mindern (§ 441 Abs. 1)";
+    label en unofficial "The buyer has the power to reduce the price by declaration (§ 441 (1))";
+    when recht_auf_minderung(k, ka) and kaeufer(k, ka) and verkaeufer(k, v)
+     and vertragsschluss_am(k, beginn);
+    then power Power441Minderung {
+        holder ka;
+        over v;
+        exercise minderung_erklaert(k);
+        valid_when recht_auf_minderung(k, ka);
+        effect create(minderung_wirksam(k));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs2(k: Kaufvertrag, v: Person, art: Nacherfuellungsart) strict {
+    label de official "Der Verkäufer hat die zum Zwecke der Nacherfüllung erforderlichen Aufwendungen, insbesondere Transport-, Wege-, Arbeits- und Materialkosten, zu tragen (§ 439 Abs. 2)";
+    label en unofficial "The seller must bear the expenses necessary for the purpose of cure, in particular transport, travel, labour and material costs (§ 439 (2))";
+    when anspruch_auf_nacherfuellung(k, art) and verkaeufer(k, v);
+    then pflicht_aufwendungen_der_nacherfuellung(k, v);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs3(k: Kaufvertrag, v: Person, art: Nacherfuellungsart) strict {
+    label de official "Hat der Käufer die mangelhafte Sache vor dem Offenbarwerden des Mangels eingebaut oder angebracht, ist der Verkäufer im Rahmen der Nacherfüllung verpflichtet, die erforderlichen Aufwendungen für das Entfernen und den Einbau zu ersetzen (§ 439 Abs. 3)";
+    label en unofficial "Where the buyer installed or attached the defective thing before the defect became apparent, the seller must reimburse, as part of the cure, the necessary expenses of removal and installation (§ 439 (3))";
+    when anspruch_auf_nacherfuellung(k, art) and sache_vor_offenbarwerden_eingebaut(k) and verkaeufer(k, v);
+    then pflicht_aus_und_einbaukosten(k, v);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs4(k: Kaufvertrag, art: Nacherfuellungsart) strict {
+    label de official "Der Verkäufer kann die vom Käufer gewählte Art der Nacherfüllung unbeschadet des § 275 Abs. 2 und 3 verweigern, wenn sie nur mit unverhältnismäßigen Kosten möglich ist (§ 439 Abs. 4 Satz 1)";
+    label en unofficial "The seller may refuse the kind of cure chosen by the buyer, without prejudice to § 275 (2) and (3), where it is possible only at disproportionate cost (§ 439 (4) sentence 1)";
+    when nacherfuellung_gewaehlt(k, art) and nacherfuellung_nur_mit_unverhaeltnismaessigen_kosten(k, art);
+    then verweigerungsrecht_der_nacherfuellung(k, art);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs4Satz3(k: Kaufvertrag, ka: Person) strict {
+    label de official "Der Anspruch des Käufers beschränkt sich in diesem Fall auf die andere Art der Nacherfüllung (§ 439 Abs. 4 Satz 3): verweigert der Verkäufer die Mangelbeseitigung, bleibt die Ersatzlieferung";
+    label en unofficial "In that case the buyer's claim is limited to the other kind of cure (§ 439 (4) sentence 3): where the seller refuses removal of the defect, replacement delivery remains";
+    when recht_auf_nacherfuellung(k, ka) and verweigerungsrecht_der_nacherfuellung(k, Mangelbeseitigung);
+    then anspruch_auf_nacherfuellung(k, Ersatzlieferung);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs4Satz3Umgekehrt(k: Kaufvertrag, ka: Person) strict {
+    label de official "Verweigert der Verkäufer die Ersatzlieferung, so beschränkt sich der Anspruch auf die Mangelbeseitigung (§ 439 Abs. 4 Satz 3)";
+    label en unofficial "Where the seller refuses replacement delivery, the claim is limited to removal of the defect (§ 439 (4) sentence 3)";
+    when recht_auf_nacherfuellung(k, ka) and verweigerungsrecht_der_nacherfuellung(k, Ersatzlieferung);
+    then anspruch_auf_nacherfuellung(k, Mangelbeseitigung);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs5(k: Kaufvertrag, ka: Person, art: Nacherfuellungsart) strict {
+    label de official "Der Käufer hat dem Verkäufer die Sache zum Zweck der Nacherfüllung zur Verfügung zu stellen (§ 439 Abs. 5)";
+    label en unofficial "The buyer must make the thing available to the seller for the purpose of cure (§ 439 (5))";
+    when anspruch_auf_nacherfuellung(k, art) and kaeufer(k, ka);
+    then pflicht_zur_verfuegungstellung(k, ka);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs6Satz1(k: Kaufvertrag, v: Person) strict {
+    label de official "Liefert der Verkäufer zum Zwecke der Nacherfüllung eine mangelfreie Sache, so kann er vom Käufer Rückgewähr der mangelhaften Sache nach Maßgabe der §§ 346 bis 348 verlangen (§ 439 Abs. 6 Satz 1)";
+    label en unofficial "Where the seller delivers a conforming thing for the purpose of cure he may demand the return of the defective thing in accordance with §§ 346 to 348 (§ 439 (6) sentence 1)";
+    when mangelfreie_sache_nachgeliefert(k) and verkaeufer(k, v);
+    then rueckgewaehranspruch_des_verkaeufers(k, v);
+}
+
+@source(BGB_P439)
+rule Nacherfuellung439Abs6Satz2(k: Kaufvertrag, v: Person) strict {
+    label de official "Der Verkäufer hat die ersetzte Sache auf seine Kosten zurückzunehmen (§ 439 Abs. 6 Satz 2)";
+    label en unofficial "The seller must take back the replaced thing at his own expense (§ 439 (6) sentence 2)";
+    when mangelfreie_sache_nachgeliefert(k) and verkaeufer(k, v);
+    then pflicht_ruecknahme_auf_eigene_kosten(k, v);
+}
+
+// --- § 440 Besondere Bestimmungen für Rücktritt und Schadensersatz --------------------------------
+
+@source(BGB_P440)
+pub external judgment relation nacherfuellung_unzumutbar(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 440 Satz 1. Die dem Käufer zustehende Art der Nacherfüllung ist ihm unzumutbar";
+    label en unofficial "§ 440 sentence 1. The kind of cure available to the buyer is unreasonable for him";
+}
+
+@source(BGB_P440)
+pub external judgment relation nachbesserung_gilt_nicht_als_fehlgeschlagen(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 440 Satz 2. Aus der Art der Sache oder des Mangels oder den sonstigen Umständen ergibt sich, dass die Nachbesserung trotz des erfolglosen zweiten Versuchs nicht als fehlgeschlagen gilt";
+    label en unofficial "§ 440 sentence 2. It follows from the kind of the thing or of the defect or from the other circumstances that the repair is not deemed to have failed despite the unsuccessful second attempt";
+}
+
+pub relation zweiter_nachbesserungsversuch_erfolglos(k: Kaufvertrag) kind empirical {
+    label de official "die Nachbesserung ist auch im zweiten Versuch erfolglos geblieben (§ 440 Satz 2)";
+    label en unofficial "the repair remained unsuccessful at the second attempt as well (§ 440 sentence 2)";
+}
+pub relation nacherfuellung_fehlgeschlagen(k: Kaufvertrag) kind institutional {
+    label de official "die dem Käufer zustehende Art der Nacherfüllung ist fehlgeschlagen (§ 440 Satz 1, 2)";
+    label en unofficial "the kind of cure available to the buyer has failed (§ 440 sentences 1, 2)";
+}
+pub relation beide_arten_der_nacherfuellung_verweigert(k: Kaufvertrag) kind institutional {
+    label de official "der Verkäufer verweigert beide Arten der Nacherfüllung gemäß § 439 Abs. 4 (§ 440 Satz 1)";
+    label en unofficial "the seller refuses both kinds of cure under § 439 (4) (§ 440 sentence 1)";
+}
+pub relation fristsetzung_entbehrlich(k: Kaufvertrag) kind institutional {
+    label de official "es bedarf der Fristsetzung für Rücktritt und Schadensersatz nicht (§ 440 Satz 1)";
+    label en unofficial "no period need be fixed for withdrawal and damages (§ 440 sentence 1)";
+}
+
+@source(BGB_P440)
+presumption NachbesserungFehlgeschlagen(k: Kaufvertrag) {
+    label de official "Eine Nachbesserung gilt nach dem erfolglosen zweiten Versuch als fehlgeschlagen, wenn sich nicht insbesondere aus der Art der Sache oder des Mangels oder den sonstigen Umständen etwas anderes ergibt (§ 440 Satz 2)";
+    label en unofficial "A repair is deemed to have failed after the second unsuccessful attempt unless something else follows in particular from the kind of the thing or of the defect or from the other circumstances (§ 440 sentence 2)";
+    when zweiter_nachbesserungsversuch_erfolglos(k);
+    presume nacherfuellung_fehlgeschlagen(k);
+    unless nachbesserung_gilt_nicht_als_fehlgeschlagen(k);
+}
+
+@source(BGB_P440)
+rule BeideArtenVerweigert440(k: Kaufvertrag) strict {
+    label de official "Der Verkäufer verweigert beide Arten der Nacherfüllung gemäß § 439 Abs. 4 (§ 440 Satz 1)";
+    label en unofficial "The seller refuses both kinds of cure under § 439 (4) (§ 440 sentence 1)";
+    when verweigerungsrecht_der_nacherfuellung(k, Mangelbeseitigung)
+     and verweigerungsrecht_der_nacherfuellung(k, Ersatzlieferung);
+    then beide_arten_der_nacherfuellung_verweigert(k);
+}
+
+@source(BGB_P440)
+rule Fristsetzung440Verweigerung(k: Kaufvertrag) strict {
+    label de official "Außer in den Fällen des § 281 Abs. 2 und des § 323 Abs. 2 bedarf es der Fristsetzung auch dann nicht, wenn der Verkäufer beide Arten der Nacherfüllung gemäß § 439 Abs. 4 verweigert (§ 440 Satz 1)";
+    label en unofficial "Apart from the cases of § 281 (2) and § 323 (2), no period need be fixed where the seller refuses both kinds of cure under § 439 (4) (§ 440 sentence 1)";
+    when beide_arten_der_nacherfuellung_verweigert(k);
+    then fristsetzung_entbehrlich(k);
+}
+
+@source(BGB_P440)
+rule Fristsetzung440Fehlschlag(k: Kaufvertrag) defeasible {
+    label de official "Der Fristsetzung bedarf es auch dann nicht, wenn die dem Käufer zustehende Art der Nacherfüllung fehlgeschlagen ist (§ 440 Satz 1)";
+    label en unofficial "Nor need a period be fixed where the kind of cure available to the buyer has failed (§ 440 sentence 1)";
+    when nacherfuellung_fehlgeschlagen(k);
+    then fristsetzung_entbehrlich(k);
+}
+
+@source(BGB_P440)
+rule Fristsetzung440Unzumutbarkeit(k: Kaufvertrag) defeasible {
+    label de official "Der Fristsetzung bedarf es auch dann nicht, wenn die dem Käufer zustehende Art der Nacherfüllung ihm unzumutbar ist (§ 440 Satz 1)";
+    label en unofficial "Nor need a period be fixed where the kind of cure available to the buyer is unreasonable for him (§ 440 sentence 1)";
+    when nacherfuellung_unzumutbar(k);
+    then fristsetzung_entbehrlich(k);
+}
+
+// --- § 441 Minderung ------------------------------------------------------------------------------
+
+pub relation minderung_erklaert(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer hat die Minderung durch Erklärung gegenüber dem Verkäufer erklärt (§ 441 Abs. 1 Satz 1)";
+    label en unofficial "the buyer declared the reduction to the seller (§ 441 (1) sentence 1)";
+}
+pub relation mehrere_beteiligte(k: Kaufvertrag) kind empirical {
+    label de official "auf der Seite des Käufers oder auf der Seite des Verkäufers sind mehrere beteiligt (§ 441 Abs. 2)";
+    label en unofficial "there are several persons on the buyer's or on the seller's side (§ 441 (2))";
+}
+pub relation minderung_von_allen_oder_gegen_alle_erklaert(k: Kaufvertrag) kind empirical {
+    label de official "die Minderung ist von allen oder gegen alle Beteiligten erklärt worden (§ 441 Abs. 2)";
+    label en unofficial "the reduction was declared by or against all the persons involved (§ 441 (2))";
+}
+pub relation minderung_wirksam(k: Kaufvertrag) kind institutional {
+    label de official "die Minderung des Kaufpreises ist wirksam erklärt (§ 441 Abs. 1, 2)";
+    label en unofficial "the reduction of the purchase price is effectively declared (§ 441 (1), (2))";
+}
+pub relation wert_ohne_mangel_in_cent(k: Kaufvertrag, wert: Integer) kind empirical {
+    key(k);
+    label de official "Wert der Sache in mangelfreiem Zustand zur Zeit des Vertragsschlusses, in Cent (§ 441 Abs. 3 Satz 1) — der Text nennt weder Einheit noch Bewertungsverfahren; die Bewertung selbst ist Sache des Falls oder der Schätzung nach Satz 2";
+    label en unofficial "value of the thing free from defects at the time the contract was concluded, in cents (§ 441 (3) sentence 1) — the text names neither unit nor method of valuation; the valuation itself is a matter for the case or for the estimate under sentence 2";
+}
+pub relation wirklicher_wert_in_cent(k: Kaufvertrag, wert: Integer) kind empirical {
+    key(k);
+    label de official "wirklicher Wert der Sache zur Zeit des Vertragsschlusses, in Cent (§ 441 Abs. 3 Satz 1)";
+    label en unofficial "actual value of the thing at the time the contract was concluded, in cents (§ 441 (3) sentence 1)";
+}
+
+@source(BGB_P441)
+pub external judgment relation minderung_durch_schaetzung_zu_ermitteln(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 441 Abs. 3 Satz 2. Die Minderung ist, soweit erforderlich, durch Schätzung zu ermitteln";
+    label en unofficial "§ 441 (3) sentence 2. The reduction is, in so far as necessary, to be determined by estimate";
+}
+
+pub relation geminderter_kaufpreis(k: Kaufvertrag, betrag: Money) kind institutional {
+    label de official "der nach § 441 Abs. 3 herabgesetzte Kaufpreis, einmal je Anspruch auf den Cent gerundet";
+    label en unofficial "the purchase price reduced under § 441 (3), rounded once per claim to the cent";
+}
+pub relation mehrbetrag_zu_erstatten(k: Kaufvertrag, betrag: Money) kind institutional {
+    label de official "Mehrbetrag, den der Verkäufer zu erstatten hat, weil der Käufer mehr als den geminderten Kaufpreis gezahlt hat (§ 441 Abs. 4 Satz 1)";
+    label en unofficial "excess amount to be reimbursed by the seller because the buyer paid more than the reduced price (§ 441 (4) sentence 1)";
+}
+pub relation gezahlter_kaufpreis(k: Kaufvertrag, betrag: Money) kind empirical {
+    key(k);
+    label de official "der vom Käufer tatsächlich gezahlte Kaufpreis (§ 441 Abs. 4 Satz 1)";
+    label en unofficial "the purchase price actually paid by the buyer (§ 441 (4) sentence 1)";
+}
+
+@source(BGB_P441)
+rule Minderung441Abs1(k: Kaufvertrag, ka: Person) strict {
+    label de official "Statt zurückzutreten, kann der Käufer den Kaufpreis durch Erklärung gegenüber dem Verkäufer mindern; der Ausschlussgrund des § 323 Abs. 5 Satz 2 findet keine Anwendung (§ 441 Abs. 1)";
+    label en unofficial "Instead of withdrawing, the buyer may reduce the purchase price by declaration to the seller; the ground of exclusion in § 323 (5) sentence 2 does not apply (§ 441 (1))";
+    when recht_auf_minderung(k, ka) and minderung_erklaert(k) and not mehrere_beteiligte(k);
+    then minderung_wirksam(k);
+}
+
+@source(BGB_P441)
+rule Minderung441Abs2(k: Kaufvertrag, ka: Person) strict {
+    label de official "Sind auf der Seite des Käufers oder auf der Seite des Verkäufers mehrere beteiligt, so kann die Minderung nur von allen oder gegen alle erklärt werden (§ 441 Abs. 2)";
+    label en unofficial "Where several persons are involved on the buyer's or the seller's side, the reduction may be declared only by or against all of them (§ 441 (2))";
+    when recht_auf_minderung(k, ka) and minderung_erklaert(k) and mehrere_beteiligte(k)
+     and minderung_von_allen_oder_gegen_alle_erklaert(k);
+    then minderung_wirksam(k);
+}
+
+@source(BGB_P441)
+rule Minderung441Abs3(k: Kaufvertrag, preis: Money, ohne: Integer, wirklich: Integer) strict {
+    label de official "Bei der Minderung ist der Kaufpreis in dem Verhältnis herabzusetzen, in welchem zur Zeit des Vertragsschlusses der Wert der Sache in mangelfreiem Zustand zu dem wirklichen Wert gestanden haben würde (§ 441 Abs. 3 Satz 1) — eine Division je Anspruch, kaufmännisch auf den Cent gerundet";
+    label en unofficial "On reduction the purchase price is to be reduced in the proportion in which, at the time the contract was concluded, the value of the thing free from defects would have stood to its actual value (§ 441 (3) sentence 1) — one division per claim, rounded commercially to the cent";
+    when minderung_wirksam(k) and kaufpreis(k, preis) and wert_ohne_mangel_in_cent(k, ohne)
+     and wirklicher_wert_in_cent(k, wirklich);
+    then geminderter_kaufpreis(k, div_round(preis * wirklich, ohne * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P441)
+rule Minderung441Abs4(k: Kaufvertrag, gezahlt: Money, gemindert: Money) strict {
+    label de official "Hat der Käufer mehr als den geminderten Kaufpreis gezahlt, so ist der Mehrbetrag vom Verkäufer zu erstatten (§ 441 Abs. 4 Satz 1); § 346 Abs. 1 und § 347 Abs. 1 finden entsprechende Anwendung (Satz 2)";
+    label en unofficial "Where the buyer has paid more than the reduced price, the excess is to be reimbursed by the seller (§ 441 (4) sentence 1); § 346 (1) and § 347 (1) apply accordingly (sentence 2)";
+    when geminderter_kaufpreis(k, gemindert) and gezahlter_kaufpreis(k, gezahlt) and gezahlt > gemindert;
+    then mehrbetrag_zu_erstatten(k, gezahlt - gemindert);
+}
+
+// --- §§ 445a, 445b, 445c: Rückgriff des Verkäufers -----------------------------------------------
+
+pub relation lieferkette_vorvertrag(k: Kaufvertrag, kl: Kaufvertrag) kind empirical {
+    key(k);
+    label de official "der Kaufvertrag, durch den der Verkäufer die Sache von seinem Lieferanten gekauft hatte (§ 445a Abs. 1)";
+    label en unofficial "the contract by which the seller had bought the thing from his supplier (§ 445a (1))";
+}
+pub relation neu_hergestellte_sache(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Verkaufs ist eine neu hergestellte Sache (§ 445a Abs. 1)";
+    label en unofficial "the object of the sale is a newly produced thing (§ 445a (1))";
+}
+pub relation mangel_bereits_beim_gefahruebergang_auf_den_verkaeufer(k: Kaufvertrag) kind empirical {
+    label de official "der vom Käufer geltend gemachte Mangel war bereits beim Übergang der Gefahr auf den Verkäufer vorhanden (§ 445a Abs. 1)";
+    label en unofficial "the defect asserted by the buyer was already present when the risk passed to the seller (§ 445a (1))";
+}
+pub relation aufwendungen_des_verkaeufers(k: Kaufvertrag, betrag: Money) kind empirical {
+    key(k);
+    label de official "Aufwendungen, die der Verkäufer im Verhältnis zum Käufer nach § 439 Abs. 2, 3 und 6 Satz 2 sowie nach § 475 Abs. 5 zu tragen hatte (§ 445a Abs. 1)";
+    label en unofficial "expenses which the seller had to bear in relation to the buyer under § 439 (2), (3) and (6) sentence 2 and under § 475 (5) (§ 445a (1))";
+}
+pub relation rueckgriffsanspruch_445a(kl: Kaufvertrag, v: Person, lieferant: Person, betrag: Money) kind institutional {
+    label de official "Anspruch des Verkäufers gegen seinen Lieferanten auf Ersatz der Aufwendungen (§ 445a Abs. 1)";
+    label en unofficial "seller's claim against his supplier for reimbursement of the expenses (§ 445a (1))";
+}
+pub relation sache_als_folge_der_mangelhaftigkeit_zurueckgenommen(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer musste die verkaufte neu hergestellte Sache als Folge ihrer Mangelhaftigkeit zurücknehmen (§ 445a Abs. 2)";
+    label en unofficial "the seller had to take back the newly produced thing sold as a consequence of its defectiveness (§ 445a (2))";
+}
+pub relation fristsetzung_im_rueckgriff_entbehrlich(kl: Kaufvertrag) kind institutional {
+    label de official "für die Rechte des Verkäufers gegen seinen Lieferanten bedarf es der Fristsetzung nicht (§ 445a Abs. 2)";
+    label en unofficial "no period need be fixed for the seller's rights against his supplier (§ 445a (2))";
+}
+pub relation schuldner_sind_unternehmer(k: Kaufvertrag) kind empirical {
+    label de official "die Schuldner in der Lieferkette sind Unternehmer (§ 445a Abs. 3, § 445b Abs. 3, § 478 Abs. 3)";
+    label en unofficial "the debtors in the supply chain are traders (§ 445a (3), § 445b (3), § 478 (3))";
+}
+pub relation letzter_vertrag_ueber_digitale_produkte(k: Kaufvertrag) kind empirical {
+    label de official "der letzte Vertrag in der Lieferkette ist ein Verbrauchervertrag über die Bereitstellung digitaler Produkte nach den §§ 327 und 327a (§ 445c Satz 1)";
+    label en unofficial "the last contract in the supply chain is a consumer contract for the provision of digital products under §§ 327 and 327a (§ 445c sentence 1)";
+}
+pub relation rueckgriff_nach_445a_445b_478_nicht_anzuwenden(k: Kaufvertrag) kind institutional {
+    label de official "die §§ 445a, 445b und 478 sind nicht anzuwenden; an ihre Stelle treten die Vorschriften des Abschnitts 3 Titel 2a Untertitel 2 (§ 445c)";
+    label en unofficial "§§ 445a, 445b and 478 do not apply; the provisions of Division 3 Title 2a Sub-title 2 take their place (§ 445c)";
+}
+
+@source(BGB_P445a)
+rule Rueckgriff445aAbs1(k: Kaufvertrag, kl: Kaufvertrag, v: Person, lieferant: Person, betrag: Money) strict {
+    label de official "Der Verkäufer kann beim Verkauf einer neu hergestellten Sache von seinem Lieferanten Ersatz der Aufwendungen verlangen, die er im Verhältnis zum Käufer nach § 439 Abs. 2, 3 und 6 Satz 2 sowie nach § 475 Abs. 5 zu tragen hatte, wenn der geltend gemachte Mangel bereits beim Übergang der Gefahr auf den Verkäufer vorhanden war (§ 445a Abs. 1)";
+    label en unofficial "On the sale of a newly produced thing the seller may demand from his supplier reimbursement of the expenses he had to bear towards the buyer under § 439 (2), (3), (6) sentence 2 and § 475 (5), where the defect asserted was already present when the risk passed to the seller (§ 445a (1))";
+    when neu_hergestellte_sache(k) and mangel(k) and mangel_bereits_beim_gefahruebergang_auf_den_verkaeufer(k)
+     and lieferkette_vorvertrag(k, kl) and not letzter_vertrag_ueber_digitale_produkte(k)
+     and verkaeufer(k, v) and verkaeufer(kl, lieferant) and aufwendungen_des_verkaeufers(k, betrag);
+    then rueckgriffsanspruch_445a(kl, v, lieferant, betrag);
+}
+
+@source(BGB_P445a)
+rule Rueckgriff445aAbs2Ruecknahme(k: Kaufvertrag, kl: Kaufvertrag) strict {
+    label de official "Für die in § 437 bezeichneten Rechte des Verkäufers gegen seinen Lieferanten bedarf es der sonst erforderlichen Fristsetzung nicht, wenn der Verkäufer die verkaufte neu hergestellte Sache als Folge ihrer Mangelhaftigkeit zurücknehmen musste (§ 445a Abs. 2)";
+    label en unofficial "For the seller's rights under § 437 against his supplier no period need be fixed where he had to take back the newly produced thing as a consequence of its defectiveness (§ 445a (2))";
+    when neu_hergestellte_sache(k) and sache_als_folge_der_mangelhaftigkeit_zurueckgenommen(k)
+     and lieferkette_vorvertrag(k, kl);
+    then fristsetzung_im_rueckgriff_entbehrlich(kl);
+}
+
+@source(BGB_P445a)
+rule Rueckgriff445aAbs2Minderung(k: Kaufvertrag, kl: Kaufvertrag) strict {
+    label de official "Der Fristsetzung bedarf es auch dann nicht, wenn der Käufer den Kaufpreis gemindert hat (§ 445a Abs. 2)";
+    label en unofficial "Nor need a period be fixed where the buyer reduced the purchase price (§ 445a (2))";
+    when minderung_wirksam(k) and neu_hergestellte_sache(k) and lieferkette_vorvertrag(k, kl);
+    then fristsetzung_im_rueckgriff_entbehrlich(kl);
+}
+
+@source(BGB_P445c)
+rule Rueckgriff445c(k: Kaufvertrag) strict {
+    label de official "Ist der letzte Vertrag in der Lieferkette ein Verbrauchervertrag über die Bereitstellung digitaler Produkte nach den §§ 327 und 327a, so sind die §§ 445a, 445b und 478 nicht anzuwenden (§ 445c Satz 1)";
+    label en unofficial "Where the last contract in the supply chain is a consumer contract for the provision of digital products under §§ 327 and 327a, §§ 445a, 445b and 478 do not apply (§ 445c sentence 1)";
+    when letzter_vertrag_ueber_digitale_produkte(k);
+    then rueckgriff_nach_445a_445b_478_nicht_anzuwenden(k);
+}
+
+// --- § 445b Verjährung von Rückgriffsansprüchen ---------------------------------------------------
+
+pub relation rueckgriffsanspruch(a: Anspruch, kl: Kaufvertrag) kind empirical {
+    key(a);
+    label de official "Aufwendungsersatzanspruch des Verkäufers gegen seinen Lieferanten aus § 445a Abs. 1";
+    label en unofficial "seller's claim against his supplier for reimbursement of expenses under § 445a (1)";
+}
+pub relation erfuellung_der_kaeuferansprueche_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, an dem der Verkäufer die Ansprüche des Käufers erfüllt hat (§ 445b Abs. 2)";
+    label en unofficial "day on which the seller satisfied the buyer's claims (§ 445b (2))";
+}
+pub relation rueckgriffsfrist_ende_445b_abs1(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Ablauf der zweijährigen Frist ab Ablieferung der Sache (§ 445b Abs. 1)";
+    label en unofficial "expiry of the two-year period from delivery of the thing (§ 445b (1))";
+}
+pub relation ablaufhemmung_ende_445b_abs2(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "frühester Tag des Eintritts der Verjährung: zwei Monate nach der Erfüllung der Ansprüche des Käufers (§ 445b Abs. 2)";
+    label en unofficial "earliest day of limitation: two months after satisfaction of the buyer's claims (§ 445b (2))";
+}
+pub relation rueckgriffsverjaehrung_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf der Rückgriffsanspruch verjährt (§ 445b Abs. 1, 2)";
+    label en unofficial "day at whose end the recourse claim becomes time-barred (§ 445b (1), (2))";
+}
+
+@source(BGB_P445b)
+rule Rueckgriffsverjaehrung445bAbs1(a: Anspruch, kl: Kaufvertrag, t: Date) strict {
+    label de official "Die in § 445a Abs. 1 bestimmten Aufwendungsersatzansprüche verjähren in zwei Jahren ab Ablieferung der Sache (§ 445b Abs. 1)";
+    label en unofficial "The claims for reimbursement of expenses under § 445a (1) become time-barred in two years from delivery of the thing (§ 445b (1))";
+    when rueckgriffsanspruch(a, kl) and ablieferung_am(kl, t);
+    then rueckgriffsfrist_ende_445b_abs1(a, add_calendar_period(t, 2 calendar_year));
+}
+
+@source(BGB_P445b)
+rule Ablaufhemmung445bAbs2(a: Anspruch, t: Date) strict {
+    label de official "Die Verjährung der in den §§ 437 und 445a Abs. 1 bestimmten Ansprüche des Verkäufers gegen seinen Lieferanten tritt frühestens zwei Monate nach dem Zeitpunkt ein, in dem der Verkäufer die Ansprüche des Käufers erfüllt hat (§ 445b Abs. 2)";
+    label en unofficial "Limitation of the seller's claims against his supplier under §§ 437 and 445a (1) occurs at the earliest two months after the seller satisfied the buyer's claims (§ 445b (2))";
+    when erfuellung_der_kaeuferansprueche_am(a, t);
+    then ablaufhemmung_ende_445b_abs2(a, add_calendar_period(t, 2 calendar_month));
+}
+
+@source(BGB_P445b)
+rule Rueckgriffsverjaehrung445bRegel(a: Anspruch, e: Date, h: Date) strict {
+    label de official "Endet die Ablaufhemmung des Absatzes 2 nicht später als die Frist des Absatzes 1, so bleibt es bei der Frist des Absatzes 1 (§ 445b)";
+    label en unofficial "Where the suspension of expiry under (2) does not end later than the period under (1), the period under (1) governs (§ 445b)";
+    when rueckgriffsfrist_ende_445b_abs1(a, e) and ablaufhemmung_ende_445b_abs2(a, h) and h <= e;
+    then rueckgriffsverjaehrung_ende(a, e);
+}
+
+@source(BGB_P445b)
+rule Rueckgriffsverjaehrung445bAblaufhemmung(a: Anspruch, e: Date, h: Date) strict {
+    label de official "Endet die Ablaufhemmung des Absatzes 2 später, so tritt die Verjährung erst mit ihrem Ablauf ein (§ 445b Abs. 2)";
+    label en unofficial "Where the suspension of expiry under (2) ends later, limitation occurs only upon its expiry (§ 445b (2))";
+    when rueckgriffsfrist_ende_445b_abs1(a, e) and ablaufhemmung_ende_445b_abs2(a, h) and h > e;
+    then rueckgriffsverjaehrung_ende(a, h);
+}
+
+@source(BGB_P445a)
+rule Rueckgriff445aAbs3Lieferkette(k: Kaufvertrag, kl: Kaufvertrag, v: Person, lieferant: Person, betrag: Money) strict {
+    label de official "Die Absätze 1 und 2 finden auf die Ansprüche des Lieferanten und der übrigen Käufer in der Lieferkette gegen die jeweiligen Verkäufer entsprechende Anwendung, wenn die Schuldner Unternehmer sind (§ 445a Abs. 3)";
+    label en unofficial "Subsections (1) and (2) apply accordingly to the claims of the supplier and the other buyers in the supply chain against their respective sellers where the debtors are traders (§ 445a (3))";
+    when schuldner_sind_unternehmer(kl) and neu_hergestellte_sache(kl) and mangel(kl)
+     and mangel_bereits_beim_gefahruebergang_auf_den_verkaeufer(kl) and lieferkette_vorvertrag(kl, k)
+     and verkaeufer(kl, v) and verkaeufer(k, lieferant) and aufwendungen_des_verkaeufers(kl, betrag);
+    then rueckgriffsanspruch_445a(k, v, lieferant, betrag);
+}

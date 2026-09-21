@@ -1,0 +1,43 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1234 Abs. 2, § 1235, § 1242, § 1247: Der Verkauf am 17.03.2026 liegt nach dem verlegten Fristende, ist öffentlich versteigert und bekannt gemacht, es sind nur die erforderlichen Pfänder verkauft und der Zuschlag liegt nicht unter einem Edelmetallwert. Die Veräußerung ist rechtmäßig. Der Erlös von 5 000 € übersteigt die Forderung von 3 000 €: dem Pfandgläubiger gebühren 3 000 €, die Forderung gilt in dieser Höhe als berichtigt, der Überschuss von 2 000 € tritt an die Stelle des Pfandes.
+test "§ 1242, § 1247: rechtmäßiger Pfandverkauf, Erlös und Überschuss" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "b1": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:p07:pfand"), entity_ref("urn:de:bgb:dr:p07:uhr")) { origin case_input; }
+        assert "b2": de.bgb.besitz_eigentum::bewegliche_sache(entity_ref("urn:de:bgb:dr:p07:uhr")) { origin case_input; }
+        assert "b3": pfandglaeubiger(entity_ref("urn:de:bgb:dr:p07:pfand"), entity_ref("urn:de:bgb:dr:p07:bank")) { origin case_input; }
+        assert "b3a": gesicherte_forderung(entity_ref("urn:de:bgb:dr:p07:pfand"), entity_ref("urn:de:bgb:dr:p07:forderung")) { origin case_input; }
+        assert "b4": einigung_ueber_das_pfandrecht(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "b5": sache_dem_glaeubiger_uebergeben(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "b6": not sache_gehoert_dem_verpfaender_nicht(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "b7": forderung_ganz_oder_zum_teil_faellig(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "b8": not geschuldeter_gegenstand_nicht_geld(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "b9": verkaufsandrohungsfrist(entity_ref("urn:de:bgb:dr:p07:pfand"), entity_ref("urn:de:bgb:dr:p07:frist")) { origin case_input; }
+        assert "b10": versteigerung_angedroht_am(entity_ref("urn:de:bgb:dr:p07:pfand"), @2026-02-15) { origin adjudicated; }
+        assert "b11": not anzeige_untunlich(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "f1": verkauf_erfolgt_am(entity_ref("urn:de:bgb:dr:p07:pfand"), @2026-03-17) { origin adjudicated; }
+        assert "f2": oeffentliche_versteigerung_durchgefuehrt(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "f3": oeffentlich_bekannt_gemacht(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "f4": nur_so_viele_pfaender_verkauft_wie_erforderlich(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "f5": not zuschlag_unter_dem_edelmetallwert(entity_ref("urn:de:bgb:dr:p07:pfand")) { origin adjudicated; }
+        assert "f6": erloes_aus_dem_pfand(entity_ref("urn:de:bgb:dr:p07:pfand"), 5000.00 EUR) { origin adjudicated; }
+        assert "f7": forderungsbetrag(entity_ref("urn:de:bgb:dr:p07:pfand"), 3000.00 EUR) { origin adjudicated; }
+    }
+    evaluate truth(veraeusserung_rechtmaessig(entity_ref("urn:de:bgb:dr:p07:pfand")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erloes_gebuehrt_dem_pfandglaeubiger(entity_ref("urn:de:bgb:dr:p07:pfand"), 3000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(forderung_gilt_als_berichtigt(entity_ref("urn:de:bgb:dr:p07:pfand"), 3000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ueberschuss_tritt_an_die_stelle_des_pfandes(entity_ref("urn:de:bgb:dr:p07:pfand"), 2000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erwerber_erlangt_die_rechte_wie_vom_eigentuemer(entity_ref("urn:de:bgb:dr:p07:pfand")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

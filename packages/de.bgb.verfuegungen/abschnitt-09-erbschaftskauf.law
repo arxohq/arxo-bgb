@@ -1,0 +1,638 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 9 — ERBSCHAFTSKAUF
+// (§§ 2372–2385). § 2371 (Form) bereits in package.law — nicht angetastet;
+// dieses Modul erweitert dieselbe Entität `Erbschaftskauf` um die
+// materiellen Folgen des Vertrags (Vorteile, ausgeschlossene Teile,
+// Herausgabe- und Ersatzpflichten, Haftung im Innen- und Außenverhältnis,
+// Anzeigepflicht, entsprechende Anwendung auf ähnliche Verträge und
+// Schenkung).
+//
+// GELDBETRÄGE (§§ 2375, 2378, 2381) sind Fallangabe (Wert, Wertminderung,
+// fehlender Betrag, Werterhöhung), wie an den übrigen Geldstellen des
+// Pakets: das Gesetz nennt keinen eigenen Berechnungsweg für diese Beträge
+// (anders als § 2303/§ 2325, wo die Quote aus der Erbfolge kommt), daher
+// kein `div_round` in diesem Modul — die Beträge fließen unverändert von
+// der Tatsachenfeststellung in die Anspruchsfolge (kind empirical →
+// kind derived, keine Arithmetik).
+//
+// § 2384 UNVERZÜGLICH ist Wertungsmerkmal (DECISION-0194): Kanal §47.3 über
+// `external judgment relation` mit `authority Court` (Nachlassgericht als
+// Gericht im Sinne des Pakets — einzige im Paket verwendete Autorität,
+// s. § 2339 ff.). Ebenso das „rechtliche Interesse“ des Einsichtnehmenden
+// (§ 2384 Abs. 2).
+//
+// § 2373 (im Zweifel nicht mitverkauft) und § 2385 Abs. 1 Satz 1
+// (Vermutungswirkung „andere Verträge“, dort aber keine Zweifelsregel,
+// sondern Rechtsfolgenverweisung — als `strict`-Regel modelliert) folgen
+// der etablierten Unterscheidung des Pakets: „im Zweifel“ → `presumption
+// … unless`, sonst `rule … strict`.
+
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// ---- § 2372 Dem Käufer zustehende Vorteile --------------------------------
+
+pub relation vorteil_aus_wegfall_entstanden_2372(k: Erbschaftskauf, kaeufer: Person) kind empirical {
+    label de official "Es ist ein Vorteil aus dem Wegfall eines Vermächtnisses oder einer Auflage oder aus der Ausgleichungspflicht eines Miterben entstanden (§ 2372)";
+    label en unofficial "an advantage has arisen from the lapse of a legacy or a testamentary burden, or from a co-heir's duty to equalise (§ 2372)";
+}
+pub relation vorteil_gebuehrt_kaeufer_2372(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Der Vorteil gebührt dem Käufer (§ 2372)";
+    label en unofficial "the advantage belongs to the buyer (§ 2372)";
+}
+
+// ---- § 2373 Dem Verkäufer verbleibende Teile ------------------------------
+
+pub relation spaeter_anfallender_erbteil_entstanden_2373(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Dem Verkäufer ist nach Abschluss des Kaufs ein Erbteil durch Nacherbfolge oder infolge des Wegfalls eines Miterben angefallen (§ 2373 Satz 1)";
+    label en unofficial "after conclusion of the sale a further share devolved on the seller by subsequent succession or a co-heir's falling away (§ 2373 sentence 1)";
+}
+pub relation erbteil_ausdruecklich_mitverkauft_2373(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Die Vertragsparteien haben den später anfallenden Erbteil abweichend ausdrücklich als mitverkauft vereinbart (§ 2373 Satz 1, Gegenausnahme)";
+    label en unofficial "the parties expressly agreed, contrary to the doubt-rule, that the later-devolving share was included in the sale (§ 2373 sentence 1, counter-exception)";
+}
+pub relation erbteil_nicht_mitverkauft_vermutet_2373(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Der später anfallende Erbteil gilt im Zweifel nicht als mitverkauft (§ 2373 Satz 1)";
+    label en unofficial "in case of doubt the later-devolving share is not deemed part of the sale (§ 2373 sentence 1)";
+}
+pub relation vorausvermaechtnis_dem_verkaeufer_zugewendet_2373(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Dem Verkäufer ist ein Vorausvermächtnis zugewendet (§ 2373 Satz 1)";
+    label en unofficial "a preferential legacy has been made to the seller (§ 2373 sentence 1)";
+}
+pub relation vorausvermaechtnis_ausdruecklich_mitverkauft_2373(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Die Vertragsparteien haben das Vorausvermächtnis abweichend ausdrücklich als mitverkauft vereinbart (§ 2373 Satz 1, Gegenausnahme)";
+    label en unofficial "the parties expressly agreed that the preferential legacy was included in the sale (§ 2373 sentence 1, counter-exception)";
+}
+pub relation vorausvermaechtnis_nicht_mitverkauft_vermutet_2373(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Das Vorausvermächtnis gilt im Zweifel nicht als mitverkauft (§ 2373 Satz 1)";
+    label en unofficial "in case of doubt the preferential legacy is not deemed part of the sale (§ 2373 sentence 1)";
+}
+pub relation familienpapiere_oder_familienbilder_vorhanden_2373(k: Erbschaftskauf) kind empirical {
+    label de official "Zur Erbschaft gehören Familienpapiere oder Familienbilder (§ 2373 Satz 2)";
+    label en unofficial "the estate includes family papers or family portraits (§ 2373 sentence 2)";
+}
+pub relation familienpapiere_ausdruecklich_mitverkauft_2373(k: Erbschaftskauf) kind empirical {
+    label de official "Die Vertragsparteien haben die Familienpapiere oder Familienbilder abweichend ausdrücklich als mitverkauft vereinbart (§ 2373 Satz 2, Gegenausnahme)";
+    label en unofficial "the parties expressly agreed that the family papers or portraits were included in the sale (§ 2373 sentence 2, counter-exception)";
+}
+pub relation familienpapiere_nicht_mitverkauft_vermutet_2373(k: Erbschaftskauf) kind derived {
+    label de official "Familienpapiere und Familienbilder gelten im Zweifel nicht als mitverkauft (§ 2373 Satz 2)";
+    label en unofficial "in case of doubt family papers and portraits are not deemed part of the sale (§ 2373 sentence 2)";
+}
+
+// ---- § 2374 Herausgabepflicht ---------------------------------------------
+
+pub relation erbschaftsgegenstand_zur_zeit_des_verkaufs_vorhanden_2374(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) kind empirical {
+    label de official "Zur Zeit des Verkaufs sind Erbschaftsgegenstände vorhanden (§ 2374)";
+    label en unofficial "estate assets exist at the time of the sale (§ 2374)";
+}
+pub relation vor_verkauf_aufgrund_erbschaftsrechts_oder_als_ersatz_erlangt_2374(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) kind empirical {
+    label de official "Der Verkäufer hat vor dem Verkauf etwas aufgrund eines zur Erbschaft gehörenden Rechts, als Ersatz für Zerstörung, Beschädigung oder Entziehung eines Erbschaftsgegenstands oder durch ein sich auf die Erbschaft beziehendes Rechtsgeschäft erlangt (§ 2374)";
+    label en unofficial "before the sale the seller obtained something by a right belonging to the estate, as replacement for destruction, damage or deprivation of an estate asset, or through a transaction relating to the estate (§ 2374)";
+}
+pub relation herausgabepflicht_besteht_2374(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) kind derived {
+    label de official "Der Verkäufer ist zur Herausgabe an den Käufer verpflichtet (§ 2374)";
+    label en unofficial "the seller is obliged to hand over to the buyer (§ 2374)";
+}
+
+// ---- § 2375 Ersatzpflicht ---------------------------------------------------
+
+pub relation gegenstand_vor_verkauf_verbraucht_veraeussert_oder_belastet_2375(k: Erbschaftskauf, verkaeufer: Person, wert: Money) kind empirical {
+    label de official "Der Verkäufer hat vor dem Verkauf einen Erbschaftsgegenstand verbraucht, unentgeltlich veräußert oder unentgeltlich belastet; der Wert bzw. die Wertminderung beträgt den angegebenen Betrag (§ 2375 Abs. 1 Satz 1)";
+    label en unofficial "before the sale the seller consumed, gratuitously disposed of, or gratuitously encumbered an estate asset; the value or diminution in value is the stated amount (§ 2375 (1) sentence 1)";
+}
+pub relation kaeufer_kennt_verbrauch_oder_veraeusserung_bei_abschluss_2375(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Der Käufer kennt den Verbrauch oder die unentgeltliche Verfügung bei Abschluss des Kaufs (§ 2375 Abs. 1 Satz 2)";
+    label en unofficial "the buyer knows of the consumption or gratuitous disposal at the conclusion of the sale (§ 2375 (1) sentence 2)";
+}
+pub relation ersatzpflicht_besteht_2375(k: Erbschaftskauf, verkaeufer: Person, wert: Money) kind derived {
+    label de official "Der Verkäufer ist zum Ersatz des Werts bzw. der Wertminderung verpflichtet (§ 2375 Abs. 1)";
+    label en unofficial "the seller is obliged to compensate the value or the diminution in value (§ 2375 (1))";
+}
+pub relation verschlechterung_untergang_oder_unmoeglichkeit_ohne_verbrauch_veraeusserung_2375(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Ein Erbschaftsgegenstand kann wegen Verschlechterung, Untergangs oder einer aus einem anderen Grund eingetretenen Unmöglichkeit nicht herausgegeben werden, ohne dass Verbrauch, unentgeltliche Veräußerung oder Belastung nach Abs. 1 vorliegt (§ 2375 Abs. 2)";
+    label en unofficial "an estate asset cannot be handed over because of deterioration, loss, or impossibility from another cause, without consumption, gratuitous disposal or encumbrance under (1) (§ 2375 (2))";
+}
+pub relation kein_ersatzanspruch_2375(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Der Käufer kann insoweit keinen Ersatz verlangen (§ 2375 Abs. 2)";
+    label en unofficial "the buyer cannot claim compensation for this (§ 2375 (2))";
+}
+
+// ---- § 2376 Haftung des Verkäufers ------------------------------------------
+
+pub relation erbrecht_steht_verkaeufer_tatsaechlich_nicht_zu_2376(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Dem Verkäufer steht das Erbrecht tatsächlich nicht zu (§ 2376 Abs. 1)";
+    label en unofficial "the seller does not in fact hold the right of inheritance (§ 2376 (1))";
+}
+pub relation erbrecht_durch_nacherbenrecht_oder_testamentsvollstrecker_beschraenkt_2376(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Das Erbrecht ist tatsächlich durch das Recht eines Nacherben oder die Ernennung eines Testamentsvollstreckers beschränkt (§ 2376 Abs. 1)";
+    label en unofficial "the right of inheritance is in fact restricted by a subsequent heir's right or the appointment of an executor (§ 2376 (1))";
+}
+pub relation vermaechtnisse_auflagen_oder_lasten_bestehen_tatsaechlich_2376(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Es bestehen tatsächlich Vermächtnisse, Auflagen, Pflichtteilslasten, Ausgleichungspflichten oder Teilungsanordnungen (§ 2376 Abs. 1)";
+    label en unofficial "legacies, testamentary burdens, compulsory-portion charges, equalisation duties or partition directions in fact exist (§ 2376 (1))";
+}
+pub relation unbeschraenkte_haftung_gegenueber_nachlassglaeubigern_tatsaechlich_eingetreten_2376(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Es ist tatsächlich unbeschränkte Haftung gegenüber den Nachlassgläubigern oder einzelnen von ihnen eingetreten (§ 2376 Abs. 1)";
+    label en unofficial "unlimited liability towards the estate creditors, or some of them, has in fact arisen (§ 2376 (1))";
+}
+pub relation rechtsmangelhaftung_ausgeloest_2376(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Die Haftung des Verkäufers für Rechtsmängel ist ausgelöst (§ 2376 Abs. 1)";
+    label en unofficial "the seller's liability for defects of title is triggered (§ 2376 (1))";
+}
+pub relation mangel_arglistig_verschwiegen_2376(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Der Verkäufer hat einen Sachmangel arglistig verschwiegen (§ 2376 Abs. 2)";
+    label en unofficial "the seller fraudulently concealed a defect of quality (§ 2376 (2))";
+}
+pub relation garantie_fuer_beschaffenheit_uebernommen_2376(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Der Verkäufer hat eine Garantie für die Beschaffenheit des Gegenstands übernommen (§ 2376 Abs. 2)";
+    label en unofficial "the seller assumed a guarantee for the quality of the asset (§ 2376 (2))";
+}
+pub relation sachmangelhaftung_ausgeloest_2376(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Die Haftung des Verkäufers für Sachmängel ist ausgelöst (§ 2376 Abs. 2)";
+    label en unofficial "the seller's liability for defects of quality is triggered (§ 2376 (2))";
+}
+
+// ---- § 2377 Wiederaufleben erloschener Rechtsverhältnisse -------------------
+
+pub relation recht_und_verbindlichkeit_oder_belastung_durch_erbfall_vereinigt_2377(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) kind empirical {
+    label de official "Ein Rechtsverhältnis ist infolge des Erbfalls durch Vereinigung von Recht und Verbindlichkeit oder von Recht und Belastung erloschen (§ 2377 Satz 1)";
+    label en unofficial "a legal relationship was extinguished by confusion of right and obligation, or right and encumbrance, upon devolution (§ 2377 sentence 1)";
+}
+pub relation rechtsverhaeltnis_gilt_im_verhaeltnis_kaeufer_verkaeufer_als_nicht_erloschen_2377(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) kind derived {
+    label de official "Im Verhältnis zwischen Käufer und Verkäufer gilt das Rechtsverhältnis als nicht erloschen und ist erforderlichenfalls wiederherzustellen (§ 2377)";
+    label en unofficial "as between buyer and seller the relationship is deemed not extinguished and must be restored if necessary (§ 2377)";
+}
+
+// ---- § 2378 Nachlassverbindlichkeiten ---------------------------------------
+
+pub relation nachlassverbindlichkeit_besteht_2378(k: Erbschaftskauf, kaeufer: Person, betrag: Money) kind empirical {
+    label de official "Es besteht eine Nachlassverbindlichkeit in Höhe des angegebenen Betrags (§ 2378 Abs. 1)";
+    label en unofficial "an estate debt exists in the stated amount (§ 2378 (1))";
+}
+pub relation verkaeufer_haftet_nach_2376_fuer_nichtbestehen_dieser_verbindlichkeit_2378(k: Erbschaftskauf, kaeufer: Person, betrag: Money) kind empirical {
+    label de official "Der Verkäufer haftet nach § 2376 dafür, dass diese Verbindlichkeit nicht besteht (§ 2378 Abs. 1, Ausnahme)";
+    label en unofficial "the seller warrants under § 2376 that this debt does not exist (§ 2378 (1), exception)";
+}
+pub relation kaeufer_verpflichtet_verbindlichkeit_zu_erfuellen_2378(k: Erbschaftskauf, kaeufer: Person, betrag: Money) kind derived {
+    label de official "Der Käufer ist dem Verkäufer gegenüber verpflichtet, die Nachlassverbindlichkeit zu erfüllen (§ 2378 Abs. 1)";
+    label en unofficial "the buyer is obliged towards the seller to discharge the estate debt (§ 2378 (1))";
+}
+pub relation verkaeufer_hat_verbindlichkeit_vor_verkauf_erfuellt_2378(k: Erbschaftskauf, verkaeufer: Person, betrag: Money) kind empirical {
+    label de official "Der Verkäufer hat vor dem Verkauf eine Nachlassverbindlichkeit in Höhe des Betrags erfüllt (§ 2378 Abs. 2)";
+    label en unofficial "before the sale the seller discharged an estate debt of the stated amount (§ 2378 (2))";
+}
+pub relation verkaeufer_kann_ersatz_von_kaeufer_verlangen_2378(k: Erbschaftskauf, verkaeufer: Person, betrag: Money) kind derived {
+    label de official "Der Verkäufer kann von dem Käufer Ersatz verlangen (§ 2378 Abs. 2)";
+    label en unofficial "the seller may demand reimbursement from the buyer (§ 2378 (2))";
+}
+
+// ---- § 2379 Nutzungen und Lasten vor Verkauf --------------------------------
+
+pub relation nutzung_vor_verkauf_entstanden_2379(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Auf die Zeit vor dem Verkauf fällt eine Nutzung (§ 2379 Satz 1)";
+    label en unofficial "a benefit accrues for the period before the sale (§ 2379 sentence 1)";
+}
+pub relation nutzung_verbleibt_verkaeufer_2379(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Die Nutzung verbleibt dem Verkäufer (§ 2379 Satz 1)";
+    label en unofficial "the benefit remains with the seller (§ 2379 sentence 1)";
+}
+pub relation laufende_last_vor_verkauf_entstanden_2379(k: Erbschaftskauf, verkaeufer: Person) kind empirical {
+    label de official "Auf die Zeit vor dem Verkauf fällt eine Last, mit Einschluss der Zinsen der Nachlassverbindlichkeiten (§ 2379 Satz 2)";
+    label en unofficial "a burden, including interest on estate debts, falls due for the period before the sale (§ 2379 sentence 2)";
+}
+pub relation last_traegt_verkaeufer_2379(k: Erbschaftskauf, verkaeufer: Person) kind derived {
+    label de official "Der Verkäufer trägt die Last (§ 2379 Satz 2)";
+    label en unofficial "the seller bears the burden (§ 2379 sentence 2)";
+}
+pub relation abgabe_von_der_erbschaft_zu_entrichten_2379(k: Erbschaftskauf, kaeufer: Person) kind empirical {
+    label de official "Von der Erbschaft ist eine Abgabe zu entrichten (§ 2379 Satz 3)";
+    label en unofficial "a levy is payable out of the estate (§ 2379 sentence 3)";
+}
+pub relation abgabe_traegt_kaeufer_2379(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Den Käufer trifft die Abgabe (§ 2379 Satz 3)";
+    label en unofficial "the buyer bears the levy (§ 2379 sentence 3)";
+}
+pub relation ausserordentliche_auf_stammwert_gelegte_last_2379(k: Erbschaftskauf, kaeufer: Person) kind empirical {
+    label de official "Eine außerordentliche Last ist als auf den Stammwert der Erbschaftsgegenstände gelegt anzusehen (§ 2379 Satz 3)";
+    label en unofficial "an extraordinary burden is to be regarded as charged on the capital value of the estate assets (§ 2379 sentence 3)";
+}
+pub relation ausserordentliche_last_traegt_kaeufer_2379(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Den Käufer trifft die außerordentliche Last (§ 2379 Satz 3)";
+    label en unofficial "the buyer bears the extraordinary burden (§ 2379 sentence 3)";
+}
+
+// ---- § 2380 Gefahrübergang, Nutzungen und Lasten nach Verkauf ---------------
+
+pub relation kauf_abgeschlossen_2380(k: Erbschaftskauf, kaeufer: Person) kind empirical {
+    label de official "Der Kauf ist abgeschlossen (§ 2380)";
+    label en unofficial "the sale has been concluded (§ 2380)";
+}
+pub relation kaeufer_traegt_gefahr_ab_abschluss_2380(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Der Käufer trägt von dem Abschluss des Kaufs an die Gefahr des zufälligen Untergangs und einer zufälligen Verschlechterung (§ 2380 Satz 1)";
+    label en unofficial "the buyer bears the risk of accidental loss and accidental deterioration from conclusion of the sale (§ 2380 sentence 1)";
+}
+pub relation nutzungen_und_lasten_ab_abschluss_beim_kaeufer_2380(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Ab dem Abschluss des Kaufs gebühren dem Käufer die Nutzungen und trägt er die Lasten (§ 2380 Satz 2)";
+    label en unofficial "from conclusion of the sale the buyer is entitled to the benefits and bears the burdens (§ 2380 sentence 2)";
+}
+
+// ---- § 2381 Ersatz von Verwendungen und Aufwendungen ------------------------
+
+pub relation notwendige_verwendung_vor_verkauf_gemacht_2381(k: Erbschaftskauf, verkaeufer: Person, betrag: Money) kind empirical {
+    label de official "Der Verkäufer hat vor dem Verkauf eine notwendige Verwendung auf die Erbschaft in Höhe des Betrags gemacht (§ 2381 Abs. 1)";
+    label en unofficial "before the sale the seller made a necessary outlay on the estate of the stated amount (§ 2381 (1))";
+}
+pub relation verkaeufer_kann_verwendungsersatz_verlangen_2381(k: Erbschaftskauf, verkaeufer: Person, betrag: Money) kind derived {
+    label de official "Der Käufer hat dem Verkäufer die notwendige Verwendung zu ersetzen (§ 2381 Abs. 1)";
+    label en unofficial "the buyer must reimburse the seller for the necessary outlay (§ 2381 (1))";
+}
+pub relation andere_aufwendung_vor_verkauf_gemacht_2381(k: Erbschaftskauf, verkaeufer: Person, werterhoehung: Money) kind empirical {
+    label de official "Der Verkäufer hat vor dem Verkauf eine andere Aufwendung gemacht, durch die der Wert der Erbschaft zur Zeit des Verkaufs um den angegebenen Betrag erhöht ist (§ 2381 Abs. 2)";
+    label en unofficial "before the sale the seller made another outlay that increased the estate's value at the time of sale by the stated amount (§ 2381 (2))";
+}
+pub relation verkaeufer_kann_aufwendungsersatz_verlangen_2381(k: Erbschaftskauf, verkaeufer: Person, werterhoehung: Money) kind derived {
+    label de official "Der Käufer hat insoweit Ersatz in Höhe der Werterhöhung zu leisten (§ 2381 Abs. 2)";
+    label en unofficial "to that extent the buyer must reimburse the amount of the value increase (§ 2381 (2))";
+}
+
+// ---- § 2382 Haftung des Käufers gegenüber Nachlassgläubigern ---------------
+
+pub relation kaeufer_haftet_nachlassglaeubigern_2382(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Der Käufer haftet von dem Abschluss des Kaufs an den Nachlassgläubigern, unbeschadet der Fortdauer der Haftung des Verkäufers, auch für Verbindlichkeiten, zu deren Erfüllung er dem Verkäufer gegenüber nach §§ 2378, 2379 nicht verpflichtet ist (§ 2382 Abs. 1)";
+    label en unofficial "the buyer becomes liable to the estate creditors from conclusion of the sale, without prejudice to the seller's continuing liability, including for debts he is not obliged to discharge towards the seller under §§ 2378, 2379 (§ 2382 (1))";
+}
+pub relation vereinbarung_zwischen_kaeufer_und_verkaeufer_ueber_ausschluss_der_glaeubigerhaftung_2382(k: Erbschaftskauf) kind empirical {
+    label de official "Zwischen Käufer und Verkäufer ist eine Vereinbarung getroffen, welche die Haftung des Käufers gegenüber den Nachlassgläubigern ausschließen oder beschränken soll (§ 2382 Abs. 2)";
+    label en unofficial "buyer and seller have agreed to exclude or limit the buyer's liability towards the estate creditors (§ 2382 (2))";
+}
+pub relation vereinbarung_ohne_wirkung_gegenueber_glaeubigern_2382(k: Erbschaftskauf) kind derived {
+    label de official "Diese Vereinbarung ist den Nachlassgläubigern gegenüber ohne Wirkung (§ 2382 Abs. 2)";
+    label en unofficial "such an agreement has no effect towards the estate creditors (§ 2382 (2))";
+}
+
+// ---- § 2383 Umfang der Haftung des Käufers ---------------------------------
+
+pub relation verkaeufer_haftet_zur_zeit_des_verkaufs_unbeschraenkt_2383(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) kind empirical {
+    label de official "Der Verkäufer haftet zur Zeit des Verkaufs unbeschränkt (§ 2383 Abs. 1 Satz 2)";
+    label en unofficial "at the time of the sale the seller is liable without limitation (§ 2383 (1) sentence 2)";
+}
+pub relation kaeufer_haftet_unbeschraenkt_2383(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Der Käufer haftet unbeschränkt (§ 2383 Abs. 1 Satz 2)";
+    label en unofficial "the buyer is liable without limitation (§ 2383 (1) sentence 2)";
+}
+pub relation kaeufer_haftung_auf_erbschaft_beschraenkt_2383(k: Erbschaftskauf, kaeufer: Person) kind empirical {
+    label de official "Die Haftung des Käufers ist auf die Erbschaft beschränkt (§ 2383 Abs. 1 Satz 3)";
+    label en unofficial "the buyer's liability is limited to the estate (§ 2383 (1) sentence 3)";
+}
+pub relation anspruch_aus_kauf_gilt_als_zur_erbschaft_gehoerend_2383(k: Erbschaftskauf, kaeufer: Person) kind derived {
+    label de official "Die Ansprüche des Käufers aus dem Kauf gelten als zur Erbschaft gehörend (§ 2383 Abs. 1 Satz 3)";
+    label en unofficial "the buyer's claims from the sale are deemed to belong to the estate (§ 2383 (1) sentence 3)";
+}
+pub relation inventar_errichtet_2383(k: Erbschaftskauf, errichtender: Person) kind empirical {
+    label de official "Der Verkäufer oder der Käufer hat das Inventar errichtet (§ 2383 Abs. 2)";
+    label en unofficial "the seller or the buyer drew up the inventory (§ 2383 (2))";
+}
+pub relation anderer_teil_ist_2383(k: Erbschaftskauf, errichtender: Person, anderer: Person) kind empirical {
+    label de official "Der andere Teil, der das Inventar nicht selbst errichtet hat, ist die angegebene Person (§ 2383 Abs. 2)";
+    label en unofficial "the other party, who did not draw up the inventory himself, is the stated person (§ 2383 (2))";
+}
+pub relation anderer_teil_haftet_unbeschraenkt_2383(k: Erbschaftskauf, anderer: Person) kind empirical {
+    label de official "Der andere Teil haftet unbeschränkt (§ 2383 Abs. 2, Ausnahme)";
+    label en unofficial "the other party is liable without limitation (§ 2383 (2), exception)";
+}
+pub relation inventarerrichtung_kommt_anderem_teil_zugute_2383(k: Erbschaftskauf, errichtender: Person, anderer: Person) kind derived {
+    label de official "Die Errichtung des Inventars kommt auch dem anderen Teil zustatten (§ 2383 Abs. 2)";
+    label en unofficial "the drawing-up of the inventory also benefits the other party (§ 2383 (2))";
+}
+
+// ---- § 2384 Anzeigepflicht, Einsichtsrecht ----------------------------------
+
+pub relation verkauf_und_name_des_kaeufers_angezeigt_2384(k: Erbschaftskauf) kind empirical {
+    label de official "Der Verkauf der Erbschaft und der Name des Käufers sind dem Nachlassgericht angezeigt (§ 2384 Abs. 1 Satz 1)";
+    label en unofficial "the sale of the estate and the buyer's name have been notified to the probate court (§ 2384 (1) sentence 1)";
+}
+pub external judgment relation anzeige_unverzueglich_erfolgt_2384(k: Erbschaftskauf) {
+    authority Court;
+    label de official "Die Anzeige ist unverzüglich erfolgt (§ 2384 Abs. 1 Satz 1)";
+    label en unofficial "the notification was made without undue delay (§ 2384 (1) sentence 1)";
+}
+pub relation anzeige_durch_kaeufer_erfolgt_2384(k: Erbschaftskauf) kind empirical {
+    label de official "Die Anzeige des Verkäufers wird durch die Anzeige des Käufers ersetzt (§ 2384 Abs. 1 Satz 2)";
+    label en unofficial "the seller's notification is replaced by the buyer's notification (§ 2384 (1) sentence 2)";
+}
+pub relation anzeigepflicht_erfuellt_2384(k: Erbschaftskauf) kind derived {
+    label de official "Die Anzeigepflicht gegenüber den Nachlassgläubigern ist erfüllt (§ 2384 Abs. 1)";
+    label en unofficial "the duty to notify the estate creditors is fulfilled (§ 2384 (1))";
+}
+pub relation dritter_begehrt_einsicht_der_anzeige_2384(k: Erbschaftskauf, dritter: Person) kind empirical {
+    label de official "Ein Dritter begehrt Einsicht der Anzeige (§ 2384 Abs. 2)";
+    label en unofficial "a third party seeks to inspect the notification (§ 2384 (2))";
+}
+pub external judgment relation rechtliches_interesse_glaubhaft_gemacht_2384(k: Erbschaftskauf, dritter: Person) {
+    authority Court;
+    label de official "Der Dritte macht ein rechtliches Interesse glaubhaft (§ 2384 Abs. 2)";
+    label en unofficial "the third party shows a credible legal interest (§ 2384 (2))";
+}
+pub relation einsicht_zu_gestatten_2384(k: Erbschaftskauf, dritter: Person) kind derived {
+    label de official "Das Nachlassgericht hat dem Dritten die Einsicht der Anzeige zu gestatten (§ 2384 Abs. 2)";
+    label en unofficial "the probate court must allow the third party to inspect the notification (§ 2384 (2))";
+}
+
+// ---- § 2385 Anwendung auf ähnliche Verträge ---------------------------------
+
+pub relation vertrag_auf_veraeusserung_erworbener_erbschaft_gerichtet_2385(k: Erbschaftskauf) kind empirical {
+    label de official "Der Vertrag ist auf den Kauf einer vom Veräußerer durch Vertrag erworbenen Erbschaft oder auf die Veräußerung einer ihm angefallenen oder anderweit erworbenen Erbschaft gerichtet (§ 2385 Abs. 1)";
+    label en unofficial "the contract is for the purchase of an estate the transferor acquired by contract, or for the disposal of an estate that devolved on or was otherwise acquired by the transferor (§ 2385 (1))";
+}
+pub relation vorschriften_ueber_erbschaftskauf_entsprechend_anwendbar_2385(k: Erbschaftskauf) kind derived {
+    label de official "Die Vorschriften über den Erbschaftskauf finden entsprechende Anwendung (§ 2385 Abs. 1)";
+    label en unofficial "the provisions on the purchase of an inheritance apply correspondingly (§ 2385 (1))";
+}
+pub relation erbschaftskauf_ist_schenkung_2385(k: Erbschaftskauf, schenker: Person, beschenkter: Person) kind empirical {
+    label de official "Der Vertrag ist eine Schenkung der Erbschaft (§ 2385 Abs. 2)";
+    label en unofficial "the contract is a gift of the estate (§ 2385 (2))";
+}
+pub relation schenker_zu_ersatz_nach_2375_nicht_verpflichtet_2385(k: Erbschaftskauf, schenker: Person) kind derived {
+    label de official "Der Schenker ist nicht verpflichtet, für die vor der Schenkung verbrauchten oder unentgeltlich veräußerten Erbschaftsgegenstände oder für eine vor der Schenkung unentgeltlich vorgenommene Belastung Ersatz zu leisten (§ 2385 Abs. 2 Satz 1)";
+    label en unofficial "the donor is not obliged to compensate for estate assets consumed or gratuitously disposed of, or gratuitously encumbered, before the gift (§ 2385 (2) sentence 1)";
+}
+pub relation gewaehrleistung_nach_2376_trifft_schenker_nicht_2385(k: Erbschaftskauf, schenker: Person) kind derived {
+    label de official "Die in § 2376 bestimmte Verpflichtung zur Gewährleistung wegen eines Mangels im Recht trifft den Schenker nicht (§ 2385 Abs. 2 Satz 2)";
+    label en unofficial "the § 2376 warranty obligation for a defect of title does not apply to the donor (§ 2385 (2) sentence 2)";
+}
+pub relation schenker_mangel_arglistig_verschwiegen_2385(k: Erbschaftskauf, schenker: Person) kind empirical {
+    label de official "Der Schenker hat den Mangel im Recht arglistig verschwiegen (§ 2385 Abs. 2 Satz 2, Gegenausnahme)";
+    label en unofficial "the donor fraudulently concealed the defect of title (§ 2385 (2) sentence 2, counter-exception)";
+}
+pub relation schenker_muss_schaden_ersetzen_2385(k: Erbschaftskauf, schenker: Person, beschenkter: Person) kind derived {
+    label de official "Der Schenker ist verpflichtet, dem Beschenkten den daraus entstehenden Schaden zu ersetzen (§ 2385 Abs. 2 Satz 2)";
+    label en unofficial "the donor must compensate the donee for the resulting loss (§ 2385 (2) sentence 2)";
+}
+
+// ============================================================================
+
+@source(BGB_P2372)
+rule VorteileGebuehrenKaeufer(k: Erbschaftskauf, kaeufer: Person) strict {
+    label de official "Die Vorteile aus dem Wegfall eines Vermächtnisses oder einer Auflage oder aus der Ausgleichungspflicht eines Miterben gebühren dem Käufer (§ 2372)";
+    label en unofficial "advantages from the lapse of a legacy or burden, or a co-heir's equalisation duty, belong to the buyer (§ 2372)";
+    when vorteil_aus_wegfall_entstanden_2372(k, kaeufer);
+    then vorteil_gebuehrt_kaeufer_2372(k, kaeufer);
+}
+
+@source(BGB_P2373) {
+    presumption ErbteilImZweifelNichtMitverkauft(k: Erbschaftskauf, verkaeufer: Person) {
+        label de official "Ein dem Verkäufer nach dem Kauf durch Nacherbfolge oder Wegfall eines Miterben anfallender Erbteil ist im Zweifel nicht mitverkauft (§ 2373 Satz 1)";
+        label en unofficial "a share later devolving on the seller by subsequent succession or a co-heir's falling away is in case of doubt not included in the sale (§ 2373 sentence 1)";
+        when spaeter_anfallender_erbteil_entstanden_2373(k, verkaeufer);
+        presume erbteil_nicht_mitverkauft_vermutet_2373(k, verkaeufer);
+        unless erbteil_ausdruecklich_mitverkauft_2373(k, verkaeufer);
+    }
+    presumption VorausvermaechtnisImZweifelNichtMitverkauft(k: Erbschaftskauf, verkaeufer: Person) {
+        label de official "Ein dem Verkäufer zugewendetes Vorausvermächtnis ist im Zweifel nicht mitverkauft (§ 2373 Satz 1)";
+        label en unofficial "a preferential legacy made to the seller is in case of doubt not included in the sale (§ 2373 sentence 1)";
+        when vorausvermaechtnis_dem_verkaeufer_zugewendet_2373(k, verkaeufer);
+        presume vorausvermaechtnis_nicht_mitverkauft_vermutet_2373(k, verkaeufer);
+        unless vorausvermaechtnis_ausdruecklich_mitverkauft_2373(k, verkaeufer);
+    }
+    presumption FamilienpapiereImZweifelNichtMitverkauft(k: Erbschaftskauf) {
+        label de official "Familienpapiere und Familienbilder sind im Zweifel nicht mitverkauft (§ 2373 Satz 2)";
+        label en unofficial "family papers and family portraits are in case of doubt not included in the sale (§ 2373 sentence 2)";
+        when familienpapiere_oder_familienbilder_vorhanden_2373(k);
+        presume familienpapiere_nicht_mitverkauft_vermutet_2373(k);
+        unless familienpapiere_ausdruecklich_mitverkauft_2373(k);
+    }
+}
+
+@source(BGB_P2374) {
+    rule HerausgabeVorhandenerGegenstaende(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) strict {
+        label de official "Der Verkäufer hat die zur Zeit des Verkaufs vorhandenen Erbschaftsgegenstände herauszugeben (§ 2374)";
+        label en unofficial "the seller must hand over the estate assets existing at the time of the sale (§ 2374)";
+        when erbschaftsgegenstand_zur_zeit_des_verkaufs_vorhanden_2374(k, verkaeufer, kaeufer);
+        then herausgabepflicht_besteht_2374(k, verkaeufer, kaeufer);
+    }
+    rule HerausgabeVorVerkaufErlangten(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) strict {
+        label de official "Der Verkäufer hat auch das herauszugeben, was er vor dem Verkauf aufgrund eines zur Erbschaft gehörenden Rechts, als Ersatz oder durch ein sich auf die Erbschaft beziehendes Rechtsgeschäft erlangt hat (§ 2374)";
+        label en unofficial "the seller must also hand over what he obtained before the sale by a right of the estate, as replacement, or through an estate-related transaction (§ 2374)";
+        when vor_verkauf_aufgrund_erbschaftsrechts_oder_als_ersatz_erlangt_2374(k, verkaeufer, kaeufer);
+        then herausgabepflicht_besteht_2374(k, verkaeufer, kaeufer);
+    }
+}
+
+@source(BGB_P2375) {
+    rule ErsatzpflichtBeiVerbrauchVeraeusserungOderBelastung(k: Erbschaftskauf, verkaeufer: Person, wert: Money) strict {
+        label de official "Wer vor dem Verkauf einen Erbschaftsgegenstand verbraucht, unentgeltlich veräußert oder unentgeltlich belastet hat, muss den Wert bzw. die Wertminderung ersetzen, außer der Käufer kannte dies bei Abschluss (§ 2375 Abs. 1)";
+        label en unofficial "whoever consumed, gratuitously disposed of, or gratuitously encumbered an estate asset before the sale must compensate the value or diminution, unless the buyer knew of it at conclusion (§ 2375 (1))";
+        when gegenstand_vor_verkauf_verbraucht_veraeussert_oder_belastet_2375(k, verkaeufer, wert) and not_known(kaeufer_kennt_verbrauch_oder_veraeusserung_bei_abschluss_2375(k, verkaeufer));
+        then ersatzpflicht_besteht_2375(k, verkaeufer, wert);
+    }
+    rule KeinErsatzOhneVerbrauchVeraeusserung(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Im Übrigen kann der Käufer wegen Verschlechterung, Untergangs oder sonstiger Unmöglichkeit der Herausgabe keinen Ersatz verlangen (§ 2375 Abs. 2)";
+        label en unofficial "otherwise the buyer cannot claim compensation for deterioration, loss, or other impossibility of handover (§ 2375 (2))";
+        when verschlechterung_untergang_oder_unmoeglichkeit_ohne_verbrauch_veraeusserung_2375(k, verkaeufer);
+        then kein_ersatzanspruch_2375(k, verkaeufer);
+    }
+}
+
+@source(BGB_P2376) {
+    rule RechtsmangelhaftungErbrechtStehtNichtZu(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Steht dem Verkäufer das Erbrecht tatsächlich nicht zu, ist die Rechtsmangelhaftung ausgelöst (§ 2376 Abs. 1)";
+        label en unofficial "if the seller does not in fact hold the right of inheritance, liability for defects of title is triggered (§ 2376 (1))";
+        when erbrecht_steht_verkaeufer_tatsaechlich_nicht_zu_2376(k, verkaeufer);
+        then rechtsmangelhaftung_ausgeloest_2376(k, verkaeufer);
+    }
+    rule RechtsmangelhaftungBeschraenkung(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Ist das Erbrecht tatsächlich durch Nacherbenrecht oder Testamentsvollstreckerernennung beschränkt, ist die Rechtsmangelhaftung ausgelöst (§ 2376 Abs. 1)";
+        label en unofficial "if the right of inheritance is in fact restricted by a subsequent heir's right or an executor's appointment, liability for defects of title is triggered (§ 2376 (1))";
+        when erbrecht_durch_nacherbenrecht_oder_testamentsvollstrecker_beschraenkt_2376(k, verkaeufer);
+        then rechtsmangelhaftung_ausgeloest_2376(k, verkaeufer);
+    }
+    rule RechtsmangelhaftungLasten(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Bestehen tatsächlich Vermächtnisse, Auflagen, Pflichtteilslasten, Ausgleichungspflichten oder Teilungsanordnungen, ist die Rechtsmangelhaftung ausgelöst (§ 2376 Abs. 1)";
+        label en unofficial "if legacies, burdens, compulsory-portion charges, equalisation duties or partition directions in fact exist, liability for defects of title is triggered (§ 2376 (1))";
+        when vermaechtnisse_auflagen_oder_lasten_bestehen_tatsaechlich_2376(k, verkaeufer);
+        then rechtsmangelhaftung_ausgeloest_2376(k, verkaeufer);
+    }
+    rule RechtsmangelhaftungUnbeschraenkteHaftung(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Ist tatsächlich unbeschränkte Haftung gegenüber Nachlassgläubigern eingetreten, ist die Rechtsmangelhaftung ausgelöst (§ 2376 Abs. 1)";
+        label en unofficial "if unlimited liability towards estate creditors has in fact arisen, liability for defects of title is triggered (§ 2376 (1))";
+        when unbeschraenkte_haftung_gegenueber_nachlassglaeubigern_tatsaechlich_eingetreten_2376(k, verkaeufer);
+        then rechtsmangelhaftung_ausgeloest_2376(k, verkaeufer);
+    }
+    rule SachmangelhaftungBeiArglist(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Hat der Verkäufer einen Sachmangel arglistig verschwiegen, haftet er dafür (§ 2376 Abs. 2)";
+        label en unofficial "if the seller fraudulently concealed a defect of quality, he is liable for it (§ 2376 (2))";
+        when mangel_arglistig_verschwiegen_2376(k, verkaeufer);
+        then sachmangelhaftung_ausgeloest_2376(k, verkaeufer);
+    }
+    rule SachmangelhaftungBeiGarantie(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Hat der Verkäufer eine Garantie für die Beschaffenheit übernommen, haftet er dafür (§ 2376 Abs. 2)";
+        label en unofficial "if the seller assumed a guarantee for the quality, he is liable for it (§ 2376 (2))";
+        when garantie_fuer_beschaffenheit_uebernommen_2376(k, verkaeufer);
+        then sachmangelhaftung_ausgeloest_2376(k, verkaeufer);
+    }
+}
+
+@source(BGB_P2377)
+rule ErloscheneRechtsverhaeltnisseGeltenAlsNichtErloschen(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) strict {
+    label de official "Durch den Erbfall im Verhältnis der Rechtsträger erloschene Rechtsverhältnisse gelten zwischen Käufer und Verkäufer als nicht erloschen (§ 2377)";
+    label en unofficial "legal relationships extinguished by devolution are, as between buyer and seller, deemed not extinguished (§ 2377)";
+    when recht_und_verbindlichkeit_oder_belastung_durch_erbfall_vereinigt_2377(k, verkaeufer, kaeufer);
+    then rechtsverhaeltnis_gilt_im_verhaeltnis_kaeufer_verkaeufer_als_nicht_erloschen_2377(k, verkaeufer, kaeufer);
+}
+
+@source(BGB_P2378) {
+    rule KaeuferErfuelltNachlassverbindlichkeiten(k: Erbschaftskauf, kaeufer: Person, betrag: Money) strict {
+        label de official "Der Käufer ist dem Verkäufer gegenüber verpflichtet, die Nachlassverbindlichkeiten zu erfüllen, soweit nicht der Verkäufer nach § 2376 dafür haftet, dass sie nicht bestehen (§ 2378 Abs. 1)";
+        label en unofficial "the buyer is obliged towards the seller to discharge estate debts, unless the seller warrants under § 2376 that they do not exist (§ 2378 (1))";
+        when nachlassverbindlichkeit_besteht_2378(k, kaeufer, betrag) and not_known(verkaeufer_haftet_nach_2376_fuer_nichtbestehen_dieser_verbindlichkeit_2378(k, kaeufer, betrag));
+        then kaeufer_verpflichtet_verbindlichkeit_zu_erfuellen_2378(k, kaeufer, betrag);
+    }
+    rule VerkaeuferErsatzFuerVorVerkaufErfuellteVerbindlichkeit(k: Erbschaftskauf, verkaeufer: Person, betrag: Money) strict {
+        label de official "Hat der Verkäufer vor dem Verkauf eine Nachlassverbindlichkeit erfüllt, kann er von dem Käufer Ersatz verlangen (§ 2378 Abs. 2)";
+        label en unofficial "if the seller discharged an estate debt before the sale, he may demand reimbursement from the buyer (§ 2378 (2))";
+        when verkaeufer_hat_verbindlichkeit_vor_verkauf_erfuellt_2378(k, verkaeufer, betrag);
+        then verkaeufer_kann_ersatz_von_kaeufer_verlangen_2378(k, verkaeufer, betrag);
+    }
+}
+
+@source(BGB_P2379) {
+    rule NutzungVerbleibtVerkaeufer(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Dem Verkäufer verbleiben die auf die Zeit vor dem Verkauf fallenden Nutzungen (§ 2379 Satz 1)";
+        label en unofficial "the seller keeps the benefits falling due for the period before the sale (§ 2379 sentence 1)";
+        when nutzung_vor_verkauf_entstanden_2379(k, verkaeufer);
+        then nutzung_verbleibt_verkaeufer_2379(k, verkaeufer);
+    }
+    rule LastTraegtVerkaeufer(k: Erbschaftskauf, verkaeufer: Person) strict {
+        label de official "Der Verkäufer trägt die für diese Zeit anfallenden Lasten, mit Einschluss der Zinsen der Nachlassverbindlichkeiten (§ 2379 Satz 2)";
+        label en unofficial "the seller bears the burdens for that period, including interest on estate debts (§ 2379 sentence 2)";
+        when laufende_last_vor_verkauf_entstanden_2379(k, verkaeufer);
+        then last_traegt_verkaeufer_2379(k, verkaeufer);
+    }
+    rule AbgabeTraegtKaeufer(k: Erbschaftskauf, kaeufer: Person) strict {
+        label de official "Den Käufer treffen die von der Erbschaft zu entrichtenden Abgaben (§ 2379 Satz 3)";
+        label en unofficial "the buyer bears the levies payable out of the estate (§ 2379 sentence 3)";
+        when abgabe_von_der_erbschaft_zu_entrichten_2379(k, kaeufer);
+        then abgabe_traegt_kaeufer_2379(k, kaeufer);
+    }
+    rule AusserordentlicheLastTraegtKaeufer(k: Erbschaftskauf, kaeufer: Person) strict {
+        label de official "Den Käufer treffen außerordentliche, auf den Stammwert gelegte Lasten (§ 2379 Satz 3)";
+        label en unofficial "the buyer bears extraordinary burdens charged on the capital value (§ 2379 sentence 3)";
+        when ausserordentliche_auf_stammwert_gelegte_last_2379(k, kaeufer);
+        then ausserordentliche_last_traegt_kaeufer_2379(k, kaeufer);
+    }
+}
+
+@source(BGB_P2380) {
+    rule KaeuferTraegtGefahrAbAbschluss(k: Erbschaftskauf, kaeufer: Person) strict {
+        label de official "Der Käufer trägt von dem Abschluss des Kaufs an die Gefahr des zufälligen Untergangs und einer zufälligen Verschlechterung (§ 2380 Satz 1)";
+        label en unofficial "the buyer bears the risk of accidental loss and deterioration from conclusion of the sale (§ 2380 sentence 1)";
+        when kauf_abgeschlossen_2380(k, kaeufer);
+        then kaeufer_traegt_gefahr_ab_abschluss_2380(k, kaeufer);
+    }
+    rule NutzungenUndLastenAbAbschlussBeimKaeufer(k: Erbschaftskauf, kaeufer: Person) strict {
+        label de official "Ab dem Abschluss des Kaufs gebühren dem Käufer die Nutzungen und trägt er die Lasten (§ 2380 Satz 2)";
+        label en unofficial "from conclusion of the sale the buyer receives the benefits and bears the burdens (§ 2380 sentence 2)";
+        when kauf_abgeschlossen_2380(k, kaeufer);
+        then nutzungen_und_lasten_ab_abschluss_beim_kaeufer_2380(k, kaeufer);
+    }
+}
+
+@source(BGB_P2381) {
+    rule VerwendungsersatzNotwendigeVerwendung(k: Erbschaftskauf, verkaeufer: Person, betrag: Money) strict {
+        label de official "Der Käufer hat dem Verkäufer die vor dem Verkauf gemachten notwendigen Verwendungen zu ersetzen (§ 2381 Abs. 1)";
+        label en unofficial "the buyer must reimburse the seller for necessary outlays made before the sale (§ 2381 (1))";
+        when notwendige_verwendung_vor_verkauf_gemacht_2381(k, verkaeufer, betrag);
+        then verkaeufer_kann_verwendungsersatz_verlangen_2381(k, verkaeufer, betrag);
+    }
+    rule AufwendungsersatzSoweitWerterhoehung(k: Erbschaftskauf, verkaeufer: Person, werterhoehung: Money) strict {
+        label de official "Für andere Aufwendungen hat der Käufer Ersatz zu leisten, soweit der Wert der Erbschaft zur Zeit des Verkaufs dadurch erhöht ist (§ 2381 Abs. 2)";
+        label en unofficial "for other outlays the buyer must reimburse to the extent the estate's value at the time of sale was thereby increased (§ 2381 (2))";
+        when andere_aufwendung_vor_verkauf_gemacht_2381(k, verkaeufer, werterhoehung);
+        then verkaeufer_kann_aufwendungsersatz_verlangen_2381(k, verkaeufer, werterhoehung);
+    }
+}
+
+@source(BGB_P2382) {
+    rule KaeuferHaftetNachlassglaeubigernAbAbschluss(k: Erbschaftskauf, kaeufer: Person) strict {
+        label de official "Der Käufer haftet von dem Abschluss des Kaufs an den Nachlassgläubigern, unbeschadet der Fortdauer der Haftung des Verkäufers, auch für nach §§ 2378, 2379 nicht geschuldete Verbindlichkeiten (§ 2382 Abs. 1)";
+        label en unofficial "the buyer becomes liable to the estate creditors from conclusion of the sale, without prejudice to the seller's continuing liability, including debts not owed under §§ 2378, 2379 (§ 2382 (1))";
+        when kauf_abgeschlossen_2380(k, kaeufer);
+        then kaeufer_haftet_nachlassglaeubigern_2382(k, kaeufer);
+    }
+    rule GlaeubigerhaftungNichtAbdingbar(k: Erbschaftskauf) strict {
+        label de official "Die Haftung des Käufers den Gläubigern gegenüber kann nicht durch Vereinbarung zwischen Käufer und Verkäufer ausgeschlossen oder beschränkt werden (§ 2382 Abs. 2)";
+        label en unofficial "the buyer's liability towards the creditors cannot be excluded or limited by agreement between buyer and seller (§ 2382 (2))";
+        when vereinbarung_zwischen_kaeufer_und_verkaeufer_ueber_ausschluss_der_glaeubigerhaftung_2382(k);
+        then vereinbarung_ohne_wirkung_gegenueber_glaeubigern_2382(k);
+    }
+}
+
+@source(BGB_P2383) {
+    rule KaeuferHaftetUnbeschraenktWieVerkaeufer(k: Erbschaftskauf, verkaeufer: Person, kaeufer: Person) strict {
+        label de official "Der Käufer haftet unbeschränkt, soweit der Verkäufer zur Zeit des Verkaufs unbeschränkt haftet (§ 2383 Abs. 1 Satz 2)";
+        label en unofficial "the buyer is liable without limitation to the extent the seller was liable without limitation at the time of the sale (§ 2383 (1) sentence 2)";
+        when verkaeufer_haftet_zur_zeit_des_verkaufs_unbeschraenkt_2383(k, verkaeufer, kaeufer);
+        then kaeufer_haftet_unbeschraenkt_2383(k, kaeufer);
+    }
+    rule AnsprueecheGehoerenZurErbschaft(k: Erbschaftskauf, kaeufer: Person) strict {
+        label de official "Beschränkt sich die Haftung des Käufers auf die Erbschaft, gelten seine Ansprüche aus dem Kauf als zur Erbschaft gehörend (§ 2383 Abs. 1 Satz 3)";
+        label en unofficial "where the buyer's liability is limited to the estate, his claims from the sale are deemed to belong to the estate (§ 2383 (1) sentence 3)";
+        when kaeufer_haftung_auf_erbschaft_beschraenkt_2383(k, kaeufer);
+        then anspruch_aus_kauf_gilt_als_zur_erbschaft_gehoerend_2383(k, kaeufer);
+    }
+    rule InventarerrichtungKommtBeidenZugute(k: Erbschaftskauf, errichtender: Person, anderer: Person) strict {
+        label de official "Die Errichtung des Inventars durch den Verkäufer oder den Käufer kommt auch dem anderen Teil zustatten, außer dieser haftet unbeschränkt (§ 2383 Abs. 2)";
+        label en unofficial "drawing up the inventory by the seller or the buyer also benefits the other party, unless that party is liable without limitation (§ 2383 (2))";
+        when inventar_errichtet_2383(k, errichtender) and anderer_teil_ist_2383(k, errichtender, anderer) and not_known(anderer_teil_haftet_unbeschraenkt_2383(k, anderer));
+        then inventarerrichtung_kommt_anderem_teil_zugute_2383(k, errichtender, anderer);
+    }
+}
+
+@source(BGB_P2384) {
+    rule AnzeigepflichtDurchVerkaeufer(k: Erbschaftskauf) strict {
+        label de official "Der Verkäufer hat den Verkauf und den Namen des Käufers den Nachlassgläubigern gegenüber unverzüglich dem Nachlassgericht anzuzeigen (§ 2384 Abs. 1 Satz 1)";
+        label en unofficial "the seller must notify the probate court of the sale and the buyer's name without undue delay, for the benefit of the estate creditors (§ 2384 (1) sentence 1)";
+        when verkauf_und_name_des_kaeufers_angezeigt_2384(k) and anzeige_unverzueglich_erfolgt_2384(k);
+        then anzeigepflicht_erfuellt_2384(k);
+    }
+    rule AnzeigeDurchKaeuferErsetzt(k: Erbschaftskauf) strict {
+        label de official "Die Anzeige des Verkäufers wird durch die Anzeige des Käufers ersetzt (§ 2384 Abs. 1 Satz 2)";
+        label en unofficial "the seller's notification is replaced by the buyer's notification (§ 2384 (1) sentence 2)";
+        when anzeige_durch_kaeufer_erfolgt_2384(k);
+        then anzeigepflicht_erfuellt_2384(k);
+    }
+    rule EinsichtBeiGlaubhaftemInteresse(k: Erbschaftskauf, dritter: Person) strict {
+        label de official "Das Nachlassgericht hat die Einsicht der Anzeige jedem zu gestatten, der ein rechtliches Interesse glaubhaft macht (§ 2384 Abs. 2)";
+        label en unofficial "the probate court must allow inspection of the notification to anyone who shows a credible legal interest (§ 2384 (2))";
+        when dritter_begehrt_einsicht_der_anzeige_2384(k, dritter) and rechtliches_interesse_glaubhaft_gemacht_2384(k, dritter);
+        then einsicht_zu_gestatten_2384(k, dritter);
+    }
+}
+
+@source(BGB_P2385) {
+    rule EntsprechendeAnwendungAufAehnlicheVertraege(k: Erbschaftskauf) strict {
+        label de official "Die Vorschriften über den Erbschaftskauf finden entsprechende Anwendung auf den Kauf einer vertraglich erworbenen Erbschaft sowie auf andere Veräußerungsverträge (§ 2385 Abs. 1)";
+        label en unofficial "the provisions on the purchase of an inheritance apply correspondingly to the purchase of a contractually acquired estate and to other disposal contracts (§ 2385 (1))";
+        when vertrag_auf_veraeusserung_erworbener_erbschaft_gerichtet_2385(k);
+        then vorschriften_ueber_erbschaftskauf_entsprechend_anwendbar_2385(k);
+    }
+    rule SchenkerKeinErsatzNach2375(k: Erbschaftskauf, schenker: Person, beschenkter: Person) strict {
+        label de official "Bei einer Schenkung ist der Schenker nicht verpflichtet, für vor der Schenkung verbrauchte oder unentgeltlich veräußerte Gegenstände oder eine vor der Schenkung vorgenommene unentgeltliche Belastung Ersatz zu leisten (§ 2385 Abs. 2 Satz 1)";
+        label en unofficial "in a gift, the donor need not compensate for assets consumed or gratuitously disposed of, or gratuitously encumbered, before the gift (§ 2385 (2) sentence 1)";
+        when erbschaftskauf_ist_schenkung_2385(k, schenker, beschenkter);
+        then schenker_zu_ersatz_nach_2375_nicht_verpflichtet_2385(k, schenker);
+    }
+    rule SchenkerKeineGewaehrleistungNach2376(k: Erbschaftskauf, schenker: Person, beschenkter: Person) strict {
+        label de official "Bei einer Schenkung trifft den Schenker die Gewährleistung nach § 2376 für einen Rechtsmangel nicht (§ 2385 Abs. 2 Satz 2)";
+        label en unofficial "in a gift, the donor does not bear the § 2376 warranty for a defect of title (§ 2385 (2) sentence 2)";
+        when erbschaftskauf_ist_schenkung_2385(k, schenker, beschenkter);
+        then gewaehrleistung_nach_2376_trifft_schenker_nicht_2385(k, schenker);
+    }
+    rule SchenkerSchadensersatzBeiArglist(k: Erbschaftskauf, schenker: Person, beschenkter: Person) strict {
+        label de official "Hat der Schenker den Rechtsmangel arglistig verschwiegen, muss er dem Beschenkten den daraus entstehenden Schaden ersetzen (§ 2385 Abs. 2 Satz 2)";
+        label en unofficial "if the donor fraudulently concealed the defect of title, he must compensate the donee for the resulting loss (§ 2385 (2) sentence 2)";
+        when erbschaftskauf_ist_schenkung_2385(k, schenker, beschenkter) and schenker_mangel_arglistig_verschwiegen_2385(k, schenker);
+        then schenker_muss_schaden_ersetzen_2385(k, schenker, beschenkter);
+    }
+}

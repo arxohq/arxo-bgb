@@ -1,0 +1,891 @@
+// ABSCHNITT 1 TITEL 1, §§ 280–292: SCHADENSERSATZ WEGEN PFLICHTVERLETZUNG,
+// VERZUG DES SCHULDNERS, VERZUGSZINSEN
+//
+// DIE DREISSIG TAGE DES § 286 ABS. 3 sind eine Tagesfrist: der Tag der
+// Fälligkeit und des Zugangs der Rechnung wird nicht mitgerechnet (§ 187
+// Abs. 1), die Frist endet mit dem Ablauf des letzten Tages (§ 188 Abs. 1),
+// § 193 verlegt das Ende auf den nächsten Werktag. Gerechnet wird sie vom
+// Eigentümer der Fristen, `de.bgb.fristen` (Politik `BGB_FRISTEN_TAG`);
+// dieses Paket schreibt nur das Ereignis und die Dauer in dessen Köpfe und
+// liest das Ende. Zeile: docs/foundations/de-bgb/DEADLINES.json, BG-04.
+//
+// DER BASISZINSSATZ DES § 247 ist kein Zahlenwert des Gesetzes: § 247 Abs. 1
+// Satz 1 nennt 3,62 Prozent als Ausgangswert, Satz 2 und 3 verändern ihn zum
+// 1. Januar und 1. Juli um die Veränderung der Bezugsgröße, und die Deutsche
+// Bundesbank gibt den geltenden Satz bekannt (Abs. 2). Das Paket führt beides:
+// die BEKANNTGEMACHTEN Sätze als A3-Parameter `Basiszinssatz` über die Achse
+// `legal_time` (Schnappschuss der Bundesbank in sources/bundesbank-basiszinssatz/,
+// SOURCES.json.external) und die RECHNUNG des Absatzes 1 als Regel über die
+// Bezugsgröße, wenn der Fall sie vorlegt (Ledger D-04-02).
+//
+// WAS DAS PAKET NICHT RECHNET: den Zinsbetrag für einen Zeitraum, der kein
+// volles Jahr ist. § 288 nennt den Satz „für das Jahr“ und keine
+// Zinsmethode (actual/365, actual/360, 30/360); die Zahl der Tage je Jahr ist
+// im Text nicht enthalten, und eine erfundene Methode wäre keine Norm
+// (Frage D-Q04-1 im Ledger). Gerechnet werden der Satz, der Betrag für ein
+// volles Jahr und die Pauschale des § 288 Abs. 5.
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- § 280 Schadensersatz wegen Pflichtverletzung ------------------------------------------------------
+
+pub relation pflichtverletzung_festgestellt(s: Schuldverhaeltnis, p: Person) kind empirical {
+    label de official "Der Schuldner hat eine Pflicht aus dem Schuldverhältnis verletzt (§ 280 Abs. 1 Satz 1) — festgestellte Tatsache des Falls";
+    label en unofficial "the debtor breached a duty arising from the obligation (§ 280 (1) sentence 1) — established fact of the case";
+}
+pub relation schaden_aus_pflichtverletzung(s: Schuldverhaeltnis, sch: Schaden) kind empirical {
+    key(sch);
+    label de official "Der Schaden ist durch die Pflichtverletzung entstanden (§ 280 Abs. 1 Satz 1)";
+    label en unofficial "the damage arose from the breach of duty (§ 280 (1) sentence 1)";
+}
+pub relation schadensersatz_wegen_pflichtverletzung(s: Schuldverhaeltnis, sch: Schaden, p: Person) kind institutional {
+    label de official "Der Gläubiger kann Ersatz des durch die Pflichtverletzung entstehenden Schadens verlangen (§ 280 Abs. 1 Satz 1)";
+    label en unofficial "the creditor may claim compensation for the damage caused by the breach of duty (§ 280 (1) sentence 1)";
+}
+
+// --- § 280 Abs. 1 Satz 2 Vertretenmüssen: Vermutung (V3-BG-04-07, Punkt 3 der Sitzung BG-04/BG-05) --
+//
+// `hat_zu_vertreten` (abschnitt-01-titel-1-leistung.law) trägt POSITIVE
+// Herleitungen aus Vorsatz/Fahrlässigkeit (§ 276 Abs. 1 Satz 1) und wird von
+// mehreren STRICT-Regeln dieser Datei gelesen. Satz 2 des § 280 Abs. 1 kehrt
+// die Beweislast um: „dies gilt nicht, wenn der Schuldner die
+// Pflichtverletzung nicht zu vertreten hat" — eine echte Vermutung
+// (`presumption … unless`, §§122-137 SPEC). Gemessen: eine `presumption`
+// kompiliert intern defeasible; ein bestehendes STRICT-Verbrauchsrecht des
+// GLEICHEN Kopfes verletzt LDC-E4103 (LATE_STATUS_PRODUCER, §111) — und
+// zieht, würde man stattdessen `hat_zu_vertreten` selbst zum dritten
+// Produzenten machen, eine Kaskade auf ALLE strict-Regeln nach sich, die
+// `hat_zu_vertreten` ODER den davon abhängigen `schadensersatz_wegen_
+// pflichtverletzung` lesen (§§ 281 ff., in dieser Datei). Deshalb: EIGENE,
+// isolierte Köpfe für die Vermutung, additiv NEBEN dem bestehenden
+// positiven Pfad — keine Änderung an einer bestehenden Regel, kein
+// Kaskadenrisiko für § 281 ff.
+
+pub external judgment relation schuldner_hat_pflichtverletzung_nicht_zu_vertreten(s: Schuldverhaeltnis, p: Person) {
+    authority Court;
+    label de official "Der Schuldner hat die Pflichtverletzung nicht zu vertreten (§ 280 Abs. 1 Satz 2) — Ausnahme von der Vermutung, Wertung des Gerichts (Kanal §47.3, Muster § 477 Abs. 1)";
+    label en unofficial "the debtor is not responsible for the breach of duty (§ 280 (1) sentence 2) — exception to the presumption, a judicial evaluation (channel §47.3, pattern § 477 (1))";
+}
+pub relation hat_zu_vertreten_vermutet(p: Person, s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Schuldner wird vermutet, die Pflichtverletzung zu vertreten (§ 280 Abs. 1 Satz 2) — eigener Kopf, um bestehende strict-Verbraucher von `hat_zu_vertreten` nicht zu kaskadieren (LDC-E4103)";
+    label en unofficial "the debtor is presumed responsible for the breach of duty (§ 280 (1) sentence 2) — separate head so existing strict consumers of `hat_zu_vertreten` are not cascaded (LDC-E4103)";
+}
+
+@source(BGB_P280)
+presumption Vertretenmuessen280Abs1Satz2(s: Schuldverhaeltnis, p: Person) {
+    label de official "Ist eine Pflichtverletzung festgestellt, wird vermutet, dass der Schuldner sie zu vertreten hat; dies gilt nicht, wenn der Schuldner die Pflichtverletzung nicht zu vertreten hat (§ 280 Abs. 1 Satz 2)";
+    label en unofficial "Once a breach of duty is established, the debtor is presumed responsible for it; this does not apply if the debtor is not responsible for the breach (§ 280 (1) sentence 2)";
+    when pflichtverletzung_festgestellt(s, p);
+    presume hat_zu_vertreten_vermutet(p, s);
+    unless schuldner_hat_pflichtverletzung_nicht_zu_vertreten(s, p);
+}
+pub relation schadensersatz_wegen_pflichtverletzung_vermutet(s: Schuldverhaeltnis, sch: Schaden, p: Person) kind institutional {
+    label de official "Der Gläubiger kann Ersatz des durch die Pflichtverletzung entstehenden Schadens verlangen, gestützt auf das vermutete (nicht positiv bewiesene) Vertretenmüssen (§ 280 Abs. 1 Satz 1, 2)";
+    label en unofficial "the creditor may claim compensation for the damage, relying on the presumed (not positively proven) responsibility (§ 280 (1) sentences 1, 2)";
+}
+
+@source(BGB_P280)
+rule SchadensersatzWegenVermutetenVertretenmuessens(s: Schuldverhaeltnis, sch: Schaden, p: Person) defeasible {
+    label de official "Steht die Pflichtverletzung und der hierdurch entstandene Schaden fest und wird das Vertretenmüssen vermutet, kann der Gläubiger Ersatz verlangen (§ 280 Abs. 1 Satz 1 mit Satz 2)";
+    label en unofficial "Where the breach and the resulting damage are established and responsibility is presumed, the creditor may claim compensation (§ 280 (1) sentence 1 with sentence 2)";
+    when pflichtverletzung_festgestellt(s, p);
+    when schaden_aus_pflichtverletzung(s, sch);
+    when hat_zu_vertreten_vermutet(p, s);
+    then schadensersatz_wegen_pflichtverletzung_vermutet(s, sch, p);
+}
+pub relation schadensersatz_statt_der_leistung(s: Schuldverhaeltnis, sch: Schaden, p: Person) kind institutional {
+    label de official "Der Gläubiger kann Schadensersatz statt der Leistung verlangen (§ 280 Abs. 3 mit §§ 281, 282, 283)";
+    label en unofficial "the creditor may claim damages in lieu of performance (§ 280 (3) with §§ 281, 282, 283)";
+}
+pub relation schadensersatz_wegen_verzoegerung(s: Schuldverhaeltnis, sch: Schaden, p: Person) kind institutional {
+    label de official "Schadensersatz wegen Verzögerung der Leistung unter der zusätzlichen Voraussetzung des § 286 (§ 280 Abs. 2)";
+    label en unofficial "damages for delay of performance under the additional requirement of § 286 (§ 280 (2))";
+}
+
+@source(BGB_P280)
+rule SchadensersatzWegenEigenerPflichtverletzung(s: Schuldverhaeltnis, sch: Schaden, p: Person) strict {
+    label de official "Verletzt der Schuldner eine Pflicht aus dem Schuldverhältnis, so kann der Gläubiger Ersatz des hierdurch entstehenden Schadens verlangen; dies gilt nicht, wenn der Schuldner die Pflichtverletzung nicht zu vertreten hat (§ 280 Abs. 1) — der Schuldner hat sie zu vertreten";
+    label en unofficial "If the debtor breaches a duty the creditor may claim the resulting damage; not so if the debtor is not responsible for the breach (§ 280 (1)) — here he is responsible";
+    when pflichtverletzung_festgestellt(s, p);
+    when schaden_aus_pflichtverletzung(s, sch);
+    when hat_zu_vertreten(p, s);
+    then schadensersatz_wegen_pflichtverletzung(s, sch, p);
+}
+
+@source(BGB_P280)
+rule SchadensersatzWegenPflichtverletzungAusTreuUndGlauben(s: Schuldverhaeltnis, sch: Schaden, p: Person) strict {
+    label de official "Die vom Gericht nach § 242 festgestellte Pflichtverletzung trägt den Anspruch aus § 280 Abs. 1, wenn der Schuldner sie zu vertreten hat";
+    label en unofficial "A breach found under § 242 supports the claim under § 280 (1) where the debtor is responsible for it";
+    when pflichtverletzung(s, p);
+    when schaden_aus_pflichtverletzung(s, sch);
+    when hat_zu_vertreten(p, s);
+    then schadensersatz_wegen_pflichtverletzung(s, sch, p);
+}
+
+@source(BGB_P280)
+rule SchadensersatzWegenZugerechnetenVerschuldens(s: Schuldverhaeltnis, sch: Schaden, p: Person, gehilfe: Person) strict {
+    label de official "Der Schuldner hat das Verschulden seines gesetzlichen Vertreters und seiner Erfüllungsgehilfen wie eigenes zu vertreten (§ 278 Satz 1); die Pflichtverletzung trägt dann den Anspruch aus § 280 Abs. 1";
+    label en unofficial "The debtor is responsible for the fault of his representative and agents as for his own (§ 278 sentence 1); the breach then supports the claim under § 280 (1)";
+    when pflichtverletzung_festgestellt(s, p);
+    when schaden_aus_pflichtverletzung(s, sch);
+    when haftet_fuer_fremdes_verschulden(p, gehilfe, s);
+    then schadensersatz_wegen_pflichtverletzung(s, sch, p);
+}
+
+// --- § 281 Schadensersatz statt der Leistung nach Fristsetzung -------------------------------------------
+
+pub relation faellige_leistung_nicht_oder_nicht_wie_geschuldet_erbracht(l: Leistung) kind empirical {
+    label de official "Der Schuldner erbringt die fällige Leistung nicht oder nicht wie geschuldet (§ 281 Abs. 1 Satz 1)";
+    label en unofficial "the debtor does not render the performance due, or does not render it as owed (§ 281 (1) sentence 1)";
+}
+@source(BGB_P281)
+pub external judgment relation frist_zur_leistung_angemessen(l: Leistung, ende: Date) {
+    authority Court;
+    label de official "§ 281 Abs. 1 Satz 1. Das Gericht hat festgestellt, dass die dem Schuldner zur Leistung oder Nacherfüllung bestimmte Frist angemessen ist und mit dem Ablauf dieses Tages endet";
+    label en unofficial "§ 281 (1) sentence 1. The court found that the period fixed for performance or cure is reasonable and ends at the close of that day";
+}
+pub relation frist_erfolglos_abgelaufen(l: Leistung) kind empirical {
+    label de official "Die Frist ist erfolglos abgelaufen (§ 281 Abs. 1 Satz 1)";
+    label en unofficial "the period expired without result (§ 281 (1) sentence 1)";
+}
+pub relation leistung_ernsthaft_und_endgueltig_verweigert(l: Leistung) kind empirical {
+    label de official "Der Schuldner verweigert die Leistung ernsthaft und endgültig (§ 281 Abs. 2, § 286 Abs. 2 Nr. 3, § 323 Abs. 2 Nr. 1)";
+    label en unofficial "the debtor seriously and definitively refuses performance (§ 281 (2), § 286 (2) no. 3, § 323 (2) no. 1)";
+}
+@source(BGB_P281)
+pub external judgment relation besondere_umstaende_rechtfertigen_sofortige_geltendmachung(l: Leistung) {
+    authority Court;
+    label de official "§ 281 Abs. 2. Das Gericht hat festgestellt, dass besondere Umstände vorliegen, die unter Abwägung der beiderseitigen Interessen die sofortige Geltendmachung des Schadensersatzanspruchs rechtfertigen";
+    label en unofficial "§ 281 (2). The court found special circumstances which, weighing both parties' interests, justify claiming damages immediately";
+}
+pub relation teilleistung_bewirkt(l: Leistung) kind empirical {
+    label de official "Der Schuldner hat eine Teilleistung bewirkt (§ 281 Abs. 1 Satz 2)";
+    label en unofficial "the debtor rendered part performance (§ 281 (1) sentence 2)";
+}
+pub relation kein_interesse_an_der_teilleistung(l: Leistung) kind empirical {
+    label de official "Der Gläubiger hat an der Teilleistung kein Interesse (§ 281 Abs. 1 Satz 2)";
+    label en unofficial "the creditor has no interest in the part performance (§ 281 (1) sentence 2)";
+}
+@source(BGB_P281)
+pub external judgment relation pflichtverletzung_unerheblich(l: Leistung) {
+    authority Court;
+    label de official "§ 281 Abs. 1 Satz 3. Das Gericht hat festgestellt, dass die Pflichtverletzung unerheblich ist; der Gläubiger kann dann Schadensersatz statt der ganzen Leistung nicht verlangen";
+    label en unofficial "§ 281 (1) sentence 3. The court found that the breach is trivial; the creditor may then not claim damages in lieu of the whole performance";
+}
+pub relation fristsetzung_kommt_nicht_in_betracht(l: Leistung) kind empirical {
+    label de official "Nach der Art der Pflichtverletzung kommt eine Fristsetzung nicht in Betracht (§ 281 Abs. 3)";
+    label en unofficial "by the nature of the breach fixing a period is not an option (§ 281 (3))";
+}
+pub relation abgemahnt(l: Leistung) kind empirical {
+    label de official "Der Gläubiger hat abgemahnt (§ 281 Abs. 3)";
+    label en unofficial "the creditor gave a warning notice (§ 281 (3))";
+}
+pub relation schadensersatz_statt_der_leistung_verlangt(l: Leistung) kind empirical {
+    label de official "Der Gläubiger hat statt der Leistung Schadensersatz verlangt (§ 281 Abs. 4)";
+    label en unofficial "the creditor has demanded damages in lieu of performance (§ 281 (4))";
+}
+pub relation rueckforderung_des_geleisteten_nach_346_bis_348(l: Leistung) kind institutional {
+    label de official "Verlangt der Gläubiger Schadensersatz statt der ganzen Leistung, so ist der Schuldner zur Rückforderung des Geleisteten nach den §§ 346 bis 348 berechtigt (§ 281 Abs. 5)";
+    label en unofficial "where the creditor claims damages in lieu of the whole performance, the debtor may reclaim what he rendered under §§ 346 to 348 (§ 281 (5))";
+}
+
+@source(BGB_P281)
+rule SchadensersatzStattDerLeistungNachErfolgloserFristsetzung(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, p: Person, ende: Date) strict {
+    label de official "Soweit der Schuldner die fällige Leistung nicht oder nicht wie geschuldet erbringt, kann der Gläubiger unter den Voraussetzungen des § 280 Abs. 1 Schadensersatz statt der Leistung verlangen, wenn er dem Schuldner erfolglos eine angemessene Frist zur Leistung oder Nacherfüllung bestimmt hat (§ 281 Abs. 1 Satz 1)";
+    label en unofficial "Where the debtor does not render the performance due, the creditor may claim damages in lieu of performance under § 280 (1) if he fixed a reasonable period which expired without result (§ 281 (1) sentence 1)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when faellige_leistung_nicht_oder_nicht_wie_geschuldet_erbracht(l);
+    when frist_zur_leistung_angemessen(l, ende);
+    when frist_erfolglos_abgelaufen(l);
+    when schadensersatz_wegen_pflichtverletzung(s, sch, p);
+    then schadensersatz_statt_der_leistung(s, sch, p);
+}
+
+@source(BGB_P281)
+rule FristsetzungEntbehrlichBeiErnsthafterVerweigerung(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, p: Person) strict {
+    label de official "Die Fristsetzung ist entbehrlich, wenn der Schuldner die Leistung ernsthaft und endgültig verweigert (§ 281 Abs. 2 Alt. 1)";
+    label en unofficial "Fixing a period is dispensable where the debtor seriously and definitively refuses performance (§ 281 (2) first alternative)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when faellige_leistung_nicht_oder_nicht_wie_geschuldet_erbracht(l);
+    when leistung_ernsthaft_und_endgueltig_verweigert(l);
+    when schadensersatz_wegen_pflichtverletzung(s, sch, p);
+    then schadensersatz_statt_der_leistung(s, sch, p);
+}
+
+@source(BGB_P281)
+rule FristsetzungEntbehrlichBeiBesonderenUmstaenden(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, p: Person) strict {
+    label de official "Die Fristsetzung ist entbehrlich, wenn besondere Umstände vorliegen, die unter Abwägung der beiderseitigen Interessen die sofortige Geltendmachung des Schadensersatzanspruchs rechtfertigen (§ 281 Abs. 2 Alt. 2)";
+    label en unofficial "Fixing a period is dispensable where special circumstances justify claiming damages immediately (§ 281 (2) second alternative)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when faellige_leistung_nicht_oder_nicht_wie_geschuldet_erbracht(l);
+    when besondere_umstaende_rechtfertigen_sofortige_geltendmachung(l);
+    when schadensersatz_wegen_pflichtverletzung(s, sch, p);
+    then schadensersatz_statt_der_leistung(s, sch, p);
+}
+
+@source(BGB_P281)
+rule AbmahnungTrittAnDieStelleDerFristsetzung(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, p: Person) strict {
+    label de official "Kommt nach der Art der Pflichtverletzung eine Fristsetzung nicht in Betracht, so tritt an deren Stelle eine Abmahnung (§ 281 Abs. 3)";
+    label en unofficial "Where by the nature of the breach fixing a period is not an option, a warning notice takes its place (§ 281 (3))";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when faellige_leistung_nicht_oder_nicht_wie_geschuldet_erbracht(l);
+    when fristsetzung_kommt_nicht_in_betracht(l);
+    when abgemahnt(l);
+    when schadensersatz_wegen_pflichtverletzung(s, sch, p);
+    then schadensersatz_statt_der_leistung(s, sch, p);
+}
+
+@source(BGB_P281)
+rule LeistungsanspruchErlischtMitDemVerlangenVonSchadensersatz(l: Leistung) strict {
+    label de official "Der Anspruch auf die Leistung ist ausgeschlossen, sobald der Gläubiger statt der Leistung Schadensersatz verlangt hat (§ 281 Abs. 4)";
+    label en unofficial "The claim to performance is excluded as soon as the creditor has demanded damages in lieu of performance (§ 281 (4))";
+    when schadensersatz_statt_der_leistung_verlangt(l);
+    then leistungsanspruch_ausgeschlossen(l);
+}
+
+@source(BGB_P281)
+rule RueckforderungDesGeleistetenNachSchadensersatzVerlangen(l: Leistung) strict {
+    label de official "Verlangt der Gläubiger Schadensersatz statt der ganzen Leistung, so ist der Schuldner zur Rückforderung des Geleisteten nach den §§ 346 bis 348 berechtigt (§ 281 Abs. 5)";
+    label en unofficial "Where the creditor claims damages in lieu of the whole performance, the debtor may reclaim what he rendered under §§ 346 to 348 (§ 281 (5))";
+    when schadensersatz_statt_der_leistung_verlangt(l);
+    when teilleistung_bewirkt(l);
+    then rueckforderung_des_geleisteten_nach_346_bis_348(l);
+}
+
+// --- §§ 282–285 ----------------------------------------------------------------------------------------
+
+@source(BGB_P282)
+pub external judgment relation leistung_durch_den_schuldner_nicht_mehr_zumutbar(s: Schuldverhaeltnis) {
+    authority Court;
+    label de official "§ 282. Das Gericht hat festgestellt, dass dem Gläubiger die Leistung durch den Schuldner nach der Verletzung einer Pflicht nach § 241 Abs. 2 nicht mehr zuzumuten ist";
+    label en unofficial "§ 282. The court found that performance by the debtor can no longer be required of the creditor after a breach of a duty under § 241 (2)";
+}
+
+@source(BGB_P282)
+rule SchadensersatzStattDerLeistungWegenVerletzungEinerRuecksichtnahmepflicht(s: Schuldverhaeltnis, sch: Schaden, p: Person) strict {
+    label de official "Verletzt der Schuldner eine Pflicht nach § 241 Abs. 2, kann der Gläubiger unter den Voraussetzungen des § 280 Abs. 1 Schadensersatz statt der Leistung verlangen, wenn ihm die Leistung durch den Schuldner nicht mehr zuzumuten ist (§ 282)";
+    label en unofficial "Where the debtor breaches a duty under § 241 (2), the creditor may claim damages in lieu of performance under § 280 (1) if performance by the debtor can no longer be required of him (§ 282)";
+    when schadensersatz_wegen_pflichtverletzung(s, sch, p);
+    when leistung_durch_den_schuldner_nicht_mehr_zumutbar(s);
+    then schadensersatz_statt_der_leistung(s, sch, p);
+}
+
+@source(BGB_P283)
+rule SchadensersatzStattDerLeistungBeiAusschlussDerLeistungspflicht(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, p: Person) strict {
+    label de official "Braucht der Schuldner nach § 275 Abs. 1 bis 3 nicht zu leisten, kann der Gläubiger unter den Voraussetzungen des § 280 Abs. 1 Schadensersatz statt der Leistung verlangen; § 281 Abs. 1 Satz 2 und 3 und Abs. 5 findet entsprechende Anwendung (§ 283)";
+    label en unofficial "If the debtor need not perform under § 275 (1) to (3), the creditor may claim damages in lieu of performance under § 280 (1); § 281 (1) sentences 2 and 3 and (5) apply accordingly (§ 283)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when leistungsanspruch_ausgeschlossen(l);
+    when schadensersatz_wegen_pflichtverletzung(s, sch, p);
+    then schadensersatz_statt_der_leistung(s, sch, p);
+}
+
+pub relation aufwendungen_im_vertrauen_auf_den_erhalt_der_leistung(s: Schuldverhaeltnis, betrag: Money) kind empirical {
+    key(s);
+    label de official "Aufwendungen, die der Gläubiger im Vertrauen auf den Erhalt der Leistung gemacht hat und billigerweise machen durfte (§ 284)";
+    label en unofficial "expenses the creditor incurred in reliance on receiving the performance and was entitled to incur (§ 284)";
+}
+pub relation zweck_auch_ohne_pflichtverletzung_nicht_erreicht(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Zweck der Aufwendungen wäre auch ohne die Pflichtverletzung des Schuldners nicht erreicht worden (§ 284 Halbsatz 2)";
+    label en unofficial "the purpose of the expenses would not have been achieved even without the breach (§ 284 second half-sentence)";
+}
+pub relation zweck_waere_ohne_pflichtverletzung_erreicht_worden(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Zweck der Aufwendungen wäre ohne die Pflichtverletzung erreicht worden (§ 284 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the purpose of the expenses would have been achieved but for the breach (§ 284) — explicit case input";
+}
+pub relation aufwendungsersatz(s: Schuldverhaeltnis, betrag: Money) kind institutional {
+    key(s);
+    label de official "Anstelle des Schadensersatzes statt der Leistung kann der Gläubiger Ersatz der vergeblichen Aufwendungen verlangen (§ 284)";
+    label en unofficial "instead of damages in lieu of performance the creditor may claim reimbursement of futile expenses (§ 284)";
+}
+
+@source(BGB_P284)
+rule ErsatzVergeblicherAufwendungen(s: Schuldverhaeltnis, sch: Schaden, p: Person, betrag: Money) strict {
+    label de official "Anstelle des Schadensersatzes statt der Leistung kann der Gläubiger Ersatz der Aufwendungen verlangen, die er im Vertrauen auf den Erhalt der Leistung gemacht hat und billigerweise machen durfte, es sei denn, deren Zweck wäre auch ohne die Pflichtverletzung des Schuldners nicht erreicht worden (§ 284)";
+    label en unofficial "Instead of damages in lieu of performance the creditor may claim the expenses incurred in reliance on the performance, unless their purpose would not have been achieved even without the breach (§ 284)";
+    when schadensersatz_statt_der_leistung(s, sch, p);
+    when aufwendungen_im_vertrauen_auf_den_erhalt_der_leistung(s, betrag);
+    when zweck_waere_ohne_pflichtverletzung_erreicht_worden(s);
+    then aufwendungsersatz(s, betrag);
+}
+
+pub relation ersatz_fuer_den_geschuldeten_gegenstand_erlangt(l: Leistung, betrag: Money) kind empirical {
+    key(l);
+    label de official "Der Schuldner hat infolge des Umstands, auf Grund dessen er nach § 275 Abs. 1 bis 3 nicht zu leisten braucht, für den geschuldeten Gegenstand einen Ersatz oder einen Ersatzanspruch erlangt (§ 285 Abs. 1)";
+    label en unofficial "the debtor obtained a substitute or a claim to a substitute for the object owed (§ 285 (1))";
+}
+pub relation herausgabe_des_ersatzes_verlangbar(l: Leistung, betrag: Money) kind institutional {
+    key(l);
+    label de official "Der Gläubiger kann Herausgabe des als Ersatz Empfangenen oder Abtretung des Ersatzanspruchs verlangen (§ 285 Abs. 1)";
+    label en unofficial "the creditor may demand surrender of the substitute received or assignment of the claim to it (§ 285 (1))";
+}
+pub relation vom_herausgaberecht_gebrauch_gemacht(l: Leistung) kind empirical {
+    label de official "Der Gläubiger macht von dem Recht aus § 285 Abs. 1 Gebrauch (§ 285 Abs. 2)";
+    label en unofficial "the creditor exercises the right under § 285 (1) (§ 285 (2))";
+}
+pub relation geminderter_schadensersatz_statt_der_leistung(l: Leistung, betrag: Money) kind institutional {
+    key(l);
+    label de official "Kann der Gläubiger statt der Leistung Schadensersatz verlangen, so mindert sich dieser um den Wert des erlangten Ersatzes oder Ersatzanspruchs (§ 285 Abs. 2)";
+    label en unofficial "where the creditor may claim damages in lieu of performance, they are reduced by the value of the substitute obtained (§ 285 (2))";
+}
+
+@source(BGB_P285)
+rule HerausgabeDesErsatzes(l: Leistung, betrag: Money) strict {
+    label de official "Erlangt der Schuldner infolge des Umstands, auf Grund dessen er die Leistung nach § 275 Abs. 1 bis 3 nicht zu erbringen braucht, für den geschuldeten Gegenstand einen Ersatz oder einen Ersatzanspruch, so kann der Gläubiger Herausgabe des als Ersatz Empfangenen oder Abtretung des Ersatzanspruchs verlangen (§ 285 Abs. 1)";
+    label en unofficial "If the debtor obtains a substitute for the object owed, the creditor may demand its surrender or the assignment of the claim to it (§ 285 (1))";
+    when leistungsanspruch_ausgeschlossen(l);
+    when ersatz_fuer_den_geschuldeten_gegenstand_erlangt(l, betrag);
+    then herausgabe_des_ersatzes_verlangbar(l, betrag);
+}
+
+@source(BGB_P285)
+rule SchadensersatzMindertSichUmDenWertDesErsatzes(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, p: Person, schadenbetrag: Money, ersatz: Money) strict {
+    label de official "Kann der Gläubiger statt der Leistung Schadensersatz verlangen, so mindert sich dieser, wenn er von dem in Absatz 1 bestimmten Recht Gebrauch macht, um den Wert des erlangten Ersatzes oder Ersatzanspruchs (§ 285 Abs. 2)";
+    label en unofficial "Where the creditor may claim damages in lieu of performance, they are reduced by the value of the substitute if he exercises the right under (1) (§ 285 (2))";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when schadensersatz_statt_der_leistung(s, sch, p);
+    when zu_ersetzender_schaden(sch, schadenbetrag);
+    when ersatz_fuer_den_geschuldeten_gegenstand_erlangt(l, ersatz);
+    when vom_herausgaberecht_gebrauch_gemacht(l);
+    then geminderter_schadensersatz_statt_der_leistung(l, schadenbetrag - ersatz);
+}
+
+// --- § 286 Verzug des Schuldners --------------------------------------------------------------------------
+
+pub relation gemahnt_nach_faelligkeit(l: Leistung, tag: Date) kind empirical {
+    key(l);
+    label de official "Der Gläubiger hat nach dem Eintritt der Fälligkeit gemahnt; der Mahnung stehen die Erhebung der Klage auf die Leistung sowie die Zustellung eines Mahnbescheids gleich (§ 286 Abs. 1)";
+    label en unofficial "the creditor gave a reminder after the debt fell due; bringing an action and service of a default summons are equivalent (§ 286 (1))";
+}
+pub relation auf_mahnung_nicht_geleistet(l: Leistung) kind empirical {
+    label de official "Der Schuldner leistet auf die Mahnung nicht (§ 286 Abs. 1 Satz 1)";
+    label en unofficial "the debtor does not perform upon the reminder (§ 286 (1) sentence 1)";
+}
+pub relation leistungszeit_nach_dem_kalender_bestimmt(l: Leistung, tag: Date) kind empirical {
+    key(l);
+    label de official "Für die Leistung ist eine Zeit nach dem Kalender bestimmt (§ 286 Abs. 2 Nr. 1)";
+    label en unofficial "a time for performance is fixed by the calendar (§ 286 (2) no. 1)";
+}
+pub relation angemessene_zeit_nach_ereignis_kalendermaessig_berechenbar(l: Leistung, tag: Date) kind empirical {
+    key(l);
+    label de official "Der Leistung hat ein Ereignis vorauszugehen und eine angemessene Zeit für die Leistung ist so bestimmt, dass sie sich von dem Ereignis an nach dem Kalender berechnen lässt (§ 286 Abs. 2 Nr. 2)";
+    label en unofficial "performance is to be preceded by an event and a reasonable time is fixed so that it can be calculated from that event by the calendar (§ 286 (2) no. 2)";
+}
+@source(BGB_P286)
+pub external judgment relation sofortiger_verzugseintritt_gerechtfertigt(l: Leistung) {
+    authority Court;
+    label de official "§ 286 Abs. 2 Nr. 4. Das Gericht hat festgestellt, dass aus besonderen Gründen unter Abwägung der beiderseitigen Interessen der sofortige Eintritt des Verzugs gerechtfertigt ist";
+    label en unofficial "§ 286 (2) no. 4. The court found that for special reasons, weighing both parties' interests, immediate default is justified";
+}
+pub relation leistung_unterbleibt_aus_nicht_zu_vertretendem_umstand(l: Leistung) kind empirical {
+    label de official "Die Leistung unterbleibt infolge eines Umstands, den der Schuldner nicht zu vertreten hat (§ 286 Abs. 4)";
+    label en unofficial "performance is omitted owing to a circumstance for which the debtor is not responsible (§ 286 (4))";
+}
+pub relation leistung_unterbleibt_aus_zu_vertretendem_umstand(l: Leistung) kind empirical {
+    label de official "Die Leistung unterbleibt nicht infolge eines Umstands, den der Schuldner nicht zu vertreten hat (§ 286 Abs. 4) — ausdrückliche Angabe des Falls";
+    label en unofficial "performance is not omitted owing to a circumstance for which the debtor is not responsible (§ 286 (4)) — explicit case input";
+}
+pub relation verzug_seit(l: Leistung, tag: Date) kind institutional {
+    key(l);
+    label de official "Tag, seit dem sich der Schuldner im Verzug befindet (§ 286)";
+    label en unofficial "day since which the debtor is in default (§ 286)";
+}
+pub relation kein_verzug(l: Leistung) kind institutional {
+    label de official "Der Schuldner kommt nicht in Verzug, solange die Leistung infolge eines Umstands unterbleibt, den er nicht zu vertreten hat (§ 286 Abs. 4)";
+    label en unofficial "the debtor does not come into default so long as performance is omitted owing to a circumstance for which he is not responsible (§ 286 (4))";
+}
+
+@source(BGB_P286)
+rule VerzugDurchMahnung(l: Leistung, f: Date, m: Date) strict {
+    label de official "Leistet der Schuldner auf eine Mahnung des Gläubigers nicht, die nach dem Eintritt der Fälligkeit erfolgt, so kommt er durch die Mahnung in Verzug (§ 286 Abs. 1 Satz 1)";
+    label en unofficial "If the debtor does not perform upon a reminder given after the debt falls due, he comes into default through the reminder (§ 286 (1) sentence 1)";
+    when faelligkeit(l, f);
+    when gemahnt_nach_faelligkeit(l, m);
+    when m >= f;
+    when auf_mahnung_nicht_geleistet(l);
+    when leistung_unterbleibt_aus_zu_vertretendem_umstand(l);
+    then verzug_seit(l, m);
+}
+
+@source(BGB_P286)
+rule VerzugOhneMahnungBeiKalendermaessigerLeistungszeit(l: Leistung, tag: Date) strict {
+    label de official "Der Mahnung bedarf es nicht, wenn für die Leistung eine Zeit nach dem Kalender bestimmt ist (§ 286 Abs. 2 Nr. 1)";
+    label en unofficial "No reminder is needed where a time for performance is fixed by the calendar (§ 286 (2) no. 1)";
+    when leistungszeit_nach_dem_kalender_bestimmt(l, tag);
+    when leistung_unterbleibt_aus_zu_vertretendem_umstand(l);
+    then verzug_seit(l, tag);
+}
+
+@source(BGB_P286)
+rule VerzugOhneMahnungBeiKalendermaessigBerechenbarerZeit(l: Leistung, tag: Date) strict {
+    label de official "Der Mahnung bedarf es nicht, wenn der Leistung ein Ereignis vorauszugehen hat und eine angemessene Zeit für die Leistung in der Weise bestimmt ist, dass sie sich von dem Ereignis an nach dem Kalender berechnen lässt (§ 286 Abs. 2 Nr. 2)";
+    label en unofficial "No reminder is needed where performance is preceded by an event and a reasonable time is calculable from it by the calendar (§ 286 (2) no. 2)";
+    when angemessene_zeit_nach_ereignis_kalendermaessig_berechenbar(l, tag);
+    when leistung_unterbleibt_aus_zu_vertretendem_umstand(l);
+    then verzug_seit(l, tag);
+}
+
+@source(BGB_P286)
+rule VerzugOhneMahnungBeiErnsthafterVerweigerung(l: Leistung, f: Date) strict {
+    label de official "Der Mahnung bedarf es nicht, wenn der Schuldner die Leistung ernsthaft und endgültig verweigert (§ 286 Abs. 2 Nr. 3)";
+    label en unofficial "No reminder is needed where the debtor seriously and definitively refuses performance (§ 286 (2) no. 3)";
+    when faelligkeit(l, f);
+    when leistung_ernsthaft_und_endgueltig_verweigert(l);
+    when leistung_unterbleibt_aus_zu_vertretendem_umstand(l);
+    then verzug_seit(l, f);
+}
+
+@source(BGB_P286)
+rule VerzugOhneMahnungAusBesonderenGruenden(l: Leistung, f: Date) strict {
+    label de official "Der Mahnung bedarf es nicht, wenn aus besonderen Gründen unter Abwägung der beiderseitigen Interessen der sofortige Eintritt des Verzugs gerechtfertigt ist (§ 286 Abs. 2 Nr. 4)";
+    label en unofficial "No reminder is needed where for special reasons immediate default is justified (§ 286 (2) no. 4)";
+    when faelligkeit(l, f);
+    when sofortiger_verzugseintritt_gerechtfertigt(l);
+    when leistung_unterbleibt_aus_zu_vertretendem_umstand(l);
+    then verzug_seit(l, f);
+}
+
+@source(BGB_P286)
+rule KeinVerzugOhneVertretenmuessen(l: Leistung) strict {
+    label de official "Der Schuldner kommt nicht in Verzug, solange die Leistung infolge eines Umstands unterbleibt, den er nicht zu vertreten hat (§ 286 Abs. 4)";
+    label en unofficial "The debtor does not come into default so long as performance is omitted owing to a circumstance for which he is not responsible (§ 286 (4))";
+    when leistung_unterbleibt_aus_nicht_zu_vertretendem_umstand(l);
+    then kein_verzug(l);
+}
+
+// § 286 Abs. 3: die Dreißigtagefrist. Ereignis ist der spätere der beiden Tage
+// — Fälligkeit und Zugang der Rechnung —, gerechnet wird in `de.bgb.fristen`
+// (Politik BGB_FRISTEN_TAG); der Verzug tritt mit dem Ablauf des Fristendes
+// ein, also am folgenden Tag.
+
+pub entity Dreissigtagefrist : Frist {
+    label de official "Frist von 30 Tagen nach Fälligkeit und Zugang einer Rechnung oder gleichwertigen Zahlungsaufstellung (§ 286 Abs. 3 Satz 1)";
+    label en unofficial "period of 30 days after the debt falls due and an invoice or equivalent statement is received (§ 286 (3) sentence 1)";
+}
+pub relation dreissigtagefrist_der_entgeltforderung(a: Anspruch, f: Dreissigtagefrist) kind empirical {
+    key(a);
+    label de official "Frist des § 286 Abs. 3 für diese Entgeltforderung";
+    label en unofficial "the period of § 286 (3) for this claim for remuneration";
+}
+pub relation faelligkeit_der_entgeltforderung(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag der Fälligkeit der Entgeltforderung (§ 286 Abs. 3 Satz 1)";
+    label en unofficial "day on which the claim for remuneration falls due (§ 286 (3) sentence 1)";
+}
+pub relation zugang_der_rechnung(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag des Zugangs der Rechnung oder gleichwertigen Zahlungsaufstellung (§ 286 Abs. 3 Satz 1)";
+    label en unofficial "day of receipt of the invoice or equivalent payment statement (§ 286 (3) sentence 1)";
+}
+pub relation hinweis_auf_die_folgen_in_der_rechnung(a: Anspruch) kind empirical {
+    label de official "In der Rechnung oder Zahlungsaufstellung ist auf die Folgen des § 286 Abs. 3 besonders hingewiesen worden (§ 286 Abs. 3 Satz 1 Halbsatz 2)";
+    label en unofficial "the invoice or statement drew special attention to these consequences (§ 286 (3) sentence 1 second half-sentence)";
+}
+pub relation zeitpunkt_des_zugangs_unsicher(a: Anspruch) kind empirical {
+    label de official "Der Zeitpunkt des Zugangs der Rechnung oder Zahlungsaufstellung ist unsicher (§ 286 Abs. 3 Satz 2)";
+    label en unofficial "the time of receipt of the invoice or statement is uncertain (§ 286 (3) sentence 2)";
+}
+pub relation empfang_der_gegenleistung(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag des Empfangs der Gegenleistung (§ 286 Abs. 3 Satz 2, § 271a Abs. 1)";
+    label en unofficial "day of receipt of the counter-performance (§ 286 (3) sentence 2, § 271a (1))";
+}
+pub relation innerhalb_der_dreissig_tage_nicht_geleistet(a: Anspruch) kind empirical {
+    label de official "Der Schuldner hat innerhalb von 30 Tagen nicht geleistet (§ 286 Abs. 3 Satz 1)";
+    label en unofficial "the debtor did not pay within 30 days (§ 286 (3) sentence 1)";
+}
+pub relation verzug_der_entgeltforderung_mit_ablauf_des_tages(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf der Schuldner einer Entgeltforderung spätestens in Verzug kommt (§ 286 Abs. 3): das Ende der Dreißigtagefrist. Der Text nennt keinen weiteren Schritt, und ein Tagesschritt ist unter der Tagespolitik des Falls nicht ausführbar (MISSING_POLICY, gemessen 17.09.2026) — deshalb benennt der Kopf den Tag des Ablaufs, nicht den folgenden Tag (Ledger D-04-08)";
+    label en unofficial "day at whose end the debtor of a claim for remuneration is at the latest in default (§ 286 (3)): the end of the thirty-day period (ledger D-04-08)";
+}
+
+@source(BGB_P286)
+rule DreissigtagefristLaeuftVomZugangDerRechnung(a: Anspruch, f: Dreissigtagefrist, faellig: Date, zugang: Date) strict {
+    label de official "Der Schuldner einer Entgeltforderung kommt spätestens in Verzug, wenn er nicht innerhalb von 30 Tagen nach Fälligkeit und Zugang einer Rechnung leistet (§ 286 Abs. 3 Satz 1) — maßgebend ist der spätere der beiden Tage, hier der Zugang der Rechnung; gerechnet nach §§ 187 Abs. 1, 188 Abs. 1, 193";
+    label en unofficial "The debtor of a claim for remuneration is at the latest in default if he does not pay within 30 days after the debt falls due and an invoice is received (§ 286 (3) sentence 1) — the later of the two days governs, here receipt of the invoice";
+    when dreissigtagefrist_der_entgeltforderung(a, f);
+    when faelligkeit_der_entgeltforderung(a, faellig);
+    when zugang_der_rechnung(a, zugang);
+    when zugang >= faellig;
+    then de.bgb.fristen::frist_ereignis(f, zugang);
+}
+
+@source(BGB_P286)
+rule DreissigtagefristLaeuftVonDerFaelligkeit(a: Anspruch, f: Dreissigtagefrist, faellig: Date, zugang: Date) strict {
+    label de official "Der Schuldner einer Entgeltforderung kommt spätestens in Verzug, wenn er nicht innerhalb von 30 Tagen nach Fälligkeit und Zugang einer Rechnung leistet (§ 286 Abs. 3 Satz 1) — maßgebend ist der spätere der beiden Tage, hier die Fälligkeit";
+    label en unofficial "The later of the two days governs, here the due date (§ 286 (3) sentence 1)";
+    when dreissigtagefrist_der_entgeltforderung(a, f);
+    when faelligkeit_der_entgeltforderung(a, faellig);
+    when zugang_der_rechnung(a, zugang);
+    when faellig > zugang;
+    then de.bgb.fristen::frist_ereignis(f, faellig);
+}
+
+@source(BGB_P286)
+rule DreissigtagefristBeiUnsicheremZugangVomEmpfangDerGegenleistung(a: Anspruch, s: Schuldverhaeltnis, schuldner: Person, f: Dreissigtagefrist, faellig: Date, empfang: Date) strict {
+    label de official "Wenn der Zeitpunkt des Zugangs der Rechnung oder Zahlungsaufstellung unsicher ist, kommt der Schuldner, der nicht Verbraucher ist, spätestens 30 Tage nach Fälligkeit und Empfang der Gegenleistung in Verzug (§ 286 Abs. 3 Satz 2)";
+    label en unofficial "Where the time of receipt of the invoice is uncertain, a debtor who is not a consumer is in default at the latest 30 days after the due date and receipt of the counter-performance (§ 286 (3) sentence 2)";
+    when dreissigtagefrist_der_entgeltforderung(a, f);
+    when de.bgb.core::anspruch_aus_schuldverhaeltnis(a, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when unternehmer(schuldner);
+    when zeitpunkt_des_zugangs_unsicher(a);
+    when faelligkeit_der_entgeltforderung(a, faellig);
+    when empfang_der_gegenleistung(a, empfang);
+    when empfang >= faellig;
+    then de.bgb.fristen::frist_ereignis(f, empfang);
+}
+
+@source(BGB_P286)
+rule DauerDerDreissigtagefrist(a: Anspruch, f: Dreissigtagefrist, ereignis: Date) strict {
+    label de official "Die Frist des § 286 Abs. 3 beträgt 30 Tage (§ 188 Abs. 1: Ende mit dem Ablauf des letzten Tages; § 187 Abs. 1: der Tag des Ereignisses wird nicht mitgerechnet)";
+    label en unofficial "The period of § 286 (3) is 30 days (§ 188 (1); § 187 (1))";
+    when dreissigtagefrist_der_entgeltforderung(a, f);
+    when de.bgb.fristen::frist_ereignis(f, ereignis);
+    then de.bgb.fristen::frist_dauer_tage(f, 30 calendar_day);
+}
+
+@source(BGB_P286)
+rule VerzugDerEntgeltforderungGegenueberUnternehmer(a: Anspruch, s: Schuldverhaeltnis, schuldner: Person, f: Dreissigtagefrist, ende: Date) strict {
+    label de official "Der Schuldner einer Entgeltforderung, der nicht Verbraucher ist, kommt spätestens mit dem Ablauf der Dreißigtagefrist in Verzug (§ 286 Abs. 3 Satz 1) — benannt ist der Tag, mit dessen Ablauf der Verzug eintritt";
+    label en unofficial "A debtor of a claim for remuneration who is not a consumer is in default at the latest upon expiry of the thirty-day period (§ 286 (3) sentence 1) — the day named is the one at whose end default occurs";
+    when entgeltforderung(a);
+    when dreissigtagefrist_der_entgeltforderung(a, f);
+    when de.bgb.core::anspruch_aus_schuldverhaeltnis(a, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when unternehmer(schuldner);
+    when innerhalb_der_dreissig_tage_nicht_geleistet(a);
+    when de.bgb.fristen::frist_ende(f, ende);
+    then verzug_der_entgeltforderung_mit_ablauf_des_tages(a, ende);
+}
+
+@source(BGB_P286)
+rule VerzugDerEntgeltforderungGegenueberVerbraucherNurMitHinweis(a: Anspruch, s: Schuldverhaeltnis, schuldner: Person, f: Dreissigtagefrist, ende: Date) strict {
+    label de official "Gegenüber einem Schuldner, der Verbraucher ist, gilt § 286 Abs. 3 Satz 1 nur, wenn auf diese Folgen in der Rechnung oder Zahlungsaufstellung besonders hingewiesen worden ist (§ 286 Abs. 3 Satz 1 Halbsatz 2)";
+    label en unofficial "Against a consumer debtor § 286 (3) sentence 1 applies only if the invoice drew special attention to these consequences (§ 286 (3) sentence 1)";
+    when entgeltforderung(a);
+    when dreissigtagefrist_der_entgeltforderung(a, f);
+    when de.bgb.core::anspruch_aus_schuldverhaeltnis(a, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when verbraucher(schuldner);
+    when hinweis_auf_die_folgen_in_der_rechnung(a);
+    when innerhalb_der_dreissig_tage_nicht_geleistet(a);
+    when de.bgb.fristen::frist_ende(f, ende);
+    then verzug_der_entgeltforderung_mit_ablauf_des_tages(a, ende);
+}
+
+// --- § 287 Verantwortlichkeit während des Verzugs -----------------------------------------------------------
+
+pub relation haftung_fuer_jede_fahrlaessigkeit_waehrend_des_verzugs(l: Leistung) kind institutional {
+    label de official "Der Schuldner hat während des Verzugs jede Fahrlässigkeit zu vertreten (§ 287 Satz 1)";
+    label en unofficial "during default the debtor is responsible for every degree of negligence (§ 287 sentence 1)";
+}
+pub relation schaden_waere_auch_bei_rechtzeitiger_leistung_eingetreten(l: Leistung) kind empirical {
+    label de official "Der Schaden würde auch bei rechtzeitiger Leistung eingetreten sein (§ 287 Satz 2 Halbsatz 2)";
+    label en unofficial "the damage would have occurred even with timely performance (§ 287 sentence 2)";
+}
+pub relation schaden_waere_bei_rechtzeitiger_leistung_nicht_eingetreten(l: Leistung) kind empirical {
+    label de official "Der Schaden wäre bei rechtzeitiger Leistung nicht eingetreten (§ 287 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the damage would not have occurred with timely performance (§ 287 sentence 2) — explicit case input";
+}
+pub relation haftung_auch_fuer_zufall(l: Leistung) kind institutional {
+    label de official "Der Schuldner haftet wegen der Leistung auch für Zufall (§ 287 Satz 2)";
+    label en unofficial "the debtor is liable for the performance even for accident (§ 287 sentence 2)";
+}
+
+@source(BGB_P287)
+rule HaftungFuerJedeFahrlaessigkeitImVerzug(l: Leistung, tag: Date) strict {
+    label de official "Der Schuldner hat während des Verzugs jede Fahrlässigkeit zu vertreten (§ 287 Satz 1)";
+    label en unofficial "During default the debtor is responsible for every degree of negligence (§ 287 sentence 1)";
+    when verzug_seit(l, tag);
+    then haftung_fuer_jede_fahrlaessigkeit_waehrend_des_verzugs(l);
+}
+
+@source(BGB_P287)
+rule HaftungFuerZufallImVerzug(l: Leistung, tag: Date) strict {
+    label de official "Der Schuldner haftet wegen der Leistung auch für Zufall, es sei denn, dass der Schaden auch bei rechtzeitiger Leistung eingetreten sein würde (§ 287 Satz 2)";
+    label en unofficial "The debtor is liable even for accident unless the damage would have occurred with timely performance (§ 287 sentence 2)";
+    when verzug_seit(l, tag);
+    when schaden_waere_bei_rechtzeitiger_leistung_nicht_eingetreten(l);
+    then haftung_auch_fuer_zufall(l);
+}
+
+// --- § 288 Verzugszinsen und sonstiger Verzugsschaden ---------------------------------------------------------
+
+pub relation geldschuld_im_verzug(a: Anspruch, seit: Date) kind empirical {
+    key(a);
+    label de official "Eine Geldschuld befindet sich seit diesem Tag im Verzug (§ 288 Abs. 1 Satz 1)";
+    label en unofficial "a monetary debt has been in default since that day (§ 288 (1) sentence 1)";
+}
+pub relation verbraucher_am_rechtsgeschaeft_beteiligt(a: Anspruch) kind empirical {
+    label de official "An dem Rechtsgeschäft ist ein Verbraucher beteiligt (§ 288 Abs. 2)";
+    label en unofficial "a consumer is party to the legal transaction (§ 288 (2))";
+}
+pub relation kein_verbraucher_am_rechtsgeschaeft_beteiligt(a: Anspruch) kind empirical {
+    label de official "An dem Rechtsgeschäft ist kein Verbraucher beteiligt (§ 288 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no consumer is party to the legal transaction (§ 288 (2)) — explicit case input";
+}
+pub relation verzugszinssatz(a: Anspruch, satz: Decimal) kind institutional {
+    key(a);
+    label de official "Verzugszinssatz für das Jahr in Prozent (§ 288 Abs. 1 Satz 2, Abs. 2) — Basiszinssatz des § 247 zuzüglich fünf beziehungsweise neun Prozentpunkte";
+    label en unofficial "default interest rate per year in per cent (§ 288 (1) sentence 2, (2)) — base rate of § 247 plus five or nine percentage points";
+}
+pub relation verzugszinsen_fuer_ein_jahr(a: Anspruch, betrag: Money) kind institutional {
+    key(a);
+    label de official "Verzugszinsen für ein volles Jahr (§ 288 Abs. 1) — Rundung auf den Cent ist Politik des Pakets (README „Rundung“); für Zeiträume, die kein volles Jahr sind, nennt das Gesetz keine Zinsmethode (Frage D-Q04-1)";
+    label en unofficial "default interest for one full year (§ 288 (1)); rounding to the cent is the package's policy; for periods shorter than a year the statute names no day-count convention (question D-Q04-1)";
+}
+pub relation pauschale_wegen_verzugs(a: Anspruch, betrag: Money) kind institutional {
+    key(a);
+    label de official "Anspruch auf Zahlung einer Pauschale in Höhe von 40 Euro (§ 288 Abs. 5 Satz 1)";
+    label en unofficial "claim to a lump sum of 40 euros (§ 288 (5) sentence 1)";
+}
+pub relation hoehere_zinsen_aus_anderem_rechtsgrund(a: Anspruch, satz: Decimal) kind empirical {
+    key(a);
+    label de official "Der Gläubiger kann aus einem anderen Rechtsgrund höhere Zinsen verlangen (§ 288 Abs. 3)";
+    label en unofficial "the creditor may claim higher interest on another legal ground (§ 288 (3))";
+}
+pub relation weiterer_schaden_geltend_gemacht(a: Anspruch, betrag: Money) kind empirical {
+    key(a);
+    label de official "Die Geltendmachung eines weiteren Schadens ist nicht ausgeschlossen (§ 288 Abs. 4)";
+    label en unofficial "asserting further damage is not excluded (§ 288 (4))";
+}
+pub relation weiterer_schaden_ersatzfaehig(a: Anspruch, betrag: Money) kind institutional {
+    key(a);
+    label de official "Der weitere Verzugsschaden ist zu ersetzen (§ 288 Abs. 4)";
+    label en unofficial "further damage caused by default is recoverable (§ 288 (4))";
+}
+pub relation schaden_in_kosten_der_rechtsverfolgung(a: Anspruch, betrag: Money) kind empirical {
+    key(a);
+    label de official "Der Schaden ist in Kosten der Rechtsverfolgung begründet; die Pauschale ist darauf anzurechnen (§ 288 Abs. 5 Satz 3)";
+    label en unofficial "the damage consists in costs of pursuing the claim; the lump sum is set off against it (§ 288 (5) sentence 3)";
+}
+pub relation anzurechnender_schadensersatz(a: Anspruch, betrag: Money) kind institutional {
+    key(a);
+    label de official "Auf den geschuldeten Schadensersatz angerechnete Pauschale (§ 288 Abs. 5 Satz 3)";
+    label en unofficial "damages after setting off the lump sum (§ 288 (5) sentence 3)";
+}
+pub relation vereinbarung_schliesst_verzugszinsen_aus(vb: Vereinbarung) kind empirical {
+    label de official "Im Voraus getroffene Vereinbarung, die den Anspruch des Gläubigers einer Entgeltforderung auf Verzugszinsen ausschließt (§ 288 Abs. 6 Satz 1)";
+    label en unofficial "agreement made in advance excluding the creditor's claim to default interest (§ 288 (6) sentence 1)";
+}
+pub relation vereinbarung_richtet_sich_gegen_einen_verbraucher(vb: Vereinbarung) kind empirical {
+    label de official "Der Anspruch richtet sich gegen einen Verbraucher (§ 288 Abs. 6 Satz 4)";
+    label en unofficial "the claim is directed against a consumer (§ 288 (6) sentence 4)";
+}
+pub relation anspruch_richtet_sich_nicht_gegen_einen_verbraucher(vb: Vereinbarung) kind empirical {
+    label de official "Der Anspruch richtet sich nicht gegen einen Verbraucher (§ 288 Abs. 6 Satz 4) — ausdrückliche Angabe des Falls";
+    label en unofficial "the claim is not directed against a consumer (§ 288 (6) sentence 4) — explicit case input";
+}
+
+@source(BGB_P288)
+rule VerzugszinssatzFuenfProzentpunkteUeberDemBasiszinssatz(a: Anspruch, seit: Date) strict {
+    label de official "Eine Geldschuld ist während des Verzugs zu verzinsen; der Verzugszinssatz beträgt für das Jahr fünf Prozentpunkte über dem Basiszinssatz (§ 288 Abs. 1)";
+    label en unofficial "A monetary debt bears interest during default; the rate is five percentage points above the base rate per year (§ 288 (1))";
+    when geldschuld_im_verzug(a, seit);
+    when verbraucher_am_rechtsgeschaeft_beteiligt(a);
+    then verzugszinssatz(a, Basiszinssatz + 5.00);
+}
+
+@source(BGB_P288)
+rule VerzugszinssatzNeunProzentpunkteBeiEntgeltforderungenOhneVerbraucher(a: Anspruch, seit: Date) strict {
+    label de official "Bei Rechtsgeschäften, an denen ein Verbraucher nicht beteiligt ist, beträgt der Zinssatz für Entgeltforderungen neun Prozentpunkte über dem Basiszinssatz (§ 288 Abs. 2)";
+    label en unofficial "In transactions to which no consumer is party the rate for claims for remuneration is nine percentage points above the base rate (§ 288 (2))";
+    when geldschuld_im_verzug(a, seit);
+    when entgeltforderung(a);
+    when kein_verbraucher_am_rechtsgeschaeft_beteiligt(a);
+    then verzugszinssatz(a, Basiszinssatz + 9.00);
+}
+
+@source(BGB_P288)
+rule VerzugszinsenFuerEinVollesJahr(a: Anspruch, betrag: Money, satz: Decimal) strict {
+    label de official "Eine Geldschuld ist während des Verzugs zu verzinsen (§ 288 Abs. 1 Satz 1); der Betrag für ein volles Jahr ist der Zinssatz vom Hundert des Geldbetrags — einmalige Rundung auf den Cent (Politik des Pakets)";
+    label en unofficial "A monetary debt bears interest during default (§ 288 (1) sentence 1); the amount for a full year is the rate per hundred of the sum — rounded once to the cent (package policy)";
+    when de.bgb.core::anspruch_geldbetrag(a, betrag);
+    when verzugszinssatz(a, satz);
+    then verzugszinsen_fuer_ein_jahr(a, div_round(betrag * satz, 100.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P288)
+rule PauschaleVierzigEuroBeiEntgeltforderung(a: Anspruch, s: Schuldverhaeltnis, schuldner: Person, seit: Date) strict {
+    label de official "Der Gläubiger einer Entgeltforderung hat bei Verzug des Schuldners, wenn dieser kein Verbraucher ist, außerdem einen Anspruch auf Zahlung einer Pauschale in Höhe von 40 Euro; dies gilt auch, wenn es sich um eine Abschlagszahlung oder sonstige Ratenzahlung handelt (§ 288 Abs. 5 Sätze 1, 2)";
+    label en unofficial "The creditor of a claim for remuneration whose debtor is not a consumer additionally has a claim to a lump sum of 40 euros; this also applies to payments on account or instalments (§ 288 (5) sentences 1, 2)";
+    when entgeltforderung(a);
+    when geldschuld_im_verzug(a, seit);
+    when de.bgb.core::anspruch_aus_schuldverhaeltnis(a, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when unternehmer(schuldner);
+    then pauschale_wegen_verzugs(a, 40.00 EUR);
+}
+
+@source(BGB_P288)
+rule PauschaleWirdAufRechtsverfolgungskostenAngerechnet(a: Anspruch, pauschale: Money, kosten: Money) strict {
+    label de official "Die Pauschale nach Satz 1 ist auf einen geschuldeten Schadensersatz anzurechnen, soweit der Schaden in Kosten der Rechtsverfolgung begründet ist (§ 288 Abs. 5 Satz 3)";
+    label en unofficial "The lump sum is set off against damages owed so far as the damage consists in costs of pursuing the claim (§ 288 (5) sentence 3)";
+    when pauschale_wegen_verzugs(a, pauschale);
+    when schaden_in_kosten_der_rechtsverfolgung(a, kosten);
+    then anzurechnender_schadensersatz(a, kosten - pauschale);
+}
+
+@source(BGB_P288)
+rule WeitererVerzugsschadenBleibtErsatzfaehig(a: Anspruch, betrag: Money, seit: Date) strict {
+    label de official "Die Geltendmachung eines weiteren Schadens ist nicht ausgeschlossen (§ 288 Abs. 4); der Gläubiger kann aus einem anderen Rechtsgrund höhere Zinsen verlangen (Abs. 3)";
+    label en unofficial "Asserting further damage is not excluded (§ 288 (4)); the creditor may claim higher interest on another legal ground ((3))";
+    when geldschuld_im_verzug(a, seit);
+    when weiterer_schaden_geltend_gemacht(a, betrag);
+    then weiterer_schaden_ersatzfaehig(a, betrag);
+}
+
+@source(BGB_P288)
+rule AusschlussDerVerzugszinsenIstUnwirksam(vb: Vereinbarung) strict {
+    label de official "Eine im Voraus getroffene Vereinbarung, die den Anspruch des Gläubigers einer Entgeltforderung auf Verzugszinsen ausschließt, ist unwirksam; die Sätze 1 bis 3 sind nicht anzuwenden, wenn sich der Anspruch gegen einen Verbraucher richtet (§ 288 Abs. 6)";
+    label en unofficial "An agreement made in advance excluding the claim to default interest is ineffective; sentences 1 to 3 do not apply where the claim is against a consumer (§ 288 (6))";
+    when vereinbarung_schliesst_verzugszinsen_aus(vb);
+    when anspruch_richtet_sich_nicht_gegen_einen_verbraucher(vb);
+    then unwirksam(vb);
+}
+
+// --- §§ 289–292 -----------------------------------------------------------------------------------------------
+
+pub relation zinsen_als_hauptforderung(a: Anspruch) kind empirical {
+    label de official "Die Forderung besteht in Zinsen (§ 289 Satz 1)";
+    label en unofficial "the claim consists of interest (§ 289 sentence 1)";
+}
+pub relation keine_verzugszinsen_von_zinsen(a: Anspruch) kind institutional {
+    label de official "Von Zinsen sind Verzugszinsen nicht zu entrichten; das Recht des Gläubigers auf Ersatz des durch den Verzug entstehenden Schadens bleibt unberührt (§ 289)";
+    label en unofficial "no default interest is payable on interest; the right to compensation for damage caused by default remains unaffected (§ 289)";
+}
+
+@source(BGB_P289)
+rule ZinseszinsverbotImVerzug(a: Anspruch, seit: Date) strict {
+    label de official "Von Zinsen sind Verzugszinsen nicht zu entrichten (§ 289 Satz 1)";
+    label en unofficial "No default interest is payable on interest (§ 289 sentence 1)";
+    when zinsen_als_hauptforderung(a);
+    when geldschuld_im_verzug(a, seit);
+    then keine_verzugszinsen_von_zinsen(a);
+}
+
+pub relation wertersatzpflicht_wegen_untergangs_im_verzug(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Der Schuldner ist zum Ersatz des Wertes eines Gegenstands verpflichtet, der während des Verzugs untergegangen ist oder nicht herausgegeben werden kann; maßgebend ist der Zeitpunkt, welcher der Bestimmung des Wertes zugrunde gelegt wird (§ 290 Satz 1)";
+    label en unofficial "the debtor must compensate the value of an object lost during default; the time on which the valuation is based governs (§ 290 sentence 1)";
+}
+pub relation verzinsung_des_wertersatzes_ab(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Der Gläubiger kann Zinsen des zu ersetzenden Betrags von diesem Zeitpunkt an verlangen (§ 290)";
+    label en unofficial "the creditor may demand interest on the amount to be compensated from that time (§ 290)";
+}
+
+@source(BGB_P290)
+rule VerzinsungDesWertersatzes(a: Anspruch, tag: Date) strict {
+    label de official "Ist der Schuldner zum Ersatz des Wertes eines Gegenstands verpflichtet, der während des Verzugs untergegangen ist, so kann der Gläubiger Zinsen des zu ersetzenden Betrags von dem Zeitpunkt an verlangen, welcher der Bestimmung des Wertes zugrunde gelegt wird; das Gleiche gilt bei Ersatz der Wertminderung (§ 290)";
+    label en unofficial "Where the debtor must compensate the value of an object lost during default, the creditor may demand interest from the time on which the valuation is based; the same applies to compensation for depreciation (§ 290)";
+    when wertersatzpflicht_wegen_untergangs_im_verzug(a, tag);
+    then verzinsung_des_wertersatzes_ab(a, tag);
+}
+
+pub relation rechtshaengigkeit_seit(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag des Eintritts der Rechtshängigkeit (§ 291 Satz 1)";
+    label en unofficial "day on which the action became pending (§ 291 sentence 1)";
+}
+pub relation faelligkeit_nach_rechtshaengigkeit(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Die Schuld wird erst nach der Rechtshängigkeit fällig; sie ist von der Fälligkeit an zu verzinsen (§ 291 Satz 1 Halbsatz 2)";
+    label en unofficial "the debt falls due only after the action became pending; interest runs from the due date (§ 291 sentence 1)";
+}
+pub relation prozesszinsen_ab(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, von dem an die Geldschuld zu verzinsen ist, auch wenn der Schuldner nicht im Verzug ist (§ 291)";
+    label en unofficial "day from which the monetary debt bears interest even without default (§ 291)";
+}
+
+@source(BGB_P291)
+rule ProzesszinsenAbRechtshaengigkeit(a: Anspruch, tag: Date) strict {
+    label de official "Eine Geldschuld hat der Schuldner von dem Eintritt der Rechtshängigkeit an zu verzinsen, auch wenn er nicht im Verzug ist (§ 291 Satz 1); die Vorschriften des § 288 Abs. 1 Satz 2, Abs. 2, Abs. 3 und des § 289 Satz 1 finden entsprechende Anwendung (Satz 2)";
+    label en unofficial "A monetary debt bears interest from the time the action becomes pending even without default (§ 291 sentence 1); § 288 (1) sentence 2, (2), (3) and § 289 sentence 1 apply accordingly (sentence 2)";
+    when rechtshaengigkeit_seit(a, tag);
+    then prozesszinsen_ab(a, tag);
+}
+
+@source(BGB_P291)
+rule ProzesszinsenAbSpaetererFaelligkeit(a: Anspruch, tag: Date) strict {
+    label de official "Wird die Schuld erst später fällig, so ist sie von der Fälligkeit an zu verzinsen (§ 291 Satz 1 Halbsatz 2)";
+    label en unofficial "If the debt falls due only later, interest runs from the due date (§ 291 sentence 1)";
+    when faelligkeit_nach_rechtshaengigkeit(a, tag);
+    then prozesszinsen_ab(a, tag);
+}
+
+pub relation herausgabepflicht_eines_bestimmten_gegenstands(a: Anspruch, gegenstand: Sache) kind empirical {
+    label de official "Der Schuldner hat einen bestimmten Gegenstand herauszugeben (§ 292 Abs. 1)";
+    label en unofficial "the debtor must deliver up a specific object (§ 292 (1))";
+}
+pub relation haftung_nach_eigentuemer_besitzer_recht(a: Anspruch, gegenstand: Sache) kind institutional {
+    label de official "Von dem Eintritt der Rechtshängigkeit an bestimmt sich der Anspruch des Gläubigers auf Schadensersatz wegen Verschlechterung, Untergangs oder Unmöglichkeit der Herausgabe nach den Vorschriften für das Verhältnis zwischen Eigentümer und Besitzer; das Gleiche gilt für Nutzungen und Verwendungen (§ 292 Abs. 1, 2)";
+    label en unofficial "from the time the action becomes pending the claim for damages for deterioration, loss or impossibility of surrender follows the rules on the owner-possessor relationship; the same applies to emoluments and outlays (§ 292 (1), (2))";
+}
+
+@source(BGB_P292)
+rule HaftungDesHerausgabepflichtigenNachRechtshaengigkeit(a: Anspruch, gegenstand: Sache, tag: Date) strict {
+    label de official "Hat der Schuldner einen bestimmten Gegenstand herauszugeben, so bestimmt sich von dem Eintritt der Rechtshängigkeit an der Anspruch des Gläubigers auf Schadensersatz nach den Vorschriften, welche für das Verhältnis zwischen dem Eigentümer und dem Besitzer gelten (§ 292 Abs. 1); das Gleiche gilt für Nutzungen und Verwendungen (Abs. 2)";
+    label en unofficial "Where the debtor must deliver up a specific object, from the time the action becomes pending the creditor's claim for damages follows the owner-possessor rules (§ 292 (1)); the same applies to emoluments and outlays ((2))";
+    when herausgabepflicht_eines_bestimmten_gegenstands(a, gegenstand);
+    when rechtshaengigkeit_seit(a, tag);
+    then haftung_nach_eigentuemer_besitzer_recht(a, gegenstand);
+}
+
+// --- § 247 Basiszinssatz: die Rechnung des Absatzes 1 ------------------------------------------------
+//
+// Der GELTENDE Satz kommt als A3-Parameter aus dem Schnappschuss der
+// Bundesbank (Kopf dieser Datei). Absatz 1 Satz 2 und 3 sagt aber auch, WIE er
+// sich ändert: zum 1. Januar und 1. Juli um die Prozentpunkte, um welche die
+// Bezugsgröße — der Zinssatz für die jüngste Hauptrefinanzierungsoperation der
+// Europäischen Zentralbank vor dem ersten Kalendertag des betreffenden
+// Halbjahrs — seit der letzten Veränderung gestiegen oder gefallen ist. Legt
+// der Fall die beiden Bezugsgrößen und den vorherigen Satz vor, rechnet die
+// Regel den neuen Satz; die Bekanntmachung im Bundesanzeiger (Absatz 2) ist
+// Handlung der Deutschen Bundesbank und außerhalb dieses Pakets.
+
+pub entity Halbjahr {
+    label de official "Halbjahr, zu dessen erstem Kalendertag sich der Basiszinssatz verändert (§ 247 Abs. 1 Satz 2)";
+    label en unofficial "half-year at whose first calendar day the base rate changes (§ 247 (1) sentence 2)";
+}
+pub relation halbjahr_beginn(h: Halbjahr, tag: Date) kind empirical {
+    key(h);
+    label de official "Erster Kalendertag des betreffenden Halbjahrs: 1. Januar oder 1. Juli (§ 247 Abs. 1 Satz 2)";
+    label en unofficial "first calendar day of the half-year: 1 January or 1 July (§ 247 (1) sentence 2)";
+}
+pub relation basiszinssatz_vor_der_veraenderung(h: Halbjahr, satz: Decimal) kind empirical {
+    key(h);
+    label de official "Basiszinssatz, der vor der Veränderung zum ersten Kalendertag dieses Halbjahrs galt (§ 247 Abs. 1 Satz 2)";
+    label en unofficial "base rate applicable before the change at the first calendar day of this half-year (§ 247 (1) sentence 2)";
+}
+pub relation bezugsgroesse_bei_der_letzten_veraenderung(h: Halbjahr, satz: Decimal) kind empirical {
+    key(h);
+    label de official "Bezugsgröße bei der letzten Veränderung des Basiszinssatzes: Zinssatz der jüngsten Hauptrefinanzierungsoperation der Europäischen Zentralbank vor jenem Zeitpunkt (§ 247 Abs. 1 Satz 2, 3)";
+    label en unofficial "reference rate at the last change of the base rate: the ECB main refinancing rate before that time (§ 247 (1) sentences 2, 3)";
+}
+pub relation bezugsgroesse_vor_dem_halbjahr(h: Halbjahr, satz: Decimal) kind empirical {
+    key(h);
+    label de official "Bezugsgröße vor dem ersten Kalendertag des betreffenden Halbjahrs: Zinssatz für die jüngste Hauptrefinanzierungsoperation der Europäischen Zentralbank (§ 247 Abs. 1 Satz 3)";
+    label en unofficial "reference rate before the first calendar day of the half-year: the ECB main refinancing rate (§ 247 (1) sentence 3)";
+}
+pub relation basiszinssatz_des_halbjahrs(h: Halbjahr, satz: Decimal) kind institutional {
+    key(h);
+    label de official "Basiszinssatz, der sich zum ersten Kalendertag dieses Halbjahrs ergibt (§ 247 Abs. 1 Satz 2)";
+    label en unofficial "base rate resulting at the first calendar day of this half-year (§ 247 (1) sentence 2)";
+}
+
+@source(BGB_P247)
+rule VeraenderungDesBasiszinssatzes(h: Halbjahr, beginn: Date, vorher: Decimal, alt: Decimal, neu: Decimal) strict {
+    label de official "Der Basiszinssatz verändert sich zum 1. Januar und 1. Juli eines jeden Jahres um die Prozentpunkte, um welche die Bezugsgröße seit der letzten Veränderung des Basiszinssatzes gestiegen oder gefallen ist; Bezugsgröße ist der Zinssatz für die jüngste Hauptrefinanzierungsoperation der Europäischen Zentralbank vor dem ersten Kalendertag des betreffenden Halbjahrs (§ 247 Abs. 1 Sätze 2, 3)";
+    label en unofficial "The base rate changes on 1 January and 1 July of each year by the percentage points by which the reference rate has risen or fallen since the last change; the reference rate is the ECB main refinancing rate before the first calendar day of the half-year (§ 247 (1) sentences 2, 3)";
+    when halbjahr_beginn(h, beginn);
+    when basiszinssatz_vor_der_veraenderung(h, vorher);
+    when bezugsgroesse_bei_der_letzten_veraenderung(h, alt);
+    when bezugsgroesse_vor_dem_halbjahr(h, neu);
+    then basiszinssatz_des_halbjahrs(h, vorher + neu - alt);
+}

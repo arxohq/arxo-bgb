@@ -1,0 +1,39 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 2047 Abs. 1: Der nach der Berichtigung der Nachlassverbindlichkeiten
+// verbleibende Ueberschuss gebuehrt den Erben nach dem Verhaeltnis der Erbteile.
+// Zwei Kinder erben zu gleichen Teilen (§ 1924 Abs. 4), also je 1/2 von
+// 10 000,00 EUR = 5 000,00 EUR. Das Gesetz nennt keine Rundung; das Paket rundet
+// EINMAL je Miterbe kaufmaennisch auf den Cent. Die Rechenwache
+// `ueberschuss_vollstaendig_verteilt` prueft, dass kein Restcent bleibt.
+test "§ 2047 Abs. 1: der Ueberschuss nach dem Verhaeltnis der Erbteile" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:g01:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:g01:F"), entity_ref("urn:de:bgb:e:g01:D"), entity_ref("urn:de:bgb:e:g01:K1")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:K1")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:g01:F"), entity_ref("urn:de:bgb:e:g01:D"), entity_ref("urn:de:bgb:e:g01:K2")) { origin case_input; }
+        assert "f7": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:K2")) { origin case_input; }
+        assert "f8": ueberschuss(entity_ref("urn:de:bgb:e:g01:E"), 10000.00 EUR) { origin case_input; }
+    }
+    evaluate truth(miterbe(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nachlass_ist_gemeinschaftliches_vermoegen(entity_ref("urn:de:bgb:e:g01:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_ueberschuss(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:K1"), 5000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_ueberschuss(entity_ref("urn:de:bgb:e:g01:E"), entity_ref("urn:de:bgb:e:g01:K2"), 5000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ueberschuss_vollstaendig_verteilt(entity_ref("urn:de:bgb:e:g01:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

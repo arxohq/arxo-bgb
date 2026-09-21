@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 438 Abs. 1 Nr. 3 und Abs. 2: kein Grundstück, kein Bauwerk, kein Recht eines Dritten — zwei Jahre ab Ablieferung. Abgeliefert am 15. März 2024; der Tag der Ablieferung wird nicht mitgerechnet (§ 187 Abs. 1), die Frist endet mit Ablauf des 15. März 2026 (§ 188 Abs. 2).
+test "§ 438 Abs. 1 Nr. 3: zwei Jahre ab Ablieferung enden am 15. März 2026" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:v01"), entity_ref("urn:de:bgb:kauf:v01:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:v01"), entity_ref("urn:de:bgb:kauf:v01:K")) { origin case_input; }
+        assert "f3": maengelanspruch(entity_ref("urn:de:bgb:kauf:v01:A"), entity_ref("urn:de:bgb:kauf:v01")) { origin case_input; }
+        assert "f4": ablieferung_am(entity_ref("urn:de:bgb:kauf:v01"), @2024-03-15) { origin adjudicated; }
+        assert "f5": not grundstueckskauf(entity_ref("urn:de:bgb:kauf:v01")) { origin case_input; }
+        assert "f6": not mangel_in_dinglichem_herausgaberecht(entity_ref("urn:de:bgb:kauf:v01")) { origin case_input; }
+        assert "f7": not mangel_in_eingetragenem_recht(entity_ref("urn:de:bgb:kauf:v01")) { origin case_input; }
+        assert "f8": not bauwerk(entity_ref("urn:de:bgb:kauf:v01")) { origin case_input; }
+        assert "f9": not baustoff_mit_verursachter_mangelhaftigkeit(entity_ref("urn:de:bgb:kauf:v01")) { origin case_input; }
+        assert "f10": not mangel_arglistig_verschwiegen(entity_ref("urn:de:bgb:kauf:v01")) { origin adjudicated; }
+    }
+    evaluate truth(regelfrist_ende_438(entity_ref("urn:de:bgb:kauf:v01:A"), @2026-03-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(frist_ende_438(entity_ref("urn:de:bgb:kauf:v01:A"), @2026-03-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(frist_ende_438(entity_ref("urn:de:bgb:kauf:v01:A"), @2026-03-16));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

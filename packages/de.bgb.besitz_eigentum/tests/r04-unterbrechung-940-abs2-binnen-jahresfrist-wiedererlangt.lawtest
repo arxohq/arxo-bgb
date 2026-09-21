@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 940 Abs. 2: der Eigenbesitz ist am 10. Mai 2018 ohne Willen verloren und am 10. Mai 2019 wiedererlangt — die Jahresfrist vom Tag des Verlustes endet mit dem Ablauf des 10. Mai 2019 (§§ 187 Abs. 1, 188 Abs. 2), die Unterbrechung gilt als nicht erfolgt.
+test "§ 940 Abs. 2: Wiedererlangung am letzten Tag der Jahresfrist — keine Unterbrechung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:r:besitz"), entity_ref("urn:de:bgb:be:r:bild")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:r:besitz"), entity_ref("urn:de:bgb:be:r:P")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:r:besitz"), @2014-03-20) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "f5": besitzt_als_ihm_gehoerend(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "f6": bewegliche_sache(entity_ref("urn:de:bgb:be:r:bild")) { origin case_input; }
+        assert "f7": ersitzungsfrist(entity_ref("urn:de:bgb:be:r:besitz"), entity_ref("urn:de:bgb:be:r:frist")) { origin case_input; }
+        assert "f8": keine_hemmung_der_ersitzung(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "f9": eigenbesitz_verloren_am(entity_ref("urn:de:bgb:be:r:besitz"), @2018-05-10) { origin case_input; }
+        assert "f10": eigenbesitz_ohne_willen_verloren(entity_ref("urn:de:bgb:be:r:besitz")) { origin case_input; }
+        assert "f11": eigenbesitz_wiedererlangt_am(entity_ref("urn:de:bgb:be:r:besitz"), @2019-05-10) { origin case_input; }
+    }
+    evaluate truth(unterbrechung_gilt_als_nicht_erfolgt(entity_ref("urn:de:bgb:be:r:besitz")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ersitzung_unterbrochen(entity_ref("urn:de:bgb:be:r:besitz")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

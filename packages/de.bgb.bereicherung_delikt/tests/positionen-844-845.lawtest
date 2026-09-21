@@ -1,0 +1,35 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+
+test "§§ 844 und 845: Ansprüche Dritter aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "t844": toetung(entity_ref("urn:de:bgb:handlung:h844")) { origin case_input; }
+        assert "p844": beerdigungskostenpflichtiger(entity_ref("urn:de:bgb:handlung:h844"), entity_ref("urn:de:bgb:person:funeral")) { origin case_input; }
+        assert "c844": beerdigungskosten(entity_ref("urn:de:bgb:handlung:h844"), 5000.00 EUR) { origin case_input; }
+        assert "d845": dienstverpflichtung_kraft_gesetzes(entity_ref("urn:de:bgb:handlung:h845"), entity_ref("urn:de:bgb:person:services")) { origin case_input; }
+        assert "v845": wert_der_entgehenden_dienste(entity_ref("urn:de:bgb:handlung:h845"), entity_ref("urn:de:bgb:person:services"), 1200.00 EUR) { origin case_input; }
+        assert "t844h": toetung(entity_ref("urn:de:bgb:handlung:h844h")) { origin case_input; }
+        assert "h844h": hinterbliebener(entity_ref("urn:de:bgb:handlung:h844h"), entity_ref("urn:de:bgb:person:survivor")) { origin case_input; }
+        assert "n844h": naeheverhaeltnis_festgestellt(entity_ref("urn:de:bgb:handlung:h844h"), entity_ref("urn:de:bgb:person:survivor")) { origin case_input; }
+        assert "m844h": angemessene_entschaedigung_in_geld(entity_ref("urn:de:bgb:handlung:h844h"), entity_ref("urn:de:bgb:person:survivor"), 10000.00 EUR) { origin case_input; }
+        assert "date844": handlungstag(entity_ref("urn:de:bgb:handlung:h844"), @2026-06-01) { origin case_input; }
+        assert "date845": handlungstag(entity_ref("urn:de:bgb:handlung:h845"), @2026-06-02) { origin case_input; }
+        assert "date844h": handlungstag(entity_ref("urn:de:bgb:handlung:h844h"), @2026-06-03) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Duty844Beerdigung, ACTIVE);
+    expect position(Duty845EntgangeneDienste, ACTIVE);
+    expect position(Duty844Hinterbliebenengeld, ACTIVE);
+}
+
+test "§§ 844 und 845: ohne Tatsachen keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Duty844Beerdigung, ACTIVE);
+    expect not position(Duty845EntgangeneDienste, ACTIVE);
+    expect not position(Duty844Hinterbliebenengeld, ACTIVE);
+}

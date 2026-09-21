@@ -1,0 +1,34 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// §§ 1483, 1503: die Ehegatten haben die Fortsetzung der Gütergemeinschaft vereinbart; A stirbt, B überlebt. Die beiden gemeinschaftlichen Abkömmlinge K1 und K2 sind bei gesetzlicher Erbfolge als Erben berufen — das ist ein ausdrücklicher EINGANG des Falls, weil `de.bgb.erbfolge` nicht importiert werden darf. Der Anteil des Verstorbenen gehört NICHT zum Nachlass (§ 1483 Abs. 1 Satz 3). Die den Abkömmlingen zufallende Hälfte von 90 000,00 € teilen sie nach ihren Erbquoten von je 1/2: 45 000,00 € für jeden.
+test "§§ 1483, 1503: Eintritt der fortgesetzten Gütergemeinschaft und die Teilung der Hälfte" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:A"), entity_ref("urn:de:bgb:ehe:gg04:B")) { origin case_input; }
+        assert "f2": ehevertrag_gueterstand(entity_ref("urn:de:bgb:ehe:gg04:E"), Guetergemeinschaft) { origin case_input; }
+        assert "f3": fortsetzung_durch_ehevertrag_vereinbart(entity_ref("urn:de:bgb:ehe:gg04:E")) { origin case_input; }
+        assert "f4": ehe_durch_tod_aufgeloest(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:A")) { origin case_input; }
+        assert "f5": gemeinschaftlicher_abkoemmling_erbberufen(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:K1")) { origin case_input; }
+        assert "f6": gemeinschaftlicher_abkoemmling_erbberufen(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:K2")) { origin case_input; }
+        assert "f7": haelfte_der_abkoemmlinge(entity_ref("urn:de:bgb:ehe:gg04:E"), 90000.00 EUR) { origin case_input; }
+        assert "f8": erbquote_des_abkoemmlings(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:K1"), 1, 2) { origin case_input; }
+        assert "f9": erbquote_des_abkoemmlings(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:K2"), 1, 2) { origin case_input; }
+    }
+    evaluate truth(fortgesetzte_guetergemeinschaft_eingetreten(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_gehoert_nicht_zum_nachlass(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:A")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteilsberechtigter_abkoemmling(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_des_abkoemmlings_am_gesamtgut(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:K1"), 45000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_gesamtgut_faellt_in_den_nachlass(entity_ref("urn:de:bgb:ehe:gg04:E"), entity_ref("urn:de:bgb:ehe:gg04:A")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

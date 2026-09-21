@@ -1,0 +1,475 @@
+// ABSCHNITT 7 MEHRHEIT VON SCHULDNERN UND GLÄUBIGERN, §§ 420–432
+//
+// GLEICHE ANTEILE ALS EXAKTER BRUCH (§ 420, § 426 Abs. 1 Satz 1, § 430). Der
+// Anteil ist 1 geteilt durch die Zahl der Schuldner beziehungsweise Gläubiger:
+// ein Aggregat `count` über die Beteiligten (mit `key` über die
+// nichtaggregierten Argumente, ohne `distinct`) und die Division zweier
+// Integer, die den exakten `Rational` gibt (§18). Der GELDBETRAG entsteht
+// einmal, mit `div_round(Betrag × 1, Zahl als Decimal, 2, "HALF_UP")` — Politik
+// des Pakets (README „Rundung“; Ledger D-04-04). Keine Dezimalzahl vor der
+// Rundung, kein `float`.
+//
+// DER AUSFALL DES § 426 ABS. 1 SATZ 2 („ist der Ausfall von den übrigen zur
+// Ausgleichung verpflichteten Schuldnern zu tragen“) verlangt eine zweite
+// Runde über das Ergebnis der ersten (Aggregat über die verbleibenden
+// Schuldner nach Abzug des Ausgefallenen). Das Paket rechnet ihn über die Zahl
+// der zahlungsfähigen Schuldner, die der Fall benennt: `ausgefallener_schuldner`
+// ist Eingang, und die Quote der übrigen ist 1 durch deren Zahl. Eine
+// Neuberechnung über mehrere Stufen (mehrere Ausfälle in Folge, § 111.1
+// `stage`) ist GRENZE dieses Pakets und in der Aufgabenkarte des README
+// als `TODO` verzeichnet.
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- § 420 Teilbare Leistung ----------------------------------------------------------------------
+
+pub relation teilbare_leistung(s: Schuldverhaeltnis, l: Leistung) kind empirical {
+    label de official "Mehrere schulden eine teilbare Leistung oder mehrere haben eine teilbare Leistung zu fordern (§ 420)";
+    label en unofficial "several persons owe or may demand a divisible performance (§ 420)";
+}
+pub relation unteilbare_leistung(s: Schuldverhaeltnis, l: Leistung) kind empirical {
+    label de official "Mehrere schulden eine unteilbare Leistung oder haben eine unteilbare Leistung zu fordern (§§ 431, 432)";
+    label en unofficial "several persons owe or may demand an indivisible performance (§§ 431, 432)";
+}
+pub relation gesamtschuld_vereinbart_oder_bestimmt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Mehrere schulden eine Leistung in der Weise, dass jeder die ganze Leistung zu bewirken verpflichtet, der Gläubiger aber die Leistung nur einmal zu fordern berechtigt ist (Gesamtschuld, § 421)";
+    label en unofficial "several persons owe a performance such that each must render the whole while the creditor may demand it only once (joint and several debt, § 421)";
+}
+pub relation keine_gesamtschuld_bestimmt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Eine Gesamtschuld ist nicht bestimmt (§ 420 „im Zweifel“) — ausdrückliche Angabe des Falls";
+    label en unofficial "no joint and several debt is stipulated (§ 420) — explicit case input";
+}
+pub relation zahl_der_schuldner(s: Schuldverhaeltnis, zahl: Integer) kind institutional {
+    key(s);
+    label de official "Zahl der Schuldner des Schuldverhältnisses (§ 420, § 426 Abs. 1 Satz 1)";
+    label en unofficial "number of debtors of the obligation (§ 420, § 426 (1) sentence 1)";
+}
+pub relation zahl_der_glaeubiger(s: Schuldverhaeltnis, zahl: Integer) kind institutional {
+    key(s);
+    label de official "Zahl der Gläubiger des Schuldverhältnisses (§ 420, § 430)";
+    label en unofficial "number of creditors of the obligation (§ 420, § 430)";
+}
+pub relation anteil_des_schuldners(s: Schuldverhaeltnis, schuldner: Person, anteil: Rational) kind institutional {
+    key(s, schuldner);
+    label de official "Anteil, zu dem der einzelne Schuldner verpflichtet ist (§ 420 Halbsatz 1)";
+    label en unofficial "share to which the individual debtor is bound (§ 420)";
+}
+pub relation anteil_des_glaeubigers(s: Schuldverhaeltnis, glaeubiger: Person, anteil: Rational) kind institutional {
+    key(s, glaeubiger);
+    label de official "Anteil, zu dem der einzelne Gläubiger berechtigt ist (§ 420 Halbsatz 2, § 430)";
+    label en unofficial "share to which the individual creditor is entitled (§ 420, § 430)";
+}
+
+@source(BGB_P420)
+rule ZahlDerSchuldner(s: Schuldverhaeltnis, glaeubiger0: Person) strict {
+    label de official "Zahl der Schuldner des Schuldverhältnisses — Grundlage der gleichen Anteile (§ 420, § 426 Abs. 1 Satz 1)";
+    label en unofficial "Number of debtors of the obligation — the basis of the equal shares (§ 420, § 426 (1) sentence 1)";
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger0);
+    then zahl_der_schuldner(s, (count all p: Person where de.bgb.core::schuldverhaeltnis_schuldner(s, p)));
+}
+
+@source(BGB_P420)
+rule ZahlDerGlaeubiger(s: Schuldverhaeltnis, schuldner0: Person) strict {
+    label de official "Zahl der Gläubiger des Schuldverhältnisses — Grundlage der gleichen Anteile (§ 420, § 430)";
+    label en unofficial "Number of creditors of the obligation — the basis of the equal shares (§ 420, § 430)";
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner0);
+    then zahl_der_glaeubiger(s, (count all p: Person where de.bgb.core::schuldverhaeltnis_glaeubiger(s, p)));
+}
+
+@source(BGB_P420)
+rule GleicheAnteileDerSchuldnerBeiTeilbarerLeistung(s: Schuldverhaeltnis, l: Leistung, schuldner: Person, zahl: Integer) strict {
+    label de official "Schulden mehrere eine teilbare Leistung, so ist im Zweifel jeder Schuldner nur zu einem gleichen Anteil verpflichtet (§ 420 Halbsatz 1) — der Anteil ist eins geteilt durch die Zahl der Schuldner, ein exakter Bruch";
+    label en unofficial "Where several persons owe a divisible performance, in case of doubt each is bound only to an equal share (§ 420) — one divided by the number of debtors, an exact fraction";
+    when teilbare_leistung(s, l);
+    when keine_gesamtschuld_bestimmt(s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when zahl_der_schuldner(s, zahl);
+    then anteil_des_schuldners(s, schuldner, 1 / zahl);
+}
+
+@source(BGB_P420)
+rule GleicheAnteileDerGlaeubigerBeiTeilbarerLeistung(s: Schuldverhaeltnis, l: Leistung, glaeubiger: Person, zahl: Integer) strict {
+    label de official "Haben mehrere eine teilbare Leistung zu fordern, so ist im Zweifel jeder Gläubiger nur zu einem gleichen Anteil berechtigt (§ 420 Halbsatz 2)";
+    label en unofficial "Where several persons may demand a divisible performance, in case of doubt each is entitled only to an equal share (§ 420)";
+    when teilbare_leistung(s, l);
+    when keine_gesamtschuld_bestimmt(s);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when zahl_der_glaeubiger(s, zahl);
+    then anteil_des_glaeubigers(s, glaeubiger, 1 / zahl);
+}
+
+// --- §§ 421–425 Gesamtschuld ------------------------------------------------------------------------
+
+pub relation gesamtschuldner(s: Schuldverhaeltnis, schuldner: Person) kind institutional {
+    label de official "Dieser Schuldner ist Gesamtschuldner (§ 421, § 427, § 431)";
+    label en unofficial "this debtor is a joint and several debtor (§ 421, § 427, § 431)";
+}
+pub relation ganze_leistung_von_jedem_forderbar(s: Schuldverhaeltnis, schuldner: Person) kind institutional {
+    label de official "Der Gläubiger kann die Leistung nach seinem Belieben von jedem der Schuldner ganz oder zu einem Teil fordern; bis zur Bewirkung der ganzen Leistung bleiben sämtliche Schuldner verpflichtet (§ 421)";
+    label en unofficial "the creditor may demand performance in whole or in part from any debtor at his discretion; all remain bound until the whole is rendered (§ 421)";
+}
+pub relation gemeinschaftliche_vertragliche_verpflichtung(s: Schuldverhaeltnis, l: Leistung) kind empirical {
+    label de official "Mehrere verpflichten sich durch Vertrag gemeinschaftlich zu einer teilbaren Leistung (§ 427)";
+    label en unofficial "several persons jointly undertake by contract a divisible performance (§ 427)";
+}
+pub relation erfuellung_durch_einen_gesamtschuldner(s: Schuldverhaeltnis, schuldner: Person, tag: Date) kind empirical {
+    key(s);
+    label de official "Ein Gesamtschuldner hat erfüllt, an Erfüllungs statt geleistet, hinterlegt oder aufgerechnet (§ 422 Abs. 1)";
+    label en unofficial "a joint and several debtor performed, gave in lieu of performance, deposited or set off (§ 422 (1))";
+}
+pub relation wirkung_auch_fuer_die_uebrigen_schuldner(s: Schuldverhaeltnis) kind institutional {
+    label de official "Die Erfüllung durch einen Gesamtschuldner wirkt auch für die übrigen Schuldner; das Gleiche gilt von der Leistung an Erfüllungs statt, der Hinterlegung und der Aufrechnung (§ 422 Abs. 1)";
+    label en unofficial "performance by one joint and several debtor also operates for the others; likewise giving in lieu, deposit and set-off (§ 422 (1))";
+}
+pub relation forderung_eines_gesamtschuldners(s: Schuldverhaeltnis, schuldner: Person, a: Anspruch) kind empirical {
+    label de official "Diese Forderung steht einem Gesamtschuldner zu (§ 422 Abs. 2)";
+    label en unofficial "this claim belongs to one joint and several debtor (§ 422 (2))";
+}
+pub relation nicht_von_den_uebrigen_aufrechenbar(s: Schuldverhaeltnis, a: Anspruch) kind institutional {
+    label de official "Eine Forderung, die einem Gesamtschuldner zusteht, kann nicht von den übrigen Schuldnern aufgerechnet werden (§ 422 Abs. 2)";
+    label en unofficial "a claim belonging to one joint and several debtor may not be set off by the others (§ 422 (2))";
+}
+pub relation erlass_mit_einem_gesamtschuldner(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Zwischen dem Gläubiger und einem Gesamtschuldner ist ein Erlass vereinbart (§ 423)";
+    label en unofficial "a release was agreed between the creditor and one joint and several debtor (§ 423)";
+}
+pub relation ganzes_schuldverhaeltnis_sollte_aufgehoben_werden(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Vertragschließenden wollten das ganze Schuldverhältnis aufheben (§ 423)";
+    label en unofficial "the contracting parties intended to discharge the entire obligation (§ 423)";
+}
+pub relation erlass_wirkt_fuer_alle(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Erlass wirkt auch für die übrigen Schuldner (§ 423)";
+    label en unofficial "the release also operates for the other debtors (§ 423)";
+}
+pub relation glaeubigerverzug_gegenueber_einem_gesamtschuldner(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der Gläubiger ist gegenüber einem Gesamtschuldner im Verzug (§ 424)";
+    label en unofficial "the creditor is in default towards one joint and several debtor (§ 424)";
+}
+pub relation glaeubigerverzug_wirkt_fuer_alle(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Verzug des Gläubigers gegenüber einem Gesamtschuldner wirkt auch für die übrigen Schuldner (§ 424)";
+    label en unofficial "the creditor's default towards one debtor also operates for the others (§ 424)";
+}
+pub enum EinzelwirkendeTatsache {
+    label de official "Tatsache, die nur für und gegen den Gesamtschuldner wirkt, in dessen Person sie eintritt (§ 425 Abs. 2)";
+    label en unofficial "fact operating only for and against the debtor in whose person it occurs (§ 425 (2))";
+    Kuendigung,
+    Verzug,
+    Verschulden,
+    Unmoeglichkeit,
+    Verjaehrung,
+    NeubeginnDerVerjaehrung,
+    HemmungDerVerjaehrung,
+    AblaufhemmungDerVerjaehrung,
+    VereinigungVonForderungUndSchuld,
+    RechtskraeftigesUrteil
+}
+pub relation einzelwirkende_tatsache(s: Schuldverhaeltnis, schuldner: Person, tatsache: EinzelwirkendeTatsache) kind empirical {
+    label de official "Eine andere als die in den §§ 422 bis 424 bezeichneten Tatsachen ist in der Person dieses Gesamtschuldners eingetreten (§ 425)";
+    label en unofficial "a fact other than those named in §§ 422 to 424 occurred in the person of this debtor (§ 425)";
+}
+pub relation wirkung_nur_fuer_diesen_schuldner(s: Schuldverhaeltnis, schuldner: Person, tatsache: EinzelwirkendeTatsache) kind institutional {
+    label de official "Die Tatsache wirkt nur für und gegen den Gesamtschuldner, in dessen Person sie eintritt (§ 425 Abs. 1)";
+    label en unofficial "the fact operates only for and against the debtor in whose person it occurs (§ 425 (1))";
+}
+
+@source(BGB_P421)
+rule GesamtschuldnerHaftenAufDieGanzeLeistung(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Schulden mehrere eine Leistung in der Weise, dass jeder die ganze Leistung zu bewirken verpflichtet, der Gläubiger aber die Leistung nur einmal zu fordern berechtigt ist, so kann der Gläubiger die Leistung nach seinem Belieben von jedem der Schuldner ganz oder zu einem Teil fordern (§ 421)";
+    label en unofficial "Where several owe a performance such that each must render the whole and the creditor may demand it once, he may demand it wholly or partly from any of them (§ 421)";
+    when gesamtschuld_vereinbart_oder_bestimmt(s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    then gesamtschuldner(s, schuldner);
+}
+
+@source(BGB_P421)
+rule GlaeubigerWaehltDenSchuldner(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Der Gläubiger kann die Leistung nach seinem Belieben von jedem der Gesamtschuldner ganz oder zu einem Teil fordern; bis zur Bewirkung der ganzen Leistung bleiben sämtliche Schuldner verpflichtet (§ 421)";
+    label en unofficial "The creditor may demand performance wholly or partly from any joint and several debtor; all remain bound until the whole is rendered (§ 421)";
+    when gesamtschuldner(s, schuldner);
+    then ganze_leistung_von_jedem_forderbar(s, schuldner);
+}
+
+@source(BGB_P427)
+rule GemeinschaftlicheVerpflichtungFuehrtZurGesamtschuld(s: Schuldverhaeltnis, l: Leistung, schuldner: Person) strict {
+    label de official "Verpflichten sich mehrere durch Vertrag gemeinschaftlich zu einer teilbaren Leistung, so haften sie im Zweifel als Gesamtschuldner (§ 427)";
+    label en unofficial "Where several persons jointly undertake a divisible performance by contract, in case of doubt they are liable as joint and several debtors (§ 427)";
+    when gemeinschaftliche_vertragliche_verpflichtung(s, l);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    then gesamtschuldner(s, schuldner);
+}
+
+@source(BGB_P431)
+rule UnteilbareLeistungFuehrtZurGesamtschuld(s: Schuldverhaeltnis, l: Leistung, schuldner: Person) strict {
+    label de official "Schulden mehrere eine unteilbare Leistung, so haften sie als Gesamtschuldner (§ 431)";
+    label en unofficial "Where several persons owe an indivisible performance they are liable as joint and several debtors (§ 431)";
+    when unteilbare_leistung(s, l);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    then gesamtschuldner(s, schuldner);
+}
+
+@source(BGB_P422)
+rule ErfuellungDurchEinenWirktFuerAlle(s: Schuldverhaeltnis, schuldner: Person, tag: Date) strict {
+    label de official "Die Erfüllung durch einen Gesamtschuldner wirkt auch für die übrigen Schuldner; das Gleiche gilt von der Leistung an Erfüllungs statt, der Hinterlegung und der Aufrechnung (§ 422 Abs. 1)";
+    label en unofficial "Performance by one joint and several debtor also operates for the others; likewise giving in lieu, deposit and set-off (§ 422 (1))";
+    when gesamtschuldner(s, schuldner);
+    when erfuellung_durch_einen_gesamtschuldner(s, schuldner, tag);
+    then wirkung_auch_fuer_die_uebrigen_schuldner(s);
+}
+
+@source(BGB_P422)
+rule ForderungEinesGesamtschuldnersIstNichtVonDenUebrigenAufrechenbar(s: Schuldverhaeltnis, schuldner: Person, a: Anspruch) strict {
+    label de official "Eine Forderung, die einem Gesamtschuldner zusteht, kann nicht von den übrigen Schuldnern aufgerechnet werden (§ 422 Abs. 2)";
+    label en unofficial "A claim belonging to one joint and several debtor may not be set off by the others (§ 422 (2))";
+    when gesamtschuldner(s, schuldner);
+    when forderung_eines_gesamtschuldners(s, schuldner, a);
+    then nicht_von_den_uebrigen_aufrechenbar(s, a);
+}
+
+@source(BGB_P423)
+rule ErlassWirktFuerAlleBeiEntsprechendemWillen(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Ein zwischen dem Gläubiger und einem Gesamtschuldner vereinbarter Erlass wirkt auch für die übrigen Schuldner, wenn die Vertragschließenden das ganze Schuldverhältnis aufheben wollten (§ 423)";
+    label en unofficial "A release agreed with one joint and several debtor also operates for the others where the parties intended to discharge the entire obligation (§ 423)";
+    when gesamtschuldner(s, schuldner);
+    when erlass_mit_einem_gesamtschuldner(s, schuldner);
+    when ganzes_schuldverhaeltnis_sollte_aufgehoben_werden(s);
+    then erlass_wirkt_fuer_alle(s);
+}
+
+@source(BGB_P424)
+rule GlaeubigerverzugWirktFuerAlleGesamtschuldner(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Der Verzug des Gläubigers gegenüber einem Gesamtschuldner wirkt auch für die übrigen Schuldner (§ 424)";
+    label en unofficial "The creditor's default towards one joint and several debtor also operates for the others (§ 424)";
+    when gesamtschuldner(s, schuldner);
+    when glaeubigerverzug_gegenueber_einem_gesamtschuldner(s, schuldner);
+    then glaeubigerverzug_wirkt_fuer_alle(s);
+}
+
+@source(BGB_P425)
+rule AndereTatsachenWirkenNurEinzeln(s: Schuldverhaeltnis, schuldner: Person, tatsache: EinzelwirkendeTatsache) strict {
+    label de official "Andere als die in den §§ 422 bis 424 bezeichneten Tatsachen wirken, soweit sich nicht aus dem Schuldverhältnis ein anderes ergibt, nur für und gegen den Gesamtschuldner, in dessen Person sie eintreten (§ 425 Abs. 1); dies gilt insbesondere von Kündigung, Verzug, Verschulden, Unmöglichkeit, Verjährung mit Neubeginn, Hemmung und Ablaufhemmung, Vereinigung von Forderung und Schuld und rechtskräftigem Urteil (Abs. 2)";
+    label en unofficial "Facts other than those in §§ 422 to 424 operate only for and against the debtor in whose person they occur (§ 425 (1), (2))";
+    when gesamtschuldner(s, schuldner);
+    when einzelwirkende_tatsache(s, schuldner, tatsache);
+    then wirkung_nur_fuer_diesen_schuldner(s, schuldner, tatsache);
+}
+
+// --- § 426 Ausgleichung im Innenverhältnis --------------------------------------------------------------
+
+pub relation abweichende_bestimmung_der_ausgleichung(s: Schuldverhaeltnis) kind empirical {
+    label de official "Für das Verhältnis der Gesamtschuldner zueinander ist ein anderes als gleiche Anteile bestimmt (§ 426 Abs. 1 Satz 1)";
+    label en unofficial "something other than equal shares is stipulated for the debtors' internal relationship (§ 426 (1) sentence 1)";
+}
+pub relation keine_abweichende_bestimmung_der_ausgleichung(s: Schuldverhaeltnis) kind empirical {
+    label de official "Für das Verhältnis der Gesamtschuldner zueinander ist nichts anderes bestimmt (§ 426 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing else is stipulated for the debtors' internal relationship (§ 426 (1) sentence 1) — explicit case input";
+}
+pub relation ausgleichsanteil(s: Schuldverhaeltnis, schuldner: Person, anteil: Rational) kind institutional {
+    key(s, schuldner);
+    label de official "Anteil, zu dem der Gesamtschuldner im Verhältnis zu den übrigen verpflichtet ist (§ 426 Abs. 1 Satz 1): gleiche Anteile, exakter Bruch";
+    label en unofficial "share to which the joint and several debtor is bound internally (§ 426 (1) sentence 1): equal shares, an exact fraction";
+}
+pub relation gesamtschuld_betrag(s: Schuldverhaeltnis, betrag: Money) kind empirical {
+    key(s);
+    label de official "Höhe der Gesamtschuld in Geld";
+    label en unofficial "amount of the joint and several debt in money";
+}
+pub relation ausgleichsbetrag(s: Schuldverhaeltnis, schuldner: Person, betrag: Money) kind institutional {
+    key(s, schuldner);
+    label de official "Auf den Gesamtschuldner entfallender Beitrag in Geld (§ 426 Abs. 1 Satz 1); Rundung auf den Cent: Politik des Pakets (README „Rundung“)";
+    label en unofficial "contribution of the joint and several debtor in money (§ 426 (1) sentence 1); rounding to the cent is the package's policy";
+}
+pub relation ausgefallener_schuldner(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Von diesem Gesamtschuldner kann der auf ihn entfallende Beitrag nicht erlangt werden (§ 426 Abs. 1 Satz 2)";
+    label en unofficial "the contribution of this joint and several debtor cannot be obtained (§ 426 (1) sentence 2)";
+}
+pub relation zahl_der_ausgleichspflichtigen_schuldner(s: Schuldverhaeltnis, zahl: Integer) kind institutional {
+    key(s);
+    label de official "Zahl der zur Ausgleichung verpflichteten Schuldner, von denen der Beitrag erlangt werden kann (§ 426 Abs. 1 Satz 2)";
+    label en unofficial "number of debtors bound to contribute from whom the contribution can be obtained (§ 426 (1) sentence 2)";
+}
+pub relation ausgleichsanteil_nach_ausfall(s: Schuldverhaeltnis, schuldner: Person, anteil: Rational) kind institutional {
+    key(s, schuldner);
+    label de official "Anteil nach Verteilung des Ausfalls auf die übrigen zur Ausgleichung verpflichteten Schuldner (§ 426 Abs. 1 Satz 2); mehrfache Ausfälle in Folge sind Grenze des Pakets (README)";
+    label en unofficial "share after allocating the shortfall to the remaining debtors bound to contribute (§ 426 (1) sentence 2); successive shortfalls are a boundary of the package";
+}
+pub relation glaeubiger_befriedigt_durch_gesamtschuldner(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der Gesamtschuldner hat den Gläubiger befriedigt (§ 426 Abs. 2 Satz 1)";
+    label en unofficial "the joint and several debtor satisfied the creditor (§ 426 (2) sentence 1)";
+}
+pub relation forderung_geht_auf_den_ausgleichsberechtigten_ueber(s: Schuldverhaeltnis, schuldner: Person) kind institutional {
+    label de official "Soweit ein Gesamtschuldner den Gläubiger befriedigt und Ausgleichung verlangen kann, geht die Forderung des Gläubigers gegen die übrigen Schuldner auf ihn über; der Übergang kann nicht zum Nachteil des Gläubigers geltend gemacht werden (§ 426 Abs. 2)";
+    label en unofficial "so far as a joint and several debtor satisfies the creditor and may claim contribution, the creditor's claim against the others passes to him (§ 426 (2))";
+}
+
+@source(BGB_P426)
+rule GleicheAusgleichsanteile(s: Schuldverhaeltnis, schuldner: Person, zahl: Integer) strict {
+    label de official "Die Gesamtschuldner sind im Verhältnis zueinander zu gleichen Anteilen verpflichtet, soweit nicht ein anderes bestimmt ist (§ 426 Abs. 1 Satz 1)";
+    label en unofficial "Joint and several debtors are bound internally in equal shares unless otherwise stipulated (§ 426 (1) sentence 1)";
+    when gesamtschuldner(s, schuldner);
+    when keine_abweichende_bestimmung_der_ausgleichung(s);
+    when zahl_der_schuldner(s, zahl);
+    then ausgleichsanteil(s, schuldner, 1 / zahl);
+}
+
+@source(BGB_P426)
+rule AusgleichsbetragInGeld(s: Schuldverhaeltnis, schuldner: Person, zahl: Integer, betrag: Money) strict {
+    label de official "Der auf den einzelnen Gesamtschuldner entfallende Beitrag ist der gleiche Anteil an der Gesamtschuld (§ 426 Abs. 1 Satz 1) — einmalige Rundung auf den Cent";
+    label en unofficial "The contribution of each joint and several debtor is his equal share of the debt (§ 426 (1) sentence 1) — rounded once to the cent";
+    when gesamtschuldner(s, schuldner);
+    when keine_abweichende_bestimmung_der_ausgleichung(s);
+    when zahl_der_schuldner(s, zahl);
+    when gesamtschuld_betrag(s, betrag);
+    then ausgleichsbetrag(s, schuldner, div_round(betrag * 1, zahl * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P426)
+rule ZahlDerAusgleichspflichtigenNachAusfall(s: Schuldverhaeltnis, glaeubiger0: Person) strict {
+    label de official "Zahl der zur Ausgleichung verpflichteten Schuldner, von denen der Beitrag erlangt werden kann (§ 426 Abs. 1 Satz 2)";
+    label en unofficial "Number of debtors bound to contribute from whom the contribution can be obtained (§ 426 (1) sentence 2)";
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger0);
+    then zahl_der_ausgleichspflichtigen_schuldner(s, (count all p: Person where gesamtschuldner(s, p)) - (count all q: Person where ausgefallener_schuldner(s, q)));
+}
+
+@source(BGB_P426)
+rule AusfallWirdVonDenUebrigenGetragen(s: Schuldverhaeltnis, schuldner: Person, zahl: Integer) strict {
+    label de official "Kann von einem Gesamtschuldner der auf ihn entfallende Beitrag nicht erlangt werden, so ist der Ausfall von den übrigen zur Ausgleichung verpflichteten Schuldnern zu tragen (§ 426 Abs. 1 Satz 2) — der Anteil ist eins geteilt durch die Zahl der übrigen";
+    label en unofficial "Where a debtor's contribution cannot be obtained, the shortfall is borne by the remaining debtors bound to contribute (§ 426 (1) sentence 2) — one divided by their number";
+    when gesamtschuldner(s, schuldner);
+    when keine_abweichende_bestimmung_der_ausgleichung(s);
+    when zahl_der_ausgleichspflichtigen_schuldner(s, zahl);
+    when zahl > 0;
+    then ausgleichsanteil_nach_ausfall(s, schuldner, 1 / zahl);
+}
+
+@source(BGB_P426)
+rule ForderungsuebergangAufDenAusgleichsberechtigten(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Soweit ein Gesamtschuldner den Gläubiger befriedigt und von den übrigen Schuldnern Ausgleichung verlangen kann, geht die Forderung des Gläubigers gegen die übrigen Schuldner auf ihn über (§ 426 Abs. 2 Satz 1)";
+    label en unofficial "So far as a joint and several debtor satisfies the creditor and may claim contribution, the creditor's claim against the others passes to him (§ 426 (2) sentence 1)";
+    when gesamtschuldner(s, schuldner);
+    when glaeubiger_befriedigt_durch_gesamtschuldner(s, schuldner);
+    then forderung_geht_auf_den_ausgleichsberechtigten_ueber(s, schuldner);
+}
+
+// --- §§ 428–432 Gesamtgläubiger und unteilbare Leistung -------------------------------------------------
+
+pub relation gesamtglaeubigerschaft_bestimmt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Mehrere sind eine Leistung in der Weise zu fordern berechtigt, dass jeder die ganze Leistung fordern kann, der Schuldner aber die Leistung nur einmal zu bewirken verpflichtet ist (Gesamtgläubiger, § 428)";
+    label en unofficial "several persons may demand a performance such that each may demand the whole while the debtor owes it only once (joint and several creditors, § 428)";
+}
+pub relation gesamtglaeubiger(s: Schuldverhaeltnis, glaeubiger: Person) kind institutional {
+    label de official "Dieser Gläubiger ist Gesamtgläubiger (§ 428)";
+    label en unofficial "this creditor is a joint and several creditor (§ 428)";
+}
+pub relation schuldner_darf_an_jeden_leisten(s: Schuldverhaeltnis, glaeubiger: Person) kind institutional {
+    label de official "Der Schuldner kann nach seinem Belieben an jeden der Gläubiger leisten; dies gilt auch dann, wenn einer der Gläubiger bereits Klage auf die Leistung erhoben hat (§ 428)";
+    label en unofficial "the debtor may perform to any of the creditors at his discretion, even where one has already brought an action (§ 428)";
+}
+pub relation verzug_eines_gesamtglaeubigers(s: Schuldverhaeltnis, glaeubiger: Person) kind empirical {
+    label de official "Ein Gesamtgläubiger ist im Verzug (§ 429 Abs. 1)";
+    label en unofficial "one joint and several creditor is in default (§ 429 (1))";
+}
+pub relation verzug_wirkt_gegen_alle_glaeubiger(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Verzug eines Gesamtgläubigers wirkt auch gegen die übrigen Gläubiger (§ 429 Abs. 1)";
+    label en unofficial "the default of one joint and several creditor also operates against the others (§ 429 (1))";
+}
+pub relation vereinigung_von_forderung_und_schuld(s: Schuldverhaeltnis, glaeubiger: Person) kind empirical {
+    label de official "Forderung und Schuld vereinigen sich in der Person eines Gesamtgläubigers (§ 429 Abs. 2)";
+    label en unofficial "claim and debt unite in the person of one joint and several creditor (§ 429 (2))";
+}
+pub relation rechte_der_uebrigen_glaeubiger_erloschen(s: Schuldverhaeltnis) kind institutional {
+    label de official "Vereinigen sich Forderung und Schuld in der Person eines Gesamtgläubigers, so erlöschen die Rechte der übrigen Gläubiger gegen den Schuldner (§ 429 Abs. 2)";
+    label en unofficial "where claim and debt unite in one joint and several creditor, the others' rights against the debtor lapse (§ 429 (2))";
+}
+pub relation leistung_nur_an_alle_gemeinschaftlich(s: Schuldverhaeltnis) kind institutional {
+    label de official "Haben mehrere eine unteilbare Leistung zu fordern, so kann, sofern sie nicht Gesamtgläubiger sind, der Schuldner nur an alle gemeinschaftlich leisten und jeder Gläubiger nur die Leistung an alle fordern (§ 432 Abs. 1 Satz 1)";
+    label en unofficial "where several may demand an indivisible performance and are not joint and several creditors, the debtor may perform only to all jointly (§ 432 (1) sentence 1)";
+}
+pub relation hinterlegung_oder_verwahrer_verlangbar(s: Schuldverhaeltnis, glaeubiger: Person) kind institutional {
+    label de official "Jeder Gläubiger kann verlangen, dass der Schuldner die geschuldete Sache für alle Gläubiger hinterlegt oder, wenn sie sich nicht zur Hinterlegung eignet, an einen gerichtlich zu bestellenden Verwahrer abliefert (§ 432 Abs. 1 Satz 2)";
+    label en unofficial "each creditor may demand that the debtor deposit the thing for all creditors or deliver it to a custodian appointed by the court (§ 432 (1) sentence 2)";
+}
+pub relation keine_gesamtglaeubigerschaft(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Gläubiger sind nicht Gesamtgläubiger (§ 432 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the creditors are not joint and several creditors (§ 432 (1) sentence 1) — explicit case input";
+}
+pub relation tatsache_nur_in_der_person_eines_glaeubigers(s: Schuldverhaeltnis, glaeubiger: Person) kind empirical {
+    label de official "Eine Tatsache tritt nur in der Person eines der Gläubiger ein (§ 432 Abs. 2)";
+    label en unofficial "a fact occurs only in the person of one of the creditors (§ 432 (2))";
+}
+pub relation wirkung_nur_fuer_diesen_glaeubiger(s: Schuldverhaeltnis, glaeubiger: Person) kind institutional {
+    label de official "Die Tatsache wirkt nicht für und gegen die übrigen Gläubiger (§ 432 Abs. 2)";
+    label en unofficial "the fact does not operate for or against the other creditors (§ 432 (2))";
+}
+
+@source(BGB_P428)
+rule GesamtglaeubigerKoennenJederDieGanzeLeistungFordern(s: Schuldverhaeltnis, glaeubiger: Person) strict {
+    label de official "Sind mehrere eine Leistung in der Weise zu fordern berechtigt, dass jeder die ganze Leistung fordern kann, der Schuldner aber die Leistung nur einmal zu bewirken verpflichtet ist, so kann der Schuldner nach seinem Belieben an jeden der Gläubiger leisten (§ 428)";
+    label en unofficial "Where several may each demand the whole performance while the debtor owes it once, he may perform to any of them at his discretion (§ 428)";
+    when gesamtglaeubigerschaft_bestimmt(s);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    then gesamtglaeubiger(s, glaeubiger);
+}
+
+@source(BGB_P428)
+rule SchuldnerWaehltDenGlaeubiger(s: Schuldverhaeltnis, glaeubiger: Person) strict {
+    label de official "Der Schuldner kann nach seinem Belieben an jeden der Gesamtgläubiger leisten; dies gilt auch dann, wenn einer der Gläubiger bereits Klage auf die Leistung erhoben hat (§ 428)";
+    label en unofficial "The debtor may perform to any joint and several creditor, even where one has already sued (§ 428)";
+    when gesamtglaeubiger(s, glaeubiger);
+    then schuldner_darf_an_jeden_leisten(s, glaeubiger);
+}
+
+@source(BGB_P429)
+rule VerzugEinesGesamtglaeubigersWirktGegenAlle(s: Schuldverhaeltnis, glaeubiger: Person) strict {
+    label de official "Der Verzug eines Gesamtgläubigers wirkt auch gegen die übrigen Gläubiger (§ 429 Abs. 1); im Übrigen finden die §§ 422, 423, 425 entsprechende Anwendung (Abs. 3)";
+    label en unofficial "The default of one joint and several creditor also operates against the others (§ 429 (1)); otherwise §§ 422, 423, 425 apply accordingly ((3))";
+    when gesamtglaeubiger(s, glaeubiger);
+    when verzug_eines_gesamtglaeubigers(s, glaeubiger);
+    then verzug_wirkt_gegen_alle_glaeubiger(s);
+}
+
+@source(BGB_P429)
+rule VereinigungVonForderungUndSchuldLoeschtDieRechteDerUebrigen(s: Schuldverhaeltnis, glaeubiger: Person) strict {
+    label de official "Vereinigen sich Forderung und Schuld in der Person eines Gesamtgläubigers, so erlöschen die Rechte der übrigen Gläubiger gegen den Schuldner (§ 429 Abs. 2)";
+    label en unofficial "Where claim and debt unite in one joint and several creditor, the other creditors' rights against the debtor lapse (§ 429 (2))";
+    when gesamtglaeubiger(s, glaeubiger);
+    when vereinigung_von_forderung_und_schuld(s, glaeubiger);
+    then rechte_der_uebrigen_glaeubiger_erloschen(s);
+}
+
+@source(BGB_P430)
+rule GleicheAnteileDerGesamtglaeubiger(s: Schuldverhaeltnis, glaeubiger: Person, zahl: Integer) strict {
+    label de official "Die Gesamtgläubiger sind im Verhältnis zueinander zu gleichen Anteilen berechtigt, soweit nicht ein anderes bestimmt ist (§ 430)";
+    label en unofficial "Joint and several creditors are entitled internally in equal shares unless otherwise stipulated (§ 430)";
+    when gesamtglaeubiger(s, glaeubiger);
+    when keine_abweichende_bestimmung_der_ausgleichung(s);
+    when zahl_der_glaeubiger(s, zahl);
+    then anteil_des_glaeubigers(s, glaeubiger, 1 / zahl);
+}
+
+@source(BGB_P432)
+rule UnteilbareLeistungNurAnAlleGemeinschaftlich(s: Schuldverhaeltnis, l: Leistung) strict {
+    label de official "Haben mehrere eine unteilbare Leistung zu fordern, so kann, sofern sie nicht Gesamtgläubiger sind, der Schuldner nur an alle gemeinschaftlich leisten und jeder Gläubiger nur die Leistung an alle fordern (§ 432 Abs. 1 Satz 1)";
+    label en unofficial "Where several may demand an indivisible performance and are not joint and several creditors, the debtor may perform only to all jointly (§ 432 (1) sentence 1)";
+    when unteilbare_leistung(s, l);
+    when keine_gesamtglaeubigerschaft(s);
+    then leistung_nur_an_alle_gemeinschaftlich(s);
+}
+
+@source(BGB_P432)
+rule HinterlegungFuerAlleGlaeubigerVerlangbar(s: Schuldverhaeltnis, l: Leistung, glaeubiger: Person) strict {
+    label de official "Jeder Gläubiger kann verlangen, dass der Schuldner die geschuldete Sache für alle Gläubiger hinterlegt oder, wenn sie sich nicht zur Hinterlegung eignet, an einen gerichtlich zu bestellenden Verwahrer abliefert (§ 432 Abs. 1 Satz 2)";
+    label en unofficial "Each creditor may demand deposit for all creditors or delivery to a court-appointed custodian (§ 432 (1) sentence 2)";
+    when leistung_nur_an_alle_gemeinschaftlich(s);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    then hinterlegung_oder_verwahrer_verlangbar(s, glaeubiger);
+}
+
+@source(BGB_P432)
+rule TatsacheInDerPersonEinesGlaeubigersWirktNichtFuerDieUebrigen(s: Schuldverhaeltnis, glaeubiger: Person) strict {
+    label de official "Im Übrigen wirkt eine Tatsache, die nur in der Person eines der Gläubiger eintritt, nicht für und gegen die übrigen Gläubiger (§ 432 Abs. 2)";
+    label en unofficial "Otherwise a fact occurring only in the person of one creditor does not operate for or against the others (§ 432 (2))";
+    when tatsache_nur_in_der_person_eines_glaeubigers(s, glaeubiger);
+    then wirkung_nur_fuer_diesen_glaeubiger(s, glaeubiger);
+}

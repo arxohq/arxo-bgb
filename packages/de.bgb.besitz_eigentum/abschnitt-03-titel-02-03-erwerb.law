@@ -1,0 +1,1224 @@
+// --- Buch 3 Abschnitt 3 Titel 2 und 3: Erwerb und Verlust des Eigentums (§§ 925–964) --------------
+//
+// WER IST EIGENTÜMER? Der Fall nennt den Stand VOR dem beurteilten Vorgang
+// (`eigentuemer_vor_dem_vorgang`). Tritt ein Eigentumswechsel ein, sagt der
+// Fall das ausdrücklich (`eigentumswechsel_im_fall`), und der bisherige
+// Eigentümer fällt aus `eigentuemer` heraus; die Erwerbstatbestände der
+// §§ 925, 929 ff., 937, 946 ff., 958, 984 schreiben in `eigentum_erworben`.
+// Das Fehlen der Angabe ist keine Verneinung (Ledger D-10-03).
+//
+// GUTER GLAUBE IST VERMUTET. § 932 Abs. 2 definiert den guten Glauben
+// NEGATIV: „nicht in gutem Glauben, wenn ihm bekannt oder infolge grober
+// Fahrlässigkeit unbekannt ist, dass die Sache nicht dem Veräußerer gehört“.
+// Wer den guten Glauben bestreitet, trägt die Feststellung; deshalb steht der
+// Erwerb als widerlegliche Regel mit zwei strikten Angriffen: die KENNTNIS
+// ist eine festgestellte Tatsache (`origin adjudicated`), die GROBE
+// FAHRLÄSSIGKEIT eine Wertung des Gerichts (§47.3). Solange keines von beiden
+// feststeht, bleibt es beim Erwerb (Ledger D-10-04).
+//
+// ERSITZUNG (§§ 937–945): zehn Jahre Eigenbesitz, gerechnet als Frist von
+// `de.bgb.fristen` (§§ 187 Abs. 1, 188 Abs. 2) ohne Verlegung nach § 193; die
+// Hemmung (§ 939) verschiebt das Ende um die gehemmten Tage (§ 209
+// entsprechend), die Unterbrechung durch Besitzverlust (§ 940) beseitigt die
+// verstrichene Zeit (§ 942), gilt aber als nicht erfolgt, wenn der
+// Eigenbesitz ohne Willen verloren und binnen Jahresfrist wiedererlangt ist
+// (§ 940 Abs. 2). Im ersten Schnitt: EIN Hemmungszeitraum je Besitzlage.
+//
+// WERTVERHÄLTNIS (§ 947 Abs. 1): die Anteile sind das Verhältnis der Werte
+// zur Zeit der Verbindung — als Paar ganzer Zahlen (Wert der Sache in Cent,
+// Summe der Werte). Keine Dezimalzahl, keine Rundung.
+
+pub entity Veraeusserung {
+    label de official "Veräußerung einer beweglichen Sache: Einigung und Übergabe oder ihr Ersatz (§§ 929–931)";
+    label en unofficial "transfer of a movable: agreement and delivery or its substitute (§§ 929–931)";
+}
+pub entity Verbindung {
+    label de official "Verbindung, Vermischung oder Verarbeitung beweglicher Sachen (§§ 946–950)";
+    label en unofficial "combination, mixing or processing of movables (§§ 946–950)";
+}
+
+// --- Eigentümerstand des Falls ---------------------------------------------------------------------
+
+pub relation eigentumswechsel_im_fall(s: Sache) kind empirical {
+    label de official "der Fall beurteilt einen Eigentumswechsel an dieser Sache — ausdrückliche Angabe; das Fehlen der Angabe ist keine Verneinung";
+    label en unofficial "the case judges a change of ownership of this thing — explicit input; absence of the input is not a denial";
+}
+
+pub relation eigentum_am_grundstueck_erworben(g: Grundstueck, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an einem Grundstück durch Auflassung und Eintragung (§ 873, § 925) oder Aneignung des Fiskus (§ 928 Abs. 2)";
+    label en unofficial "acquisition of ownership of land by conveyance and registration (§ 873, § 925) or appropriation by the treasury (§ 928 (2))";
+}
+
+pub relation eigentum_durch_uebereignung_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an einer beweglichen Sache durch Übereignung (§§ 929–934)";
+    label en unofficial "acquisition of ownership of a movable by transfer (§§ 929–934)";
+}
+
+pub relation eigentum_durch_ersitzung_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums durch Ersitzung (§ 937 Abs. 1)";
+    label en unofficial "acquisition of ownership by prescription (§ 937 (1))";
+}
+
+pub relation eigentum_durch_verbindung_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums durch Verbindung oder als Eigentümer der Hauptsache (§ 946, § 947 Abs. 2)";
+    label en unofficial "acquisition of ownership by combination or as owner of the principal thing (§ 946, § 947 (2))";
+}
+
+pub relation eigentum_durch_verarbeitung_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an der neuen Sache durch Verarbeitung (§ 950 Abs. 1)";
+    label en unofficial "acquisition of ownership of the new thing by processing (§ 950 (1))";
+}
+
+pub relation eigentum_an_erzeugnissen_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an getrennten Erzeugnissen und Bestandteilen (§ 953)";
+    label en unofficial "acquisition of ownership of separated produce and components (§ 953)";
+}
+
+pub relation eigentum_durch_aneignung_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an einer herrenlosen beweglichen Sache durch Aneignung (§ 958 Abs. 1)";
+    label en unofficial "acquisition of ownership of an ownerless movable by appropriation (§ 958 (1))";
+}
+
+@source(BGB_P873)
+rule SammeltAmGrundstueck(g: Grundstueck, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Grundstück (§ 873, § 925, § 928)";
+    label en unofficial "collection of acquisition grounds: land (§ 873, § 925, § 928)";
+    when eigentum_am_grundstueck_erworben(g, p);
+    then eigentum_erworben(g, p);
+}
+
+// --- § 926 Zubehör des Grundstücks (Welle B6, Block 3) -----------------------------------------------
+//
+// Abs. 1 Satz 2 ist eine WIDERLEGLICHE VERMUTUNG „im Zweifel“ — dasselbe
+// Muster wie § 891 und § 1006 dieses Pakets (`presume … unless`), nicht ein
+// flacher Fallsatz. Abs. 2 (gutgläubiger Erwerb von Zubehörstücken, die dem
+// Veräußerer nicht gehören, nach §§ 932–936) braucht KEINEN eigenen Kopf:
+// legt der Fall für das betroffene Zubehörstück eine eigene `Veraeusserung`
+// mit den gewohnten §§ 929–934-Tatsachen an (Einigung, Übergabe,
+// Nichtberechtigung des Veräußerers, guter Glaube nach § 932), greift die
+// bereits bestehende Erwerbskette dieses Pakets unverändert — § 926 Abs. 2
+// fügt dem Modell keinen neuen Mechanismus hinzu, er bestätigt nur, dass
+// §§ 932–936 auch im Zubehör-Kontext gelten (Ledger D-10-13, revidiert D-10-11).
+
+pub relation zubehoerstueck(g: Grundstueck, z: Sache) kind empirical {
+    label de official "Zubehörstück des Grundstücks (§ 926 Abs. 1)";
+    label en unofficial "accessory of the land (§ 926 (1))";
+}
+pub relation zubehoer_gehoert_dem_veraeusserer_zur_zeit_des_erwerbs(g: Grundstueck, z: Sache) kind empirical {
+    label de official "das Zubehörstück gehört zur Zeit des Erwerbs dem Veräußerer (§ 926 Abs. 1 Satz 1)";
+    label en unofficial "the accessory belongs to the transferor at the time of acquisition (§ 926 (1) sentence 1)";
+}
+pub relation einigkeit_ueber_ausschluss_des_zubehoers(g: Grundstueck) kind empirical {
+    label de official "Veräußerer und Erwerber sind ausdrücklich darüber einig, dass sich die Veräußerung NICHT auf das Zubehör erstrecken soll — Eingabe des Falls, die die Vermutung widerlegt (§ 926 Abs. 1 Satz 2)";
+    label en unofficial "transferor and acquirer expressly agree that the transfer does NOT extend to the accessories — case input rebutting the presumption (§ 926 (1) sentence 2)";
+}
+pub relation einigkeit_ueber_erstreckung_auf_zubehoer(g: Grundstueck) kind derived {
+    label de official "Veräußerer und Erwerber sind darüber einig, dass sich die Veräußerung auf das Zubehör des Grundstücks erstrecken soll (§ 926 Abs. 1 Satz 1); im Zweifel wird dies vermutet (Satz 2)";
+    label en unofficial "transferor and acquirer agree that the transfer extends to the accessories of the land (§ 926 (1) sentence 1); presumed in case of doubt (sentence 2)";
+}
+
+@source(BGB_P926)
+presumption ErstreckungAufZubehoerImZweifel(g: Grundstueck, veraeusserer: Person, erwerber: Person) {
+    label de official "Im Zweifel ist anzunehmen, dass sich die Veräußerung eines Grundstücks auf das Zubehör erstrecken soll (§ 926 Abs. 1 Satz 2)";
+    label en unofficial "In case of doubt it is presumed that the transfer of land extends to its accessories (§ 926 (1) sentence 2)";
+    when eigentum_am_grundstueck_erworben(g, erwerber) and eigentuemer_vor_dem_vorgang(g, veraeusserer);
+    presume einigkeit_ueber_erstreckung_auf_zubehoer(g);
+    unless eigentum_am_grundstueck_erworben(g, erwerber) and eigentuemer_vor_dem_vorgang(g, veraeusserer)
+        and einigkeit_ueber_ausschluss_des_zubehoers(g) then not einigkeit_ueber_erstreckung_auf_zubehoer(g);
+}
+
+pub relation eigentum_durch_zubehoerregel_erworben(z: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums am Zubehörstück mit dem Grundstück (§ 926 Abs. 1)";
+    label en unofficial "acquisition of ownership of the accessory together with the land (§ 926 (1))";
+}
+
+@source(BGB_P926)
+rule ErwerbDesZubehoersMitDemGrundstueck926(g: Grundstueck, z: Sache, erwerber: Person) defeasible {
+    label de official "Sind Veräußerer und Erwerber darüber einig, dass sich die Veräußerung auf das Zubehör des Grundstücks erstrecken soll, so erlangt der Erwerber mit dem Eigentum an dem Grundstück auch das Eigentum an den zur Zeit des Erwerbs vorhandenen Zubehörstücken, soweit sie dem Veräußerer gehören (§ 926 Abs. 1 Satz 1)";
+    label en unofficial "If transferor and acquirer agree that the transfer extends to the accessories, the acquirer obtains ownership of the accessories present at the time of acquisition, in so far as they belong to the transferor, together with ownership of the land (§ 926 (1) sentence 1)";
+    when eigentum_am_grundstueck_erworben(g, erwerber) and einigkeit_ueber_erstreckung_auf_zubehoer(g)
+        and zubehoerstueck(g, z) and zubehoer_gehoert_dem_veraeusserer_zur_zeit_des_erwerbs(g, z);
+    then eigentum_durch_zubehoerregel_erworben(z, erwerber);
+}
+
+@source(BGB_P926)
+rule SammeltDurchZubehoerregel(z: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Zubehör (§ 926 Abs. 1)";
+    label en unofficial "collection of acquisition grounds: accessories (§ 926 (1))";
+    when eigentum_durch_zubehoerregel_erworben(z, p);
+    then eigentum_erworben(z, p);
+}
+
+@source(BGB_P929)
+rule SammeltDurchUebereignung(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Übereignung beweglicher Sachen (§§ 929–934)";
+    label en unofficial "collection of acquisition grounds: transfer of movables (§§ 929–934)";
+    when eigentum_durch_uebereignung_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+@source(BGB_P937)
+rule SammeltDurchErsitzung(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Ersitzung (§ 937)";
+    label en unofficial "collection of acquisition grounds: prescription (§ 937)";
+    when eigentum_durch_ersitzung_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+@source(BGB_P946)
+rule SammeltDurchVerbindung(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Verbindung und Hauptsache (§ 946, § 947 Abs. 2)";
+    label en unofficial "collection of acquisition grounds: combination and principal thing (§ 946, § 947 (2))";
+    when eigentum_durch_verbindung_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+@source(BGB_P950)
+rule SammeltDurchVerarbeitung(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Verarbeitung (§ 950)";
+    label en unofficial "collection of acquisition grounds: processing (§ 950)";
+    when eigentum_durch_verarbeitung_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+@source(BGB_P953)
+rule SammeltAnErzeugnissen(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: getrennte Erzeugnisse (§ 953)";
+    label en unofficial "collection of acquisition grounds: separated produce (§ 953)";
+    when eigentum_an_erzeugnissen_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+@source(BGB_P958)
+rule SammeltDurchAneignung(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Aneignung herrenloser Sachen (§ 958)";
+    label en unofficial "collection of acquisition grounds: appropriation of ownerless things (§ 958)";
+    when eigentum_durch_aneignung_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+@source(BGB_P903)
+rule EigentuemerNachDemErwerb(s: Sache, p: Person) defeasible {
+    label de official "Eigentümer ist, wer das Eigentum nach den §§ 925 ff., 929 ff., 937, 946 ff., 958, 973, 984 erworben hat";
+    label en unofficial "The owner is the person who acquired ownership under §§ 925 et seq., 929 et seq., 937, 946 et seq., 958, 973, 984";
+    when eigentum_erworben(s, p);
+    then eigentuemer(s, p);
+}
+
+@source(BGB_P903)
+rule BisherigerEigentuemerBleibtEigentuemer(s: Sache, p: Person) defeasible {
+    label de official "Ohne Eigentumswechsel bleibt es bei dem Eigentümer, den der Fall nennt (§ 903)";
+    label en unofficial "Without a change of ownership the owner named by the case remains the owner (§ 903)";
+    when eigentuemer_vor_dem_vorgang(s, p);
+    unless eigentuemer_vor_dem_vorgang(s, p) and eigentumswechsel_im_fall(s);
+    then eigentuemer(s, p);
+}
+
+// --- Titel 2: Erwerb und Verlust des Eigentums an Grundstücken (§§ 925, 928) ----------------------
+
+pub relation auflassung_bei_gleichzeitiger_anwesenheit_vor_zustaendiger_stelle(r: Recht) kind empirical {
+    label de official "die Auflassung ist bei gleichzeitiger Anwesenheit beider Teile vor einer zuständigen Stelle (insbesondere einem Notar) erklärt worden (§ 925 Abs. 1 Satz 1, 2)";
+    label en unofficial "the conveyance was declared with both parties present simultaneously before a competent authority, in particular a notary (§ 925 (1) sentences 1, 2)";
+}
+pub relation auflassung_unter_bedingung_oder_zeitbestimmung(r: Recht) kind empirical {
+    label de official "die Auflassung erfolgt unter einer Bedingung oder einer Zeitbestimmung (§ 925 Abs. 2)";
+    label en unofficial "the conveyance is made subject to a condition or a time provision (§ 925 (2))";
+}
+pub relation verzicht_dem_grundbuchamt_gegenueber_erklaert(g: Grundstueck) kind empirical {
+    label de official "der Eigentümer hat den Verzicht dem Grundbuchamt gegenüber erklärt und der Verzicht ist in das Grundbuch eingetragen (§ 928 Abs. 1)";
+    label en unofficial "the owner declared the waiver to the land registry and it was registered (§ 928 (1))";
+}
+pub relation fiskus_des_landes(g: Grundstueck, fiskus: Person) kind empirical {
+    label de official "Fiskus des Landes, in dem das Grundstück liegt (§ 928 Abs. 2 Satz 1)";
+    label en unofficial "treasury of the Land in which the plot is situated (§ 928 (2) sentence 1)";
+}
+pub relation fiskus_hat_sich_eintragen_lassen(g: Grundstueck) kind empirical {
+    label de official "der Fiskus hat sich als Eigentümer in das Grundbuch eintragen lassen (§ 928 Abs. 2 Satz 2)";
+    label en unofficial "the treasury had itself registered as owner (§ 928 (2) sentence 2)";
+}
+pub relation auflassung_wirksam(r: Recht) kind derived {
+    label de official "die Auflassung ist wirksam erklärt (§ 925)";
+    label en unofficial "the conveyance has been validly declared (§ 925)";
+}
+pub relation grundstueck_herrenlos(g: Grundstueck) kind derived {
+    label de official "das Eigentum an dem Grundstück ist aufgegeben (§ 928 Abs. 1)";
+    label en unofficial "ownership of the plot has been relinquished (§ 928 (1))";
+}
+
+@source(BGB_P925)
+rule AuflassungWirksam(r: Recht) defeasible {
+    label de official "Die zur Übertragung des Eigentums an einem Grundstück nach § 873 erforderliche Einigung des Veräußerers und des Erwerbers (Auflassung) muss bei gleichzeitiger Anwesenheit beider Teile vor einer zuständigen Stelle erklärt werden (§ 925 Abs. 1); eine Auflassung, die unter einer Bedingung oder einer Zeitbestimmung erfolgt, ist unwirksam (Abs. 2)";
+    label en unofficial "The agreement required by § 873 for the transfer of land (conveyance) must be declared with both parties present before a competent authority (§ 925 (1)); a conveyance subject to a condition or time provision is void ((2))";
+    when auflassung_bei_gleichzeitiger_anwesenheit_vor_zustaendiger_stelle(r);
+    unless auflassung_bei_gleichzeitiger_anwesenheit_vor_zustaendiger_stelle(r) and auflassung_unter_bedingung_oder_zeitbestimmung(r);
+    then auflassung_wirksam(r);
+}
+
+@source(BGB_P925)
+rule EigentumsuebergangAmGrundstueck(r: Recht, g: Grundstueck, veraeusserer: Person, erwerber: Person) defeasible {
+    label de official "Zur Übertragung des Eigentums an einem Grundstück sind die Auflassung (§ 925) und die Eintragung der Rechtsänderung in das Grundbuch (§ 873 Abs. 1) erforderlich";
+    label en unofficial "Transfer of ownership of land requires the conveyance (§ 925) and registration of the change in the land register (§ 873 (1))";
+    when auflassung_wirksam(r) and recht_am_grundstueck(r, g) and rechtsaenderung_eingetreten(r, veraeusserer, erwerber);
+    then eigentum_am_grundstueck_erworben(g, erwerber);
+}
+
+@source(BGB_P928) {
+    rule AufgabeDesEigentumsAmGrundstueck(g: Grundstueck) strict {
+        label de official "Das Eigentum an einem Grundstück kann dadurch aufgegeben werden, dass der Eigentümer den Verzicht dem Grundbuchamt gegenüber erklärt und der Verzicht in das Grundbuch eingetragen wird (§ 928 Abs. 1)";
+        label en unofficial "Ownership of land may be relinquished by declaring the waiver to the land registry and having it registered (§ 928 (1))";
+        when verzicht_dem_grundbuchamt_gegenueber_erklaert(g);
+        then grundstueck_herrenlos(g);
+    }
+    rule AneignungDurchDenFiskus(g: Grundstueck, fiskus: Person) defeasible {
+        label de official "Das Recht zur Aneignung des aufgegebenen Grundstücks steht dem Fiskus des Landes zu, in dem das Grundstück liegt; der Fiskus erwirbt das Eigentum dadurch, dass er sich als Eigentümer in das Grundbuch eintragen lässt (§ 928 Abs. 2)";
+        label en unofficial "The right to appropriate the relinquished plot belongs to the treasury of the Land; it acquires ownership by having itself registered as owner (§ 928 (2))";
+        when grundstueck_herrenlos(g) and fiskus_des_landes(g, fiskus) and fiskus_hat_sich_eintragen_lassen(g);
+        then eigentum_am_grundstueck_erworben(g, fiskus);
+    }
+}
+
+// --- Titel 3: Übertragung beweglicher Sachen (§§ 929–936) -----------------------------------------
+
+pub relation veraeusserte_sache(v: Veraeusserung, s: Sache) kind empirical {
+    key(v);
+    label de official "Sache, die veräußert wird (§ 929 Satz 1)";
+    label en unofficial "thing being transferred (§ 929 sentence 1)";
+}
+pub relation veraeusserer(v: Veraeusserung, p: Person) kind empirical {
+    key(v);
+    label de official "Veräußerer (§ 929 Satz 1)";
+    label en unofficial "transferor (§ 929 sentence 1)";
+}
+pub relation erwerber(v: Veraeusserung, p: Person) kind empirical {
+    key(v);
+    label de official "Erwerber (§ 929 Satz 1)";
+    label en unofficial "acquirer (§ 929 sentence 1)";
+}
+pub relation einigung_ueber_den_eigentumsuebergang(v: Veraeusserung) kind empirical {
+    label de official "beide sind darüber einig, dass das Eigentum übergehen soll (§ 929 Satz 1)";
+    label en unofficial "both agree that ownership is to pass (§ 929 sentence 1)";
+}
+pub relation uebergabe_erfolgt(v: Veraeusserung) kind empirical {
+    label de official "der Eigentümer übergibt die Sache dem Erwerber (§ 929 Satz 1)";
+    label en unofficial "the owner delivers the thing to the acquirer (§ 929 sentence 1)";
+}
+pub relation erwerber_ist_im_besitz(v: Veraeusserung) kind empirical {
+    label de official "der Erwerber ist im Besitz der Sache; dann genügt die Einigung über den Übergang des Eigentums (§ 929 Satz 2)";
+    label en unofficial "the acquirer is in possession; then the agreement on the passing of ownership suffices (§ 929 sentence 2)";
+}
+pub relation besitz_vom_veraeusserer_erlangt(v: Veraeusserung) kind empirical {
+    label de official "der Erwerber hatte den Besitz von dem Veräußerer erlangt (§ 932 Abs. 1 Satz 2, § 936 Abs. 1 Satz 2)";
+    label en unofficial "the acquirer had obtained possession from the transferor (§ 932 (1) sentence 2, § 936 (1) sentence 2)";
+}
+pub relation besitzkonstitut_vereinbart(v: Veraeusserung) kind empirical {
+    label de official "zwischen dem Eigentümer und dem Erwerber ist ein Rechtsverhältnis vereinbart, vermöge dessen der Erwerber den mittelbaren Besitz erlangt (§ 930)";
+    label en unofficial "a legal relationship has been agreed by which the acquirer obtains indirect possession (§ 930)";
+}
+pub relation herausgabeanspruch_abgetreten(v: Veraeusserung) kind empirical {
+    label de official "der Eigentümer tritt dem Erwerber den Anspruch auf Herausgabe der Sache ab (§ 931)";
+    label en unofficial "the owner assigns the claim for return of the thing to the acquirer (§ 931)";
+}
+pub relation dritter_im_besitz(v: Veraeusserung, dritter: Person) kind empirical {
+    label de official "ein Dritter ist im Besitz der Sache (§ 931, § 934, § 936 Abs. 3)";
+    label en unofficial "a third party is in possession of the thing (§ 931, § 934, § 936 (3))";
+}
+pub relation veraeusserer_ist_mittelbarer_besitzer(v: Veraeusserung) kind empirical {
+    label de official "der Veräußerer ist mittelbarer Besitzer der Sache (§ 934 Halbsatz 1)";
+    label en unofficial "the transferor is the indirect possessor of the thing (§ 934)";
+}
+pub relation besitz_vom_dritten_erlangt(v: Veraeusserung) kind empirical {
+    label de official "der Erwerber erlangt den Besitz der Sache von dem Dritten (§ 934 Halbsatz 2)";
+    label en unofficial "the acquirer obtains possession of the thing from the third party (§ 934)";
+}
+pub relation uebergabe_durch_den_veraeusserer_nachgeholt(v: Veraeusserung) kind empirical {
+    label de official "die Sache wird dem Erwerber von dem Veräußerer übergeben (§ 933)";
+    label en unofficial "the thing is delivered to the acquirer by the transferor (§ 933)";
+}
+pub relation veraeusserer_ist_nicht_eigentuemer(v: Veraeusserung) kind empirical {
+    label de official "die Sache gehört nicht dem Veräußerer (§ 932 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the thing does not belong to the transferor (§ 932 (1) sentence 1) — established fact";
+}
+pub relation kenntnis_dass_die_sache_nicht_dem_veraeusserer_gehoert(v: Veraeusserung) kind empirical {
+    label de official "dem Erwerber ist bekannt, dass die Sache nicht dem Veräußerer gehört (§ 932 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "the acquirer knows that the thing does not belong to the transferor (§ 932 (2)) — established fact";
+}
+pub external judgment relation grob_fahrlaessige_unkenntnis_des_erwerbers(v: Veraeusserung) {
+    authority Court;
+    label de official "§ 932 Abs. 2: dem Erwerber ist infolge grober Fahrlässigkeit unbekannt, dass die Sache nicht dem Veräußerer gehört — Wertung des Gerichts";
+    label en unofficial "§ 932 (2): the acquirer is unaware through gross negligence that the thing does not belong to the transferor — evaluation by the court";
+}
+pub relation abhanden_gekommen(s: Sache) kind empirical {
+    label de official "die Sache ist dem Eigentümer gestohlen worden, verloren gegangen oder sonst abhanden gekommen (§ 935 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "the thing was stolen from, lost by or otherwise removed from the owner (§ 935 (1)) — established fact";
+}
+pub relation geld_oder_inhaberpapier_oder_oeffentliche_versteigerung(s: Sache) kind empirical {
+    label de official "es handelt sich um Geld oder Inhaberpapiere oder um Sachen, die im Wege öffentlicher Versteigerung oder in einer Versteigerung nach § 979 Absatz 1a veräußert werden (§ 935 Abs. 2)";
+    label en unofficial "the case concerns money, bearer instruments or things sold at public auction or an auction under § 979 (1a) (§ 935 (2))";
+}
+pub relation recht_eines_dritten_an_der_sache(s: Sache, dritter: Person) kind empirical {
+    label de official "die veräußerte Sache ist mit dem Recht eines Dritten belastet (§ 936 Abs. 1 Satz 1)";
+    label en unofficial "the transferred thing is encumbered with a third party's right (§ 936 (1) sentence 1)";
+}
+pub external judgment relation nicht_in_gutem_glauben_in_ansehung_des_rechts(v: Veraeusserung, dritter: Person) {
+    authority Court;
+    label de official "§ 936 Abs. 2: der Erwerber ist in Ansehung des Rechts des Dritten nicht in gutem Glauben — Wertung des Gerichts";
+    label en unofficial "§ 936 (2): the acquirer is not in good faith as regards the third party's right — evaluation by the court";
+}
+
+pub relation uebereignungstatbestand(v: Veraeusserung) kind derived {
+    label de official "Tatbestand der Übereignung: Einigung und Übergabe oder ihr Ersatz (§§ 929–931)";
+    label en unofficial "elements of the transfer: agreement and delivery or its substitute (§§ 929–931)";
+}
+pub relation nicht_in_gutem_glauben(v: Veraeusserung) kind derived {
+    label de official "Der Erwerber ist nicht in gutem Glauben, wenn ihm bekannt oder infolge grober Fahrlässigkeit unbekannt ist, dass die Sache nicht dem Veräußerer gehört (§ 932 Abs. 2)";
+    label en unofficial "The acquirer is not in good faith if they know, or are unaware through gross negligence, that the thing does not belong to the transferor (§ 932 (2))";
+}
+pub relation gutglaeubiger_erwerb_ausgeschlossen(v: Veraeusserung) kind derived {
+    label de official "Der gutgläubige Erwerb ist ausgeschlossen (§ 932 Abs. 1 Satz 1 Halbsatz 2, § 933, § 934, § 935 Abs. 1)";
+    label en unofficial "Acquisition in good faith is excluded (§ 932 (1), § 933, § 934, § 935 (1))";
+}
+pub relation recht_des_dritten_erloschen(s: Sache, dritter: Person) kind derived {
+    label de official "Das Recht des Dritten erlischt mit dem Erwerb des Eigentums (§ 936 Abs. 1 Satz 1)";
+    label en unofficial "The third party's right lapses upon the acquisition of ownership (§ 936 (1) sentence 1)";
+}
+
+@source(BGB_P929) {
+    rule UebereignungDurchEinigungUndUebergabe(v: Veraeusserung) strict {
+        label de official "Zur Übertragung des Eigentums an einer beweglichen Sache ist erforderlich, dass der Eigentümer die Sache dem Erwerber übergibt und beide darüber einig sind, dass das Eigentum übergehen soll (§ 929 Satz 1)";
+        label en unofficial "Transfer of ownership of a movable requires the owner to deliver the thing to the acquirer and both to agree that ownership is to pass (§ 929 sentence 1)";
+        when einigung_ueber_den_eigentumsuebergang(v) and uebergabe_erfolgt(v);
+        then uebereignungstatbestand(v);
+    }
+    rule UebereignungBeiBesitzDesErwerbers(v: Veraeusserung) strict {
+        label de official "Ist der Erwerber im Besitz der Sache, so genügt die Einigung über den Übergang des Eigentums (§ 929 Satz 2)";
+        label en unofficial "If the acquirer is in possession, the agreement on the passing of ownership suffices (§ 929 sentence 2)";
+        when einigung_ueber_den_eigentumsuebergang(v) and erwerber_ist_im_besitz(v);
+        then uebereignungstatbestand(v);
+    }
+    rule EigentumsuebergangVomBerechtigten(v: Veraeusserung, s: Sache, ver: Person, erw: Person) defeasible {
+        label de official "Die Übereignung nach § 929 überträgt das Eigentum, wenn der Veräußerer Eigentümer ist";
+        label en unofficial "The transfer under § 929 passes ownership if the transferor is the owner";
+        when uebereignungstatbestand(v) and veraeusserte_sache(v, s) and veraeusserer(v, ver)
+            and erwerber(v, erw) and eigentuemer_vor_dem_vorgang(s, ver) and bewegliche_sache(s);
+        then eigentum_durch_uebereignung_erworben(s, erw);
+    }
+}
+
+@source(BGB_P930)
+rule BesitzkonstitutErsetztDieUebergabe(v: Veraeusserung) strict {
+    label de official "Ist der Eigentümer im Besitz der Sache, so kann die Übergabe dadurch ersetzt werden, dass zwischen ihm und dem Erwerber ein Rechtsverhältnis vereinbart wird, vermöge dessen der Erwerber den mittelbaren Besitz erlangt (§ 930)";
+    label en unofficial "If the owner is in possession, delivery may be replaced by agreeing a relationship giving the acquirer indirect possession (§ 930)";
+    when einigung_ueber_den_eigentumsuebergang(v) and besitzkonstitut_vereinbart(v);
+    then uebereignungstatbestand(v);
+}
+
+@source(BGB_P931)
+rule AbtretungDesHerausgabeanspruchsErsetztDieUebergabe(v: Veraeusserung, dritter: Person) strict {
+    label de official "Ist ein Dritter im Besitz der Sache, so kann die Übergabe dadurch ersetzt werden, dass der Eigentümer dem Erwerber den Anspruch auf Herausgabe der Sache abtritt (§ 931)";
+    label en unofficial "If a third party is in possession, delivery may be replaced by the owner assigning the claim for return to the acquirer (§ 931)";
+    when einigung_ueber_den_eigentumsuebergang(v) and dritter_im_besitz(v, dritter) and herausgabeanspruch_abgetreten(v);
+    then uebereignungstatbestand(v);
+}
+
+@source(BGB_P932) {
+    rule NichtInGutemGlaubenBeiKenntnis(v: Veraeusserung) strict {
+        label de official "Der Erwerber ist nicht in gutem Glauben, wenn ihm bekannt ist, dass die Sache nicht dem Veräußerer gehört (§ 932 Abs. 2)";
+        label en unofficial "The acquirer is not in good faith if they know that the thing does not belong to the transferor (§ 932 (2))";
+        when kenntnis_dass_die_sache_nicht_dem_veraeusserer_gehoert(v);
+        then nicht_in_gutem_glauben(v);
+    }
+    rule NichtInGutemGlaubenBeiGroberFahrlaessigkeit(v: Veraeusserung) strict {
+        label de official "Der Erwerber ist nicht in gutem Glauben, wenn ihm infolge grober Fahrlässigkeit unbekannt ist, dass die Sache nicht dem Veräußerer gehört (§ 932 Abs. 2)";
+        label en unofficial "The acquirer is not in good faith if they are unaware through gross negligence (§ 932 (2))";
+        when grob_fahrlaessige_unkenntnis_des_erwerbers(v);
+        then nicht_in_gutem_glauben(v);
+    }
+    rule GutglaeubigerErwerbAusgeschlossenBeiBoesemGlauben(v: Veraeusserung) strict {
+        label de official "Durch eine nach § 929 erfolgte Veräußerung wird der Erwerber nicht Eigentümer, wenn er zu der Zeit, zu der er nach diesen Vorschriften das Eigentum erwerben würde, nicht in gutem Glauben ist (§ 932 Abs. 1 Satz 1)";
+        label en unofficial "The acquirer does not become owner if they are not in good faith at the time ownership would pass (§ 932 (1) sentence 1)";
+        when nicht_in_gutem_glauben(v);
+        then gutglaeubiger_erwerb_ausgeschlossen(v);
+    }
+    rule GutglaeubigerErwerbVomNichtberechtigten(v: Veraeusserung, s: Sache, erw: Person) defeasible {
+        label de official "Durch eine nach § 929 erfolgte Veräußerung wird der Erwerber auch dann Eigentümer, wenn die Sache nicht dem Veräußerer gehört, es sei denn, dass er zu der Zeit, zu der er nach diesen Vorschriften das Eigentum erwerben würde, nicht in gutem Glauben ist (§ 932 Abs. 1 Satz 1)";
+        label en unofficial "By a transfer under § 929 the acquirer becomes owner even if the thing does not belong to the transferor, unless they are not in good faith at that time (§ 932 (1) sentence 1)";
+        when uebereignungstatbestand(v) and veraeusserte_sache(v, s) and bewegliche_sache(s)
+            and veraeusserer_ist_nicht_eigentuemer(v) and erwerber(v, erw);
+        unless veraeusserte_sache(v, s) and erwerber(v, erw) and gutglaeubiger_erwerb_ausgeschlossen(v);
+        then eigentum_durch_uebereignung_erworben(s, erw);
+    }
+    rule ErwerbNach929Satz2NurBeiBesitzVomVeraeusserer(v: Veraeusserung) strict {
+        label de official "In dem Falle des § 929 Satz 2 gilt dies jedoch nur dann, wenn der Erwerber den Besitz von dem Veräußerer erlangt hatte (§ 932 Abs. 1 Satz 2)";
+        label en unofficial "In the case of § 929 sentence 2 this applies only if the acquirer had obtained possession from the transferor (§ 932 (1) sentence 2)";
+        when erwerber_ist_im_besitz(v) and kein_besitz_vom_veraeusserer(v);
+        then gutglaeubiger_erwerb_ausgeschlossen(v);
+    }
+}
+
+pub relation kein_besitz_vom_veraeusserer(v: Veraeusserung) kind empirical {
+    label de official "der Erwerber hatte den Besitz nicht von dem Veräußerer erlangt — ausdrückliche Angabe des Falls (§ 932 Abs. 1 Satz 2)";
+    label en unofficial "the acquirer had not obtained possession from the transferor — explicit case input (§ 932 (1) sentence 2)";
+}
+pub relation uebergabe_noch_nicht_nachgeholt(v: Veraeusserung) kind empirical {
+    label de official "die Sache ist dem Erwerber von dem Veräußerer noch nicht übergeben worden — ausdrückliche Angabe des Falls (§ 933)";
+    label en unofficial "the thing has not yet been delivered to the acquirer by the transferor — explicit case input (§ 933)";
+}
+pub relation weder_abtretung_noch_besitzerlangung(v: Veraeusserung) kind empirical {
+    label de official "der Veräußerer ist nicht mittelbarer Besitzer und der Erwerber hat den Besitz nicht von dem Dritten erlangt — ausdrückliche Angabe des Falls (§ 934)";
+    label en unofficial "the transferor is not the indirect possessor and the acquirer has not obtained possession from the third party — explicit case input (§ 934)";
+}
+
+@source(BGB_P933)
+rule GutglaeubigerErwerbBeiBesitzkonstitutErstMitUebergabe(v: Veraeusserung) strict {
+    label de official "Gehört eine nach § 930 veräußerte Sache nicht dem Veräußerer, so wird der Erwerber Eigentümer, wenn ihm die Sache von dem Veräußerer übergeben wird (§ 933) — vorher nicht";
+    label en unofficial "If a thing transferred under § 930 does not belong to the transferor, the acquirer becomes owner when the thing is delivered to them by the transferor (§ 933) — not before";
+    when besitzkonstitut_vereinbart(v) and veraeusserer_ist_nicht_eigentuemer(v) and uebergabe_noch_nicht_nachgeholt(v);
+    then gutglaeubiger_erwerb_ausgeschlossen(v);
+}
+
+@source(BGB_P934)
+rule GutglaeubigerErwerbBeiAbtretung(v: Veraeusserung) strict {
+    label de official "Gehört eine nach § 931 veräußerte Sache nicht dem Veräußerer, so wird der Erwerber, wenn der Veräußerer mittelbarer Besitzer der Sache ist, mit der Abtretung des Anspruchs, anderenfalls dann Eigentümer, wenn er den Besitz der Sache von dem Dritten erlangt (§ 934) — liegt keines von beiden vor, tritt der Erwerb nicht ein";
+    label en unofficial "If a thing transferred under § 931 does not belong to the transferor, the acquirer becomes owner on assignment where the transferor is the indirect possessor, otherwise on obtaining possession from the third party (§ 934)";
+    when herausgabeanspruch_abgetreten(v) and veraeusserer_ist_nicht_eigentuemer(v) and weder_abtretung_noch_besitzerlangung(v);
+    then gutglaeubiger_erwerb_ausgeschlossen(v);
+}
+
+@source(BGB_P935)
+rule KeinGutglaeubigerErwerbAbhandenGekommenerSachen(v: Veraeusserung, s: Sache) defeasible {
+    label de official "Der Erwerb des Eigentums auf Grund der §§ 932 bis 934 tritt nicht ein, wenn die Sache dem Eigentümer gestohlen worden, verloren gegangen oder sonst abhanden gekommen war (§ 935 Abs. 1); diese Vorschriften finden keine Anwendung auf Geld oder Inhaberpapiere sowie auf Sachen, die im Wege öffentlicher Versteigerung veräußert werden (Abs. 2)";
+    label en unofficial "Acquisition under §§ 932 to 934 does not occur if the thing was stolen, lost or otherwise removed from the owner (§ 935 (1)); this does not apply to money, bearer instruments or things sold at public auction ((2))";
+    when veraeusserte_sache(v, s) and abhanden_gekommen(s);
+    unless veraeusserte_sache(v, s) and geld_oder_inhaberpapier_oder_oeffentliche_versteigerung(s);
+    then gutglaeubiger_erwerb_ausgeschlossen(v);
+}
+
+@source(BGB_P936)
+rule ErloeschenDesRechtsDesDritten(v: Veraeusserung, s: Sache, erw: Person, dritter: Person) defeasible {
+    label de official "Ist eine veräußerte Sache mit dem Recht eines Dritten belastet, so erlischt das Recht mit dem Erwerb des Eigentums (§ 936 Abs. 1 Satz 1); es erlischt nicht, wenn der Erwerber zu der maßgebenden Zeit in Ansehung des Rechts nicht in gutem Glauben ist (Abs. 2)";
+    label en unofficial "If the transferred thing is encumbered with a third party's right, that right lapses upon acquisition of ownership (§ 936 (1) sentence 1); it does not lapse if the acquirer is not in good faith as regards it ((2))";
+    when eigentum_erworben(s, erw) and veraeusserte_sache(v, s) and erwerber(v, erw) and recht_eines_dritten_an_der_sache(s, dritter);
+    unless veraeusserte_sache(v, s) and recht_eines_dritten_an_der_sache(s, dritter)
+        and nicht_in_gutem_glauben_in_ansehung_des_rechts(v, dritter);
+    then recht_des_dritten_erloschen(s, dritter);
+}
+
+// --- Ersitzung (§§ 937–945) -----------------------------------------------------------------------
+
+pub relation ersitzungsfrist(b: Besitz, f: Frist) kind empirical {
+    label de official "Frist der Ersitzung für diese Eigenbesitzlage — Bezeichnung der Frist, deren Ablauf `de.bgb.fristen` rechnet (§ 937 Abs. 1)";
+    label en unofficial "period of acquisitive prescription for this proprietary possession — handle of the period computed by `de.bgb.fristen` (§ 937 (1))";
+}
+pub relation kenntnis_vom_fehlenden_eigentum_bei_erwerb(b: Besitz) kind empirical {
+    label de official "der Erwerber ist bei dem Erwerb des Eigenbesitzes nicht in gutem Glauben: ihm ist bekannt, dass ihm das Eigentum nicht zusteht (§ 937 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "the acquirer is not in good faith when acquiring proprietary possession: they know that ownership does not belong to them (§ 937 (2)) — established fact";
+}
+pub relation spaeter_erfahren_dass_das_eigentum_nicht_zusteht(b: Besitz) kind empirical {
+    label de official "der Eigenbesitzer erfährt später, dass ihm das Eigentum nicht zusteht (§ 937 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "the proprietary possessor later learns that ownership does not belong to them (§ 937 (2)) — established fact";
+}
+pub external judgment relation grob_fahrlaessige_unkenntnis_des_eigenbesitzers(b: Besitz) {
+    authority Court;
+    label de official "§ 937 Abs. 2 in Verbindung mit § 932 Abs. 2: dem Eigenbesitzer ist infolge grober Fahrlässigkeit unbekannt, dass ihm das Eigentum nicht zusteht — Wertung des Gerichts";
+    label en unofficial "§ 937 (2) with § 932 (2): the proprietary possessor is unaware through gross negligence that ownership does not belong to them — evaluation by the court";
+}
+pub relation ersitzung_gehemmt_von_bis(b: Besitz, von: Date, bis: Date) kind empirical {
+    key(b);
+    label de official "Zeitraum, während dessen die Ersitzung gehemmt ist (§ 939) — im ersten Schnitt ein Zeitraum je Besitzlage";
+    label en unofficial "period during which acquisitive prescription is suspended (§ 939) — one period per possession in this cut";
+}
+pub relation keine_hemmung_der_ersitzung(b: Besitz) kind empirical {
+    label de official "kein Hemmungstatbestand des § 939 festgestellt — ausdrückliche Angabe des Falls; das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "no ground of suspension under § 939 established — explicit case input; absence of an input is not a denial";
+}
+pub relation eigenbesitz_verloren_am(b: Besitz, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem der Eigenbesitz verloren worden ist (§ 940 Abs. 1)";
+    label en unofficial "day on which proprietary possession was lost (§ 940 (1))";
+}
+pub relation eigenbesitz_ohne_willen_verloren(b: Besitz) kind empirical {
+    label de official "der Eigenbesitzer hat den Eigenbesitz ohne seinen Willen verloren (§ 940 Abs. 2)";
+    label en unofficial "the proprietary possessor lost possession against their will (§ 940 (2))";
+}
+pub relation eigenbesitz_wiedererlangt_am(b: Besitz, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem der Eigenbesitz wiedererlangt worden ist (§ 940 Abs. 2)";
+    label en unofficial "day on which proprietary possession was regained (§ 940 (2))";
+}
+pub relation vollstreckungshandlung_vorgenommen_oder_beantragt(b: Besitz) kind empirical {
+    label de official "eine gerichtliche oder behördliche Vollstreckungshandlung ist vorgenommen oder beantragt worden (§ 941)";
+    label en unofficial "a judicial or official execution measure has been taken or applied for (§ 941)";
+}
+pub relation rechtsnachfolge_im_eigenbesitz(neu: Besitz, vorgaenger: Besitz) kind empirical {
+    label de official "die Sache gelangt durch Rechtsnachfolge in den Eigenbesitz eines Dritten (§ 943); die Ersitzungszeit des Rechtsvorgängers kommt ihm zugute";
+    label en unofficial "the thing passes by succession into the proprietary possession of a third party (§ 943); the predecessor's period benefits them";
+}
+
+pub relation hemmungstage_der_ersitzung(b: Besitz, tage: Integer) kind derived {
+    key(b);
+    label de official "Zahl der Tage, während deren die Ersitzung gehemmt war, erster und letzter Tag eingeschlossen (§ 939)";
+    label en unofficial "number of days during which prescription was suspended, first and last day included (§ 939)";
+}
+pub relation ersitzung_unterbrochen(b: Besitz) kind derived {
+    label de official "die Ersitzung ist unterbrochen (§ 940 Abs. 1, § 941); die bis zur Unterbrechung verstrichene Zeit kommt nicht in Betracht (§ 942)";
+    label en unofficial "prescription is interrupted (§ 940 (1), § 941); the time elapsed until the interruption is disregarded (§ 942)";
+}
+pub relation unterbrechung_gilt_als_nicht_erfolgt(b: Besitz) kind derived {
+    label de official "die Unterbrechung gilt als nicht erfolgt, wenn der Eigenbesitzer den Eigenbesitz ohne seinen Willen verloren und ihn binnen Jahresfrist wiedererlangt hat (§ 940 Abs. 2)";
+    label en unofficial "the interruption is deemed not to have occurred if possession was lost against the possessor's will and regained within one year (§ 940 (2))";
+}
+pub relation ersitzung_ausgeschlossen(b: Besitz) kind derived {
+    label de official "die Ersitzung ist ausgeschlossen (§ 937 Abs. 2)";
+    label en unofficial "acquisitive prescription is excluded (§ 937 (2))";
+}
+pub relation ersitzung_vollendet_am(b: Besitz, tag: Date) kind derived {
+    key(b);
+    label de official "Tag, mit dessen Ablauf die zehnjährige Ersitzungsfrist abgelaufen ist (§ 937 Abs. 1, § 939)";
+    label en unofficial "day at whose end the ten-year period of prescription expires (§ 937 (1), § 939)";
+}
+
+@source(BGB_P937) {
+    rule ErsitzungsfristEreignis(b: Besitz, f: Frist, e: Date) strict {
+        label de official "Wer eine bewegliche Sache zehn Jahre im Eigenbesitz hat, erwirbt das Eigentum (Ersitzung) (§ 937 Abs. 1) — Ereignis der Frist ist der Erwerb des Eigenbesitzes (§ 187 Abs. 1)";
+        label en unofficial "A person who has proprietary possession of a movable for ten years acquires ownership (§ 937 (1)) — the event is the acquisition of proprietary possession (§ 187 (1))";
+        when ersitzungsfrist(b, f) and besitz_erworben_am(b, e) and besitzt_als_ihm_gehoerend(b);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule ErsitzungsfristDauer(b: Besitz, f: Frist, e: Date) strict {
+        label de official "Die Ersitzungsfrist beträgt zehn Jahre (§ 937 Abs. 1) — Jahresschritt nach § 188 Abs. 2";
+        label en unofficial "The period of prescription is ten years (§ 937 (1)) — year step under § 188 (2)";
+        when ersitzungsfrist(b, f) and besitz_erworben_am(b, e) and besitzt_als_ihm_gehoerend(b);
+        then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+    }
+    rule ErsitzungAusgeschlossenBeiKenntnis(b: Besitz) strict {
+        label de official "Die Ersitzung ist ausgeschlossen, wenn der Erwerber bei dem Erwerb des Eigenbesitzes nicht in gutem Glauben ist (§ 937 Abs. 2)";
+        label en unofficial "Prescription is excluded if the acquirer is not in good faith when acquiring proprietary possession (§ 937 (2))";
+        when kenntnis_vom_fehlenden_eigentum_bei_erwerb(b);
+        then ersitzung_ausgeschlossen(b);
+    }
+    rule ErsitzungAusgeschlossenBeiGroberFahrlaessigkeit(b: Besitz) strict {
+        label de official "Die Ersitzung ist ausgeschlossen, wenn dem Erwerber bei dem Erwerb des Eigenbesitzes infolge grober Fahrlässigkeit unbekannt ist, dass ihm das Eigentum nicht zusteht (§ 937 Abs. 2 in Verbindung mit § 932 Abs. 2)";
+        label en unofficial "Prescription is excluded if the acquirer is unaware through gross negligence that ownership does not belong to them (§ 937 (2) with § 932 (2))";
+        when grob_fahrlaessige_unkenntnis_des_eigenbesitzers(b);
+        then ersitzung_ausgeschlossen(b);
+    }
+    rule ErsitzungAusgeschlossenBeiSpaetererKenntnis(b: Besitz) strict {
+        label de official "Die Ersitzung ist ausgeschlossen, wenn der Erwerber später erfährt, dass ihm das Eigentum nicht zusteht (§ 937 Abs. 2)";
+        label en unofficial "Prescription is excluded if the acquirer later learns that ownership does not belong to them (§ 937 (2))";
+        when spaeter_erfahren_dass_das_eigentum_nicht_zusteht(b);
+        then ersitzung_ausgeschlossen(b);
+    }
+    rule EigentumserwerbDurchErsitzung(b: Besitz, s: Sache, p: Person, ende: Date) defeasible {
+        label de official "Wer eine bewegliche Sache zehn Jahre im Eigenbesitz hat, erwirbt das Eigentum (Ersitzung) (§ 937 Abs. 1)";
+        label en unofficial "A person who has proprietary possession of a movable for ten years acquires ownership (§ 937 (1))";
+        when ersitzung_vollendet_am(b, ende) and besitzlage_sache(b, s) and besitzlage_person(b, p) and bewegliche_sache(s);
+        unless besitzlage_sache(b, s) and besitzlage_person(b, p) and ersitzung_ausgeschlossen(b);
+        then eigentum_durch_ersitzung_erworben(s, p);
+    }
+}
+
+pub relation eigenbesitz_am_anfang_und_am_ende(b: Besitz, anfang: Date, ende: Date) kind empirical {
+    key(b);
+    label de official "jemand hat eine Sache am Anfang und am Ende eines Zeitraums im Eigenbesitz gehabt (§ 938)";
+    label en unofficial "a person had proprietary possession of a thing at the beginning and at the end of a period (§ 938)";
+}
+pub relation eigenbesitz_in_der_zwischenzeit_vermutet(b: Besitz) kind derived {
+    label de official "Vermutung, dass der Eigenbesitz auch in der Zwischenzeit bestanden habe (§ 938)";
+    label en unofficial "presumption that proprietary possession also existed in the intervening period (§ 938)";
+}
+pub relation eigenbesitz_in_der_zwischenzeit_widerlegt(b: Besitz) kind empirical {
+    label de official "der Eigenbesitz in der Zwischenzeit ist widerlegt — festgestellte Tatsache, die die Vermutung des § 938 beseitigt";
+    label en unofficial "proprietary possession in the intervening period is disproved — established fact rebutting the presumption of § 938";
+}
+pub relation ersitzungszeit_kommt_zugute(neu: Besitz, vorgaenger: Besitz) kind derived {
+    label de official "die während des Besitzes des Rechtsvorgängers verstrichene Ersitzungszeit kommt dem Dritten zugute (§ 943); die zugunsten eines Erbschaftsbesitzers verstrichene Zeit kommt dem Erben zustatten (§ 944)";
+    label en unofficial "the period elapsed during the predecessor's possession benefits the third party (§ 943); the period elapsed for an apparent heir benefits the heir (§ 944)";
+}
+pub relation verstrichene_zeit_kommt_nicht_in_betracht(b: Besitz) kind derived {
+    label de official "wird die Ersitzung unterbrochen, so kommt die bis zur Unterbrechung verstrichene Zeit nicht in Betracht; eine neue Ersitzung kann erst nach der Beendigung der Unterbrechung beginnen (§ 942)";
+    label en unofficial "if prescription is interrupted, the time elapsed up to the interruption is disregarded; a new prescription may begin only after the interruption ends (§ 942)";
+}
+
+@source(BGB_P938)
+presumption VermutungDesEigenbesitzesInDerZwischenzeit(b: Besitz, anfang: Date, ende: Date) {
+    label de official "Hat jemand eine Sache am Anfang und am Ende eines Zeitraums im Eigenbesitz gehabt, so wird vermutet, dass sein Eigenbesitz auch in der Zwischenzeit bestanden habe (§ 938)";
+    label en unofficial "If a person had proprietary possession at the beginning and at the end of a period, it is presumed that possession also existed in between (§ 938)";
+    when eigenbesitz_am_anfang_und_am_ende(b, anfang, ende);
+    presume eigenbesitz_in_der_zwischenzeit_vermutet(b);
+    unless eigenbesitz_am_anfang_und_am_ende(b, anfang, ende) and eigenbesitz_in_der_zwischenzeit_widerlegt(b)
+        then not eigenbesitz_in_der_zwischenzeit_vermutet(b);
+}
+
+@source(BGB_P942)
+rule WirkungDerUnterbrechung(b: Besitz) defeasible {
+    label de official "Wird die Ersitzung unterbrochen, so kommt die bis zur Unterbrechung verstrichene Zeit nicht in Betracht; eine neue Ersitzung kann erst nach der Beendigung der Unterbrechung beginnen (§ 942)";
+    label en unofficial "If prescription is interrupted, the time elapsed until then is disregarded; a new prescription may begin only after the interruption ends (§ 942)";
+    when ersitzung_unterbrochen(b);
+    then verstrichene_zeit_kommt_nicht_in_betracht(b);
+}
+
+@source(BGB_P943)
+rule ErsitzungszeitBeiRechtsnachfolge(neu: Besitz, vorgaenger: Besitz) strict {
+    label de official "Gelangt die Sache durch Rechtsnachfolge in den Eigenbesitz eines Dritten, so kommt die während des Besitzes des Rechtsvorgängers verstrichene Ersitzungszeit dem Dritten zugute (§ 943)";
+    label en unofficial "If the thing passes by succession into the proprietary possession of a third party, the period elapsed during the predecessor's possession benefits them (§ 943)";
+    when rechtsnachfolge_im_eigenbesitz(neu, vorgaenger);
+    then ersitzungszeit_kommt_zugute(neu, vorgaenger);
+}
+
+@source(BGB_P944)
+rule ErsitzungszeitDesErbschaftsbesitzers(neu: Besitz, vorgaenger: Besitz) strict {
+    label de official "Die Ersitzungszeit, die zugunsten eines Erbschaftsbesitzers verstrichen ist, kommt dem Erben zustatten (§ 944)";
+    label en unofficial "The period of prescription elapsed in favour of an apparent heir benefits the heir (§ 944)";
+    when rechtsnachfolge_im_eigenbesitz(neu, vorgaenger) and erbe_des_vorgaengers_im_besitz(neu);
+    then ersitzungszeit_kommt_zugute(neu, vorgaenger);
+}
+
+@source(BGB_P939) {
+    rule HemmungstageDerErsitzung(b: Besitz, von: Date, bis: Date) strict {
+        label de official "Die Ersitzung ist gehemmt, wenn der Herausgabeanspruch gegen den Eigenbesitzer in einer nach den §§ 203 und 204 zur Hemmung der Verjährung geeigneten Weise geltend gemacht wird, und ferner, solange die Verjährung des Herausgabeanspruchs nach den §§ 205 bis 207 gehemmt ist (§ 939) — gezählt in Tagen, erster und letzter Tag eingeschlossen";
+        label en unofficial "Prescription is suspended where the claim for return is asserted in a manner suspending limitation under §§ 203, 204, and while limitation of that claim is suspended under §§ 205 to 207 (§ 939)";
+        when ersitzung_gehemmt_von_bis(b, von, bis);
+        then hemmungstage_der_ersitzung(b, days_between(von, bis) + 1);
+    }
+    rule ErsitzungEndeMitHemmung(b: Besitz, f: Frist, k: Date, n: Integer) strict {
+        label de official "Das Ende der Ersitzungsfrist verschiebt sich um die Tage, während deren die Ersitzung gehemmt war (§ 939, § 209 entsprechend)";
+        label en unofficial "The end of the period moves by the days during which prescription was suspended (§ 939, § 209 applied accordingly)";
+        when ersitzungsfrist(b, f) and de.bgb.fristen::frist_ende_kalender(f, k) and hemmungstage_der_ersitzung(b, n);
+        then ersitzung_vollendet_am(b, add_calendar_period(k, with_unit(n, "calendar_day")));
+    }
+    rule ErsitzungEndeOhneHemmung(b: Besitz, f: Frist, k: Date) strict {
+        label de official "Ohne Hemmung endet die Ersitzungsfrist mit dem kalendarischen Ende (§ 937 Abs. 1, §§ 187 Abs. 1, 188 Abs. 2)";
+        label en unofficial "Without suspension the period ends with the calendar end (§ 937 (1), §§ 187 (1), 188 (2))";
+        when ersitzungsfrist(b, f) and de.bgb.fristen::frist_ende_kalender(f, k) and keine_hemmung_der_ersitzung(b);
+        then ersitzung_vollendet_am(b, k);
+    }
+}
+
+@source(BGB_P940) {
+    rule UnterbrechungDurchBesitzverlust(b: Besitz, tag: Date) defeasible {
+        label de official "Die Ersitzung wird durch den Verlust des Eigenbesitzes unterbrochen (§ 940 Abs. 1); die Unterbrechung gilt als nicht erfolgt, wenn der Eigenbesitzer den Eigenbesitz ohne seinen Willen verloren und ihn binnen Jahresfrist oder mittels einer innerhalb dieser Frist erhobenen Klage wiedererlangt hat (Abs. 2)";
+        label en unofficial "Prescription is interrupted by loss of proprietary possession (§ 940 (1)); the interruption is deemed not to have occurred where possession was lost against the possessor's will and regained within one year ((2))";
+        when eigenbesitz_verloren_am(b, tag);
+        unless eigenbesitz_verloren_am(b, tag) and unterbrechung_gilt_als_nicht_erfolgt(b);
+        then ersitzung_unterbrochen(b);
+    }
+    rule UnterbrechungGiltAlsNichtErfolgt(b: Besitz, verlust: Date, wieder: Date) strict {
+        label de official "Die Unterbrechung gilt als nicht erfolgt, wenn der Eigenbesitzer den Eigenbesitz ohne seinen Willen verloren und ihn binnen Jahresfrist wiedererlangt hat (§ 940 Abs. 2) — Jahresfrist vom Tag des Verlustes (§§ 187 Abs. 1, 188 Abs. 2)";
+        label en unofficial "The interruption is deemed not to have occurred where possession was lost against the possessor's will and regained within one year (§ 940 (2))";
+        when eigenbesitz_verloren_am(b, verlust) and eigenbesitz_ohne_willen_verloren(b)
+            and eigenbesitz_wiedererlangt_am(b, wieder) and wieder <= add_calendar_period(verlust, 1 calendar_year);
+        then unterbrechung_gilt_als_nicht_erfolgt(b);
+    }
+}
+
+@source(BGB_P941)
+rule UnterbrechungDurchVollstreckungshandlung(b: Besitz) defeasible {
+    label de official "Die Ersitzung wird durch Vornahme oder Beantragung einer gerichtlichen oder behördlichen Vollstreckungshandlung unterbrochen (§ 941)";
+    label en unofficial "Prescription is interrupted by taking or applying for a judicial or official execution measure (§ 941)";
+    when vollstreckungshandlung_vorgenommen_oder_beantragt(b);
+    then ersitzung_unterbrochen(b);
+}
+
+// --- Verbindung, Vermischung, Verarbeitung (§§ 946–951) -------------------------------------------
+
+pub relation verbundene_sache(vb: Verbindung, s: Sache) kind empirical {
+    label de official "bewegliche Sache, die mit anderen verbunden oder vermischt wird (§ 947 Abs. 1, § 948 Abs. 1)";
+    label en unofficial "movable combined or mixed with others (§ 947 (1), § 948 (1))";
+}
+pub relation einheitliche_sache(vb: Verbindung, neu: Sache) kind empirical {
+    key(vb);
+    label de official "einheitliche Sache, deren wesentliche Bestandteile die verbundenen Sachen werden (§ 947 Abs. 1)";
+    label en unofficial "single thing of which the combined things become essential parts (§ 947 (1))";
+}
+pub relation hauptsache(vb: Verbindung, s: Sache) kind empirical {
+    label de official "eine der Sachen ist als die Hauptsache anzusehen (§ 947 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "one of the things is to be regarded as the principal thing (§ 947 (2)) — established fact";
+}
+pub relation wesentlicher_bestandteil_eines_grundstuecks(s: Sache, g: Grundstueck) kind empirical {
+    label de official "die bewegliche Sache wird mit einem Grundstück dergestalt verbunden, dass sie wesentlicher Bestandteil des Grundstücks wird (§ 946)";
+    label en unofficial "the movable is combined with land so as to become an essential part of it (§ 946)";
+}
+pub relation neue_sache_durch_verarbeitung(vb: Verbindung, neu: Sache, hersteller: Person) kind empirical {
+    key(vb);
+    label de official "durch Verarbeitung oder Umbildung eines oder mehrerer Stoffe ist eine neue bewegliche Sache hergestellt worden (§ 950 Abs. 1 Satz 1)";
+    label en unofficial "a new movable has been produced by processing or transforming one or more materials (§ 950 (1) sentence 1)";
+}
+pub external judgment relation wert_der_verarbeitung_erheblich_geringer(vb: Verbindung) {
+    authority Court;
+    label de official "§ 950 Abs. 1 Satz 1: der Wert der Verarbeitung oder der Umbildung ist erheblich geringer als der Wert des Stoffes — Wertung des Gerichts";
+    label en unofficial "§ 950 (1) sentence 1: the value of the processing is substantially less than the value of the material — evaluation by the court";
+}
+pub relation rechtsverlust_durch_verbindung(s: Sache, verlierer: Person, gewinner: Person) kind derived {
+    label de official "Rechtsverlust infolge der §§ 946 bis 950 (§ 951 Abs. 1 Satz 1)";
+    label en unofficial "loss of rights as a result of §§ 946 to 950 (§ 951 (1) sentence 1)";
+}
+pub relation verguetungsanspruch_in_geld(verlierer: Person, gewinner: Person) kind derived {
+    label de official "Anspruch auf Vergütung in Geld nach den Vorschriften über die Herausgabe einer ungerechtfertigten Bereicherung (§ 951 Abs. 1 Satz 1); die Wiederherstellung des früheren Zustands kann nicht verlangt werden (Satz 2)";
+    label en unofficial "claim to compensation in money under the rules on unjust enrichment (§ 951 (1) sentence 1); restoration of the former state may not be demanded (sentence 2)";
+}
+pub relation wert_der_verbundenen_sache(vb: Verbindung, s: Sache, wert: Integer) kind derived {
+    key(vb, s);
+    label de official "Wert einer verbundenen Sache zur Zeit der Verbindung, in Cent (§ 947 Abs. 1)";
+    label en unofficial "value of a combined thing at the time of combination, in cents (§ 947 (1))";
+}
+
+@source(BGB_P946)
+rule VerbindungMitEinemGrundstueck(s: Sache, g: Grundstueck, p: Person) defeasible {
+    label de official "Wird eine bewegliche Sache mit einem Grundstück dergestalt verbunden, dass sie wesentlicher Bestandteil des Grundstücks wird, so erstreckt sich das Eigentum an dem Grundstück auf diese Sache (§ 946)";
+    label en unofficial "If a movable is combined with land so as to become an essential part, ownership of the land extends to that thing (§ 946)";
+    when wesentlicher_bestandteil_eines_grundstuecks(s, g) and eigentuemer_vor_dem_vorgang(g, p);
+    then eigentum_durch_verbindung_erworben(s, p);
+}
+
+@source(BGB_P947) {
+    rule WertDerVerbundenenSache(vb: Verbindung, s: Sache, w: Integer) strict {
+        label de official "Die Anteile bestimmen sich nach dem Verhältnis des Wertes, den die Sachen zur Zeit der Verbindung haben (§ 947 Abs. 1 Halbsatz 2)";
+        label en unofficial "The shares are determined by the ratio of the values the things have at the time of combination (§ 947 (1))";
+        when verbundene_sache(vb, s) and wert_in_cent(s, w);
+        then wert_der_verbundenen_sache(vb, s, w);
+    }
+    rule MiteigentumNachDemWertverhaeltnis(vb: Verbindung, neu: Sache, s: Sache, p: Person, w: Integer) defeasible {
+        label de official "Werden bewegliche Sachen miteinander dergestalt verbunden, dass sie wesentliche Bestandteile einer einheitlichen Sache werden, so werden die bisherigen Eigentümer Miteigentümer dieser Sache; die Anteile bestimmen sich nach dem Verhältnis des Wertes, den die Sachen zur Zeit der Verbindung haben (§ 947 Abs. 1)";
+        label en unofficial "If movables are combined so as to become essential parts of a single thing, their former owners become co-owners; the shares follow the ratio of values at the time of combination (§ 947 (1))";
+        when einheitliche_sache(vb, neu) and wert_der_verbundenen_sache(vb, s, w) and eigentuemer_vor_dem_vorgang(s, p);
+        then miteigentumsanteil(neu, p, w, (sum all x: Integer for y: Sache where wert_der_verbundenen_sache(vb, y, x)));
+    }
+    rule AlleineigentumDesEigentuemersDerHauptsache(vb: Verbindung, neu: Sache, s: Sache, p: Person) defeasible {
+        label de official "Ist eine der Sachen als die Hauptsache anzusehen, so erwirbt ihr Eigentümer das Alleineigentum (§ 947 Abs. 2)";
+        label en unofficial "If one of the things is to be regarded as the principal thing, its owner acquires sole ownership (§ 947 (2))";
+        when einheitliche_sache(vb, neu) and hauptsache(vb, s) and eigentuemer_vor_dem_vorgang(s, p);
+        then eigentum_durch_verbindung_erworben(neu, p);
+    }
+}
+
+@source(BGB_P950)
+rule EigentumDesHerstellersDurchVerarbeitung(vb: Verbindung, neu: Sache, hersteller: Person) defeasible {
+    label de official "Wer durch Verarbeitung oder Umbildung eines oder mehrerer Stoffe eine neue bewegliche Sache herstellt, erwirbt das Eigentum an der neuen Sache, sofern nicht der Wert der Verarbeitung oder der Umbildung erheblich geringer ist als der Wert des Stoffes (§ 950 Abs. 1 Satz 1)";
+    label en unofficial "A person producing a new movable by processing or transforming materials acquires ownership of it unless the value of the processing is substantially less than that of the material (§ 950 (1) sentence 1)";
+    when neue_sache_durch_verarbeitung(vb, neu, hersteller);
+    unless neue_sache_durch_verarbeitung(vb, neu, hersteller) and verarbeitung_950_ausgeschlossen(vb);
+    then eigentum_durch_verarbeitung_erworben(neu, hersteller);
+}
+
+pub relation verarbeitung_950_ausgeschlossen(vb: Verbindung) kind derived {
+    label de official "der Erwerb durch Verarbeitung ist ausgeschlossen: der Wert der Verarbeitung ist erheblich geringer als der Wert des Stoffes (§ 950 Abs. 1 Satz 1)";
+    label en unofficial "acquisition by processing is excluded: the value of the processing is substantially less than that of the material (§ 950 (1) sentence 1)";
+}
+
+// Die Wertung steht als eigener Produzent OHNE weiteren Tatbestandsmitkonjunkt
+// (wie § 932 Abs. 2 dieses Pakets), damit sie nicht dieselbe Tatsachengrundlage
+// wie die Hauptregel teilt — sonst REQUIRES_JUDGMENT statt Defeater (D-10-09,
+// D-10-13; Merksatz auch hier angewandt, ohne den bestehenden `pub` der
+// Wertungsrelation selbst zu ändern).
+@source(BGB_P950)
+rule Verarbeitung950AusgeschlossenBeiGeringemWert(vb: Verbindung) strict {
+    label de official "Der Wert der Verarbeitung oder der Umbildung ist erheblich geringer als der Wert des Stoffes (§ 950 Abs. 1 Satz 1)";
+    label en unofficial "The value of the processing or transformation is substantially less than the value of the material (§ 950 (1) sentence 1)";
+    when wert_der_verarbeitung_erheblich_geringer(vb);
+    then verarbeitung_950_ausgeschlossen(vb);
+}
+
+@source(BGB_P951)
+rule VerguetungFuerDenRechtsverlust(s: Sache, verlierer: Person, gewinner: Person) defeasible {
+    label de official "Wer infolge der Vorschriften der §§ 946 bis 950 einen Rechtsverlust erleidet, kann von demjenigen, zu dessen Gunsten die Rechtsänderung eintritt, Vergütung in Geld nach den Vorschriften über die Herausgabe einer ungerechtfertigten Bereicherung fordern (§ 951 Abs. 1 Satz 1)";
+    label en unofficial "A person who loses a right under §§ 946 to 950 may demand compensation in money from the person benefiting, under the rules on unjust enrichment (§ 951 (1) sentence 1)";
+    when rechtsverlust_durch_verbindung(s, verlierer, gewinner);
+    then verguetungsanspruch_in_geld(verlierer, gewinner);
+}
+
+@source(BGB_P951)
+rule RechtsverlustDurchVerbindung(s: Sache, verlierer: Person, gewinner: Person) defeasible {
+    label de official "Rechtsverlust infolge der §§ 946 bis 950: der bisherige Eigentümer verliert das Eigentum an der Sache, das ein anderer erwirbt";
+    label en unofficial "Loss of rights under §§ 946 to 950: the previous owner loses ownership which another acquires";
+    when eigentuemer_vor_dem_vorgang(s, verlierer) and eigentum_erworben(s, gewinner);
+    then rechtsverlust_durch_verbindung(s, verlierer, gewinner);
+}
+
+// --- § 949 Erlöschen von Rechten Dritter, § 950 Abs. 2, § 952 Eigentum an Schuldurkunden (dritter Anlauf) --
+//
+// §§ 949, 950 Abs. 2 und 952 liegen im Geltungsbereich dieses Pakets
+// (§§ 854–1017) und brauchen keine Entität aus `de.bgb.dingliche_rechte`:
+// das GESICHERTE Recht selbst (Pfandrecht, Nießbrauch, Hypothek) wird nicht
+// nachgebildet, nur die Tatsache, DASS ein Dritter ein Recht an der Sache
+// bzw. der Forderung hat und WER er ist — lokale Eingaben des Falls, wie
+// bei Kenntnis oder Rechtshängigkeit an anderer Stelle dieses Pakets.
+
+pub relation recht_dritter_an_sache(s: Sache, dritter: Person) kind empirical {
+    label de official "ein Dritter hat ein Recht an der Sache — Eingabe des Falls, das Recht selbst wird nicht nachgebildet (§ 949 Satz 1, § 950 Abs. 2)";
+    label en unofficial "a third party has a right in the thing — case input, the right itself is not modelled (§ 949 sentence 1, § 950 (2))";
+}
+pub relation eigentum_an_s_erloschen_ohne_ersatzgegenstand(s: Sache) kind empirical {
+    label de official "das Eigentum an der Sache ist nach den §§ 946 bis 950 erloschen, ohne dass der bisherige Eigentümer Miteigentum oder Alleineigentum an einer neuen Sache erwirbt — Eingabe des Falls (§ 949 Satz 1)";
+    label en unofficial "ownership of the thing has lapsed under §§ 946 to 950 without the previous owner acquiring co-ownership or sole ownership of a new thing — case input (§ 949 sentence 1)";
+}
+pub relation eigentuemer_von_s_erwirbt_miteigentum_am_anteil(s: Sache, neu: Sache) kind empirical {
+    label de official "der Eigentümer der mit dem Recht des Dritten belasteten Sache erwirbt Miteigentum an der neuen Sache, dessen Anteil an die Stelle der Sache tritt — Eingabe des Falls (§ 949 Satz 2)";
+    label en unofficial "the owner of the thing encumbered with the third party's right acquires co-ownership of the new thing, whose share takes the place of the thing — case input (§ 949 sentence 2)";
+}
+pub relation eigentuemer_von_s_wird_alleineigentuemer_von(s: Sache, neu: Sache) kind empirical {
+    label de official "der Eigentümer der belasteten Sache wird Alleineigentümer der neuen Sache — Eingabe des Falls (§ 949 Satz 3)";
+    label en unofficial "the owner of the encumbered thing becomes sole owner of the new thing — case input (§ 949 sentence 3)";
+}
+pub relation recht_dritter_erloschen(s: Sache, dritter: Person) kind derived {
+    label de official "das Recht des Dritten an der Sache ist erloschen (§ 949 Satz 1, § 950 Abs. 2)";
+    label en unofficial "the third party's right in the thing has lapsed (§ 949 sentence 1, § 950 (2))";
+}
+pub relation recht_dritter_besteht_am_anteil_fort(s: Sache, dritter: Person, neu: Sache) kind derived {
+    label de official "das Recht des Dritten besteht an dem Miteigentumsanteil fort, der an die Stelle der Sache tritt (§ 949 Satz 2)";
+    label en unofficial "the third party's right continues at the co-ownership share that takes the place of the thing (§ 949 sentence 2)";
+}
+pub relation recht_dritter_erstreckt_sich_auf_hinzutretende_sache(s: Sache, dritter: Person, neu: Sache) kind derived {
+    label de official "das Recht des Dritten erstreckt sich auf die hinzutretende Sache (§ 949 Satz 3)";
+    label en unofficial "the third party's right extends to the accreted thing (§ 949 sentence 3)";
+}
+
+@source(BGB_P949) {
+    rule RechtDritterErloschen949Satz1(s: Sache, dritter: Person) strict {
+        label de official "Erlischt nach den §§ 946 bis 948 das Eigentum an einer Sache, so erlöschen auch die sonstigen an der Sache bestehenden Rechte (§ 949 Satz 1)";
+        label en unofficial "If ownership of a thing lapses under §§ 946 to 948, the other rights existing in the thing also lapse (§ 949 sentence 1)";
+        when recht_dritter_an_sache(s, dritter) and eigentum_an_s_erloschen_ohne_ersatzgegenstand(s);
+        then recht_dritter_erloschen(s, dritter);
+    }
+    rule RechtDritterBestehtAmAnteilFort949Satz2(s: Sache, dritter: Person, neu: Sache) strict {
+        label de official "Erwirbt der Eigentümer der belasteten Sache Miteigentum, so bestehen die Rechte an dem Anteil fort, der an die Stelle der Sache tritt (§ 949 Satz 2)";
+        label en unofficial "If the owner of the encumbered thing acquires co-ownership, the rights continue at the share that takes the place of the thing (§ 949 sentence 2)";
+        when recht_dritter_an_sache(s, dritter) and eigentuemer_von_s_erwirbt_miteigentum_am_anteil(s, neu);
+        then recht_dritter_besteht_am_anteil_fort(s, dritter, neu);
+    }
+    rule RechtDritterErstrecktSichAufHinzutretendeSache949Satz3(s: Sache, dritter: Person, neu: Sache) strict {
+        label de official "Wird der Eigentümer der belasteten Sache Alleineigentümer, so erstrecken sich die Rechte auf die hinzutretende Sache (§ 949 Satz 3)";
+        label en unofficial "If the owner of the encumbered thing becomes sole owner, the rights extend to the accreted thing (§ 949 sentence 3)";
+        when recht_dritter_an_sache(s, dritter) and eigentuemer_von_s_wird_alleineigentuemer_von(s, neu);
+        then recht_dritter_erstreckt_sich_auf_hinzutretende_sache(s, dritter, neu);
+    }
+}
+
+@source(BGB_P950)
+rule RechtAmStoffErlischt950Abs2(s: Sache, dritter: Person, neu: Sache, hersteller: Person) defeasible {
+    label de official "Mit dem Erwerb des Eigentums an der neuen Sache erlöschen die an dem Stoffe bestehenden Rechte (§ 950 Abs. 2)";
+    label en unofficial "On acquisition of ownership of the new thing, the rights existing in the material lapse (§ 950 (2))";
+    when recht_dritter_an_sache(s, dritter) and eigentum_durch_verarbeitung_erworben(neu, hersteller);
+    then recht_dritter_erloschen(s, dritter);
+}
+
+pub relation glaeubiger_der_forderung(urkunde: Sache, glaeubiger: Person) kind empirical {
+    key(urkunde);
+    label de official "wer Gläubiger der Forderung ist, über die die Urkunde (Schuldschein) ausgestellt ist — Eingabe des Falls, die Forderung selbst wird nicht nachgebildet (§ 952 Abs. 1 Satz 1)";
+    label en unofficial "who is the creditor of the claim for which the document (promissory note) was issued — case input, the claim itself is not modelled (§ 952 (1) sentence 1)";
+}
+pub relation berechtigter_der_urkunde_ueber_anderes_recht(urkunde: Sache, berechtigter: Person) kind empirical {
+    key(urkunde);
+    label de official "wer aus dem anderen Recht (insbesondere Hypotheken-, Grundschuld- oder Rentenschuldbrief) berechtigt ist, kraft dessen eine Leistung gefordert werden kann — Eingabe des Falls (§ 952 Abs. 2)";
+    label en unofficial "who is entitled under the other right (in particular a mortgage, land charge or annuity charge certificate) by virtue of which a performance may be demanded — case input (§ 952 (2))";
+}
+pub relation recht_dritter_an_der_forderung(urkunde: Sache, dritter: Person) kind empirical {
+    label de official "ein Dritter hat ein Recht an der Forderung, über die die Urkunde ausgestellt ist — Eingabe des Falls (§ 952 Abs. 1 Satz 2)";
+    label en unofficial "a third party has a right in the claim for which the document was issued — case input (§ 952 (1) sentence 2)";
+}
+pub relation eigentum_an_urkunde_durch_forderungsinhaberschaft_erworben(urkunde: Sache, berechtigter: Person) kind derived {
+    label de official "Eigentum an der Urkunde steht dem Gläubiger der Forderung bzw. dem aus dem anderen Recht Berechtigten zu (§ 952 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "ownership of the document belongs to the creditor of the claim, or to the person entitled under the other right (§ 952 (1) sentence 1, (2))";
+}
+pub relation recht_dritter_erstreckt_sich_auf_die_urkunde(urkunde: Sache, dritter: Person) kind derived {
+    label de official "das Recht des Dritten an der Forderung erstreckt sich auf die Urkunde (§ 952 Abs. 1 Satz 2)";
+    label en unofficial "the third party's right in the claim extends to the document (§ 952 (1) sentence 2)";
+}
+
+@source(BGB_P952) {
+    rule EigentumAmSchuldscheinStehtDemGlaeubigerZu952Abs1(urkunde: Sache, glaeubiger: Person) strict {
+        label de official "Das Eigentum an dem über eine Forderung ausgestellten Schuldschein steht dem Gläubiger zu (§ 952 Abs. 1 Satz 1)";
+        label en unofficial "Ownership of a promissory note issued for a claim belongs to the creditor (§ 952 (1) sentence 1)";
+        when glaeubiger_der_forderung(urkunde, glaeubiger);
+        then eigentum_an_urkunde_durch_forderungsinhaberschaft_erworben(urkunde, glaeubiger);
+    }
+    rule EigentumAnAndererUrkundeStehtDemBerechtigtenZu952Abs2(urkunde: Sache, berechtigter: Person) strict {
+        label de official "Das Gleiche gilt für Urkunden über andere Rechte, kraft deren eine Leistung gefordert werden kann, insbesondere für Hypotheken-, Grundschuld- und Rentenschuldbriefe (§ 952 Abs. 2)";
+        label en unofficial "The same applies to documents on other rights by virtue of which a performance may be demanded, in particular mortgage, land charge and annuity charge certificates (§ 952 (2))";
+        when berechtigter_der_urkunde_ueber_anderes_recht(urkunde, berechtigter);
+        then eigentum_an_urkunde_durch_forderungsinhaberschaft_erworben(urkunde, berechtigter);
+    }
+    rule RechtDritterErstrecktSichAufDieUrkunde952Abs1Satz2(urkunde: Sache, dritter: Person) strict {
+        label de official "Das Recht eines Dritten an der Forderung erstreckt sich auf den Schuldschein (§ 952 Abs. 1 Satz 2)";
+        label en unofficial "A third party's right in the claim extends to the promissory note (§ 952 (1) sentence 2)";
+        when recht_dritter_an_der_forderung(urkunde, dritter);
+        then recht_dritter_erstreckt_sich_auf_die_urkunde(urkunde, dritter);
+    }
+}
+
+@source(BGB_P952)
+rule SammeltDurchUrkunde952(urkunde: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Eigentum an Schuldurkunden (§ 952)";
+    label en unofficial "collection of acquisition grounds: ownership of debt documents (§ 952)";
+    when eigentum_an_urkunde_durch_forderungsinhaberschaft_erworben(urkunde, p);
+    then eigentum_erworben(urkunde, p);
+}
+
+// --- § 948 Vermischung — entsprechende Anwendung des § 947 ------------------------------------------
+
+pub relation vermischt_oder_vermengt_untrennbar(vb: Verbindung, s: Sache) kind empirical {
+    label de official "bewegliche Sachen sind miteinander untrennbar vermischt oder vermengt worden (§ 948 Abs. 1)";
+    label en unofficial "movables have been inseparably mixed or blended (§ 948 (1))";
+}
+pub relation trennung_der_vermischten_sachen_unverhaeltnismaessig_teuer(vb: Verbindung, s: Sache) kind empirical {
+    label de official "die Trennung der vermischten oder vermengten Sachen wäre mit unverhältnismäßigen Kosten verbunden — der Untrennbarkeit gleichgestellt (§ 948 Abs. 2)";
+    label en unofficial "separating the mixed things would involve disproportionate cost — treated as inseparability (§ 948 (2))";
+}
+
+@source(BGB_P948) {
+    rule VermischungGiltAlsVerbindung(vb: Verbindung, s: Sache) strict {
+        label de official "Werden bewegliche Sachen miteinander untrennbar vermischt oder vermengt, so finden die Vorschriften des § 947 entsprechende Anwendung (§ 948 Abs. 1)";
+        label en unofficial "If movables are inseparably mixed or blended, § 947 applies correspondingly (§ 948 (1))";
+        when vermischt_oder_vermengt_untrennbar(vb, s);
+        then verbundene_sache(vb, s);
+    }
+    rule UnverhaeltnismaessigeTrennungskostenGleichUntrennbarkeit(vb: Verbindung, s: Sache) strict {
+        label de official "Der Untrennbarkeit steht es gleich, wenn die Trennung mit unverhältnismäßigen Kosten verbunden sein würde (§ 948 Abs. 2)";
+        label en unofficial "Disproportionate cost of separation is treated as inseparability (§ 948 (2))";
+        when trennung_der_vermischten_sachen_unverhaeltnismaessig_teuer(vb, s);
+        then vermischt_oder_vermengt_untrennbar(vb, s);
+    }
+}
+
+// --- § 951 Abs. 2 Satz 2: Wegnahmerecht auch ohne Besitz der Hauptsache -----------------------------
+//
+// Satz 1 (Schadensersatz-, Verwendungsersatz- und Wegnahmerecht „bleiben
+// unberührt“) ist eine Nichtabbedingung: diese Regime dieses Pakets (§ 992,
+// §§ 994, 996, § 997) gelten neben § 951 unverändert fort — keine eigene
+// Regel nötig. Satz 2 ist der einzige NEUE Tatbestand: in den Fällen der
+// §§ 946, 947 ist die Wegnahme nach § 997 auch zulässig, wenn die Verbindung
+// NICHT vom Besitzer der Hauptsache bewirkt worden ist — eine zweite,
+// besitzunabhängige Quelle desselben Kopfes `wegnahmerecht` (§ 997 dieses
+// Pakets, Datei ansprueche-und-miteigentum).
+
+pub relation verbindung_nach_946_947_ohne_besitz_der_hauptsache(s: Sache, teil: Sache, wegnehmender: Person) kind empirical {
+    label de official "wer die Verbindung nach § 946 oder § 947 bewirkt hat, auch wenn er nicht Besitzer der Hauptsache ist (§ 951 Abs. 2 Satz 2)";
+    label en unofficial "whoever brought about the combination under § 946 or § 947, even if not the possessor of the principal thing (§ 951 (2) sentence 2)";
+}
+
+@source(BGB_P951)
+rule WegnahmerechtNach951Abs2Satz2(s: Sache, teil: Sache, wegnehmender: Person) defeasible {
+    label de official "In den Fällen der §§ 946, 947 ist die Wegnahme nach den für das Wegnahmerecht des Besitzers gegenüber dem Eigentümer geltenden Vorschriften auch dann zulässig, wenn die Verbindung nicht von dem Besitzer der Hauptsache bewirkt worden ist (§ 951 Abs. 2 Satz 2)";
+    label en unofficial "In the cases of §§ 946, 947 separation under the rules on the possessor's right to remove is permitted even if the connection was not made by the possessor of the principal thing (§ 951 (2) sentence 2)";
+    when verbindung_nach_946_947_ohne_besitz_der_hauptsache(s, teil, wegnehmender);
+    unless verbindung_nach_946_947_ohne_besitz_der_hauptsache(s, teil, wegnehmender) and wegnahmerecht_ausgeschlossen(s, teil, wegnehmender);
+    then wegnahmerecht(s, teil, wegnehmender);
+}
+
+// --- §§ 953–957 Erzeugnisse: Rangfolge als Eingabe des Falls ----------------------------------------
+//
+// § 953 gilt „soweit sich nicht aus den §§ 954 bis 957 ein anderes ergibt“.
+// Ob im Einzelfall eine der Ausnahmen (dinglich Berechtigter, gutgläubiger
+// Eigenbesitzer, persönlich Gestatteter, Gestattung durch Nichtberechtigten)
+// den Grundsatz verdrängt, trennt der Fall selbst durch EINE ausdrückliche
+// Eingabe (`andere_zuordnung_nach_954_bis_957_vorrangig`) — kein impliziter
+// Vorrang wird aus dem bloßen Vorliegen der Tatbestandsmerkmale gefolgert,
+// weil die Regeln der §§ 954–957 sonst gleichzeitig mit § 953 feuern und
+// zwei verschiedene Erwerber für dasselbe Erzeugnis ausweisen würden, ohne
+// dass eine der beiden Regeln die andere aussticht (Ledger D-10-10).
+
+pub relation andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis: Sache) kind empirical {
+    label de official "im Fall greift statt § 953 eine der Ausnahmen der §§ 954 bis 957 — Eingabe des Falls, die die konkurrierenden Erwerbsköpfe trennt (§ 953 Halbsatz 2, Ledger D-10-10)";
+    label en unofficial "in this case one of the exceptions of §§ 954 to 957 governs instead of § 953 — case input separating the competing acquisition heads (§ 953, second half-sentence, Ledger D-10-10)";
+}
+
+pub relation dinglich_berechtigt_zur_aneignung_der_erzeugnisse(erzeugnis: Sache, mutter: Sache, berechtigter: Person) kind empirical {
+    label de official "wer vermöge eines Rechts an einer fremden Sache befugt ist, sich Erzeugnisse oder sonstige Bestandteile der Sache anzueignen — Eingabe des Falls; das zugrunde liegende dingliche Recht (Nießbrauch u. Ä.) bleibt Sache von `de.bgb.dingliche_rechte` (§ 954)";
+    label en unofficial "whoever is entitled, by virtue of a right in another's thing, to appropriate its produce or components — case input; the underlying right (e.g. usufruct) belongs to `de.bgb.dingliche_rechte` (§ 954)";
+}
+
+@source(BGB_P954)
+rule ErwerbDurchDinglichBerechtigten954(erzeugnis: Sache, mutter: Sache, berechtigter: Person) strict {
+    label de official "Wer vermöge eines Rechts an einer fremden Sache befugt ist, sich Erzeugnisse oder sonstige Bestandteile der Sache anzueignen, erwirbt das Eigentum an ihnen mit der Trennung (§ 954)";
+    label en unofficial "A person entitled, by virtue of a right in another's thing, to appropriate its produce acquires ownership of it on separation (§ 954)";
+    when erzeugnis_der_sache(erzeugnis, mutter) and dinglich_berechtigt_zur_aneignung_der_erzeugnisse(erzeugnis, mutter, berechtigter)
+        and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+    then eigentum_an_erzeugnissen_erworben(erzeugnis, berechtigter);
+}
+
+pub relation eigenbesitzer_ohne_eigenbesitzrecht_oder_anderer_fruchtbezugsberechtigt(mutter: Sache) kind empirical {
+    label de official "der Eigenbesitzer ist nicht zum Eigenbesitz berechtigt, oder ein anderer ist vermöge eines Rechts an der Sache zum Fruchtbezug berechtigt — Eingabe des Falls (§ 955 Abs. 1 Satz 2, erste Voraussetzung)";
+    label en unofficial "the proprietary possessor is not entitled to that possession, or another is entitled to the fruits by virtue of a right in the thing — case input (§ 955 (1) sentence 2, first condition)";
+}
+pub relation eigenbesitzer_boesglaeubig_oder_erfaehrt_rechtsmangel_vor_trennung(mutter: Sache, eigenbesitzer: Person) kind empirical {
+    label de official "der Eigenbesitzer war bei dem Erwerb des Eigenbesitzes nicht in gutem Glauben, oder er erfährt vor der Trennung den Rechtsmangel — Eingabe des Falls (§ 955 Abs. 1 Satz 2, zweite Voraussetzung)";
+    label en unofficial "the proprietary possessor was not in good faith on acquiring that possession, or learns of the defect of right before separation — case input (§ 955 (1) sentence 2, second condition)";
+}
+pub relation erwerb_durch_eigenbesitzer_955_ausgeschlossen(mutter: Sache, eigenbesitzer: Person) kind derived {
+    label de official "der Erwerb der Erzeugnisse durch den Eigenbesitzer ist ausgeschlossen (§ 955 Abs. 1 Satz 2)";
+    label en unofficial "acquisition of the produce by the proprietary possessor is excluded (§ 955 (1) sentence 2)";
+}
+
+@source(BGB_P955) {
+    rule ErwerbAusgeschlossen955(mutter: Sache, eigenbesitzer: Person) strict {
+        label de official "Der Erwerb ist ausgeschlossen, wenn der Eigenbesitzer nicht zum Eigenbesitz oder ein anderer vermöge eines Rechts an der Sache zum Fruchtbezug berechtigt ist UND der Eigenbesitzer bei dem Erwerb des Eigenbesitzes nicht in gutem Glauben ist oder vor der Trennung den Rechtsmangel erfährt (§ 955 Abs. 1 Satz 2)";
+        label en unofficial "Acquisition is excluded if the possessor is not entitled to that possession (or another is entitled to the fruits) AND the possessor was not in good faith or learns of the defect before separation (§ 955 (1) sentence 2)";
+        when eigenbesitzer_ohne_eigenbesitzrecht_oder_anderer_fruchtbezugsberechtigt(mutter)
+            and eigenbesitzer_boesglaeubig_oder_erfaehrt_rechtsmangel_vor_trennung(mutter, eigenbesitzer);
+        then erwerb_durch_eigenbesitzer_955_ausgeschlossen(mutter, eigenbesitzer);
+    }
+    rule ErwerbDurchGutglaeubigenEigenbesitzer955(erzeugnis: Sache, mutter: Sache, eigenbesitzer: Person) defeasible {
+        label de official "Wer eine Sache im Eigenbesitz hat, erwirbt das Eigentum an den Erzeugnissen und sonstigen zu den Früchten der Sache gehörenden Bestandteilen mit der Trennung (§ 955 Abs. 1 Satz 1); Abs. 2 (Nutzungsberechtigter gleichgestellt) — derselbe Kopf `eigenbesitzer`, der bereits § 872 dieses Pakets führt. Abs. 3 (§ 940 Abs. 2 entsprechend für die Unterbrechung) ist durch die Abwesenheit einer Gegenregel bereits erfüllt: `eigenbesitzer` dieses Pakets ist eine punktuelle Tatsachenfeststellung (§ 872) ohne eigene Unterbrechungsregel, die § 940 Abs. 2 zu überschreiben hätte — nichts in diesem Paket lässt eine binnen Jahresfrist geheilte Besitzunterbrechung den Eigenbesitzerstatus verlieren (Muster § 889, § 999 Abs. 2, Ledger D-10-13)";
+        label en unofficial "A person having proprietary possession of a thing acquires ownership of its produce on separation (§ 955 (1) sentence 1); (2) (a usufructuary-type possessor is equated) reuses the same `eigenbesitzer` head as § 872. (3) (§ 940 (2) applied correspondingly to interruption) is already satisfied by the absence of a contrary rule: this package's `eigenbesitzer` is a point-in-time factual finding (§ 872) with no interruption rule of its own for § 940 (2) to override";
+        when erzeugnis_der_sache(erzeugnis, mutter) and eigenbesitzer(mutter, eigenbesitzer)
+            and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+        unless erzeugnis_der_sache(erzeugnis, mutter) and eigenbesitzer(mutter, eigenbesitzer)
+            and erwerb_durch_eigenbesitzer_955_ausgeschlossen(mutter, eigenbesitzer);
+        then eigentum_an_erzeugnissen_erworben(erzeugnis, eigenbesitzer);
+    }
+}
+
+pub relation gestattung_zur_aneignung_durch_eigentuemer(erzeugnis: Sache, mutter: Sache, gestatteter: Person) kind empirical {
+    label de official "der Eigentümer gestattet einem anderen, sich Erzeugnisse oder sonstige Bestandteile der Sache anzueignen — Eingabe des Falls (§ 956 Abs. 1 Satz 1)";
+    label en unofficial "the owner permits another to appropriate produce or components of the thing — case input (§ 956 (1) sentence 1)";
+}
+pub relation besitz_dem_gestatteten_ueberlassen(erzeugnis: Sache, mutter: Sache, gestatteter: Person) kind empirical {
+    label de official "der Besitz der Sache ist dem Gestatteten überlassen — bestimmt, ob der Erwerb mit der Trennung oder erst mit der Besitzergreifung eintritt (§ 956 Abs. 1 Satz 1)";
+    label en unofficial "possession of the thing has been left to the person permitted — determines whether acquisition occurs on separation or only on taking possession (§ 956 (1) sentence 1)";
+}
+pub relation erzeugnisse_in_besitz_genommen(erzeugnis: Sache, gestatteter: Person) kind empirical {
+    label de official "der Gestattete hat die Erzeugnisse oder sonstigen Bestandteile nach der Trennung in Besitz genommen — Eingabe des Falls, wenn ihm der Besitz der Sache nicht überlassen war (§ 956 Abs. 1 Satz 1)";
+    label en unofficial "the person permitted has taken possession of the produce after separation — case input where possession of the thing was not left to them (§ 956 (1) sentence 1)";
+}
+pub relation gestattung_durch_einen_anderen_als_den_eigentuemer(erzeugnis: Sache, mutter: Sache, gestatteter: Person) kind empirical {
+    label de official "die Gestattung geht nicht von dem Eigentümer, sondern von einem anderen aus, dem Erzeugnisse nach der Trennung gehören (§ 956 Abs. 2)";
+    label en unofficial "the permission is given not by the owner but by another to whom produce belongs after separation (§ 956 (2))";
+}
+pub relation gestattung_von_nichtberechtigtem(erzeugnis: Sache, mutter: Sache, gestatteter: Person) kind empirical {
+    label de official "wer die Aneignung gestattet, ist hierzu nicht berechtigt (§ 957)";
+    label en unofficial "the person permitting appropriation is not entitled to do so (§ 957)";
+}
+pub relation gestatteter_boesglaeubig_oder_erfaehrt_rechtsmangel_vor_trennung(erzeugnis: Sache, gestatteter: Person) kind empirical {
+    label de official "der Gestattete ist bei der Überlassung oder bei der Ergreifung des Besitzes der Erzeugnisse nicht in gutem Glauben oder erfährt vor der Trennung den Rechtsmangel (§ 957)";
+    label en unofficial "the person permitted was not in good faith at the transfer or at taking possession of the produce, or learns of the defect before separation (§ 957)";
+}
+
+@source(BGB_P956) {
+    rule ErwerbDurchPersoenlichBerechtigtenMitBesitzueberlassung956(erzeugnis: Sache, mutter: Sache, gestatteter: Person) defeasible {
+        label de official "Gestattet der Eigentümer einem anderen, sich Erzeugnisse anzueignen, so erwirbt dieser das Eigentum, wenn der Besitz der Sache ihm überlassen ist, mit der Trennung (§ 956 Abs. 1 Satz 1 Halbsatz 1)";
+        label en unofficial "If the owner permits another to appropriate produce, that person acquires ownership on separation if possession of the thing was left to them (§ 956 (1) sentence 1)";
+        when erzeugnis_der_sache(erzeugnis, mutter) and gestattung_zur_aneignung_durch_eigentuemer(erzeugnis, mutter, gestatteter)
+            and besitz_dem_gestatteten_ueberlassen(erzeugnis, mutter, gestatteter) and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+        then eigentum_an_erzeugnissen_erworben(erzeugnis, gestatteter);
+    }
+    rule ErwerbDurchPersoenlichBerechtigtenMitBesitzergreifung956(erzeugnis: Sache, mutter: Sache, gestatteter: Person) defeasible {
+        label de official "… anderenfalls mit der Besitzergreifung (§ 956 Abs. 1 Satz 1 Halbsatz 2)";
+        label en unofficial "… otherwise on taking possession (§ 956 (1) sentence 1)";
+        when erzeugnis_der_sache(erzeugnis, mutter) and gestattung_zur_aneignung_durch_eigentuemer(erzeugnis, mutter, gestatteter)
+            and erzeugnisse_in_besitz_genommen(erzeugnis, gestatteter) and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+        then eigentum_an_erzeugnissen_erworben(erzeugnis, gestatteter);
+    }
+    rule ErwerbBeiGestattungDurchEinenAnderen956Abs2(erzeugnis: Sache, mutter: Sache, gestatteter: Person) defeasible {
+        label de official "Das Gleiche gilt, wenn die Gestattung nicht von dem Eigentümer, sondern von einem anderen ausgeht, dem Erzeugnisse nach der Trennung gehören (§ 956 Abs. 2)";
+        label en unofficial "The same applies if the permission comes not from the owner but from another to whom the produce belongs after separation (§ 956 (2))";
+        when erzeugnis_der_sache(erzeugnis, mutter) and gestattung_durch_einen_anderen_als_den_eigentuemer(erzeugnis, mutter, gestatteter)
+            and erzeugnisse_in_besitz_genommen(erzeugnis, gestatteter) and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+        then eigentum_an_erzeugnissen_erworben(erzeugnis, gestatteter);
+    }
+}
+
+@source(BGB_P957)
+rule ErwerbBeiGestattungDurchNichtberechtigten957(erzeugnis: Sache, mutter: Sache, gestatteter: Person) defeasible {
+    label de official "§ 956 findet auch dann Anwendung, wenn derjenige, welcher die Aneignung gestattet, hierzu nicht berechtigt ist, es sei denn, dass der Gestattete bei der Überlassung oder bei der Ergreifung des Besitzes nicht in gutem Glauben ist oder vor der Trennung den Rechtsmangel erfährt (§ 957)";
+    label en unofficial "§ 956 also applies where the person permitting appropriation is not entitled to do so, unless the person permitted was not in good faith at the transfer or at taking possession, or learns of the defect before separation (§ 957)";
+    when erzeugnis_der_sache(erzeugnis, mutter) and gestattung_von_nichtberechtigtem(erzeugnis, mutter, gestatteter)
+        and erzeugnisse_in_besitz_genommen(erzeugnis, gestatteter) and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+    unless erzeugnis_der_sache(erzeugnis, mutter) and gestattung_von_nichtberechtigtem(erzeugnis, mutter, gestatteter)
+        and gestatteter_boesglaeubig_oder_erfaehrt_rechtsmangel_vor_trennung(erzeugnis, gestatteter);
+    then eigentum_an_erzeugnissen_erworben(erzeugnis, gestatteter);
+}
+
+// --- Erzeugnisse und Aneignung (§§ 953, 955, 958–963) ---------------------------------------------
+
+pub relation erzeugnis_der_sache(erzeugnis: Sache, mutter: Sache) kind empirical {
+    label de official "Erzeugnis oder sonstiger Bestandteil einer Sache nach der Trennung (§ 953)";
+    label en unofficial "produce or other component of a thing after separation (§ 953)";
+}
+pub relation herrenlose_bewegliche_sache(s: Sache) kind empirical {
+    label de official "herrenlose bewegliche Sache (§ 958 Abs. 1)";
+    label en unofficial "ownerless movable (§ 958 (1))";
+}
+pub relation in_eigenbesitz_genommen_von(s: Sache, p: Person) kind empirical {
+    label de official "die herrenlose bewegliche Sache ist in Eigenbesitz genommen worden (§ 958 Abs. 1)";
+    label en unofficial "the ownerless movable has been taken into proprietary possession (§ 958 (1))";
+}
+pub relation aneignung_gesetzlich_verboten_oder_aneignungsrecht_verletzt(s: Sache) kind empirical {
+    label de official "die Aneignung ist gesetzlich verboten oder durch die Besitzergreifung wird das Aneignungsrecht eines anderen verletzt (§ 958 Abs. 2)";
+    label en unofficial "appropriation is prohibited by law or infringes another's right of appropriation (§ 958 (2))";
+}
+pub relation besitz_in_verzichtsabsicht_aufgegeben(s: Sache) kind empirical {
+    label de official "der Eigentümer hat in der Absicht, auf das Eigentum zu verzichten, den Besitz der Sache aufgegeben (§ 959)";
+    label en unofficial "the owner gave up possession intending to relinquish ownership (§ 959)";
+}
+pub relation gefangenes_wildes_tier_wieder_frei(s: Sache) kind empirical {
+    label de official "ein gefangenes wildes Tier hat die Freiheit wiedererlangt (§ 960 Abs. 2)";
+    label en unofficial "a captured wild animal has regained its freedom (§ 960 (2))";
+}
+pub external judgment relation unverzuegliche_verfolgung(s: Sache) {
+    authority Court;
+    label de official "§ 960 Abs. 2, § 961: der Eigentümer verfolgt das Tier oder den Bienenschwarm unverzüglich und gibt die Verfolgung nicht auf — die Unverzüglichkeit ist Wertung des Gerichts, kein Nullfristmaß";
+    label en unofficial "§ 960 (2), § 961: the owner pursues the animal or swarm without undue delay and does not abandon the pursuit — immediacy is the court's evaluation, not a zero period";
+}
+pub relation bienenschwarm_ausgezogen(s: Sache) kind empirical {
+    label de official "ein Bienenschwarm ist ausgezogen (§ 961)";
+    label en unofficial "a swarm of bees has issued (§ 961)";
+}
+pub relation verfolgter_schwarm_eines_eigentuemers(gesamtschwarm: Sache, p: Person, anzahl: Integer) kind empirical {
+    label de official "Zahl der von diesem Eigentümer verfolgten Schwärme, die sich mit anderen vereinigt haben (§ 963)";
+    label en unofficial "number of swarms pursued by this owner which have united with others (§ 963)";
+}
+pub relation sache_herrenlos(s: Sache) kind derived {
+    label de official "die bewegliche Sache ist herrenlos (§ 959, § 960 Abs. 2, § 961)";
+    label en unofficial "the movable is ownerless (§ 959, § 960 (2), § 961)";
+}
+
+@source(BGB_P953)
+rule ErzeugnisseGehoerenDemEigentuemer(erzeugnis: Sache, mutter: Sache, p: Person) defeasible {
+    label de official "Erzeugnisse und sonstige Bestandteile einer Sache gehören auch nach der Trennung dem Eigentümer der Sache, soweit sich nicht aus den §§ 954 bis 957 ein anderes ergibt (§ 953); welche Regel im Einzelfall greift, trennt die Eingabe `andere_zuordnung_nach_954_bis_957_vorrangig` (Ledger D-10-10)";
+    label en unofficial "Produce and other components of a thing belong to its owner even after separation, unless §§ 954 to 957 provide otherwise (§ 953); which rule governs in a given case is separated by the input `andere_zuordnung_nach_954_bis_957_vorrangig` (Ledger D-10-10)";
+    when erzeugnis_der_sache(erzeugnis, mutter) and eigentuemer_vor_dem_vorgang(mutter, p);
+    unless erzeugnis_der_sache(erzeugnis, mutter) and eigentuemer_vor_dem_vorgang(mutter, p) and andere_zuordnung_nach_954_bis_957_vorrangig(erzeugnis);
+    then eigentum_an_erzeugnissen_erworben(erzeugnis, p);
+}
+
+@source(BGB_P958)
+rule AneignungHerrenloserBeweglicherSachen(s: Sache, p: Person) defeasible {
+    label de official "Wer eine herrenlose bewegliche Sache in Eigenbesitz nimmt, erwirbt das Eigentum an der Sache (§ 958 Abs. 1); das Eigentum wird nicht erworben, wenn die Aneignung gesetzlich verboten ist oder wenn durch die Besitzergreifung das Aneignungsrecht eines anderen verletzt wird (Abs. 2)";
+    label en unofficial "A person taking an ownerless movable into proprietary possession acquires ownership (§ 958 (1)); not so if appropriation is prohibited or infringes another's right of appropriation ((2))";
+    when herrenlose_bewegliche_sache(s) and in_eigenbesitz_genommen_von(s, p);
+    unless in_eigenbesitz_genommen_von(s, p) and aneignung_gesetzlich_verboten_oder_aneignungsrecht_verletzt(s);
+    then eigentum_durch_aneignung_erworben(s, p);
+}
+
+@source(BGB_P959)
+rule AufgabeDesEigentumsAnBeweglicherSache(s: Sache) strict {
+    label de official "Eine bewegliche Sache wird herrenlos, wenn der Eigentümer in der Absicht, auf das Eigentum zu verzichten, den Besitz der Sache aufgibt (§ 959)";
+    label en unofficial "A movable becomes ownerless if the owner gives up possession intending to relinquish ownership (§ 959)";
+    when besitz_in_verzichtsabsicht_aufgegeben(s);
+    then sache_herrenlos(s);
+}
+
+@source(BGB_P960)
+rule WiederErlangteFreiheitMachtDasTierHerrenlos(s: Sache) defeasible {
+    label de official "Erlangt ein gefangenes wildes Tier die Freiheit wieder, so wird es herrenlos, wenn nicht der Eigentümer das Tier unverzüglich verfolgt oder wenn er die Verfolgung aufgibt (§ 960 Abs. 2)";
+    label en unofficial "If a captured wild animal regains its freedom it becomes ownerless unless the owner pursues it without undue delay or abandons the pursuit (§ 960 (2))";
+    when gefangenes_wildes_tier_wieder_frei(s);
+    unless gefangenes_wildes_tier_wieder_frei(s) and unverzuegliche_verfolgung(s);
+    then sache_herrenlos(s);
+}
+
+@source(BGB_P961)
+rule AusgezogenerBienenschwarmWirdHerrenlos(s: Sache) defeasible {
+    label de official "Zieht ein Bienenschwarm aus, so wird er herrenlos, wenn nicht der Eigentümer ihn unverzüglich verfolgt oder wenn der Eigentümer die Verfolgung aufgibt (§ 961)";
+    label en unofficial "If a swarm of bees issues it becomes ownerless unless the owner pursues it without undue delay or abandons the pursuit (§ 961)";
+    when bienenschwarm_ausgezogen(s);
+    unless bienenschwarm_ausgezogen(s) and unverzuegliche_verfolgung(s);
+    then sache_herrenlos(s);
+}
+
+@source(BGB_P963)
+rule MiteigentumAmGesamtschwarm(gesamtschwarm: Sache, p: Person, k: Integer) strict {
+    label de official "Vereinigen sich ausgezogene Bienenschwärme mehrerer Eigentümer, so werden die Eigentümer, welche ihre Schwärme verfolgt haben, Miteigentümer des eingefangenen Gesamtschwarms; die Anteile bestimmen sich nach der Zahl der verfolgten Schwärme (§ 963)";
+    label en unofficial "If issued swarms of several owners unite, the owners who pursued their swarms become co-owners of the captured total swarm; the shares follow the number of swarms pursued (§ 963)";
+    when verfolgter_schwarm_eines_eigentuemers(gesamtschwarm, p, k);
+    then miteigentumsanteil(gesamtschwarm, p, k, (sum all n: Integer for q: Person where verfolgter_schwarm_eines_eigentuemers(gesamtschwarm, q, n)));
+}

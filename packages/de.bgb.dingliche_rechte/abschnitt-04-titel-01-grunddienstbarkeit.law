@@ -1,0 +1,411 @@
+// --- Buch 3 Abschnitt 4 Titel 1: Grunddienstbarkeiten (§§ 1018–1029) -------------------------------
+//
+// EINE ENTITÄT: `Grunddienstbarkeit` ist wie `Grundpfandrecht` und `Pfandrecht`
+// ein Untertyp von `Belastung`, damit gelten Eintragung (§ 873), Rang (§ 879)
+// und öffentlicher Glaube (§ 892) des Nachbarpakets unmittelbar (D-11-01).
+//
+// KANÄLE FÜR BEWERTENDE MERKMALE (DECISION-0194): „tunlichst schonen“ (§ 1020),
+// „besonders beschwerlich“ und „ebenso geeignet“ (§ 1023 Abs. 1), „billiges
+// Ermessen“ (§ 1024) sind Wertungen des Gerichts — `external judgment relation`.
+// Eintragung und die tatsächliche Ausübung sind FESTGESTELLTE TATSACHEN.
+//
+// §§ 1027, 1029 GEBEN DEM BERECHTIGTEN DIE RECHTE DER §§ 1004, 858 FF. „ENTSPRECHEND“.
+// Statt eine Brücke in das Nachbarpaket zu bauen (verboten ohne `pub` beim
+// Eigentümer, PARALLEL.md §3), stellt dieses Paket die Rechtsfolge lokal und
+// terminal fest — dieselbe Lesart wie die bereits geprüften „posylki v odin
+// konets“ des Abschnitts 7/8 (Ledger D-11-08).
+
+pub entity Grunddienstbarkeit : Belastung {
+    label de official "Grunddienstbarkeit: Belastung eines Grundstücks zugunsten des jeweiligen Eigentümers eines anderen (herrschenden) Grundstücks (§ 1018)";
+    label en unofficial "easement in land (Grunddienstbarkeit): encumbrance of land for the benefit of the owner for the time being of another (dominant) land (§ 1018)";
+}
+
+pub relation herrschendes_grundstueck(d: Grunddienstbarkeit, g: Grundstueck) kind empirical {
+    key(d);
+    label de official "herrschendes Grundstück, dessen jeweiligem Eigentümer die Grunddienstbarkeit zusteht (§ 1018)";
+    label en unofficial "dominant land whose owner for the time being holds the easement (§ 1018)";
+}
+
+pub enum Grunddienstbarkeitsinhalt {
+    label de official "Art des Inhalts der Grunddienstbarkeit nach § 1018";
+    label en unofficial "kind of content of an easement under § 1018";
+    Nutzungsrecht,
+    Unterlassungspflicht,
+    Rechtsausschluss
+}
+pub relation inhalt_der_grunddienstbarkeit(d: Grunddienstbarkeit, art: Grunddienstbarkeitsinhalt) kind empirical {
+    key(d);
+    label de official "Inhalt der Grunddienstbarkeit: Benutzung in einzelnen Beziehungen, Unterlassung gewisser Handlungen auf dem Grundstück, oder Ausschluss eines aus dem Eigentum sich ergebenden Rechts (§ 1018)";
+    label en unofficial "content of the easement: use in individual respects, forbearance of certain acts on the land, or exclusion of a right arising from ownership (§ 1018)";
+}
+pub relation vorteil_fuer_die_benutzung_des_herrschenden_grundstuecks(d: Grunddienstbarkeit) kind empirical {
+    label de official "die Belastung bietet für die Benutzung des herrschenden Grundstücks Vorteil (§ 1019 Satz 1)";
+    label en unofficial "the encumbrance offers a benefit for the use of the dominant land (§ 1019 sentence 1)";
+}
+pub relation inhalt_geht_ueber_das_vorteilsmass_hinaus(d: Grunddienstbarkeit) kind empirical {
+    label de official "der Inhalt der Dienstbarkeit ist über das aus dem Vorteil sich ergebende Maß hinaus erstreckt worden — ausdrückliche Eingabe des Falls (§ 1019 Satz 2)";
+    label en unofficial "the content of the easement was extended beyond the measure resulting from the benefit — explicit case input (§ 1019 sentence 2)";
+}
+
+pub relation grunddienstbarkeit_wirksam_bestellt(d: Grunddienstbarkeit) kind derived {
+    label de official "die Grunddienstbarkeit ist nach § 1018, § 1019 Satz 1 wirksam bestellt";
+    label en unofficial "the easement has been validly created under § 1018, § 1019 sentence 1";
+}
+pub relation inhalt_insoweit_unwirksam(d: Grunddienstbarkeit) kind derived {
+    label de official "der Inhalt der Dienstbarkeit kann nicht über das Vorteilsmaß hinaus erstreckt werden (§ 1019 Satz 2)";
+    label en unofficial "the content of the easement cannot be extended beyond the measure of the benefit (§ 1019 sentence 2)";
+}
+
+@source(BGB_P1018)
+rule GrunddienstbarkeitBestellt(d: Grunddienstbarkeit, g: Grundstueck, h: Grundstueck, p: Person) strict {
+    label de official "Ein Grundstück kann zugunsten des jeweiligen Eigentümers eines anderen (herrschenden) Grundstücks mit einer Grunddienstbarkeit belastet werden (§ 1018); die Belastung muss für die Benutzung des herrschenden Grundstücks Vorteil bieten (§ 1019 Satz 1)";
+    label en unofficial "Land may be encumbered for the benefit of the owner for the time being of another (dominant) land with an easement (§ 1018); the encumbrance must offer a benefit for the use of the dominant land (§ 1019 sentence 1)";
+    when belastungsgegenstand_grundstueck(d, g) and herrschendes_grundstueck(d, h) and berechtigter(d, p)
+        and inhalt_der_grunddienstbarkeit(d, _)
+        and vorteil_fuer_die_benutzung_des_herrschenden_grundstuecks(d);
+    then grunddienstbarkeit_wirksam_bestellt(d);
+}
+@source(BGB_P1019)
+rule InhaltUeberDasVorteilsmassHinausUnwirksam(d: Grunddienstbarkeit) strict {
+    label de official "Über das sich aus dem Vorteil ergebende Maß hinaus kann der Inhalt der Dienstbarkeit nicht erstreckt werden (§ 1019 Satz 2)";
+    label en unofficial "The content of the easement cannot be extended beyond the measure resulting from the benefit (§ 1019 sentence 2)";
+    when inhalt_geht_ueber_das_vorteilsmass_hinaus(d);
+    then inhalt_insoweit_unwirksam(d);
+}
+
+// --- § 1020: Schonende Ausübung -----------------------------------------------------------------
+
+pub relation anlage_zur_ausuebung_auf_dem_belasteten_grundstueck_gehalten(d: Grunddienstbarkeit) kind empirical {
+    label de official "der Berechtigte hält zur Ausübung der Dienstbarkeit auf dem belasteten Grundstück eine Anlage (§ 1020 Satz 2)";
+    label en unofficial "the entitled person keeps an installation on the encumbered land for the exercise of the easement (§ 1020 sentence 2)";
+}
+@source(BGB_P1020)
+pub external judgment relation eigentuemerinteresse_erfordert_erhaltung_der_anlage(d: Grunddienstbarkeit) {
+    authority Court;
+    label de official "das Interesse des Eigentümers des belasteten Grundstücks erfordert die Erhaltung der Anlage in ordnungsmäßigem Zustand (§ 1020 Satz 2) — Wertung des Gerichts";
+    label en unofficial "the interest of the owner of the encumbered land requires the installation to be kept in proper condition (§ 1020 sentence 2) — evaluation by the court";
+}
+
+pub relation schonungspflicht_bei_der_ausuebung(d: Grunddienstbarkeit) kind derived {
+    label de official "der Berechtigte hat bei der Ausübung der Dienstbarkeit das Interesse des Eigentümers des belasteten Grundstücks tunlichst zu schonen (§ 1020 Satz 1)";
+    label en unofficial "the entitled person must, when exercising the easement, spare the interest of the owner of the encumbered land as far as practicable (§ 1020 sentence 1)";
+}
+pub relation erhaltungspflicht_der_anlage(d: Grunddienstbarkeit) kind derived {
+    label de official "der Berechtigte hat die zur Ausübung gehaltene Anlage in ordnungsmäßigem Zustand zu erhalten (§ 1020 Satz 2)";
+    label en unofficial "the entitled person must keep the installation held for the exercise of the easement in proper condition (§ 1020 sentence 2)";
+}
+
+@source(BGB_P1020) {
+    rule SchonungspflichtBeiAusuebung(d: Grunddienstbarkeit) strict {
+        label de official "Bei der Ausübung einer Grunddienstbarkeit hat der Berechtigte das Interesse des Eigentümers des belasteten Grundstücks tunlichst zu schonen (§ 1020 Satz 1)";
+        label en unofficial "When exercising an easement, the entitled person must spare the interest of the owner of the encumbered land as far as practicable (§ 1020 sentence 1)";
+        when grunddienstbarkeit_wirksam_bestellt(d);
+        then schonungspflicht_bei_der_ausuebung(d);
+    }
+    rule ErhaltungspflichtDerAnlage(d: Grunddienstbarkeit) strict {
+        label de official "Hält der Berechtigte zur Ausübung der Dienstbarkeit auf dem belasteten Grundstück eine Anlage, so hat er sie in ordnungsmäßigem Zustand zu erhalten, soweit das Interesse des Eigentümers es erfordert (§ 1020 Satz 2)";
+        label en unofficial "If the entitled person keeps an installation on the encumbered land for the exercise of the easement, they must keep it in proper condition in so far as the owner's interest requires it (§ 1020 sentence 2)";
+        when anlage_zur_ausuebung_auf_dem_belasteten_grundstueck_gehalten(d) and eigentuemerinteresse_erfordert_erhaltung_der_anlage(d);
+        then erhaltungspflicht_der_anlage(d);
+    }
+}
+
+// --- §§ 1021, 1022: Unterhaltung einer zur Ausübung gehörenden Anlage ------------------------------
+//
+// Die entsprechende Anwendung der Reallastenvorschriften (§ 1021 Abs. 2, § 1022
+// Satz 2) ist ein textlicher Verweis auf Abschnitt 6 (Reallasten, §§ 1105 ff.);
+// dieses Paket berechnet ihn nicht ein zweites Mal, sondern dokumentiert ihn
+// (README „Was das Paket nicht tut“).
+
+pub relation anlage_gehoert_zur_ausuebung(d: Grunddienstbarkeit) kind empirical {
+    label de official "zur Ausübung der Grunddienstbarkeit gehört eine Anlage auf dem belasteten Grundstück (§ 1021 Abs. 1 Satz 1)";
+    label en unofficial "an installation on the encumbered land belongs to the exercise of the easement (§ 1021 (1) sentence 1)";
+}
+pub relation bestimmt_dass_eigentuemer_die_anlage_unterhaelt(d: Grunddienstbarkeit) kind empirical {
+    label de official "es ist bestimmt, dass der Eigentümer des belasteten Grundstücks die Anlage zu unterhalten hat, soweit das Interesse des Berechtigten es erfordert (§ 1021 Abs. 1 Satz 1)";
+    label en unofficial "it is determined that the owner of the encumbered land must maintain the installation as far as the entitled person's interest requires (§ 1021 (1) sentence 1)";
+}
+pub relation eigentuemer_hat_recht_zur_mitbenutzung(d: Grunddienstbarkeit) kind empirical {
+    label de official "dem Eigentümer des belasteten Grundstücks steht das Recht zur Mitbenutzung der Anlage zu (§ 1021 Abs. 1 Satz 2)";
+    label en unofficial "the owner of the encumbered land has a right to co-use the installation (§ 1021 (1) sentence 2)";
+}
+pub relation bestimmt_dass_berechtigter_die_anlage_unterhaelt(d: Grunddienstbarkeit) kind empirical {
+    label de official "es ist bestimmt, dass der Berechtigte die Anlage zu unterhalten hat, soweit es für das Benutzungsrecht des Eigentümers erforderlich ist (§ 1021 Abs. 1 Satz 2)";
+    label en unofficial "it is determined that the entitled person must maintain the installation as far as it is necessary for the owner's right of use (§ 1021 (1) sentence 2)";
+}
+pub relation anlage_auf_baulicher_anlage_des_belasteten_grundstuecks(d: Grunddienstbarkeit) kind empirical {
+    label de official "die Grunddienstbarkeit besteht in dem Recht, auf einer baulichen Anlage des belasteten Grundstücks eine bauliche Anlage zu halten (§ 1022 Satz 1)";
+    label en unofficial "the easement consists in the right to keep a structure on a structure of the encumbered land (§ 1022 sentence 1)";
+}
+pub relation keine_abweichende_bestimmung_ueber_die_unterhaltung(d: Grunddienstbarkeit) kind empirical {
+    label de official "ein anderes über die Unterhaltungspflicht ist nicht bestimmt — ausdrückliche Eingabe des Falls (§ 1022 Satz 1)";
+    label en unofficial "no other determination on the maintenance duty has been made — explicit case input (§ 1022 sentence 1)";
+}
+
+pub relation unterhaltungspflicht_des_eigentuemers(d: Grunddienstbarkeit) kind derived {
+    label de official "der Eigentümer des belasteten Grundstücks hat die Anlage zu unterhalten (§ 1021 Abs. 1 Satz 1, § 1022 Satz 1)";
+    label en unofficial "the owner of the encumbered land must maintain the installation (§ 1021 (1) sentence 1, § 1022 sentence 1)";
+}
+pub relation unterhaltungspflicht_des_berechtigten(d: Grunddienstbarkeit) kind derived {
+    label de official "der Berechtigte hat die Anlage zu unterhalten (§ 1021 Abs. 1 Satz 2)";
+    label en unofficial "the entitled person must maintain the installation (§ 1021 (1) sentence 2)";
+}
+
+@source(BGB_P1021) {
+    rule UnterhaltungspflichtDesEigentuemersVereinbart(d: Grunddienstbarkeit) strict {
+        label de official "Gehört zur Ausübung einer Grunddienstbarkeit eine Anlage auf dem belasteten Grundstück, so kann bestimmt werden, dass der Eigentümer dieses Grundstücks die Anlage zu unterhalten hat, soweit das Interesse des Berechtigten es erfordert (§ 1021 Abs. 1 Satz 1)";
+        label en unofficial "Where an installation on the encumbered land belongs to the exercise of an easement, it may be determined that the owner of that land must maintain it as far as the entitled person's interest requires (§ 1021 (1) sentence 1)";
+        when anlage_gehoert_zur_ausuebung(d) and bestimmt_dass_eigentuemer_die_anlage_unterhaelt(d);
+        then unterhaltungspflicht_des_eigentuemers(d);
+    }
+    rule UnterhaltungspflichtDesBerechtigtenVereinbart(d: Grunddienstbarkeit) strict {
+        label de official "Steht dem Eigentümer das Recht zur Mitbenutzung der Anlage zu, so kann bestimmt werden, dass der Berechtigte die Anlage zu unterhalten hat, soweit es für das Benutzungsrecht des Eigentümers erforderlich ist (§ 1021 Abs. 1 Satz 2)";
+        label en unofficial "Where the owner has a right to co-use the installation, it may be determined that the entitled person must maintain it as far as necessary for the owner's right of use (§ 1021 (1) sentence 2)";
+        when anlage_gehoert_zur_ausuebung(d) and eigentuemer_hat_recht_zur_mitbenutzung(d) and bestimmt_dass_berechtigter_die_anlage_unterhaelt(d);
+        then unterhaltungspflicht_des_berechtigten(d);
+    }
+}
+@source(BGB_P1022)
+rule UnterhaltungspflichtDesEigentuemersBeiAnlageAufAnlage(d: Grunddienstbarkeit) strict {
+    label de official "Besteht die Grunddienstbarkeit in dem Recht, auf einer baulichen Anlage des belasteten Grundstücks eine bauliche Anlage zu halten, so hat, wenn nicht ein anderes bestimmt ist, der Eigentümer des belasteten Grundstücks seine Anlage zu unterhalten, soweit das Interesse des Berechtigten es erfordert (§ 1022 Satz 1)";
+    label en unofficial "If the easement consists in the right to keep a structure on a structure of the encumbered land, the owner of the encumbered land must, unless otherwise determined, maintain their structure as far as the entitled person's interest requires (§ 1022 sentence 1)";
+    when anlage_auf_baulicher_anlage_des_belasteten_grundstuecks(d) and keine_abweichende_bestimmung_ueber_die_unterhaltung(d);
+    then unterhaltungspflicht_des_eigentuemers(d);
+}
+
+// --- § 1023: Verlegung der Ausübung ---------------------------------------------------------------
+
+pub relation ausuebung_auf_teil_des_belasteten_grundstuecks_beschraenkt(d: Grunddienstbarkeit, teil: Grundstueck) kind empirical {
+    key(d);
+    label de official "die jeweilige Ausübung der Grunddienstbarkeit beschränkt sich auf einen Teil des belasteten Grundstücks (§ 1023 Abs. 1 Satz 1)";
+    label en unofficial "the actual exercise of the easement is confined to a part of the encumbered land (§ 1023 (1) sentence 1)";
+}
+@source(BGB_P1023)
+pub external judgment relation ausuebung_an_bisheriger_stelle_besonders_beschwerlich(d: Grunddienstbarkeit) {
+    authority Court;
+    label de official "die Ausübung an der bisherigen Stelle ist für den Eigentümer des belasteten Grundstücks besonders beschwerlich (§ 1023 Abs. 1 Satz 1) — Wertung des Gerichts";
+    label en unofficial "exercise at the previous place is particularly burdensome for the owner of the encumbered land (§ 1023 (1) sentence 1) — evaluation by the court";
+}
+@source(BGB_P1023)
+pub external judgment relation andere_stelle_fuer_berechtigten_ebenso_geeignet(d: Grunddienstbarkeit, teil: Grundstueck) {
+    authority Court;
+    label de official "die andere Stelle ist für den Berechtigten ebenso geeignet wie die bisherige (§ 1023 Abs. 1 Satz 1) — Wertung des Gerichts";
+    label en unofficial "the other place is as suitable for the entitled person as the previous one (§ 1023 (1) sentence 1) — evaluation by the court";
+}
+
+pub relation anspruch_auf_verlegung_der_ausuebung(d: Grunddienstbarkeit, eigentuemer: Person, teil: Grundstueck) kind derived {
+    label de official "der Eigentümer kann die Verlegung der Ausübung der Grunddienstbarkeit auf eine andere, ebenso geeignete Stelle verlangen (§ 1023 Abs. 1 Satz 1)";
+    label en unofficial "the owner may demand relocation of the exercise of the easement to another, equally suitable place (§ 1023 (1) sentence 1)";
+}
+pub relation kostenlast_der_verlegung_beim_eigentuemer(d: Grunddienstbarkeit, eigentuemer: Person) kind derived {
+    label de official "der Eigentümer hat die Kosten der Verlegung zu tragen und vorzuschießen (§ 1023 Abs. 1 Satz 1 Halbsatz 2)";
+    label en unofficial "the owner must bear and advance the costs of the relocation (§ 1023 (1) sentence 1)";
+}
+
+@source(BGB_P1023)
+rule AnspruchAufVerlegungDerAusuebung(d: Grunddienstbarkeit, g: Grundstueck, eigentuemer: Person, teil: Grundstueck) strict {
+    label de official "Beschränkt sich die jeweilige Ausübung einer Grunddienstbarkeit auf einen Teil des belasteten Grundstücks, so kann der Eigentümer die Verlegung der Ausübung auf eine andere, für den Berechtigten ebenso geeignete Stelle verlangen, wenn die Ausübung an der bisherigen Stelle für ihn besonders beschwerlich ist; die Kosten der Verlegung hat er zu tragen und vorzuschießen (§ 1023 Abs. 1)";
+    label en unofficial "If the exercise of an easement is confined to a part of the encumbered land, the owner may demand relocation to another, equally suitable place if exercise at the previous place is particularly burdensome; the owner must bear and advance the costs (§ 1023 (1))";
+    when belastungsgegenstand_grundstueck(d, g) and ausuebung_auf_teil_des_belasteten_grundstuecks_beschraenkt(d, teil)
+        and ausuebung_an_bisheriger_stelle_besonders_beschwerlich(d) and andere_stelle_fuer_berechtigten_ebenso_geeignet(d, teil)
+        and besteller(d, eigentuemer);
+    then anspruch_auf_verlegung_der_ausuebung(d, eigentuemer, teil);
+    then kostenlast_der_verlegung_beim_eigentuemer(d, eigentuemer);
+}
+
+// --- § 1024: Zusammentreffen mehrerer Nutzungsrechte gleichen Rangs --------------------------------
+
+pub relation rechte_koennen_nicht_nebeneinander_vollstaendig_ausgeuebt_werden(eins: Grunddienstbarkeit, zwei: Grunddienstbarkeit) kind empirical {
+    label de official "eine Grunddienstbarkeit trifft mit einer anderen Grunddienstbarkeit oder einem sonstigen Nutzungsrecht dergestalt zusammen, dass die Rechte nebeneinander nicht oder nicht vollständig ausgeübt werden können — ausdrückliche Eingabe des Falls (§ 1024)";
+    label en unofficial "an easement coincides with another easement or another right of use such that the rights cannot be exercised alongside one another, or not fully — explicit case input (§ 1024)";
+}
+
+pub relation anspruch_auf_regelung_nach_billigem_ermessen(eins: Grunddienstbarkeit, zwei: Grunddienstbarkeit, berechtigter: Person) kind derived {
+    label de official "jeder Berechtigte kann eine den Interessen aller Berechtigten nach billigem Ermessen entsprechende Regelung der Ausübung verlangen (§ 1024)";
+    label en unofficial "each entitled person may demand an arrangement of the exercise that, in fair discretion, corresponds to the interests of all entitled persons (§ 1024)";
+}
+
+@source(BGB_P1024)
+rule AnspruchAufRegelungNachBilligemErmessen(eins: Grunddienstbarkeit, zwei: Grunddienstbarkeit, berechtigter: Person) strict {
+    label de official "Trifft eine Grunddienstbarkeit mit einer anderen Grunddienstbarkeit oder einem sonstigen Nutzungsrecht an dem Grundstück dergestalt zusammen, dass die Rechte nebeneinander nicht oder nicht vollständig ausgeübt werden können, und haben die Rechte gleichen Rang, so kann jeder Berechtigte eine den Interessen aller Berechtigten nach billigem Ermessen entsprechende Regelung der Ausübung verlangen (§ 1024)";
+    label en unofficial "If an easement coincides with another easement or another right of use over the land such that the rights cannot be exercised alongside one another, or not fully, and the rights are of equal rank, each entitled person may demand an arrangement of the exercise that corresponds, in fair discretion, to the interests of all entitled persons (§ 1024)";
+    when rechte_koennen_nicht_nebeneinander_vollstaendig_ausgeuebt_werden(eins, zwei)
+        and de.bgb.besitz_eigentum::gleicher_rang(eins, zwei) and berechtigter(eins, berechtigter);
+    then anspruch_auf_regelung_nach_billigem_ermessen(eins, zwei, berechtigter);
+}
+
+// --- §§ 1025, 1026: Teilung des herrschenden und des belasteten Grundstücks ------------------------
+
+pub relation herrschendes_grundstueck_geteilt_in(alt: Grundstueck, teil: Grundstueck) kind empirical {
+    label de official "das herrschende Grundstück wird geteilt; Teil eines der neu entstandenen Grundstücke (§ 1025 Satz 1)";
+    label en unofficial "the dominant land is divided; a part is one of the newly created plots (§ 1025 sentence 1)";
+}
+pub relation dient_nur_diesem_teil_zum_vorteil(d: Grunddienstbarkeit, teil: Grundstueck) kind empirical {
+    label de official "die Dienstbarkeit gereicht nur diesem Teil des geteilten herrschenden Grundstücks zum Vorteil — ausdrückliche Eingabe des Falls (§ 1025 Satz 2)";
+    label en unofficial "the easement benefits only this part of the divided dominant land — explicit case input (§ 1025 sentence 2)";
+}
+pub relation belastetes_grundstueck_geteilt_in(alt: Grundstueck, teil: Grundstueck) kind empirical {
+    label de official "das belastete Grundstück wird geteilt; Teil eines der neu entstandenen Grundstücke (§ 1026 Satz 1)";
+    label en unofficial "the encumbered land is divided; a part is one of the newly created plots (§ 1026 sentence 1)";
+}
+
+pub relation grunddienstbarkeit_besteht_fuer_teil(d: Grunddienstbarkeit, teil: Grundstueck) kind derived {
+    label de official "die Grunddienstbarkeit besteht für den Teil des geteilten herrschenden Grundstücks fort (§ 1025 Satz 1)";
+    label en unofficial "the easement continues to exist for the part of the divided dominant land (§ 1025 sentence 1)";
+}
+pub relation grunddienstbarkeit_erloschen_fuer_teil(d: Grunddienstbarkeit, teil: Grundstueck) kind derived {
+    label de official "die Grunddienstbarkeit erlischt für die übrigen Teile des geteilten herrschenden Grundstücks (§ 1025 Satz 2)";
+    label en unofficial "the easement is extinguished for the remaining parts of the divided dominant land (§ 1025 sentence 2)";
+}
+pub relation teil_von_der_grunddienstbarkeit_frei(d: Grunddienstbarkeit, teil: Grundstueck) kind derived {
+    label de official "der Teil des geteilten belasteten Grundstücks außerhalb des Bereichs der Ausübung wird von der Grunddienstbarkeit frei (§ 1026)";
+    label en unofficial "the part of the divided encumbered land outside the area of exercise is freed of the easement (§ 1026)";
+}
+
+@source(BGB_P1025) {
+    rule GrunddienstbarkeitBestehtFuerJedenTeilFort(d: Grunddienstbarkeit, alt: Grundstueck, teil: Grundstueck) strict {
+        label de official "Wird das Grundstück des Berechtigten geteilt, so besteht die Grunddienstbarkeit für die einzelnen Teile fort (§ 1025 Satz 1)";
+        label en unofficial "If the land of the entitled person is divided, the easement continues to exist for the individual parts (§ 1025 sentence 1)";
+        when herrschendes_grundstueck(d, alt) and herrschendes_grundstueck_geteilt_in(alt, teil);
+        then grunddienstbarkeit_besteht_fuer_teil(d, teil);
+    }
+    rule GrunddienstbarkeitErlischtFuerUebrigeTeile(d: Grunddienstbarkeit, alt: Grundstueck, vorteilsteil: Grundstueck, anderer_teil: Grundstueck) strict {
+        label de official "Gereicht die Dienstbarkeit nur einem der Teile zum Vorteil, so erlischt sie für die übrigen Teile (§ 1025 Satz 2)";
+        label en unofficial "If the easement benefits only one of the parts, it is extinguished for the remaining parts (§ 1025 sentence 2)";
+        when herrschendes_grundstueck(d, alt) and herrschendes_grundstueck_geteilt_in(alt, anderer_teil)
+            and dient_nur_diesem_teil_zum_vorteil(d, vorteilsteil) and anderer_teil != vorteilsteil;
+        then grunddienstbarkeit_erloschen_fuer_teil(d, anderer_teil);
+    }
+}
+@source(BGB_P1026)
+rule TeilAusserhalbDerAusuebungFrei(d: Grunddienstbarkeit, belastet: Grundstueck, ausuebungsteil: Grundstueck, anderer_teil: Grundstueck) strict {
+    label de official "Wird das belastete Grundstück geteilt, so werden, wenn die Ausübung der Grunddienstbarkeit auf einen bestimmten Teil des belasteten Grundstücks beschränkt ist, die Teile, welche außerhalb des Bereichs der Ausübung liegen, von der Dienstbarkeit frei (§ 1026)";
+    label en unofficial "If the encumbered land is divided and exercise of the easement is confined to a certain part of it, the parts lying outside the area of exercise are freed of the easement (§ 1026)";
+    when belastungsgegenstand_grundstueck(d, belastet) and ausuebung_auf_teil_des_belasteten_grundstuecks_beschraenkt(d, ausuebungsteil)
+        and belastetes_grundstueck_geteilt_in(belastet, anderer_teil) and anderer_teil != ausuebungsteil;
+    then teil_von_der_grunddienstbarkeit_frei(d, anderer_teil);
+}
+
+// --- § 1027: Beeinträchtigung der Grunddienstbarkeit ----------------------------------------------
+//
+// „stehen dem Berechtigten die in § 1004 bestimmten Rechte zu“: statt der Sache
+// des Nachbarpakets `Einwirkung` bedient sich dieses Paket eigener, lokaler
+// Relationen mit derselben Rechtsfolge (Ledger D-11-08).
+
+pub relation grunddienstbarkeit_beeintraechtigt_durch(d: Grunddienstbarkeit, stoerer: Person) kind empirical {
+    label de official "die Grunddienstbarkeit wird durch den Störer beeinträchtigt (§ 1027 i.V.m. § 1004 Abs. 1 Satz 1)";
+    label en unofficial "the easement is impaired by the disturber (§ 1027 in conjunction with § 1004 (1) sentence 1)";
+}
+pub relation berechtigter_nicht_zur_duldung_verpflichtet(d: Grunddienstbarkeit) kind empirical {
+    label de official "der Berechtigte ist nicht zur Duldung der Beeinträchtigung verpflichtet — ausdrückliche Eingabe des Falls (§ 1027 i.V.m. § 1004 Abs. 2)";
+    label en unofficial "the entitled person is not obliged to tolerate the impairment — explicit case input (§ 1027 in conjunction with § 1004 (2))";
+}
+@source(BGB_P1027)
+pub external judgment relation weitere_beeintraechtigung_der_dienstbarkeit_zu_besorgen(d: Grunddienstbarkeit) {
+    authority Court;
+    label de official "weitere Beeinträchtigungen der Grunddienstbarkeit sind zu besorgen (§ 1027 i.V.m. § 1004 Abs. 1 Satz 2) — Wertung des Gerichts";
+    label en unofficial "further impairments of the easement are to be feared (§ 1027 in conjunction with § 1004 (1) sentence 2) — evaluation by the court";
+}
+
+pub relation dienstbarkeit_beseitigungsanspruch(d: Grunddienstbarkeit, berechtigter: Person, stoerer: Person) kind derived {
+    label de official "der Berechtigte kann von dem Störer die Beseitigung der Beeinträchtigung verlangen (§ 1027 i.V.m. § 1004 Abs. 1 Satz 1)";
+    label en unofficial "the entitled person may demand removal of the impairment from the disturber (§ 1027 in conjunction with § 1004 (1) sentence 1)";
+}
+pub relation dienstbarkeit_unterlassungsanspruch(d: Grunddienstbarkeit, berechtigter: Person, stoerer: Person) kind derived {
+    label de official "der Berechtigte kann auf Unterlassung weiterer Beeinträchtigungen klagen (§ 1027 i.V.m. § 1004 Abs. 1 Satz 2)";
+    label en unofficial "the entitled person may sue for an injunction against further impairments (§ 1027 in conjunction with § 1004 (1) sentence 2)";
+}
+
+@source(BGB_P1027) {
+    rule DienstbarkeitBeseitigungsanspruch(d: Grunddienstbarkeit, berechtigter: Person, stoerer: Person) strict {
+        label de official "Wird eine Grunddienstbarkeit beeinträchtigt, so stehen dem Berechtigten die in § 1004 bestimmten Rechte zu: Beseitigung der Beeinträchtigung, wenn er nicht zur Duldung verpflichtet ist (§ 1027, § 1004 Abs. 1 Satz 1, Abs. 2)";
+        label en unofficial "If an easement is impaired, the entitled person has the rights provided by § 1004: removal of the impairment, unless obliged to tolerate it (§ 1027, § 1004 (1) sentence 1, (2))";
+        when grunddienstbarkeit_beeintraechtigt_durch(d, stoerer) and berechtigter(d, berechtigter)
+            and berechtigter_nicht_zur_duldung_verpflichtet(d);
+        then dienstbarkeit_beseitigungsanspruch(d, berechtigter, stoerer);
+    }
+    rule DienstbarkeitUnterlassungsanspruch(d: Grunddienstbarkeit, berechtigter: Person, stoerer: Person) strict {
+        label de official "Sind weitere Beeinträchtigungen der Grunddienstbarkeit zu besorgen, so kann der Berechtigte auf Unterlassung klagen (§ 1027, § 1004 Abs. 1 Satz 2, Abs. 2)";
+        label en unofficial "If further impairments of the easement are to be feared, the entitled person may sue for an injunction (§ 1027, § 1004 (1) sentence 2, (2))";
+        when grunddienstbarkeit_beeintraechtigt_durch(d, stoerer) and berechtigter(d, berechtigter)
+            and berechtigter_nicht_zur_duldung_verpflichtet(d) and weitere_beeintraechtigung_der_dienstbarkeit_zu_besorgen(d);
+        then dienstbarkeit_unterlassungsanspruch(d, berechtigter, stoerer);
+    }
+}
+
+// --- § 1028: Verjährung des Beseitigungsanspruchs -------------------------------------------------
+//
+// Der Beseitigungsanspruch des § 1027 verjährt nach den ALLGEMEINEN Vorschriften
+// (§§ 195, 199) des Nachbarpakets `de.bgb.fristen`; dieses Paket rechnet keine
+// eigene Frist, sondern verknüpft den Anspruch mit dem Anspruch-Träger der Nabe
+// (DEADLINES.json, Zeile „1028 Abs. 1“).
+
+pub relation beseitigungsanspruch_wegen_der_anlage_ist(d: Grunddienstbarkeit, a: Anspruch) kind empirical {
+    key(d);
+    label de official "der Beseitigungsanspruch des § 1027 wegen einer die Dienstbarkeit beeinträchtigenden Anlage — Träger für die allgemeine Verjährung der §§ 195, 199 (§ 1028 Abs. 1 Satz 1)";
+    label en unofficial "the § 1027 claim for removal of an installation impairing the easement — carrier for the regular limitation of §§ 195, 199 (§ 1028 (1) sentence 1)";
+}
+pub relation anlage_die_die_dienstbarkeit_beeintraechtigt_errichtet(d: Grunddienstbarkeit) kind empirical {
+    label de official "auf dem belasteten Grundstück ist eine Anlage errichtet worden, durch welche die Grunddienstbarkeit beeinträchtigt wird (§ 1028 Abs. 1 Satz 1)";
+    label en unofficial "an installation impairing the easement has been erected on the encumbered land (§ 1028 (1) sentence 1)";
+}
+
+pub relation grunddienstbarkeit_erloschen_soweit_die_anlage_entgegensteht(d: Grunddienstbarkeit) kind derived {
+    label de official "mit der Verjährung des Beseitigungsanspruchs erlischt die Grunddienstbarkeit, soweit der Bestand der Anlage mit ihr in Widerspruch steht (§ 1028 Abs. 1 Satz 2)";
+    label en unofficial "with the limitation of the claim for removal, the easement is extinguished in so far as the existence of the installation conflicts with it (§ 1028 (1) sentence 2)";
+}
+pub relation oeffentlicher_glaube_des_grundbuchs_unanwendbar_auf_die_verjaehrung(d: Grunddienstbarkeit) kind derived {
+    label de official "§ 892 findet auf das Erlöschen nach § 1028 Abs. 1 keine Anwendung, auch wenn die Dienstbarkeit im Grundbuch eingetragen bleibt (§ 1028 Abs. 2)";
+    label en unofficial "§ 892 does not apply to the extinction under § 1028 (1), even though the easement remains entered in the register (§ 1028 (2))";
+}
+
+@source(BGB_P1028) {
+    rule AnlageBeeintraechtigtVerjaehrungPflichtig(d: Grunddienstbarkeit) strict {
+        label de official "Ist auf dem belasteten Grundstück eine Anlage, durch welche die Grunddienstbarkeit beeinträchtigt wird, errichtet worden, so unterliegt der Anspruch des Berechtigten auf Beseitigung der Beeinträchtigung der Verjährung, auch wenn die Dienstbarkeit im Grundbuch eingetragen ist (§ 1028 Abs. 1 Satz 1)";
+        label en unofficial "If an installation impairing the easement has been erected on the encumbered land, the entitled person's claim for removal of the impairment is subject to limitation, even where the easement is entered in the register (§ 1028 (1) sentence 1)";
+        when anlage_die_die_dienstbarkeit_beeintraechtigt_errichtet(d) and beseitigungsanspruch_wegen_der_anlage_ist(d, _);
+        then oeffentlicher_glaube_des_grundbuchs_unanwendbar_auf_die_verjaehrung(d);
+    }
+    rule DienstbarkeitErloschenMitDerVerjaehrung(d: Grunddienstbarkeit, a: Anspruch, tag: Date) strict {
+        label de official "Mit der Verjährung des Anspruchs erlischt die Dienstbarkeit, soweit der Bestand der Anlage mit ihr in Widerspruch steht (§ 1028 Abs. 1 Satz 2)";
+        label en unofficial "With the limitation of the claim, the easement is extinguished in so far as the existence of the installation conflicts with it (§ 1028 (1) sentence 2)";
+        when anlage_die_die_dienstbarkeit_beeintraechtigt_errichtet(d) and beseitigungsanspruch_wegen_der_anlage_ist(d, a)
+            and de.bgb.fristen::verjaehrung_eingetreten_am(a, tag);
+        then grunddienstbarkeit_erloschen_soweit_die_anlage_entgegensteht(d);
+    }
+}
+
+// --- § 1029: Besitzschutz des Rechtsbesitzers -----------------------------------------------------
+//
+// „finden die für den Besitzschutz geltenden Vorschriften entsprechende
+// Anwendung“: wie bei § 1027 stellt dieses Paket die Anwendbarkeit lokal fest,
+// ohne die Besitzschutzmechanik des Nachbarpakets (§§ 858 ff.) ein zweites Mal
+// zu berechnen (Ledger D-11-08).
+
+pub relation dienstbarkeit_im_grundbuch_fuer_den_eigentuemer_eingetragen(d: Grunddienstbarkeit) kind empirical {
+    label de official "die Grunddienstbarkeit ist für den Eigentümer des herrschenden Grundstücks im Grundbuch eingetragen (§ 1029)";
+    label en unofficial "the easement is entered in the register in favour of the owner of the dominant land (§ 1029)";
+}
+pub relation ausuebung_zuletzt_am(d: Grunddienstbarkeit, tag: Date) kind empirical {
+    label de official "Tag, an dem die Grunddienstbarkeit zuletzt ausgeübt worden ist, sei es auch nur einmal (§ 1029)";
+    label en unofficial "day on which the easement was last exercised, even if only once (§ 1029)";
+}
+pub relation stoerung_der_ausuebung_am(d: Grunddienstbarkeit, stoerer: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Besitzer in der Ausübung der Grunddienstbarkeit gestört wird (§ 1029)";
+    label en unofficial "day on which the possessor is disturbed in the exercise of the easement (§ 1029)";
+}
+
+pub relation dienstbarkeitsbesitzschutz_anwendbar(d: Grunddienstbarkeit, stoerer: Person) kind derived {
+    label de official "auf die Störung finden die für den Besitzschutz geltenden Vorschriften entsprechende Anwendung (§ 1029)";
+    label en unofficial "the provisions on the protection of possession apply correspondingly to the disturbance (§ 1029)";
+}
+
+@source(BGB_P1029)
+rule DienstbarkeitsbesitzschutzInnerhalbEinesJahres(d: Grunddienstbarkeit, stoerer: Person, aus: Date, stoer: Date) strict {
+    label de official "Wird der Besitzer eines Grundstücks in der Ausübung einer für den Eigentümer im Grundbuch eingetragenen Grunddienstbarkeit gestört, so finden die für den Besitzschutz geltenden Vorschriften entsprechende Anwendung, soweit die Dienstbarkeit innerhalb eines Jahres vor der Störung, sei es auch nur einmal, ausgeübt worden ist (§ 1029)";
+    label en unofficial "If the possessor of land is disturbed in the exercise of an easement entered in the register for the owner, the provisions on the protection of possession apply correspondingly, in so far as the easement was exercised within one year before the disturbance, even if only once (§ 1029)";
+    when dienstbarkeit_im_grundbuch_fuer_den_eigentuemer_eingetragen(d) and ausuebung_zuletzt_am(d, aus)
+        and stoerung_der_ausuebung_am(d, stoerer, stoer) and aus <= stoer
+        and stoer <= add_calendar_period(aus, 1 calendar_year);
+    then dienstbarkeitsbesitzschutz_anwendbar(d, stoerer);
+}

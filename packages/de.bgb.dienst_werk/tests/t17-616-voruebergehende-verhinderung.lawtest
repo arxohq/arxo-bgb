@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 616 Satz 1, 2: der Vergütungsanspruch bleibt bei kurzer, unverschuldeter
+// Verhinderung, gemindert um die Versicherungsleistung.
+
+test "urn:query:bgb-dw-t17-616-verhinderung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": verhinderung_ohne_verschulden(entity_ref("urn:de:bgb:dw:t17")) { origin case_input; }
+        assert "f2": verhinderungszeit_verhaeltnismaessig_nicht_erheblich(entity_ref("urn:de:bgb:dw:t17")) { origin adjudicated; }
+        assert "f3": vereinbarte_verguetung(entity_ref("urn:de:bgb:dw:t17"), 2500 EUR) { origin case_input; }
+        assert "f4": versicherungsleistung_fuer_verhinderungszeit(entity_ref("urn:de:bgb:dw:t17"), 300 EUR) { origin case_input; }
+    }
+    evaluate truth(verguetungsanspruch_616(entity_ref("urn:de:bgb:dw:t17"), 2200 EUR));
+    expect truth_status == TRUE_ONLY;
+}

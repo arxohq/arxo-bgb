@@ -1,0 +1,922 @@
+// TITEL 6, UNTERTITEL 1 — ZUGEWINNGEMEINSCHAFT (§§ 1363–1390)
+//
+// Das Herz des Pakets. § 1363 Abs. 1 und § 1371 Abs. 1 stehen im
+// `package.law` (eingefrorene Fläche des Piloten B1); hier steht alles
+// Übrige: die Verfügungsbeschränkungen (§§ 1364–1369), der Ausgleich im
+// Todesfall außerhalb der Erbfolge (§ 1371 Abs. 2 bis 4) und der
+// Zugewinnausgleich in Geld (§§ 1372–1390).
+//
+// GELD UND RUNDUNG (Ledger D-12-06, Muster D-04-04 und D-07). Anfangs- und
+// Endvermögen, Zugewinn und Überschuss sind `Money` und werden NUR addiert
+// und subtrahiert — exakte Arithmetik. Geteilt wird genau EINMAL je Forderung:
+// die Hälfte des Überschusses nach § 1378 Abs. 1 als
+// `div_round(Überschuss, 2 * 1.0, 2, "HALF_UP")` (der Divisor muss `Decimal`
+// sein, E-0085). Einen Prozentsatz, einen Zinssatz oder eine andere Zahl, die
+// der Text nicht nennt, erfindet das Paket nicht.
+//
+// KEIN NEGATIVER ZUGEWINN. § 1373 definiert den Zugewinn als den Betrag, um
+// den das Endvermögen das Anfangsvermögen ÜBERSTEIGT. Übersteigt es nicht, so
+// gibt es keinen Zugewinn — nicht einen negativen. Das steht als ZWEI Regeln
+// mit sich ausschließenden Garden (`E > A` und `E <= A`), nicht als `max`:
+// ein Maximum-Term wäre eine Erfindung, die Garde ist der Text.
+//
+// NEGATIVES ANFANGSVERMÖGEN. § 1374 Abs. 3 („Verbindlichkeiten sind über die
+// Höhe des Vermögens hinaus abzuziehen“) ist seit der Reform von 2009
+// (BGBl. I 2009 S. 1696) geltendes Recht; dasselbe gilt für § 1375 Abs. 2
+// Satz 2 und für die Erhöhung der Obergrenze in § 1378 Abs. 2 Satz 2. Der
+// Korridor steht in `SOURCES.json.transitions`; Zeugen beiderseits der
+// Reformgrenze liegen im Fallpaar `z07`/`z08`.
+//
+// OBERGRENZE. § 1378 Abs. 2 begrenzt die Ausgleichsforderung durch den Wert
+// des bei Beendigung vorhandenen Vermögens nach Abzug der Verbindlichkeiten.
+// Auch das sind ZWEI Regeln mit sich ausschließenden Garden (`<=` und `>`) —
+// kein `min`.
+//
+// § 1371 ABS. 2 LIEST NICHT DIE ERBFOLGE. Ob der überlebende Ehegatte Erbe
+// oder Vermächtnisnehmer wird, weiß `de.bgb.erbfolge`; ein Import von dort
+// wäre der Rückimport und damit ein Zyklus (DECISION-0319). Die Tatsache
+// „wird nicht Erbe und steht ihm kein Vermächtnis zu“ ist deshalb ein
+// ausdrücklicher EINGANG des Falls (Ledger D-12-07).
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+pub entity Rechtsgeschaeft {
+    label de official "Rechtsgeschäft eines Ehegatten, dessen Wirksamkeit von der Zustimmung des anderen abhängt (§§ 1365–1369, 1423–1428, 1450–1453)";
+    label en unofficial "legal transaction of a spouse whose validity depends on the other's consent (§§ 1365–1369, 1423–1428, 1450–1453)";
+}
+
+// --- Eingänge des Falls: Vermögen und Beendigung ----------------------------------------------------
+
+pub relation gueterstand_beendet_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der Beendigung des Güterstands (§§ 1372, 1375 Abs. 1, 1378 Abs. 2, 3)";
+    label en unofficial "day on which the property regime ended (§§ 1372, 1375 (1), 1378 (2), (3))";
+}
+pub relation gueterstand_auf_andere_weise_als_durch_tod_beendet(ehe: Ehe) kind empirical {
+    label de official "Der Güterstand ist auf andere Weise als durch den Tod eines Ehegatten beendet (§ 1372)";
+    label en unofficial "the property regime ended otherwise than by the death of a spouse (§ 1372)";
+}
+pub relation vermoegen_beim_eintritt_des_gueterstands(ehe: Ehe, p: Person, wert: Money) kind empirical {
+    label de official "Wert des Vermögens, das dem Ehegatten beim Eintritt des Güterstands gehört, nach Abzug der Verbindlichkeiten (§ 1374 Abs. 1, § 1376 Abs. 1)";
+    label en unofficial "value of the assets belonging to the spouse at the start of the regime, after deduction of liabilities (§ 1374 (1), § 1376 (1))";
+}
+pub relation hinzurechnung_zum_anfangsvermoegen(ehe: Ehe, p: Person, wert: Money) kind empirical {
+    label de official "Vermögen, das ein Ehegatte nach Eintritt des Güterstands von Todes wegen oder mit Rücksicht auf ein künftiges Erbrecht, durch Schenkung oder als Ausstattung erwirbt, nach Abzug der Verbindlichkeiten und bewertet im Zeitpunkt des Erwerbs (§ 1374 Abs. 2, § 1376 Abs. 1)";
+    label en unofficial "assets acquired by a spouse after the start of the regime by death, gift or endowment, after deduction of liabilities, valued at the time of acquisition (§ 1374 (2), § 1376 (1))";
+}
+pub relation keine_hinzurechnung_zum_anfangsvermoegen(ehe: Ehe, p: Person) kind empirical {
+    label de official "Dem Anfangsvermögen ist nichts hinzuzurechnen (§ 1374 Abs. 2) — ausdrückliche Angabe des Falls; das Schweigen des Falls ist keine Verneinung";
+    label en unofficial "nothing is to be added to the initial assets (§ 1374 (2)) — explicit input; silence of the case is not a denial";
+}
+pub relation vermoegen_bei_beendigung_des_gueterstands(ehe: Ehe, p: Person, wert: Money) kind empirical {
+    key(ehe, p);
+    label de official "Wert des Vermögens, das dem Ehegatten bei der Beendigung des Güterstands gehört, nach Abzug der Verbindlichkeiten (§ 1375 Abs. 1, § 1376 Abs. 2); Verbindlichkeiten sind über die Höhe des Vermögens hinaus abzuziehen (Satz 2)";
+    label en unofficial "value of the assets belonging to the spouse at the end of the regime, after deduction of liabilities (§ 1375 (1), § 1376 (2)); liabilities are deducted beyond the amount of the assets (sentence 2)";
+}
+relation illoyale_vermoegensminderung(ehe: Ehe, p: Person, wert: Money, nummer: Integer) kind empirical {
+    label de official "Betrag, um den das Endvermögen dadurch vermindert ist, dass der Ehegatte unentgeltliche Zuwendungen gemacht (Nr. 1), Vermögen verschwendet (Nr. 2) oder in Benachteiligungsabsicht gehandelt hat (Nr. 3) (§ 1375 Abs. 2 Satz 1)";
+    label en unofficial "amount by which the final assets are reduced by gratuitous dispositions (no. 1), dissipation (no. 2) or acts intended to disadvantage the other spouse (no. 3) (§ 1375 (2) sentence 1)";
+}
+relation minderung_eingetreten_am(ehe: Ehe, p: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem die Vermögensminderung eingetreten ist (§ 1375 Abs. 2 Satz 1, Abs. 3, § 1376 Abs. 2)";
+    label en unofficial "day on which the reduction of assets occurred (§ 1375 (2) sentence 1, (3), § 1376 (2))";
+}
+relation zehnjahresfrist_1375(ehe: Ehe, p: Person, f: Frist) kind empirical {
+    label de official "Zehnjahresfrist des § 1375 Abs. 3 (Vermögensminderung mindestens zehn Jahre vor Beendigung des Güterstands)";
+    label en unofficial "ten-year period of § 1375 (3) (reduction of assets at least ten years before the end of the regime)";
+}
+relation einverstaendnis_mit_der_minderung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der andere Ehegatte ist mit der unentgeltlichen Zuwendung oder der Verschwendung einverstanden gewesen (§ 1375 Abs. 3 Alt. 2)";
+    label en unofficial "the other spouse consented to the gratuitous disposition or the dissipation (§ 1375 (3))";
+}
+pub relation keine_illoyale_minderung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Dem Endvermögen ist nichts nach § 1375 Abs. 2 hinzuzurechnen — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing is to be added to the final assets under § 1375 (2) — explicit input";
+}
+relation verzeichnis_des_anfangsvermoegens(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Ehegatten haben Bestand und Wert des Anfangsvermögens gemeinsam in einem Verzeichnis festgestellt (§ 1377 Abs. 1)";
+    label en unofficial "the spouses jointly recorded the composition and value of the initial assets in an inventory (§ 1377 (1))";
+}
+relation verzeichnis_unrichtig(ehe: Ehe, p: Person) kind empirical {
+    label de official "Gegenbeweis zur Vermutung des § 1377 Abs. 1: das Verzeichnis ist unrichtig (ausdrückliche Angabe des Falls)";
+    label en unofficial "rebuttal of the presumption of § 1377 (1): the inventory is incorrect (explicit input)";
+}
+relation kein_verzeichnis_aufgenommen(ehe: Ehe, p: Person) kind empirical {
+    label de official "Es ist kein Verzeichnis des Anfangsvermögens aufgenommen (§ 1377 Abs. 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "no inventory of the initial assets has been drawn up (§ 1377 (3)) — explicit input";
+}
+relation anfangsvermoegen_hoeher_als_null_nachgewiesen(ehe: Ehe, p: Person) kind empirical {
+    label de official "Gegenbeweis zur Vermutung des § 1377 Abs. 3: ein höheres Anfangsvermögen als null ist nachgewiesen (ausdrückliche Angabe des Falls)";
+    label en unofficial "rebuttal of the presumption of § 1377 (3): initial assets higher than zero have been proven (explicit input)";
+}
+relation vorausempfang_mit_anrechnungsbestimmung(ehe: Ehe, zuwendender: Person, empfaenger: Person, wert: Money) kind empirical {
+    label de official "Zuwendung durch Rechtsgeschäft unter Lebenden mit der Bestimmung, dass sie auf die Ausgleichsforderung angerechnet werden soll (§ 1380 Abs. 1 Satz 1); der Wert bestimmt sich nach dem Zeitpunkt der Zuwendung (Abs. 2 Satz 2)";
+    label en unofficial "inter vivos disposition with the stipulation that it is to be set off against the equalisation claim (§ 1380 (1) sentence 1); the value is as at the time of the disposition ((2) sentence 2)";
+}
+relation zuwendung_ohne_anrechnungsbestimmung(ehe: Ehe, zuwendender: Person, empfaenger: Person, wert: Money) kind empirical {
+    label de official "Zuwendung ohne ausdrückliche Anrechnungsbestimmung, deren Wert den Wert üblicher Gelegenheitsgeschenke übersteigt (§ 1380 Abs. 1 Satz 2)";
+    label en unofficial "disposition without an express stipulation whose value exceeds that of customary occasional gifts (§ 1380 (1) sentence 2)";
+}
+relation anrechnung_ausdruecklich_ausgeschlossen(ehe: Ehe, empfaenger: Person, wert: Money) kind empirical {
+    label de official "Gegenbeweis zur Zweifelsregel des § 1380 Abs. 1 Satz 2: die Anrechnung ist ausgeschlossen (ausdrückliche Angabe des Falls)";
+    label en unofficial "rebuttal of the doubt rule of § 1380 (1) sentence 2: the set-off is excluded (explicit input)";
+}
+relation auskunft_verlangt(ehe: Ehe, verlangender: Person, verpflichteter: Person) kind empirical {
+    label de official "Ein Ehegatte verlangt vom anderen Auskunft über das Vermögen (§ 1379 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "a spouse demands information from the other about the assets (§ 1379 (1) sentence 1, (2))";
+}
+relation vorzeitiger_ausgleich_beantragt_am(ehe: Ehe, antragsteller: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Antrag auf vorzeitigen Ausgleich des Zugewinns oder auf vorzeitige Aufhebung der Zugewinngemeinschaft gestellt ist (§§ 1385, 1386, 1387)";
+    label en unofficial "day on which the application for premature equalisation or premature termination was made (§§ 1385, 1386, 1387)";
+}
+relation handlungen_nach_1365_oder_1375_zu_befuerchten(ehe: Ehe, p: Person) kind empirical {
+    label de official "Handlungen der in § 1365 oder § 1375 Abs. 2 bezeichneten Art sind zu befürchten und dadurch ist eine erhebliche Gefährdung der Erfüllung der Ausgleichsforderung zu besorgen (§ 1385 Nr. 2)";
+    label en unofficial "acts of the kind described in § 1365 or § 1375 (2) are to be feared and thereby the fulfilment of the equalisation claim is seriously endangered (§ 1385 no. 2)";
+}
+relation auskunft_beharrlich_verweigert(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der andere Ehegatte weigert sich ohne ausreichenden Grund beharrlich, über den Bestand seines Vermögens zu unterrichten (§ 1385 Nr. 4)";
+    label en unofficial "the other spouse persistently refuses without sufficient ground to inform about the composition of his assets (§ 1385 no. 4)";
+}
+relation vorzeitige_aufhebung_rechtskraeftig_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der Rechtskraft der Entscheidung, die die Zugewinngemeinschaft vorzeitig aufhebt (§ 1388)";
+    label en unofficial "day on which the decision prematurely terminating the regime became final (§ 1388)";
+}
+relation unentgeltliche_zuwendung_an_dritten(ehe: Ehe, pflichtiger: Person, dritter: Person, wert: Money) kind empirical {
+    label de official "Unentgeltliche Zuwendung des ausgleichspflichtigen Ehegatten an einen Dritten (§ 1390 Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "gratuitous disposition by the spouse liable to equalise in favour of a third party (§ 1390 (1) sentence 1 no. 1)";
+}
+relation benachteiligungsabsicht(ehe: Ehe, pflichtiger: Person, dritter: Person) kind empirical {
+    label de official "Der ausgleichspflichtige Ehegatte hat die Zuwendung in der Absicht gemacht, den ausgleichsberechtigten Ehegatten zu benachteiligen (§ 1390 Abs. 1 Satz 1 Nr. 1); bei anderen Rechtshandlungen muss die Absicht dem Dritten bekannt gewesen sein (Abs. 2)";
+    label en unofficial "the liable spouse made the disposition intending to disadvantage the entitled spouse (§ 1390 (1) sentence 1 no. 1); for other acts the intention must have been known to the third party ((2))";
+}
+relation andere_rechtshandlung_mit_bekannter_absicht(ehe: Ehe, pflichtiger: Person, dritter: Person, wert: Money) kind empirical {
+    label de official "Andere Rechtshandlung, bei der die Benachteiligungsabsicht dem Dritten bekannt war (§ 1390 Abs. 2)";
+    label en unofficial "other legal act where the intention to disadvantage was known to the third party (§ 1390 (2))";
+}
+relation verjaehrungsfrist_1390(ehe: Ehe, f: Frist) kind empirical {
+    key(ehe);
+    label de official "Frist, deren Lauf § 1390 Abs. 3 Satz 1 an die Beendigung des Güterstands knüpft";
+    label en unofficial "period whose running § 1390 (3) sentence 1 attaches to the end of the property regime";
+}
+
+// --- Eingänge des Falls: Verfügungsbeschränkungen §§ 1364–1369 ------------------------------------
+
+relation verpflichtung_ueber_das_vermoegen_im_ganzen(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) kind empirical {
+    label de official "Ein Ehegatte verpflichtet sich, über sein Vermögen im Ganzen zu verfügen (§ 1365 Abs. 1 Satz 1)";
+    label en unofficial "a spouse undertakes to dispose of his assets as a whole (§ 1365 (1) sentence 1)";
+}
+relation verfuegung_ueber_haushaltsgegenstand(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) kind empirical {
+    label de official "Ein Ehegatte verfügt über ihm gehörende Gegenstände des ehelichen Haushalts oder verpflichtet sich dazu (§ 1369 Abs. 1)";
+    label en unofficial "a spouse disposes of household objects belonging to him or undertakes to do so (§ 1369 (1))";
+}
+relation einwilligung_des_anderen_ehegatten(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der andere Ehegatte hat in das Rechtsgeschäft eingewilligt (§§ 1365 Abs. 1, 1369 Abs. 1)";
+    label en unofficial "the other spouse consented to the transaction (§§ 1365 (1), 1369 (1))";
+}
+relation genehmigung_erklaert(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der andere Ehegatte hat den Vertrag genehmigt (§ 1366 Abs. 1)";
+    label en unofficial "the other spouse ratified the contract (§ 1366 (1))";
+}
+relation zustimmung_durch_familiengericht_ersetzt(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Das Familiengericht hat die Zustimmung des anderen Ehegatten ersetzt (§ 1365 Abs. 2, § 1366 Abs. 3 Satz 3, § 1369 Abs. 2) — festgestellte Tatsache, im Fall mit `origin adjudicated`";
+    label en unofficial "the family court replaced the other spouse's consent (§ 1365 (2), § 1366 (3) sentence 3, § 1369 (2)) — established fact";
+}
+relation ersetzungsbeschluss_dem_dritten_mitgeteilt(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der Ehegatte hat den Beschluss, der die Genehmigung ersetzt, dem Dritten innerhalb der zweiwöchigen Frist mitgeteilt (§ 1366 Abs. 3 Satz 3)";
+    label en unofficial "the spouse communicated the substituting decision to the third party within the two-week period (§ 1366 (3) sentence 3)";
+}
+relation aufforderung_zur_genehmigung_empfangen_am(ehe: Ehe, g: Rechtsgeschaeft, tag: Date) kind empirical {
+    label de official "Tag des Empfangs der Aufforderung des Dritten, die erforderliche Genehmigung des anderen Ehegatten zu beschaffen (§ 1366 Abs. 3 Satz 1, 2)";
+    label en unofficial "day of receipt of the third party's demand to obtain the other spouse's ratification (§ 1366 (3) sentences 1, 2)";
+}
+relation genehmigungsfrist(ehe: Ehe, g: Rechtsgeschaeft, f: Frist) kind empirical {
+    label de official "Zweiwochenfrist des § 1366 Abs. 3 Satz 2";
+    label en unofficial "two-week period of § 1366 (3) sentence 2";
+}
+relation genehmigung_verweigert(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der andere Ehegatte hat die Genehmigung verweigert (§ 1366 Abs. 4)";
+    label en unofficial "the other spouse refused ratification (§ 1366 (4))";
+}
+relation widerruf_des_dritten(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der Dritte hat den Vertrag bis zur Genehmigung widerrufen (§ 1366 Abs. 2 Satz 1)";
+    label en unofficial "the third party revoked the contract before ratification (§ 1366 (2) sentence 1)";
+}
+relation dritter_kannte_die_ehe(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der Dritte wusste, dass der vertragsschließende Ehegatte verheiratet ist (§ 1366 Abs. 2 Satz 2)";
+    label en unofficial "the third party knew that the contracting spouse is married (§ 1366 (2) sentence 2)";
+}
+relation wahrheitswidrige_behauptung_der_einwilligung(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Der Ehegatte hat wahrheitswidrig behauptet, der andere Ehegatte habe eingewilligt (§ 1366 Abs. 2 Satz 2)";
+    label en unofficial "the spouse untruthfully asserted that the other had consented (§ 1366 (2) sentence 2)";
+}
+relation dritter_kannte_das_fehlen_der_einwilligung(ehe: Ehe, g: Rechtsgeschaeft) kind empirical {
+    label de official "Dem Dritten war beim Abschluss des Vertrags bekannt, dass der andere Ehegatte nicht eingewilligt hatte (§ 1366 Abs. 2 Satz 3)";
+    label en unofficial "at the conclusion of the contract the third party knew that the other spouse had not consented (§ 1366 (2) sentence 3)";
+}
+relation einseitiges_rechtsgeschaeft(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) kind empirical {
+    label de official "Einseitiges Rechtsgeschäft, das ohne die erforderliche Einwilligung vorgenommen wird (§ 1367)";
+    label en unofficial "unilateral legal transaction undertaken without the required consent (§ 1367)";
+}
+relation verfuegung_ohne_zustimmung(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person, dritter: Person) kind empirical {
+    label de official "Ein Ehegatte verfügt ohne die erforderliche Zustimmung des anderen über sein Vermögen (§ 1368)";
+    label en unofficial "a spouse disposes of his assets without the other's required consent (§ 1368)";
+}
+relation nicht_erbe_und_kein_vermaechtnis(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte wird nicht Erbe und es steht ihm auch kein Vermächtnis zu (§ 1371 Abs. 2) — ausdrücklicher EINGANG des Falls: ein Import von `de.bgb.erbfolge` wäre der verbotene Rückimport (Ledger D-12-07)";
+    label en unofficial "the surviving spouse does not become heir and is entitled to no legacy (§ 1371 (2)) — explicit input: importing `de.bgb.erbfolge` would be the forbidden reverse import";
+}
+relation erbschaft_ausgeschlagen(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte schlägt die Erbschaft aus (§ 1371 Abs. 3 Satz 1)";
+    label en unofficial "the surviving spouse disclaims the inheritance (§ 1371 (3) sentence 1)";
+}
+relation verzicht_auf_erb_und_pflichtteilsrecht(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte hat durch Vertrag mit seinem Ehegatten auf sein gesetzliches Erbrecht oder sein Pflichtteilsrecht verzichtet (§ 1371 Abs. 3 Halbsatz 2)";
+    label en unofficial "the surviving spouse waived his statutory right of succession or compulsory share by contract ((3))";
+}
+relation erbberechtigter_abkoemmling_aus_anderer_ehe(ehe: Ehe, verstorbener: Person, abkoemmling: Person) kind empirical {
+    label de official "Erbberechtigter Abkömmling des verstorbenen Ehegatten, der nicht aus der durch dessen Tod aufgelösten Ehe stammt (§ 1371 Abs. 4)";
+    label en unofficial "descendant of the deceased spouse entitled to inherit who is not from the marriage dissolved by that death (§ 1371 (4))";
+}
+relation ausbildungsbeduerftig(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Der Abkömmling bedarf der Mittel zu einer angemessenen Ausbildung (§ 1371 Abs. 4)";
+    label en unofficial "the descendant needs the means for appropriate education (§ 1371 (4))";
+}
+
+// --- Kanäle der Wertung (§47.3) --------------------------------------------------------------------
+//
+// § 1365 „Vermögen im Ganzen“: die herrschende Lesart der Rechtsprechung
+// arbeitet mit Prozentsätzen des Restvermögens. Das Paket formalisiert KEINE
+// Prozentschwelle — der Text nennt keine (Ledger D-12-08). Ob eine Verfügung
+// das Vermögen im Ganzen betrifft, ist eine Wertung und bleibt beim Gericht.
+
+pub external judgment relation verfuegung_betrifft_das_vermoegen_im_ganzen(ehe: Ehe, g: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 1365 Abs. 1 Satz 1. Die Verpflichtung betrifft das Vermögen IM GANZEN; der Text nennt keine Prozentschwelle, und das Paket erfindet keine";
+    label en unofficial "§ 1365 (1) sentence 1. The undertaking concerns the assets AS A WHOLE; the text names no percentage threshold and the package invents none";
+}
+pub external judgment relation ordnungsmaessige_verwaltung(ehe: Ehe, g: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 1365 Abs. 2. Das Rechtsgeschäft entspricht den Grundsätzen einer ordnungsmäßigen Verwaltung, und der andere Ehegatte verweigert die Zustimmung ohne ausreichenden Grund oder ist an der Erklärung verhindert";
+    label en unofficial "§ 1365 (2). The transaction accords with proper administration and consent is refused without sufficient ground or prevented";
+}
+pub external judgment relation ausgleich_grob_unbillig(ehe: Ehe, schuldner: Person) {
+    authority Court;
+    label de official "§ 1381 Abs. 1, 2. Der Ausgleich des Zugewinns wäre nach den Umständen des Falles grob unbillig; grobe Unbilligkeit kann insbesondere vorliegen, wenn der Ehegatte mit dem geringeren Zugewinn längere Zeit hindurch die wirtschaftlichen Verpflichtungen aus dem ehelichen Verhältnis schuldhaft nicht erfüllt hat";
+    label en unofficial "§ 1381 (1), (2). The equalisation would be grossly inequitable in the circumstances";
+}
+pub external judgment relation sofortige_zahlung_zur_unzeit(ehe: Ehe, schuldner: Person) {
+    authority Court;
+    label de official "§ 1382 Abs. 1. Die sofortige Zahlung der Ausgleichsforderung würde auch unter Berücksichtigung der Interessen des Gläubigers zur Unzeit erfolgen; das Familiengericht stundet sie auf Antrag";
+    label en unofficial "§ 1382 (1). Immediate payment would be untimely even taking the creditor's interests into account; the family court defers it on application";
+}
+pub external judgment relation uebertragung_zur_vermeidung_grober_unbilligkeit(ehe: Ehe, glaeubiger: Person) {
+    authority Court;
+    label de official "§ 1383 Abs. 1. Die Übertragung bestimmter Gegenstände ist erforderlich, um eine grobe Unbilligkeit für den Gläubiger zu vermeiden, und dem Schuldner zuzumuten";
+    label en unofficial "§ 1383 (1). The transfer of specified objects is necessary to avoid gross inequity for the creditor and reasonable for the debtor";
+}
+pub external judgment relation wirtschaftliche_verpflichtungen_schuldhaft_nicht_erfuellt(ehe: Ehe, p: Person) {
+    authority Court;
+    label de official "§ 1385 Nr. 3. Der andere Ehegatte hat längere Zeit hindurch die wirtschaftlichen Verpflichtungen aus dem ehelichen Verhältnis schuldhaft nicht erfüllt, und es ist anzunehmen, dass er sie auch in Zukunft nicht erfüllen wird";
+    label en unofficial "§ 1385 no. 3. The other spouse has culpably failed for a considerable time to meet the economic obligations arising from the marriage and is unlikely to meet them in future";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation vermoegen_bleibt_getrennt(ehe: Ehe, p: Person) kind institutional {
+    label de official "Das jeweilige Vermögen der Ehegatten wird nicht deren gemeinschaftliches Vermögen; dies gilt auch für Vermögen, das ein Ehegatte nach der Eheschließung erwirbt (§ 1363 Abs. 2 Satz 1)";
+    label en unofficial "The respective assets of the spouses do not become their joint assets; this also applies to assets acquired after the marriage (§ 1363 (2) sentence 1)";
+}
+pub relation verwaltet_sein_vermoegen_selbstaendig(ehe: Ehe, p: Person) kind institutional {
+    label de official "Jeder Ehegatte verwaltet sein Vermögen selbständig; er ist jedoch nach Maßgabe der folgenden Vorschriften beschränkt (§ 1364)";
+    label en unofficial "Each spouse administers his assets independently, subject to the restrictions of the following provisions (§ 1364)";
+}
+pub relation zustimmung_erforderlich(ehe: Ehe, g: Rechtsgeschaeft, zustimmender: Person) kind institutional {
+    label de official "Das Rechtsgeschäft bedarf der Einwilligung des anderen Ehegatten (§ 1365 Abs. 1, § 1369 Abs. 1)";
+    label en unofficial "The transaction requires the consent of the other spouse (§ 1365 (1), § 1369 (1))";
+}
+pub relation rechtsgeschaeft_wirksam(ehe: Ehe, g: Rechtsgeschaeft) kind institutional {
+    label de official "Das zustimmungsbedürftige Rechtsgeschäft ist wirksam (§ 1365 Abs. 1, § 1366 Abs. 1)";
+    label en unofficial "The transaction requiring consent is effective (§ 1365 (1), § 1366 (1))";
+}
+pub relation rechtsgeschaeft_unwirksam(ehe: Ehe, g: Rechtsgeschaeft) kind institutional {
+    label de official "Das Rechtsgeschäft ist unwirksam (§ 1366 Abs. 4, § 1367)";
+    label en unofficial "The transaction is ineffective (§ 1366 (4), § 1367)";
+}
+relation letzter_tag_der_genehmigungsfrist(ehe: Ehe, g: Rechtsgeschaeft, tag: Date) kind institutional {
+    label de official "Letzter Tag der Zweiwochenfrist des § 1366 Abs. 3 Satz 2: die Genehmigung ist innerhalb der Frist gegenüber dem Dritten zu erklären, daher gilt die Verlegung des § 193";
+    label en unofficial "Last day of the two-week period of § 1366 (3) sentence 2: the ratification is to be declared to the third party within the period, so § 193 applies";
+}
+relation genehmigung_gilt_als_verweigert(ehe: Ehe, g: Rechtsgeschaeft) kind institutional {
+    label de official "Wird die Genehmigung nicht innerhalb von zwei Wochen seit dem Empfang der Aufforderung erklärt, so gilt sie als verweigert (§ 1366 Abs. 3 Satz 2)";
+    label en unofficial "If ratification is not declared within two weeks of receipt of the demand, it counts as refused (§ 1366 (3) sentence 2)";
+}
+relation widerruf_des_dritten_ausgeschlossen(ehe: Ehe, g: Rechtsgeschaeft) kind institutional {
+    label de official "Der Dritte kann nicht widerrufen (§ 1366 Abs. 2 Sätze 2, 3)";
+    label en unofficial "The third party cannot revoke (§ 1366 (2) sentences 2, 3)";
+}
+pub relation unwirksamkeit_auch_vom_anderen_geltend_zu_machen(ehe: Ehe, berechtigter: Person, dritter: Person) kind institutional {
+    label de official "Verfügt ein Ehegatte ohne die erforderliche Zustimmung, so ist auch der andere Ehegatte berechtigt, die sich aus der Unwirksamkeit ergebenden Rechte gegen den Dritten gerichtlich geltend zu machen (§ 1368)";
+    label en unofficial "The other spouse is also entitled to assert judicially against the third party the rights arising from the ineffectiveness (§ 1368)";
+}
+pub relation zugewinnausgleich_nach_1373_bis_1383(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Wird der überlebende Ehegatte nicht Erbe und steht ihm auch kein Vermächtnis zu, so kann er Ausgleich des Zugewinns nach den Vorschriften der §§ 1373 bis 1383, 1390 verlangen (§ 1371 Abs. 2 Halbsatz 1)";
+    label en unofficial "If the surviving spouse becomes neither heir nor legatee, he may claim equalisation under §§ 1373 to 1383, 1390 (§ 1371 (2))";
+}
+pub relation pflichtteil_nach_nicht_erhoehtem_erbteil(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Der Pflichtteil des überlebenden Ehegatten oder eines anderen Pflichtteilsberechtigten bestimmt sich in diesem Falle nach dem NICHT ERHÖHTEN gesetzlichen Erbteil des Ehegatten (§ 1371 Abs. 2 Halbsatz 2)";
+    label en unofficial "The compulsory share is then determined by the UNINCREASED statutory share of the spouse (§ 1371 (2))";
+}
+pub relation pflichtteil_neben_zugewinnausgleich(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Schlägt der überlebende Ehegatte die Erbschaft aus, so kann er neben dem Ausgleich des Zugewinns den Pflichtteil auch dann verlangen, wenn dieser ihm nach den erbrechtlichen Bestimmungen nicht zustünde (§ 1371 Abs. 3 Satz 1)";
+    label en unofficial "If the surviving spouse disclaims, he may claim the compulsory share alongside equalisation even where he would not otherwise be entitled (§ 1371 (3) sentence 1)";
+}
+pub relation ausbildungsmittel_aus_dem_viertel(ehe: Ehe, ueberlebender: Person, abkoemmling: Person) kind institutional {
+    label de official "Der überlebende Ehegatte ist verpflichtet, erbberechtigten Abkömmlingen des Verstorbenen, die nicht aus der aufgelösten Ehe stammen, die Mittel zu einer angemessenen Ausbildung aus dem nach Absatz 1 zusätzlich gewährten Viertel zu gewähren (§ 1371 Abs. 4)";
+    label en unofficial "The surviving spouse must grant descendants not from the dissolved marriage the means for appropriate education out of the additional quarter (§ 1371 (4))";
+}
+pub relation zugewinn_wird_ausgeglichen(ehe: Ehe) kind institutional {
+    label de official "Wird der Güterstand auf andere Weise als durch den Tod eines Ehegatten beendet, so wird der Zugewinn nach den Vorschriften der §§ 1373 bis 1390 ausgeglichen (§ 1372)";
+    label en unofficial "Where the regime ends otherwise than by death, the accrued gains are equalised under §§ 1373 to 1390 (§ 1372)";
+}
+pub relation anfangsvermoegen(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    key(ehe, p);
+    label de official "Anfangsvermögen: das Vermögen beim Eintritt des Güterstands nach Abzug der Verbindlichkeiten, zuzüglich der Hinzurechnungen (§ 1374 Abs. 1, 2); Verbindlichkeiten sind über die Höhe des Vermögens hinaus abzuziehen (Abs. 3)";
+    label en unofficial "Initial assets: the assets at the start of the regime after deduction of liabilities plus the additions (§ 1374 (1), (2)); liabilities are deducted beyond the amount of the assets ((3))";
+}
+pub relation endvermoegen(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    key(ehe, p);
+    label de official "Endvermögen: das Vermögen bei der Beendigung des Güterstands nach Abzug der Verbindlichkeiten, zuzüglich der nach § 1375 Abs. 2 hinzuzurechnenden Beträge";
+    label en unofficial "Final assets: the assets at the end of the regime after deduction of liabilities plus the amounts to be added under § 1375 (2)";
+}
+relation hinzurechnungsbetrag_1375(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    key(ehe, p);
+    label de official "Betrag, der dem Endvermögen nach § 1375 Abs. 2 hinzuzurechnen ist";
+    label en unofficial "Amount to be added to the final assets under § 1375 (2)";
+}
+relation minderung_nicht_hinzuzurechnen(ehe: Ehe, p: Person) kind institutional {
+    label de official "Der Betrag der Vermögensminderung wird dem Endvermögen nicht hinzugerechnet, wenn sie mindestens zehn Jahre vor Beendigung des Güterstands eingetreten ist oder wenn der andere Ehegatte einverstanden war (§ 1375 Abs. 3)";
+    label en unofficial "The amount of the reduction is not added if it occurred at least ten years before the end of the regime or if the other spouse consented (§ 1375 (3))";
+}
+pub relation zugewinn(ehe: Ehe, p: Person, wert: Money) kind institutional {
+    key(ehe, p);
+    label de official "Zugewinn ist der Betrag, um den das Endvermögen eines Ehegatten das Anfangsvermögen übersteigt (§ 1373)";
+    label en unofficial "Accrued gain is the amount by which the final assets exceed the initial assets (§ 1373)";
+}
+relation verzeichnis_richtig_vermutet(ehe: Ehe, p: Person) kind institutional {
+    label de official "Haben die Ehegatten das Anfangsvermögen gemeinsam in einem Verzeichnis festgestellt, so wird im Verhältnis der Ehegatten zueinander vermutet, dass das Verzeichnis richtig ist (§ 1377 Abs. 1)";
+    label en unofficial "Where the spouses jointly recorded the initial assets in an inventory, it is presumed between them that the inventory is correct (§ 1377 (1))";
+}
+relation endvermoegen_ist_zugewinn_vermutet(ehe: Ehe, p: Person) kind institutional {
+    label de official "Soweit kein Verzeichnis aufgenommen ist, wird vermutet, dass das Endvermögen eines Ehegatten seinen Zugewinn darstellt (§ 1377 Abs. 3) — das heißt: das Anfangsvermögen ist null";
+    label en unofficial "In so far as no inventory was drawn up, it is presumed that the final assets constitute the accrued gain (§ 1377 (3)) — i.e. the initial assets are zero";
+}
+pub relation ueberschuss(ehe: Ehe, glaeubiger: Person, schuldner: Person, wert: Money) kind institutional {
+    label de official "Betrag, um den der Zugewinn des einen Ehegatten den Zugewinn des anderen übersteigt (§ 1378 Abs. 1)";
+    label en unofficial "Amount by which one spouse's accrued gain exceeds the other's (§ 1378 (1))";
+}
+pub relation ausgleichsforderung(ehe: Ehe, glaeubiger: Person, schuldner: Person, betrag: Money) kind institutional {
+    label de official "Übersteigt der Zugewinn des einen Ehegatten den Zugewinn des anderen, so steht die HÄLFTE des Überschusses dem anderen Ehegatten als Ausgleichsforderung zu (§ 1378 Abs. 1), begrenzt durch den Wert des bei Beendigung vorhandenen Vermögens nach Abzug der Verbindlichkeiten (Abs. 2)";
+    label en unofficial "Where one spouse's accrued gain exceeds the other's, HALF the excess accrues to the other as an equalisation claim (§ 1378 (1)), capped by the value of the assets at the end after deduction of liabilities ((2))";
+}
+relation obergrenze_der_ausgleichsforderung(ehe: Ehe, schuldner: Person, betrag: Money) kind institutional {
+    key(ehe, schuldner);
+    label de official "Die Höhe der Ausgleichsforderung wird durch den Wert des Vermögens begrenzt, das nach Abzug der Verbindlichkeiten bei Beendigung des Güterstands vorhanden ist; die Begrenzung erhöht sich in den Fällen des § 1375 Abs. 2 Satz 1 um den hinzuzurechnenden Betrag (§ 1378 Abs. 2)";
+    label en unofficial "The equalisation claim is capped by the value of the assets present at the end of the regime after deduction of liabilities; the cap increases in the cases of § 1375 (2) sentence 1 ((2))";
+}
+relation ausgleichsforderung_entsteht_am(ehe: Ehe, tag: Date) kind institutional {
+    key(ehe);
+    label de official "Die Ausgleichsforderung entsteht mit der Beendigung des Güterstands und ist von diesem Zeitpunkt an vererblich und übertragbar (§ 1378 Abs. 3 Satz 1)";
+    label en unofficial "The equalisation claim arises upon the end of the regime and is from then inheritable and transferable (§ 1378 (3) sentence 1)";
+}
+relation auskunftspflicht(ehe: Ehe, verpflichteter: Person, berechtigter: Person, gegenstand: Text) kind institutional {
+    label de official "Auskunftspflicht über das Vermögen zum Zeitpunkt der Trennung und über das für die Berechnung des Anfangs- und Endvermögens maßgebliche Vermögen (§ 1379 Abs. 1 Satz 1 Nr. 1, 2, Abs. 2)";
+    label en unofficial "Duty to give information about the assets at the time of separation and about the assets relevant to the calculation (§ 1379 (1) sentence 1 nos. 1, 2, (2))";
+}
+relation anrechnung_auf_die_ausgleichsforderung(ehe: Ehe, empfaenger: Person, wert: Money) kind institutional {
+    label de official "Auf die Ausgleichsforderung eines Ehegatten wird angerechnet, was ihm von dem anderen Ehegatten mit der Bestimmung zugewendet ist, dass es angerechnet werden soll (§ 1380 Abs. 1 Satz 1)";
+    label en unofficial "What has been given with the stipulation that it is to be set off is set off against the equalisation claim (§ 1380 (1) sentence 1)";
+}
+relation anrechnung_vermutet(ehe: Ehe, empfaenger: Person, wert: Money) kind institutional {
+    label de official "Im Zweifel ist anzunehmen, dass Zuwendungen angerechnet werden sollen, wenn ihr Wert den Wert üblicher Gelegenheitsgeschenke übersteigt (§ 1380 Abs. 1 Satz 2)";
+    label en unofficial "In case of doubt dispositions are presumed to be intended for set-off where their value exceeds that of customary occasional gifts (§ 1380 (1) sentence 2)";
+}
+relation leistung_verweigerbar(ehe: Ehe, schuldner: Person) kind institutional {
+    label de official "Der Schuldner kann die Erfüllung der Ausgleichsforderung verweigern, soweit der Ausgleich nach den Umständen des Falles grob unbillig wäre (§ 1381 Abs. 1)";
+    label en unofficial "The debtor may refuse performance in so far as the equalisation would be grossly inequitable (§ 1381 (1))";
+}
+relation ausgleichsforderung_gestundet(ehe: Ehe, schuldner: Person) kind institutional {
+    label de official "Das Familiengericht stundet auf Antrag eine Ausgleichsforderung, soweit sie vom Schuldner nicht bestritten wird, wenn die sofortige Zahlung zur Unzeit erfolgen würde; eine gestundete Forderung hat der Schuldner zu verzinsen (§ 1382 Abs. 1, 2)";
+    label en unofficial "The family court defers the claim on application where immediate payment would be untimely; a deferred claim bears interest (§ 1382 (1), (2))";
+}
+relation uebertragung_von_vermoegensgegenstaenden_angeordnet(ehe: Ehe, schuldner: Person, glaeubiger: Person) kind institutional {
+    label de official "Das Familiengericht kann auf Antrag des Gläubigers anordnen, dass der Schuldner bestimmte Gegenstände seines Vermögens unter Anrechnung auf die Ausgleichsforderung zu übertragen hat (§ 1383 Abs. 1)";
+    label en unofficial "On the creditor's application the family court may order the debtor to transfer specified objects, set off against the equalisation claim (§ 1383 (1))";
+}
+pub relation berechnungszeitpunkt(ehe: Ehe, tag: Date) kind institutional {
+    key(ehe);
+    label de official "Zeitpunkt, der für die Berechnung des Zugewinns und für die Höhe der Ausgleichsforderung maßgebend ist: die Beendigung des Güterstands (§ 1375 Abs. 1), bei Scheidung die Rechtshängigkeit des Scheidungsantrags (§ 1384), im Falle der §§ 1385, 1386 die Stellung der Anträge (§ 1387)";
+    label en unofficial "Point in time decisive for calculating the accrued gain and the amount of the claim (§§ 1375 (1), 1384, 1387)";
+}
+relation vorzeitiger_ausgleich_verlangbar(ehe: Ehe, berechtigter: Person, nummer: Integer) kind institutional {
+    label de official "Der ausgleichsberechtigte Ehegatte kann vorzeitigen Ausgleich des Zugewinns bei vorzeitiger Aufhebung der Zugewinngemeinschaft verlangen (§ 1385 Nr. 1 bis 4)";
+    label en unofficial "The entitled spouse may claim premature equalisation upon premature termination of the regime (§ 1385 nos. 1 to 4)";
+}
+relation vorzeitige_aufhebung_verlangbar(ehe: Ehe, verlangender: Person) kind institutional {
+    label de official "Jeder Ehegatte kann unter entsprechender Anwendung des § 1385 die vorzeitige Aufhebung der Zugewinngemeinschaft verlangen (§ 1386)";
+    label en unofficial "Each spouse may claim premature termination of the regime, § 1385 applying accordingly (§ 1386)";
+}
+relation guetertrennung_tritt_ein(ehe: Ehe, tag: Date) kind institutional {
+    label de official "Mit der Rechtskraft der Entscheidung, die die Zugewinngemeinschaft vorzeitig aufhebt, tritt Gütertrennung ein (§ 1388)";
+    label en unofficial "Upon the decision terminating the regime becoming final, separation of property takes effect (§ 1388)";
+}
+pub relation wertersatz_vom_dritten(ehe: Ehe, berechtigter: Person, dritter: Person, wert: Money) kind institutional {
+    label de official "Der ausgleichsberechtigte Ehegatte kann von einem Dritten Ersatz des Wertes einer unentgeltlichen Zuwendung des ausgleichspflichtigen Ehegatten verlangen (§ 1390 Abs. 1, 2); der ausgleichspflichtige Ehegatte und der Dritte haften als Gesamtschuldner (Abs. 1 Satz 4)";
+    label en unofficial "The entitled spouse may claim from a third party the value of a gratuitous disposition by the liable spouse (§ 1390 (1), (2)); both are jointly and severally liable";
+}
+pub relation verjaehrungsbeginn_1390(ehe: Ehe, tag: Date) kind institutional {
+    key(ehe);
+    label de official "Die Verjährungsfrist des Anspruchs gegen den Dritten beginnt mit der Beendigung des Güterstands (§ 1390 Abs. 3 Satz 1)";
+    label en unofficial "The limitation period of the claim against the third party begins with the end of the regime (§ 1390 (3) sentence 1)";
+}
+
+// --- Regeln: Verwaltung und Verfügungsbeschränkungen ------------------------------------------------
+
+@source(BGB_P1363)
+rule VermoegenBleibtGetrennt(ehe: Ehe, p: Person) strict {
+    label de official "Das jeweilige Vermögen der Ehegatten wird nicht deren gemeinschaftliches Vermögen; dies gilt auch für Vermögen, das ein Ehegatte nach der Eheschließung erwirbt. Der Zugewinn, den die Ehegatten in der Ehe erzielen, wird jedoch ausgeglichen, wenn die Zugewinngemeinschaft endet (§ 1363 Abs. 2)";
+    label en unofficial "The respective assets do not become joint assets; but the accrued gain is equalised when the regime ends (§ 1363 (2))";
+    when gueterstand(ehe, Zugewinngemeinschaft) and ehegatte(ehe, p);
+    then vermoegen_bleibt_getrennt(ehe, p);
+}
+
+@source(BGB_P1364)
+rule SelbstaendigeVermoegensverwaltung(ehe: Ehe, p: Person) strict {
+    label de official "Jeder Ehegatte verwaltet sein Vermögen selbständig; er ist jedoch in der Verwaltung seines Vermögens nach Maßgabe der folgenden Vorschriften beschränkt (§ 1364)";
+    label en unofficial "Each spouse administers his assets independently, subject to the restrictions of the following provisions (§ 1364)";
+    when gueterstand(ehe, Zugewinngemeinschaft) and ehegatte(ehe, p);
+    then verwaltet_sein_vermoegen_selbstaendig(ehe, p);
+}
+
+@source(BGB_P1365) {
+    rule ZustimmungBeiVerfuegungUeberDasVermoegenImGanzen(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person, anderer: Person) strict {
+        label de official "Ein Ehegatte kann sich nur mit Einwilligung des anderen Ehegatten verpflichten, über sein Vermögen im Ganzen zu verfügen (§ 1365 Abs. 1 Satz 1)";
+        label en unofficial "A spouse may undertake to dispose of his assets as a whole only with the other's consent (§ 1365 (1) sentence 1)";
+        when gueterstand(ehe, Zugewinngemeinschaft) and verpflichtung_ueber_das_vermoegen_im_ganzen(ehe, g, handelnder)
+         and verfuegung_betrifft_das_vermoegen_im_ganzen(ehe, g)
+         and anderer_ehegatte(ehe, handelnder, anderer);
+        then zustimmung_erforderlich(ehe, g, anderer);
+    }
+    rule ErsetzungDerZustimmungDurchDasFamiliengericht(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Entspricht das Rechtsgeschäft den Grundsätzen einer ordnungsmäßigen Verwaltung, so kann das Familiengericht auf Antrag die Zustimmung des anderen Ehegatten ersetzen, wenn dieser sie ohne ausreichenden Grund verweigert oder verhindert ist und mit dem Aufschub Gefahr verbunden ist (§ 1365 Abs. 2)";
+        label en unofficial "Where the transaction accords with proper administration, the family court may replace the other spouse's consent ((2))";
+        when ordnungsmaessige_verwaltung(ehe, g) and zustimmung_durch_familiengericht_ersetzt(ehe, g);
+        then rechtsgeschaeft_wirksam(ehe, g);
+    }
+}
+
+@source(BGB_P1366) {
+    rule VertragDurchGenehmigungWirksam(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Ein Vertrag, den ein Ehegatte ohne die erforderliche Einwilligung des anderen Ehegatten schließt, ist wirksam, wenn dieser ihn genehmigt (§ 1366 Abs. 1)";
+        label en unofficial "A contract concluded without the required consent is effective if the other spouse ratifies it (§ 1366 (1))";
+        when genehmigung_erklaert(ehe, g) and not_known(widerruf_des_dritten(ehe, g));
+        then rechtsgeschaeft_wirksam(ehe, g);
+    }
+    rule WiderrufDesDrittenAusgeschlossenBeiKenntnisDerEhe(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Hat der Dritte gewusst, dass der vertragsschließende Ehegatte verheiratet ist, so kann er nur widerrufen, wenn der Ehegatte wahrheitswidrig behauptet hat, der andere Ehegatte habe eingewilligt (§ 1366 Abs. 2 Satz 2)";
+        label en unofficial "If the third party knew the spouse was married, he may revoke only where the spouse untruthfully asserted consent (§ 1366 (2) sentence 2)";
+        when dritter_kannte_die_ehe(ehe, g)
+         and not_known(wahrheitswidrige_behauptung_der_einwilligung(ehe, g));
+        then widerruf_des_dritten_ausgeschlossen(ehe, g);
+    }
+    rule WiderrufAuchBeiWahrheitswidrigerBehauptungAusgeschlossen(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Der Dritte kann auch in diesem Fall nicht widerrufen, wenn ihm beim Abschluss des Vertrags bekannt war, dass der andere Ehegatte nicht eingewilligt hatte (§ 1366 Abs. 2 Satz 3)";
+        label en unofficial "Even then the third party cannot revoke where at conclusion he knew that the other spouse had not consented (§ 1366 (2) sentence 3)";
+        when dritter_kannte_das_fehlen_der_einwilligung(ehe, g);
+        then widerruf_des_dritten_ausgeschlossen(ehe, g);
+    }
+    rule GenehmigungsfristEreignis(ehe: Ehe, g: Rechtsgeschaeft, f: Frist, t: Date) strict {
+        label de official "Die Frist läuft vom Empfang der Aufforderung des Dritten an (§ 1366 Abs. 3 Satz 2)";
+        label en unofficial "The period runs from the receipt of the third party's demand (§ 1366 (3) sentence 2)";
+        when genehmigungsfrist(ehe, g, f) and aufforderung_zur_genehmigung_empfangen_am(ehe, g, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule GenehmigungsfristDauer(ehe: Ehe, g: Rechtsgeschaeft, f: Frist) strict {
+        label de official "Die Genehmigung kann nur innerhalb von ZWEI WOCHEN seit dem Empfang der Aufforderung erklärt werden (§ 1366 Abs. 3 Satz 2)";
+        label en unofficial "Ratification may be declared only within TWO WEEKS of receipt of the demand (§ 1366 (3) sentence 2)";
+        when genehmigungsfrist(ehe, g, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 2 calendar_week);
+    }
+    rule LetzterTagDerGenehmigungsfrist(ehe: Ehe, g: Rechtsgeschaeft, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Zweiwochenfrist: die Genehmigung ist gegenüber dem Dritten zu ERKLÄREN, daher gilt die Verlegung des § 193 (Kopf package.law)";
+        label en unofficial "Last day of the two-week period: the ratification is DECLARED to the third party, so § 193 applies";
+        when genehmigungsfrist(ehe, g, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_genehmigungsfrist(ehe, g, e);
+    }
+    rule GenehmigungGiltAlsVerweigert(ehe: Ehe, g: Rechtsgeschaeft, e: Date, bewertung: Date) strict {
+        label de official "Wird die Genehmigung nicht innerhalb der Frist erklärt, so gilt sie als verweigert (§ 1366 Abs. 3 Satz 2 Halbsatz 2); ersetzt das Familiengericht die Genehmigung, so ist sein Beschluss nur wirksam, wenn der Ehegatte ihn dem Dritten innerhalb der zweiwöchigen Frist mitteilt (Satz 3)";
+        label en unofficial "If not declared within the period, ratification counts as refused ((3) sentence 2); a substituting decision is effective only if communicated within the period (sentence 3)";
+        when letzter_tag_der_genehmigungsfrist(ehe, g, e) and bewertungstag(ehe, bewertung) and bewertung > e
+         and not_known(genehmigung_erklaert(ehe, g))
+         and not_known(ersetzungsbeschluss_dem_dritten_mitgeteilt(ehe, g));
+        then genehmigung_gilt_als_verweigert(ehe, g);
+    }
+    rule VerweigerteGenehmigungMachtUnwirksam(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Wird die Genehmigung verweigert, so ist der Vertrag unwirksam (§ 1366 Abs. 4)";
+        label en unofficial "If ratification is refused, the contract is ineffective (§ 1366 (4))";
+        when genehmigung_verweigert(ehe, g);
+        then rechtsgeschaeft_unwirksam(ehe, g);
+    }
+    rule FiktiveVerweigerungMachtUnwirksam(ehe: Ehe, g: Rechtsgeschaeft) strict {
+        label de official "Gilt die Genehmigung als verweigert, so ist der Vertrag unwirksam (§ 1366 Abs. 3 Satz 2, Abs. 4)";
+        label en unofficial "Where ratification counts as refused, the contract is ineffective ((3) sentence 2, (4))";
+        when genehmigung_gilt_als_verweigert(ehe, g);
+        then rechtsgeschaeft_unwirksam(ehe, g);
+    }
+}
+
+@source(BGB_P1367)
+rule EinseitigesRechtsgeschaeftUnwirksam(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) strict {
+    label de official "Ein einseitiges Rechtsgeschäft, das ohne die erforderliche Einwilligung vorgenommen wird, ist unwirksam (§ 1367)";
+    label en unofficial "A unilateral legal transaction undertaken without the required consent is ineffective (§ 1367)";
+    when einseitiges_rechtsgeschaeft(ehe, g, handelnder)
+     and not_known(einwilligung_des_anderen_ehegatten(ehe, g));
+    then rechtsgeschaeft_unwirksam(ehe, g);
+}
+
+@source(BGB_P1368)
+rule RevokationsrechtDesAnderenEhegatten(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person, dritter: Person, anderer: Person) strict {
+    label de official "Verfügt ein Ehegatte ohne die erforderliche Zustimmung des anderen Ehegatten über sein Vermögen, so ist auch der andere Ehegatte berechtigt, die sich aus der Unwirksamkeit der Verfügung ergebenden Rechte gegen den Dritten gerichtlich geltend zu machen (§ 1368)";
+    label en unofficial "Where a spouse disposes without the required consent, the other spouse too may judicially assert the rights arising from the ineffectiveness against the third party (§ 1368)";
+    when verfuegung_ohne_zustimmung(ehe, g, handelnder, dritter)
+     and anderer_ehegatte(ehe, handelnder, anderer);
+    then unwirksamkeit_auch_vom_anderen_geltend_zu_machen(ehe, anderer, dritter);
+}
+
+@source(BGB_P1369) {
+    rule ZustimmungBeiHaushaltsgegenstaenden(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person, anderer: Person) strict {
+        label de official "Ein Ehegatte kann über ihm gehörende Gegenstände des ehelichen Haushalts nur verfügen und sich zu einer solchen Verfügung auch nur verpflichten, wenn der andere Ehegatte einwilligt (§ 1369 Abs. 1)";
+        label en unofficial "A spouse may dispose of household objects belonging to him only with the other's consent (§ 1369 (1))";
+        when gueterstand(ehe, Zugewinngemeinschaft) and verfuegung_ueber_haushaltsgegenstand(ehe, g, handelnder)
+         and anderer_ehegatte(ehe, handelnder, anderer);
+        then zustimmung_erforderlich(ehe, g, anderer);
+    }
+    rule ErsetzungDerZustimmungBeiHaushaltsgegenstaenden(ehe: Ehe, g: Rechtsgeschaeft, handelnder: Person) strict {
+        label de official "Das Familiengericht kann auf Antrag des Ehegatten die Zustimmung des anderen Ehegatten ersetzen, wenn dieser sie ohne ausreichenden Grund verweigert oder verhindert ist (§ 1369 Abs. 2); die §§ 1366 bis 1368 gelten entsprechend (Abs. 3)";
+        label en unofficial "The family court may replace the other spouse's consent ((2)); §§ 1366 to 1368 apply accordingly ((3))";
+        when verfuegung_ueber_haushaltsgegenstand(ehe, g, handelnder)
+         and zustimmung_durch_familiengericht_ersetzt(ehe, g);
+        then rechtsgeschaeft_wirksam(ehe, g);
+    }
+}
+
+// --- Regeln: § 1371 Abs. 2 bis 4 ---------------------------------------------------------------------
+
+@source(BGB_P1371) {
+    rule ZugewinnausgleichWennNichtErbe(ehe: Ehe, verstorbener: Person, ueberlebender: Person) strict {
+        label de official "Wird der überlebende Ehegatte nicht Erbe und steht ihm auch kein Vermächtnis zu, so kann er Ausgleich des Zugewinns nach den Vorschriften der §§ 1373 bis 1383, 1390 verlangen (§ 1371 Abs. 2 Halbsatz 1)";
+        label en unofficial "If the surviving spouse becomes neither heir nor legatee, he may claim equalisation under §§ 1373 to 1383, 1390 ((2))";
+        when gueterstand(ehe, Zugewinngemeinschaft) and gueterstand_durch_tod_beendet(ehe, verstorbener)
+         and anderer_ehegatte(ehe, verstorbener, ueberlebender)
+         and nicht_erbe_und_kein_vermaechtnis(ehe, ueberlebender);
+        then zugewinnausgleich_nach_1373_bis_1383(ehe, ueberlebender);
+    }
+    rule PflichtteilNachNichtErhoehtemErbteil(ehe: Ehe, ueberlebender: Person) strict {
+        label de official "Der Pflichtteil des überlebenden Ehegatten oder eines anderen Pflichtteilsberechtigten bestimmt sich in diesem Falle nach dem nicht erhöhten gesetzlichen Erbteil des Ehegatten (§ 1371 Abs. 2 Halbsatz 2)";
+        label en unofficial "The compulsory share is then determined by the unincreased statutory share ((2))";
+        when zugewinnausgleich_nach_1373_bis_1383(ehe, ueberlebender);
+        then pflichtteil_nach_nicht_erhoehtem_erbteil(ehe, ueberlebender);
+    }
+    rule PflichtteilNebenAusgleichBeiAusschlagung(ehe: Ehe, verstorbener: Person, ueberlebender: Person) strict {
+        label de official "Schlägt der überlebende Ehegatte die Erbschaft aus, so kann er neben dem Ausgleich des Zugewinns den Pflichtteil auch dann verlangen, wenn dieser ihm nach den erbrechtlichen Bestimmungen nicht zustünde; dies gilt nicht, wenn er durch Vertrag auf sein gesetzliches Erbrecht oder sein Pflichtteilsrecht verzichtet hat (§ 1371 Abs. 3)";
+        label en unofficial "If the surviving spouse disclaims, he may claim the compulsory share alongside equalisation, unless he waived by contract ((3))";
+        when gueterstand(ehe, Zugewinngemeinschaft) and gueterstand_durch_tod_beendet(ehe, verstorbener)
+         and anderer_ehegatte(ehe, verstorbener, ueberlebender)
+         and erbschaft_ausgeschlagen(ehe, ueberlebender)
+         and not_known(verzicht_auf_erb_und_pflichtteilsrecht(ehe, ueberlebender));
+        then pflichtteil_neben_zugewinnausgleich(ehe, ueberlebender);
+    }
+    rule AusbildungsmittelFuerStiefkinder(ehe: Ehe, verstorbener: Person, ueberlebender: Person, a: Person) strict {
+        label de official "Sind erbberechtigte Abkömmlinge des verstorbenen Ehegatten vorhanden, welche nicht aus der durch dessen Tod aufgelösten Ehe stammen, so ist der überlebende Ehegatte verpflichtet, diesen Abkömmlingen, wenn und soweit sie dessen bedürfen, die Mittel zu einer angemessenen Ausbildung aus dem nach Absatz 1 zusätzlich gewährten Viertel zu gewähren (§ 1371 Abs. 4)";
+        label en unofficial "Where descendants of the deceased not from the dissolved marriage are entitled to inherit, the surviving spouse must grant them the means for appropriate education out of the additional quarter ((4))";
+        when erhoehung_des_erbteils_1371(ehe, ueberlebender)
+         and erbberechtigter_abkoemmling_aus_anderer_ehe(ehe, verstorbener, a)
+         and ausbildungsbeduerftig(ehe, a);
+        then ausbildungsmittel_aus_dem_viertel(ehe, ueberlebender, a);
+    }
+}
+
+@source(BGB_P1372)
+rule ZugewinnausgleichInAnderenFaellen(ehe: Ehe) strict {
+    label de official "Wird der Güterstand auf andere Weise als durch den Tod eines Ehegatten beendet, so wird der Zugewinn nach den Vorschriften der §§ 1373 bis 1390 ausgeglichen (§ 1372)";
+    label en unofficial "Where the regime ends otherwise than by death, the accrued gains are equalised under §§ 1373 to 1390 (§ 1372)";
+    when gueterstand(ehe, Zugewinngemeinschaft) and gueterstand_auf_andere_weise_als_durch_tod_beendet(ehe);
+    then zugewinn_wird_ausgeglichen(ehe);
+}
+
+// --- Regeln: Anfangs- und Endvermögen, Zugewinn ------------------------------------------------------
+
+@source(BGB_P1374) {
+    rule AnfangsvermoegenMitHinzurechnung(ehe: Ehe, p: Person, grund: Money, hinzu: Money) strict {
+        label de official "Anfangsvermögen ist das Vermögen, das einem Ehegatten nach Abzug der Verbindlichkeiten beim Eintritt des Güterstands gehört (§ 1374 Abs. 1); Vermögen, das er danach von Todes wegen, durch Schenkung oder als Ausstattung erwirbt, wird nach Abzug der Verbindlichkeiten hinzugerechnet (Abs. 2). Verbindlichkeiten sind über die Höhe des Vermögens hinaus abzuziehen (Abs. 3): das Anfangsvermögen kann NEGATIV sein";
+        label en unofficial "Initial assets are those belonging at the start after deduction of liabilities ((1)), plus later acquisitions by death, gift or endowment ((2)); liabilities are deducted beyond the amount of the assets ((3)): initial assets may be NEGATIVE";
+        when vermoegen_beim_eintritt_des_gueterstands(ehe, p, grund)
+         and hinzurechnung_zum_anfangsvermoegen(ehe, p, hinzu);
+        then anfangsvermoegen(ehe, p, grund + hinzu);
+    }
+    rule AnfangsvermoegenOhneHinzurechnung(ehe: Ehe, p: Person, grund: Money) strict {
+        label de official "Ist dem Anfangsvermögen nichts hinzuzurechnen, so ist es das Vermögen beim Eintritt des Güterstands nach Abzug der Verbindlichkeiten (§ 1374 Abs. 1)";
+        label en unofficial "Where nothing is to be added, the initial assets are those at the start after deduction of liabilities ((1))";
+        when vermoegen_beim_eintritt_des_gueterstands(ehe, p, grund)
+         and keine_hinzurechnung_zum_anfangsvermoegen(ehe, p);
+        then anfangsvermoegen(ehe, p, grund);
+    }
+}
+
+@source(BGB_P1375) {
+    rule ZehnjahresfristEreignis(ehe: Ehe, p: Person, f: Frist, t: Date) strict {
+        label de official "Die Zehnjahresfrist des § 1375 Abs. 3 wird von der Vermögensminderung an vorwärts gerechnet; ihr Ende wird mit dem Tag der Beendigung des Güterstands verglichen (Ledger D-13-03: ein negativer Kalenderschritt ist unzulässig)";
+        label en unofficial "The ten-year period of § 1375 (3) is counted forward from the reduction; its end is compared with the day the regime ended";
+        when zehnjahresfrist_1375(ehe, p, f) and minderung_eingetreten_am(ehe, p, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule ZehnjahresfristDauer(ehe: Ehe, p: Person, f: Frist) strict {
+        label de official "Der Betrag der Vermögensminderung wird dem Endvermögen nicht hinzugerechnet, wenn sie mindestens ZEHN JAHRE vor Beendigung des Güterstands eingetreten ist (§ 1375 Abs. 3)";
+        label en unofficial "The reduction is not added where it occurred at least TEN YEARS before the end of the regime (§ 1375 (3))";
+        when zehnjahresfrist_1375(ehe, p, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+    }
+    rule MinderungNichtHinzuzurechnenWegenZeitablaufs(ehe: Ehe, p: Person, f: Frist, e: Date, beendet: Date) strict {
+        label de official "Die Minderung ist mindestens zehn Jahre vor Beendigung des Güterstands eingetreten und wird daher nicht hinzugerechnet (§ 1375 Abs. 3 Alt. 1)";
+        label en unofficial "The reduction occurred at least ten years before the end of the regime and is therefore not added ((3))";
+        when zehnjahresfrist_1375(ehe, p, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and gueterstand_beendet_am(ehe, beendet) and beendet > e;
+        then minderung_nicht_hinzuzurechnen(ehe, p);
+    }
+    rule MinderungNichtHinzuzurechnenWegenEinverstaendnisses(ehe: Ehe, p: Person) strict {
+        label de official "Die Minderung wird nicht hinzugerechnet, wenn der andere Ehegatte mit der unentgeltlichen Zuwendung oder der Verschwendung einverstanden gewesen ist (§ 1375 Abs. 3 Alt. 2)";
+        label en unofficial "The reduction is not added where the other spouse consented to the disposition or dissipation ((3))";
+        when einverstaendnis_mit_der_minderung(ehe, p);
+        then minderung_nicht_hinzuzurechnen(ehe, p);
+    }
+    rule HinzurechnungsbetragDesEndvermoegens(ehe: Ehe, p: Person, wert: Money, nr: Integer) strict {
+        label de official "Dem Endvermögen eines Ehegatten wird der Betrag hinzugerechnet, um den dieses Vermögen durch unentgeltliche Zuwendungen (Nr. 1), Verschwendung (Nr. 2) oder Handlungen in Benachteiligungsabsicht (Nr. 3) vermindert ist (§ 1375 Abs. 2 Satz 1)";
+        label en unofficial "The amount by which the assets were reduced by gratuitous dispositions, dissipation or acts intended to disadvantage is added to the final assets ((2) sentence 1)";
+        when illoyale_vermoegensminderung(ehe, p, wert, nr)
+         and not_known(minderung_nicht_hinzuzurechnen(ehe, p));
+        then hinzurechnungsbetrag_1375(ehe, p, wert);
+    }
+    rule EndvermoegenMitHinzurechnung(ehe: Ehe, p: Person, grund: Money, hinzu: Money) strict {
+        label de official "Endvermögen ist das Vermögen, das einem Ehegatten nach Abzug der Verbindlichkeiten bei der Beendigung des Güterstands gehört (§ 1375 Abs. 1 Satz 1), zuzüglich der nach Absatz 2 hinzuzurechnenden Beträge; Verbindlichkeiten sind über die Höhe des Vermögens hinaus abzuziehen (Abs. 1 Satz 2)";
+        label en unofficial "Final assets are those belonging at the end after deduction of liabilities ((1)) plus the amounts to be added under (2)";
+        when vermoegen_bei_beendigung_des_gueterstands(ehe, p, grund)
+         and hinzurechnungsbetrag_1375(ehe, p, hinzu);
+        then endvermoegen(ehe, p, grund + hinzu);
+    }
+    rule EndvermoegenOhneHinzurechnung(ehe: Ehe, p: Person, grund: Money) strict {
+        label de official "Ist dem Endvermögen nichts hinzuzurechnen, so ist es das Vermögen bei der Beendigung des Güterstands nach Abzug der Verbindlichkeiten (§ 1375 Abs. 1)";
+        label en unofficial "Where nothing is to be added, the final assets are those at the end after deduction of liabilities ((1))";
+        when vermoegen_bei_beendigung_des_gueterstands(ehe, p, grund)
+         and keine_illoyale_minderung(ehe, p);
+        then endvermoegen(ehe, p, grund);
+    }
+}
+
+@source(BGB_P1373) {
+    rule ZugewinnAlsUeberschuss(ehe: Ehe, p: Person, e: Money, a: Money) strict {
+        label de official "Zugewinn ist der Betrag, um den das Endvermögen eines Ehegatten das Anfangsvermögen ÜBERSTEIGT (§ 1373)";
+        label en unofficial "Accrued gain is the amount by which the final assets EXCEED the initial assets (§ 1373)";
+        when endvermoegen(ehe, p, e) and anfangsvermoegen(ehe, p, a) and e > a;
+        then zugewinn(ehe, p, e - a);
+    }
+    rule KeinZugewinnOhneUeberschuss(ehe: Ehe, p: Person, e: Money, a: Money) strict {
+        label de official "Übersteigt das Endvermögen das Anfangsvermögen nicht, so gibt es keinen Zugewinn — und keinen negativen (§ 1373); die zweite Regel mit umgekehrter Garde ersetzt ein `max`, das der Text nicht kennt";
+        label en unofficial "Where the final assets do not exceed the initial assets there is no accrued gain — and none that is negative (§ 1373)";
+        when endvermoegen(ehe, p, e) and anfangsvermoegen(ehe, p, a) and e <= a;
+        then zugewinn(ehe, p, 0.00 EUR);
+    }
+}
+
+@source(BGB_P1376)
+rule BerechnungszeitpunktBeendigung(ehe: Ehe, t: Date) strict {
+    label de official "Der Berechnung des Endvermögens wird der Wert zugrunde gelegt, den das bei Beendigung des Güterstands vorhandene Vermögen in diesem Zeitpunkt hatte (§ 1376 Abs. 2); die Bewertung eines land- oder forstwirtschaftlichen Betriebs mit dem Ertragswert (Abs. 4) ist eine äußere Feststellung und kommt als Wert aus dem Fall";
+    label en unofficial "The final assets are valued as at the end of the regime (§ 1376 (2)); the yield value of an agricultural holding ((4)) is an external finding supplied by the case";
+    when gueterstand_beendet_am(ehe, t);
+    then berechnungszeitpunkt(ehe, t);
+}
+
+@source(BGB_P1377) {
+    presumption VerzeichnisRichtig(ehe: Ehe, p: Person) {
+        label de official "Haben die Ehegatten den Bestand und den Wert des Anfangsvermögens gemeinsam in einem Verzeichnis festgestellt, so wird im Verhältnis der Ehegatten zueinander vermutet, dass das Verzeichnis richtig ist (§ 1377 Abs. 1)";
+        label en unofficial "Where the spouses jointly recorded the initial assets in an inventory, it is presumed between them that it is correct (§ 1377 (1))";
+        when verzeichnis_des_anfangsvermoegens(ehe, p);
+        presume verzeichnis_richtig_vermutet(ehe, p);
+        unless verzeichnis_unrichtig(ehe, p);
+    }
+    presumption OhneVerzeichnisIstDasEndvermoegenDerZugewinn(ehe: Ehe, p: Person) {
+        label de official "Soweit kein Verzeichnis aufgenommen ist, wird vermutet, dass das Endvermögen eines Ehegatten seinen Zugewinn darstellt (§ 1377 Abs. 3)";
+        label en unofficial "In so far as no inventory was drawn up, the final assets are presumed to constitute the accrued gain (§ 1377 (3))";
+        when kein_verzeichnis_aufgenommen(ehe, p);
+        presume endvermoegen_ist_zugewinn_vermutet(ehe, p);
+        unless anfangsvermoegen_hoeher_als_null_nachgewiesen(ehe, p);
+    }
+}
+
+// --- Regeln: Ausgleichsforderung § 1378 ----------------------------------------------------------------
+
+@source(BGB_P1378) {
+    rule UeberschussDerZugewinne(ehe: Ehe, mehr: Person, weniger: Person, zm: Money, zw: Money) strict {
+        label de official "Übersteigt der Zugewinn des einen Ehegatten den Zugewinn des anderen, so ist der Überschuss der Unterschiedsbetrag (§ 1378 Abs. 1)";
+        label en unofficial "Where one spouse's gain exceeds the other's, the excess is the difference (§ 1378 (1))";
+        when zugewinn(ehe, mehr, zm) and zugewinn(ehe, weniger, zw)
+         and anderer_ehegatte(ehe, mehr, weniger) and zm > zw;
+        then ueberschuss(ehe, weniger, mehr, zm - zw);
+    }
+    rule ObergrenzeOhneHinzurechnung(ehe: Ehe, schuldner: Person, v: Money) strict {
+        label de official "Die Höhe der Ausgleichsforderung wird durch den Wert des Vermögens begrenzt, das nach Abzug der Verbindlichkeiten bei Beendigung des Güterstands vorhanden ist (§ 1378 Abs. 2 Satz 1)";
+        label en unofficial "The claim is capped by the value of the assets present at the end after deduction of liabilities ((2) sentence 1)";
+        when vermoegen_bei_beendigung_des_gueterstands(ehe, schuldner, v)
+         and keine_illoyale_minderung(ehe, schuldner);
+        then obergrenze_der_ausgleichsforderung(ehe, schuldner, v);
+    }
+    rule ObergrenzeMitHinzurechnung(ehe: Ehe, schuldner: Person, v: Money, hinzu: Money) strict {
+        label de official "Die sich nach Satz 1 ergebende Begrenzung erhöht sich in den Fällen des § 1375 Abs. 2 Satz 1 um den dem Endvermögen hinzuzurechnenden Betrag (§ 1378 Abs. 2 Satz 2, eingefügt durch das Gesetz vom 6. Juli 2009, BGBl. I S. 1696)";
+        label en unofficial "The cap under sentence 1 increases in the cases of § 1375 (2) sentence 1 by the amount to be added ((2) sentence 2, inserted by the Act of 6 July 2009)";
+        when vermoegen_bei_beendigung_des_gueterstands(ehe, schuldner, v)
+         and hinzurechnungsbetrag_1375(ehe, schuldner, hinzu);
+        then obergrenze_der_ausgleichsforderung(ehe, schuldner, v + hinzu);
+    }
+    rule AusgleichsforderungUnterhalbDerObergrenze(ehe: Ehe, glaeubiger: Person, schuldner: Person, u: Money, grenze: Money) strict {
+        label de official "Die Hälfte des Überschusses steht dem anderen Ehegatten als Ausgleichsforderung zu (§ 1378 Abs. 1), solange sie die Obergrenze des Absatzes 2 nicht übersteigt; geteilt wird EINMAL, kaufmännisch auf den Cent (Ledger D-12-06)";
+        label en unofficial "Half the excess accrues as the equalisation claim ((1)) as long as it does not exceed the cap of (2); the division is made ONCE, commercially rounded to the cent";
+        when ueberschuss(ehe, glaeubiger, schuldner, u)
+         and obergrenze_der_ausgleichsforderung(ehe, schuldner, grenze)
+         and div_round(u, 2 * 1.0, 2, "HALF_UP") <= grenze;
+        then ausgleichsforderung(ehe, glaeubiger, schuldner, div_round(u, 2 * 1.0, 2, "HALF_UP"));
+    }
+    rule AusgleichsforderungAufDieObergrenzeBegrenzt(ehe: Ehe, glaeubiger: Person, schuldner: Person, u: Money, grenze: Money) strict {
+        label de official "Übersteigt die Hälfte des Überschusses den Wert des bei Beendigung des Güterstands vorhandenen Vermögens nach Abzug der Verbindlichkeiten, so ist die Ausgleichsforderung auf diesen Wert begrenzt (§ 1378 Abs. 2 Satz 1)";
+        label en unofficial "Where half the excess exceeds the value of the assets present at the end after deduction of liabilities, the claim is capped at that value ((2) sentence 1)";
+        when ueberschuss(ehe, glaeubiger, schuldner, u)
+         and obergrenze_der_ausgleichsforderung(ehe, schuldner, grenze)
+         and div_round(u, 2 * 1.0, 2, "HALF_UP") > grenze;
+        then ausgleichsforderung(ehe, glaeubiger, schuldner, grenze);
+    }
+    rule AusgleichsforderungEntstehtMitDerBeendigung(ehe: Ehe, t: Date) strict {
+        label de official "Die Ausgleichsforderung entsteht mit der Beendigung des Güterstands und ist von diesem Zeitpunkt an vererblich und übertragbar (§ 1378 Abs. 3 Satz 1)";
+        label en unofficial "The claim arises upon the end of the regime and is thereafter inheritable and transferable ((3) sentence 1)";
+        when gueterstand_beendet_am(ehe, t);
+        then ausgleichsforderung_entsteht_am(ehe, t);
+    }
+}
+
+@source(BGB_P1379) {
+    rule AuskunftZumTrennungszeitpunkt(ehe: Ehe, verlangender: Person, verpflichteter: Person) strict {
+        label de official "Ist der Güterstand beendet oder hat ein Ehegatte die Scheidung beantragt, kann jeder Ehegatte von dem anderen Auskunft über das Vermögen zum Zeitpunkt der Trennung verlangen (§ 1379 Abs. 1 Satz 1 Nr. 1); leben die Ehegatten getrennt, gilt dasselbe (Abs. 2 Satz 1)";
+        label en unofficial "Where the regime has ended or divorce has been applied for, each spouse may demand information about the assets as at the separation ((1) sentence 1 no. 1; (2))";
+        when auskunft_verlangt(ehe, verlangender, verpflichteter) and getrennt_lebend(ehe);
+        then auskunftspflicht(ehe, verpflichteter, verlangender, "Vermögen zum Zeitpunkt der Trennung (§ 1379 Abs. 1 Satz 1 Nr. 1, Abs. 2)");
+    }
+    rule AuskunftUeberDasMassgeblicheVermoegen(ehe: Ehe, verlangender: Person, verpflichteter: Person, t: Date) strict {
+        label de official "Jeder Ehegatte kann Auskunft über das Vermögen verlangen, soweit es für die Berechnung des Anfangs- und Endvermögens maßgeblich ist; auf Anforderung sind Belege vorzulegen (§ 1379 Abs. 1 Satz 1 Nr. 2, Satz 2)";
+        label en unofficial "Each spouse may demand information about the assets relevant to calculating initial and final assets; on request documents are to be produced ((1) sentence 1 no. 2, sentence 2)";
+        when auskunft_verlangt(ehe, verlangender, verpflichteter) and gueterstand_beendet_am(ehe, t);
+        then auskunftspflicht(ehe, verpflichteter, verlangender, "für die Berechnung des Anfangs- und Endvermögens maßgebliches Vermögen (§ 1379 Abs. 1 Satz 1 Nr. 2)");
+    }
+}
+
+@source(BGB_P1380) {
+    rule AnrechnungNachBestimmung(ehe: Ehe, zuwendender: Person, empfaenger: Person, wert: Money) strict {
+        label de official "Auf die Ausgleichsforderung eines Ehegatten wird angerechnet, was ihm von dem anderen Ehegatten durch Rechtsgeschäft unter Lebenden mit der Bestimmung zugewendet ist, dass es angerechnet werden soll (§ 1380 Abs. 1 Satz 1); der Wert bestimmt sich nach dem Zeitpunkt der Zuwendung (Abs. 2 Satz 2)";
+        label en unofficial "What has been given inter vivos with the stipulation of set-off is set off against the claim ((1) sentence 1); the value is as at the time of the disposition ((2) sentence 2)";
+        when vorausempfang_mit_anrechnungsbestimmung(ehe, zuwendender, empfaenger, wert);
+        then anrechnung_auf_die_ausgleichsforderung(ehe, empfaenger, wert);
+    }
+    presumption AnrechnungImZweifel(ehe: Ehe, zuwendender: Person, empfaenger: Person, wert: Money) {
+        label de official "Im Zweifel ist anzunehmen, dass Zuwendungen angerechnet werden sollen, wenn ihr Wert den Wert von Gelegenheitsgeschenken übersteigt, die nach den Lebensverhältnissen der Ehegatten üblich sind (§ 1380 Abs. 1 Satz 2)";
+        label en unofficial "In case of doubt dispositions are presumed to be intended for set-off where their value exceeds that of customary occasional gifts ((1) sentence 2)";
+        when zuwendung_ohne_anrechnungsbestimmung(ehe, zuwendender, empfaenger, wert);
+        presume anrechnung_vermutet(ehe, empfaenger, wert);
+        unless anrechnung_ausdruecklich_ausgeschlossen(ehe, empfaenger, wert);
+    }
+}
+
+@source(BGB_P1381)
+rule LeistungsverweigerungWegenGroberUnbilligkeit(ehe: Ehe, schuldner: Person) strict {
+    label de official "Der Schuldner kann die Erfüllung der Ausgleichsforderung verweigern, soweit der Ausgleich des Zugewinns nach den Umständen des Falles grob unbillig wäre (§ 1381 Abs. 1); grobe Unbilligkeit kann insbesondere vorliegen, wenn der Ehegatte mit dem geringeren Zugewinn seine wirtschaftlichen Verpflichtungen längere Zeit schuldhaft nicht erfüllt hat (Abs. 2)";
+    label en unofficial "The debtor may refuse performance in so far as the equalisation would be grossly inequitable (§ 1381 (1), (2))";
+    when ausgleich_grob_unbillig(ehe, schuldner);
+    then leistung_verweigerbar(ehe, schuldner);
+}
+
+@source(BGB_P1382)
+rule StundungDurchDasFamiliengericht(ehe: Ehe, schuldner: Person) strict {
+    label de official "Das Familiengericht stundet auf Antrag eine Ausgleichsforderung, soweit sie vom Schuldner nicht bestritten wird, wenn die sofortige Zahlung auch unter Berücksichtigung der Interessen des Gläubigers zur Unzeit erfolgen würde; eine gestundete Forderung hat der Schuldner zu verzinsen, und über Höhe und Fälligkeit der Zinsen sowie über Art und Umfang einer Sicherheitsleistung entscheidet das Familiengericht nach billigem Ermessen (§ 1382 Abs. 1 bis 4)";
+    label en unofficial "The family court defers the claim where immediate payment would be untimely; a deferred claim bears interest, whose amount and maturity the court sets at its equitable discretion (§ 1382 (1) to (4))";
+    when sofortige_zahlung_zur_unzeit(ehe, schuldner);
+    then ausgleichsforderung_gestundet(ehe, schuldner);
+}
+
+@source(BGB_P1383)
+rule UebertragungVonVermoegensgegenstaenden(ehe: Ehe, glaeubiger: Person, schuldner: Person, betrag: Money) strict {
+    label de official "Das Familiengericht kann auf Antrag des Gläubigers anordnen, dass der Schuldner bestimmte Gegenstände seines Vermögens dem Gläubiger unter Anrechnung auf die Ausgleichsforderung zu übertragen hat, wenn dies erforderlich ist, um eine grobe Unbilligkeit für den Gläubiger zu vermeiden, und dem Schuldner zuzumuten ist; der Gläubiger muss die Gegenstände im Antrag bezeichnen (§ 1383 Abs. 1, 2)";
+    label en unofficial "On the creditor's application the family court may order the transfer of specified objects, set off against the claim ((1), (2))";
+    when ausgleichsforderung(ehe, glaeubiger, schuldner, betrag)
+     and uebertragung_zur_vermeidung_grober_unbilligkeit(ehe, glaeubiger);
+    then uebertragung_von_vermoegensgegenstaenden_angeordnet(ehe, schuldner, glaeubiger);
+}
+
+@source(BGB_P1384)
+rule BerechnungszeitpunktBeiScheidung(ehe: Ehe, rh: Date) strict {
+    label de official "Wird die Ehe geschieden, so tritt für die Berechnung des Zugewinns und für die Höhe der Ausgleichsforderung an die Stelle der Beendigung des Güterstands der Zeitpunkt der RECHTSHÄNGIGKEIT des Scheidungsantrags (§ 1384)";
+    label en unofficial "On divorce the day the divorce application became PENDING replaces the end of the regime for calculating the gain and the claim (§ 1384)";
+    when scheidungsverfahren_rechtshaengig_seit(ehe, rh);
+    then berechnungszeitpunkt(ehe, rh);
+}
+
+@source(BGB_P1385) {
+    rule VorzeitigerAusgleichNachDreiJahrenTrennung(ehe: Ehe, berechtigter: Person, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Der ausgleichsberechtigte Ehegatte kann vorzeitigen Ausgleich des Zugewinns verlangen, wenn die Ehegatten seit mindestens DREI JAHREN getrennt leben (§ 1385 Nr. 1)";
+        label en unofficial "The entitled spouse may claim premature equalisation where the spouses have lived apart for at least THREE YEARS (§ 1385 no. 1)";
+        when getrennt_lebend(ehe) and ehegatte(ehe, berechtigter) and trennungsfrist_drei_jahre(ehe, f)
+         and de.bgb.fristen::frist_ende_kalender(f, e) and bewertungstag(ehe, bewertung) and bewertung > e;
+        then vorzeitiger_ausgleich_verlangbar(ehe, berechtigter, 1);
+    }
+    rule VorzeitigerAusgleichWegenBefuerchteterHandlungen(ehe: Ehe, berechtigter: Person, gegner: Person) strict {
+        label de official "Der ausgleichsberechtigte Ehegatte kann vorzeitigen Ausgleich verlangen, wenn Handlungen der in § 1365 oder § 1375 Abs. 2 bezeichneten Art zu befürchten sind und dadurch eine erhebliche Gefährdung der Erfüllung der Ausgleichsforderung zu besorgen ist (§ 1385 Nr. 2)";
+        label en unofficial "Premature equalisation may be claimed where acts of the kind described in § 1365 or § 1375 (2) are to be feared (§ 1385 no. 2)";
+        when anderer_ehegatte(ehe, berechtigter, gegner) and handlungen_nach_1365_oder_1375_zu_befuerchten(ehe, gegner);
+        then vorzeitiger_ausgleich_verlangbar(ehe, berechtigter, 2);
+    }
+    rule VorzeitigerAusgleichWegenPflichtverletzung(ehe: Ehe, berechtigter: Person, gegner: Person) strict {
+        label de official "Der ausgleichsberechtigte Ehegatte kann vorzeitigen Ausgleich verlangen, wenn der andere Ehegatte längere Zeit hindurch die wirtschaftlichen Verpflichtungen aus dem ehelichen Verhältnis schuldhaft nicht erfüllt hat und anzunehmen ist, dass er sie auch in Zukunft nicht erfüllen wird (§ 1385 Nr. 3)";
+        label en unofficial "Premature equalisation may be claimed where the other spouse has culpably failed for a considerable time to meet the economic obligations (§ 1385 no. 3)";
+        when anderer_ehegatte(ehe, berechtigter, gegner)
+         and wirtschaftliche_verpflichtungen_schuldhaft_nicht_erfuellt(ehe, gegner);
+        then vorzeitiger_ausgleich_verlangbar(ehe, berechtigter, 3);
+    }
+    rule VorzeitigerAusgleichWegenAuskunftsverweigerung(ehe: Ehe, berechtigter: Person, gegner: Person) strict {
+        label de official "Der ausgleichsberechtigte Ehegatte kann vorzeitigen Ausgleich verlangen, wenn der andere Ehegatte sich ohne ausreichenden Grund beharrlich weigert, ihn über den Bestand seines Vermögens zu unterrichten (§ 1385 Nr. 4)";
+        label en unofficial "Premature equalisation may be claimed where the other spouse persistently refuses to inform about his assets (§ 1385 no. 4)";
+        when anderer_ehegatte(ehe, berechtigter, gegner) and auskunft_beharrlich_verweigert(ehe, gegner);
+        then vorzeitiger_ausgleich_verlangbar(ehe, berechtigter, 4);
+    }
+}
+
+@source(BGB_P1386)
+rule VorzeitigeAufhebungDerZugewinngemeinschaft(ehe: Ehe, verlangender: Person, nr: Integer) strict {
+    label de official "Jeder Ehegatte kann unter entsprechender Anwendung des § 1385 die vorzeitige Aufhebung der Zugewinngemeinschaft verlangen (§ 1386)";
+    label en unofficial "Each spouse may claim premature termination of the regime, § 1385 applying accordingly (§ 1386)";
+    when vorzeitiger_ausgleich_verlangbar(ehe, verlangender, nr);
+    then vorzeitige_aufhebung_verlangbar(ehe, verlangender);
+}
+
+@source(BGB_P1387)
+rule BerechnungszeitpunktBeiVorzeitigemAusgleich(ehe: Ehe, antragsteller: Person, t: Date) strict {
+    label de official "In den Fällen der §§ 1385 und 1386 tritt für die Berechnung des Zugewinns und für die Höhe der Ausgleichsforderung an die Stelle der Beendigung des Güterstands der Zeitpunkt, in dem die entsprechenden Anträge gestellt sind (§ 1387)";
+    label en unofficial "In the cases of §§ 1385 and 1386 the day the applications were made replaces the end of the regime (§ 1387)";
+    when vorzeitiger_ausgleich_beantragt_am(ehe, antragsteller, t);
+    then berechnungszeitpunkt(ehe, t);
+}
+
+@source(BGB_P1388)
+rule EintrittDerGuetertrennungNachVorzeitigerAufhebung(ehe: Ehe, t: Date) strict {
+    label de official "Mit der Rechtskraft der Entscheidung, die die Zugewinngemeinschaft vorzeitig aufhebt, tritt Gütertrennung ein (§ 1388)";
+    label en unofficial "Upon the decision terminating the regime becoming final, separation of property takes effect (§ 1388)";
+    when vorzeitige_aufhebung_rechtskraeftig_am(ehe, t);
+    then guetertrennung_tritt_ein(ehe, t);
+}
+
+@source(BGB_P1390) {
+    rule WertersatzWegenUnentgeltlicherZuwendung(ehe: Ehe, berechtigter: Person, pflichtiger: Person, dritter: Person, wert: Money, forderung: Money, grenze: Money) strict {
+        label de official "Der ausgleichsberechtigte Ehegatte kann von einem Dritten Ersatz des Wertes einer unentgeltlichen Zuwendung des ausgleichspflichtigen Ehegatten verlangen, wenn dieser sie in Benachteiligungsabsicht gemacht hat und die Höhe der Ausgleichsforderung den Wert des bei Beendigung des Güterstands vorhandenen Vermögens übersteigt (§ 1390 Abs. 1 Satz 1 Nr. 1, 2)";
+        label en unofficial "The entitled spouse may claim from a third party the value of a gratuitous disposition made with intent to disadvantage where the claim exceeds the value of the assets present at the end ((1) sentence 1 nos. 1, 2)";
+        when unentgeltliche_zuwendung_an_dritten(ehe, pflichtiger, dritter, wert)
+         and benachteiligungsabsicht(ehe, pflichtiger, dritter)
+         and ausgleichsforderung(ehe, berechtigter, pflichtiger, forderung)
+         and vermoegen_bei_beendigung_des_gueterstands(ehe, pflichtiger, grenze) and forderung > grenze;
+        then wertersatz_vom_dritten(ehe, berechtigter, dritter, wert);
+    }
+    rule WertersatzWegenAndererRechtshandlung(ehe: Ehe, berechtigter: Person, pflichtiger: Person, dritter: Person, wert: Money, forderung: Money, grenze: Money) strict {
+        label de official "Das Gleiche gilt für andere Rechtshandlungen, wenn die Absicht, den Ehegatten zu benachteiligen, dem Dritten bekannt war (§ 1390 Abs. 2)";
+        label en unofficial "The same applies to other legal acts where the intention to disadvantage was known to the third party ((2))";
+        when andere_rechtshandlung_mit_bekannter_absicht(ehe, pflichtiger, dritter, wert)
+         and ausgleichsforderung(ehe, berechtigter, pflichtiger, forderung)
+         and vermoegen_bei_beendigung_des_gueterstands(ehe, pflichtiger, grenze) and forderung > grenze;
+        then wertersatz_vom_dritten(ehe, berechtigter, dritter, wert);
+    }
+    rule VerjaehrungsbeginnGegenDenDritten(ehe: Ehe, t: Date) strict {
+        label de official "Die Verjährungsfrist des Anspruchs gegen den Dritten beginnt mit der Beendigung des Güterstands (§ 1390 Abs. 3 Satz 1); die Länge der Frist steht in den §§ 195, 199 (de.bgb.fristen) und wird hier nicht wiederholt";
+        label en unofficial "The limitation period of the claim against the third party begins with the end of the regime ((3) sentence 1)";
+        when gueterstand_beendet_am(ehe, t);
+        then verjaehrungsbeginn_1390(ehe, t);
+    }
+    rule Verjaehrungsfrist1390Ereignis(ehe: Ehe, f: Frist, t: Date) strict {
+        label de official "Maßgebend für den Anfang der Frist ist die Beendigung des Güterstands (§ 1390 Abs. 3 Satz 1 in Verbindung mit § 187)";
+        label en unofficial "Decisive for the beginning of the period is the end of the regime ((3) sentence 1 with § 187)";
+        when verjaehrungsfrist_1390(ehe, f) and verjaehrungsbeginn_1390(ehe, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+}

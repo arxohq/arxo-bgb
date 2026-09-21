@@ -1,0 +1,53 @@
+// --- Querschnitt: § 823 Abs. 1 → § 254 (Mitverschulden) → § 249 (Ersatz)
+// --- → Verjährung §§ 195, 199 Abs. 1 (MULTISESSION-PROMPT.ru.md §10 Nr. 6)
+//
+// Dieses Paket (BG-09) sagt nur, WER WEM dem Grunde nach nach § 823 Abs. 1
+// haftet; WIEVIEL zu ersetzen ist, bestimmen §§ 249–254 bei
+// de.bgb.schuldrecht_at (BG-04, Ledger D-04-05, D-09-01). Die Brücke unten
+// verbindet die eigene institutionelle Feststellung dieses Pakets
+// (`schadensersatzpflicht`) mit der institutionellen Feststellung des
+// Nachbarpakets (`ersatzbetrag_nach_mitverschulden`) — kein Duplikat der
+// Regeln des Nachbarn, sondern ein `when` auf sein berechnetes Ergebnis
+// (Vorbild: de.bgb.verfuegungen auf de.bgb.erbfolge::gesetzlicher_erbteil_bruch).
+//
+// Die Verknüpfung, WELCHE `SchadenSAT`-Entität des Nachbarpakets zu einer
+// `Handlung` dieses Pakets gehört, ist selbst keine Rechtsfrage, sondern eine
+// Tatsachenidentifikation des Falls (`schaden_fuer_249`, `kind empirical`):
+// beide Pakete führen für denselben wirklichen Schaden eigene, nominal
+// verschiedene Entitäten (Ledger D-09-08).
+//
+// § 254 Abs. 1 verlangt für die Anwendung eine Angabe des Gerichts oder die
+// ausdrückliche Feststellung, dass kein Mitverschulden vorliegt
+// (`kein_mitverschulden_festgestellt`, BG-04) — Abwesenheit ist keine
+// Verneinung (wie im übrigen Paket).
+//
+// Die Verjährung des eigenen Ersatzanspruchs (§§ 195, 199 Abs. 1) wird NICHT
+// hier neu gerechnet: sie liegt, wie bei § 852 (Titel 27 Teil 5), bei
+// de.bgb.fristen über denselben `Anspruch` (`schadensersatzanspruch`,
+// `de.bgb.core::anspruch_entstanden_am`, `de.bgb.fristen::kenntnis_erlangt_am`).
+// Die dreißigjährige Höchstfrist des § 199 Abs. 2 (Leben, Körper, Gesundheit,
+// Freiheit) ist in de.bgb.fristen zum Zeitpunkt dieser Änderung NICHT
+// veröffentlicht (Stand 2026-09-18) — die Szenarien dieser Familie beschränken
+// sich auf die regelmäßige dreijährige Frist (§§ 195, 199 Abs. 1); eine Aufgabe
+// „Höchstfrist nach Schluss von BG-02 nachziehen“ steht in TASKS.json.
+
+pub relation schaden_fuer_249(h: Handlung, sch: SchadenSAT) kind empirical {
+    key(h);
+    label de official "Schaden im Sinne der §§ 249 ff. (de.bgb.schuldrecht_at), der zu derselben Handlung nach § 823 Abs. 1 gehört — Tatsachenidentifikation des Falls, keine Rechtsfrage";
+    label en unofficial "damage within the meaning of §§ 249 et seq. (de.bgb.schuldrecht_at) belonging to the same act under § 823 (1) — a factual identification of the case, not a legal question";
+}
+
+pub relation deliktischer_schadensersatz(h: Handlung, betrag: Money) kind institutional {
+    label de official "Schadensersatz aus unerlaubter Handlung (§ 823 Abs. 1), der Höhe nach bestimmt nach §§ 249, 252, 254 (Querschnitt mit de.bgb.schuldrecht_at)";
+    label en unofficial "damages from a tort (§ 823 (1)), quantified under §§ 249, 252, 254 (cross-cutting with de.bgb.schuldrecht_at)";
+}
+
+@source(BGB_P823)
+rule DeliktischerSchadensersatzDerHoeheNach(h: Handlung, s: Person, v: Person, sch: SchadenSAT, betrag: Money) defeasible {
+    label de official "Wer nach § 823 Abs. 1 dem Grunde nach zum Schadensersatz verpflichtet ist, schuldet den nach §§ 249, 252, 254 bestimmten Betrag";
+    label en unofficial "A person liable in principle in damages under § 823 (1) owes the amount determined under §§ 249, 252, 254";
+    when schadensersatzpflicht(h, s, v);
+    when schaden_fuer_249(h, sch);
+    when de.bgb.schuldrecht_at::ersatzbetrag_nach_mitverschulden(sch, betrag);
+    then deliktischer_schadensersatz(h, betrag);
+}

@@ -1,0 +1,1737 @@
+// ABSCHNITT 1 INHALT DER SCHULDVERHÄLTNISSE, TITEL 1 VERPFLICHTUNG ZUR LEISTUNG
+// §§ 241–279: Inhalt der Pflicht, Zinsen, Schadensersatz, Wahlschuld, Ort und
+// Zeit der Leistung, Ausschluss der Leistungspflicht, Vertretenmüssen.
+//
+// WERTUNGEN DES GERICHTS (DECISION-0194, Kanal §47.3): Treu und Glauben
+// (§ 242), die Unverhältnismäßigkeit der Herstellung (§ 251 Abs. 2), die
+// Wahrscheinlichkeit des entgangenen Gewinns (§ 252 Satz 2), die billige
+// Entschädigung (§ 253 Abs. 2), das Mitverschulden und sein Anteil (§ 254),
+// die angemessene Frist (§ 250, § 264 Abs. 2), die grobe Unbilligkeit
+// (§ 271a) und das grobe Missverhältnis (§ 275 Abs. 2, Abs. 3).
+//
+// ANTEILE ALS PAAR GANZER ZAHLEN (Ledger D-04-05). Der Anteil des
+// Mitverschuldens kommt vom Gericht als Paar (Zähler, Nenner) — nicht als
+// Dezimalzahl: `Money × Rational` ist nur bei 10-glattem Ergebnis exakt
+// (E-0085). Der Geldbetrag entsteht einmal, mit `div_round` auf den Cent
+// (Politik des Pakets, README „Rundung“).
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- § 241 Pflichten aus dem Schuldverhältnis ------------------------------------------------------
+
+pub relation erfuellt(l: Leistung) kind institutional {
+    label de official "Die geschuldete Leistung ist an den Gläubiger bewirkt (§ 362 Abs. 1)";
+    label en unofficial "the performance owed has been rendered to the creditor (§ 362 (1))";
+}
+pub relation schuldverhaeltnis_begruendet_am(s: Schuldverhaeltnis, tag: Date) kind empirical {
+    key(s);
+    label de official "Tag, an dem das Schuldverhältnis entstanden ist";
+    label en unofficial "day on which the obligation arose";
+}
+pub relation leistung_besteht_in_einem_unterlassen(l: Leistung) kind empirical {
+    label de official "Die Leistung besteht in einem Unterlassen (§ 241 Abs. 1 Satz 2)";
+    label en unofficial "the performance consists in forbearance (§ 241 (1) sentence 2)";
+}
+pub relation inhalt_verpflichtet_zur_ruecksicht(s: Schuldverhaeltnis, teil: Person) kind empirical {
+    label de official "Das Schuldverhältnis verpflichtet nach seinem Inhalt diesen Teil zur Rücksicht auf die Rechte, Rechtsgüter und Interessen des anderen Teils (§ 241 Abs. 2)";
+    label en unofficial "by its content the obligation requires this party to have regard to the rights, legal interests and other interests of the other party (§ 241 (2))";
+}
+pub relation ruecksicht_genommen(s: Schuldverhaeltnis, teil: Person) kind empirical {
+    label de official "Der Teil hat auf die Rechte, Rechtsgüter und Interessen des anderen Teils Rücksicht genommen (§ 241 Abs. 2)";
+    label en unofficial "the party had regard to the rights, legal interests and other interests of the other party (§ 241 (2))";
+}
+
+@source(BGB_P362)
+rule LeistungBewirktIstErfuellung(l: Leistung, t: Date) strict {
+    label de official "Das Schuldverhältnis erlischt, wenn die geschuldete Leistung an den Gläubiger bewirkt wird (§ 362 Abs. 1)";
+    label en unofficial "The obligation is extinguished if the performance owed is rendered to the creditor (§ 362 (1))";
+    when leistung_bewirkt(l, t);
+    then erfuellt(l);
+}
+
+@source(BGB_P241)
+rule LeistungspflichtDesSchuldners(s: Schuldverhaeltnis, l: Leistung, glaeubiger: Person, schuldner: Person, f: Date) strict {
+    label de official "Kraft des Schuldverhältnisses ist der Gläubiger berechtigt, von dem Schuldner eine Leistung zu fordern (§ 241 Abs. 1 Satz 1) — die Pflicht des Schuldners besteht von der Fälligkeit an, bis die Leistung bewirkt ist (§ 362 Abs. 1); der Eintritt des Verzugs und seine Folgen richten sich nach §§ 280, 286";
+    label en unofficial "By virtue of the obligation the creditor is entitled to claim performance from the debtor (§ 241 (1) sentence 1) — the duty runs from the due date until performance is rendered (§ 362 (1)); default and its consequences follow §§ 280, 286";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when faelligkeit(l, f);
+    then duty LeistungAnDenGlaeubigerBewirken {
+        bearer schuldner;
+        achieve erfuellt(l) during [f, infinity);
+    };
+}
+
+@source(BGB_P241)
+rule RuecksichtnahmepflichtNachInhaltDesSchuldverhaeltnisses(s: Schuldverhaeltnis, teil: Person, beginn: Date) strict {
+    label de official "Das Schuldverhältnis kann nach seinem Inhalt jeden Teil zur Rücksicht auf die Rechte, Rechtsgüter und Interessen des anderen Teils verpflichten (§ 241 Abs. 2)";
+    label en unofficial "By its content the obligation may require each party to have regard to the rights, legal interests and other interests of the other party (§ 241 (2))";
+    when inhalt_verpflichtet_zur_ruecksicht(s, teil);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    then duty RuecksichtAufDieRechteDesAnderenTeils {
+        bearer teil;
+        maintain ruecksicht_genommen(s, teil) during [beginn, infinity);
+    };
+}
+
+// --- § 241a Unbestellte Leistungen -------------------------------------------------------------------
+
+pub relation lieferung_beweglicher_waren(u: Person, v: Person, l: Leistung) kind empirical {
+    label de official "Lieferung beweglicher Sachen (Waren) oder Erbringung sonstiger Leistungen durch einen Unternehmer an den Verbraucher (§ 241a Abs. 1)";
+    label en unofficial "supply of movable goods or provision of other services by a trader to the consumer (§ 241a (1))";
+}
+pub relation bestellt(v: Person, l: Leistung) kind empirical {
+    label de official "Der Verbraucher hat die Waren oder sonstigen Leistungen bestellt (§ 241a Abs. 1)";
+    label en unofficial "the consumer ordered the goods or other services (§ 241a (1))";
+}
+pub relation leistung_nicht_fuer_den_empfaenger_bestimmt(l: Leistung, v: Person) kind empirical {
+    label de official "Die Leistung war nicht für den Empfänger bestimmt oder erfolgte in der irrigen Vorstellung einer Bestellung und der Empfänger hat dies erkannt oder hätte es bei verkehrserforderlicher Sorgfalt erkennen können (§ 241a Abs. 2)";
+    label en unofficial "the performance was not intended for the recipient or was made in the mistaken belief that an order existed and the recipient recognised this or could have recognised it (§ 241a (2))";
+}
+pub relation kein_anspruch_gegen_den_verbraucher(u: Person, v: Person, l: Leistung) kind institutional {
+    label de official "Ein Anspruch gegen den Verbraucher wird nicht begründet (§ 241a Abs. 1)";
+    label en unofficial "no claim against the consumer arises (§ 241a (1))";
+}
+pub relation gesetzliche_ansprueche_nicht_ausgeschlossen(u: Person, v: Person, l: Leistung) kind institutional {
+    label de official "Gesetzliche Ansprüche sind nicht ausgeschlossen (§ 241a Abs. 2)";
+    label en unofficial "claims under statute are not excluded (§ 241a (2))";
+}
+pub relation abweichung_zum_nachteil_des_verbrauchers(l: Leistung) kind empirical {
+    label de official "Von den Regelungen des § 241a wird zum Nachteil des Verbrauchers abgewichen, auch durch anderweitige Gestaltungen (§ 241a Abs. 3)";
+    label en unofficial "the rules of § 241a are departed from to the disadvantage of the consumer, including by other arrangements (§ 241a (3))";
+}
+pub relation unzulaessige_abweichung(l: Leistung) kind institutional {
+    label de official "Die Abweichung ist unzulässig (§ 241a Abs. 3)";
+    label en unofficial "the departure is impermissible (§ 241a (3))";
+}
+
+@source(BGB_P241a)
+rule UnbestellteLeistungBegruendetKeinenAnspruch(u: Person, v: Person, l: Leistung) strict {
+    label de official "Durch die Lieferung beweglicher Sachen oder durch die Erbringung sonstiger Leistungen durch einen Unternehmer an den Verbraucher wird ein Anspruch gegen den Verbraucher nicht begründet, wenn der Verbraucher die Waren oder sonstigen Leistungen nicht bestellt hat (§ 241a Abs. 1)";
+    label en unofficial "No claim against the consumer arises from the supply of goods or other services by a trader where the consumer did not order them (§ 241a (1))";
+    when lieferung_beweglicher_waren(u, v, l);
+    when unternehmer(u);
+    when verbraucher(v);
+    when nicht_bestellt(v, l);
+    then kein_anspruch_gegen_den_verbraucher(u, v, l);
+}
+
+@source(BGB_P241a)
+rule GesetzlicheAnsprueche(u: Person, v: Person, l: Leistung) strict {
+    label de official "Gesetzliche Ansprüche sind nicht ausgeschlossen, wenn die Leistung nicht für den Empfänger bestimmt war oder in der irrigen Vorstellung einer Bestellung erfolgte und der Empfänger dies erkannt hat oder bei Anwendung der im Verkehr erforderlichen Sorgfalt hätte erkennen können (§ 241a Abs. 2)";
+    label en unofficial "Claims under statute are not excluded where the performance was not intended for the recipient or was made in the mistaken belief that an order existed (§ 241a (2))";
+    when lieferung_beweglicher_waren(u, v, l);
+    when leistung_nicht_fuer_den_empfaenger_bestimmt(l, v);
+    then gesetzliche_ansprueche_nicht_ausgeschlossen(u, v, l);
+}
+
+@source(BGB_P241a)
+rule AbweichungZumNachteilDesVerbrauchersIstUnzulaessig(l: Leistung) strict {
+    label de official "Von den Regelungen dieser Vorschrift darf nicht zum Nachteil des Verbrauchers abgewichen werden; die Regelungen finden auch Anwendung, wenn sie durch anderweitige Gestaltungen umgangen werden (§ 241a Abs. 3)";
+    label en unofficial "No departure from this provision to the disadvantage of the consumer is permitted; it also applies where it is circumvented by other arrangements (§ 241a (3))";
+    when abweichung_zum_nachteil_des_verbrauchers(l);
+    then unzulaessige_abweichung(l);
+}
+
+// --- § 242 Leistung nach Treu und Glauben -------------------------------------------------------------
+
+@source(BGB_P242)
+pub external judgment relation verstoss_gegen_treu_und_glauben(s: Schuldverhaeltnis, p: Person) {
+    authority Court;
+    label de official "§ 242. Das Gericht hat festgestellt, dass die Partei die Leistung nicht so bewirkt hat, wie Treu und Glauben mit Rücksicht auf die Verkehrssitte es erfordern";
+    label en unofficial "§ 242. The court found that the party did not perform as good faith with regard to common usage requires";
+}
+pub relation pflichtverletzung(s: Schuldverhaeltnis, p: Person) kind institutional {
+    label de official "Verletzung einer Pflicht aus dem Schuldverhältnis (§ 280 Abs. 1 Satz 1)";
+    label en unofficial "breach of a duty arising from the obligation (§ 280 (1) sentence 1)";
+}
+
+@source(BGB_P242)
+rule VerstossGegenTreuUndGlaubenIstPflichtverletzung(s: Schuldverhaeltnis, p: Person) strict {
+    label de official "Der Schuldner ist verpflichtet, die Leistung so zu bewirken, wie Treu und Glauben mit Rücksicht auf die Verkehrssitte es erfordern (§ 242) — die vom Gericht festgestellte Verletzung dieser Pflicht ist eine Pflichtverletzung im Sinne des § 280 Abs. 1";
+    label en unofficial "The debtor must perform as good faith with regard to common usage requires (§ 242) — the breach found by the court is a breach of duty within § 280 (1)";
+    when verstoss_gegen_treu_und_glauben(s, p);
+    then pflichtverletzung(s, p);
+}
+
+// --- § 243 Gattungsschuld ------------------------------------------------------------------------------
+
+pub relation gattungsschuld(l: Leistung) kind empirical {
+    label de official "Geschuldet ist eine nur der Gattung nach bestimmte Sache (§ 243 Abs. 1)";
+    label en unofficial "the thing owed is defined only by class (§ 243 (1))";
+}
+pub relation mittlere_art_und_guete_geschuldet(l: Leistung) kind institutional {
+    label de official "Zu leisten ist eine Sache von mittlerer Art und Güte (§ 243 Abs. 1)";
+    label en unofficial "a thing of average kind and quality must be supplied (§ 243 (1))";
+}
+pub relation erforderliches_getan(l: Leistung, sache: Sache) kind empirical {
+    label de official "Der Schuldner hat das zur Leistung einer solchen Sache seinerseits Erforderliche getan (§ 243 Abs. 2)";
+    label en unofficial "the debtor has done what was necessary on his part to supply such a thing (§ 243 (2))";
+}
+pub relation konkretisiert_auf(l: Leistung, sache: Sache) kind institutional {
+    label de official "Das Schuldverhältnis beschränkt sich auf diese Sache (§ 243 Abs. 2)";
+    label en unofficial "the obligation is limited to that thing (§ 243 (2))";
+}
+
+@source(BGB_P243)
+rule GattungsschuldMittlereArtUndGuete(l: Leistung) strict {
+    label de official "Wer eine nur der Gattung nach bestimmte Sache schuldet, hat eine Sache von mittlerer Art und Güte zu leisten (§ 243 Abs. 1)";
+    label en unofficial "A person who owes a thing defined only by class must supply a thing of average kind and quality (§ 243 (1))";
+    when gattungsschuld(l);
+    then mittlere_art_und_guete_geschuldet(l);
+}
+
+@source(BGB_P243)
+rule KonkretisierungDerGattungsschuld(l: Leistung, sache: Sache) strict {
+    label de official "Hat der Schuldner das zur Leistung einer solchen Sache seinerseits Erforderliche getan, so beschränkt sich das Schuldverhältnis auf diese Sache (§ 243 Abs. 2)";
+    label en unofficial "If the debtor has done what was necessary on his part, the obligation is limited to that thing (§ 243 (2))";
+    when gattungsschuld(l);
+    when erforderliches_getan(l, sache);
+    then konkretisiert_auf(l, sache);
+}
+
+// --- § 244 Fremdwährungsschuld, § 245 Geldsortenschuld --------------------------------------------------
+
+pub relation fremdwaehrungsschuld_im_inland_zahlbar(a: Anspruch) kind empirical {
+    label de official "Eine in einer anderen Währung als Euro ausgedrückte Geldschuld ist im Inland zu zahlen (§ 244 Abs. 1)";
+    label en unofficial "a monetary debt expressed in a currency other than the euro is payable in Germany (§ 244 (1))";
+}
+pub relation zahlung_in_der_anderen_waehrung_vereinbart(a: Anspruch) kind empirical {
+    label de official "Zahlung in der anderen Währung ist ausdrücklich vereinbart (§ 244 Abs. 1 Halbsatz 2)";
+    label en unofficial "payment in the other currency is expressly agreed (§ 244 (1) second half-sentence)";
+}
+pub relation zahlung_in_euro_zulaessig(a: Anspruch) kind institutional {
+    label de official "Die Zahlung kann in Euro erfolgen (§ 244 Abs. 1)";
+    label en unofficial "payment may be made in euro (§ 244 (1))";
+}
+pub relation kurswert_zur_zeit_der_zahlung(a: Anspruch, kurs: Decimal) kind empirical {
+    key(a);
+    label de official "Kurswert, der zur Zeit der Zahlung für den Zahlungsort maßgebend ist (§ 244 Abs. 2) — Eingang des Falls; der Kurs steht nicht im Gesetz";
+    label en unofficial "rate of exchange decisive at the time of payment for the place of payment (§ 244 (2)) — case input; the rate is not in the statute";
+}
+pub relation umrechnung_nach_kurswert(a: Anspruch, kurs: Decimal) kind institutional {
+    key(a);
+    label de official "Die Umrechnung erfolgt nach diesem Kurswert (§ 244 Abs. 2)";
+    label en unofficial "conversion is made at that rate of exchange (§ 244 (2))";
+}
+
+@source(BGB_P244)
+rule ZahlungInEuroBeiFremdwaehrungsschuld(a: Anspruch) strict {
+    label de official "Ist eine in einer anderen Währung als Euro ausgedrückte Geldschuld im Inland zu zahlen, so kann die Zahlung in Euro erfolgen, es sei denn, dass Zahlung in der anderen Währung ausdrücklich vereinbart ist (§ 244 Abs. 1)";
+    label en unofficial "A monetary debt expressed in another currency and payable in Germany may be paid in euro unless payment in the other currency is expressly agreed (§ 244 (1))";
+    when fremdwaehrungsschuld_im_inland_zahlbar(a);
+    when keine_vereinbarung_ueber_zahlung_in_der_anderen_waehrung(a);
+    then zahlung_in_euro_zulaessig(a);
+}
+
+@source(BGB_P244)
+rule UmrechnungNachDemKurswertDerZahlungszeit(a: Anspruch, kurs: Decimal) strict {
+    label de official "Die Umrechnung erfolgt nach dem Kurswert, der zur Zeit der Zahlung für den Zahlungsort maßgebend ist (§ 244 Abs. 2)";
+    label en unofficial "Conversion is made at the rate of exchange decisive at the time of payment for the place of payment (§ 244 (2))";
+    when zahlung_in_euro_zulaessig(a);
+    when kurswert_zur_zeit_der_zahlung(a, kurs);
+    then umrechnung_nach_kurswert(a, kurs);
+}
+
+pub relation geldschuld_in_bestimmter_muenzsorte(a: Anspruch) kind empirical {
+    label de official "Eine Geldschuld ist in einer bestimmten Münzsorte zu zahlen (§ 245)";
+    label en unofficial "a monetary debt is payable in a particular coinage (§ 245)";
+}
+pub relation muenzsorte_nicht_mehr_im_umlauf(a: Anspruch) kind empirical {
+    label de official "Die Münzsorte befindet sich zur Zeit der Zahlung nicht mehr im Umlauf (§ 245)";
+    label en unofficial "the coinage is no longer in circulation at the time of payment (§ 245)";
+}
+pub relation zahlung_wie_ohne_muenzsorte(a: Anspruch) kind institutional {
+    label de official "Die Zahlung ist so zu leisten, wie wenn die Münzsorte nicht bestimmt wäre (§ 245)";
+    label en unofficial "payment must be made as if the coinage had not been specified (§ 245)";
+}
+
+@source(BGB_P245)
+rule GeldsortenschuldAusserKurs(a: Anspruch) strict {
+    label de official "Ist eine Geldschuld in einer bestimmten Münzsorte zu zahlen, die sich zur Zeit der Zahlung nicht mehr im Umlauf befindet, so ist die Zahlung so zu leisten, wie wenn die Münzsorte nicht bestimmt wäre (§ 245)";
+    label en unofficial "If a debt is payable in a coinage no longer in circulation at the time of payment, payment is to be made as if that coinage had not been specified (§ 245)";
+    when geldschuld_in_bestimmter_muenzsorte(a);
+    when muenzsorte_nicht_mehr_im_umlauf(a);
+    then zahlung_wie_ohne_muenzsorte(a);
+}
+
+// --- § 246 Gesetzlicher Zinssatz, § 248 Zinseszinsen ------------------------------------------------------
+
+pub relation zu_verzinsen(a: Anspruch) kind empirical {
+    label de official "Eine Schuld ist nach Gesetz oder Rechtsgeschäft zu verzinsen (§ 246)";
+    label en unofficial "a debt bears interest by operation of law or by legal transaction (§ 246)";
+}
+pub relation anderer_zinssatz_bestimmt(a: Anspruch) kind empirical {
+    label de official "Ein anderer Zinssatz als der gesetzliche ist bestimmt (§ 246 Halbsatz 2)";
+    label en unofficial "a rate of interest other than the statutory rate is specified (§ 246 second half-sentence)";
+}
+pub relation gesetzlicher_zinssatz(a: Anspruch, satz: Decimal) kind institutional {
+    key(a);
+    label de official "Gesetzlicher Zinssatz für das Jahr in Prozent (§ 246)";
+    label en unofficial "statutory rate of interest per year in per cent (§ 246)";
+}
+
+@source(BGB_P246)
+rule GesetzlicherZinssatzVierProzent(a: Anspruch) strict {
+    label de official "Ist eine Schuld nach Gesetz oder Rechtsgeschäft zu verzinsen, so sind vier vom Hundert für das Jahr zu entrichten, sofern nicht ein anderes bestimmt ist (§ 246)";
+    label en unofficial "Where a debt bears interest by law or by legal transaction, four per cent per year is payable unless otherwise specified (§ 246)";
+    when zu_verzinsen(a);
+    when kein_anderer_zinssatz_bestimmt(a);
+    then gesetzlicher_zinssatz(a, 4.00);
+}
+
+pub entity Vereinbarung {
+    label de official "Vereinbarung der Parteien über den Inhalt des Schuldverhältnisses";
+    label en unofficial "agreement of the parties on the content of the obligation";
+}
+pub relation zinseszinsvereinbarung_im_voraus(vb: Vereinbarung) kind empirical {
+    label de official "Im Voraus getroffene Vereinbarung, dass fällige Zinsen wieder Zinsen tragen sollen (§ 248 Abs. 1)";
+    label en unofficial "agreement made in advance that interest due is itself to bear interest (§ 248 (1))";
+}
+pub relation einlagenvereinbarung_eines_kreditinstituts(vb: Vereinbarung) kind empirical {
+    label de official "Vereinbarung einer Sparkasse, Kreditanstalt oder eines Inhabers von Bankgeschäften, dass nicht erhobene Zinsen von Einlagen als neue verzinsliche Einlagen gelten, oder Verzinsung rückständiger Zinsen bei Darlehen einer zur Ausgabe verzinslicher Inhaberschuldverschreibungen berechtigten Kreditanstalt (§ 248 Abs. 2)";
+    label en unofficial "agreement of a savings bank, credit institution or banker under § 248 (2)";
+}
+pub relation nichtig(vb: Vereinbarung) kind institutional {
+    label de official "Die Vereinbarung ist nichtig";
+    label en unofficial "the agreement is void";
+}
+
+@source(BGB_P248)
+rule ZinseszinsvereinbarungIstNichtig(vb: Vereinbarung) strict {
+    label de official "Eine im Voraus getroffene Vereinbarung, dass fällige Zinsen wieder Zinsen tragen sollen, ist nichtig (§ 248 Abs. 1); Sparkassen, Kreditanstalten und Inhaber von Bankgeschäften können die in Absatz 2 genannten Vereinbarungen im Voraus treffen";
+    label en unofficial "An agreement made in advance that interest due is itself to bear interest is void (§ 248 (1)); the institutions named in (2) may make the agreements set out there";
+    when zinseszinsvereinbarung_im_voraus(vb);
+    when keine_einlagenvereinbarung_eines_kreditinstituts(vb);
+    then nichtig(vb);
+}
+
+// --- §§ 249–255 Schadensersatz -----------------------------------------------------------------------------
+
+pub relation zum_schadensersatz_verpflichtet(sch: Schaden, p: Person) kind empirical {
+    label de official "Diese Person ist zum Ersatz des Schadens verpflichtet (§ 249 Abs. 1)";
+    label en unofficial "this person is liable to compensate the damage (§ 249 (1))";
+}
+pub relation geschaedigter(sch: Schaden, p: Person) kind empirical {
+    key(sch);
+    label de official "Gläubiger des Schadensersatzanspruchs (Beschädigter)";
+    label en unofficial "creditor of the claim for damages (the injured party)";
+}
+pub relation schadensbetrag(sch: Schaden, betrag: Money) kind empirical {
+    key(sch);
+    label de official "Höhe des Schadens in Geld — Eingang des Falls; die Schätzung nach § 287 ZPO liegt außerhalb dieses Gesetzes";
+    label en unofficial "amount of the damage in money — case input; estimation under § 287 ZPO lies outside this statute";
+}
+pub relation herstellung_des_zustands_geschuldet(sch: Schaden, p: Person) kind institutional {
+    label de official "Der Ersatzpflichtige hat den Zustand herzustellen, der bestehen würde, wenn der zum Ersatz verpflichtende Umstand nicht eingetreten wäre (§ 249 Abs. 1)";
+    label en unofficial "the person liable must restore the position that would exist had the circumstance obliging him to pay damages not occurred (§ 249 (1))";
+}
+pub relation verletzung_einer_person_oder_beschaedigung_einer_sache(sch: Schaden) kind empirical {
+    label de official "Der Schadensersatz ist wegen Verletzung einer Person oder wegen Beschädigung einer Sache zu leisten (§ 249 Abs. 2 Satz 1)";
+    label en unofficial "damages are payable for injury to a person or damage to a thing (§ 249 (2) sentence 1)";
+}
+pub relation geldbetrag_statt_herstellung_verlangbar(sch: Schaden) kind institutional {
+    label de official "Der Gläubiger kann statt der Herstellung den dazu erforderlichen Geldbetrag verlangen (§ 249 Abs. 2 Satz 1)";
+    label en unofficial "the creditor may demand the sum of money necessary for restoration instead of restoration (§ 249 (2) sentence 1)";
+}
+pub relation umsatzsteuer_tatsaechlich_angefallen(sch: Schaden, steuer: Money) kind empirical {
+    key(sch);
+    label de official "Die Umsatzsteuer ist bei der Beschädigung einer Sache tatsächlich angefallen (§ 249 Abs. 2 Satz 2)";
+    label en unofficial "value added tax has actually been incurred on damage to a thing (§ 249 (2) sentence 2)";
+}
+pub relation erforderlicher_geldbetrag(sch: Schaden, betrag: Money) kind institutional {
+    key(sch);
+    label de official "Erforderlicher Geldbetrag; er schließt die Umsatzsteuer nur ein, wenn und soweit sie tatsächlich angefallen ist (§ 249 Abs. 2)";
+    label en unofficial "the sum of money necessary; it includes value added tax only if and to the extent it was actually incurred (§ 249 (2))";
+}
+
+@source(BGB_P249)
+rule NaturalrestitutionIstDieRegel(sch: Schaden, p: Person) strict {
+    label de official "Wer zum Schadensersatz verpflichtet ist, hat den Zustand herzustellen, der bestehen würde, wenn der zum Ersatz verpflichtende Umstand nicht eingetreten wäre (§ 249 Abs. 1)";
+    label en unofficial "A person liable in damages must restore the position that would exist had the circumstance obliging him to pay damages not occurred (§ 249 (1))";
+    when zum_schadensersatz_verpflichtet(sch, p);
+    then herstellung_des_zustands_geschuldet(sch, p);
+}
+
+@source(BGB_P249)
+rule GeldbetragStattHerstellung(sch: Schaden, p: Person) strict {
+    label de official "Ist wegen Verletzung einer Person oder wegen Beschädigung einer Sache Schadensersatz zu leisten, so kann der Gläubiger statt der Herstellung den dazu erforderlichen Geldbetrag verlangen (§ 249 Abs. 2 Satz 1)";
+    label en unofficial "Where damages are payable for injury to a person or damage to a thing, the creditor may demand the sum necessary instead of restoration (§ 249 (2) sentence 1)";
+    when zum_schadensersatz_verpflichtet(sch, p);
+    when verletzung_einer_person_oder_beschaedigung_einer_sache(sch);
+    then geldbetrag_statt_herstellung_verlangbar(sch);
+}
+
+@source(BGB_P249)
+rule ErforderlicherGeldbetragMitAngefallenerUmsatzsteuer(sch: Schaden, betrag: Money, steuer: Money) strict {
+    label de official "Bei der Beschädigung einer Sache schließt der erforderliche Geldbetrag die Umsatzsteuer nur mit ein, wenn und soweit sie tatsächlich angefallen ist (§ 249 Abs. 2 Satz 2) — sie ist angefallen";
+    label en unofficial "On damage to a thing the sum necessary includes value added tax only if and to the extent actually incurred (§ 249 (2) sentence 2) — it was incurred";
+    when geldbetrag_statt_herstellung_verlangbar(sch);
+    when schadensbetrag(sch, betrag);
+    when umsatzsteuer_tatsaechlich_angefallen(sch, steuer);
+    then erforderlicher_geldbetrag(sch, betrag + steuer);
+}
+
+@source(BGB_P249)
+rule ErforderlicherGeldbetragOhneUmsatzsteuer(sch: Schaden, betrag: Money) strict {
+    label de official "Bei der Beschädigung einer Sache schließt der erforderliche Geldbetrag die Umsatzsteuer nur mit ein, wenn und soweit sie tatsächlich angefallen ist (§ 249 Abs. 2 Satz 2) — ohne festgestellten Anfall bleibt sie außer Ansatz";
+    label en unofficial "On damage to a thing value added tax is included only if actually incurred (§ 249 (2) sentence 2) — without an established incurrence it is left out";
+    when geldbetrag_statt_herstellung_verlangbar(sch);
+    when schadensbetrag(sch, betrag);
+    when umsatzsteuer_nicht_angefallen(sch);
+    then erforderlicher_geldbetrag(sch, betrag);
+}
+
+// § 250: Fristsetzung mit Ablehnungserklärung; die Angemessenheit der Frist ist
+// Wertung des Gerichts (Kanal §47.3).
+@source(BGB_P250)
+pub external judgment relation frist_zur_herstellung_angemessen(sch: Schaden, ende: Date) {
+    authority Court;
+    label de official "§ 250 Satz 1. Das Gericht hat festgestellt, dass die dem Ersatzpflichtigen zur Herstellung bestimmte Frist angemessen ist und mit Ablauf dieses Tages endet";
+    label en unofficial "§ 250 sentence 1. The court found that the period fixed for restoration is reasonable and ends at the close of that day";
+}
+pub relation ablehnungserklaerung_bei_fristsetzung(sch: Schaden) kind empirical {
+    label de official "Der Gläubiger hat die Frist mit der Erklärung bestimmt, dass er die Herstellung nach dem Ablauf der Frist ablehne (§ 250 Satz 1)";
+    label en unofficial "the creditor fixed the period declaring that he will refuse restoration after its expiry (§ 250 sentence 1)";
+}
+pub relation herstellung_rechtzeitig_erfolgt(sch: Schaden) kind empirical {
+    label de official "Die Herstellung ist rechtzeitig erfolgt (§ 250 Satz 2)";
+    label en unofficial "restoration was effected in good time (§ 250 sentence 2)";
+}
+pub relation ersatz_in_geld_verlangbar(sch: Schaden) kind institutional {
+    label de official "Der Gläubiger kann den Ersatz in Geld verlangen (§ 250 Satz 2, § 251 Abs. 1)";
+    label en unofficial "the creditor may demand compensation in money (§ 250 sentence 2, § 251 (1))";
+}
+pub relation anspruch_auf_herstellung_ausgeschlossen(sch: Schaden) kind institutional {
+    label de official "Der Anspruch auf die Herstellung ist ausgeschlossen (§ 250 Satz 2 Halbsatz 2)";
+    label en unofficial "the claim to restoration is excluded (§ 250 sentence 2 second half-sentence)";
+}
+
+@source(BGB_P250)
+rule GeldersatzNachFristablauf(sch: Schaden, ende: Date) strict {
+    label de official "Nach dem Ablauf der mit Ablehnungserklärung bestimmten angemessenen Frist kann der Gläubiger den Ersatz in Geld verlangen, wenn nicht die Herstellung rechtzeitig erfolgt; der Anspruch auf die Herstellung ist ausgeschlossen (§ 250)";
+    label en unofficial "After expiry of the reasonable period fixed with a declaration of refusal the creditor may demand compensation in money if restoration is not effected in time; the claim to restoration is excluded (§ 250)";
+    when ablehnungserklaerung_bei_fristsetzung(sch);
+    when frist_zur_herstellung_angemessen(sch, ende);
+    when herstellung_nicht_rechtzeitig_erfolgt(sch);
+    then ersatz_in_geld_verlangbar(sch);
+}
+
+@source(BGB_P250)
+rule HerstellungsanspruchAusgeschlossen(sch: Schaden, ende: Date) strict {
+    label de official "Mit dem Geldersatz nach Fristablauf ist der Anspruch auf die Herstellung ausgeschlossen (§ 250 Satz 2 Halbsatz 2)";
+    label en unofficial "With compensation in money after expiry the claim to restoration is excluded (§ 250 sentence 2 second half-sentence)";
+    when ablehnungserklaerung_bei_fristsetzung(sch);
+    when frist_zur_herstellung_angemessen(sch, ende);
+    when not herstellung_rechtzeitig_erfolgt(sch);
+    then anspruch_auf_herstellung_ausgeschlossen(sch);
+}
+
+pub relation herstellung_nicht_moeglich_oder_nicht_genuegend(sch: Schaden) kind empirical {
+    label de official "Die Herstellung ist nicht möglich oder zur Entschädigung des Gläubigers nicht genügend (§ 251 Abs. 1)";
+    label en unofficial "restoration is impossible or insufficient to compensate the creditor (§ 251 (1))";
+}
+@source(BGB_P251)
+pub external judgment relation herstellung_nur_mit_unverhaeltnismaessigen_aufwendungen_moeglich(sch: Schaden) {
+    authority Court;
+    label de official "§ 251 Abs. 2 Satz 1. Das Gericht hat festgestellt, dass die Herstellung nur mit unverhältnismäßigen Aufwendungen möglich ist; die Aufwendungen aus der Heilbehandlung eines verletzten Tieres sind nicht bereits dann unverhältnismäßig, wenn sie dessen Wert erheblich übersteigen (Satz 2)";
+    label en unofficial "§ 251 (2) sentence 1. The court found that restoration is possible only with disproportionate expense; expense for the medical treatment of an injured animal is not disproportionate merely because it considerably exceeds the animal's value (sentence 2)";
+}
+pub relation ersatzpflichtiger_darf_in_geld_entschaedigen(sch: Schaden) kind institutional {
+    label de official "Der Ersatzpflichtige kann den Gläubiger in Geld entschädigen (§ 251 Abs. 2 Satz 1)";
+    label en unofficial "the person liable may compensate the creditor in money (§ 251 (2) sentence 1)";
+}
+
+@source(BGB_P251)
+rule GeldentschaedigungOhneFristsetzung(sch: Schaden) strict {
+    label de official "Soweit die Herstellung nicht möglich oder zur Entschädigung des Gläubigers nicht genügend ist, hat der Ersatzpflichtige den Gläubiger in Geld zu entschädigen (§ 251 Abs. 1)";
+    label en unofficial "To the extent that restoration is impossible or insufficient, the person liable must compensate the creditor in money (§ 251 (1))";
+    when herstellung_nicht_moeglich_oder_nicht_genuegend(sch);
+    then ersatz_in_geld_verlangbar(sch);
+}
+
+@source(BGB_P251)
+rule GeldentschaedigungBeiUnverhaeltnismaessigenAufwendungen(sch: Schaden) strict {
+    label de official "Der Ersatzpflichtige kann den Gläubiger in Geld entschädigen, wenn die Herstellung nur mit unverhältnismäßigen Aufwendungen möglich ist (§ 251 Abs. 2)";
+    label en unofficial "The person liable may compensate in money where restoration is possible only with disproportionate expense (§ 251 (2))";
+    when herstellung_nur_mit_unverhaeltnismaessigen_aufwendungen_moeglich(sch);
+    then ersatzpflichtiger_darf_in_geld_entschaedigen(sch);
+}
+
+@source(BGB_P252)
+pub external judgment relation entgangener_gewinn_wahrscheinlich(sch: Schaden, betrag: Money) {
+    authority Court;
+    label de official "§ 252 Satz 2. Das Gericht hat festgestellt, welcher Gewinn nach dem gewöhnlichen Lauf der Dinge oder nach den besonderen Umständen, insbesondere nach den getroffenen Anstalten und Vorkehrungen, mit Wahrscheinlichkeit erwartet werden konnte";
+    label en unofficial "§ 252 sentence 2. The court found which profit could probably have been expected in the ordinary course of events or under the special circumstances";
+}
+pub relation zu_ersetzender_schaden(sch: Schaden, betrag: Money) kind institutional {
+    key(sch);
+    label de official "Zu ersetzender Schaden einschließlich des entgangenen Gewinns (§ 252 Satz 1)";
+    label en unofficial "damage to be compensated including lost profit (§ 252 sentence 1)";
+}
+
+@source(BGB_P252)
+rule EntgangenerGewinnGehoertZumSchaden(sch: Schaden, betrag: Money, gewinn: Money) strict {
+    label de official "Der zu ersetzende Schaden umfasst auch den entgangenen Gewinn (§ 252 Satz 1); als entgangen gilt der Gewinn, der mit Wahrscheinlichkeit erwartet werden konnte (Satz 2)";
+    label en unofficial "The damage to be compensated also covers lost profit (§ 252 sentence 1); profit which could probably have been expected counts as lost (sentence 2)";
+    when schadensbetrag(sch, betrag);
+    when entgangener_gewinn_wahrscheinlich(sch, gewinn);
+    then zu_ersetzender_schaden(sch, betrag + gewinn);
+}
+
+@source(BGB_P252)
+rule SchadenOhneEntgangenenGewinn(sch: Schaden, betrag: Money) strict {
+    label de official "Ohne festgestellten entgangenen Gewinn ist der zu ersetzende Schaden der festgestellte Schadensbetrag (§ 252 Satz 1)";
+    label en unofficial "Without an established lost profit the damage to be compensated is the established amount of damage (§ 252 sentence 1)";
+    when schadensbetrag(sch, betrag);
+    when kein_entgangener_gewinn_geltend_gemacht(sch);
+    then zu_ersetzender_schaden(sch, betrag);
+}
+
+pub relation nichtvermoegensschaden(sch: Schaden) kind empirical {
+    label de official "Der Schaden ist kein Vermögensschaden (§ 253 Abs. 1)";
+    label en unofficial "the damage is not pecuniary loss (§ 253 (1))";
+}
+pub relation verletzung_koerper_gesundheit_freiheit_sexuelle_selbstbestimmung(sch: Schaden) kind empirical {
+    label de official "Der Schadensersatz ist wegen einer Verletzung des Körpers, der Gesundheit, der Freiheit oder der sexuellen Selbstbestimmung zu leisten (§ 253 Abs. 2)";
+    label en unofficial "damages are payable for injury to body, health, freedom or sexual self-determination (§ 253 (2))";
+}
+@source(BGB_P253)
+pub external judgment relation billige_entschaedigung_in_geld(sch: Schaden, betrag: Money) {
+    authority Court;
+    label de official "§ 253 Abs. 2. Das Gericht hat die billige Entschädigung in Geld wegen des Schadens bemessen, der nicht Vermögensschaden ist";
+    label en unofficial "§ 253 (2). The court assessed the equitable compensation in money for damage which is not pecuniary loss";
+}
+pub relation entschaedigung_in_geld_gefordert_werden_kann(sch: Schaden, betrag: Money) kind institutional {
+    key(sch);
+    label de official "Entschädigung in Geld wegen eines Schadens, der nicht Vermögensschaden ist (§ 253)";
+    label en unofficial "compensation in money for damage which is not pecuniary loss (§ 253)";
+}
+
+@source(BGB_P253)
+rule ImmateriellerSchadenNurInGesetzlichBestimmtenFaellen(sch: Schaden, betrag: Money) strict {
+    label de official "Wegen eines Schadens, der nicht Vermögensschaden ist, kann Entschädigung in Geld nur in den durch das Gesetz bestimmten Fällen gefordert werden (§ 253 Abs. 1); bei Verletzung des Körpers, der Gesundheit, der Freiheit oder der sexuellen Selbstbestimmung kann eine billige Entschädigung gefordert werden (Abs. 2)";
+    label en unofficial "Compensation in money for non-pecuniary damage may be demanded only in the cases provided by law (§ 253 (1)); for injury to body, health, freedom or sexual self-determination equitable compensation may be demanded ((2))";
+    when nichtvermoegensschaden(sch);
+    when verletzung_koerper_gesundheit_freiheit_sexuelle_selbstbestimmung(sch);
+    when billige_entschaedigung_in_geld(sch, betrag);
+    then entschaedigung_in_geld_gefordert_werden_kann(sch, betrag);
+}
+
+// § 254: das Mitverschulden und sein Umfang sind Wertung des Gerichts; der
+// Anteil kommt als Paar ganzer Zahlen (Zähler, Nenner) — Ledger D-04-05.
+@source(BGB_P254)
+pub external judgment relation mitverschulden_anteil(sch: Schaden, p: Person, zaehler: Integer, nenner: Integer) {
+    authority Court;
+    label de official "§ 254 Abs. 1. Das Gericht hat festgestellt, dass ein Verschulden des Beschädigten bei der Entstehung des Schadens mitgewirkt hat, und den Anteil bestimmt, um den sich der Ersatz mindert (Zähler und Nenner des Bruchs); Absatz 2 Satz 1 stellt dem das Unterlassen der Warnung und der Schadensabwendung gleich";
+    label en unofficial "§ 254 (1). The court found contributory fault of the injured party and determined the share by which compensation is reduced (numerator and denominator); (2) sentence 1 treats failure to warn or to avert damage in the same way";
+}
+pub relation ersatzbetrag_nach_mitverschulden(sch: Schaden, betrag: Money) kind institutional {
+    key(sch);
+    label de official "Umfang des zu leistenden Ersatzes nach Abzug des Mitverschuldensanteils (§ 254 Abs. 1); Rundung auf den Cent: Politik des Pakets (README „Rundung“)";
+    label en unofficial "amount of compensation after deducting the share of contributory fault (§ 254 (1)); rounding to the cent is the package's policy (README „Rundung“)";
+}
+pub relation verschulden_eines_erfuellungsgehilfen_des_beschaedigten(sch: Schaden, p: Person) kind empirical {
+    label de official "Das Verschulden einer Person, deren sich der Beschädigte bedient hat (§ 254 Abs. 2 Satz 2 mit § 278)";
+    label en unofficial "fault of a person used by the injured party (§ 254 (2) sentence 2 with § 278)";
+}
+
+@source(BGB_P254)
+rule ErsatzMindertSichUmDenMitverschuldensanteil(sch: Schaden, p: Person, betrag: Money, z: Integer, n: Integer) strict {
+    label de official "Hat bei der Entstehung des Schadens ein Verschulden des Beschädigten mitgewirkt, so hängen die Verpflichtung zum Ersatz und der Umfang des zu leistenden Ersatzes von den Umständen ab (§ 254 Abs. 1) — der Ersatz mindert sich um den vom Gericht bestimmten Anteil";
+    label en unofficial "Where fault of the injured party contributed to the damage, liability and its extent depend on the circumstances (§ 254 (1)) — compensation is reduced by the share determined by the court";
+    when geschaedigter(sch, p);
+    when zu_ersetzender_schaden(sch, betrag);
+    when mitverschulden_anteil(sch, p, z, n);
+    then ersatzbetrag_nach_mitverschulden(sch, div_round(betrag * (n - z), n * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P254)
+rule OhneMitverschuldenVollerErsatz(sch: Schaden, p: Person, betrag: Money) strict {
+    label de official "Ohne festgestelltes Mitverschulden des Beschädigten bleibt es beim vollen zu ersetzenden Schaden (§ 254 Abs. 1 im Umkehrschluss)";
+    label en unofficial "Without established contributory fault the full damage remains payable (§ 254 (1) a contrario)";
+    when geschaedigter(sch, p);
+    when zu_ersetzender_schaden(sch, betrag);
+    when kein_mitverschulden_festgestellt(sch, p);
+    then ersatzbetrag_nach_mitverschulden(sch, betrag);
+}
+
+pub relation ersatz_fuer_verlust_einer_sache_oder_eines_rechts(sch: Schaden, p: Person) kind empirical {
+    label de official "Die Person hat für den Verlust einer Sache oder eines Rechts Schadensersatz zu leisten (§ 255)";
+    label en unofficial "the person must pay damages for the loss of a thing or a right (§ 255)";
+}
+pub relation ersatz_nur_gegen_abtretung(sch: Schaden, p: Person) kind institutional {
+    label de official "Der Ersatzpflichtige ist zum Ersatz nur gegen Abtretung der Ansprüche verpflichtet, die dem Ersatzberechtigten auf Grund des Eigentums an der Sache oder auf Grund des Rechts gegen Dritte zustehen (§ 255)";
+    label en unofficial "the person liable must pay only against assignment of the claims which the injured party has against third parties by virtue of ownership or of the right (§ 255)";
+}
+
+@source(BGB_P255)
+rule ErsatzNurGegenAbtretungDerAnsprueche(sch: Schaden, p: Person) strict {
+    label de official "Wer für den Verlust einer Sache oder eines Rechts Schadensersatz zu leisten hat, ist zum Ersatz nur gegen Abtretung der Ansprüche verpflichtet, die dem Ersatzberechtigten gegen Dritte zustehen (§ 255)";
+    label en unofficial "A person liable for the loss of a thing or a right must pay only against assignment of the claims of the injured party against third parties (§ 255)";
+    when ersatz_fuer_verlust_einer_sache_oder_eines_rechts(sch, p);
+    then ersatz_nur_gegen_abtretung(sch, p);
+}
+
+// --- §§ 256–261 Aufwendungen, Wegnahme, Rechenschaft --------------------------------------------------------
+
+pub relation zum_ersatz_von_aufwendungen_verpflichtet(a: Anspruch, p: Person) kind empirical {
+    label de official "Die Person ist zum Ersatz von Aufwendungen verpflichtet (§ 256 Satz 1)";
+    label en unofficial "the person is liable to reimburse outlays (§ 256 sentence 1)";
+}
+pub relation zeit_der_aufwendung(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Zeit der Aufwendung, von der an zu verzinsen ist (§ 256 Satz 1)";
+    label en unofficial "time of the outlay from which interest runs (§ 256 sentence 1)";
+}
+pub relation nutzungen_verbleiben_ohne_verguetung(a: Anspruch) kind empirical {
+    label de official "Die Nutzungen oder Früchte des Gegenstands verbleiben dem Ersatzberechtigten ohne Vergütung (§ 256 Satz 2)";
+    label en unofficial "the emoluments or fruits of the object remain with the injured party without payment (§ 256 sentence 2)";
+}
+pub relation verzinsung_der_aufwendungen_ab(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Der aufgewendete Betrag ist von der Zeit der Aufwendung an zu verzinsen (§ 256 Satz 1)";
+    label en unofficial "the amount spent bears interest from the time of the outlay (§ 256 sentence 1)";
+}
+
+@source(BGB_P256)
+rule VerzinsungVonAufwendungen(a: Anspruch, p: Person, tag: Date) strict {
+    label de official "Wer zum Ersatz von Aufwendungen verpflichtet ist, hat den aufgewendeten Betrag von der Zeit der Aufwendung an zu verzinsen (§ 256 Satz 1); Zinsen sind nicht zu entrichten für die Zeit, für welche dem Ersatzberechtigten die Nutzungen oder Früchte ohne Vergütung verbleiben (Satz 2)";
+    label en unofficial "A person liable to reimburse outlays must pay interest on the amount from the time of the outlay (§ 256 sentence 1); no interest is due for the period in which the emoluments remain with the injured party without payment (sentence 2)";
+    when zum_ersatz_von_aufwendungen_verpflichtet(a, p);
+    when zeit_der_aufwendung(a, tag);
+    when keine_nutzungen_ohne_verguetung(a);
+    then verzinsung_der_aufwendungen_ab(a, tag);
+}
+
+pub relation verbindlichkeit_fuer_den_zweck_eingegangen(a: Anspruch, p: Person) kind empirical {
+    label de official "Der Ersatzberechtigte ist für den Zweck, für den er Aufwendungen macht, eine Verbindlichkeit eingegangen (§ 257 Satz 1)";
+    label en unofficial "the person entitled to reimbursement has incurred an obligation for that purpose (§ 257 sentence 1)";
+}
+pub relation verbindlichkeit_faellig(a: Anspruch) kind empirical {
+    label de official "Die Verbindlichkeit ist fällig (§ 257 Satz 2 im Umkehrschluss)";
+    label en unofficial "the obligation is due (§ 257 sentence 2 a contrario)";
+}
+pub relation befreiung_von_der_verbindlichkeit_verlangbar(a: Anspruch, p: Person) kind institutional {
+    label de official "Der Ersatzberechtigte kann Befreiung von der Verbindlichkeit verlangen (§ 257 Satz 1)";
+    label en unofficial "the person entitled may demand release from the obligation (§ 257 sentence 1)";
+}
+pub relation sicherheit_statt_befreiung(a: Anspruch, p: Person) kind institutional {
+    label de official "Ist die Verbindlichkeit noch nicht fällig, so kann der Ersatzpflichtige statt der Befreiung Sicherheit leisten (§ 257 Satz 2)";
+    label en unofficial "if the obligation is not yet due the person liable may provide security instead of release (§ 257 sentence 2)";
+}
+
+@source(BGB_P257)
+rule BefreiungsanspruchWegenEingegangenerVerbindlichkeit(a: Anspruch, p: Person) strict {
+    label de official "Wer berechtigt ist, Ersatz für Aufwendungen zu verlangen, die er für einen bestimmten Zweck macht, kann, wenn er für diesen Zweck eine Verbindlichkeit eingeht, Befreiung von der Verbindlichkeit verlangen (§ 257 Satz 1)";
+    label en unofficial "A person entitled to reimbursement of outlays made for a specific purpose may demand release from an obligation incurred for that purpose (§ 257 sentence 1)";
+    when verbindlichkeit_fuer_den_zweck_eingegangen(a, p);
+    then befreiung_von_der_verbindlichkeit_verlangbar(a, p);
+}
+
+@source(BGB_P257)
+rule SicherheitStattBefreiungBeiNichtFaelligerVerbindlichkeit(a: Anspruch, p: Person) strict {
+    label de official "Ist die Verbindlichkeit noch nicht fällig, so kann ihm der Ersatzpflichtige, statt ihn zu befreien, Sicherheit leisten (§ 257 Satz 2)";
+    label en unofficial "If the obligation is not yet due the person liable may provide security instead of granting release (§ 257 sentence 2)";
+    when verbindlichkeit_fuer_den_zweck_eingegangen(a, p);
+    when verbindlichkeit_noch_nicht_faellig(a);
+    then sicherheit_statt_befreiung(a, p);
+}
+
+pub relation zur_wegnahme_einer_einrichtung_berechtigt(p: Person, s: Sache) kind empirical {
+    label de official "Die Person ist berechtigt, von einer Sache, die sie einem anderen herauszugeben hat, eine Einrichtung wegzunehmen (§ 258 Satz 1)";
+    label en unofficial "the person is entitled to remove a fixture from a thing which he must deliver up to another (§ 258 sentence 1)";
+}
+pub relation wegnahme_erfolgt(p: Person, s: Sache) kind empirical {
+    label de official "Die Wegnahme ist erfolgt (§ 258 Satz 1)";
+    label en unofficial "the removal has taken place (§ 258 sentence 1)";
+}
+pub relation besitz_der_sache_erlangt(anderer: Person, s: Sache) kind empirical {
+    label de official "Der andere hat den Besitz der Sache erlangt (§ 258 Satz 2)";
+    label en unofficial "the other person has obtained possession of the thing (§ 258 sentence 2)";
+}
+pub relation wiederherstellung_des_vorigen_standes_geschuldet(p: Person, s: Sache) kind institutional {
+    label de official "Der Wegnehmende hat die Sache auf seine Kosten in den vorigen Stand zu setzen (§ 258 Satz 1)";
+    label en unofficial "the person removing must restore the thing to its previous condition at his own expense (§ 258 sentence 1)";
+}
+pub relation wegnahme_zu_gestatten(anderer: Person, s: Sache) kind institutional {
+    label de official "Der andere ist verpflichtet, die Wegnahme der Einrichtung zu gestatten; er kann die Gestattung verweigern, bis ihm für den mit der Wegnahme verbundenen Schaden Sicherheit geleistet wird (§ 258 Satz 2)";
+    label en unofficial "the other must permit removal of the fixture; he may refuse until security is provided for the damage connected with the removal (§ 258 sentence 2)";
+}
+
+@source(BGB_P258)
+rule WegnahmeVerpflichtetZurWiederherstellung(p: Person, s: Sache) strict {
+    label de official "Wer berechtigt ist, von einer Sache, die er einem anderen herauszugeben hat, eine Einrichtung wegzunehmen, hat im Falle der Wegnahme die Sache auf seine Kosten in den vorigen Stand zu setzen (§ 258 Satz 1)";
+    label en unofficial "A person entitled to remove a fixture must, in the case of removal, restore the thing at his own expense (§ 258 sentence 1)";
+    when zur_wegnahme_einer_einrichtung_berechtigt(p, s);
+    when wegnahme_erfolgt(p, s);
+    then wiederherstellung_des_vorigen_standes_geschuldet(p, s);
+}
+
+@source(BGB_P258)
+rule BesitzerMussWegnahmeGestatten(p: Person, anderer: Person, s: Sache) strict {
+    label de official "Erlangt der andere den Besitz der Sache, so ist er verpflichtet, die Wegnahme der Einrichtung zu gestatten (§ 258 Satz 2)";
+    label en unofficial "If the other obtains possession of the thing he must permit removal of the fixture (§ 258 sentence 2)";
+    when zur_wegnahme_einer_einrichtung_berechtigt(p, s);
+    when besitz_der_sache_erlangt(anderer, s);
+    then wegnahme_zu_gestatten(anderer, s);
+}
+
+pub relation rechenschaftspflichtig(p: Person, berechtigter: Person) kind empirical {
+    label de official "Die Person ist verpflichtet, über eine mit Einnahmen oder Ausgaben verbundene Verwaltung Rechenschaft abzulegen (§ 259 Abs. 1)";
+    label en unofficial "the person must render account of an administration involving income or expenditure (§ 259 (1))";
+}
+pub relation belege_werden_erteilt(p: Person) kind empirical {
+    label de official "Belege pflegen erteilt zu werden (§ 259 Abs. 1 Halbsatz 2)";
+    label en unofficial "vouchers are customarily issued (§ 259 (1) second half-sentence)";
+}
+pub relation rechnung_mitzuteilen(p: Person, berechtigter: Person) kind institutional {
+    label de official "Dem Berechtigten ist eine die geordnete Zusammenstellung der Einnahmen oder der Ausgaben enthaltende Rechnung mitzuteilen (§ 259 Abs. 1)";
+    label en unofficial "an account containing an orderly compilation of income or expenditure must be communicated to the person entitled (§ 259 (1))";
+}
+pub relation belege_vorzulegen(p: Person, berechtigter: Person) kind institutional {
+    label de official "Soweit Belege erteilt zu werden pflegen, sind Belege vorzulegen (§ 259 Abs. 1)";
+    label en unofficial "vouchers must be produced so far as they are customarily issued (§ 259 (1))";
+}
+pub relation grund_zur_annahme_mangelnder_sorgfalt(p: Person) kind empirical {
+    label de official "Es besteht Grund zu der Annahme, dass die Angaben nicht mit der erforderlichen Sorgfalt gemacht worden sind (§ 259 Abs. 2, § 260 Abs. 2)";
+    label en unofficial "there is reason to assume that the particulars were not given with the necessary care (§ 259 (2), § 260 (2))";
+}
+pub relation angelegenheit_von_geringer_bedeutung(p: Person) kind empirical {
+    label de official "Es handelt sich um eine Angelegenheit von geringer Bedeutung (§ 259 Abs. 3, § 260 Abs. 3)";
+    label en unofficial "the matter is of minor importance (§ 259 (3), § 260 (3))";
+}
+pub relation eidesstattliche_versicherung_geschuldet(p: Person) kind institutional {
+    label de official "Der Verpflichtete hat auf Verlangen zu Protokoll an Eides statt zu versichern, dass er nach bestem Wissen so vollständig angegeben habe, als er dazu imstande sei (§ 259 Abs. 2, § 260 Abs. 2)";
+    label en unofficial "on demand the obliged person must give a declaration in lieu of an oath that he has given the particulars as completely as he is able (§ 259 (2), § 260 (2))";
+}
+
+@source(BGB_P259)
+rule RechenschaftDurchRechnung(p: Person, berechtigter: Person) strict {
+    label de official "Wer verpflichtet ist, über eine mit Einnahmen oder Ausgaben verbundene Verwaltung Rechenschaft abzulegen, hat dem Berechtigten eine die geordnete Zusammenstellung der Einnahmen oder der Ausgaben enthaltende Rechnung mitzuteilen (§ 259 Abs. 1)";
+    label en unofficial "A person bound to render account must communicate an orderly compilation of income or expenditure (§ 259 (1))";
+    when rechenschaftspflichtig(p, berechtigter);
+    then rechnung_mitzuteilen(p, berechtigter);
+}
+
+@source(BGB_P259)
+rule BelegeVorzulegenSoweitUeblich(p: Person, berechtigter: Person) strict {
+    label de official "Soweit Belege erteilt zu werden pflegen, sind Belege vorzulegen (§ 259 Abs. 1 Halbsatz 2)";
+    label en unofficial "Vouchers must be produced so far as they are customarily issued (§ 259 (1) second half-sentence)";
+    when rechenschaftspflichtig(p, berechtigter);
+    when belege_werden_erteilt(p);
+    then belege_vorzulegen(p, berechtigter);
+}
+
+@source(BGB_P259)
+rule EidesstattlicheVersicherungBeiZweifeln(p: Person, berechtigter: Person) strict {
+    label de official "Besteht Grund zu der Annahme, dass die Angaben über die Einnahmen nicht mit der erforderlichen Sorgfalt gemacht worden sind, so hat der Verpflichtete auf Verlangen an Eides statt zu versichern (§ 259 Abs. 2); in Angelegenheiten von geringer Bedeutung besteht diese Verpflichtung nicht (Abs. 3)";
+    label en unofficial "Where there is reason to assume the particulars were not given with due care, a declaration in lieu of an oath must be given on demand (§ 259 (2)); not in matters of minor importance ((3))";
+    when rechenschaftspflichtig(p, berechtigter);
+    when grund_zur_annahme_mangelnder_sorgfalt(p);
+    when keine_angelegenheit_von_geringer_bedeutung(p);
+    then eidesstattliche_versicherung_geschuldet(p);
+}
+
+pub relation inbegriff_herauszugeben_oder_auskunft_zu_erteilen(p: Person, berechtigter: Person) kind empirical {
+    label de official "Die Person ist verpflichtet, einen Inbegriff von Gegenständen herauszugeben oder über den Bestand eines solchen Inbegriffs Auskunft zu erteilen (§ 260 Abs. 1)";
+    label en unofficial "the person must deliver up an aggregate of objects or give information about its composition (§ 260 (1))";
+}
+pub relation verzeichnis_vorzulegen(p: Person, berechtigter: Person) kind institutional {
+    label de official "Dem Berechtigten ist ein Verzeichnis des Bestands vorzulegen (§ 260 Abs. 1)";
+    label en unofficial "an inventory of the aggregate must be produced to the person entitled (§ 260 (1))";
+}
+
+@source(BGB_P260)
+rule VerzeichnisDesBestands(p: Person, berechtigter: Person) strict {
+    label de official "Wer verpflichtet ist, einen Inbegriff von Gegenständen herauszugeben oder über den Bestand Auskunft zu erteilen, hat dem Berechtigten ein Verzeichnis des Bestands vorzulegen (§ 260 Abs. 1)";
+    label en unofficial "A person bound to deliver up an aggregate or to give information about it must produce an inventory (§ 260 (1))";
+    when inbegriff_herauszugeben_oder_auskunft_zu_erteilen(p, berechtigter);
+    then verzeichnis_vorzulegen(p, berechtigter);
+}
+
+@source(BGB_P260)
+rule EidesstattlicheVersicherungUeberDenBestand(p: Person, berechtigter: Person) strict {
+    label de official "Besteht Grund zu der Annahme, dass das Verzeichnis nicht mit der erforderlichen Sorgfalt aufgestellt worden ist, so hat der Verpflichtete auf Verlangen an Eides statt zu versichern (§ 260 Abs. 2); § 259 Abs. 3 findet Anwendung (Abs. 3)";
+    label en unofficial "Where there is reason to assume the inventory was not drawn up with due care, a declaration in lieu of an oath must be given on demand (§ 260 (2)); § 259 (3) applies ((3))";
+    when inbegriff_herauszugeben_oder_auskunft_zu_erteilen(p, berechtigter);
+    when grund_zur_annahme_mangelnder_sorgfalt(p);
+    when keine_angelegenheit_von_geringer_bedeutung(p);
+    then eidesstattliche_versicherung_geschuldet(p);
+}
+
+pub relation abgabe_der_versicherung_verlangt(verlangender: Person, p: Person) kind empirical {
+    label de official "Diese Person verlangt die Abgabe der eidesstattlichen Versicherung (§ 261 Abs. 2)";
+    label en unofficial "this person demands the declaration in lieu of an oath (§ 261 (2))";
+}
+pub relation gericht_kann_versicherung_aendern(p: Person) kind institutional {
+    label de official "Das Gericht kann eine den Umständen entsprechende Änderung der eidesstattlichen Versicherung beschließen (§ 261 Abs. 1)";
+    label en unofficial "the court may order a modification of the declaration appropriate to the circumstances (§ 261 (1))";
+}
+pub relation kosten_der_abnahme_traegt(verlangender: Person, p: Person) kind institutional {
+    label de official "Die Kosten der Abnahme der eidesstattlichen Versicherung hat derjenige zu tragen, welcher die Abgabe der Versicherung verlangt (§ 261 Abs. 2)";
+    label en unofficial "the costs of taking the declaration are borne by the person who demands it (§ 261 (2))";
+}
+
+@source(BGB_P261)
+rule AenderungDerEidesstattlichenVersicherung(p: Person) strict {
+    label de official "Das Gericht kann eine den Umständen entsprechende Änderung der eidesstattlichen Versicherung beschließen (§ 261 Abs. 1)";
+    label en unofficial "The court may order a modification of the declaration in lieu of an oath (§ 261 (1))";
+    when eidesstattliche_versicherung_geschuldet(p);
+    then gericht_kann_versicherung_aendern(p);
+}
+
+@source(BGB_P261)
+rule KostenDerAbnahmeTraegtDerVerlangende(verlangender: Person, p: Person) strict {
+    label de official "Die Kosten der Abnahme der eidesstattlichen Versicherung hat derjenige zu tragen, welcher die Abgabe der Versicherung verlangt (§ 261 Abs. 2)";
+    label en unofficial "The costs of taking the declaration are borne by the person who demands it (§ 261 (2))";
+    when eidesstattliche_versicherung_geschuldet(p);
+    when abgabe_der_versicherung_verlangt(verlangender, p);
+    then kosten_der_abnahme_traegt(verlangender, p);
+}
+
+// --- §§ 262–265 Wahlschuld -------------------------------------------------------------------------------------
+
+pub relation wahlschuld(s: Schuldverhaeltnis, l: Leistung) kind empirical {
+    label de official "Mehrere Leistungen werden in der Weise geschuldet, dass nur die eine oder die andere zu bewirken ist (§ 262)";
+    label en unofficial "several performances are owed in such a way that only one or the other is to be rendered (§ 262)";
+}
+pub relation wahlrecht_dem_glaeubiger_eingeraeumt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Das Wahlrecht ist dem Gläubiger eingeräumt (§ 262 „im Zweifel“ — abweichende Bestimmung)";
+    label en unofficial "the right to choose is granted to the creditor (§ 262 „in case of doubt“ — deviating stipulation)";
+}
+pub relation wahlrecht(s: Schuldverhaeltnis, p: Person) kind institutional {
+    label de official "Dieser Partei steht das Wahlrecht zu (§ 262)";
+    label en unofficial "this party has the right to choose (§ 262)";
+}
+pub relation wahl_erklaert(s: Schuldverhaeltnis, p: Person, l: Leistung) kind empirical {
+    label de official "Die Wahl ist durch Erklärung gegenüber dem anderen Teil erfolgt (§ 263 Abs. 1)";
+    label en unofficial "the choice was made by declaration to the other party (§ 263 (1))";
+}
+pub relation von_anfang_an_allein_geschuldet(s: Schuldverhaeltnis, l: Leistung) kind institutional {
+    label de official "Die gewählte Leistung gilt als die von Anfang an allein geschuldete (§ 263 Abs. 2)";
+    label en unofficial "the performance chosen is deemed to be the only one owed from the outset (§ 263 (2))";
+}
+
+@source(BGB_P262)
+rule WahlrechtImZweifelBeimSchuldner(s: Schuldverhaeltnis, l: Leistung, schuldner: Person) strict {
+    label de official "Werden mehrere Leistungen in der Weise geschuldet, dass nur die eine oder die andere zu bewirken ist, so steht das Wahlrecht im Zweifel dem Schuldner zu (§ 262)";
+    label en unofficial "Where several performances are owed such that only one is to be rendered, the right to choose belongs in case of doubt to the debtor (§ 262)";
+    when wahlschuld(s, l);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when wahlrecht_nicht_dem_glaeubiger_eingeraeumt(s);
+    then wahlrecht(s, schuldner);
+}
+
+@source(BGB_P262)
+rule WahlrechtDesGlaeubigersNachAbrede(s: Schuldverhaeltnis, l: Leistung, glaeubiger: Person) strict {
+    label de official "Ist das Wahlrecht dem Gläubiger eingeräumt, steht es ihm zu (§ 262 „im Zweifel“)";
+    label en unofficial "Where the right to choose is granted to the creditor, it belongs to him (§ 262 „in case of doubt“)";
+    when wahlschuld(s, l);
+    when wahlrecht_dem_glaeubiger_eingeraeumt(s);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    then wahlrecht(s, glaeubiger);
+}
+
+@source(BGB_P263)
+rule GewaehlteLeistungGiltAlsAlleinGeschuldet(s: Schuldverhaeltnis, p: Person, l: Leistung) strict {
+    label de official "Die Wahl erfolgt durch Erklärung gegenüber dem anderen Teil (§ 263 Abs. 1); die gewählte Leistung gilt als die von Anfang an allein geschuldete (Abs. 2)";
+    label en unofficial "The choice is made by declaration to the other party (§ 263 (1)); the performance chosen is deemed the only one owed from the outset ((2))";
+    when wahlrecht(s, p);
+    when wahl_erklaert(s, p, l);
+    then von_anfang_an_allein_geschuldet(s, l);
+}
+
+pub relation zwangsvollstreckung_begonnen(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Zwangsvollstreckung hat begonnen (§ 264 Abs. 1)";
+    label en unofficial "execution has begun (§ 264 (1))";
+}
+pub relation glaeubiger_richtet_zwangsvollstreckung_nach_seiner_wahl(s: Schuldverhaeltnis, glaeubiger: Person) kind institutional {
+    label de official "Nimmt der wahlberechtigte Schuldner die Wahl nicht vor dem Beginn der Zwangsvollstreckung vor, so kann der Gläubiger die Zwangsvollstreckung nach seiner Wahl auf die eine oder die andere Leistung richten (§ 264 Abs. 1)";
+    label en unofficial "If the debtor entitled to choose does not choose before execution begins, the creditor may direct execution to either performance (§ 264 (1))";
+}
+@source(BGB_P264)
+pub external judgment relation frist_zur_wahl_angemessen(s: Schuldverhaeltnis, ende: Date) {
+    authority Court;
+    label de official "§ 264 Abs. 2 Satz 1. Das Gericht hat festgestellt, dass die dem wahlberechtigten Gläubiger zur Vornahme der Wahl bestimmte Frist angemessen ist und mit Ablauf dieses Tages endet";
+    label en unofficial "§ 264 (2) sentence 1. The court found that the period fixed for the creditor entitled to choose is reasonable and ends at the close of that day";
+}
+pub relation wahl_rechtzeitig_vorgenommen(s: Schuldverhaeltnis, p: Person) kind empirical {
+    label de official "Der Gläubiger hat die Wahl rechtzeitig vorgenommen (§ 264 Abs. 2 Satz 2)";
+    label en unofficial "the creditor made the choice in good time (§ 264 (2) sentence 2)";
+}
+pub relation wahlrecht_geht_ueber_auf(s: Schuldverhaeltnis, p: Person) kind institutional {
+    label de official "Mit dem Ablauf der Frist geht das Wahlrecht auf den Schuldner über (§ 264 Abs. 2 Satz 2)";
+    label en unofficial "on expiry of the period the right to choose passes to the debtor (§ 264 (2) sentence 2)";
+}
+
+@source(BGB_P264)
+rule ZwangsvollstreckungNachWahlDesGlaeubigers(s: Schuldverhaeltnis, l: Leistung, schuldner: Person, glaeubiger: Person) strict {
+    label de official "Nimmt der wahlberechtigte Schuldner die Wahl nicht vor dem Beginn der Zwangsvollstreckung vor, so kann der Gläubiger die Zwangsvollstreckung nach seiner Wahl auf die eine oder auf die andere Leistung richten (§ 264 Abs. 1)";
+    label en unofficial "If the debtor entitled to choose has not chosen before execution begins, the creditor may direct execution to either performance (§ 264 (1))";
+    when wahlrecht(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when zwangsvollstreckung_begonnen(s);
+    when wahl_vor_der_zwangsvollstreckung_nicht_vorgenommen(s, schuldner);
+    then glaeubiger_richtet_zwangsvollstreckung_nach_seiner_wahl(s, glaeubiger);
+}
+
+@source(BGB_P264)
+rule WahlrechtGehtNachFristablaufAufDenSchuldnerUeber(s: Schuldverhaeltnis, glaeubiger: Person, schuldner: Person, ende: Date) strict {
+    label de official "Ist der wahlberechtigte Gläubiger im Verzug, so kann der Schuldner ihn unter Bestimmung einer angemessenen Frist zur Vornahme der Wahl auffordern; mit dem Ablauf der Frist geht das Wahlrecht auf den Schuldner über, wenn nicht der Gläubiger rechtzeitig die Wahl vornimmt (§ 264 Abs. 2)";
+    label en unofficial "If the creditor entitled to choose is in default, the debtor may request him to choose within a reasonable period; on its expiry the right passes to the debtor unless the creditor chooses in time (§ 264 (2))";
+    when wahlrecht(s, glaeubiger);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when frist_zur_wahl_angemessen(s, ende);
+    when wahl_nicht_rechtzeitig_vorgenommen(s, glaeubiger);
+    then wahlrecht_geht_ueber_auf(s, schuldner);
+}
+
+pub relation leistung_unmoeglich(l: Leistung) kind empirical {
+    label de official "Die Leistung ist von Anfang an unmöglich oder wird später unmöglich (§ 265 Satz 1, § 275 Abs. 1)";
+    label en unofficial "performance is impossible from the outset or becomes impossible later (§ 265 sentence 1, § 275 (1))";
+}
+pub relation unmoeglichkeit_vom_nicht_wahlberechtigten_teil_zu_vertreten(s: Schuldverhaeltnis, l: Leistung) kind empirical {
+    label de official "Die Leistung wird infolge eines Umstands unmöglich, den der nicht wahlberechtigte Teil zu vertreten hat (§ 265 Satz 2)";
+    label en unofficial "performance becomes impossible owing to a circumstance for which the party not entitled to choose is responsible (§ 265 sentence 2)";
+}
+pub relation schuldverhaeltnis_beschraenkt_sich_auf_die_uebrigen_leistungen(s: Schuldverhaeltnis, l: Leistung) kind institutional {
+    label de official "Das Schuldverhältnis beschränkt sich auf die übrigen Leistungen (§ 265 Satz 1)";
+    label en unofficial "the obligation is limited to the remaining performances (§ 265 sentence 1)";
+}
+
+@source(BGB_P265)
+rule UnmoeglichkeitBeiWahlschuld(s: Schuldverhaeltnis, l: Leistung) strict {
+    label de official "Ist eine der Leistungen von Anfang an unmöglich oder wird sie später unmöglich, so beschränkt sich das Schuldverhältnis auf die übrigen Leistungen; die Beschränkung tritt nicht ein, wenn die Leistung infolge eines Umstands unmöglich wird, den der nicht wahlberechtigte Teil zu vertreten hat (§ 265)";
+    label en unofficial "If one performance is or becomes impossible the obligation is limited to the remaining ones; not so where the impossibility is due to a circumstance for which the party not entitled to choose is responsible (§ 265)";
+    when wahlschuld(s, l);
+    when leistung_unmoeglich(l);
+    when unmoeglichkeit_nicht_vom_nicht_wahlberechtigten_teil_zu_vertreten(s, l);
+    then schuldverhaeltnis_beschraenkt_sich_auf_die_uebrigen_leistungen(s, l);
+}
+
+// --- §§ 266–272 Leistung: Person, Ort und Zeit ----------------------------------------------------------------
+
+pub relation teilleistung_angeboten(l: Leistung, schuldner: Person) kind empirical {
+    label de official "Der Schuldner bietet eine Teilleistung an (§ 266)";
+    label en unofficial "the debtor offers part performance (§ 266)";
+}
+pub relation zu_teilleistungen_nicht_berechtigt(l: Leistung, schuldner: Person) kind institutional {
+    label de official "Der Schuldner ist zu Teilleistungen nicht berechtigt (§ 266)";
+    label en unofficial "the debtor is not entitled to render part performance (§ 266)";
+}
+
+@source(BGB_P266)
+rule KeineTeilleistungen(l: Leistung, s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Der Schuldner ist zu Teilleistungen nicht berechtigt (§ 266)";
+    label en unofficial "The debtor is not entitled to render part performance (§ 266)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    then zu_teilleistungen_nicht_berechtigt(l, schuldner);
+}
+
+pub relation in_person_zu_leisten(l: Leistung) kind empirical {
+    label de official "Der Schuldner hat in Person zu leisten (§ 267 Abs. 1 Satz 1 im Umkehrschluss)";
+    label en unofficial "the debtor must perform in person (§ 267 (1) sentence 1 a contrario)";
+}
+pub relation dritter_bewirkt_die_leistung(l: Leistung, dritter: Person) kind empirical {
+    label de official "Ein Dritter bewirkt die Leistung (§ 267 Abs. 1 Satz 1)";
+    label en unofficial "a third party renders the performance (§ 267 (1) sentence 1)";
+}
+pub relation schuldner_widerspricht(l: Leistung, schuldner: Person) kind empirical {
+    label de official "Der Schuldner widerspricht der Leistung durch den Dritten (§ 267 Abs. 2)";
+    label en unofficial "the debtor objects to performance by the third party (§ 267 (2))";
+}
+pub relation leistung_des_dritten_wirksam(l: Leistung, dritter: Person) kind institutional {
+    label de official "Auch ein Dritter kann die Leistung bewirken; die Einwilligung des Schuldners ist nicht erforderlich (§ 267 Abs. 1)";
+    label en unofficial "a third party may also render the performance; the debtor's consent is not required (§ 267 (1))";
+}
+pub relation glaeubiger_darf_ablehnen(l: Leistung, dritter: Person) kind institutional {
+    label de official "Der Gläubiger kann die Leistung ablehnen, wenn der Schuldner widerspricht (§ 267 Abs. 2)";
+    label en unofficial "the creditor may refuse the performance if the debtor objects (§ 267 (2))";
+}
+
+@source(BGB_P267)
+rule LeistungDurchDritteOhneEinwilligung(l: Leistung, dritter: Person) strict {
+    label de official "Hat der Schuldner nicht in Person zu leisten, so kann auch ein Dritter die Leistung bewirken; die Einwilligung des Schuldners ist nicht erforderlich (§ 267 Abs. 1)";
+    label en unofficial "If the debtor need not perform in person, a third party may render the performance; the debtor's consent is not required (§ 267 (1))";
+    when dritter_bewirkt_die_leistung(l, dritter);
+    when nicht_in_person_zu_leisten(l);
+    then leistung_des_dritten_wirksam(l, dritter);
+}
+
+@source(BGB_P267)
+rule GlaeubigerDarfBeiWiderspruchAblehnen(l: Leistung, s: Schuldverhaeltnis, dritter: Person, schuldner: Person) strict {
+    label de official "Der Gläubiger kann die Leistung ablehnen, wenn der Schuldner widerspricht (§ 267 Abs. 2)";
+    label en unofficial "The creditor may refuse the performance if the debtor objects (§ 267 (2))";
+    when dritter_bewirkt_die_leistung(l, dritter);
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when schuldner_widerspricht(l, schuldner);
+    then glaeubiger_darf_ablehnen(l, dritter);
+}
+
+pub relation zwangsvollstreckung_in_gegenstand(a: Anspruch, gegenstand: Sache) kind empirical {
+    label de official "Der Gläubiger betreibt die Zwangsvollstreckung in einen dem Schuldner gehörenden Gegenstand (§ 268 Abs. 1 Satz 1)";
+    label en unofficial "the creditor is levying execution against an object belonging to the debtor (§ 268 (1) sentence 1)";
+}
+pub relation gefahr_des_rechtsverlusts(a: Anspruch, gegenstand: Sache, dritter: Person) kind empirical {
+    label de official "Der Dritte läuft Gefahr, durch die Zwangsvollstreckung ein Recht an dem Gegenstand oder als Besitzer den Besitz zu verlieren (§ 268 Abs. 1)";
+    label en unofficial "the third party risks losing a right in the object, or as possessor the possession, through the execution (§ 268 (1))";
+}
+pub relation abloeserecht(a: Anspruch, dritter: Person) kind institutional {
+    label de official "Der Dritte ist berechtigt, den Gläubiger zu befriedigen; die Befriedigung kann auch durch Hinterlegung oder Aufrechnung erfolgen (§ 268 Abs. 1, 2)";
+    label en unofficial "the third party is entitled to satisfy the creditor; satisfaction may also be effected by deposit or set-off (§ 268 (1), (2))";
+}
+pub relation glaeubiger_befriedigt(a: Anspruch, dritter: Person) kind empirical {
+    label de official "Der Dritte hat den Gläubiger befriedigt (§ 268 Abs. 3 Satz 1)";
+    label en unofficial "the third party has satisfied the creditor (§ 268 (3) sentence 1)";
+}
+pub relation forderung_geht_ueber_auf(a: Anspruch, p: Person) kind institutional {
+    label de official "Die Forderung geht auf diese Person über (§ 268 Abs. 3 Satz 1, § 426 Abs. 2, § 412)";
+    label en unofficial "the claim passes to this person (§ 268 (3) sentence 1, § 426 (2), § 412)";
+}
+
+@source(BGB_P268)
+rule AbloeserechtDesGefaehrdetenDritten(a: Anspruch, gegenstand: Sache, dritter: Person) strict {
+    label de official "Betreibt der Gläubiger die Zwangsvollstreckung in einen dem Schuldner gehörenden Gegenstand, so ist jeder, der Gefahr läuft, durch die Zwangsvollstreckung ein Recht an dem Gegenstand zu verlieren, berechtigt, den Gläubiger zu befriedigen (§ 268 Abs. 1); die Befriedigung kann auch durch Hinterlegung oder durch Aufrechnung erfolgen (Abs. 2)";
+    label en unofficial "Where the creditor levies execution against an object of the debtor, anyone who risks losing a right in it may satisfy the creditor (§ 268 (1)); satisfaction may also be by deposit or set-off ((2))";
+    when zwangsvollstreckung_in_gegenstand(a, gegenstand);
+    when gefahr_des_rechtsverlusts(a, gegenstand, dritter);
+    then abloeserecht(a, dritter);
+}
+
+@source(BGB_P268)
+rule ForderungsuebergangAufDenAbloesendenDritten(a: Anspruch, dritter: Person) strict {
+    label de official "Soweit der Dritte den Gläubiger befriedigt, geht die Forderung auf ihn über; der Übergang kann nicht zum Nachteil des Gläubigers geltend gemacht werden (§ 268 Abs. 3)";
+    label en unofficial "To the extent that the third party satisfies the creditor the claim passes to him; the transfer may not be asserted to the creditor's disadvantage (§ 268 (3))";
+    when abloeserecht(a, dritter);
+    when glaeubiger_befriedigt(a, dritter);
+    then forderung_geht_ueber_auf(a, dritter);
+}
+
+pub relation leistungsort_bestimmt_oder_aus_umstaenden(s: Schuldverhaeltnis) kind empirical {
+    label de official "Ein Ort für die Leistung ist bestimmt oder aus den Umständen, insbesondere aus der Natur des Schuldverhältnisses, zu entnehmen (§ 269 Abs. 1)";
+    label en unofficial "a place of performance is specified or can be inferred from the circumstances (§ 269 (1))";
+}
+pub relation wohnsitz_des_schuldners_bei_entstehung(s: Schuldverhaeltnis, ort: Text) kind empirical {
+    key(s);
+    label de official "Wohnsitz des Schuldners zur Zeit der Entstehung des Schuldverhältnisses (§ 269 Abs. 1)";
+    label en unofficial "domicile of the debtor at the time the obligation arose (§ 269 (1))";
+}
+pub relation gewerbliche_niederlassung_des_schuldners(s: Schuldverhaeltnis, ort: Text) kind empirical {
+    key(s);
+    label de official "Ort der gewerblichen Niederlassung des Schuldners, wenn die Verbindlichkeit im Gewerbebetrieb entstanden ist (§ 269 Abs. 2)";
+    label en unofficial "place of the debtor's commercial establishment where the obligation arose in his business (§ 269 (2))";
+}
+pub relation leistungsort(s: Schuldverhaeltnis, ort: Text) kind institutional {
+    key(s);
+    label de official "Ort, an dem die Leistung zu erfolgen hat (§ 269)";
+    label en unofficial "place at which performance is to be made (§ 269)";
+}
+pub relation versendungskosten_uebernommen(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Schuldner hat die Kosten der Versendung übernommen (§ 269 Abs. 3)";
+    label en unofficial "the debtor has assumed the costs of dispatch (§ 269 (3))";
+}
+pub relation versendungsort_ist_nicht_leistungsort(s: Schuldverhaeltnis) kind institutional {
+    label de official "Aus der Übernahme der Versendungskosten allein ist nicht zu entnehmen, dass der Ort, nach welchem die Versendung zu erfolgen hat, der Leistungsort sein soll (§ 269 Abs. 3)";
+    label en unofficial "the assumption of dispatch costs alone does not imply that the place of dispatch is the place of performance (§ 269 (3))";
+}
+
+@source(BGB_P269)
+rule LeistungsortIstDerWohnsitzDesSchuldners(s: Schuldverhaeltnis, ort: Text) strict {
+    label de official "Ist ein Ort für die Leistung weder bestimmt noch aus den Umständen zu entnehmen, so hat die Leistung an dem Orte zu erfolgen, an welchem der Schuldner zur Zeit der Entstehung des Schuldverhältnisses seinen Wohnsitz hatte (§ 269 Abs. 1); ist die Verbindlichkeit im Gewerbebetrieb entstanden, tritt der Ort der Niederlassung an die Stelle des Wohnsitzes (Abs. 2)";
+    label en unofficial "If no place of performance is specified or inferable, performance is to be made at the debtor's domicile at the time the obligation arose (§ 269 (1)); where it arose in his business, the place of his establishment takes the place of the domicile ((2))";
+    when wohnsitz_des_schuldners_bei_entstehung(s, ort);
+    when kein_leistungsort_bestimmt_oder_aus_umstaenden(s);
+    when keine_gewerbliche_niederlassung_des_schuldners(s);
+    then leistungsort(s, ort);
+}
+
+@source(BGB_P269)
+rule LeistungsortIstDieGewerblicheNiederlassung(s: Schuldverhaeltnis, ort: Text) strict {
+    label de official "Ist die Verbindlichkeit im Gewerbebetrieb des Schuldners entstanden, so tritt, wenn der Schuldner seine gewerbliche Niederlassung an einem anderen Orte hatte, der Ort der Niederlassung an die Stelle des Wohnsitzes (§ 269 Abs. 2)";
+    label en unofficial "Where the obligation arose in the debtor's business and his establishment is elsewhere, that place replaces the domicile (§ 269 (2))";
+    when gewerbliche_niederlassung_des_schuldners(s, ort);
+    when kein_leistungsort_bestimmt_oder_aus_umstaenden(s);
+    then leistungsort(s, ort);
+}
+
+@source(BGB_P269)
+rule VersendungskostenMachenDenVersendungsortNichtZumLeistungsort(s: Schuldverhaeltnis) strict {
+    label de official "Aus dem Umstand allein, dass der Schuldner die Kosten der Versendung übernommen hat, ist nicht zu entnehmen, dass der Ort, nach welchem die Versendung zu erfolgen hat, der Leistungsort sein soll (§ 269 Abs. 3)";
+    label en unofficial "From the mere fact that the debtor bears the costs of dispatch it cannot be inferred that the place of destination is the place of performance (§ 269 (3))";
+    when versendungskosten_uebernommen(s);
+    then versendungsort_ist_nicht_leistungsort(s);
+}
+
+pub relation wohnsitz_des_glaeubigers(s: Schuldverhaeltnis, ort: Text) kind empirical {
+    key(s);
+    label de official "Wohnsitz des Gläubigers (§ 270 Abs. 1)";
+    label en unofficial "domicile of the creditor (§ 270 (1))";
+}
+pub relation gewerbliche_niederlassung_des_glaeubigers(s: Schuldverhaeltnis, ort: Text) kind empirical {
+    key(s);
+    label de official "Ort der gewerblichen Niederlassung des Gläubigers, wenn die Forderung im Gewerbebetrieb entstanden ist (§ 270 Abs. 2)";
+    label en unofficial "place of the creditor's commercial establishment where the claim arose in his business (§ 270 (2))";
+}
+pub relation geld_zu_uebermitteln_an(s: Schuldverhaeltnis, ort: Text) kind institutional {
+    key(s);
+    label de official "Geld hat der Schuldner im Zweifel auf seine Gefahr und seine Kosten dem Gläubiger an diesen Ort zu übermitteln (§ 270 Abs. 1, 2)";
+    label en unofficial "in case of doubt the debtor must transmit money to the creditor at that place at his own risk and expense (§ 270 (1), (2))";
+}
+pub relation wohnsitzaenderung_des_glaeubigers_erhoeht_kosten(s: Schuldverhaeltnis) kind empirical {
+    label de official "Infolge einer nach der Entstehung des Schuldverhältnisses eintretenden Änderung des Wohnsitzes oder der Niederlassung des Gläubigers erhöhen sich die Kosten der Übermittlung (§ 270 Abs. 3)";
+    label en unofficial "the costs of transmission increase because of a change of the creditor's domicile or establishment after the obligation arose (§ 270 (3))";
+}
+pub relation wohnsitzaenderung_des_glaeubigers_erhoeht_gefahr(s: Schuldverhaeltnis) kind empirical {
+    label de official "Infolge einer solchen Änderung erhöht sich die Gefahr der Übermittlung (§ 270 Abs. 3)";
+    label en unofficial "the risk of transmission increases because of such a change (§ 270 (3))";
+}
+pub relation glaeubiger_traegt_mehrkosten(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Gläubiger hat die Mehrkosten zu tragen (§ 270 Abs. 3)";
+    label en unofficial "the creditor bears the additional costs (§ 270 (3))";
+}
+pub relation glaeubiger_traegt_gefahr(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Gläubiger hat die Gefahr zu tragen (§ 270 Abs. 3)";
+    label en unofficial "the creditor bears the risk (§ 270 (3))";
+}
+
+@source(BGB_P270)
+rule ZahlungsortIstDerWohnsitzDesGlaeubigers(s: Schuldverhaeltnis, ort: Text) strict {
+    label de official "Geld hat der Schuldner im Zweifel auf seine Gefahr und seine Kosten dem Gläubiger an dessen Wohnsitz zu übermitteln (§ 270 Abs. 1); ist die Forderung im Gewerbebetrieb des Gläubigers entstanden, tritt der Ort der Niederlassung an die Stelle des Wohnsitzes (Abs. 2); die Vorschriften über den Leistungsort bleiben unberührt (Abs. 4)";
+    label en unofficial "In case of doubt the debtor must transmit money to the creditor's domicile at his own risk and expense (§ 270 (1)); where the claim arose in the creditor's business, his establishment replaces the domicile ((2)); the provisions on the place of performance remain unaffected ((4))";
+    when wohnsitz_des_glaeubigers(s, ort);
+    when keine_gewerbliche_niederlassung_des_glaeubigers(s);
+    then geld_zu_uebermitteln_an(s, ort);
+}
+
+@source(BGB_P270)
+rule ZahlungsortIstDieNiederlassungDesGlaeubigers(s: Schuldverhaeltnis, ort: Text) strict {
+    label de official "Ist die Forderung im Gewerbebetrieb des Gläubigers entstanden, so tritt, wenn der Gläubiger seine gewerbliche Niederlassung an einem anderen Orte hat, der Ort der Niederlassung an die Stelle des Wohnsitzes (§ 270 Abs. 2)";
+    label en unofficial "Where the claim arose in the creditor's business and his establishment is elsewhere, that place replaces the domicile (§ 270 (2))";
+    when gewerbliche_niederlassung_des_glaeubigers(s, ort);
+    then geld_zu_uebermitteln_an(s, ort);
+}
+
+@source(BGB_P270)
+rule MehrkostenDerUebermittlungTraegtDerGlaeubiger(s: Schuldverhaeltnis) strict {
+    label de official "Erhöhen sich infolge einer nach der Entstehung des Schuldverhältnisses eintretenden Änderung des Wohnsitzes oder der gewerblichen Niederlassung des Gläubigers die Kosten der Übermittlung, so hat der Gläubiger die Mehrkosten zu tragen (§ 270 Abs. 3)";
+    label en unofficial "If the costs of transmission increase owing to a change of the creditor's domicile or establishment after the obligation arose, the creditor bears the additional costs (§ 270 (3))";
+    when wohnsitzaenderung_des_glaeubigers_erhoeht_kosten(s);
+    then glaeubiger_traegt_mehrkosten(s);
+}
+
+@source(BGB_P270)
+rule GefahrDerUebermittlungTraegtDerGlaeubiger(s: Schuldverhaeltnis) strict {
+    label de official "Erhöht sich infolge einer solchen Änderung die Gefahr der Übermittlung, so hat der Gläubiger die Gefahr zu tragen (§ 270 Abs. 3)";
+    label en unofficial "If such a change increases the risk of transmission, the creditor bears the risk (§ 270 (3))";
+    when wohnsitzaenderung_des_glaeubigers_erhoeht_gefahr(s);
+    then glaeubiger_traegt_gefahr(s);
+}
+
+pub relation entgelt_fuer_bargeldloses_zahlungsmittel_vereinbart(vb: Vereinbarung) kind empirical {
+    label de official "Vereinbarung, durch die der Schuldner verpflichtet wird, ein Entgelt für die Nutzung einer SEPA-Basislastschrift, einer SEPA-Firmenlastschrift, einer SEPA-Überweisung oder einer Zahlungskarte zu entrichten (§ 270a Satz 1)";
+    label en unofficial "agreement obliging the debtor to pay a charge for using a SEPA direct debit, SEPA credit transfer or payment card (§ 270a sentence 1)";
+}
+pub relation zahlungskarte_ausserhalb_des_anwendungsbereichs(vb: Vereinbarung) kind empirical {
+    label de official "Die Vereinbarung betrifft die Nutzung von Zahlungskarten bei einem Zahlungsvorgang, auf den Kapitel II der Verordnung (EU) 2015/751 nicht anwendbar ist oder an dem kein Verbraucher beteiligt ist (§ 270a Satz 2)";
+    label en unofficial "the agreement concerns payment cards in a transaction to which Chapter II of Regulation (EU) 2015/751 does not apply or which does not involve a consumer (§ 270a sentence 2)";
+}
+pub relation unwirksam(vb: Vereinbarung) kind institutional {
+    label de official "Die Vereinbarung ist unwirksam";
+    label en unofficial "the agreement is ineffective";
+}
+
+@source(BGB_P270a)
+rule EntgeltFuerLastschriftOderUeberweisungIstUnwirksam(vb: Vereinbarung) strict {
+    label de official "Eine Vereinbarung, durch die der Schuldner verpflichtet wird, ein Entgelt für die Nutzung einer SEPA-Basislastschrift, einer SEPA-Firmenlastschrift, einer SEPA-Überweisung oder einer Zahlungskarte zu entrichten, ist unwirksam; für Zahlungskarten gilt dies nur bei Zahlungsvorgängen mit Verbrauchern, auf die Kapitel II der Verordnung (EU) 2015/751 anwendbar ist (§ 270a)";
+    label en unofficial "An agreement obliging the debtor to pay a charge for a SEPA direct debit, SEPA credit transfer or payment card is ineffective; for payment cards only in consumer transactions to which Chapter II of Regulation (EU) 2015/751 applies (§ 270a)";
+    when entgelt_fuer_lastschrift_oder_ueberweisung_vereinbart(vb);
+    then unwirksam(vb);
+}
+
+// § 271: die Leistungszeit. „Sofort“ ist kein Zeitraum, sondern die Fälligkeit
+// im Augenblick der Entstehung des Schuldverhältnisses (Ledger D-04-06).
+pub relation leistungszeit_bestimmt(l: Leistung, tag: Date) kind empirical {
+    key(l);
+    label de official "Eine Zeit für die Leistung ist bestimmt oder aus den Umständen zu entnehmen (§ 271 Abs. 1, 2)";
+    label en unofficial "a time for performance is specified or inferable from the circumstances (§ 271 (1), (2))";
+}
+pub relation sofort_zu_leisten(l: Leistung) kind institutional {
+    label de official "Der Gläubiger kann die Leistung sofort verlangen, der Schuldner sie sofort bewirken (§ 271 Abs. 1)";
+    label en unofficial "the creditor may demand performance at once and the debtor may render it at once (§ 271 (1))";
+}
+pub relation schuldner_darf_vorher_leisten(l: Leistung) kind institutional {
+    label de official "Ist eine Zeit bestimmt, so ist im Zweifel anzunehmen, dass der Gläubiger die Leistung nicht vor dieser Zeit verlangen, der Schuldner aber sie vorher bewirken kann (§ 271 Abs. 2)";
+    label en unofficial "where a time is specified it is presumed that the creditor may not demand performance before it but the debtor may render it earlier (§ 271 (2))";
+}
+
+@source(BGB_P271)
+rule SofortigeFaelligkeitOhneBestimmteLeistungszeit(l: Leistung, s: Schuldverhaeltnis, beginn: Date) strict {
+    label de official "Ist eine Zeit für die Leistung weder bestimmt noch aus den Umständen zu entnehmen, so kann der Gläubiger die Leistung sofort verlangen, der Schuldner sie sofort bewirken (§ 271 Abs. 1) — fällig mit der Entstehung des Schuldverhältnisses";
+    label en unofficial "If no time for performance is specified or inferable, the creditor may demand performance at once and the debtor may render it at once (§ 271 (1)) — due when the obligation arises";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when keine_leistungszeit_bestimmt(l);
+    then sofort_zu_leisten(l);
+}
+
+@source(BGB_P271)
+rule FaelligkeitBeiBestimmterLeistungszeit(l: Leistung, tag: Date) strict {
+    label de official "Ist eine Zeit bestimmt, so ist im Zweifel anzunehmen, dass der Gläubiger die Leistung nicht vor dieser Zeit verlangen, der Schuldner aber sie vorher bewirken kann (§ 271 Abs. 2)";
+    label en unofficial "Where a time is specified, it is presumed that the creditor may not demand performance before it, but the debtor may render it earlier (§ 271 (2))";
+    when leistungszeit_bestimmt(l, tag);
+    then schuldner_darf_vorher_leisten(l);
+}
+
+// § 271a: Zahlungs-, Überprüfungs- und Abnahmefristen. Die Zahlen 60 und 30
+// stehen im Text; die grobe Unbilligkeit und die sachliche Rechtfertigung sind
+// Wertungen des Gerichts.
+pub relation entgeltforderung(a: Anspruch) kind empirical {
+    label de official "Die Forderung ist eine Entgeltforderung (§ 271a Abs. 1, § 286 Abs. 3, § 288 Abs. 2, 5)";
+    label en unofficial "the claim is a claim for payment of remuneration (§ 271a (1), § 286 (3), § 288 (2), (5))";
+}
+pub relation vereinbarte_zahlungsfrist_tage(a: Anspruch, tage: Integer) kind empirical {
+    key(a);
+    label de official "Vereinbarte Zahl von Tagen nach Empfang der Gegenleistung, nach denen der Gläubiger die Erfüllung verlangen kann (§ 271a Abs. 1 Satz 1)";
+    label en unofficial "number of days after receipt of the counter-performance agreed for demanding payment (§ 271a (1) sentence 1)";
+}
+pub relation vereinbarung_ausdruecklich_getroffen(a: Anspruch) kind empirical {
+    label de official "Die Vereinbarung ist ausdrücklich getroffen (§ 271a Abs. 1 Satz 1)";
+    label en unofficial "the agreement was made expressly (§ 271a (1) sentence 1)";
+}
+@source(BGB_P271a)
+pub external judgment relation grob_unbillig_im_hinblick_auf_die_belange_des_glaeubigers(a: Anspruch) {
+    authority Court;
+    label de official "§ 271a Abs. 1 Satz 1. Das Gericht hat festgestellt, dass die Vereinbarung im Hinblick auf die Belange des Gläubigers grob unbillig ist";
+    label en unofficial "§ 271a (1) sentence 1. The court found the agreement grossly unfair with regard to the creditor's interests";
+}
+pub relation oeffentlicher_auftraggeber(p: Person) kind empirical {
+    label de official "Der Schuldner ist ein öffentlicher Auftraggeber im Sinne von § 99 Nummer 1 bis 3 des Gesetzes gegen Wettbewerbsbeschränkungen (§ 271a Abs. 2)";
+    label en unofficial "the debtor is a public contracting authority within § 99 nos. 1 to 3 GWB (§ 271a (2))";
+}
+pub relation sachlich_gerechtfertigt(a: Anspruch) kind empirical {
+    label de official "Die Vereinbarung ist aufgrund der besonderen Natur oder der Merkmale des Schuldverhältnisses sachlich gerechtfertigt (§ 271a Abs. 2 Nr. 1)";
+    label en unofficial "the agreement is objectively justified by the special nature or features of the obligation (§ 271a (2) no. 1)";
+}
+pub relation vereinbarung_ueber_zahlungsfrist_unwirksam(a: Anspruch) kind institutional {
+    label de official "Die Vereinbarung über die Zahlungs-, Überprüfungs- oder Abnahmefrist ist unwirksam (§ 271a Abs. 1 bis 3)";
+    label en unofficial "the agreement on the payment, inspection or acceptance period is ineffective (§ 271a (1) to (3))";
+}
+pub relation vertrag_im_uebrigen_wirksam(a: Anspruch) kind institutional {
+    label de official "Ist eine Vereinbarung nach den Absätzen 1 bis 3 unwirksam, bleibt der Vertrag im Übrigen wirksam (§ 271a Abs. 4)";
+    label en unofficial "if an agreement under (1) to (3) is ineffective, the contract remains effective in other respects (§ 271a (4))";
+}
+pub relation abschlags_oder_ratenzahlung_vereinbart(a: Anspruch) kind empirical {
+    label de official "Gegenstand ist die Vereinbarung von Abschlagszahlungen und sonstigen Ratenzahlungen (§ 271a Abs. 5 Nr. 1)";
+    label en unofficial "the subject is an agreement on payments on account or instalments (§ 271a (5) no. 1)";
+}
+pub relation vereinbarte_ueberpruefungsfrist_tage(a: Anspruch, tage: Integer) kind empirical {
+    key(a);
+    label de official "Vereinbarte Zeit für die Überprüfung oder Abnahme der Gegenleistung in Tagen nach Empfang (§ 271a Abs. 3)";
+    label en unofficial "period agreed for inspection or acceptance of the counter-performance in days after receipt (§ 271a (3))";
+}
+
+@source(BGB_P271a)
+rule ZahlungsfristUeberSechzigTagenOhneAusdrueckicheVereinbarungUnwirksam(a: Anspruch, tage: Integer) strict {
+    label de official "Eine Vereinbarung, nach der der Gläubiger die Erfüllung einer Entgeltforderung erst nach mehr als 60 Tagen nach Empfang der Gegenleistung verlangen kann, ist nur wirksam, wenn sie ausdrücklich getroffen ist (§ 271a Abs. 1 Satz 1) — hier fehlt die ausdrückliche Vereinbarung";
+    label en unofficial "An agreement allowing payment to be demanded only after more than 60 days is effective only if made expressly (§ 271a (1) sentence 1) — express agreement is missing here";
+    when entgeltforderung(a);
+    when vereinbarte_zahlungsfrist_tage(a, tage);
+    when tage > 60;
+    when vereinbarung_nicht_ausdruecklich_getroffen(a);
+    then vereinbarung_ueber_zahlungsfrist_unwirksam(a);
+}
+
+@source(BGB_P271a)
+rule ZahlungsfristUeberSechzigTagenGrobUnbilligUnwirksam(a: Anspruch, tage: Integer) strict {
+    label de official "Die Vereinbarung über eine Zahlungsfrist von mehr als 60 Tagen ist nur wirksam, wenn sie im Hinblick auf die Belange des Gläubigers nicht grob unbillig ist (§ 271a Abs. 1 Satz 1) — das Gericht hat die grobe Unbilligkeit festgestellt";
+    label en unofficial "An agreement on a payment period of more than 60 days is effective only if not grossly unfair to the creditor (§ 271a (1) sentence 1) — the court found gross unfairness";
+    when entgeltforderung(a);
+    when vereinbarte_zahlungsfrist_tage(a, tage);
+    when tage > 60;
+    when grob_unbillig_im_hinblick_auf_die_belange_des_glaeubigers(a);
+    then vereinbarung_ueber_zahlungsfrist_unwirksam(a);
+}
+
+@source(BGB_P271a)
+rule ZahlungsfristDesOeffentlichenAuftraggebersUeberDreissigTagen(a: Anspruch, s: Schuldverhaeltnis, schuldner: Person, tage: Integer) strict {
+    label de official "Ist der Schuldner ein öffentlicher Auftraggeber, so ist eine Vereinbarung über eine Zahlungsfrist von mehr als 30 Tagen nur wirksam, wenn sie ausdrücklich getroffen und sachlich gerechtfertigt ist (§ 271a Abs. 2 Nr. 1)";
+    label en unofficial "Where the debtor is a public contracting authority, an agreement on a payment period of more than 30 days is effective only if made expressly and objectively justified (§ 271a (2) no. 1)";
+    when entgeltforderung(a);
+    when de.bgb.core::anspruch_aus_schuldverhaeltnis(a, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when oeffentlicher_auftraggeber(schuldner);
+    when vereinbarte_zahlungsfrist_tage(a, tage);
+    when tage > 30;
+    when nicht_sachlich_gerechtfertigt(a);
+    then vereinbarung_ueber_zahlungsfrist_unwirksam(a);
+}
+
+@source(BGB_P271a)
+rule ZahlungsfristDesOeffentlichenAuftraggebersUeberSechzigTagenStetsUnwirksam(a: Anspruch, s: Schuldverhaeltnis, schuldner: Person, tage: Integer) strict {
+    label de official "Ist der Schuldner ein öffentlicher Auftraggeber, so ist eine Vereinbarung, nach der der Gläubiger die Erfüllung erst nach mehr als 60 Tagen verlangen kann, unwirksam (§ 271a Abs. 2 Nr. 2)";
+    label en unofficial "Where the debtor is a public contracting authority, an agreement allowing payment to be demanded only after more than 60 days is ineffective (§ 271a (2) no. 2)";
+    when entgeltforderung(a);
+    when de.bgb.core::anspruch_aus_schuldverhaeltnis(a, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when oeffentlicher_auftraggeber(schuldner);
+    when vereinbarte_zahlungsfrist_tage(a, tage);
+    when tage > 60;
+    then vereinbarung_ueber_zahlungsfrist_unwirksam(a);
+}
+
+@source(BGB_P271a)
+rule UeberpruefungsfristUeberDreissigTagenOhneAusdrueckicheVereinbarung(a: Anspruch, tage: Integer) strict {
+    label de official "Ist eine Entgeltforderung erst nach Überprüfung oder Abnahme der Gegenleistung zu erfüllen, so ist eine Vereinbarung, nach der die Zeit für die Überprüfung oder Abnahme mehr als 30 Tage nach Empfang der Gegenleistung beträgt, nur wirksam, wenn sie ausdrücklich getroffen und nicht grob unbillig ist (§ 271a Abs. 3)";
+    label en unofficial "Where remuneration is payable only after inspection or acceptance, an agreement fixing more than 30 days for it is effective only if made expressly and not grossly unfair (§ 271a (3))";
+    when entgeltforderung(a);
+    when vereinbarte_ueberpruefungsfrist_tage(a, tage);
+    when tage > 30;
+    when not vereinbarung_ausdruecklich_getroffen(a);
+    then vereinbarung_ueber_zahlungsfrist_unwirksam(a);
+}
+
+@source(BGB_P271a)
+rule VertragBleibtImUebrigenWirksam(a: Anspruch) strict {
+    label de official "Ist eine Vereinbarung nach den Absätzen 1 bis 3 unwirksam, bleibt der Vertrag im Übrigen wirksam (§ 271a Abs. 4)";
+    label en unofficial "If an agreement under (1) to (3) is ineffective, the contract remains effective in other respects (§ 271a (4))";
+    when vereinbarung_ueber_zahlungsfrist_unwirksam(a);
+    then vertrag_im_uebrigen_wirksam(a);
+}
+
+pub relation unverzinsliche_schuld_vor_faelligkeit_bezahlt(a: Anspruch) kind empirical {
+    label de official "Der Schuldner bezahlt eine unverzinsliche Schuld vor der Fälligkeit (§ 272)";
+    label en unofficial "the debtor pays a debt not bearing interest before it falls due (§ 272)";
+}
+pub relation kein_abzug_wegen_zwischenzinsen(a: Anspruch) kind institutional {
+    label de official "Der Schuldner ist zu einem Abzug wegen der Zwischenzinsen nicht berechtigt (§ 272)";
+    label en unofficial "the debtor is not entitled to a deduction for interim interest (§ 272)";
+}
+
+@source(BGB_P272)
+rule KeinAbzugWegenZwischenzinsen(a: Anspruch) strict {
+    label de official "Bezahlt der Schuldner eine unverzinsliche Schuld vor der Fälligkeit, so ist er zu einem Abzug wegen der Zwischenzinsen nicht berechtigt (§ 272)";
+    label en unofficial "If the debtor pays a non-interest-bearing debt before it is due, he is not entitled to deduct interim interest (§ 272)";
+    when unverzinsliche_schuld_vor_faelligkeit_bezahlt(a);
+    then kein_abzug_wegen_zwischenzinsen(a);
+}
+
+// --- §§ 273–274 Zurückbehaltungsrecht ---------------------------------------------------------------------------
+
+pub relation faelliger_gegenanspruch_aus_demselben_verhaeltnis(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der Schuldner hat aus demselben rechtlichen Verhältnis einen fälligen Anspruch gegen den Gläubiger (§ 273 Abs. 1)";
+    label en unofficial "the debtor has a matured claim against the creditor arising from the same legal relationship (§ 273 (1))";
+}
+pub relation aus_dem_schuldverhaeltnis_ergibt_sich_anderes(s: Schuldverhaeltnis) kind empirical {
+    label de official "Aus dem Schuldverhältnis ergibt sich ein anderes (§ 273 Abs. 1)";
+    label en unofficial "the obligation provides otherwise (§ 273 (1))";
+}
+pub relation zurueckbehaltungsrecht(s: Schuldverhaeltnis, schuldner: Person) kind institutional {
+    label de official "Der Schuldner kann die geschuldete Leistung verweigern, bis die ihm gebührende Leistung bewirkt wird (Zurückbehaltungsrecht, § 273 Abs. 1)";
+    label en unofficial "the debtor may refuse the performance owed until the performance due to him is rendered (right of retention, § 273 (1))";
+}
+pub relation herausgabepflicht_mit_verwendungs_oder_schadensanspruch(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der zur Herausgabe eines Gegenstands Verpflichtete hat einen fälligen Anspruch wegen Verwendungen auf den Gegenstand oder wegen eines durch diesen verursachten Schadens (§ 273 Abs. 2)";
+    label en unofficial "the person bound to deliver up an object has a matured claim for outlays on it or for damage caused by it (§ 273 (2))";
+}
+pub relation gegenstand_durch_vorsaetzliche_unerlaubte_handlung_erlangt(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der Verpflichtete hat den Gegenstand durch eine vorsätzlich begangene unerlaubte Handlung erlangt (§ 273 Abs. 2 Halbsatz 2)";
+    label en unofficial "the obliged person obtained the object by an intentional tort (§ 273 (2) second half-sentence)";
+}
+pub relation sicherheit_geleistet(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Gläubiger hat Sicherheit geleistet; die Sicherheitsleistung durch Bürgen ist ausgeschlossen (§ 273 Abs. 3)";
+    label en unofficial "the creditor has provided security; security by a surety is excluded (§ 273 (3))";
+}
+pub relation ausuebung_des_zurueckbehaltungsrechts_abgewendet(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Gläubiger kann die Ausübung des Zurückbehaltungsrechts durch Sicherheitsleistung abwenden (§ 273 Abs. 3)";
+    label en unofficial "the creditor may avert the exercise of the right of retention by providing security (§ 273 (3))";
+}
+pub relation verurteilung_zug_um_zug(s: Schuldverhaeltnis, schuldner: Person) kind institutional {
+    label de official "Gegenüber der Klage des Gläubigers hat die Geltendmachung des Zurückbehaltungsrechts nur die Wirkung, dass der Schuldner zur Leistung gegen Empfang der ihm gebührenden Leistung (Erfüllung Zug um Zug) zu verurteilen ist (§ 274 Abs. 1)";
+    label en unofficial "against the creditor's action the right of retention has only the effect that the debtor is ordered to perform concurrently (§ 274 (1))";
+}
+pub relation zurueckbehaltungsrecht_geltend_gemacht(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Das Zurückbehaltungsrecht ist gegenüber der Klage geltend gemacht (§ 274 Abs. 1)";
+    label en unofficial "the right of retention has been asserted against the action (§ 274 (1))";
+}
+pub relation annahmeverzug_des_glaeubigers(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Gläubiger ist im Verzug der Annahme (§§ 293 ff., § 274 Abs. 2)";
+    label en unofficial "the creditor is in default of acceptance (§§ 293 et seq., § 274 (2))";
+}
+pub relation zwangsvollstreckung_ohne_gegenleistung_moeglich(s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Gläubiger kann seinen Anspruch ohne Bewirkung der ihm obliegenden Leistung im Wege der Zwangsvollstreckung verfolgen, wenn der Schuldner im Verzug der Annahme ist (§ 274 Abs. 2)";
+    label en unofficial "the creditor may enforce his claim without rendering his own performance if the debtor is in default of acceptance (§ 274 (2))";
+}
+
+@source(BGB_P273)
+rule ZurueckbehaltungsrechtAusDemselbenVerhaeltnis(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Hat der Schuldner aus demselben rechtlichen Verhältnis einen fälligen Anspruch gegen den Gläubiger, so kann er, sofern nicht aus dem Schuldverhältnis sich ein anderes ergibt, die geschuldete Leistung verweigern, bis die ihm gebührende Leistung bewirkt wird (§ 273 Abs. 1)";
+    label en unofficial "Where the debtor has a matured counter-claim from the same legal relationship he may, unless the obligation provides otherwise, refuse performance until the performance due to him is rendered (§ 273 (1))";
+    when faelliger_gegenanspruch_aus_demselben_verhaeltnis(s, schuldner);
+    when aus_dem_schuldverhaeltnis_ergibt_sich_nichts_anderes(s);
+    then zurueckbehaltungsrecht(s, schuldner);
+}
+
+@source(BGB_P273)
+rule ZurueckbehaltungsrechtDesHerausgabepflichtigen(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Wer zur Herausgabe eines Gegenstands verpflichtet ist, hat das gleiche Recht, wenn ihm ein fälliger Anspruch wegen Verwendungen auf den Gegenstand oder wegen eines ihm durch diesen verursachten Schadens zusteht, es sei denn, dass er den Gegenstand durch eine vorsätzlich begangene unerlaubte Handlung erlangt hat (§ 273 Abs. 2)";
+    label en unofficial "A person bound to deliver up an object has the same right if he has a matured claim for outlays or damage, unless he obtained the object by an intentional tort (§ 273 (2))";
+    when herausgabepflicht_mit_verwendungs_oder_schadensanspruch(s, schuldner);
+    when gegenstand_nicht_durch_vorsaetzliche_unerlaubte_handlung_erlangt(s, schuldner);
+    then zurueckbehaltungsrecht(s, schuldner);
+}
+
+@source(BGB_P273)
+rule SicherheitsleistungWendetZurueckbehaltungAb(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Der Gläubiger kann die Ausübung des Zurückbehaltungsrechts durch Sicherheitsleistung abwenden; die Sicherheitsleistung durch Bürgen ist ausgeschlossen (§ 273 Abs. 3)";
+    label en unofficial "The creditor may avert the exercise of the right of retention by providing security; security by a surety is excluded (§ 273 (3))";
+    when zurueckbehaltungsrecht(s, schuldner);
+    when sicherheit_geleistet(s);
+    then ausuebung_des_zurueckbehaltungsrechts_abgewendet(s);
+}
+
+@source(BGB_P274)
+rule ZurueckbehaltungFuehrtZurVerurteilungZugUmZug(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Gegenüber der Klage des Gläubigers hat die Geltendmachung des Zurückbehaltungsrechts nur die Wirkung, dass der Schuldner zur Leistung gegen Empfang der ihm gebührenden Leistung zu verurteilen ist (§ 274 Abs. 1)";
+    label en unofficial "Against the creditor's action the assertion of the right of retention only leads to an order to perform concurrently (§ 274 (1))";
+    when zurueckbehaltungsrecht(s, schuldner);
+    when zurueckbehaltungsrecht_geltend_gemacht(s, schuldner);
+    then verurteilung_zug_um_zug(s, schuldner);
+}
+
+@source(BGB_P274)
+rule VollstreckungOhneGegenleistungBeiAnnahmeverzug(s: Schuldverhaeltnis, schuldner: Person) strict {
+    label de official "Auf Grund einer solchen Verurteilung kann der Gläubiger seinen Anspruch ohne Bewirkung der ihm obliegenden Leistung im Wege der Zwangsvollstreckung verfolgen, wenn der Schuldner im Verzug der Annahme ist (§ 274 Abs. 2)";
+    label en unofficial "On the basis of such an order the creditor may enforce his claim without rendering his own performance if the debtor is in default of acceptance (§ 274 (2))";
+    when verurteilung_zug_um_zug(s, schuldner);
+    when annahmeverzug_des_glaeubigers(s);
+    then zwangsvollstreckung_ohne_gegenleistung_moeglich(s);
+}
+
+// --- §§ 275–279 Ausschluss der Leistungspflicht und Vertretenmüssen ------------------------------------------------
+
+pub relation leistungsanspruch_ausgeschlossen(l: Leistung) kind institutional {
+    label de official "Der Anspruch auf Leistung ist ausgeschlossen, soweit diese für den Schuldner oder für jedermann unmöglich ist (§ 275 Abs. 1)";
+    label en unofficial "the claim to performance is excluded to the extent that performance is impossible for the debtor or for anyone (§ 275 (1))";
+}
+@source(BGB_P275)
+pub external judgment relation grobes_missverhaeltnis_von_aufwand_und_leistungsinteresse(l: Leistung) {
+    authority Court;
+    label de official "§ 275 Abs. 2. Das Gericht hat festgestellt, dass der Aufwand der Leistung unter Beachtung des Inhalts des Schuldverhältnisses und der Gebote von Treu und Glauben in einem groben Missverhältnis zu dem Leistungsinteresse des Gläubigers steht; dabei ist auch zu berücksichtigen, ob der Schuldner das Leistungshindernis zu vertreten hat (Satz 2)";
+    label en unofficial "§ 275 (2). The court found that the effort required is grossly disproportionate to the creditor's interest in performance, taking into account whether the debtor is responsible for the impediment (sentence 2)";
+}
+@source(BGB_P275)
+pub external judgment relation persoenliche_leistung_nicht_zumutbar(l: Leistung) {
+    authority Court;
+    label de official "§ 275 Abs. 3. Das Gericht hat festgestellt, dass dem Schuldner, der die Leistung persönlich zu erbringen hat, die Leistung unter Abwägung des entgegenstehenden Hindernisses mit dem Leistungsinteresse des Gläubigers nicht zugemutet werden kann";
+    label en unofficial "§ 275 (3). The court found that performance cannot be required of a debtor who must perform personally, weighing the impediment against the creditor's interest";
+}
+pub relation leistungsverweigerungsrecht(l: Leistung) kind institutional {
+    label de official "Der Schuldner kann die Leistung verweigern (§ 275 Abs. 2, 3)";
+    label en unofficial "the debtor may refuse performance (§ 275 (2), (3))";
+}
+
+@source(BGB_P275)
+rule UnmoeglichkeitSchliesstDenLeistungsanspruchAus(l: Leistung) strict {
+    label de official "Der Anspruch auf Leistung ist ausgeschlossen, soweit diese für den Schuldner oder für jedermann unmöglich ist (§ 275 Abs. 1); die Rechte des Gläubigers bestimmen sich nach den §§ 280, 283 bis 285, 311a und 326 (Abs. 4)";
+    label en unofficial "The claim to performance is excluded to the extent that performance is impossible for the debtor or for anyone (§ 275 (1)); the creditor's rights follow §§ 280, 283 to 285, 311a and 326 ((4))";
+    when leistung_unmoeglich(l);
+    then leistungsanspruch_ausgeschlossen(l);
+}
+
+@source(BGB_P275)
+rule LeistungsverweigerungBeiGrobemMissverhaeltnis(l: Leistung) strict {
+    label de official "Der Schuldner kann die Leistung verweigern, soweit diese einen Aufwand erfordert, der in einem groben Missverhältnis zu dem Leistungsinteresse des Gläubigers steht (§ 275 Abs. 2)";
+    label en unofficial "The debtor may refuse performance to the extent it requires effort grossly disproportionate to the creditor's interest (§ 275 (2))";
+    when grobes_missverhaeltnis_von_aufwand_und_leistungsinteresse(l);
+    then leistungsverweigerungsrecht(l);
+}
+
+@source(BGB_P275)
+rule LeistungsverweigerungBeiPersoenlicherUnzumutbarkeit(l: Leistung) strict {
+    label de official "Der Schuldner kann die Leistung ferner verweigern, wenn er sie persönlich zu erbringen hat und sie ihm nicht zugemutet werden kann (§ 275 Abs. 3)";
+    label en unofficial "The debtor may also refuse performance where he must perform personally and performance cannot be required of him (§ 275 (3))";
+    when persoenliche_leistung_nicht_zumutbar(l);
+    then leistungsverweigerungsrecht(l);
+}
+
+pub relation vorsatz(p: Person, s: Schuldverhaeltnis) kind empirical {
+    label de official "Vorsatz des Schuldners (§ 276 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "intent of the debtor (§ 276 (1) sentence 1) — established fact";
+}
+pub relation verkehrserforderliche_sorgfalt_ausser_acht_gelassen(p: Person, s: Schuldverhaeltnis) kind empirical {
+    label de official "Die im Verkehr erforderliche Sorgfalt ist außer Acht gelassen (§ 276 Abs. 2)";
+    label en unofficial "the care required in dealings was disregarded (§ 276 (2))";
+}
+pub relation grobe_fahrlaessigkeit(p: Person, s: Schuldverhaeltnis) kind empirical {
+    label de official "Grobe Fahrlässigkeit (§ 277, § 300 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "gross negligence (§ 277, § 300 (1)) — established fact";
+}
+pub relation fahrlaessig(p: Person, s: Schuldverhaeltnis) kind institutional {
+    label de official "Fahrlässig handelt, wer die im Verkehr erforderliche Sorgfalt außer Acht lässt (§ 276 Abs. 2)";
+    label en unofficial "a person acts negligently if he disregards the care required in dealings (§ 276 (2))";
+}
+pub relation strengere_oder_mildere_haftung_bestimmt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Eine strengere oder mildere Haftung ist bestimmt oder aus dem sonstigen Inhalt des Schuldverhältnisses, insbesondere aus der Übernahme einer Garantie oder eines Beschaffungsrisikos, zu entnehmen (§ 276 Abs. 1 Satz 1)";
+    label en unofficial "stricter or more lenient liability is specified or inferable from the content of the obligation, in particular the assumption of a guarantee or procurement risk (§ 276 (1) sentence 1)";
+}
+pub relation hat_zu_vertreten(p: Person, s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Schuldner hat den Umstand zu vertreten (§ 276 Abs. 1)";
+    label en unofficial "the debtor is responsible for the circumstance (§ 276 (1))";
+}
+pub relation haftung_wegen_vorsatzes_im_voraus_erlassen(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Haftung wegen Vorsatzes ist dem Schuldner im Voraus erlassen worden (§ 276 Abs. 3)";
+    label en unofficial "liability for intent was released in advance (§ 276 (3))";
+}
+pub relation erlass_der_vorsatzhaftung_unwirksam(s: Schuldverhaeltnis) kind institutional {
+    label de official "Die Haftung wegen Vorsatzes kann dem Schuldner nicht im Voraus erlassen werden (§ 276 Abs. 3)";
+    label en unofficial "liability for intent cannot be released in advance (§ 276 (3))";
+}
+pub relation nur_eigenuebliche_sorgfalt_geschuldet(p: Person, s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Person hat nur für diejenige Sorgfalt einzustehen, welche sie in eigenen Angelegenheiten anzuwenden pflegt (§ 277)";
+    label en unofficial "the person is answerable only for the care he customarily exercises in his own affairs (§ 277)";
+}
+pub relation haftung_wegen_grober_fahrlaessigkeit_bleibt(p: Person, s: Schuldverhaeltnis) kind institutional {
+    label de official "Wer nur für die eigenübliche Sorgfalt einzustehen hat, ist von der Haftung wegen grober Fahrlässigkeit nicht befreit (§ 277)";
+    label en unofficial "a person answerable only for customary care is not released from liability for gross negligence (§ 277)";
+}
+pub relation erfuellungsgehilfe_oder_gesetzlicher_vertreter(gehilfe: Person, schuldner: Person, s: Schuldverhaeltnis) kind empirical {
+    label de official "Gesetzlicher Vertreter des Schuldners oder Person, deren er sich zur Erfüllung seiner Verbindlichkeit bedient (§ 278 Satz 1)";
+    label en unofficial "legal representative of the debtor or person used by him to perform his obligation (§ 278 sentence 1)";
+}
+
+@source(BGB_P276)
+rule FahrlaessigkeitIstAusserAchtLassenDerVerkehrserforderlichenSorgfalt(p: Person, s: Schuldverhaeltnis) strict {
+    label de official "Fahrlässig handelt, wer die im Verkehr erforderliche Sorgfalt außer Acht lässt (§ 276 Abs. 2)";
+    label en unofficial "A person acts negligently if he disregards the care required in dealings (§ 276 (2))";
+    when verkehrserforderliche_sorgfalt_ausser_acht_gelassen(p, s);
+    then fahrlaessig(p, s);
+}
+
+@source(BGB_P276)
+rule VorsatzIstZuVertreten(p: Person, s: Schuldverhaeltnis) strict {
+    label de official "Der Schuldner hat Vorsatz zu vertreten, wenn eine strengere oder mildere Haftung weder bestimmt noch aus dem sonstigen Inhalt des Schuldverhältnisses zu entnehmen ist (§ 276 Abs. 1 Satz 1)";
+    label en unofficial "The debtor is responsible for intent unless stricter or more lenient liability is specified or inferable (§ 276 (1) sentence 1)";
+    when vorsatz(p, s);
+    when keine_abweichende_haftungsbestimmung(s);
+    then hat_zu_vertreten(p, s);
+}
+
+@source(BGB_P276)
+rule FahrlaessigkeitIstZuVertreten(p: Person, s: Schuldverhaeltnis) strict {
+    label de official "Der Schuldner hat Fahrlässigkeit zu vertreten, wenn eine strengere oder mildere Haftung weder bestimmt noch aus dem sonstigen Inhalt des Schuldverhältnisses zu entnehmen ist (§ 276 Abs. 1 Satz 1)";
+    label en unofficial "The debtor is responsible for negligence unless stricter or more lenient liability is specified or inferable (§ 276 (1) sentence 1)";
+    when fahrlaessig(p, s);
+    when keine_abweichende_haftungsbestimmung(s);
+    then hat_zu_vertreten(p, s);
+}
+
+@source(BGB_P276)
+rule ErlassDerVorsatzhaftungImVorausIstUnwirksam(s: Schuldverhaeltnis) strict {
+    label de official "Die Haftung wegen Vorsatzes kann dem Schuldner nicht im Voraus erlassen werden (§ 276 Abs. 3)";
+    label en unofficial "Liability for intent cannot be released to the debtor in advance (§ 276 (3))";
+    when haftung_wegen_vorsatzes_im_voraus_erlassen(s);
+    then erlass_der_vorsatzhaftung_unwirksam(s);
+}
+
+@source(BGB_P277)
+rule EigenueblicheSorgfaltBefreitNichtVonGroberFahrlaessigkeit(p: Person, s: Schuldverhaeltnis) strict {
+    label de official "Wer nur für diejenige Sorgfalt einzustehen hat, welche er in eigenen Angelegenheiten anzuwenden pflegt, ist von der Haftung wegen grober Fahrlässigkeit nicht befreit (§ 277)";
+    label en unofficial "A person answerable only for the care he customarily exercises in his own affairs is not released from liability for gross negligence (§ 277)";
+    when nur_eigenuebliche_sorgfalt_geschuldet(p, s);
+    when grobe_fahrlaessigkeit(p, s);
+    then haftung_wegen_grober_fahrlaessigkeit_bleibt(p, s);
+}
+
+@source(BGB_P278)
+rule VerschuldenDesErfuellungsgehilfenWirdZugerechnet(gehilfe: Person, schuldner: Person, s: Schuldverhaeltnis) strict {
+    label de official "Der Schuldner hat ein Verschulden seines gesetzlichen Vertreters und der Personen, deren er sich zur Erfüllung seiner Verbindlichkeit bedient, in gleichem Umfang zu vertreten wie eigenes Verschulden; § 276 Abs. 3 findet keine Anwendung (§ 278)";
+    label en unofficial "The debtor is responsible for the fault of his legal representative and of persons he uses to perform his obligation to the same extent as for his own fault; § 276 (3) does not apply (§ 278)";
+    when erfuellungsgehilfe_oder_gesetzlicher_vertreter(gehilfe, schuldner, s);
+    when verschulden_des_gehilfen(gehilfe, s);
+    then haftet_fuer_fremdes_verschulden(schuldner, gehilfe, s);
+}
+
+// --- Ausdrückliche Verneinungen des Falls ------------------------------------------------------------
+//
+// Das Fehlen einer Angabe ist keine Verneinung (PARALLEL.md §4). Wo eine Norm
+// eine Ausnahme kennt („es sei denn“, „sofern nicht ein anderes bestimmt ist“,
+// „im Zweifel“), trägt der Fall die Verneinung ausdrücklich; sie steht hier
+// mit dem Anker an die Norm, die sie liest. Eine Regel, die diese Verneinung
+// nicht bekommt, schweigt — sie schließt nicht aus dem Schweigen.
+
+@source(BGB_P241a)
+pub relation nicht_bestellt(v: Person, l: Leistung) kind empirical {
+    label de official "Der Verbraucher hat die Waren oder sonstigen Leistungen nicht bestellt (§ 241a Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the consumer did not order the goods or services (§ 241a (1)) — explicit case input";
+}
+@source(BGB_P244)
+pub relation keine_vereinbarung_ueber_zahlung_in_der_anderen_waehrung(a: Anspruch) kind empirical {
+    label de official "Zahlung in der anderen Währung ist nicht ausdrücklich vereinbart (§ 244 Abs. 1 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "payment in the other currency is not expressly agreed (§ 244 (1)) — explicit case input";
+}
+@source(BGB_P246)
+pub relation kein_anderer_zinssatz_bestimmt(a: Anspruch) kind empirical {
+    label de official "Ein anderer Zinssatz als der gesetzliche ist nicht bestimmt (§ 246 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no rate of interest other than the statutory one is specified (§ 246) — explicit case input";
+}
+@source(BGB_P248)
+pub relation keine_einlagenvereinbarung_eines_kreditinstituts(vb: Vereinbarung) kind empirical {
+    label de official "Die Vereinbarung ist keine der in § 248 Abs. 2 genannten Vereinbarungen eines Kreditinstituts — ausdrückliche Angabe des Falls";
+    label en unofficial "the agreement is not one of those named in § 248 (2) — explicit case input";
+}
+@source(BGB_P249)
+pub relation umsatzsteuer_nicht_angefallen(sch: Schaden) kind empirical {
+    label de official "Die Umsatzsteuer ist nicht tatsächlich angefallen (§ 249 Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "value added tax has not actually been incurred (§ 249 (2) sentence 2) — explicit case input";
+}
+@source(BGB_P250)
+pub relation herstellung_nicht_rechtzeitig_erfolgt(sch: Schaden) kind empirical {
+    label de official "Die Herstellung ist nicht rechtzeitig erfolgt (§ 250 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "restoration was not effected in good time (§ 250 sentence 2) — explicit case input";
+}
+@source(BGB_P252)
+pub relation kein_entgangener_gewinn_geltend_gemacht(sch: Schaden) kind empirical {
+    label de official "Ein entgangener Gewinn ist nicht geltend gemacht (§ 252) — ausdrückliche Angabe des Falls";
+    label en unofficial "no lost profit is claimed (§ 252) — explicit case input";
+}
+@source(BGB_P254)
+pub relation kein_mitverschulden_festgestellt(sch: Schaden, p: Person) kind empirical {
+    label de official "Ein Verschulden des Beschädigten hat bei der Entstehung des Schadens nicht mitgewirkt (§ 254 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "no fault of the injured party contributed to the damage (§ 254 (1)) — explicit case input";
+}
+@source(BGB_P256)
+pub relation keine_nutzungen_ohne_verguetung(a: Anspruch) kind empirical {
+    label de official "Dem Ersatzberechtigten verbleiben keine Nutzungen oder Früchte ohne Vergütung (§ 256 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no emoluments or fruits remain with the injured party without payment (§ 256 sentence 2) — explicit case input";
+}
+@source(BGB_P257)
+pub relation verbindlichkeit_noch_nicht_faellig(a: Anspruch) kind empirical {
+    label de official "Die Verbindlichkeit ist noch nicht fällig (§ 257 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the obligation is not yet due (§ 257 sentence 2) — explicit case input";
+}
+@source(BGB_P259)
+pub relation keine_angelegenheit_von_geringer_bedeutung(p: Person) kind empirical {
+    label de official "Es handelt sich nicht um eine Angelegenheit von geringer Bedeutung (§ 259 Abs. 3, § 260 Abs. 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "the matter is not of minor importance (§ 259 (3), § 260 (3)) — explicit case input";
+}
+@source(BGB_P262)
+pub relation wahlrecht_nicht_dem_glaeubiger_eingeraeumt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Das Wahlrecht ist dem Gläubiger nicht eingeräumt (§ 262 „im Zweifel“) — ausdrückliche Angabe des Falls";
+    label en unofficial "the right to choose is not granted to the creditor (§ 262) — explicit case input";
+}
+@source(BGB_P264)
+pub relation wahl_vor_der_zwangsvollstreckung_nicht_vorgenommen(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der wahlberechtigte Schuldner hat die Wahl nicht vor dem Beginn der Zwangsvollstreckung vorgenommen (§ 264 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the debtor entitled to choose did not choose before execution began (§ 264 (1)) — explicit case input";
+}
+@source(BGB_P264)
+pub relation wahl_nicht_rechtzeitig_vorgenommen(s: Schuldverhaeltnis, glaeubiger: Person) kind empirical {
+    label de official "Der Gläubiger hat die Wahl nicht rechtzeitig vorgenommen (§ 264 Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the creditor did not make the choice in good time (§ 264 (2) sentence 2) — explicit case input";
+}
+@source(BGB_P265)
+pub relation unmoeglichkeit_nicht_vom_nicht_wahlberechtigten_teil_zu_vertreten(s: Schuldverhaeltnis, l: Leistung) kind empirical {
+    label de official "Die Unmöglichkeit beruht nicht auf einem Umstand, den der nicht wahlberechtigte Teil zu vertreten hat (§ 265 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the impossibility is not due to a circumstance for which the party not entitled to choose is responsible (§ 265 sentence 2) — explicit case input";
+}
+@source(BGB_P267)
+pub relation nicht_in_person_zu_leisten(l: Leistung) kind empirical {
+    label de official "Der Schuldner hat nicht in Person zu leisten (§ 267 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the debtor need not perform in person (§ 267 (1) sentence 1) — explicit case input";
+}
+@source(BGB_P269)
+pub relation kein_leistungsort_bestimmt_oder_aus_umstaenden(s: Schuldverhaeltnis) kind empirical {
+    label de official "Ein Ort für die Leistung ist weder bestimmt noch aus den Umständen zu entnehmen (§ 269 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "no place of performance is specified or inferable (§ 269 (1)) — explicit case input";
+}
+@source(BGB_P269)
+pub relation keine_gewerbliche_niederlassung_des_schuldners(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Verbindlichkeit ist nicht im Gewerbebetrieb des Schuldners entstanden oder der Schuldner hat keine abweichende gewerbliche Niederlassung (§ 269 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the obligation did not arise in the debtor's business or he has no separate establishment (§ 269 (2)) — explicit case input";
+}
+@source(BGB_P270)
+pub relation keine_gewerbliche_niederlassung_des_glaeubigers(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Forderung ist nicht im Gewerbebetrieb des Gläubigers entstanden oder der Gläubiger hat keine abweichende gewerbliche Niederlassung (§ 270 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the claim did not arise in the creditor's business or he has no separate establishment (§ 270 (2)) — explicit case input";
+}
+@source(BGB_P271)
+pub relation keine_leistungszeit_bestimmt(l: Leistung) kind empirical {
+    label de official "Eine Zeit für die Leistung ist weder bestimmt noch aus den Umständen zu entnehmen (§ 271 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "no time for performance is specified or inferable (§ 271 (1)) — explicit case input";
+}
+@source(BGB_P271a)
+pub relation vereinbarung_nicht_ausdruecklich_getroffen(a: Anspruch) kind empirical {
+    label de official "Die Vereinbarung ist nicht ausdrücklich getroffen (§ 271a Abs. 1 Satz 1, Abs. 2 Nr. 1, Abs. 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "the agreement was not made expressly (§ 271a (1), (2) no. 1, (3)) — explicit case input";
+}
+@source(BGB_P271a)
+pub relation nicht_sachlich_gerechtfertigt(a: Anspruch) kind empirical {
+    label de official "Die Vereinbarung ist nicht aufgrund der besonderen Natur oder der Merkmale des Schuldverhältnisses sachlich gerechtfertigt (§ 271a Abs. 2 Nr. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the agreement is not objectively justified (§ 271a (2) no. 1) — explicit case input";
+}
+@source(BGB_P273)
+pub relation aus_dem_schuldverhaeltnis_ergibt_sich_nichts_anderes(s: Schuldverhaeltnis) kind empirical {
+    label de official "Aus dem Schuldverhältnis ergibt sich nichts anderes (§ 273 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the obligation does not provide otherwise (§ 273 (1)) — explicit case input";
+}
+@source(BGB_P273)
+pub relation gegenstand_nicht_durch_vorsaetzliche_unerlaubte_handlung_erlangt(s: Schuldverhaeltnis, schuldner: Person) kind empirical {
+    label de official "Der Verpflichtete hat den Gegenstand nicht durch eine vorsätzlich begangene unerlaubte Handlung erlangt (§ 273 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the obliged person did not obtain the object by an intentional tort (§ 273 (2)) — explicit case input";
+}
+@source(BGB_P276)
+pub relation keine_abweichende_haftungsbestimmung(s: Schuldverhaeltnis) kind empirical {
+    label de official "Eine strengere oder mildere Haftung ist weder bestimmt noch aus dem sonstigen Inhalt des Schuldverhältnisses zu entnehmen (§ 276 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "no stricter or more lenient liability is specified or inferable (§ 276 (1) sentence 1) — explicit case input";
+}
+
+// --- § 270a Satz 2: Zahlungskarten nur im Anwendungsbereich der Verordnung -----------------------------
+
+@source(BGB_P270a)
+pub relation entgelt_fuer_lastschrift_oder_ueberweisung_vereinbart(vb: Vereinbarung) kind empirical {
+    label de official "Vereinbarung über ein Entgelt für die Nutzung einer SEPA-Basislastschrift, einer SEPA-Firmenlastschrift oder einer SEPA-Überweisung (§ 270a Satz 1)";
+    label en unofficial "agreement on a charge for a SEPA direct debit or SEPA credit transfer (§ 270a sentence 1)";
+}
+@source(BGB_P270a)
+pub relation entgelt_fuer_zahlungskarte_vereinbart(vb: Vereinbarung) kind empirical {
+    label de official "Vereinbarung über ein Entgelt für die Nutzung einer Zahlungskarte (§ 270a Satz 1, 2)";
+    label en unofficial "agreement on a charge for the use of a payment card (§ 270a sentences 1, 2)";
+}
+@source(BGB_P270a)
+pub relation zahlungsvorgang_mit_verbraucher_im_anwendungsbereich_der_verordnung(vb: Vereinbarung) kind empirical {
+    label de official "Der Zahlungsvorgang ist ein Vorgang mit einem Verbraucher, auf den Kapitel II der Verordnung (EU) 2015/751 anwendbar ist (§ 270a Satz 2)";
+    label en unofficial "the payment transaction involves a consumer and Chapter II of Regulation (EU) 2015/751 applies (§ 270a sentence 2)";
+}
+
+@source(BGB_P270a)
+rule EntgeltFuerZahlungskarteIstUnwirksam(vb: Vereinbarung) strict {
+    label de official "Satz 1 gilt für die Nutzung von Zahlungskarten nur bei Zahlungsvorgängen mit Verbrauchern, wenn auf diese Kapitel II der Verordnung (EU) 2015/751 anwendbar ist (§ 270a Satz 2)";
+    label en unofficial "Sentence 1 applies to payment cards only in consumer transactions to which Chapter II of Regulation (EU) 2015/751 applies (§ 270a sentence 2)";
+    when entgelt_fuer_zahlungskarte_vereinbart(vb);
+    when zahlungsvorgang_mit_verbraucher_im_anwendungsbereich_der_verordnung(vb);
+    then unwirksam(vb);
+}
+
+// --- § 278: Zurechnung fremden Verschuldens -------------------------------------------------------------
+//
+// Eigener Kopf statt einer Rückkopplung auf `hat_zu_vertreten`: die Zurechnung
+// des fremden Verschuldens ist ein anderer Satz als das eigene Vertretenmüssen,
+// und ein Prädikatzyklus wäre nicht stratifizierbar (LDC-E4102).
+
+@source(BGB_P278)
+pub relation verschulden_des_gehilfen(gehilfe: Person, s: Schuldverhaeltnis) kind empirical {
+    label de official "Verschulden des gesetzlichen Vertreters oder der Person, deren sich der Schuldner zur Erfüllung bedient (§ 278 Satz 1)";
+    label en unofficial "fault of the legal representative or of the person used to perform (§ 278 sentence 1)";
+}
+@source(BGB_P278)
+pub relation haftet_fuer_fremdes_verschulden(schuldner: Person, gehilfe: Person, s: Schuldverhaeltnis) kind institutional {
+    label de official "Der Schuldner hat das Verschulden in gleichem Umfang zu vertreten wie eigenes Verschulden (§ 278 Satz 1)";
+    label en unofficial "the debtor is responsible for that fault to the same extent as for his own (§ 278 sentence 1)";
+}

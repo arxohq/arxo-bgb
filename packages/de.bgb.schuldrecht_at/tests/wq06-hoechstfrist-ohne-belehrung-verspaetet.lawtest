@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Querschnitt Widerruf/Fristen, andere Seite von wq05: derselbe Sachverhalt
+// ohne jede Belehrung, der Widerruf wird erst am 23. März 2027 abgesandt,
+// einen Tag nach dem verlegten Ende (22. März 2027). Nach § 356 Abs. 4
+// Satz 1 erlischt das Widerrufsrecht — unabhängig davon, ob der Unternehmer
+// je belehrt hat (§ 356 Abs. 3 Satz 2 kappt die Frist in jedem Fall).
+// Verbraucher über die Brücke §§ 13/14.
+test "Querschnitt § 356 Abs. 3 Satz 2: Höchstfrist ohne Belehrung, verspäteter Widerruf lässt das Recht erlöschen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_SCHULDRECHT_AT_KALENDER; }
+        assert "a1": widerrufsrecht_eingeraeumt(entity_ref("urn:de:bgb:sr-at:wq06:v1"), entity_ref("urn:de:bgb:sr-at:wq06:p1")) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:sr-at:wq06:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a3": de.bgb.allgemeiner_teil::zweck_ueberwiegend_nicht_gewerblich(entity_ref("urn:de:bgb:sr-at:wq06:p1"), entity_ref("urn:de:bgb:sr-at:wq06:r1")) { origin adjudicated; }
+        assert "a4": rechtsgeschaeft_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq06:v1"), entity_ref("urn:de:bgb:sr-at:wq06:r1")) { origin case_input; }
+        assert "a5": hoechstfrist_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq06:v1"), entity_ref("urn:de:bgb:sr-at:wq06:h1")) { origin case_input; }
+        assert "a6": fristbeginn_des_widerrufs(entity_ref("urn:de:bgb:sr-at:wq06:v1"), @2026-03-06) { origin case_input; }
+        assert "a7": widerruf_erklaert_am(entity_ref("urn:de:bgb:sr-at:wq06:v1"), @2027-03-23) { origin case_input; }
+    }
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:sr-at:wq06:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(widerrufsrecht_erloschen(entity_ref("urn:de:bgb:sr-at:wq06:v1")));
+    expect truth_status == TRUE_ONLY;
+}

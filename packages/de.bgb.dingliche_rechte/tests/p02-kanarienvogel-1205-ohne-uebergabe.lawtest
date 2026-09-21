@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Kanarienvogel zu § 1205 Abs. 1 — eine Bedingung weniger: die Einigung liegt vor, die Übergabe nicht, der Gläubiger ist auch nicht bereits im Besitz und ein Übergabeersatz ist nicht vereinbart. Das Pfandrecht entsteht nicht.
+test "Kanarienvogel § 1205 Abs. 1: Einigung ohne Übergabe — kein Pfandrecht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:p02:pfand"), entity_ref("urn:de:bgb:dr:p02:uhr")) { origin case_input; }
+        assert "f2": de.bgb.besitz_eigentum::bewegliche_sache(entity_ref("urn:de:bgb:dr:p02:uhr")) { origin case_input; }
+        assert "f3": pfandglaeubiger(entity_ref("urn:de:bgb:dr:p02:pfand"), entity_ref("urn:de:bgb:dr:p02:bank")) { origin case_input; }
+        assert "f4": einigung_ueber_das_pfandrecht(entity_ref("urn:de:bgb:dr:p02:pfand")) { origin adjudicated; }
+        assert "f5": not sache_gehoert_dem_verpfaender_nicht(entity_ref("urn:de:bgb:dr:p02:pfand")) { origin adjudicated; }
+    }
+    evaluate truth(pfandrecht_entstanden(entity_ref("urn:de:bgb:dr:p02:pfand"), entity_ref("urn:de:bgb:dr:p02:bank")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,169 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 5 — PFLICHTTEIL, REST
+// (§§ 2308, 2310 Satz 2, 2312) UND MOST § 2316 ← AUSGLEICHUNG
+// `de.bgb.erbfolge`.
+//
+// § 2310 SATZ 1 (wer mitgezählt wird: durch Verfügung Ausgeschlossene,
+// Ausschlagende, Erbunwürdig Erklärte) bleibt wie vom Vorgänger begründet
+// ANCHORED ohne eigene Regel: die Erbfolge berechnet die Quote bereits
+// ohne Rücksicht auf die letztwillige Verfügung (README „Pilot ist Geld“).
+// SATZ 2 (Erbverzicht-Ausgeschlossene werden NICHT mitgezählt) ist eine
+// eigenständige Norm und wird hier durch WIEDERVERWENDUNG des bei § 2316
+// bereits deklarierten Prädikats `abkoemmling_durch_erbverzicht_ausgeschlossen_2316`
+// formalisiert — derselbe Rechtstatbestand (Ausschluss von der gesetzlichen
+// Erbfolge durch Erbverzicht) trägt hier eine ANDERE Rechtsfolge
+// (Nichtmitzählung bei der Pflichtteilsquote statt Außerachtlassung bei
+// der Ausgleichung).
+//
+// MOST § 2316 ABS. 1 SATZ 1 ← AUSGLEICHUNG (§§ 2050–2057a): das bestehende
+// `package.law` liest den um die Ausgleichung bereinigten gesetzlichen
+// Erbteilswert (`gesetzlicher_erbteilwert_nach_ausgleichung_2316`) als
+// REINE FALLANGABE (`kind empirical`) — Umwidmung zu `derived` ist verboten
+// (bestehende Fallangaben in Szenarien würden widersprüchlich, Lehre aus
+// D-16-NN). Der ECHTE Brückenwert liegt bereits `pub` bei `de.bgb.erbfolge`:
+// `rechnerischer_erbteil_2055(e, p, betrag)` — „Anteil des Miterben an der
+// Ausgleichungsmasse nach der Quote seines Erbteils (§ 2055 Abs. 1)“, genau
+// der um die Ausgleichung bereinigte gesetzliche Erbteilswert, den § 2316
+// referenziert. KEIN `pub` nötig — die Relation war es bereits (kein
+// CLIR-Regen bei `de.bgb.erbfolge` erforderlich, keine Hub-Auswirkung).
+// Der Brücke wird als ZWEITER, gleichrangiger Produzent desselben Kopfes
+// `pflichtteil_nach_ausgleichung_2316` hinzugefügt — die alte
+// Fallangabe-Regel bleibt der erste, unveränderte Produzent (kein
+// Doppelimport, keine Rückwärtsabhängigkeit `erbfolge` → `verfuegungen`:
+// `verfuegungen` importiert `erbfolge` bereits, nicht umgekehrt).
+
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// ---- § 2308 Anfechtung der Ausschlagung ------------------------------------
+
+pub relation pflichtteilsberechtigter_beschraenkt_oder_beschwert_2306_art_2308(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Pflichtteilsberechtigte ist als Erbe oder Vermächtnisnehmer in der in § 2306 bezeichneten Art beschränkt oder beschwert (§ 2308 Abs. 1)";
+    label en unofficial "the beneficiary, as heir or legatee, is restricted or burdened in the manner described in § 2306 (§ 2308 (1))";
+}
+pub relation erbschaft_oder_vermaechtnis_ausgeschlagen_2308(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Pflichtteilsberechtigte hat die Erbschaft oder das Vermächtnis ausgeschlagen (§ 2308 Abs. 1)";
+    label en unofficial "the beneficiary disclaimed the inheritance or the legacy (§ 2308 (1))";
+}
+pub relation beschraenkung_oder_beschwerung_zur_zeit_der_ausschlagung_weggefallen_2308(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Beschränkung oder die Beschwerung war zur Zeit der Ausschlagung weggefallen (§ 2308 Abs. 1)";
+    label en unofficial "the restriction or the burden had ceased to exist at the time of the disclaimer (§ 2308 (1))";
+}
+pub relation wegfall_war_dem_pflichtteilsberechtigten_nicht_bekannt_2308(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Wegfall war dem Pflichtteilsberechtigten nicht bekannt (§ 2308 Abs. 1)";
+    label en unofficial "the beneficiary was unaware that it had ceased to exist (§ 2308 (1))";
+}
+pub relation ausschlagung_anfechtbar_2308(e: Erbfall, p: Person) kind derived {
+    label de official "Der Pflichtteilsberechtigte kann die Ausschlagung anfechten (§ 2308 Abs. 1)";
+    label en unofficial "the beneficiary may avoid the disclaimer (§ 2308 (1))";
+}
+pub relation anfechtung_durch_erklaerung_gegenueber_beschwertem_erfolgt_2308(e: Erbfall, p: Person, beschwerter: Person) kind empirical {
+    label de official "Die Anfechtung der Ausschlagung eines Vermächtnisses erfolgt durch Erklärung gegenüber dem Beschwerten (§ 2308 Abs. 2 Satz 2)";
+    label en unofficial "avoidance of the disclaimer of a legacy is by declaration to the person charged (§ 2308 (2) sentence 2)";
+}
+pub relation vermaechtnisausschlagung_wirksam_angefochten_2308(e: Erbfall, p: Person, beschwerter: Person) kind derived {
+    label de official "Die Anfechtung der Ausschlagung des Vermächtnisses ist wirksam erklärt (§ 2308 Abs. 2)";
+    label en unofficial "the avoidance of the disclaimer of the legacy has been effectively declared (§ 2308 (2))";
+}
+
+// ---- § 2310 Satz 2 Feststellung des Erbteils für die Pflichtteilsberechnung
+
+pub relation erbverzichtsausgeschlossener_nicht_bei_pflichtteilserbteil_mitzuzaehlen_2310(e: Erbfall, p: Person) kind derived {
+    label de official "Wer durch Erbverzicht von der gesetzlichen Erbfolge ausgeschlossen ist, wird bei der Feststellung des für die Pflichtteilsberechnung maßgebenden Erbteils nicht mitgezählt (§ 2310 Satz 2)";
+    label en unofficial "a person excluded from statutory succession by renunciation is not counted when ascertaining the share relevant to the compulsory-portion calculation (§ 2310 sentence 2)";
+}
+
+// ---- § 2312 Wert eines Landguts ---------------------------------------------
+
+pub relation uebernahmerecht_zum_ertragswert_angeordnet_oder_2049_2312(e: Erbfall, erbe: Person) kind empirical {
+    label de official "Der Erblasser hat angeordnet oder es ist nach § 2049 anzunehmen, dass der Erbe ein zum Nachlass gehörendes Landgut zum Ertragswert übernehmen darf (§ 2312 Abs. 1 Satz 1)";
+    label en unofficial "the testator directed, or it is to be assumed under § 2049, that the heir may take over an estate farm at its productive value (§ 2312 (1) sentence 1)";
+}
+pub relation vom_uebernahmerecht_gebrauch_gemacht_2312(e: Erbfall, erbe: Person) kind empirical {
+    label de official "Von dem Übernahmerecht wird Gebrauch gemacht (§ 2312 Abs. 1 Satz 1)";
+    label en unofficial "the right of takeover is exercised (§ 2312 (1) sentence 1)";
+}
+pub relation ertragswert_des_landguts_2312(e: Erbfall, erbe: Person, wert: Money) kind empirical {
+    label de official "Der Ertragswert des Landguts beträgt den angegebenen Betrag (§ 2312 Abs. 1 Satz 1)";
+    label en unofficial "the productive value of the estate farm is the stated amount (§ 2312 (1) sentence 1)";
+}
+pub relation anderer_uebernahmepreis_bestimmt_2312(e: Erbfall, erbe: Person, preis: Money) kind empirical {
+    label de official "Der Erblasser hat einen anderen Übernahmepreis bestimmt (§ 2312 Abs. 1 Satz 2)";
+    label en unofficial "the testator fixed a different takeover price (§ 2312 (1) sentence 2)";
+}
+pub relation uebernahmepreis_erreicht_ertragswert_und_uebersteigt_schaetzungswert_nicht_2312(e: Erbfall, erbe: Person) kind empirical {
+    label de official "Der bestimmte Übernahmepreis erreicht den Ertragswert und übersteigt den Schätzungswert nicht (§ 2312 Abs. 1 Satz 2)";
+    label en unofficial "the fixed takeover price reaches the productive value and does not exceed the appraised value (§ 2312 (1) sentence 2)";
+}
+pub relation erblasser_hinterlaesst_nur_einen_erben_2312(e: Erbfall, erbe: Person) kind empirical {
+    label de official "Der Erblasser hinterlässt nur einen Erben (§ 2312 Abs. 2)";
+    label en unofficial "the testator leaves only one heir (§ 2312 (2))";
+}
+pub relation erblasser_ordnet_ertragswert_oder_bestimmten_wert_an_2312(e: Erbfall, erbe: Person, wert: Money) kind empirical {
+    label de official "Der Erblasser ordnet an, dass der Berechnung des Pflichtteils der Ertragswert oder ein nach Absatz 1 Satz 2 bestimmter Wert zugrunde gelegt werden soll (§ 2312 Abs. 2)";
+    label en unofficial "the testator directs that the productive value, or a value fixed under (1) sentence 2, is to underlie the compulsory-portion calculation (§ 2312 (2))";
+}
+pub relation erbe_gehoert_zu_pflichtteilsberechtigten_des_2303_2312(e: Erbfall, erbe: Person) kind empirical {
+    label de official "Der das Landgut erwerbende Erbe gehört zu den in § 2303 bezeichneten pflichtteilsberechtigten Personen (§ 2312 Abs. 3)";
+    label en unofficial "the heir who acquires the estate farm is among the persons entitled to a compulsory portion under § 2303 (§ 2312 (3))";
+}
+pub relation ertragswert_fuer_pflichtteil_massgebend_2312(e: Erbfall, erbe: Person, wert: Money) kind derived {
+    label de official "Der Wert ist auch für die Berechnung des Pflichtteils maßgebend (§ 2312)";
+    label en unofficial "the value is also decisive for the compulsory-portion calculation (§ 2312)";
+}
+
+// ============================================================================
+
+@source(BGB_P2308) {
+    rule AusschlagungAnfechtbarBeiWegfallDerBeschraenkung(e: Erbfall, p: Person) strict {
+        label de official "Ein beschränkter oder beschwerter Pflichtteilsberechtigter, der ausgeschlagen hat, kann die Ausschlagung anfechten, wenn die Beschränkung oder Beschwerung zur Zeit der Ausschlagung weggefallen und ihm der Wegfall nicht bekannt war (§ 2308 Abs. 1)";
+        label en unofficial "a restricted or burdened beneficiary who disclaimed may avoid the disclaimer if the restriction or burden had ceased to exist at that time and he was unaware of it (§ 2308 (1))";
+        when pflichtteilsberechtigter_beschraenkt_oder_beschwert_2306_art_2308(e, p) and erbschaft_oder_vermaechtnis_ausgeschlagen_2308(e, p) and beschraenkung_oder_beschwerung_zur_zeit_der_ausschlagung_weggefallen_2308(e, p) and wegfall_war_dem_pflichtteilsberechtigten_nicht_bekannt_2308(e, p);
+        then ausschlagung_anfechtbar_2308(e, p);
+    }
+    rule VermaechtnisausschlagungAnfechtungDurchErklaerung(e: Erbfall, p: Person, beschwerter: Person) strict {
+        label de official "Die Anfechtung der Ausschlagung eines Vermächtnisses folgt entsprechend den Vorschriften für die Erbschaftsausschlagung und erfolgt durch Erklärung gegenüber dem Beschwerten (§ 2308 Abs. 2)";
+        label en unofficial "avoidance of the disclaimer of a legacy follows the rules for disclaiming an inheritance and is declared to the person charged (§ 2308 (2))";
+        when ausschlagung_anfechtbar_2308(e, p) and anfechtung_durch_erklaerung_gegenueber_beschwertem_erfolgt_2308(e, p, beschwerter);
+        then vermaechtnisausschlagung_wirksam_angefochten_2308(e, p, beschwerter);
+    }
+}
+
+@source(BGB_P2310)
+rule ErbverzichtsausgeschlossenerNichtMitzuzaehlen(e: Erbfall, p: Person) strict {
+    label de official "Wer durch Erbverzicht von der gesetzlichen Erbfolge ausgeschlossen ist, wird bei der Feststellung des für die Pflichtteilsberechnung maßgebenden Erbteils nicht mitgezählt (§ 2310 Satz 2)";
+    label en unofficial "a person excluded from statutory succession by renunciation is not counted when ascertaining the share relevant to the compulsory-portion calculation (§ 2310 sentence 2)";
+    when abkoemmling_durch_erbverzicht_ausgeschlossen_2316(e, p);
+    then erbverzichtsausgeschlossener_nicht_bei_pflichtteilserbteil_mitzuzaehlen_2310(e, p);
+}
+
+@source(BGB_P2312) {
+    rule ErtragswertMassgebendBeiAusgeuebtemUebernahmerecht(e: Erbfall, erbe: Person, wert: Money) strict {
+        label de official "Wird von einem angeordneten oder nach § 2049 anzunehmenden Übernahmerecht zum Ertragswert Gebrauch gemacht, ist der Ertragswert auch für die Pflichtteilsberechnung maßgebend (§ 2312 Abs. 1 Satz 1, Abs. 3)";
+        label en unofficial "where a directed or § 2049-presumed right of takeover at productive value is exercised, that value also governs the compulsory-portion calculation (§ 2312 (1) sentence 1, (3))";
+        when uebernahmerecht_zum_ertragswert_angeordnet_oder_2049_2312(e, erbe) and vom_uebernahmerecht_gebrauch_gemacht_2312(e, erbe) and ertragswert_des_landguts_2312(e, erbe, wert) and erbe_gehoert_zu_pflichtteilsberechtigten_des_2303_2312(e, erbe);
+        then ertragswert_fuer_pflichtteil_massgebend_2312(e, erbe, wert);
+    }
+    rule AndererUebernahmepreisMassgebend(e: Erbfall, erbe: Person, preis: Money) strict {
+        label de official "Hat der Erblasser einen anderen Übernahmepreis bestimmt, ist dieser maßgebend, wenn er den Ertragswert erreicht und den Schätzungswert nicht übersteigt (§ 2312 Abs. 1 Satz 2, Abs. 3)";
+        label en unofficial "if the testator fixed a different takeover price, it governs where it reaches the productive value and does not exceed the appraised value (§ 2312 (1) sentence 2, (3))";
+        when anderer_uebernahmepreis_bestimmt_2312(e, erbe, preis) and uebernahmepreis_erreicht_ertragswert_und_uebersteigt_schaetzungswert_nicht_2312(e, erbe) and erbe_gehoert_zu_pflichtteilsberechtigten_des_2303_2312(e, erbe);
+        then ertragswert_fuer_pflichtteil_massgebend_2312(e, erbe, preis);
+    }
+    rule AnordnungBeiEinzigemErben(e: Erbfall, erbe: Person, wert: Money) strict {
+        label de official "Hinterlässt der Erblasser nur einen Erben, kann er anordnen, dass der Ertragswert oder ein nach Absatz 1 Satz 2 bestimmter Wert der Pflichtteilsberechnung zugrunde gelegt wird (§ 2312 Abs. 2, Abs. 3)";
+        label en unofficial "if the testator leaves only one heir, he may direct that the productive value or a value fixed under (1) sentence 2 underlies the compulsory-portion calculation (§ 2312 (2), (3))";
+        when erblasser_hinterlaesst_nur_einen_erben_2312(e, erbe) and erblasser_ordnet_ertragswert_oder_bestimmten_wert_an_2312(e, erbe, wert) and erbe_gehoert_zu_pflichtteilsberechtigten_des_2303_2312(e, erbe);
+        then ertragswert_fuer_pflichtteil_massgebend_2312(e, erbe, wert);
+    }
+}
+
+// ---- Brücke § 2316 Abs. 1 Satz 1 ← Ausgleichung de.bgb.erbfolge §§ 2050 ff. -
+
+@source(BGB_P2316)
+rule PflichtteilNachAusgleichungAusErbfolge(e: Erbfall, p: Person, wert: Money) strict {
+    label de official "Bei mehreren Abkömmlingen mit ausgleichungspflichtiger Zuwendung bestimmt sich der Pflichtteil nach der Hälfte des rechnerischen, um die Ausgleichung bereinigten Erbteils aus § 2055 Abs. 1 (§ 2316 Abs. 1 Satz 1, Brücke zu §§ 2050–2057a)";
+    label en unofficial "with several descendants and an equalisable grant, the compulsory portion is half of the § 2055 (1) computed, equalisation-adjusted share (§ 2316 (1) sentence 1, bridge to §§ 2050–2057a)";
+    when abkoemmling_mehrere_2316(e, p) and ausgleichung_bei_teilung_2316_zu_beruecksichtigen(e, p) and de.bgb.erbfolge::rechnerischer_erbteil_2055(e, p, wert);
+    then pflichtteil_nach_ausgleichung_2316(e, p, div_round(wert, 2.0, 2, "HALF_UP"));
+}

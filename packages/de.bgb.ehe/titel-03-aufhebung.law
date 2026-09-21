@@ -1,0 +1,576 @@
+// TITEL 3 — AUFHEBUNG DER EHE (§§ 1313–1320)
+//
+// Der Titel ist eine dreistufige Maschine: § 1314 nennt die AUFHEBUNGSGRÜNDE,
+// § 1315 die AUSSCHLUSSGRÜNDE, § 1317 die FRIST. Das Paket führt die Gründe
+// als Aufzählung (`Aufhebungsgrund`), weil §§ 1315, 1316, 1317 und 1318 den
+// Grund JEWEILS EINZELN in Bezug nehmen: ein flacher Kopf „aufhebbar“ ohne
+// Grund wäre für diese vier Paragraphen unlesbar.
+//
+// WERTUNGEN. „Arglistige Täuschung“ und „widerrechtliche Drohung“ (§ 1314
+// Abs. 2 Nr. 3, 4) sowie die „so schwere Härte“ (§ 1315 Abs. 1 Nr. 1
+// Buchstabe b, § 1316 Abs. 3) stehen im Urteilskanal §47.3. Die BESTÄTIGUNG
+// (§ 1315 Abs. 1) ist dagegen eine Tatsache des Falls: „zu erkennen gegeben
+// hat, dass er die Ehe fortsetzen will“.
+//
+// FRISTEN. § 1317 Abs. 1: ein Jahr in den Fällen des § 1314 Abs. 2 Nr. 2 und 3,
+// drei Jahre im Falle der Nr. 4; Abs. 2: sechs Monate nach Wegfall der
+// Geschäftsunfähigkeit. Der Antrag ist innerhalb der Frist zu STELLEN, deshalb
+// liest der Kopf `frist_ende` mit der Verlegung des § 193 (Kopf package.law).
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+pub enum Aufhebungsgrund {
+    label de official "Aufhebungsgrund der Ehe (§ 1314 Abs. 1, 2), einzeln in Bezug genommen von §§ 1315–1318";
+    label en unofficial "ground for annulment of the marriage (§ 1314 (1), (2)), taken up individually by §§ 1315–1318";
+    Minderjaehrigkeit_1303_Satz_1,
+    Geschaeftsunfaehigkeit_1304,
+    Doppelehe_1306,
+    Verwandtschaft_1307,
+    Formmangel_1311,
+    Bewusstlosigkeit_1314_Abs_2_Nr_1,
+    Irrtum_ueber_die_Eheschliessung_1314_Abs_2_Nr_2,
+    Arglistige_Taeuschung_1314_Abs_2_Nr_3,
+    Widerrechtliche_Drohung_1314_Abs_2_Nr_4,
+    Scheinehe_1314_Abs_2_Nr_5
+}
+
+// --- Eingänge des Falls ---------------------------------------------------------------------------
+
+relation aufhebungsantrag_gestellt_am(ehe: Ehe, antragsteller: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Antrag auf Aufhebung der Ehe gestellt worden ist (§ 1313 Satz 1)";
+    label en unofficial "day on which the application for annulment was made (§ 1313 sentence 1)";
+}
+relation aufhebungsentscheidung_rechtskraeftig_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag, an dem die richterliche Aufhebungsentscheidung rechtskräftig geworden ist (§ 1313 Satz 2) — festgestellte Tatsache";
+    label en unofficial "day on which the judicial annulment decision became final (§ 1313 sentence 2) — established fact";
+}
+relation minderjaehrig_aber_sechzehn_bei_der_eheschliessung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Ehegatte war bei der Eheschließung minderjährig, hatte aber das 16. Lebensjahr vollendet (§ 1314 Abs. 1 Nr. 1)";
+    label en unofficial "the spouse was a minor at the time of the marriage but had completed the 16th year of life (§ 1314 (1) no. 1)";
+}
+relation bewusstlosigkeit_oder_stoerung_bei_der_eheschliessung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Ein Ehegatte befand sich bei der Eheschließung im Zustand der Bewusstlosigkeit oder vorübergehender Störung der Geistestätigkeit (§ 1314 Abs. 2 Nr. 1)";
+    label en unofficial "a spouse was unconscious or temporarily mentally disturbed at the time of the marriage (§ 1314 (2) no. 1)";
+}
+relation nicht_gewusst_dass_eheschliessung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Ein Ehegatte hat bei der Eheschließung nicht gewusst, dass es sich um eine Eheschließung handelt (§ 1314 Abs. 2 Nr. 2)";
+    label en unofficial "a spouse did not know at the time that it was a marriage ceremony (§ 1314 (2) no. 2)";
+}
+relation taeuschung_betrifft_vermoegensverhaeltnisse(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Täuschung betrifft Vermögensverhältnisse (§ 1314 Abs. 2 Nr. 3 Halbsatz 2)";
+    label en unofficial "the deceit concerns financial circumstances (§ 1314 (2) no. 3 second half-sentence)";
+}
+relation taeuschung_durch_dritten_ohne_wissen_des_anderen(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Täuschung ist von einem Dritten ohne Wissen des anderen Ehegatten verübt worden (§ 1314 Abs. 2 Nr. 3 Halbsatz 2)";
+    label en unofficial "the deceit was practised by a third party without the knowledge of the other spouse (§ 1314 (2) no. 3 second half-sentence)";
+}
+relation einigkeit_keine_verpflichtung_nach_1353(ehe: Ehe) kind empirical {
+    label de official "Beide Ehegatten waren sich bei der Eheschließung darüber einig, dass sie keine Verpflichtung gemäß § 1353 Abs. 1 begründen wollen (§ 1314 Abs. 2 Nr. 5)";
+    label en unofficial "both spouses agreed at the time that they did not wish to create any obligation under § 1353 (1) (§ 1314 (2) no. 5)";
+}
+relation bestaetigung_erklaert(ehe: Ehe, p: Person, grund: Aufhebungsgrund) kind empirical {
+    label de official "Der Ehegatte hat zu erkennen gegeben, dass er die Ehe fortsetzen will (Bestätigung, § 1315 Abs. 1)";
+    label en unofficial "the spouse has indicated that he wishes to continue the marriage (confirmation, § 1315 (1))";
+}
+relation bestaetigender_geschaeftsunfaehig(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Bestätigende ist geschäftsunfähig; die Bestätigung ist unwirksam (§ 1315 Abs. 1 Satz 2)";
+    label en unofficial "the confirming person lacks capacity; the confirmation is ineffective (§ 1315 (1) sentence 2)";
+}
+relation als_ehegatten_miteinander_gelebt(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten haben nach der Eheschließung als Ehegatten miteinander gelebt (§ 1315 Abs. 1 Nr. 5)";
+    label en unofficial "the spouses have lived together as spouses after the marriage (§ 1315 (1) no. 5)";
+}
+relation fruehere_ehe_nach_der_neuen_ehe_rechtskraeftig_aufgeloest(ehe: Ehe) kind empirical {
+    label de official "Vor der Schließung der neuen Ehe ist die Scheidung oder Aufhebung der früheren Ehe oder die Aufhebung der Lebenspartnerschaft ausgesprochen und dieser Ausspruch nach der Schließung der neuen Ehe rechtskräftig geworden (§ 1315 Abs. 2 Nr. 1)";
+    label en unofficial "the divorce or annulment of the earlier marriage was pronounced before and became final after the new marriage (§ 1315 (2) no. 1)";
+}
+relation formmangelfrist(ehe: Ehe, f: Frist) kind empirical {
+    key(ehe);
+    label de official "Frist des § 1315 Abs. 2 Nr. 2 (fünf Jahre als Ehegatten miteinander gelebt)";
+    label en unofficial "period of § 1315 (2) no. 2 (five years lived together as spouses)";
+}
+relation aufhebung_bei_fristablauf_bereits_beantragt(ehe: Ehe) kind empirical {
+    label de official "Bei Ablauf der fünf Jahre oder zur Zeit des Todes ist die Aufhebung bereits beantragt (§ 1315 Abs. 2 Nr. 2 letzter Halbsatz)";
+    label en unofficial "at the expiry of the five years or at the time of death the annulment had already been applied for (§ 1315 (2) no. 2 final half-sentence)";
+}
+relation zustaendige_verwaltungsbehoerde_stellt_antrag(ehe: Ehe) kind empirical {
+    label de official "Die zuständige Verwaltungsbehörde stellt den Antrag auf Aufhebung (§ 1316 Abs. 1 Nr. 1, Abs. 3)";
+    label en unofficial "the competent administrative authority makes the application for annulment (§ 1316 (1) no. 1, (3))";
+}
+relation antrag_durch_gesetzlichen_vertreter(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Antrag wird für einen geschäftsunfähigen Ehegatten von seinem gesetzlichen Vertreter gestellt (§ 1316 Abs. 2 Satz 1)";
+    label en unofficial "the application is made for a spouse lacking capacity by his legal representative (§ 1316 (2) sentence 1)";
+}
+relation entdeckung_oder_aufhoeren_am(ehe: Ehe, p: Person, tag: Date) kind empirical {
+    label de official "Tag der Entdeckung des Irrtums oder der Täuschung oder des Aufhörens der Zwangslage (§ 1317 Abs. 1 Satz 2)";
+    label en unofficial "day of the discovery of the mistake or deceit or of the ending of the duress (§ 1317 (1) sentence 2)";
+}
+relation antragsfrist_1317(ehe: Ehe, p: Person, grund: Aufhebungsgrund, f: Frist) kind empirical {
+    label de official "Frist des § 1317 Abs. 1 für den benannten Aufhebungsgrund";
+    label en unofficial "period of § 1317 (1) for the named ground of annulment";
+}
+relation wegfall_der_geschaeftsunfaehigkeit_am(ehe: Ehe, p: Person, tag: Date) kind empirical {
+    label de official "Tag des Wegfalls der Geschäftsunfähigkeit (§ 1317 Abs. 2)";
+    label en unofficial "day on which the lack of capacity ceased (§ 1317 (2))";
+}
+relation vertreterfrist_versaeumt(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der gesetzliche Vertreter eines geschäftsunfähigen Ehegatten hat den Antrag nicht rechtzeitig gestellt (§ 1317 Abs. 2)";
+    label en unofficial "the legal representative did not make the application in time (§ 1317 (2))";
+}
+relation nachfrist_1317_abs_2(ehe: Ehe, p: Person, f: Frist) kind empirical {
+    label de official "Frist des § 1317 Abs. 2 (sechs Monate nach dem Wegfall der Geschäftsunfähigkeit)";
+    label en unofficial "period of § 1317 (2) (six months after the ending of the lack of capacity)";
+}
+relation ehe_bereits_aufgeloest(ehe: Ehe) kind empirical {
+    label de official "Die Ehe ist bereits aufgelöst (§ 1317 Abs. 3)";
+    label en unofficial "the marriage has already been dissolved (§ 1317 (3))";
+}
+relation aufhebbarkeit_bei_der_eheschliessung_nicht_gekannt(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Ehegatte hat die Aufhebbarkeit der Ehe bei der Eheschließung nicht gekannt (§ 1318 Abs. 2 Satz 1 Nr. 1)";
+    label en unofficial "the spouse did not know of the annullability at the time of the marriage (§ 1318 (2) sentence 1 no. 1)";
+}
+relation aufhebbarkeit_bei_der_eheschliessung_gekannt(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Ehegatte hat die Aufhebbarkeit der Ehe bei der Eheschließung gekannt (§ 1318 Abs. 2 Satz 1 Nr. 2, Abs. 5)";
+    label en unofficial "the spouse knew of the annullability at the time of the marriage (§ 1318 (2) sentence 1 no. 2, (5))";
+}
+relation vom_anderen_ehegatten_getaeuscht_oder_bedroht(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Ehegatte ist von dem anderen Ehegatten oder mit dessen Wissen getäuscht oder bedroht worden (§ 1318 Abs. 2 Satz 1 Nr. 1)";
+    label en unofficial "the spouse was deceived or threatened by the other spouse or with his knowledge (§ 1318 (2) sentence 1 no. 1)";
+}
+relation fuer_tot_erklaerter_ehegatte_lebt(ehe: Ehe, fuer_tot_erklaerter: Person) kind empirical {
+    label de official "Der für tot erklärte Ehegatte lebt noch (§ 1319 Abs. 1, § 1320 Abs. 1 Satz 1)";
+    label en unofficial "the spouse declared dead is still alive (§ 1319 (1), § 1320 (1) sentence 1)";
+}
+relation beide_wussten_vom_leben_des_fuer_tot_erklaerten(ehe: Ehe) kind empirical {
+    label de official "Beide Ehegatten der neuen Ehe wussten bei der Eheschließung, dass der für tot erklärte Ehegatte im Zeitpunkt der Todeserklärung noch lebte (§ 1319 Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "both spouses of the new marriage knew at the time that the spouse declared dead was still alive (§ 1319 (1), (2) sentence 1)";
+}
+relation frueherer_ehegatte_wusste_vom_leben(ehe: Ehe, frueherer: Person) kind empirical {
+    label de official "Der frühere Ehegatte wusste bei der Eheschließung, dass der für tot erklärte Ehegatte zum Zeitpunkt der Todeserklärung noch gelebt hat (§ 1320 Abs. 1 Satz 1 Halbsatz 2)";
+    label en unofficial "the former spouse knew at the time of the marriage that the spouse declared dead was still alive (§ 1320 (1) sentence 1)";
+}
+relation kenntnis_vom_leben_erlangt_am(ehe: Ehe, frueherer: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Ehegatte aus der früheren Ehe Kenntnis davon erlangt hat, dass der für tot erklärte Ehegatte noch lebt (§ 1320 Abs. 1 Satz 3)";
+    label en unofficial "day on which the spouse of the earlier marriage learned that the spouse declared dead is still alive (§ 1320 (1) sentence 3)";
+}
+relation frist_1320(ehe: Ehe, frueherer: Person, f: Frist) kind empirical {
+    label de official "Jahresfrist des § 1320 Abs. 1 Satz 2";
+    label en unofficial "one-year period of § 1320 (1) sentence 2";
+}
+
+// --- Kanäle der Wertung (§47.3) --------------------------------------------------------------------
+
+pub external judgment relation arglistige_taeuschung_ueber_wesentliche_umstaende(ehe: Ehe, getaeuschter: Person) {
+    authority Court;
+    label de official "§ 1314 Abs. 2 Nr. 3. Ein Ehegatte ist zur Eingehung der Ehe durch arglistige Täuschung über solche Umstände bestimmt worden, die ihn bei Kenntnis der Sachlage und bei richtiger Würdigung des Wesens der Ehe von der Eingehung der Ehe abgehalten hätten";
+    label en unofficial "§ 1314 (2) no. 3. A spouse was induced to marry by fraudulent deceit as to circumstances which, had he known them and properly appreciated the nature of marriage, would have deterred him";
+}
+pub external judgment relation widerrechtliche_drohung(ehe: Ehe, bedrohter: Person) {
+    authority Court;
+    label de official "§ 1314 Abs. 2 Nr. 4. Ein Ehegatte ist zur Eingehung der Ehe widerrechtlich durch Drohung bestimmt worden";
+    label en unofficial "§ 1314 (2) no. 4. A spouse was unlawfully induced to marry by duress";
+}
+pub external judgment relation schwere_haerte_der_aufhebung(ehe: Ehe, betroffener: Person) {
+    authority Court;
+    label de official "§ 1315 Abs. 1 Nr. 1 Buchstabe b, § 1316 Abs. 3 Satz 1. Auf Grund außergewöhnlicher Umstände würde die Aufhebung der Ehe eine so schwere Härte darstellen, dass die Aufrechterhaltung der Ehe ausnahmsweise geboten erscheint";
+    label en unofficial "§ 1315 (1) no. 1 (b), § 1316 (3) sentence 1. Because of exceptional circumstances the annulment would be so severe a hardship that maintaining the marriage appears exceptionally necessary";
+}
+pub external judgment relation versagung_des_unterhalts_grob_unbillig_wegen_des_kindes(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1318 Abs. 2 Satz 2. Eine Versagung des Unterhalts wäre im Hinblick auf die Belange des gemeinschaftlichen Kindes grob unbillig";
+    label en unofficial "§ 1318 (2) sentence 2. A refusal of maintenance would be grossly inequitable having regard to the interests of the common child";
+}
+pub external judgment relation gueterrechtsfolge_grob_unbillig(ehe: Ehe, betroffener: Person) {
+    authority Court;
+    label de official "§ 1318 Abs. 3. Die entsprechende Anwendung der §§ 1363 bis 1390 und 1587 wäre im Hinblick auf die Umstände bei der Eheschließung oder auf die Belange der dritten Person grob unbillig";
+    label en unofficial "§ 1318 (3). The application of §§ 1363 to 1390 and 1587 would be grossly inequitable in view of the circumstances of the marriage or the interests of the third person";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation ehe_aufhebbar(ehe: Ehe, grund: Aufhebungsgrund) kind institutional {
+    label de official "Die Ehe kann aus dem benannten Grund aufgehoben werden (§ 1314 Abs. 1, 2)";
+    label en unofficial "The marriage may be annulled on the named ground (§ 1314 (1), (2))";
+}
+relation aufhebung_ausgeschlossen(ehe: Ehe, grund: Aufhebungsgrund) kind institutional {
+    label de official "Eine Aufhebung der Ehe ist aus dem benannten Grund ausgeschlossen (§ 1315)";
+    label en unofficial "Annulment of the marriage on the named ground is excluded (§ 1315)";
+}
+relation bestaetigungsberechtigter_ehegatte(ehe: Ehe, p: Person, grund: Aufhebungsgrund) kind empirical {
+    label de official "Der in § 1314 Abs. 2 Nr. 2 bis 4 genannte Ehegatte — derjenige, der geirrt hat, getäuscht oder bedroht worden ist (§ 1316 Abs. 1 Nr. 2)";
+    label en unofficial "the spouse named in § 1314 (2) nos. 2 to 4 — the one who erred, was deceived or threatened (§ 1316 (1) no. 2)";
+}
+relation antrag_der_verwaltungsbehoerde_geboten(ehe: Ehe, grund: Aufhebungsgrund) kind institutional {
+    label de official "Die zuständige Verwaltungsbehörde soll den Antrag auf Aufhebung der Ehe stellen (§ 1316 Abs. 3 Satz 1)";
+    label en unofficial "The competent administrative authority should make the application for annulment (§ 1316 (3) sentence 1)";
+}
+relation antragsberechtigt(ehe: Ehe, p: Person, grund: Aufhebungsgrund) kind institutional {
+    label de official "Antragsberechtigung für den Antrag auf Aufhebung der Ehe (§ 1316 Abs. 1)";
+    label en unofficial "Entitlement to apply for annulment of the marriage (§ 1316 (1))";
+}
+relation letzter_tag_der_antragsfrist(ehe: Ehe, p: Person, grund: Aufhebungsgrund, tag: Date) kind institutional {
+    label de official "Letzter Tag der Antragsfrist des § 1317 Abs. 1 (Verlegung des § 193, weil der Antrag innerhalb der Frist zu stellen ist)";
+    label en unofficial "Last day of the application period of § 1317 (1) (§ 193 applies, the application being made within the period)";
+}
+relation antrag_verfristet(ehe: Ehe, p: Person, grund: Aufhebungsgrund) kind institutional {
+    label de official "Der Antrag ist nach Ablauf der Frist des § 1317 gestellt und kann nicht mehr gestellt werden";
+    label en unofficial "The application was made after the expiry of the period of § 1317 and can no longer be made";
+}
+relation letzter_tag_der_nachfrist(ehe: Ehe, p: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Sechsmonatsfrist des § 1317 Abs. 2";
+    label en unofficial "Last day of the six-month period of § 1317 (2)";
+}
+relation ehe_mit_rechtskraft_aufgeloest_am(ehe: Ehe, tag: Date) kind institutional {
+    key(ehe);
+    label de official "Die Ehe ist mit der Rechtskraft der Aufhebungsentscheidung aufgelöst (§ 1313 Satz 2)";
+    label en unofficial "The marriage is dissolved upon the annulment decision becoming final (§ 1313 sentence 2)";
+}
+relation scheidungsfolgen_anwendbar(ehe: Ehe, p: Person, gruppe: Text) kind institutional {
+    label de official "Die Folgen der Aufhebung bestimmen sich in den genannten Fällen nach den Vorschriften über die Scheidung (§ 1318)";
+    label en unofficial "The consequences of annulment follow the provisions on divorce in the cases named (§ 1318)";
+}
+relation erbrecht_des_ehegatten_ausgeschlossen(ehe: Ehe, p: Person) kind institutional {
+    label de official "§ 1931 findet zugunsten eines Ehegatten, der die Aufhebbarkeit bei der Eheschließung gekannt hat, keine Anwendung (§ 1318 Abs. 5)";
+    label en unofficial "§ 1931 does not apply in favour of a spouse who knew of the annullability at the time of the marriage (§ 1318 (5))";
+}
+relation fruehere_ehe_mit_der_neuen_ehe_aufgeloest(ehe: Ehe) kind institutional {
+    label de official "Mit der Schließung der neuen Ehe wird die frühere Ehe aufgelöst; sie bleibt auch dann aufgelöst, wenn die Todeserklärung aufgehoben wird (§ 1319 Abs. 2)";
+    label en unofficial "With the new marriage the earlier marriage is dissolved and remains so even if the declaration of death is set aside (§ 1319 (2))";
+}
+relation aufhebung_der_neuen_ehe_begehrbar(ehe: Ehe, frueherer: Person) kind institutional {
+    label de official "Der frühere Ehegatte kann die Aufhebung der neuen Ehe begehren (§ 1320 Abs. 1 Satz 1)";
+    label en unofficial "The former spouse may seek the annulment of the new marriage (§ 1320 (1) sentence 1)";
+}
+
+// --- Regeln -------------------------------------------------------------------------------------------
+
+@source(BGB_P1313) {
+    rule AufhebungNurDurchRichterlicheEntscheidung(ehe: Ehe, t: Date) strict {
+        label de official "Eine Ehe kann nur durch richterliche Entscheidung auf Antrag aufgehoben werden; die Ehe ist mit der Rechtskraft der Entscheidung aufgelöst (§ 1313 Sätze 1, 2)";
+        label en unofficial "A marriage may be annulled only by judicial decision upon application; it is dissolved when the decision becomes final (§ 1313 sentences 1, 2)";
+        when aufhebungsentscheidung_rechtskraeftig_am(ehe, t);
+        then ehe_mit_rechtskraft_aufgeloest_am(ehe, t);
+    }
+}
+
+@source(BGB_P1314) {
+    rule AufhebbarWegenMinderjaehrigkeit(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann aufgehoben werden, wenn sie entgegen § 1303 Satz 1 mit einem Minderjährigen geschlossen worden ist, der im Zeitpunkt der Eheschließung das 16. Lebensjahr vollendet hatte (§ 1314 Abs. 1 Nr. 1)";
+        label en unofficial "A marriage may be annulled if entered into contrary to § 1303 sentence 1 with a minor who had completed the 16th year of life (§ 1314 (1) no. 1)";
+        when minderjaehrig_aber_sechzehn_bei_der_eheschliessung(ehe, p);
+        then ehe_aufhebbar(ehe, Minderjaehrigkeit_1303_Satz_1);
+    }
+    rule AufhebbarWegenGeschaeftsunfaehigkeit(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann aufgehoben werden, wenn sie entgegen § 1304 geschlossen worden ist (§ 1314 Abs. 1 Nr. 2)";
+        label en unofficial "A marriage may be annulled if entered into contrary to § 1304 (§ 1314 (1) no. 2)";
+        when geschaeftsunfaehig_bei_der_eheschliessung(ehe, p);
+        then ehe_aufhebbar(ehe, Geschaeftsunfaehigkeit_1304);
+    }
+    rule AufhebbarWegenDoppelehe(ehe: Ehe, p: Person, d: Person) strict {
+        label de official "Eine Ehe kann aufgehoben werden, wenn sie entgegen § 1306 geschlossen worden ist (§ 1314 Abs. 1 Nr. 2)";
+        label en unofficial "A marriage may be annulled if entered into contrary to § 1306 (§ 1314 (1) no. 2)";
+        when bestehende_ehe_mit_dritter_person(ehe, p, d);
+        then ehe_aufhebbar(ehe, Doppelehe_1306);
+    }
+    rule AufhebbarWegenVerwandtschaft(ehe: Ehe, g: Text) strict {
+        label de official "Eine Ehe kann aufgehoben werden, wenn sie entgegen § 1307 geschlossen worden ist (§ 1314 Abs. 1 Nr. 2)";
+        label en unofficial "A marriage may be annulled if entered into contrary to § 1307 (§ 1314 (1) no. 2)";
+        when eheverbot(ehe, g)
+         and (g == "§ 1307 Satz 1: Verwandtschaft in gerader Linie"
+              or g == "§ 1307 Satz 1: vollbürtige Geschwister"
+              or g == "§ 1307 Satz 1: halbbürtige Geschwister"
+              or g == "§ 1307 Satz 2: durch Annahme als Kind erloschene Verwandtschaft");
+        then ehe_aufhebbar(ehe, Verwandtschaft_1307);
+    }
+    rule AufhebbarWegenFormmangels(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann aufgehoben werden, wenn sie entgegen § 1311 geschlossen worden ist (§ 1314 Abs. 1 Nr. 2)";
+        label en unofficial "A marriage may be annulled if entered into contrary to § 1311 (§ 1314 (1) no. 2)";
+        when erklaerung_nicht_persoenlich_oder_nicht_bei_gleichzeitiger_anwesenheit(ehe, p);
+        then ehe_aufhebbar(ehe, Formmangel_1311);
+    }
+    rule AufhebbarWegenBewusstlosigkeit(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann ferner aufgehoben werden, wenn ein Ehegatte sich bei der Eheschließung im Zustand der Bewusstlosigkeit oder vorübergehender Störung der Geistestätigkeit befand (§ 1314 Abs. 2 Nr. 1)";
+        label en unofficial "A marriage may also be annulled where a spouse was unconscious or temporarily mentally disturbed (§ 1314 (2) no. 1)";
+        when bewusstlosigkeit_oder_stoerung_bei_der_eheschliessung(ehe, p);
+        then ehe_aufhebbar(ehe, Bewusstlosigkeit_1314_Abs_2_Nr_1);
+    }
+    rule AufhebbarWegenIrrtums(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann ferner aufgehoben werden, wenn ein Ehegatte bei der Eheschließung nicht gewusst hat, dass es sich um eine Eheschließung handelt (§ 1314 Abs. 2 Nr. 2)";
+        label en unofficial "A marriage may also be annulled where a spouse did not know that it was a marriage ceremony (§ 1314 (2) no. 2)";
+        when nicht_gewusst_dass_eheschliessung(ehe, p);
+        then ehe_aufhebbar(ehe, Irrtum_ueber_die_Eheschliessung_1314_Abs_2_Nr_2);
+    }
+    rule AufhebbarWegenArglistigerTaeuschung(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann ferner aufgehoben werden, wenn ein Ehegatte zur Eingehung der Ehe durch arglistige Täuschung bestimmt worden ist; dies gilt nicht, wenn die Täuschung Vermögensverhältnisse betrifft oder von einem Dritten ohne Wissen des anderen Ehegatten verübt worden ist (§ 1314 Abs. 2 Nr. 3)";
+        label en unofficial "A marriage may also be annulled for fraudulent deceit; not so where the deceit concerns financial circumstances or was practised by a third party without the other spouse's knowledge (§ 1314 (2) no. 3)";
+        when arglistige_taeuschung_ueber_wesentliche_umstaende(ehe, p)
+         and not_known(taeuschung_betrifft_vermoegensverhaeltnisse(ehe, p))
+         and not_known(taeuschung_durch_dritten_ohne_wissen_des_anderen(ehe, p));
+        then ehe_aufhebbar(ehe, Arglistige_Taeuschung_1314_Abs_2_Nr_3);
+    }
+    rule AufhebbarWegenDrohung(ehe: Ehe, p: Person) strict {
+        label de official "Eine Ehe kann ferner aufgehoben werden, wenn ein Ehegatte zur Eingehung der Ehe widerrechtlich durch Drohung bestimmt worden ist (§ 1314 Abs. 2 Nr. 4)";
+        label en unofficial "A marriage may also be annulled where a spouse was unlawfully induced to marry by duress (§ 1314 (2) no. 4)";
+        when widerrechtliche_drohung(ehe, p);
+        then ehe_aufhebbar(ehe, Widerrechtliche_Drohung_1314_Abs_2_Nr_4);
+    }
+    rule AufhebbarWegenScheinehe(ehe: Ehe) strict {
+        label de official "Eine Ehe kann ferner aufgehoben werden, wenn beide Ehegatten sich bei der Eheschließung darüber einig waren, dass sie keine Verpflichtung gemäß § 1353 Abs. 1 begründen wollen (§ 1314 Abs. 2 Nr. 5)";
+        label en unofficial "A marriage may also be annulled where both spouses agreed that they did not wish to create any obligation under § 1353 (1) (§ 1314 (2) no. 5)";
+        when einigkeit_keine_verpflichtung_nach_1353(ehe);
+        then ehe_aufhebbar(ehe, Scheinehe_1314_Abs_2_Nr_5);
+    }
+}
+
+@source(BGB_P1315) {
+    rule AusschlussDurchBestaetigungNachVolljaehrigkeit(ehe: Ehe, p: Person) strict {
+        label de official "Eine Aufhebung ist bei Verstoß gegen § 1303 Satz 1 ausgeschlossen, wenn der minderjährige Ehegatte, nachdem er volljährig geworden ist, zu erkennen gegeben hat, dass er die Ehe fortsetzen will (§ 1315 Abs. 1 Nr. 1 Buchstabe a); die Bestätigung eines Geschäftsunfähigen ist unwirksam (Satz 2)";
+        label en unofficial "Annulment for breach of § 1303 sentence 1 is excluded if the minor spouse, having attained majority, indicated that he wishes to continue the marriage ((1) no. 1 (a))";
+        when bestaetigung_erklaert(ehe, p, Minderjaehrigkeit_1303_Satz_1)
+         and not_known(bestaetigender_geschaeftsunfaehig(ehe, p));
+        then aufhebung_ausgeschlossen(ehe, Minderjaehrigkeit_1303_Satz_1);
+    }
+    rule AusschlussDurchSchwereHaerte(ehe: Ehe, p: Person) strict {
+        label de official "Eine Aufhebung ist bei Verstoß gegen § 1303 Satz 1 ferner ausgeschlossen, wenn auf Grund außergewöhnlicher Umstände die Aufhebung eine so schwere Härte für den minderjährigen Ehegatten darstellen würde, dass die Aufrechterhaltung der Ehe ausnahmsweise geboten erscheint (§ 1315 Abs. 1 Nr. 1 Buchstabe b)";
+        label en unofficial "Annulment is also excluded where it would be so severe a hardship for the minor spouse that maintaining the marriage appears exceptionally necessary ((1) no. 1 (b))";
+        when schwere_haerte_der_aufhebung(ehe, p) and minderjaehrig_aber_sechzehn_bei_der_eheschliessung(ehe, p);
+        then aufhebung_ausgeschlossen(ehe, Minderjaehrigkeit_1303_Satz_1);
+    }
+    rule AusschlussNachWegfallDerGeschaeftsunfaehigkeit(ehe: Ehe, p: Person) strict {
+        label de official "Eine Aufhebung ist bei Verstoß gegen § 1304 ausgeschlossen, wenn der Ehegatte nach Wegfall der Geschäftsunfähigkeit zu erkennen gegeben hat, dass er die Ehe fortsetzen will (§ 1315 Abs. 1 Nr. 2)";
+        label en unofficial "Annulment for breach of § 1304 is excluded upon confirmation after the ending of the lack of capacity ((1) no. 2)";
+        when bestaetigung_erklaert(ehe, p, Geschaeftsunfaehigkeit_1304)
+         and not_known(bestaetigender_geschaeftsunfaehig(ehe, p));
+        then aufhebung_ausgeschlossen(ehe, Geschaeftsunfaehigkeit_1304);
+    }
+    rule AusschlussNachWegfallDerBewusstlosigkeit(ehe: Ehe, p: Person) strict {
+        label de official "Eine Aufhebung ist im Falle des § 1314 Abs. 2 Nr. 1 ausgeschlossen, wenn der Ehegatte nach Wegfall der Bewusstlosigkeit oder der Störung zu erkennen gegeben hat, dass er die Ehe fortsetzen will (§ 1315 Abs. 1 Nr. 3)";
+        label en unofficial "Annulment in the case of § 1314 (2) no. 1 is excluded upon confirmation after the ending of the unconsciousness or disturbance ((1) no. 3)";
+        when bestaetigung_erklaert(ehe, p, Bewusstlosigkeit_1314_Abs_2_Nr_1)
+         and not_known(bestaetigender_geschaeftsunfaehig(ehe, p));
+        then aufhebung_ausgeschlossen(ehe, Bewusstlosigkeit_1314_Abs_2_Nr_1);
+    }
+    rule AusschlussNachEntdeckung(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Eine Aufhebung ist in den Fällen des § 1314 Abs. 2 Nr. 2 bis 4 ausgeschlossen, wenn der Ehegatte nach Entdeckung des Irrtums oder der Täuschung oder nach Aufhören der Zwangslage zu erkennen gegeben hat, dass er die Ehe fortsetzen will (§ 1315 Abs. 1 Nr. 4)";
+        label en unofficial "Annulment in the cases of § 1314 (2) nos. 2 to 4 is excluded upon confirmation after discovery or after the ending of the duress ((1) no. 4)";
+        when bestaetigung_erklaert(ehe, p, g) and ehe_aufhebbar(ehe, g)
+         and not_known(bestaetigender_geschaeftsunfaehig(ehe, p));
+        then aufhebung_ausgeschlossen(ehe, g);
+    }
+    rule AusschlussDurchZusammenleben(ehe: Ehe) strict {
+        label de official "Eine Aufhebung ist in den Fällen des § 1314 Abs. 2 Nr. 5 ausgeschlossen, wenn die Ehegatten nach der Eheschließung als Ehegatten miteinander gelebt haben (§ 1315 Abs. 1 Nr. 5)";
+        label en unofficial "Annulment in the cases of § 1314 (2) no. 5 is excluded where the spouses have lived together as spouses after the marriage ((1) no. 5)";
+        when als_ehegatten_miteinander_gelebt(ehe);
+        then aufhebung_ausgeschlossen(ehe, Scheinehe_1314_Abs_2_Nr_5);
+    }
+    rule AusschlussBeiNachtraeglicherRechtskraft(ehe: Ehe) strict {
+        label de official "Eine Aufhebung ist bei Verstoß gegen § 1306 ausgeschlossen, wenn vor der Schließung der neuen Ehe die Scheidung oder Aufhebung der früheren Ehe ausgesprochen ist und dieser Ausspruch nach der Schließung der neuen Ehe rechtskräftig wird (§ 1315 Abs. 2 Nr. 1)";
+        label en unofficial "Annulment for breach of § 1306 is excluded in the case of (2) no. 1";
+        when fruehere_ehe_nach_der_neuen_ehe_rechtskraeftig_aufgeloest(ehe);
+        then aufhebung_ausgeschlossen(ehe, Doppelehe_1306);
+    }
+    rule FormmangelfristEreignis(ehe: Ehe, f: Frist, t: Date) strict {
+        label de official "Die Fünfjahresfrist des § 1315 Abs. 2 Nr. 2 läuft von der Eheschließung an";
+        label en unofficial "The five-year period of § 1315 (2) no. 2 runs from the marriage";
+        when formmangelfrist(ehe, f) and eheschliessung_am(ehe, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule FormmangelfristDauer(ehe: Ehe, f: Frist) strict {
+        label de official "Die Ehegatten müssen nach der Eheschließung FÜNF JAHRE als Ehegatten miteinander gelebt haben (§ 1315 Abs. 2 Nr. 2)";
+        label en unofficial "The spouses must have lived together as spouses for FIVE YEARS after the marriage (§ 1315 (2) no. 2)";
+        when formmangelfrist(ehe, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 5 calendar_year);
+    }
+    rule AusschlussBeiFormmangelNachFuenfJahren(ehe: Ehe, f: Frist, e: Date, gelebt: Date) strict {
+        label de official "Eine Aufhebung ist bei Verstoß gegen § 1311 ausgeschlossen, wenn die Ehegatten nach der Eheschließung fünf Jahre als Ehegatten miteinander gelebt haben, es sei denn, dass bei Ablauf der fünf Jahre die Aufhebung beantragt ist (§ 1315 Abs. 2 Nr. 2)";
+        label en unofficial "Annulment for breach of § 1311 is excluded where the spouses have lived together as spouses for five years, unless annulment was applied for by then ((2) no. 2)";
+        when formmangelfrist(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and als_ehegatten_miteinander_gelebt_bis(ehe, gelebt) and gelebt > e
+         and not_known(aufhebung_bei_fristablauf_bereits_beantragt(ehe));
+        then aufhebung_ausgeschlossen(ehe, Formmangel_1311);
+    }
+}
+
+@source(BGB_P1316) {
+    rule AntragsberechtigungJederEhegatte(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Antragsberechtigt sind bei Verstoß gegen § 1303 Satz 1, die §§ 1304, 1306, 1307, 1311 sowie in den Fällen des § 1314 Abs. 2 Nr. 1 und 5 jeder Ehegatte (§ 1316 Abs. 1 Nr. 1 Satz 1)";
+        label en unofficial "Each spouse is entitled to apply in the cases of § 1316 (1) no. 1 sentence 1";
+        when ehegatte(ehe, p) and ehe_aufhebbar(ehe, g)
+         and g != Irrtum_ueber_die_Eheschliessung_1314_Abs_2_Nr_2
+         and g != Arglistige_Taeuschung_1314_Abs_2_Nr_3
+         and g != Widerrechtliche_Drohung_1314_Abs_2_Nr_4;
+        then antragsberechtigt(ehe, p, g);
+    }
+    rule AntragsberechtigungDesBetroffenenEhegatten(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "In den Fällen des § 1314 Abs. 2 Nr. 2 bis 4 ist der dort genannte Ehegatte antragsberechtigt (§ 1316 Abs. 1 Nr. 2)";
+        label en unofficial "In the cases of § 1314 (2) nos. 2 to 4 the spouse there named is entitled to apply ((1) no. 2)";
+        when ehegatte(ehe, p) and ehe_aufhebbar(ehe, g) and bestaetigungsberechtigter_ehegatte(ehe, p, g);
+        then antragsberechtigt(ehe, p, g);
+    }
+    rule AntragDurchGesetzlichenVertreter(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Der Antrag kann für einen geschäftsunfähigen Ehegatten nur von seinem gesetzlichen Vertreter gestellt werden (§ 1316 Abs. 2 Satz 1)";
+        label en unofficial "For a spouse lacking capacity the application may be made only by his legal representative ((2) sentence 1)";
+        when antrag_durch_gesetzlichen_vertreter(ehe, p) and ehe_aufhebbar(ehe, g);
+        then antragsberechtigt(ehe, p, g);
+    }
+    rule BehoerdeSollAntragStellen(ehe: Ehe, g: Aufhebungsgrund) strict {
+        label de official "Bei Verstoß gegen die §§ 1304, 1306, 1307 sowie in den Fällen des § 1314 Abs. 2 Nr. 1 und 5 SOLL die zuständige Verwaltungsbehörde den Antrag stellen, wenn nicht die Aufhebung eine so schwere Härte darstellen würde (§ 1316 Abs. 3 Satz 1)";
+        label en unofficial "The competent authority SHOULD apply in the cases of § 1316 (3) sentence 1 unless annulment would be so severe a hardship";
+        when zustaendige_verwaltungsbehoerde_stellt_antrag(ehe) and ehe_aufhebbar(ehe, g);
+        then antrag_der_verwaltungsbehoerde_geboten(ehe, g);
+    }
+}
+
+@source(BGB_P1317) {
+    rule AntragsfristEreignis(ehe: Ehe, p: Person, g: Aufhebungsgrund, f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit der Entdeckung des Irrtums oder der Täuschung oder mit dem Aufhören der Zwangslage (§ 1317 Abs. 1 Satz 2)";
+        label en unofficial "The period begins with the discovery of the mistake or deceit or with the ending of the duress ((1) sentence 2)";
+        when antragsfrist_1317(ehe, p, g, f) and entdeckung_oder_aufhoeren_am(ehe, p, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule AntragsfristEinJahr(ehe: Ehe, p: Person, g: Aufhebungsgrund, f: Frist) strict {
+        label de official "Der Antrag kann in den Fällen des § 1314 Abs. 2 Nr. 2 und 3 nur binnen EINES JAHRES gestellt werden (§ 1317 Abs. 1 Satz 1)";
+        label en unofficial "In the cases of § 1314 (2) nos. 2 and 3 the application may be made only within ONE YEAR ((1) sentence 1)";
+        when antragsfrist_1317(ehe, p, g, f)
+         and (g == Irrtum_ueber_die_Eheschliessung_1314_Abs_2_Nr_2
+              or g == Arglistige_Taeuschung_1314_Abs_2_Nr_3);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule AntragsfristDreiJahre(ehe: Ehe, p: Person, g: Aufhebungsgrund, f: Frist) strict {
+        label de official "Im Falle des § 1314 Abs. 2 Nr. 4 kann der Antrag nur binnen DREI JAHREN gestellt werden (§ 1317 Abs. 1 Satz 1)";
+        label en unofficial "In the case of § 1314 (2) no. 4 the application may be made only within THREE YEARS ((1) sentence 1)";
+        when antragsfrist_1317(ehe, p, g, f) and g == Widerrechtliche_Drohung_1314_Abs_2_Nr_4;
+        then de.bgb.fristen::frist_dauer_kalender(f, 3 calendar_year);
+    }
+    rule LetzterTagDerAntragsfrist(ehe: Ehe, p: Person, g: Aufhebungsgrund, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Antragsfrist des § 1317 Abs. 1: der Antrag ist innerhalb der Frist zu stellen, daher gilt die Verlegung des § 193";
+        label en unofficial "Last day of the application period of § 1317 (1): the application is to be made within the period, so § 193 applies";
+        when antragsfrist_1317(ehe, p, g, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_antragsfrist(ehe, p, g, e);
+    }
+    rule AntragVerfristet(ehe: Ehe, p: Person, g: Aufhebungsgrund, e: Date, gestellt: Date) strict {
+        label de official "Nach Ablauf der Frist des § 1317 Abs. 1 kann der Antrag nicht mehr gestellt werden";
+        label en unofficial "After the expiry of the period of § 1317 (1) the application can no longer be made";
+        when letzter_tag_der_antragsfrist(ehe, p, g, e) and aufhebungsantrag_gestellt_am(ehe, p, gestellt)
+         and gestellt > e;
+        then antrag_verfristet(ehe, p, g);
+    }
+    rule NachfristEreignis(ehe: Ehe, p: Person, f: Frist, t: Date) strict {
+        label de official "Hat der gesetzliche Vertreter den Antrag nicht rechtzeitig gestellt, so beginnt die Frist des Ehegatten mit dem Wegfall der Geschäftsunfähigkeit (§ 1317 Abs. 2)";
+        label en unofficial "If the legal representative did not apply in time, the spouse's period begins with the ending of the lack of capacity ((2))";
+        when nachfrist_1317_abs_2(ehe, p, f) and vertreterfrist_versaeumt(ehe, p)
+         and wegfall_der_geschaeftsunfaehigkeit_am(ehe, p, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule NachfristDauer(ehe: Ehe, p: Person, f: Frist) strict {
+        label de official "Der Ehegatte kann selbst innerhalb von SECHS MONATEN nach dem Wegfall der Geschäftsunfähigkeit den Antrag stellen (§ 1317 Abs. 2)";
+        label en unofficial "The spouse may himself apply within SIX MONTHS of the ending of the lack of capacity ((2))";
+        when nachfrist_1317_abs_2(ehe, p, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+    rule LetzterTagDerNachfrist(ehe: Ehe, p: Person, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Sechsmonatsfrist des § 1317 Abs. 2 (§ 193: der Antrag ist innerhalb der Frist zu stellen)";
+        label en unofficial "Last day of the six-month period of § 1317 (2) (§ 193 applies)";
+        when nachfrist_1317_abs_2(ehe, p, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_nachfrist(ehe, p, e);
+    }
+    rule KeinAntragNachAufloesung(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Ist die Ehe bereits aufgelöst, so kann der Antrag nicht mehr gestellt werden (§ 1317 Abs. 3)";
+        label en unofficial "If the marriage has already been dissolved, the application can no longer be made ((3))";
+        when ehe_bereits_aufgeloest(ehe) and ehe_aufhebbar(ehe, g) and ehegatte(ehe, p);
+        then antrag_verfristet(ehe, p, g);
+    }
+}
+
+@source(BGB_P1318) {
+    rule ScheidungsfolgenZugunstenDesUnkundigen(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Die §§ 1569 bis 1586b finden entsprechende Anwendung zugunsten eines Ehegatten, der die Aufhebbarkeit der Ehe bei der Eheschließung nicht gekannt hat (§ 1318 Abs. 2 Satz 1 Nr. 1 Alt. 1)";
+        label en unofficial "§§ 1569 to 1586b apply mutatis mutandis in favour of a spouse who did not know of the annullability ((2) sentence 1 no. 1)";
+        when ehe_aufhebbar(ehe, g) and aufhebbarkeit_bei_der_eheschliessung_nicht_gekannt(ehe, p);
+        then scheidungsfolgen_anwendbar(ehe, p, "§§ 1569 bis 1586b");
+    }
+    rule ScheidungsfolgenZugunstenDesGetaeuschten(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Die §§ 1569 bis 1586b finden entsprechende Anwendung zugunsten eines Ehegatten, der in den Fällen des § 1314 Abs. 2 Nr. 3 oder 4 von dem anderen Ehegatten oder mit dessen Wissen getäuscht oder bedroht worden ist (§ 1318 Abs. 2 Satz 1 Nr. 1 Alt. 2)";
+        label en unofficial "§§ 1569 to 1586b apply in favour of a spouse deceived or threatened by the other spouse or with his knowledge ((2) sentence 1 no. 1)";
+        when ehe_aufhebbar(ehe, g) and vom_anderen_ehegatten_getaeuscht_oder_bedroht(ehe, p);
+        then scheidungsfolgen_anwendbar(ehe, p, "§§ 1569 bis 1586b");
+    }
+    rule UnterhaltWegenDesKindes(ehe: Ehe, p: Person) strict {
+        label de official "Die Vorschriften über den Unterhalt wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes finden auch insoweit entsprechende Anwendung, als eine Versagung des Unterhalts im Hinblick auf die Belange des Kindes grob unbillig wäre (§ 1318 Abs. 2 Satz 2)";
+        label en unofficial "The provisions on maintenance for the care of a common child also apply where a refusal would be grossly inequitable for the child ((2) sentence 2)";
+        when versagung_des_unterhalts_grob_unbillig_wegen_des_kindes(ehe, p);
+        then scheidungsfolgen_anwendbar(ehe, p, "§ 1570 (Unterhalt wegen Betreuung eines Kindes)");
+    }
+    rule GueterrechtsfolgenDerAufhebung(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Die §§ 1363 bis 1390 und 1587 finden entsprechende Anwendung, soweit dies nicht im Hinblick auf die Umstände bei der Eheschließung oder auf die Belange der dritten Person grob unbillig wäre (§ 1318 Abs. 3)";
+        label en unofficial "§§ 1363 to 1390 and 1587 apply unless grossly inequitable in view of the circumstances ((3))";
+        when ehe_aufhebbar(ehe, g) and ehegatte(ehe, p)
+         and not_known(gueterrechtsfolge_grob_unbillig(ehe, p));
+        then scheidungsfolgen_anwendbar(ehe, p, "§§ 1363 bis 1390 und 1587");
+    }
+    rule WohnungsfolgenDerAufhebung(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "Die §§ 1568a und 1568b finden entsprechende Anwendung; dabei sind die Umstände bei der Eheschließung besonders zu berücksichtigen (§ 1318 Abs. 4)";
+        label en unofficial "§§ 1568a and 1568b apply mutatis mutandis, the circumstances of the marriage being particularly taken into account ((4))";
+        when ehe_aufhebbar(ehe, g) and ehegatte(ehe, p);
+        then scheidungsfolgen_anwendbar(ehe, p, "§§ 1568a und 1568b");
+    }
+    rule ErbrechtDesKundigenAusgeschlossen(ehe: Ehe, p: Person, g: Aufhebungsgrund) strict {
+        label de official "§ 1931 findet zugunsten eines Ehegatten, der bei Verstoß gegen die §§ 1304, 1306, 1307 oder § 1311 oder im Falle des § 1314 Abs. 2 Nr. 1 die Aufhebbarkeit der Ehe bei der Eheschließung gekannt hat, keine Anwendung (§ 1318 Abs. 5)";
+        label en unofficial "§ 1931 does not apply in favour of a spouse who knew of the annullability in the cases named ((5))";
+        when ehe_aufhebbar(ehe, g) and aufhebbarkeit_bei_der_eheschliessung_gekannt(ehe, p)
+         and g != Minderjaehrigkeit_1303_Satz_1
+         and g != Irrtum_ueber_die_Eheschliessung_1314_Abs_2_Nr_2
+         and g != Arglistige_Taeuschung_1314_Abs_2_Nr_3
+         and g != Widerrechtliche_Drohung_1314_Abs_2_Nr_4
+         and g != Scheinehe_1314_Abs_2_Nr_5;
+        then erbrecht_des_ehegatten_ausgeschlossen(ehe, p);
+    }
+}
+
+@source(BGB_P1319) {
+    rule NeueEheNurBeiKenntnisBeiderAufhebbar(ehe: Ehe, tot: Person) strict {
+        label de official "Geht ein Ehegatte, nachdem der andere für tot erklärt worden ist, eine neue Ehe ein, so kann die neue Ehe wegen Verstoßes gegen § 1306 nur dann aufgehoben werden, wenn beide Ehegatten bei der Eheschließung wussten, dass der für tot Erklärte noch lebte (§ 1319 Abs. 1)";
+        label en unofficial "The new marriage may be annulled for breach of § 1306 only if both spouses knew that the person declared dead was alive ((1))";
+        when fuer_tot_erklaerter_ehegatte_lebt(ehe, tot) and beide_wussten_vom_leben_des_fuer_tot_erklaerten(ehe);
+        then ehe_aufhebbar(ehe, Doppelehe_1306);
+    }
+    rule FruehereEheMitDerNeuenAufgeloest(ehe: Ehe, tot: Person) strict {
+        label de official "Mit der Schließung der neuen Ehe wird die frühere Ehe aufgelöst, es sei denn, dass beide Ehegatten der neuen Ehe wussten, dass der für tot Erklärte noch lebte; sie bleibt auch dann aufgelöst, wenn die Todeserklärung aufgehoben wird (§ 1319 Abs. 2)";
+        label en unofficial "With the new marriage the earlier marriage is dissolved unless both spouses knew; it remains dissolved even if the declaration of death is set aside ((2))";
+        when fuer_tot_erklaerter_ehegatte_lebt(ehe, tot)
+         and not_known(beide_wussten_vom_leben_des_fuer_tot_erklaerten(ehe));
+        then fruehere_ehe_mit_der_neuen_ehe_aufgeloest(ehe);
+    }
+}
+
+@source(BGB_P1320) {
+    rule AufhebungDurchDenFrueherenEhegatten(ehe: Ehe, tot: Person, frueherer: Person, t: Date) strict {
+        label de official "Lebt der für tot erklärte Ehegatte noch, so kann unbeschadet des § 1319 sein früherer Ehegatte die Aufhebung der neuen Ehe begehren, es sei denn, dass er bei der Eheschließung wusste, dass der für tot Erklärte noch lebte (§ 1320 Abs. 1 Satz 1)";
+        label en unofficial "If the person declared dead is alive, his former spouse may seek annulment of the new marriage unless he knew ((1) sentence 1)";
+        when fuer_tot_erklaerter_ehegatte_lebt(ehe, tot)
+         and not_known(frueherer_ehegatte_wusste_vom_leben(ehe, frueherer))
+         and kenntnis_vom_leben_erlangt_am(ehe, frueherer, t);
+        then aufhebung_der_neuen_ehe_begehrbar(ehe, frueherer);
+    }
+    rule Frist1320Ereignis(ehe: Ehe, frueherer: Person, f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit dem Zeitpunkt, in dem der Ehegatte aus der früheren Ehe Kenntnis davon erlangt hat, dass der für tot erklärte Ehegatte noch lebt (§ 1320 Abs. 1 Satz 3)";
+        label en unofficial "The period begins when the spouse of the earlier marriage learns that the person declared dead is alive ((1) sentence 3)";
+        when frist_1320(ehe, frueherer, f) and kenntnis_vom_leben_erlangt_am(ehe, frueherer, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Frist1320Dauer(ehe: Ehe, frueherer: Person, f: Frist) strict {
+        label de official "Die Aufhebung kann nur binnen EINES JAHRES begehrt werden (§ 1320 Abs. 1 Satz 2)";
+        label en unofficial "Annulment may be sought only within ONE YEAR ((1) sentence 2)";
+        when frist_1320(ehe, frueherer, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule Frist1320Ende(ehe: Ehe, frueherer: Person, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Jahresfrist des § 1320 Abs. 1 Satz 2 (§ 193: die Aufhebung ist innerhalb der Frist zu begehren)";
+        label en unofficial "Last day of the one-year period of § 1320 (1) sentence 2 (§ 193 applies)";
+        when frist_1320(ehe, frueherer, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_antragsfrist(ehe, frueherer, Doppelehe_1306, e);
+    }
+}

@@ -1,0 +1,30 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2325 Abs. 2: a fall from 100,000 € to 60,000 € uses 60,000 €.  Abs. 3
+// sentence 3: the 2024 gift to the spouse does not start its period before
+// the dissolution on 1 March 2025.
+test "§ 2325 Abs. 2 und Abs. 3 Satz 3: Niederstwert und späterer Ehebeginn" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+        assert "f1": wert_zur_zeit_der_leistung(entity_ref("urn:de:bgb:pilot:v05:SCH"), 100000.00 EUR) { origin case_input; }
+        assert "f2": wert_zur_zeit_des_erbfalls(entity_ref("urn:de:bgb:pilot:v05:SCH"), 60000.00 EUR) { origin case_input; }
+        assert "f2a": schenkung_nicht_verbrauchbare_sache(entity_ref("urn:de:bgb:pilot:v05:SCH")) { origin case_input; }
+        assert "f3": schenkung_an_ehegatten(entity_ref("urn:de:bgb:pilot:v05:SCH"), entity_ref("urn:de:bgb:pilot:v05:EHE")) { origin case_input; }
+        assert "f4": geleistet_am(entity_ref("urn:de:bgb:pilot:v05:SCH"), @2024-03-01) { origin case_input; }
+        assert "f5": ehe_aufgeloest_am(entity_ref("urn:de:bgb:pilot:v05:EHE"), @2025-03-01) { origin case_input; }
+        assert "f6": schenkung_verbrauchbare_sache(entity_ref("urn:de:bgb:pilot:v05:VERB")) { origin case_input; }
+        assert "f7": wert_zur_zeit_der_leistung(entity_ref("urn:de:bgb:pilot:v05:VERB"), 100.00 EUR) { origin case_input; }
+        assert "f8": wert_zur_zeit_des_erbfalls(entity_ref("urn:de:bgb:pilot:v05:VERB"), 20.00 EUR) { origin case_input; }
+    }
+    evaluate truth(wert_nach_niederstwertprinzip(entity_ref("urn:de:bgb:pilot:v05:SCH"), 60000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(abschmelzungsbeginn(entity_ref("urn:de:bgb:pilot:v05:SCH"), @2025-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(wert_nach_niederstwertprinzip(entity_ref("urn:de:bgb:pilot:v05:VERB"), 100.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,29 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 846 i. V. m. § 254: der Unterhaltsanspruch des Dritten beträgt 9.000,00 €; das Gericht hat den Anteil des mitwirkenden Verschuldens des Getöteten mit 1/3 bestimmt. Geschuldet bleiben 9.000,00 × 2/3 = 6.000,00 € — einmal auf den Cent gerundet.
+test "§ 846: das Mitverschulden des Verletzten mindert den Anspruch des Dritten um die Quote" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": verletzung_leben(entity_ref("urn:de:bgb:bd:d04")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:d04")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:d04")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:V")) { origin case_input; }
+        assert "f6": toetung(entity_ref("urn:de:bgb:bd:d04")) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:d04")) { origin adjudicated; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:d04")) { origin adjudicated; }
+        assert "f7": gesetzlich_unterhaltsberechtigter_dritter(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:D")) { origin case_input; }
+        assert "f8": entzogener_unterhalt(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:D"), 9000.00 EUR) { origin case_input; }
+        assert "f9": verschulden_des_verletzten_mitgewirkt(entity_ref("urn:de:bgb:bd:d04")) { origin case_input; }
+        assert "j3": mitverschuldensquote(entity_ref("urn:de:bgb:bd:d04"), 1, 3) { origin adjudicated; }
+    }
+    evaluate truth(ersatzanspruch_dritter(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:D"), 9000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(geminderter_ersatzanspruch_dritter(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:D"), 6000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect applied(Mitverschulden846);
+    evaluate truth(geminderter_ersatzanspruch_dritter(entity_ref("urn:de:bgb:bd:d04"), entity_ref("urn:de:bgb:bd:d04:D"), 9000.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,40 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// Querschnitt § 823 Abs. 1 → § 254 → § 249 → §§ 195, 199 Abs. 1: S verletzt V am 10. Mai 2023 fahrlässig am Körper (kein Rechtfertigungsgrund, Kausalität festgestellt). Schaden 10.000,00 €, kein entgangener Gewinn geltend gemacht. Das Gericht stellt Mitverschulden des V mit 1/4 fest: Ersatz mindert sich um 1/4 auf 10.000,00 × 3/4 = 7.500,00 €. V erlangt am Tag der Verletzung Kenntnis; die regelmäßige Verjährung beginnt mit Schluss 2023 und endet mit Ablauf des 31.12.2026 (§§ 195, 199 Abs. 1, § 188 Abs. 2) — noch nicht eingetreten.
+test "Querschnitt: § 823 Abs. 1 mit Mitverschulden nach § 254 ergibt 7.500,00 € und ist noch nicht verjährt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:q01")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:q01")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:q01")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:q01"), entity_ref("urn:de:bgb:bd:q01:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:q01"), entity_ref("urn:de:bgb:bd:q01:V")) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:q01")) { origin adjudicated; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:q01")) { origin adjudicated; }
+        assert "f6": schaden_fuer_249(entity_ref("urn:de:bgb:bd:q01"), entity_ref("urn:de:bgb:bd:q01:Sch")) { origin case_input; }
+        assert "f7": de.bgb.schuldrecht_at::zum_schadensersatz_verpflichtet(entity_ref("urn:de:bgb:bd:q01:Sch"), entity_ref("urn:de:bgb:bd:q01:S")) { origin case_input; }
+        assert "f8": de.bgb.schuldrecht_at::geschaedigter(entity_ref("urn:de:bgb:bd:q01:Sch"), entity_ref("urn:de:bgb:bd:q01:V")) { origin case_input; }
+        assert "f9": de.bgb.schuldrecht_at::schadensbetrag(entity_ref("urn:de:bgb:bd:q01:Sch"), 10000.00 EUR) { origin case_input; }
+        assert "f10": de.bgb.schuldrecht_at::kein_entgangener_gewinn_geltend_gemacht(entity_ref("urn:de:bgb:bd:q01:Sch")) { origin case_input; }
+        assert "j3": de.bgb.schuldrecht_at::mitverschulden_anteil(entity_ref("urn:de:bgb:bd:q01:Sch"), entity_ref("urn:de:bgb:bd:q01:V"), 1, 4) { origin adjudicated; }
+        assert "f11": schadensersatzanspruch(entity_ref("urn:de:bgb:bd:q01"), entity_ref("urn:de:bgb:bd:q01:A")) { origin case_input; }
+        assert "f12": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:bd:q01:A"), @2023-05-10) { origin case_input; }
+        assert "j4": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:bd:q01:A"), @2023-05-10) { origin adjudicated; }
+        assert "f13": de.bgb.fristen::keine_hemmung(entity_ref("urn:de:bgb:bd:q01:A")) { origin case_input; }
+    }
+    evaluate truth(haftungsgrund_823_abs1(entity_ref("urn:de:bgb:bd:q01")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(schadensersatzpflicht(entity_ref("urn:de:bgb:bd:q01"), entity_ref("urn:de:bgb:bd:q01:S"), entity_ref("urn:de:bgb:bd:q01:V")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(de.bgb.schuldrecht_at::ersatzbetrag_nach_mitverschulden(entity_ref("urn:de:bgb:bd:q01:Sch"), 7500.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(deliktischer_schadensersatz(entity_ref("urn:de:bgb:bd:q01"), 7500.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect applied(DeliktischerSchadensersatzDerHoeheNach);
+    evaluate truth(deliktischer_schadensersatz(entity_ref("urn:de:bgb:bd:q01"), 10000.00 EUR));
+    expect truth_status == NEITHER;
+    evaluate truth(de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(entity_ref("urn:de:bgb:bd:q01:A"), @2026-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

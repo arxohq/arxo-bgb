@@ -1,0 +1,57 @@
+@source(BGB_P321)
+rule PositionUnsicherheitseinrede321(v: Vertrag, teil: Person, beginn: Date) defeasible {
+    label de official "Der Vorleistungspflichtige darf seine Leistung bei gefährdeter Gegenleistung verweigern (§ 321)";
+    label en unofficial "The party performing first may refuse performance where the counter-performance is jeopardised (§ 321)";
+    when gegenseitiger_vertrag(v);
+    when vorleistungspflichtig(v, teil);
+    when unsicherheitseinrede(v, teil);
+    when vertrag_geschlossen_am(v, beginn);
+    then liberty Unsicherheitseinrede321 {
+        holder teil;
+        against v;
+        action unsicherheitseinrede(v, teil);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P324)
+rule PositionRuecktritt324(v: Vertrag, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Gläubiger darf wegen unzumutbarer Pflichtverletzung zurücktreten (§ 324)";
+    label en unofficial "The creditor may withdraw for an intolerable breach of duty (§ 324)";
+    when ruecktrittsrecht(v, glaeubiger);
+    when festhalten_am_vertrag_nicht_mehr_zumutbar(v, glaeubiger);
+    when vertrag_geschlossen_am(v, beginn);
+    then liberty Ruecktritt324 {
+        holder glaeubiger;
+        against v;
+        action ruecktritt_erklaert(v, glaeubiger, beginn);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P326)
+rule PositionGegenleistungEntfall326(v: Vertrag, l: Leistung, beginn: Date) defeasible {
+    label de official "Der Anspruch auf die Gegenleistung entfällt bei Ausschluss der Leistungspflicht (§ 326)";
+    label en unofficial "The claim to counter-performance lapses when the duty to perform is excluded (§ 326)";
+    when anspruch_auf_die_gegenleistung_entfaellt(v, l);
+    when vertrag_geschlossen_am(v, beginn);
+    then duty GegenleistungEntfall326 {
+        bearer v;
+        beneficiary v;
+        achieve anspruch_auf_die_gegenleistung_entfaellt(v, l) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P391)
+rule PositionAufrechnungLeistungsorte391(a: Anspruch, gegenforderung: Anspruch) defeasible {
+    label de official "Die Aufrechnung bleibt trotz verschiedener Leistungsorte zulässig (§ 391)";
+    label en unofficial "Set-off remains permissible despite different places of performance (§ 391)";
+    when aufrechnung_nicht_wegen_der_leistungsorte_ausgeschlossen(a, gegenforderung);
+    then power AufrechnungLeistungsorte391 {
+        holder a;
+        exercise aufrechnung_erklaert(a, gegenforderung);
+        valid_when aufrechnung_nicht_wegen_der_leistungsorte_ausgeschlossen(a, gegenforderung);
+        effect aufrechnung_erklaert(a, gegenforderung);
+        window [2026-01-01, infinity);
+    };
+}

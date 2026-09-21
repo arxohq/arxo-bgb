@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 978 Abs. 2 Satz 3: der Anspruch ist ausgeschlossen, wenn der Finder Bediensteter der Behörde oder der Verkehrsanstalt ist.
+test "§ 978 Abs. 2 Satz 3: Bediensteter der Verkehrsanstalt erhält keinen Finderlohn" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": fundsache(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:mantel")) { origin case_input; }
+        assert "f2": finder(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:F")) { origin case_input; }
+        assert "f3": empfangsberechtigter(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:B")) { origin case_input; }
+        assert "f4": wert_der_fundsache(entity_ref("urn:de:bgb:be:f:fund"), 1000.00 EUR) { origin case_input; }
+        assert "f5": fundsache_ist_kein_tier(entity_ref("urn:de:bgb:be:f:fund")) { origin case_input; }
+        assert "f6": fund_in_behoerde_oder_verkehrsanstalt(entity_ref("urn:de:bgb:be:f:fund")) { origin case_input; }
+        assert "f7": finder_ist_bediensteter(entity_ref("urn:de:bgb:be:f:fund")) { origin case_input; }
+    }
+    evaluate truth(finderlohn_bei_behoerdenfund_ausgeschlossen(entity_ref("urn:de:bgb:be:f:fund")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finderlohnanspruch(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:F"), 20.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

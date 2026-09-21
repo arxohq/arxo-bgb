@@ -1,0 +1,618 @@
+// TITEL 17 — GEMEINSCHAFT (§§ 741–758)
+//
+// Teil des Pakets BG-08 (`package.law`). Achtzehn Paragraphen, nach Absätzen
+// bearbeitet.
+//
+// BRÜCHE, NICHT PROZENTE (D-08-01). § 742 vermutet gleiche Anteile, § 743
+// Absatz 1 gibt jedem Teilhaber einen SEINEM ANTEIL ENTSPRECHENDEN Bruchteil
+// der Früchte, § 745 Absatz 1 Satz 2 berechnet die Stimmenmehrheit NACH DER
+// GRÖSSE DER ANTEILE, § 748 verteilt Lasten und Kosten nach demselben
+// Verhältnis. Der Anteil ist daher ein Paar ganzer Zahlen; in Geld umgerechnet
+// wird EINMAL, mit `div_round(Wert × z, n × 1.0, 2, "HALF_UP")`.
+//
+// DIE MEHRHEIT NACH ANTEILEN (§ 745 Absatz 1 Satz 2) wird ohne Bruchrechnung
+// entschieden: die Summe der Zustimmungsanteile wird mit der Gesamtsumme
+// verglichen, beide auf den gemeinsamen Nenner gebracht — `zaehler_summe` und
+// `nenner_gemeinsam` sind eigene Schlüsse, der Guard vergleicht Variablen.
+
+language "law.core" version "0.2";
+package de.bgb.sonstige_vertraege version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-sonstige-vertraege";
+
+pub entity Gemeinschaft {
+    label de official "Gemeinschaft nach Bruchteilen (§ 741)";
+    label en unofficial "co-ownership by defined shares (§ 741)";
+}
+
+// § 741: Gemeinschaft nach Bruchteilen. § 742: Vermutung gleicher Anteile.
+// § 743: Früchteanteil und Gebrauchsbefugnis.
+
+pub relation recht_steht_mehreren_gemeinschaftlich_zu(gm: Gemeinschaft) kind empirical {
+    label de official "Ein Recht steht mehreren gemeinschaftlich zu (§ 741)";
+    label en unofficial "a right is held jointly by several persons (§ 741)";
+}
+pub relation aus_dem_gesetz_ergibt_sich_anderes(gm: Gemeinschaft) kind empirical {
+    label de official "Aus dem Gesetz ergibt sich etwas anderes als die Anwendung der §§ 742–758 (§ 741 Halbsatz 1)";
+    label en unofficial "the statute provides otherwise than for the application of §§ 742–758 (§ 741 first half-sentence)";
+}
+pub relation teilhaber(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Teilhaber der Gemeinschaft (§ 741)";
+    label en unofficial "co-owner in the community (§ 741)";
+}
+pub relation gemeinschaft_nach_bruchteilen(gm: Gemeinschaft) kind institutional {
+    label de official "Auf das gemeinschaftliche Recht finden die Vorschriften der §§ 742 bis 758 Anwendung — Gemeinschaft nach Bruchteilen (§ 741)";
+    label en unofficial "§§ 742 to 758 apply to the joint right — co-ownership by defined shares (§ 741)";
+}
+pub relation anteil_abweichend_vereinbart(gm: Gemeinschaft, p: Person, zaehler: Integer, nenner: Integer) kind empirical {
+    key(gm, p);
+    label de official "Von der Vermutung gleicher Anteile abweichend bestimmter Anteil des Teilhabers als Bruch (§ 742)";
+    label en unofficial "the co-owner's share, determined otherwise than by the presumption of equal shares, as a fraction (§ 742)";
+}
+pub relation abweichende_anteile_bestimmt(gm: Gemeinschaft) kind institutional {
+    label de official "Für die Gemeinschaft sind von § 742 abweichende Anteile bestimmt";
+    label en unofficial "shares differing from § 742 have been determined for the community";
+}
+pub relation zahl_der_teilhaber(gm: Gemeinschaft, k: Integer) kind derived {
+    key(gm);
+    label de official "Zahl der Teilhaber — Nenner der Vermutung gleicher Anteile (§ 742)";
+    label en unofficial "number of co-owners — denominator of the presumption of equal shares (§ 742)";
+}
+pub relation teilhaberanteil_bruch(gm: Gemeinschaft, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(gm, p);
+    label de official "Anteil des Teilhabers als Bruch aus Zähler und Nenner (§ 742)";
+    label en unofficial "the co-owner's share as a fraction of numerator and denominator (§ 742)";
+}
+pub relation teilhaberanteil(gm: Gemeinschaft, p: Person, x: Rational) kind derived {
+    key(gm, p);
+    label de official "Anteil des Teilhabers als exakter Bruch (§ 742)";
+    label en unofficial "the co-owner's share as an exact fraction (§ 742)";
+}
+
+@source(BGB_P741)
+rule GemeinschaftNachBruchteilen(gm: Gemeinschaft) strict {
+    label de official "Steht ein Recht mehreren gemeinschaftlich zu, so finden, sofern sich nicht aus dem Gesetz ein anderes ergibt, die Vorschriften der §§ 742 bis 758 Anwendung (§ 741)";
+    label en unofficial "where a right is held jointly by several persons, §§ 742 to 758 apply unless the statute provides otherwise (§ 741)";
+    when recht_steht_mehreren_gemeinschaftlich_zu(gm) and not_known(aus_dem_gesetz_ergibt_sich_anderes(gm));
+    then gemeinschaft_nach_bruchteilen(gm);
+}
+@source(BGB_P742) {
+    rule AbweichendeAnteileBestimmt(gm: Gemeinschaft, p: Person, z: Integer, n: Integer) strict {
+        label de official "Für die Gemeinschaft sind abweichende Anteile bestimmt, wenn für mindestens einen Teilhaber ein abweichender Anteil bestimmt ist (§ 742)";
+        label en unofficial "shares differing from the presumption are determined where such a share is determined for at least one co-owner (§ 742)";
+        when anteil_abweichend_vereinbart(gm, p, z, n);
+        then abweichende_anteile_bestimmt(gm);
+    }
+    rule ZahlDerTeilhaber(gm: Gemeinschaft, p: Person) strict {
+        label de official "Nenner der Vermutung gleicher Anteile: die Zahl der Teilhaber (§ 742)";
+        label en unofficial "denominator of the presumption of equal shares: the number of co-owners (§ 742)";
+        when teilhaber(gm, p);
+        then zahl_der_teilhaber(gm, (count distinct q: Person where teilhaber(gm, q)));
+    }
+    rule GleicheAnteileImZweifel(gm: Gemeinschaft, p: Person, k: Integer) strict {
+        label de official "Im Zweifel ist anzunehmen, dass den Teilhabern gleiche Anteile zustehen (§ 742)";
+        label en unofficial "in case of doubt it is presumed that the co-owners have equal shares (§ 742)";
+        when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p)
+            and not_known(abweichende_anteile_bestimmt(gm)) and zahl_der_teilhaber(gm, k);
+        then teilhaberanteil_bruch(gm, p, 1, k);
+    }
+    rule AbweichenderAnteil(gm: Gemeinschaft, p: Person, z: Integer, n: Integer) strict {
+        label de official "Ist ein abweichender Anteil bestimmt, so gilt dieser (§ 742)";
+        label en unofficial "where a differing share is determined, that share applies (§ 742)";
+        when gemeinschaft_nach_bruchteilen(gm) and anteil_abweichend_vereinbart(gm, p, z, n);
+        then teilhaberanteil_bruch(gm, p, z, n);
+    }
+    rule TeilhaberanteilAlsBruch(gm: Gemeinschaft, p: Person, z: Integer, n: Integer) strict {
+        label de official "Der Anteil als exakter Bruch: Zähler durch Nenner (§ 742)";
+        label en unofficial "the share as an exact fraction: numerator over denominator (§ 742)";
+        when teilhaberanteil_bruch(gm, p, z, n);
+        then teilhaberanteil(gm, p, z / n);
+    }
+}
+
+// § 743: Früchteanteil (Absatz 1) und Gebrauchsbefugnis (Absatz 2).
+
+pub relation fruechte_des_gegenstands(gm: Gemeinschaft, wert: Money) kind empirical {
+    key(gm);
+    label de official "Wert der Früchte des gemeinschaftlichen Gegenstands (§ 743 Absatz 1)";
+    label en unofficial "value of the fruits of the jointly held object (§ 743 (1))";
+}
+pub relation fruechteanteil(gm: Gemeinschaft, p: Person, betrag: Money) kind derived {
+    key(gm, p);
+    label de official "Jedem Teilhaber gebührt ein seinem Anteil entsprechender Bruchteil der Früchte (§ 743 Absatz 1)";
+    label en unofficial "each co-owner is entitled to a fraction of the fruits corresponding to his share (§ 743 (1))";
+}
+pub relation mitgebrauch_der_uebrigen_beeintraechtigt(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Der Gebrauch durch den Teilhaber beeinträchtigt den Mitgebrauch der übrigen Teilhaber (§ 743 Absatz 2)";
+    label en unofficial "the co-owner's use impairs the other co-owners' joint use (§ 743 (2))";
+}
+pub relation zum_gebrauch_befugt(gm: Gemeinschaft, p: Person) kind institutional {
+    label de official "Jeder Teilhaber ist zum Gebrauch des gemeinschaftlichen Gegenstands insoweit befugt, als nicht der Mitgebrauch der übrigen Teilhaber beeinträchtigt wird (§ 743 Absatz 2)";
+    label en unofficial "each co-owner may use the jointly held object in so far as the other co-owners' joint use is not impaired (§ 743 (2))";
+}
+
+@source(BGB_P743) {
+    rule FruechteNachAnteilen(gm: Gemeinschaft, p: Person, wert: Money, z: Integer, n: Integer) strict {
+        label de official "Jedem Teilhaber gebührt ein seinem Anteil entsprechender Bruchteil der Früchte (§ 743 Absatz 1)";
+        label en unofficial "each co-owner is entitled to a fraction of the fruits corresponding to his share (§ 743 (1))";
+        when fruechte_des_gegenstands(gm, wert) and teilhaberanteil_bruch(gm, p, z, n);
+        then fruechteanteil(gm, p, div_round(wert * z, n * 1.0, 2, "HALF_UP"));
+    }
+    rule GebrauchsbefugnisDesTeilhabers(gm: Gemeinschaft, p: Person) strict {
+        label de official "Jeder Teilhaber ist zum Gebrauch des gemeinschaftlichen Gegenstands insoweit befugt, als nicht der Mitgebrauch der übrigen Teilhaber beeinträchtigt wird (§ 743 Absatz 2)";
+        label en unofficial "each co-owner may use the jointly held object in so far as the other co-owners' joint use is not impaired (§ 743 (2))";
+        when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p)
+            and not_known(mitgebrauch_der_uebrigen_beeintraechtigt(gm, p));
+        then zum_gebrauch_befugt(gm, p);
+    }
+}
+
+// § 744: Gemeinschaftliche Verwaltung; notwendige Erhaltungsmaßregeln.
+// § 745: Verwaltung und Benutzung durch Mehrheitsbeschluss NACH ANTEILEN.
+
+pub relation notwendige_erhaltungsmassregel(gm: Gemeinschaft, massnahme: Text) kind empirical {
+    label de official "Zur Erhaltung des gemeinschaftlichen Gegenstands notwendige Maßregel (§ 744 Absatz 2)";
+    label en unofficial "measure necessary for the preservation of the jointly held object (§ 744 (2))";
+}
+pub relation ohne_zustimmung_zulaessig(gm: Gemeinschaft, p: Person, massnahme: Text) kind institutional {
+    label de official "Jeder Teilhaber ist berechtigt, die zur Erhaltung des Gegenstands notwendigen Maßregeln ohne Zustimmung der anderen Teilhaber zu treffen (§ 744 Absatz 2)";
+    label en unofficial "each co-owner may take measures necessary for the preservation of the object without the other co-owners' consent (§ 744 (2))";
+}
+pub relation verwaltungsbeschluss(gm: Gemeinschaft, b: Text) kind empirical {
+    label de official "Gegenstand eines Beschlusses über eine der Beschaffenheit des gemeinschaftlichen Gegenstands entsprechende ordnungsmäßige Verwaltung und Benutzung (§ 745 Absatz 1 Satz 1)";
+    label en unofficial "subject matter of a resolution on proper administration and use appropriate to the character of the jointly held object (§ 745 (1) sentence 1)";
+}
+pub relation fuer_beschluss_gestimmt(gm: Gemeinschaft, b: Text, p: Person) kind empirical {
+    label de official "Der Teilhaber hat für den Beschluss gestimmt (§ 745 Absatz 1 Satz 2)";
+    label en unofficial "the co-owner voted in favour of the resolution (§ 745 (1) sentence 2)";
+}
+pub relation gemeinsamer_nenner(gm: Gemeinschaft, n: Integer) kind empirical {
+    key(gm);
+    label de official "Gemeinsamer Nenner der Anteile aller Teilhaber — Angabe des Falls, damit die Mehrheit nach der Größe der Anteile ohne Bruchrechnung entschieden wird (§ 745 Absatz 1 Satz 2)";
+    label en unofficial "common denominator of all co-owners' shares — an input of the case, so that the majority by size of shares is decided without fraction arithmetic (§ 745 (1) sentence 2)";
+}
+pub relation zaehler_auf_gemeinsamem_nenner(gm: Gemeinschaft, p: Person, zaehler: Integer) kind empirical {
+    key(gm, p);
+    label de official "Zähler des Anteils des Teilhabers auf dem gemeinsamen Nenner — Angabe des Falls; ihre Stimmigkeit prüft die Rechenwache AnteilszaehlerStimmig (§ 745 Absatz 1 Satz 2)";
+    label en unofficial "numerator of the co-owner's share on the common denominator — an input of the case; its consistency is checked by the arithmetic guard AnteilszaehlerStimmig (§ 745 (1) sentence 2)";
+}
+pub relation anteilszaehler_stimmig(gm: Gemeinschaft, p: Person) kind derived {
+    key(gm, p);
+    label de official "Rechenwache, keine Norm: der angegebene Zähler auf dem gemeinsamen Nenner entspricht dem Anteil des Teilhabers (Zähler × gemeinsamer Nenner = angegebener Zähler × eigener Nenner)";
+    label en unofficial "arithmetic guard, not a norm: the stated numerator on the common denominator matches the co-owner's share (numerator × common denominator = stated numerator × own denominator)";
+}
+pub relation summe_der_zustimmungszaehler(gm: Gemeinschaft, b: Text, s: Integer) kind derived {
+    key(gm, b);
+    label de official "Summe der Zähler der Anteile, die für den Beschluss gestimmt haben (§ 745 Absatz 1 Satz 2)";
+    label en unofficial "sum of the numerators of the shares that voted in favour of the resolution (§ 745 (1) sentence 2)";
+}
+pub relation doppelte_zustimmungssumme(gm: Gemeinschaft, b: Text, d: Integer) kind derived {
+    key(gm, b);
+    label de official "Doppelte Summe der Zustimmungszähler — sie überschreitet den gemeinsamen Nenner genau dann, wenn die Zustimmung MEHR als die Hälfte der Anteile trägt (§ 745 Absatz 1 Satz 2)";
+    label en unofficial "twice the sum of the consenting numerators — it exceeds the common denominator exactly where the consent carries MORE than half of the shares (§ 745 (1) sentence 2)";
+}
+pub relation verwaltungsbeschluss_gefasst(gm: Gemeinschaft, b: Text) kind institutional {
+    label de official "Durch Stimmenmehrheit ist eine ordnungsmäßige Verwaltung und Benutzung beschlossen (§ 745 Absatz 1 Satz 1)";
+    label en unofficial "proper administration and use have been resolved by a majority of votes (§ 745 (1) sentence 1)";
+}
+pub relation wesentliche_veraenderung_des_gegenstands(gm: Gemeinschaft, b: Text) kind empirical {
+    label de official "Der Beschlussgegenstand ist eine wesentliche Veränderung des gemeinschaftlichen Gegenstands — sie kann nicht beschlossen oder verlangt werden (§ 745 Absatz 3 Satz 1)";
+    label en unofficial "the subject matter of the resolution is a material alteration of the jointly held object — it cannot be resolved or demanded (§ 745 (3) sentence 1)";
+}
+
+@source(BGB_P744)
+rule ErhaltungsmassregelOhneZustimmung(gm: Gemeinschaft, p: Person, massnahme: Text) strict {
+    label de official "Jeder Teilhaber ist berechtigt, die zur Erhaltung des Gegenstands notwendigen Maßregeln ohne Zustimmung der anderen Teilhaber zu treffen (§ 744 Absatz 2)";
+    label en unofficial "each co-owner may take measures necessary for the preservation of the object without the other co-owners' consent (§ 744 (2))";
+    when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p) and notwendige_erhaltungsmassregel(gm, massnahme);
+    then ohne_zustimmung_zulaessig(gm, p, massnahme);
+}
+pub relation erhaltung_744_ausgeuebt_am(gm: Gemeinschaft, p: Person, massnahme: Text, tag: Date) kind empirical {
+    label de official "Der Teilhaber hat die Erhaltungsmaßnahme ausgeübt (§ 744 Absatz 2)";
+    label en unofficial "the co-owner exercised the preservation measure (§ 744 (2))";
+}
+pub relation erhaltungsrecht_744_beginn_am(gm: Gemeinschaft, tag: Date) kind empirical {
+    label de official "Beginn des Erhaltungsrechts nach § 744";
+    label en unofficial "start of the preservation right under § 744";
+}
+@source(BGB_P744)
+rule Position744Erhaltung(gm: Gemeinschaft, p: Person, massnahme: Text, beginn: Date) strict {
+    label de official "Der Teilhaber ist berechtigt, notwendige Erhaltungsmaßregeln ohne Zustimmung zu treffen (§ 744 Absatz 2)";
+    label en unofficial "The co-owner has the liberty to take necessary preservation measures without consent (§ 744 (2))";
+    when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p)
+     and notwendige_erhaltungsmassregel(gm, massnahme)
+     and erhaltungsrecht_744_beginn_am(gm, beginn);
+    then liberty Liberty744Erhaltung {
+        holder p;
+        action erhaltung_744_ausgeuebt_am(gm, p, massnahme, beginn);
+        window [beginn, infinity];
+    };
+}
+@source(BGB_P745) {
+    rule AnteilszaehlerStimmig(gm: Gemeinschaft, p: Person, z: Integer, n: Integer, gn: Integer, zg: Integer) strict {
+        label de official "Rechenwache: der angegebene Zähler auf dem gemeinsamen Nenner entspricht dem Anteil des Teilhabers (§ 745 Absatz 1 Satz 2)";
+        label en unofficial "arithmetic guard: the stated numerator on the common denominator matches the co-owner's share (§ 745 (1) sentence 2)";
+        when teilhaberanteil_bruch(gm, p, z, n) and gemeinsamer_nenner(gm, gn)
+            and zaehler_auf_gemeinsamem_nenner(gm, p, zg) and z * gn == zg * n;
+        then anteilszaehler_stimmig(gm, p);
+    }
+    rule SummeDerZustimmungszaehler(gm: Gemeinschaft, b: Text, p: Person, zg: Integer) strict {
+        label de official "Die Stimmenmehrheit ist nach der Größe der Anteile zu berechnen: Summe der Zähler der zustimmenden Anteile (§ 745 Absatz 1 Satz 2)";
+        label en unofficial "the majority of votes is calculated by the size of the shares: sum of the numerators of the consenting shares (§ 745 (1) sentence 2)";
+        when verwaltungsbeschluss(gm, b) and fuer_beschluss_gestimmt(gm, b, p) and zaehler_auf_gemeinsamem_nenner(gm, p, zg);
+        then summe_der_zustimmungszaehler(gm, b, (sum all v: Integer for q: Person where fuer_beschluss_gestimmt(gm, b, q) and zaehler_auf_gemeinsamem_nenner(gm, q, v)));
+    }
+    rule DoppelteZustimmungssumme(gm: Gemeinschaft, b: Text, s: Integer) strict {
+        label de official "Schwelle der Stimmenmehrheit nach der Größe der Anteile: die doppelte Zustimmungssumme wird mit dem gemeinsamen Nenner verglichen (§ 745 Absatz 1 Satz 2)";
+        label en unofficial "threshold of the majority by size of shares: twice the sum of consents is compared with the common denominator (§ 745 (1) sentence 2)";
+        when summe_der_zustimmungszaehler(gm, b, s);
+        then doppelte_zustimmungssumme(gm, b, s * 2);
+    }
+    rule VerwaltungsbeschlussDurchStimmenmehrheit(gm: Gemeinschaft, b: Text, s: Integer, h: Integer) strict {
+        label de official "Durch Stimmenmehrheit kann eine der Beschaffenheit des gemeinschaftlichen Gegenstands entsprechende ordnungsmäßige Verwaltung und Benutzung beschlossen werden; die Stimmenmehrheit ist nach der Größe der Anteile zu berechnen (§ 745 Absatz 1)";
+        label en unofficial "proper administration and use appropriate to the character of the jointly held object may be resolved by a majority of votes; the majority is calculated by the size of the shares (§ 745 (1))";
+        when verwaltungsbeschluss(gm, b) and doppelte_zustimmungssumme(gm, b, s)
+            and gemeinsamer_nenner(gm, h) and s > h
+            and not_known(wesentliche_veraenderung_des_gegenstands(gm, b));
+        then verwaltungsbeschluss_gefasst(gm, b);
+    }
+}
+
+// § 748: Lasten- und Kostentragung nach dem Verhältnis des Anteils.
+
+pub relation lasten_und_kosten(gm: Gemeinschaft, betrag: Money) kind empirical {
+    key(gm);
+    label de official "Lasten des gemeinschaftlichen Gegenstands sowie Kosten der Erhaltung, der Verwaltung und einer gemeinschaftlichen Benutzung (§ 748)";
+    label en unofficial "charges on the jointly held object and costs of its preservation, administration and joint use (§ 748)";
+}
+pub relation lastenanteil(gm: Gemeinschaft, p: Person, betrag: Money) kind derived {
+    key(gm, p);
+    label de official "Auf den Teilhaber entfallender Anteil an Lasten und Kosten (§ 748)";
+    label en unofficial "the co-owner's share of charges and costs (§ 748)";
+}
+@source(BGB_P748)
+rule LastenNachAnteilen(gm: Gemeinschaft, p: Person, betrag: Money, z: Integer, n: Integer) strict {
+    label de official "Jeder Teilhaber ist den anderen Teilhabern gegenüber verpflichtet, die Lasten des gemeinschaftlichen Gegenstands sowie die Kosten der Erhaltung, der Verwaltung und einer gemeinschaftlichen Benutzung nach dem Verhältnis seines Anteils zu tragen (§ 748)";
+    label en unofficial "each co-owner is obliged towards the others to bear the charges on the jointly held object and the costs of its preservation, administration and joint use in proportion to his share (§ 748)";
+    when lasten_und_kosten(gm, betrag) and teilhaberanteil_bruch(gm, p, z, n);
+    then lastenanteil(gm, p, div_round(betrag * z, n * 1.0, 2, "HALF_UP"));
+}
+
+// § 749, § 750, § 751: Aufhebungsanspruch, sein Ausschluss und der wichtige
+// Grund. § 758: Unverjährbarkeit.
+
+pub relation aufhebung_fuer_immer_oder_auf_zeit_ausgeschlossen(gm: Gemeinschaft) kind empirical {
+    label de official "Das Recht, die Aufhebung zu verlangen, ist durch Vereinbarung für immer oder auf Zeit ausgeschlossen (§ 749 Absatz 2 Satz 1, § 751 Satz 1)";
+    label en unofficial "the right to demand dissolution has been excluded by agreement permanently or for a period (§ 749 (2) sentence 1, § 751 sentence 1)";
+}
+@source(BGB_P749)
+pub external judgment relation wichtiger_grund_aufhebung(gm: Gemeinschaft) {
+    authority Court;
+    label de official "Wichtiger Grund, die Aufhebung der Gemeinschaft trotz eines vereinbarten Ausschlusses zu verlangen (§ 749 Absatz 2 Satz 1)";
+    label en unofficial "good cause to demand dissolution of the community despite an agreed exclusion (§ 749 (2) sentence 1)";
+}
+pub relation teilhaber_verstorben(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Ein Teilhaber ist verstorben — die auf Zeit getroffene Ausschlussvereinbarung tritt im Zweifel außer Kraft (§ 750)";
+    label en unofficial "a co-owner has died — an exclusion agreed for a period lapses in case of doubt (§ 750)";
+}
+pub relation aufhebungsanspruch(gm: Gemeinschaft, p: Person) kind institutional {
+    label de official "Der Teilhaber kann die Aufhebung der Gemeinschaft verlangen (§ 749 Absatz 1)";
+    label en unofficial "the co-owner may demand dissolution of the community (§ 749 (1))";
+}
+pub relation aufhebungsanspruch_unverjaehrbar(gm: Gemeinschaft) kind institutional {
+    label de official "Der Anspruch auf Aufhebung der Gemeinschaft unterliegt nicht der Verjährung (§ 758)";
+    label en unofficial "the claim for dissolution of the community is not subject to limitation (§ 758)";
+}
+
+@source(BGB_P749) {
+    rule AufhebungJederzeit(gm: Gemeinschaft, p: Person) strict {
+        label de official "Jeder Teilhaber kann jederzeit die Aufhebung der Gemeinschaft verlangen (§ 749 Absatz 1)";
+        label en unofficial "each co-owner may at any time demand dissolution of the community (§ 749 (1))";
+        when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p)
+            and not_known(aufhebung_fuer_immer_oder_auf_zeit_ausgeschlossen(gm));
+        then aufhebungsanspruch(gm, p);
+    }
+    rule AufhebungTrotzAusschlussAusWichtigemGrund(gm: Gemeinschaft, p: Person) strict {
+        label de official "Wird das Recht, die Aufhebung zu verlangen, durch Vereinbarung für immer oder auf Zeit ausgeschlossen, so kann die Aufhebung gleichwohl verlangt werden, wenn ein wichtiger Grund vorliegt (§ 749 Absatz 2 Satz 1)";
+        label en unofficial "where the right to demand dissolution is excluded by agreement permanently or for a period, dissolution may nevertheless be demanded where good cause exists (§ 749 (2) sentence 1)";
+        when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p)
+            and aufhebung_fuer_immer_oder_auf_zeit_ausgeschlossen(gm) and wichtiger_grund_aufhebung(gm);
+        then aufhebungsanspruch(gm, p);
+    }
+}
+@source(BGB_P750)
+rule AusschlussTrittBeiTodAusserKraft(gm: Gemeinschaft, p: Person, q: Person) strict {
+    label de official "Haben die Teilhaber das Recht, die Aufhebung der Gemeinschaft zu verlangen, auf Zeit ausgeschlossen, so tritt die Vereinbarung im Zweifel mit dem Tode eines Teilhabers außer Kraft (§ 750)";
+    label en unofficial "where the co-owners have excluded the right to demand dissolution for a period, the agreement lapses in case of doubt on a co-owner's death (§ 750)";
+    when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p) and teilhaber_verstorben(gm, q);
+    then aufhebungsanspruch(gm, p);
+}
+@source(BGB_P758)
+rule AufhebungsanspruchUnverjaehrbar(gm: Gemeinschaft) strict {
+    label de official "Der Anspruch auf Aufhebung der Gemeinschaft unterliegt nicht der Verjährung (§ 758)";
+    label en unofficial "the claim for dissolution of the community is not subject to limitation (§ 758)";
+    when gemeinschaft_nach_bruchteilen(gm);
+    then aufhebungsanspruch_unverjaehrbar(gm);
+}
+
+// § 752, § 753: Teilung in Natur, sonst Teilung durch Verkauf.
+
+pub relation ohne_wertverminderung_teilbar(gm: Gemeinschaft) kind empirical {
+    label de official "Der gemeinschaftliche Gegenstand lässt sich ohne Verminderung des Wertes in gleichartige, den Anteilen der Teilhaber entsprechende Teile zerlegen (§ 752 Satz 1)";
+    label en unofficial "the jointly held object can be divided without loss of value into like parts corresponding to the co-owners' shares (§ 752 sentence 1)";
+}
+pub relation aufhebung_durch_teilung_in_natur(gm: Gemeinschaft) kind institutional {
+    label de official "Die Aufhebung der Gemeinschaft erfolgt durch Teilung in Natur (§ 752 Satz 1)";
+    label en unofficial "dissolution of the community is effected by division in kind (§ 752 sentence 1)";
+}
+pub relation aufhebung_durch_verkauf(gm: Gemeinschaft) kind institutional {
+    label de official "Ist die Teilung in Natur ausgeschlossen, so erfolgt die Aufhebung der Gemeinschaft durch Verkauf des gemeinschaftlichen Gegenstands und Teilung des Erlöses (§ 753 Absatz 1 Satz 1)";
+    label en unofficial "where division in kind is excluded, dissolution is effected by sale of the jointly held object and division of the proceeds (§ 753 (1) sentence 1)";
+}
+
+@source(BGB_P752)
+rule TeilungInNatur(gm: Gemeinschaft) strict {
+    label de official "Die Aufhebung der Gemeinschaft erfolgt durch Teilung in Natur, wenn der gemeinschaftliche Gegenstand sich ohne Verminderung des Wertes in gleichartige, den Anteilen der Teilhaber entsprechende Teile zerlegen lässt (§ 752 Satz 1)";
+    label en unofficial "dissolution is effected by division in kind where the jointly held object can be divided without loss of value into like parts corresponding to the shares (§ 752 sentence 1)";
+    when gemeinschaft_nach_bruchteilen(gm) and ohne_wertverminderung_teilbar(gm);
+    then aufhebung_durch_teilung_in_natur(gm);
+}
+@source(BGB_P753)
+rule TeilungDurchVerkauf(gm: Gemeinschaft) strict {
+    label de official "Ist die Teilung in Natur ausgeschlossen, so erfolgt die Aufhebung der Gemeinschaft durch Verkauf des gemeinschaftlichen Gegenstands nach den Vorschriften über den Pfandverkauf, bei Grundstücken durch Zwangsversteigerung, und durch Teilung des Erlöses (§ 753 Absatz 1 Satz 1)";
+    label en unofficial "where division in kind is excluded, dissolution is effected by sale of the object under the rules on sale of pledges, for land by compulsory auction, and by division of the proceeds (§ 753 (1) sentence 1)";
+    when gemeinschaft_nach_bruchteilen(gm) and not_known(ohne_wertverminderung_teilbar(gm));
+    then aufhebung_durch_verkauf(gm);
+}
+pub relation teilhaber_753(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Teilhaber nach § 753";
+    label en unofficial "co-owner under § 753";
+}
+pub relation verkauf_753_verlangt_am(gm: Gemeinschaft, tag: Date) kind empirical {
+    label de official "Der Teilhaber hat die Aufhebung durch Verkauf verlangt (§ 753)";
+    label en unofficial "the co-owner demanded dissolution by sale (§ 753)";
+}
+pub relation verkaufsrecht_753_beginn_am(gm: Gemeinschaft, tag: Date) kind empirical {
+    label de official "Beginn des Verkaufsrechts nach § 753";
+    label en unofficial "start of the sale right under § 753";
+}
+@source(BGB_P753)
+rule Position753Verkauf(gm: Gemeinschaft, p: Person, beginn: Date) strict {
+    label de official "Der Teilhaber ist berechtigt, bei ausgeschlossener Teilung in Natur die Aufhebung durch Verkauf zu verlangen (§ 753)";
+    label en unofficial "The co-owner has the liberty to demand dissolution by sale where division in kind is excluded (§ 753)";
+    when teilhaber_753(gm, p) and gemeinschaft_nach_bruchteilen(gm)
+     and not_known(ohne_wertverminderung_teilbar(gm))
+     and verkaufsrecht_753_beginn_am(gm, beginn);
+    then liberty Liberty753Verkauf {
+        holder p;
+        action verkauf_753_verlangt_am(gm, beginn);
+        window [beginn, infinity);
+    };
+}
+
+// --- §§ 746, 747, 751, 754–757: Sondernachfolger, Verfügung, Berichtigung, Gewährleistung (D-08-16) ---
+
+pub relation verwaltung_und_benutzung_geregelt(gm: Gemeinschaft) kind empirical {
+    label de official "Die Teilhaber haben die Verwaltung und Benutzung des gemeinschaftlichen Gegenstands geregelt (§ 746)";
+    label en unofficial "the co-owners have regulated the administration and use of the jointly held object (§ 746)";
+}
+pub relation regelung_wirkt_gegen_sondernachfolger_746(gm: Gemeinschaft) kind institutional {
+    label de official "Die getroffene Bestimmung über Verwaltung und Benutzung wirkt auch für und gegen die Sondernachfolger (§ 746)";
+    label en unofficial "the arrangement on administration and use also operates for and against successors in title (§ 746)";
+}
+pub relation verfuegung_ueber_anteil(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Der Teilhaber verfügt über seinen Anteil (§ 747 Satz 1)";
+    label en unofficial "the co-owner disposes of his share (§ 747 sentence 1)";
+}
+pub relation verfuegungsbefugnis_ueber_eigenen_anteil_747(gm: Gemeinschaft, p: Person) kind institutional {
+    label de official "Jeder Teilhaber kann über seinen Anteil verfügen (§ 747 Satz 1)";
+    label en unofficial "each co-owner may dispose of his share (§ 747 sentence 1)";
+}
+pub relation gemeinschaftliche_verfuegung_erforderlich_747(gm: Gemeinschaft) kind institutional {
+    label de official "Über den gemeinschaftlichen Gegenstand im Ganzen können die Teilhaber nur gemeinschaftlich verfügen (§ 747 Satz 2)";
+    label en unofficial "the co-owners may dispose of the jointly held object as a whole only jointly (§ 747 sentence 2)";
+}
+pub relation kuendigungsfrist_fuer_aufhebung_bestimmt_751(gm: Gemeinschaft) kind empirical {
+    label de official "Für das Recht, die Aufhebung der Gemeinschaft zu verlangen, ist eine Kündigungsfrist bestimmt (§ 751 Satz 1)";
+    label en unofficial "a notice period has been fixed for the right to demand dissolution of the community (§ 751 sentence 1)";
+}
+pub relation vereinbarung_wirkt_gegen_sondernachfolger_751(gm: Gemeinschaft) kind institutional {
+    label de official "Der Ausschluss oder die Kündigungsfrist wirkt auch für und gegen die Sondernachfolger (§ 751 Satz 1)";
+    label en unofficial "the exclusion or the notice period also operates for and against successors in title (§ 751 sentence 1)";
+}
+pub relation glaeubiger_hat_pfaendung_erwirkt_751(gm: Gemeinschaft, p: Person, glaeubiger: Person) kind empirical {
+    label de official "Ein Gläubiger hat die Pfändung des Anteils eines Teilhabers erwirkt (§ 751 Satz 2)";
+    label en unofficial "a creditor has obtained an attachment of a co-owner's share (§ 751 sentence 2)";
+}
+pub relation schuldtitel_nicht_bloss_vorlaeufig_vollstreckbar_751(gm: Gemeinschaft, glaeubiger: Person) kind empirical {
+    label de official "Der Schuldtitel des Gläubigers ist nicht bloß vorläufig vollstreckbar (§ 751 Satz 2)";
+    label en unofficial "the creditor's enforcement title is not merely provisionally enforceable (§ 751 sentence 2)";
+}
+pub relation aufhebungsanspruch_des_glaeubigers_751(gm: Gemeinschaft, glaeubiger: Person) kind institutional {
+    label de official "Der Gläubiger kann ohne Rücksicht auf die Vereinbarung die Aufhebung der Gemeinschaft verlangen (§ 751 Satz 2)";
+    label en unofficial "the creditor may demand dissolution of the community regardless of the agreement (§ 751 sentence 2)";
+}
+pub relation forderung_noch_nicht_einziehbar_754(gm: Gemeinschaft) kind empirical {
+    label de official "Die gemeinschaftliche Forderung kann noch nicht eingezogen werden (§ 754 Satz 1)";
+    label en unofficial "the jointly held claim cannot yet be collected (§ 754 sentence 1)";
+}
+pub relation verkauf_der_forderung_zulaessig_754(gm: Gemeinschaft) kind institutional {
+    label de official "Der Verkauf einer gemeinschaftlichen Forderung ist zulässig (§ 754 Satz 1)";
+    label en unofficial "the sale of a jointly held claim is permissible (§ 754 sentence 1)";
+}
+pub relation einziehung_moeglich_754(gm: Gemeinschaft) kind empirical {
+    label de official "Die Einziehung der gemeinschaftlichen Forderung ist möglich (§ 754 Satz 2)";
+    label en unofficial "collection of the jointly held claim is possible (§ 754 sentence 2)";
+}
+pub relation anspruch_auf_gemeinschaftliche_einziehung_754(gm: Gemeinschaft, p: Person) kind institutional {
+    label de official "Jeder Teilhaber kann gemeinschaftliche Einziehung verlangen (§ 754 Satz 2)";
+    label en unofficial "each co-owner may demand joint collection (§ 754 sentence 2)";
+}
+pub relation gesamtschuldnerische_haftung_748_755(gm: Gemeinschaft, betrag: Money) kind empirical {
+    key(gm);
+    label de official "Die Teilhaber haften als Gesamtschuldner für eine Verbindlichkeit, die sie nach § 748 nach dem Verhältnis ihrer Anteile zu erfüllen haben oder zu deren Erfüllung sie die Verbindlichkeit eingegangen sind (§ 755 Absatz 1)";
+    label en unofficial "the co-owners are jointly and severally liable for an obligation they must satisfy under § 748 in proportion to their shares, or which they incurred to satisfy such an obligation (§ 755 (1))";
+}
+pub relation berichtigungsanspruch_755(gm: Gemeinschaft, p: Person) kind institutional {
+    label de official "Jeder Teilhaber kann bei der Aufhebung der Gemeinschaft verlangen, dass die Schuld aus dem gemeinschaftlichen Gegenstand berichtigt wird (§ 755 Absatz 1)";
+    label en unofficial "on dissolution of the community, each co-owner may demand that the debt be settled out of the jointly held object (§ 755 (1))";
+}
+pub relation forderung_gegen_anderen_teilhaber_756(gm: Gemeinschaft, p: Person, schuldner: Person, betrag: Money) kind empirical {
+    label de official "Ein Teilhaber hat gegen einen anderen Teilhaber eine Forderung, die sich auf die Gemeinschaft gründet (§ 756 Satz 1)";
+    label en unofficial "a co-owner has a claim against another co-owner founded on the community (§ 756 sentence 1)";
+}
+pub relation berichtigungsanspruch_756(gm: Gemeinschaft, p: Person, schuldner: Person) kind institutional {
+    label de official "Der Teilhaber kann bei der Aufhebung der Gemeinschaft die Berichtigung seiner Forderung aus dem auf den Schuldner entfallenden Teil des gemeinschaftlichen Gegenstands verlangen (§ 756 Satz 1)";
+    label en unofficial "on dissolution of the community, the co-owner may demand that his claim be settled out of the portion of the jointly held object attributable to the debtor (§ 756 sentence 1)";
+}
+pub relation gegenstand_einem_teilhaber_zugeteilt_757(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Bei der Aufhebung der Gemeinschaft wird ein gemeinschaftlicher Gegenstand einem der Teilhaber zugeteilt (§ 757)";
+    label en unofficial "on dissolution of the community a jointly held object is allotted to one of the co-owners (§ 757)";
+}
+pub relation gewaehrleistungspflicht_757(gm: Gemeinschaft, empfaenger: Person, anderer: Person) kind institutional {
+    label de official "Jeder der übrigen Teilhaber hat wegen eines Mangels im Recht oder wegen eines Mangels der Sache zu seinem Anteil in gleicher Weise wie ein Verkäufer Gewähr zu leisten (§ 757)";
+    label en unofficial "each of the other co-owners must, for a defect of title or of the thing, warrant to the extent of his share in the same way as a seller (§ 757)";
+}
+
+@source(BGB_P746)
+rule RegelungWirktGegenSondernachfolger746(gm: Gemeinschaft) strict {
+    label de official "Haben die Teilhaber die Verwaltung und Benutzung des gemeinschaftlichen Gegenstands geregelt, so wirkt die getroffene Bestimmung auch für und gegen die Sondernachfolger (§ 746)";
+    label en unofficial "where the co-owners have regulated administration and use of the jointly held object, the arrangement also operates for and against successors in title (§ 746)";
+    when gemeinschaft_nach_bruchteilen(gm) and verwaltung_und_benutzung_geregelt(gm);
+    then regelung_wirkt_gegen_sondernachfolger_746(gm);
+}
+@source(BGB_P747) {
+    rule VerfuegungsbefugnisUeberEigenenAnteil747(gm: Gemeinschaft, p: Person) strict {
+        label de official "Jeder Teilhaber kann über seinen Anteil verfügen (§ 747 Satz 1)";
+        label en unofficial "each co-owner may dispose of his share (§ 747 sentence 1)";
+        when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p);
+        then verfuegungsbefugnis_ueber_eigenen_anteil_747(gm, p);
+    }
+    rule GemeinschaftlicheVerfuegungErforderlich747(gm: Gemeinschaft) strict {
+        label de official "Über den gemeinschaftlichen Gegenstand im Ganzen können die Teilhaber nur gemeinschaftlich verfügen (§ 747 Satz 2)";
+        label en unofficial "the co-owners may dispose of the jointly held object as a whole only jointly (§ 747 sentence 2)";
+        when gemeinschaft_nach_bruchteilen(gm);
+        then gemeinschaftliche_verfuegung_erforderlich_747(gm);
+    }
+}
+@source(BGB_P751) {
+    rule VereinbarungWirktGegenSondernachfolger751(gm: Gemeinschaft) strict {
+        label de official "Haben die Teilhaber das Recht, die Aufhebung der Gemeinschaft zu verlangen, für immer oder auf Zeit ausgeschlossen oder eine Kündigungsfrist bestimmt, so wirkt die Vereinbarung auch für und gegen die Sondernachfolger (§ 751 Satz 1)";
+        label en unofficial "where the co-owners have excluded the right to demand dissolution permanently or for a period, or fixed a notice period, the agreement also operates for and against successors in title (§ 751 sentence 1)";
+        when gemeinschaft_nach_bruchteilen(gm) and aufhebung_fuer_immer_oder_auf_zeit_ausgeschlossen(gm);
+        then vereinbarung_wirkt_gegen_sondernachfolger_751(gm);
+    }
+    rule VereinbarungWirktGegenSondernachfolgerKuendigungsfrist751(gm: Gemeinschaft) strict {
+        label de official "Ist für das Recht, die Aufhebung zu verlangen, eine Kündigungsfrist bestimmt, so wirkt diese Bestimmung auch für und gegen die Sondernachfolger (§ 751 Satz 1)";
+        label en unofficial "where a notice period has been fixed for the right to demand dissolution, that arrangement also operates for and against successors in title (§ 751 sentence 1)";
+        when gemeinschaft_nach_bruchteilen(gm) and kuendigungsfrist_fuer_aufhebung_bestimmt_751(gm);
+        then vereinbarung_wirkt_gegen_sondernachfolger_751(gm);
+    }
+    rule AufhebungsanspruchDesGlaeubigers751(gm: Gemeinschaft, p: Person, glaeubiger: Person) strict {
+        label de official "Hat ein Gläubiger die Pfändung des Anteils eines Teilhabers erwirkt, so kann er ohne Rücksicht auf die Vereinbarung die Aufhebung der Gemeinschaft verlangen, sofern der Schuldtitel nicht bloß vorläufig vollstreckbar ist (§ 751 Satz 2)";
+        label en unofficial "where a creditor has obtained attachment of a co-owner's share, he may demand dissolution of the community regardless of the agreement, provided his enforcement title is not merely provisionally enforceable (§ 751 sentence 2)";
+        when glaeubiger_hat_pfaendung_erwirkt_751(gm, p, glaeubiger) and schuldtitel_nicht_bloss_vorlaeufig_vollstreckbar_751(gm, glaeubiger);
+        then aufhebungsanspruch_des_glaeubigers_751(gm, glaeubiger);
+    }
+}
+@source(BGB_P754) {
+    rule VerkaufDerForderungZulaessig754(gm: Gemeinschaft) strict {
+        label de official "Der Verkauf einer gemeinschaftlichen Forderung ist nur zulässig, wenn sie noch nicht eingezogen werden kann (§ 754 Satz 1)";
+        label en unofficial "the sale of a jointly held claim is permissible only where it cannot yet be collected (§ 754 sentence 1)";
+        when gemeinschaft_nach_bruchteilen(gm) and forderung_noch_nicht_einziehbar_754(gm);
+        then verkauf_der_forderung_zulaessig_754(gm);
+    }
+    rule AnspruchAufGemeinschaftlicheEinziehung754(gm: Gemeinschaft, p: Person) strict {
+        label de official "Ist die Einziehung möglich, so kann jeder Teilhaber gemeinschaftliche Einziehung verlangen (§ 754 Satz 2)";
+        label en unofficial "where collection is possible, each co-owner may demand joint collection (§ 754 sentence 2)";
+        when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p) and einziehung_moeglich_754(gm);
+        then anspruch_auf_gemeinschaftliche_einziehung_754(gm, p);
+    }
+}
+@source(BGB_P755)
+rule Berichtigungsanspruch755(gm: Gemeinschaft, p: Person, betrag: Money) strict {
+    label de official "Haften die Teilhaber als Gesamtschuldner für eine Verbindlichkeit nach § 748, so kann jeder Teilhaber bei der Aufhebung der Gemeinschaft verlangen, dass die Schuld aus dem gemeinschaftlichen Gegenstand berichtigt wird (§ 755 Absatz 1)";
+    label en unofficial "where the co-owners are jointly and severally liable for an obligation under § 748, each co-owner may demand, on dissolution of the community, that the debt be settled out of the jointly held object (§ 755 (1))";
+    when gemeinschaft_nach_bruchteilen(gm) and teilhaber(gm, p) and gesamtschuldnerische_haftung_748_755(gm, betrag);
+    then berichtigungsanspruch_755(gm, p);
+}
+@source(BGB_P756)
+rule Berichtigungsanspruch756(gm: Gemeinschaft, p: Person, schuldner: Person, betrag: Money) strict {
+    label de official "Hat ein Teilhaber gegen einen anderen Teilhaber eine Forderung, die sich auf die Gemeinschaft gründet, so kann er bei der Aufhebung der Gemeinschaft die Berichtigung seiner Forderung aus dem auf den Schuldner entfallenden Teil des gemeinschaftlichen Gegenstands verlangen (§ 756 Satz 1)";
+    label en unofficial "where a co-owner has a claim against another co-owner founded on the community, he may demand, on dissolution, that his claim be settled out of the portion of the jointly held object attributable to the debtor (§ 756 sentence 1)";
+    when forderung_gegen_anderen_teilhaber_756(gm, p, schuldner, betrag);
+    then berichtigungsanspruch_756(gm, p, schuldner);
+}
+@source(BGB_P757)
+rule Gewaehrleistungspflicht757(gm: Gemeinschaft, p: Person, anderer: Person) strict {
+    label de official "Wird bei der Aufhebung der Gemeinschaft ein gemeinschaftlicher Gegenstand einem der Teilhaber zugeteilt, so hat wegen eines Mangels im Recht oder wegen eines Mangels der Sache jeder der übrigen Teilhaber zu seinem Anteil in gleicher Weise wie ein Verkäufer Gewähr zu leisten (§ 757)";
+    label en unofficial "where a jointly held object is allotted to one of the co-owners on dissolution of the community, each of the other co-owners must, for a defect of title or of the thing, warrant to the extent of his share in the same way as a seller (§ 757)";
+    when gegenstand_einem_teilhaber_zugeteilt_757(gm, p) and teilhaber(gm, anderer);
+    then gewaehrleistungspflicht_757(gm, p, anderer);
+}
+pub relation teilhaber_757(gm: Gemeinschaft, p: Person) kind empirical {
+    label de official "Teilhaber mit Gewährleistungspflicht nach § 757";
+    label en unofficial "co-owner owing warranty under § 757";
+}
+pub relation gewaehrleistung_757_geleistet_am(gm: Gemeinschaft, tag: Date) kind empirical {
+    label de official "Der Teilhaber hat Gewähr geleistet (§ 757)";
+    label en unofficial "the co-owner gave the warranty (§ 757)";
+}
+pub relation gewaehrleistungsbeginn_757_am(gm: Gemeinschaft, tag: Date) kind empirical {
+    label de official "Beginn der Gewährleistungspflicht nach § 757";
+    label en unofficial "start of the warranty duty under § 757";
+}
+@source(BGB_P757)
+rule Position757Gewaehrleistung(gm: Gemeinschaft, p: Person, beginn: Date) strict {
+    label de official "Der übrige Teilhaber ist verpflichtet, zum Anteil Gewähr zu leisten (§ 757)";
+    label en unofficial "The remaining co-owner is obliged to warrant to the extent of the share (§ 757)";
+    when teilhaber_757(gm, p) and gegenstand_einem_teilhaber_zugeteilt_757(gm, p)
+     and gewaehrleistungsbeginn_757_am(gm, beginn);
+    then duty Duty757Gewaehrleistung {
+        bearer p;
+        achieve gewaehrleistung_757_geleistet_am(gm, beginn) during [beginn, infinity);
+    };
+}
+pub relation gesellschafter_707(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Gesellschafter nach § 707";
+    label en unofficial "partner under § 707";
+}
+pub relation anmeldung_707_eingereicht_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Die Gesellschafter haben die Gesellschaft zur Eintragung angemeldet (§ 707)";
+    label en unofficial "the partners filed the registration application (§ 707)";
+}
+pub relation anmeldungspflicht_707_beginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der Anmeldungspflicht nach § 707";
+    label en unofficial "start of the registration duty under § 707";
+}
+@source(BGB_P707)
+rule Position707Anmeldung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist verpflichtet, die Gesellschaft zum Gesellschaftsregister anzumelden (§ 707)";
+    label en unofficial "The partner is obliged to register the company in the company register (§ 707)";
+    when gesellschafter_707(g, p) and anmeldungspflicht_707_beginn_am(g, beginn);
+    then duty Duty707Anmeldung {
+        bearer p;
+        achieve anmeldung_707_eingereicht_am(g, beginn) during [beginn, infinity);
+    };
+}
+pub relation liquidator_738(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Liquidator nach § 738";
+    label en unofficial "liquidator under § 738";
+}
+pub relation erloeschen_738_angemeldet_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Das Erlöschen der Gesellschaft wurde angemeldet (§ 738)";
+    label en unofficial "the dissolution of the company was registered (§ 738)";
+}
+pub relation anmeldungsbeginn_738_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der Anmeldungspflicht nach § 738";
+    label en unofficial "start of the registration duty under § 738";
+}
+@source(BGB_P738)
+rule Position738Anmeldung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Liquidator ist verpflichtet, das Erlöschen der Gesellschaft anzumelden (§ 738)";
+    label en unofficial "The liquidator is obliged to register the dissolution of the company (§ 738)";
+    when liquidator_738(g, p) and anmeldungsbeginn_738_am(g, beginn);
+    then duty Duty738Anmeldung {
+        bearer p;
+        achieve erloeschen_738_angemeldet_am(g, beginn) during [beginn, infinity);
+    };
+}

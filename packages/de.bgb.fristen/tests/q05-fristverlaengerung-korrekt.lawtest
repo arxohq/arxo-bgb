@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 190: die vorige Frist (wie p01) endet am 20. März 2026; die neue Frist wird von diesem Ablauf an berechnet — ihr Ereignistag ist der 20. März 2026.
+test "§ 190: die neue Frist beginnt am Ablauf der vorigen Frist (20. März 2026)" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_TAG; }
+        assert "ea": frist_ereignis(entity_ref("urn:de:bgb:fristen:pilot:q05a"), @2026-03-06) { origin case_input; }
+        assert "da": frist_dauer_tage(entity_ref("urn:de:bgb:fristen:pilot:q05a"), 14 calendar_day) { origin case_input; }
+        assert "v": frist_verlaengert_aus(entity_ref("urn:de:bgb:fristen:pilot:q05b"), entity_ref("urn:de:bgb:fristen:pilot:q05a")) { origin case_input; }
+        assert "en": frist_ereignis(entity_ref("urn:de:bgb:fristen:pilot:q05b"), @2026-03-20) { origin case_input; }
+    }
+    evaluate truth(frist_ende(entity_ref("urn:de:bgb:fristen:pilot:q05a"), @2026-03-20));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(frist_verlaengerung_korrekt_berechnet(entity_ref("urn:de:bgb:fristen:pilot:q05b")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

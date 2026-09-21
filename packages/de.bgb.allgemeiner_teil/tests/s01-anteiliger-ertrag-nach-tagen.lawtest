@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// § 101 Nr. 2 Halbsatz 2: der Pachtzins von 1 200,00 € gilt für das Jahr 2026 (365 Tage); die Berechtigung dauert vom 1. Januar bis zum 30. Juni 2026 (181 Tage, beide Grenzen eingeschlossen). Der entsprechende Teil ist 1 200,00 € × 181 / 365 = 595,068… €, einmal auf den Cent gerundet 595,07 € (Politik des Pakets, README „Rundung“).
+test "§ 101 Nr. 2: der Teil des wiederkehrenden Ertrags nach der Dauer der Berechtigung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "e": regelmaessig_wiederkehrender_ertrag(entity_ref("urn:de:bgb:at:s01:zins"), 1200.00 EUR, @2026-01-01, @2026-12-31) { origin case_input; }
+        assert "d": dauer_der_berechtigung(entity_ref("urn:de:bgb:at:s01:berechtigung"), @2026-01-01, @2026-06-30) { origin case_input; }
+        assert "b": berechtigter(entity_ref("urn:de:bgb:at:s01:berechtigung"), entity_ref("urn:de:bgb:at:s01:paechter")) { origin case_input; }
+        assert "a": not anderes_bestimmt(entity_ref("urn:de:bgb:at:s01:berechtigung")) { origin case_input; }
+    }
+    evaluate truth(anteil_am_ertrag(entity_ref("urn:de:bgb:at:s01:zins"), entity_ref("urn:de:bgb:at:s01:paechter"), 595.07 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anteil_am_ertrag(entity_ref("urn:de:bgb:at:s01:zins"), entity_ref("urn:de:bgb:at:s01:paechter"), 595.06 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

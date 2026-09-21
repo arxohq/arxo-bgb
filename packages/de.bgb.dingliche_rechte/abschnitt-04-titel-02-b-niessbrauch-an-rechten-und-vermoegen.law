@@ -1,0 +1,604 @@
+// --- Buch 3 Abschnitt 4 Titel 2: Nießbrauch an Rechten und an einem Vermögen (§§ 1068–1089) -----------
+//
+// § 1068 Abs. 2 ordnet die entsprechende Anwendung der Sachvorschriften an,
+// soweit §§ 1069–1084 nichts anderes bestimmen; dieses Paket rechnet diese
+// Anwendung nicht ein zweites Mal (README „Was das Paket nicht tut“), sondern
+// stellt die eigens geregelten Punkte der §§ 1069–1084 dar. Nießbrauch an
+// einem VERMÖGEN (§§ 1085–1089) besteht rechtlich nur als Bündel einzelner
+// Gegenstands-Nießbräuche (§ 1085 Satz 1); die Kennzeichnung
+// `vermoegensniessbrauch` markiert diese Zugehörigkeit, ohne einen zweiten
+// Belastungstyp einzuführen. Kanal §47.3: „Gefährdung der Sicherheit“
+// (§ 1078), „ohne Gefahr abgewartet werden kann“ (§ 1087 Abs. 2).
+
+// --- § 1068: Nießbrauch an Rechten — Gegenstände -----------------------------------------------------
+
+pub relation belastungsgegenstand_forderung(n: Niessbrauch, a: Anspruch) kind empirical {
+    key(n);
+    label de official "Forderung, die Gegenstand des Nießbrauchs ist (§ 1068 Abs. 1)";
+    label en unofficial "claim that is the object of the usufruct (§ 1068 (1))";
+}
+pub relation niessbrauch_an_recht_sachvorschriften_gelten(n: Niessbrauch) kind derived {
+    label de official "auf den Nießbrauch an dem Recht finden die Vorschriften über den Nießbrauch an Sachen entsprechende Anwendung, soweit sich nicht aus §§ 1069–1084 ein anderes ergibt (§ 1068 Abs. 2)";
+    label en unofficial "the provisions on the usufruct of things apply correspondingly to the usufruct of the right, except as §§ 1069–1084 provide otherwise (§ 1068 (2))";
+}
+@source(BGB_P1068)
+rule NiessbrauchAnRechtSachvorschriftenGelten(n: Niessbrauch, a: Anspruch) strict {
+    label de official "Auf den Nießbrauch an Rechten finden die Vorschriften über den Nießbrauch an Sachen entsprechende Anwendung, soweit sich nicht aus den §§ 1069 bis 1084 ein anderes ergibt (§ 1068 Abs. 2)";
+    label en unofficial "The provisions on the usufruct of things apply correspondingly to the usufruct of rights, except as §§ 1069 to 1084 provide otherwise (§ 1068 (2))";
+    when belastungsgegenstand_forderung(n, a);
+    then niessbrauch_an_recht_sachvorschriften_gelten(n);
+}
+
+// --- § 1069: Bestellung ------------------------------------------------------------------------------
+
+pub relation bestellung_nach_uebertragungsvorschriften_erfolgt(n: Niessbrauch) kind empirical {
+    label de official "die Bestellung erfolgt nach den für die Übertragung des Rechts geltenden Vorschriften (§ 1069 Abs. 1)";
+    label en unofficial "creation follows the provisions applicable to the transfer of the right (§ 1069 (1))";
+}
+pub relation forderung_nicht_uebertragbar(a: Anspruch) kind empirical {
+    label de official "die Forderung ist nicht übertragbar (§ 1069 Abs. 2)";
+    label en unofficial "the claim is not transferable (§ 1069 (2))";
+}
+pub relation niessbrauch_an_forderung_bestellt(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch an der Forderung ist wirksam bestellt (§ 1069 Abs. 1)";
+    label en unofficial "the usufruct of the claim has been validly created (§ 1069 (1))";
+}
+pub relation niessbrauch_an_nicht_uebertragbarem_recht_unmoeglich(a: Anspruch) kind derived {
+    label de official "an einem nicht übertragbaren Recht kann ein Nießbrauch nicht bestellt werden (§ 1069 Abs. 2)";
+    label en unofficial "a usufruct cannot be created in a non-transferable right (§ 1069 (2))";
+}
+@source(BGB_P1069) {
+    rule NiessbrauchAnForderungBestellt(n: Niessbrauch, a: Anspruch) strict {
+        label de official "Die Bestellung des Nießbrauchs an einem Recht erfolgt nach den für die Übertragung des Rechts geltenden Vorschriften (§ 1069 Abs. 1)";
+        label en unofficial "Creation of a usufruct of a right follows the provisions applicable to the transfer of the right (§ 1069 (1))";
+        when belastungsgegenstand_forderung(n, a) and bestellung_nach_uebertragungsvorschriften_erfolgt(n);
+        then niessbrauch_an_forderung_bestellt(n);
+    }
+    rule NiessbrauchAnNichtUebertragbaremRechtUnmoeglich(a: Anspruch) strict {
+        label de official "An einem Recht, das nicht übertragbar ist, kann ein Nießbrauch nicht bestellt werden (§ 1069 Abs. 2)";
+        label en unofficial "A usufruct cannot be created in a right that is not transferable (§ 1069 (2))";
+        when forderung_nicht_uebertragbar(a);
+        then niessbrauch_an_nicht_uebertragbarem_recht_unmoeglich(a);
+    }
+}
+
+// --- § 1070: Rechtsverhältnis zum Verpflichteten; Wirksamkeit der Verwalterübertragung -----------------
+
+pub relation rechtsverhaeltnis_wie_bei_uebertragung(n: Niessbrauch, verpflichteter: Person) kind derived {
+    label de official "auf das Rechtsverhältnis zwischen Nießbraucher und Verpflichtetem finden die Vorschriften Anwendung, die bei Übertragung des Rechts für das Verhältnis Erwerber–Verpflichteter gelten (§ 1070 Abs. 1)";
+    label en unofficial "the provisions applicable to the relationship between acquirer and obligor on transfer of the right apply to the relationship between usufructuary and obligor (§ 1070 (1))";
+}
+@source(BGB_P1070)
+rule RechtsverhaeltnisWieBeiUebertragung(n: Niessbrauch, a: Anspruch, verpflichteter: Person) strict {
+    label de official "Ist ein Recht, kraft dessen eine Leistung gefordert werden kann, Gegenstand des Nießbrauchs, so finden auf das Rechtsverhältnis zwischen dem Nießbraucher und dem Verpflichteten die Vorschriften entsprechende Anwendung, welche im Falle der Übertragung des Rechts gelten (§ 1070 Abs. 1)";
+    label en unofficial "If a right to demand performance is the object of the usufruct, the provisions applicable on transfer of the right apply correspondingly to the relationship between usufructuary and obligor (§ 1070 (1))";
+    when belastungsgegenstand_forderung(n, a) and de.bgb.core::anspruchsgegner(a, verpflichteter);
+    then rechtsverhaeltnis_wie_bei_uebertragung(n, verpflichteter);
+}
+
+pub relation verwalterkenntnis_oder_mitteilung(n: Niessbrauch, verpflichteter: Person) kind empirical {
+    label de official "der Verpflichtete hat von der Verwalterbestellung nach § 1052 Kenntnis erlangt oder ihm ist eine Mitteilung zugestellt worden (§ 1070 Abs. 2 Satz 1)";
+    label en unofficial "the obligor has learned of the appointment of an administrator under § 1052 or been served notice of it (§ 1070 (2) sentence 1)";
+}
+pub relation verwalterbestellung_wirksam_gegenueber_verpflichtetem(n: Niessbrauch, verpflichteter: Person) kind derived {
+    label de official "die Übertragung der Ausübung an den Verwalter ist dem Verpflichteten gegenüber wirksam (§ 1070 Abs. 2 Satz 1)";
+    label en unofficial "the transfer of exercise to the administrator is effective against the obligor (§ 1070 (2) sentence 1)";
+}
+@source(BGB_P1070)
+rule VerwalterbestellungWirksamGegenueberVerpflichtetem(n: Niessbrauch, verpflichteter: Person) strict {
+    label de official "Wird die Ausübung des Nießbrauchs nach § 1052 einem Verwalter übertragen, so ist die Übertragung dem Verpflichteten gegenüber erst wirksam, wenn er von der Anordnung Kenntnis erlangt oder ihm eine Mitteilung zugestellt wird (§ 1070 Abs. 2 Satz 1)";
+    label en unofficial "If exercise of the usufruct is transferred to an administrator under § 1052, the transfer is effective against the obligor only once they learn of the order or are served notice (§ 1070 (2) sentence 1)";
+    when anordnung_der_verwaltung_zulaessig(n, _) and verwalterkenntnis_oder_mitteilung(n, verpflichteter);
+    then verwalterbestellung_wirksam_gegenueber_verpflichtetem(n, verpflichteter);
+}
+
+// --- § 1071: Aufhebung oder Änderung des belasteten Rechts ---------------------------------------------
+
+pub relation zustimmung_des_niessbrauchers_zur_aufhebung(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher stimmt der Aufhebung des belasteten Rechts zu (§ 1071 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary consents to the termination of the encumbered right (§ 1071 (1) sentence 1)";
+}
+pub relation aenderung_beeintraechtigt_den_niessbrauch(n: Niessbrauch) kind empirical {
+    label de official "die Änderung des belasteten Rechts beeinträchtigt den Nießbrauch (§ 1071 Abs. 2)";
+    label en unofficial "the change to the encumbered right impairs the usufruct (§ 1071 (2))";
+}
+pub relation aufhebung_oder_aenderung_wirksam(n: Niessbrauch) kind derived {
+    label de official "die Aufhebung oder die beeinträchtigende Änderung des belasteten Rechts ist wirksam (§ 1071)";
+    label en unofficial "the termination or impairing change of the encumbered right is effective (§ 1071)";
+}
+pub relation zustimmung_unwiderruflich(n: Niessbrauch) kind derived {
+    label de official "die Zustimmung des Nießbrauchers ist unwiderruflich (§ 1071 Abs. 1 Satz 2)";
+    label en unofficial "the usufructuary's consent is irrevocable (§ 1071 (1) sentence 2)";
+}
+@source(BGB_P1071) {
+    rule AufhebungWirksamMitZustimmung(n: Niessbrauch, a: Anspruch) strict {
+        label de official "Ein dem Nießbrauch unterliegendes Recht kann durch Rechtsgeschäft nur mit Zustimmung des Nießbrauchers aufgehoben werden (§ 1071 Abs. 1 Satz 1)";
+        label en unofficial "A right subject to a usufruct may be terminated by juristic act only with the usufructuary's consent (§ 1071 (1) sentence 1)";
+        when belastungsgegenstand_forderung(n, a) and zustimmung_des_niessbrauchers_zur_aufhebung(n);
+        then aufhebung_oder_aenderung_wirksam(n);
+    }
+    rule ZustimmungUnwiderruflich(n: Niessbrauch) strict {
+        label de official "Die Zustimmung ist unwiderruflich (§ 1071 Abs. 1 Satz 2)";
+        label en unofficial "The consent is irrevocable (§ 1071 (1) sentence 2)";
+        when zustimmung_des_niessbrauchers_zur_aufhebung(n);
+        then zustimmung_unwiderruflich(n);
+    }
+    rule AenderungWirksamMitZustimmung(n: Niessbrauch, a: Anspruch) strict {
+        label de official "Das Gleiche gilt im Falle einer Änderung des Rechts, sofern sie den Nießbrauch beeinträchtigt (§ 1071 Abs. 2)";
+        label en unofficial "The same applies to a change of the right, in so far as it impairs the usufruct (§ 1071 (2))";
+        when belastungsgegenstand_forderung(n, a) and aenderung_beeintraechtigt_den_niessbrauch(n) and zustimmung_des_niessbrauchers_zur_aufhebung(n);
+        then aufhebung_oder_aenderung_wirksam(n);
+    }
+}
+
+// --- § 1072: Beendigung auch bei Rechten, die keine Rechte an beweglichen Sachen sind -------------------
+
+@source(BGB_P1072)
+rule NiessbrauchAnRechtErlischtDurchKonsolidation(n: Niessbrauch, a: Anspruch) strict {
+    label de official "Die Beendigung des Nießbrauchs tritt nach den Vorschriften der §§ 1063, 1064 auch dann ein, wenn das dem Nießbrauch unterliegende Recht nicht ein Recht an einer beweglichen Sache ist (§ 1072, § 1063 Abs. 1)";
+    label en unofficial "Termination of the usufruct also occurs under §§ 1063, 1064 where the encumbered right is not a right in a movable thing (§ 1072, § 1063 (1))";
+    when belastungsgegenstand_forderung(n, a) and niessbrauch_und_eigentum_in_derselben_person(n);
+    then niessbrauch_erloschen_1063(n);
+}
+@source(BGB_P1072)
+rule NiessbrauchAnRechtAufgehobenDurchErklaerung(n: Niessbrauch, a: Anspruch) strict {
+    label de official "Die Beendigung des Nießbrauchs tritt nach den Vorschriften der §§ 1063, 1064 auch dann ein, wenn das dem Nießbrauch unterliegende Recht nicht ein Recht an einer beweglichen Sache ist (§ 1072, § 1064)";
+    label en unofficial "Termination of the usufruct also occurs under §§ 1063, 1064 where the encumbered right is not a right in a movable thing (§ 1072, § 1064)";
+    when belastungsgegenstand_forderung(n, a) and erklaerung_der_aufgabe_gegenueber_eigentuemer_oder_besteller(n);
+    then aufhebung_durch_rechtsgeschaeft_genuegend(n);
+}
+
+// --- § 1073: Nießbrauch an einer Leibrente -----------------------------------------------------------
+
+pub relation gegenstand_ist_leibrente_oder_aehnliches_recht(n: Niessbrauch) kind empirical {
+    label de official "Gegenstand des Nießbrauchs ist eine Leibrente, ein Auszug oder ein ähnliches Recht (§ 1073)";
+    label en unofficial "the usufruct concerns a life annuity, a retirement provision or a similar right (§ 1073)";
+}
+pub relation niessbraucher_erhaelt_die_einzelleistungen(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "dem Nießbraucher gebühren die einzelnen Leistungen, die auf Grund des Rechts gefordert werden können (§ 1073)";
+    label en unofficial "the usufructuary is entitled to the individual payments that may be demanded under the right (§ 1073)";
+}
+@source(BGB_P1073)
+rule NiessbraucherErhaeltDieEinzelleistungen(n: Niessbrauch, berechtigter: Person) strict {
+    label de official "Dem Nießbraucher einer Leibrente, eines Auszugs oder eines ähnlichen Rechts gebühren die einzelnen Leistungen, die auf Grund des Rechts gefordert werden können (§ 1073)";
+    label en unofficial "The usufructuary of a life annuity, a retirement provision or a similar right is entitled to the individual payments demandable under the right (§ 1073)";
+    when gegenstand_ist_leibrente_oder_aehnliches_recht(n) and berechtigter(n, berechtigter);
+    then niessbraucher_erhaelt_die_einzelleistungen(n, berechtigter);
+}
+
+// --- § 1074: Nießbrauch an einer Forderung; Kündigung und Einziehung ------------------------------------
+
+pub relation niessbrauch_faelligkeit_haengt_von_kuendigung_ab(n: Niessbrauch) kind empirical {
+    label de official "die Fälligkeit der Forderung hängt von einer Kündigung des Gläubigers ab (§ 1074 Satz 1)";
+    label en unofficial "maturity of the claim depends on notice of termination by the creditor (§ 1074 sentence 1)";
+}
+pub relation niessbraucher_zur_einziehung_berechtigt(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "der Nießbraucher der Forderung ist zur Einziehung berechtigt (§ 1074 Satz 1)";
+    label en unofficial "the usufructuary of the claim is entitled to collect it (§ 1074 sentence 1)";
+}
+pub relation niessbraucher_zur_kuendigung_berechtigt(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "der Nießbraucher ist zur Kündigung berechtigt, wenn die Fälligkeit davon abhängt (§ 1074 Satz 1)";
+    label en unofficial "the usufructuary is entitled to give notice of termination where maturity depends on it (§ 1074 sentence 1)";
+}
+pub relation pflicht_zur_ordnungsmaessigen_einziehung(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat für die ordnungsmäßige Einziehung zu sorgen (§ 1074 Satz 2)";
+    label en unofficial "the usufructuary must ensure proper collection (§ 1074 sentence 2)";
+}
+pub relation keine_befugnis_zu_anderen_verfuegungen(n: Niessbrauch) kind derived {
+    label de official "zu anderen Verfügungen über die Forderung ist der Nießbraucher nicht berechtigt (§ 1074 Satz 3)";
+    label en unofficial "the usufructuary is not entitled to other dispositions over the claim (§ 1074 sentence 3)";
+}
+@source(BGB_P1074) {
+    rule NiessbraucherZurEinziehungBerechtigt(n: Niessbrauch, a: Anspruch, berechtigter: Person) strict {
+        label de official "Der Nießbraucher einer Forderung ist zur Einziehung der Forderung berechtigt (§ 1074 Satz 1)";
+        label en unofficial "The usufructuary of a claim is entitled to collect the claim (§ 1074 sentence 1)";
+        when belastungsgegenstand_forderung(n, a) and berechtigter(n, berechtigter);
+        then niessbraucher_zur_einziehung_berechtigt(n, berechtigter);
+    }
+    rule NiessbraucherZurKuendigungBerechtigt(n: Niessbrauch, a: Anspruch, berechtigter: Person) strict {
+        label de official "Wenn die Fälligkeit von einer Kündigung des Gläubigers abhängt, ist der Nießbraucher zur Kündigung berechtigt (§ 1074 Satz 1)";
+        label en unofficial "Where maturity depends on the creditor's notice, the usufructuary is entitled to give notice (§ 1074 sentence 1)";
+        when belastungsgegenstand_forderung(n, a) and niessbrauch_faelligkeit_haengt_von_kuendigung_ab(n) and berechtigter(n, berechtigter);
+        then niessbraucher_zur_kuendigung_berechtigt(n, berechtigter);
+    }
+    rule PflichtZurOrdnungsmaessigenEinziehung(n: Niessbrauch, a: Anspruch) strict {
+        label de official "Er hat für die ordnungsmäßige Einziehung zu sorgen (§ 1074 Satz 2)";
+        label en unofficial "They must ensure proper collection (§ 1074 sentence 2)";
+        when belastungsgegenstand_forderung(n, a);
+        then pflicht_zur_ordnungsmaessigen_einziehung(n);
+    }
+    rule KeineBefugnisZuAnderenVerfuegungen(n: Niessbrauch, a: Anspruch) strict {
+        label de official "Zu anderen Verfügungen über die Forderung ist er nicht berechtigt (§ 1074 Satz 3)";
+        label en unofficial "They are not entitled to other dispositions over the claim (§ 1074 sentence 3)";
+        when belastungsgegenstand_forderung(n, a);
+        then keine_befugnis_zu_anderen_verfuegungen(n);
+    }
+}
+
+// --- § 1075: Wirkung der Leistung -----------------------------------------------------------------------
+
+pub relation schuldner_leistet_an_niessbraucher(n: Niessbrauch, glaeubiger: Person, geleistet: Sache) kind empirical {
+    label de official "der Schuldner leistet den geschuldeten Gegenstand an den Nießbraucher (§ 1075 Abs. 1)";
+    label en unofficial "the debtor renders the object owed to the usufructuary (§ 1075 (1))";
+}
+pub relation glaeubiger_erwirbt_den_geleisteten_gegenstand(n: Niessbrauch, glaeubiger: Person, geleistet: Sache) kind derived {
+    label de official "der Gläubiger erwirbt den geleisteten Gegenstand (§ 1075 Abs. 1)";
+    label en unofficial "the creditor acquires the object rendered (§ 1075 (1))";
+}
+pub relation niessbraucher_erwirbt_niessbrauch_am_geleisteten(n: Niessbrauch, geleistet: Sache) kind derived {
+    label de official "der Nießbraucher erwirbt den Nießbrauch an dem geleisteten Gegenstand (§ 1075 Abs. 1)";
+    label en unofficial "the usufructuary acquires the usufruct of the object rendered (§ 1075 (1))";
+}
+@source(BGB_P1075) {
+    rule NiessbrauchGlaeubigerErwirbtDenGeleistetenGegenstand(n: Niessbrauch, a: Anspruch, glaeubiger: Person, geleistet: Sache) strict {
+        label de official "Mit der Leistung des Schuldners an den Nießbraucher erwirbt der Gläubiger den geleisteten Gegenstand (§ 1075 Abs. 1)";
+        label en unofficial "On the debtor's performance to the usufructuary, the creditor acquires the object rendered (§ 1075 (1))";
+        when belastungsgegenstand_forderung(n, a) and schuldner_leistet_an_niessbraucher(n, glaeubiger, geleistet);
+        then glaeubiger_erwirbt_den_geleisteten_gegenstand(n, glaeubiger, geleistet);
+    }
+    rule NiessbraucherErwirbtNiessbrauchAmGeleisteten(n: Niessbrauch, a: Anspruch, glaeubiger: Person, geleistet: Sache) strict {
+        label de official "... und der Nießbraucher den Nießbrauch an dem Gegenstand (§ 1075 Abs. 1)";
+        label en unofficial "... and the usufructuary the usufruct of the object (§ 1075 (1))";
+        when belastungsgegenstand_forderung(n, a) and schuldner_leistet_an_niessbraucher(n, glaeubiger, geleistet);
+        then niessbraucher_erwirbt_niessbrauch_am_geleisteten(n, geleistet);
+    }
+    rule NiessbraucherEigentumBeiVerbrauchbarerLeistung(n: Niessbrauch, a: Anspruch, glaeubiger: Person, geleistet: Sache) strict {
+        label de official "Werden verbrauchbare Sachen geleistet, so erwirbt der Nießbraucher das Eigentum; § 1067 findet entsprechende Anwendung (§ 1075 Abs. 2)";
+        label en unofficial "If consumable things are rendered, the usufructuary acquires ownership; § 1067 applies correspondingly (§ 1075 (2))";
+        when belastungsgegenstand_forderung(n, a) and schuldner_leistet_an_niessbraucher(n, glaeubiger, geleistet)
+            and geld_oder_verbrauchbare_sache_geleistet(n);
+        then niessbraucher_wird_eigentuemer_der_verbrauchbaren_sachen(n);
+    }
+}
+pub relation geld_oder_verbrauchbare_sache_geleistet(n: Niessbrauch) kind empirical {
+    label de official "die geleisteten Gegenstände sind verbrauchbare Sachen (§ 1075 Abs. 2, § 92)";
+    label en unofficial "the objects rendered are consumable things (§ 1075 (2), § 92)";
+}
+
+// --- §§ 1076–1079: Nießbrauch an verzinslicher Forderung -------------------------------------------------
+
+pub relation forderung_verzinslich_ausstehend(n: Niessbrauch) kind empirical {
+    label de official "eine auf Zinsen ausstehende Forderung ist Gegenstand des Nießbrauchs (§ 1076)";
+    label en unofficial "a claim bearing interest and still outstanding is the object of the usufruct (§ 1076)";
+}
+pub relation vorschriften_1077_bis_1079_gelten(n: Niessbrauch) kind derived {
+    label de official "für den Nießbrauch an der verzinslichen Forderung gelten die Vorschriften der §§ 1077 bis 1079 (§ 1076)";
+    label en unofficial "§§ 1077 to 1079 apply to the usufruct of the interest-bearing claim (§ 1076)";
+}
+@source(BGB_P1076)
+rule Vorschriften1077Bis1079Gelten(n: Niessbrauch) strict {
+    label de official "Ist eine auf Zinsen ausstehende Forderung Gegenstand des Nießbrauchs, so gelten die Vorschriften der §§ 1077 bis 1079 (§ 1076)";
+    label en unofficial "If a claim bearing interest and still outstanding is the object of the usufruct, §§ 1077 to 1079 apply (§ 1076)";
+    when forderung_verzinslich_ausstehend(n);
+    then vorschriften_1077_bis_1079_gelten(n);
+}
+pub relation zahlung_an_niessbraucher_und_glaeubiger_gemeinschaftlich_erforderlich(n: Niessbrauch) kind derived {
+    label de official "der Schuldner kann das Kapital nur an den Nießbraucher und den Gläubiger gemeinschaftlich zahlen (§ 1077 Abs. 1 Satz 1)";
+    label en unofficial "the debtor may pay the capital only to the usufructuary and the creditor jointly (§ 1077 (1) sentence 1)";
+}
+pub relation kuendigung_nur_gemeinschaftlich(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher und der Gläubiger können nur gemeinschaftlich kündigen (§ 1077 Abs. 2 Satz 1)";
+    label en unofficial "the usufructuary and the creditor may give notice only jointly (§ 1077 (2) sentence 1)";
+}
+@source(BGB_P1077) {
+    rule ZahlungGemeinschaftlichErforderlich(n: Niessbrauch) strict {
+        label de official "Der Schuldner kann das Kapital nur an den Nießbraucher und den Gläubiger gemeinschaftlich zahlen (§ 1077 Abs. 1 Satz 1)";
+        label en unofficial "The debtor may pay the capital only to the usufructuary and the creditor jointly (§ 1077 (1) sentence 1)";
+        when forderung_verzinslich_ausstehend(n);
+        then zahlung_an_niessbraucher_und_glaeubiger_gemeinschaftlich_erforderlich(n);
+    }
+    rule KuendigungNurGemeinschaftlich(n: Niessbrauch) strict {
+        label de official "Der Nießbraucher und der Gläubiger können nur gemeinschaftlich kündigen (§ 1077 Abs. 2 Satz 1)";
+        label en unofficial "The usufructuary and the creditor may give notice only jointly (§ 1077 (2) sentence 1)";
+        when forderung_verzinslich_ausstehend(n);
+        then kuendigung_nur_gemeinschaftlich(n);
+    }
+}
+
+pub relation forderung_faellig(n: Niessbrauch) kind empirical {
+    label de official "die Forderung ist fällig (§ 1078 Satz 1)";
+    label en unofficial "the claim has matured (§ 1078 sentence 1)";
+}
+pub relation niessbrauch_mitwirkungspflicht_zur_einziehung(n: Niessbrauch) kind derived {
+    label de official "Nießbraucher und Gläubiger sind einander zur Mitwirkung an der Einziehung verpflichtet (§ 1078 Satz 1)";
+    label en unofficial "usufructuary and creditor are mutually obliged to cooperate in collection (§ 1078 sentence 1)";
+}
+@source(BGB_P1078)
+pub external judgment relation kuendigungsmitwirkung_wegen_gefaehrdung_geboten(n: Niessbrauch) {
+    authority Court;
+    label de official "die Einziehung der Forderung ist wegen Gefährdung ihrer Sicherheit nach den Regeln ordnungsmäßiger Vermögensverwaltung geboten (§ 1078 Satz 2) — Wertung des Gerichts";
+    label en unofficial "collection of the claim is required by the rules of proper asset management because its security is endangered (§ 1078 sentence 2) — evaluation by the court";
+}
+pub relation mitwirkungspflicht_zur_kuendigung(n: Niessbrauch) kind derived {
+    label de official "jeder Teil kann die Mitwirkung des anderen zur Kündigung verlangen (§ 1078 Satz 2)";
+    label en unofficial "each party may demand the other's cooperation in giving notice (§ 1078 sentence 2)";
+}
+@source(BGB_P1078) {
+    rule MitwirkungspflichtZurEinziehungBeiFaelligkeit(n: Niessbrauch) strict {
+        label de official "Ist die Forderung fällig, so sind der Nießbraucher und der Gläubiger einander verpflichtet, zur Einziehung mitzuwirken (§ 1078 Satz 1)";
+        label en unofficial "If the claim has matured, the usufructuary and the creditor are mutually obliged to cooperate in collection (§ 1078 sentence 1)";
+        when forderung_verzinslich_ausstehend(n) and forderung_faellig(n);
+        then niessbrauch_mitwirkungspflicht_zur_einziehung(n);
+    }
+    rule MitwirkungspflichtZurKuendigungBeiGefaehrdung(n: Niessbrauch) strict {
+        label de official "Hängt die Fälligkeit von einer Kündigung ab, so kann jeder Teil die Mitwirkung des anderen zur Kündigung verlangen, wenn die Einziehung wegen Gefährdung ihrer Sicherheit nach ordnungsmäßiger Vermögensverwaltung geboten ist (§ 1078 Satz 2)";
+        label en unofficial "Where maturity depends on notice, each party may demand the other's cooperation in giving notice where collection is required by proper asset management owing to danger to its security (§ 1078 sentence 2)";
+        when forderung_verzinslich_ausstehend(n) and niessbrauch_faelligkeit_haengt_von_kuendigung_ab(n) and kuendigungsmitwirkung_wegen_gefaehrdung_geboten(n);
+        then mitwirkungspflicht_zur_kuendigung(n);
+    }
+}
+
+pub relation mitwirkungspflicht_zur_anlegung_des_kapitals(n: Niessbrauch) kind derived {
+    label de official "Nießbraucher und Gläubiger sind einander verpflichtet, an der vorschriftsmäßigen Anlegung des eingezogenen Kapitals mitzuwirken (§ 1079 Satz 1)";
+    label en unofficial "usufructuary and creditor are mutually obliged to cooperate in properly investing the capital collected (§ 1079 sentence 1)";
+}
+pub relation art_der_anlegung_bestimmt_niessbraucher(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "die Art der Anlegung bestimmt der Nießbraucher (§ 1079 Satz 2)";
+    label en unofficial "the usufructuary determines the manner of investment (§ 1079 sentence 2)";
+}
+@source(BGB_P1079) {
+    rule MitwirkungspflichtZurAnlegungDesKapitals(n: Niessbrauch) strict {
+        label de official "Der Nießbraucher und der Gläubiger sind einander verpflichtet, dazu mitzuwirken, dass das eingezogene Kapital vorschriftsmäßig angelegt und gleichzeitig dem Nießbraucher der Nießbrauch bestellt wird (§ 1079 Satz 1)";
+        label en unofficial "The usufructuary and creditor must cooperate so the capital collected is properly invested and a usufruct simultaneously created for the usufructuary (§ 1079 sentence 1)";
+        when forderung_verzinslich_ausstehend(n);
+        then mitwirkungspflicht_zur_anlegung_des_kapitals(n);
+    }
+    rule ArtDerAnlegungBestimmtNiessbraucher(n: Niessbrauch, berechtigter: Person) strict {
+        label de official "Die Art der Anlegung bestimmt der Nießbraucher (§ 1079 Satz 2)";
+        label en unofficial "The usufructuary determines the manner of investment (§ 1079 sentence 2)";
+        when forderung_verzinslich_ausstehend(n) and berechtigter(n, berechtigter);
+        then art_der_anlegung_bestimmt_niessbraucher(n, berechtigter);
+    }
+}
+
+// --- § 1080: Nießbrauch an Grund- oder Rentenschuld — Verweis auf die Forderungsvorschriften -----------
+
+pub relation belastungsgegenstand_grundpfandrecht(n: Niessbrauch, h: Grundpfandrecht) kind empirical {
+    key(n);
+    label de official "Grund- oder Rentenschuld, die Gegenstand des Nießbrauchs ist (§ 1080)";
+    label en unofficial "land charge or annuity charge that is the object of the usufruct (§ 1080)";
+}
+pub relation niessbrauch_an_grundschuld_forderungsvorschriften_gelten(n: Niessbrauch) kind derived {
+    label de official "die Vorschriften über den Nießbrauch an einer Forderung gelten auch für den Nießbrauch an einer Grundschuld und an einer Rentenschuld (§ 1080)";
+    label en unofficial "the provisions on the usufruct of a claim also apply to the usufruct of a land charge or an annuity charge (§ 1080)";
+}
+@source(BGB_P1080)
+rule NiessbrauchAnGrundschuldForderungsvorschriftenGelten(n: Niessbrauch, h: Grundpfandrecht) strict {
+    label de official "Die Vorschriften über den Nießbrauch an einer Forderung gelten auch für den Nießbrauch an einer Grundschuld und an einer Rentenschuld (§ 1080)";
+    label en unofficial "The provisions on the usufruct of a claim also apply to the usufruct of a land charge and of an annuity charge (§ 1080)";
+    when belastungsgegenstand_grundpfandrecht(n, h) and art_des_grundpfandrechts(h, Grundschuld);
+    then niessbrauch_an_grundschuld_forderungsvorschriften_gelten(n);
+}
+
+// --- §§ 1081–1084: Nießbrauch an Inhaber- oder Orderpapieren --------------------------------------------
+
+pub entity Wertpapier {
+    label de official "Inhaberpapier oder mit Blankoindossament versehenes Orderpapier (§ 1081 Abs. 1)";
+    label en unofficial "bearer instrument or order instrument endorsed in blank (§ 1081 (1))";
+}
+pub relation belastungsgegenstand_wertpapier(n: Niessbrauch, w: Wertpapier) kind empirical {
+    key(n);
+    label de official "Wertpapier, das Gegenstand des Nießbrauchs ist (§ 1081 Abs. 1)";
+    label en unofficial "instrument that is the object of the usufruct (§ 1081 (1))";
+}
+pub relation mitbesitz_am_papier_gemeinschaftlich(n: Niessbrauch) kind derived {
+    label de official "der Besitz des Papiers und des Erneuerungsscheins steht Nießbraucher und Eigentümer gemeinschaftlich zu (§ 1081 Abs. 1 Satz 1)";
+    label en unofficial "possession of the instrument and its renewal slip belongs jointly to the usufructuary and the owner (§ 1081 (1) sentence 1)";
+}
+pub relation besitz_der_zinsscheine_beim_niessbraucher(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "der Besitz der Zins-, Renten- oder Gewinnanteilscheine steht dem Nießbraucher zu (§ 1081 Abs. 1 Satz 2)";
+    label en unofficial "possession of the interest, annuity or dividend coupons belongs to the usufructuary (§ 1081 (1) sentence 2)";
+}
+pub relation mitbesitz_eingeraeumt(n: Niessbrauch) kind empirical {
+    label de official "dem Erwerber wird der Mitbesitz an dem Papier eingeräumt (§ 1081 Abs. 2)";
+    label en unofficial "co-possession of the instrument is granted to the acquirer (§ 1081 (2))";
+}
+pub relation niessbrauch_an_wertpapier_bestellt(n: Niessbrauch) kind derived {
+    label de official "zur Bestellung genügt anstelle der Übergabe die Einräumung des Mitbesitzes (§ 1081 Abs. 2)";
+    label en unofficial "granting co-possession suffices for creation, in place of delivery (§ 1081 (2))";
+}
+@source(BGB_P1081) {
+    rule MitbesitzAmPapierGemeinschaftlich(n: Niessbrauch, w: Wertpapier) strict {
+        label de official "Ist ein Inhaberpapier oder ein mit Blankoindossament versehenes Orderpapier Gegenstand des Nießbrauchs, so steht der Besitz des Papiers und des Erneuerungsscheins dem Nießbraucher und dem Eigentümer gemeinschaftlich zu (§ 1081 Abs. 1 Satz 1)";
+        label en unofficial "If a bearer instrument or an order instrument endorsed in blank is the object of the usufruct, possession of the instrument and its renewal slip belongs jointly to the usufructuary and the owner (§ 1081 (1) sentence 1)";
+        when belastungsgegenstand_wertpapier(n, w);
+        then mitbesitz_am_papier_gemeinschaftlich(n);
+    }
+    rule BesitzDerZinsscheineBeimNiessbraucher(n: Niessbrauch, w: Wertpapier, berechtigter: Person) strict {
+        label de official "Der Besitz der zu dem Papier gehörenden Zins-, Renten- oder Gewinnanteilscheine steht dem Nießbraucher zu (§ 1081 Abs. 1 Satz 2)";
+        label en unofficial "Possession of the interest, annuity or dividend coupons belonging to the instrument belongs to the usufructuary (§ 1081 (1) sentence 2)";
+        when belastungsgegenstand_wertpapier(n, w) and berechtigter(n, berechtigter);
+        then besitz_der_zinsscheine_beim_niessbraucher(n, berechtigter);
+    }
+    rule NiessbrauchAnWertpapierBestellt(n: Niessbrauch, w: Wertpapier) strict {
+        label de official "Zur Bestellung des Nießbrauchs genügt anstelle der Übergabe des Papiers die Einräumung des Mitbesitzes (§ 1081 Abs. 2)";
+        label en unofficial "Granting co-possession of the instrument suffices for creation of the usufruct, in place of delivery (§ 1081 (2))";
+        when belastungsgegenstand_wertpapier(n, w) and mitbesitz_eingeraeumt(n);
+        then niessbrauch_an_wertpapier_bestellt(n);
+    }
+}
+
+pub relation hinterlegung_verlangt_von(n: Niessbrauch, p: Person) kind empirical {
+    label de official "der Nießbraucher oder der Eigentümer verlangt die Hinterlegung des Papiers nebst Erneuerungsschein (§ 1082)";
+    label en unofficial "the usufructuary or the owner demands deposit of the instrument together with the renewal slip (§ 1082)";
+}
+pub relation hinterlegungspflicht_mit_gemeinschaftlicher_herausgabebindung(n: Niessbrauch) kind derived {
+    label de official "das Papier ist so zu hinterlegen, dass die Herausgabe nur von Nießbraucher und Eigentümer gemeinschaftlich verlangt werden kann (§ 1082)";
+    label en unofficial "the instrument must be deposited so that its release may be demanded only by the usufructuary and the owner jointly (§ 1082)";
+}
+@source(BGB_P1082)
+rule HinterlegungspflichtAufVerlangen(n: Niessbrauch, w: Wertpapier, p: Person) strict {
+    label de official "Das Papier ist nebst dem Erneuerungsschein auf Verlangen des Nießbrauchers oder des Eigentümers so zu hinterlegen, dass die Herausgabe nur von beiden gemeinschaftlich verlangt werden kann (§ 1082)";
+    label en unofficial "The instrument, with its renewal slip, must on demand of the usufructuary or the owner be deposited so that only both jointly may demand its release (§ 1082)";
+    when belastungsgegenstand_wertpapier(n, w) and hinterlegung_verlangt_von(n, p);
+    then hinterlegungspflicht_mit_gemeinschaftlicher_herausgabebindung(n);
+}
+
+pub relation mitwirkungspflicht_zur_einziehung_des_papiers(n: Niessbrauch) kind derived {
+    label de official "Nießbraucher und Eigentümer sind einander zur Mitwirkung bei Einziehung, Scheinbeschaffung und ordnungsmäßiger Vermögensverwaltung verpflichtet (§ 1083 Abs. 1)";
+    label en unofficial "usufructuary and owner are mutually obliged to cooperate in collection, procuring new coupons and other proper asset management (§ 1083 (1))";
+}
+pub relation praemie_gilt_als_teil_des_kapitals(n: Niessbrauch) kind derived {
+    label de official "eine bei der Einlösung gezahlte Prämie gilt als Teil des Kapitals (§ 1083 Abs. 2 Satz 2)";
+    label en unofficial "a premium paid on redemption counts as part of the capital (§ 1083 (2) sentence 2)";
+}
+@source(BGB_P1083) {
+    rule MitwirkungspflichtZurEinziehungDesPapiers(n: Niessbrauch, w: Wertpapier) strict {
+        label de official "Der Nießbraucher und der Eigentümer des Papiers sind einander verpflichtet, zur Einziehung des fälligen Kapitals, zur Beschaffung neuer Scheine sowie zu sonstigen Maßnahmen ordnungsmäßiger Vermögensverwaltung mitzuwirken (§ 1083 Abs. 1)";
+        label en unofficial "The usufructuary and the owner of the instrument must cooperate in collecting the matured capital, procuring new coupons and other measures of proper asset management (§ 1083 (1))";
+        when belastungsgegenstand_wertpapier(n, w);
+        then mitwirkungspflicht_zur_einziehung_des_papiers(n);
+    }
+    rule PraemieGiltAlsTeilDesKapitals(n: Niessbrauch, w: Wertpapier) strict {
+        label de official "Eine bei der Einlösung gezahlte Prämie gilt als Teil des Kapitals (§ 1083 Abs. 2 Satz 2)";
+        label en unofficial "A premium paid on redemption counts as part of the capital (§ 1083 (2) sentence 2)";
+        when belastungsgegenstand_wertpapier(n, w);
+        then praemie_gilt_als_teil_des_kapitals(n);
+    }
+}
+
+pub relation wertpapier_verbrauchbare_sache_nach_92(n: Niessbrauch) kind empirical {
+    label de official "das Wertpapier gehört nach § 92 zu den verbrauchbaren Sachen (§ 1084)";
+    label en unofficial "the instrument counts as a consumable thing under § 92 (§ 1084)";
+}
+@source(BGB_P1084)
+rule WertpapierVerbrauchbareSacheNach1067(n: Niessbrauch, w: Wertpapier) strict {
+    label de official "Gehört ein Inhaber- oder ein mit Blankoindossament versehenes Orderpapier nach § 92 zu den verbrauchbaren Sachen, so bewendet es bei der Vorschrift des § 1067 (§ 1084)";
+    label en unofficial "If a bearer or blank-endorsed order instrument counts as a consumable thing under § 92, § 1067 governs (§ 1084)";
+    when belastungsgegenstand_wertpapier(n, w) and wertpapier_verbrauchbare_sache_nach_92(n);
+    then niessbraucher_wird_eigentuemer_der_verbrauchbaren_sachen(n);
+}
+
+// --- §§ 1085–1089: Nießbrauch an einem Vermögen und an einer Erbschaft ----------------------------------
+
+pub relation vermoegensniessbrauch(n: Niessbrauch, besteller: Person) kind empirical {
+    label de official "der Nießbrauch ist Teil eines nach § 1085 Satz 1 bestellten Nießbrauchs an dem Vermögen des Bestellers (§ 1085)";
+    label en unofficial "the usufruct is part of a usufruct of the grantor's assets created under § 1085 sentence 1 (§ 1085)";
+}
+pub relation vorschriften_1086_bis_1088_gelten(n: Niessbrauch, besteller: Person) kind derived {
+    label de official "soweit der Nießbrauch am Vermögen bestellt ist, gelten die Vorschriften der §§ 1086 bis 1088 (§ 1085 Satz 2)";
+    label en unofficial "in so far as the usufruct of the assets has been created, §§ 1086 to 1088 apply (§ 1085 sentence 2)";
+}
+@source(BGB_P1085)
+rule NiessbrauchAmVermoegenNurAnEinzelnenGegenstaenden(n: Niessbrauch, besteller: Person) strict {
+    label de official "Der Nießbrauch an dem Vermögen einer Person kann nur in der Weise bestellt werden, dass der Nießbraucher den Nießbrauch an den einzelnen zu dem Vermögen gehörenden Gegenständen erlangt; soweit der Nießbrauch bestellt ist, gelten die Vorschriften der §§ 1086 bis 1088 (§ 1085)";
+    label en unofficial "A usufruct of a person's assets may be created only so that the usufructuary obtains the usufruct of the individual objects belonging to the assets; in so far as it is created, §§ 1086 to 1088 apply (§ 1085)";
+    when vermoegensniessbrauch(n, besteller);
+    then vorschriften_1086_bis_1088_gelten(n, besteller);
+}
+pub relation erbschaftsniessbrauch(n: Niessbrauch, besteller: Person) kind empirical {
+    label de official "der Nießbrauch ist Teil eines Nießbrauchs an einer Erbschaft (§ 1089)";
+    label en unofficial "the usufruct is part of a usufruct of an estate (§ 1089)";
+}
+@source(BGB_P1089)
+rule ErbschaftsniessbrauchIstVermoegensniessbrauch(n: Niessbrauch, besteller: Person) strict {
+    label de official "Die Vorschriften der §§ 1085 bis 1088 finden auf den Nießbrauch an einer Erbschaft entsprechende Anwendung (§ 1089)";
+    label en unofficial "§§ 1085 to 1088 apply correspondingly to the usufruct of an estate (§ 1089)";
+    when erbschaftsniessbrauch(n, besteller);
+    then vermoegensniessbrauch(n, besteller);
+}
+
+pub relation glaeubigerforderung_vor_bestellung_entstanden(n: Niessbrauch, glaeubiger: Person, betrag: Money) kind empirical {
+    label de official "eine Forderung eines Gläubigers des Bestellers ist vor der Bestellung des Nießbrauchs entstanden (§ 1086 Satz 1)";
+    label en unofficial "a claim of a creditor of the grantor arose before the usufruct was created (§ 1086 sentence 1)";
+}
+pub relation glaeubiger_kann_befriedigung_ohne_ruecksicht_verlangen(n: Niessbrauch, glaeubiger: Person, betrag: Money) kind derived {
+    label de official "der Gläubiger kann ohne Rücksicht auf den Nießbrauch Befriedigung aus den dem Nießbrauch unterliegenden Gegenständen verlangen (§ 1086 Satz 1)";
+    label en unofficial "the creditor may demand satisfaction from the objects subject to the usufruct without regard to it (§ 1086 sentence 1)";
+}
+@source(BGB_P1086)
+rule GlaeubigerKannBefriedigungVerlangen(n: Niessbrauch, besteller: Person, glaeubiger: Person, betrag: Money) strict {
+    label de official "Die Gläubiger des Bestellers können, soweit ihre Forderungen vor der Bestellung entstanden sind, ohne Rücksicht auf den Nießbrauch Befriedigung aus den dem Nießbrauch unterliegenden Gegenständen verlangen (§ 1086 Satz 1)";
+    label en unofficial "The grantor's creditors may, to the extent their claims arose before the usufruct was created, demand satisfaction from the objects subject to it, without regard to the usufruct (§ 1086 sentence 1)";
+    when vermoegensniessbrauch(n, besteller) and glaeubigerforderung_vor_bestellung_entstanden(n, glaeubiger, betrag);
+    then glaeubiger_kann_befriedigung_ohne_ruecksicht_verlangen(n, glaeubiger, betrag);
+}
+
+pub relation forderung_vor_bestellung_faellig(n: Niessbrauch, glaeubiger: Person) kind empirical {
+    label de official "eine vor der Bestellung entstandene Forderung eines Gläubigers des Bestellers ist fällig (§ 1087 Abs. 1 Satz 1)";
+    label en unofficial "a claim of a creditor of the grantor which arose before creation of the usufruct has matured (§ 1087 (1) sentence 1)";
+}
+pub relation besteller_kann_rueckgabe_zur_befriedigung_verlangen(n: Niessbrauch, besteller: Person) kind derived {
+    label de official "der Besteller kann von dem Nießbraucher Rückgabe der zur Befriedigung des Gläubigers erforderlichen Gegenstände verlangen (§ 1087 Abs. 1 Satz 1)";
+    label en unofficial "the grantor may demand from the usufructuary the return of objects necessary to satisfy the creditor (§ 1087 (1) sentence 1)";
+}
+pub relation niessbraucher_kann_durch_leistung_erfuellen(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "der Nießbraucher kann die Verbindlichkeit durch Leistung des geschuldeten Gegenstands erfüllen (§ 1087 Abs. 2 Satz 1)";
+    label en unofficial "the usufructuary may discharge the obligation by rendering the object owed (§ 1087 (2) sentence 1)";
+}
+pub relation geschuldeter_gegenstand_nicht_im_vermoegen(n: Niessbrauch) kind empirical {
+    label de official "der geschuldete Gegenstand gehört nicht zu dem dem Nießbrauch unterliegenden Vermögen (§ 1087 Abs. 2 Satz 2)";
+    label en unofficial "the object owed does not belong to the assets subject to the usufruct (§ 1087 (2) sentence 2)";
+}
+@source(BGB_P1087)
+pub external judgment relation befriedigung_durch_besteller_nicht_ohne_gefahr_abwartbar(n: Niessbrauch) {
+    authority Court;
+    label de official "die Befriedigung durch den Besteller kann nicht ohne Gefahr abgewartet werden (§ 1087 Abs. 2 Satz 2) — Wertung des Gerichts";
+    label en unofficial "satisfaction by the grantor cannot be awaited without danger (§ 1087 (2) sentence 2) — evaluation by the court";
+}
+pub relation niessbraucher_darf_gegenstand_veraeussern(n: Niessbrauch, berechtigter: Person) kind derived {
+    label de official "der Nießbraucher ist berechtigt, zum Zwecke der Befriedigung des Gläubigers einen zu dem Vermögen gehörenden Gegenstand zu veräußern (§ 1087 Abs. 2 Satz 2)";
+    label en unofficial "the usufructuary is entitled, for the purpose of satisfying the creditor, to dispose of an object belonging to the assets (§ 1087 (2) sentence 2)";
+}
+@source(BGB_P1087) {
+    rule BestellerKannRueckgabeVerlangen(n: Niessbrauch, besteller: Person, glaeubiger: Person) strict {
+        label de official "Der Besteller kann, wenn eine vor der Bestellung entstandene Forderung fällig ist, von dem Nießbraucher Rückgabe der zur Befriedigung erforderlichen Gegenstände verlangen (§ 1087 Abs. 1 Satz 1)";
+        label en unofficial "The grantor may, where a claim that arose before creation has matured, demand from the usufructuary the return of objects necessary for satisfaction (§ 1087 (1) sentence 1)";
+        when vermoegensniessbrauch(n, besteller) and forderung_vor_bestellung_faellig(n, glaeubiger);
+        then besteller_kann_rueckgabe_zur_befriedigung_verlangen(n, besteller);
+    }
+    rule NiessbraucherKannDurchLeistungErfuellen(n: Niessbrauch, besteller: Person, berechtigter: Person) strict {
+        label de official "Der Nießbraucher kann die Verbindlichkeit durch Leistung des geschuldeten Gegenstands erfüllen (§ 1087 Abs. 2 Satz 1)";
+        label en unofficial "The usufructuary may discharge the obligation by rendering the object owed (§ 1087 (2) sentence 1)";
+        when vermoegensniessbrauch(n, besteller) and berechtigter(n, berechtigter);
+        then niessbraucher_kann_durch_leistung_erfuellen(n, berechtigter);
+    }
+    rule NiessbraucherDarfGegenstandVeraeussernBeiGefahr(n: Niessbrauch, besteller: Person, berechtigter: Person) strict {
+        label de official "Gehört der geschuldete Gegenstand nicht zu dem Vermögen, so ist der Nießbraucher berechtigt, einen zum Vermögen gehörenden Gegenstand zu veräußern, wenn die Befriedigung durch den Besteller nicht ohne Gefahr abgewartet werden kann (§ 1087 Abs. 2 Satz 2)";
+        label en unofficial "Where the object owed does not belong to the assets, the usufructuary may dispose of an object belonging to the assets where satisfaction by the grantor cannot be awaited without danger (§ 1087 (2) sentence 2)";
+        when vermoegensniessbrauch(n, besteller) and geschuldeter_gegenstand_nicht_im_vermoegen(n)
+            and befriedigung_durch_besteller_nicht_ohne_gefahr_abwartbar(n) and berechtigter(n, berechtigter);
+        then niessbraucher_darf_gegenstand_veraeussern(n, berechtigter);
+    }
+}
+
+pub relation glaeubigerforderung_bei_bestellung_verzinslich(n: Niessbrauch, glaeubiger: Person) kind empirical {
+    label de official "die Forderung eines Gläubigers des Bestellers war schon zur Zeit der Bestellung verzinslich (§ 1088 Abs. 1 Satz 1)";
+    label en unofficial "the claim of a creditor of the grantor already bore interest when the usufruct was created (§ 1088 (1) sentence 1)";
+}
+pub relation glaeubiger_kann_zinsen_vom_niessbraucher_verlangen(n: Niessbrauch, glaeubiger: Person) kind derived {
+    label de official "der Gläubiger kann die Zinsen für die Dauer des Nießbrauchs auch von dem Nießbraucher verlangen (§ 1088 Abs. 1 Satz 1)";
+    label en unofficial "the creditor may demand the interest for the duration of the usufruct also from the usufructuary (§ 1088 (1) sentence 1)";
+}
+pub relation haftung_unabdingbar(n: Niessbrauch) kind derived {
+    label de official "die Haftung des Nießbrauchers kann nicht durch Vereinbarung mit dem Besteller ausgeschlossen oder beschränkt werden (§ 1088 Abs. 2)";
+    label en unofficial "the usufructuary's liability cannot be excluded or limited by agreement with the grantor (§ 1088 (2))";
+}
+pub relation niessbraucher_in_verzug(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher ist mit der Erfüllung der Verbindlichkeit gegenüber dem Besteller in Verzug (§ 1088 Abs. 3 Satz 2)";
+    label en unofficial "the usufructuary is in default of performance towards the grantor (§ 1088 (3) sentence 2)";
+}
+pub relation besteller_kann_rueckgabe_wegen_verzugs_verlangen(n: Niessbrauch, besteller: Person) kind derived {
+    label de official "die Rückgabe von Gegenständen zum Zwecke der Befriedigung kann der Besteller nur verlangen, wenn der Nießbraucher in Verzug kommt (§ 1088 Abs. 3 Satz 2)";
+    label en unofficial "the grantor may demand the return of objects for satisfaction only if the usufructuary falls into default (§ 1088 (3) sentence 2)";
+}
+@source(BGB_P1088) {
+    rule GlaeubigerKannZinsenVomNiessbraucherVerlangen(n: Niessbrauch, besteller: Person, glaeubiger: Person) strict {
+        label de official "Die Gläubiger des Bestellers, deren Forderungen schon zur Zeit der Bestellung verzinslich waren, können die Zinsen für die Dauer des Nießbrauchs auch von dem Nießbraucher verlangen (§ 1088 Abs. 1 Satz 1)";
+        label en unofficial "Creditors of the grantor whose claims already bore interest when the usufruct was created may demand the interest for its duration also from the usufructuary (§ 1088 (1) sentence 1)";
+        when vermoegensniessbrauch(n, besteller) and glaeubigerforderung_bei_bestellung_verzinslich(n, glaeubiger);
+        then glaeubiger_kann_zinsen_vom_niessbraucher_verlangen(n, glaeubiger);
+    }
+    rule HaftungUnabdingbar(n: Niessbrauch, besteller: Person) strict {
+        label de official "Die Haftung des Nießbrauchers kann nicht durch Vereinbarung zwischen ihm und dem Besteller ausgeschlossen oder beschränkt werden (§ 1088 Abs. 2)";
+        label en unofficial "The usufructuary's liability cannot be excluded or limited by agreement between them and the grantor (§ 1088 (2))";
+        when vermoegensniessbrauch(n, besteller);
+        then haftung_unabdingbar(n);
+    }
+    rule BestellerKannRueckgabeWegenVerzugsVerlangen(n: Niessbrauch, besteller: Person) strict {
+        label de official "Die Rückgabe von Gegenständen zum Zwecke der Befriedigung kann der Besteller nur verlangen, wenn der Nießbraucher mit der Erfüllung dieser Verbindlichkeit in Verzug kommt (§ 1088 Abs. 3 Satz 2)";
+        label en unofficial "The grantor may demand the return of objects for satisfaction only if the usufructuary falls into default of that obligation (§ 1088 (3) sentence 2)";
+        when vermoegensniessbrauch(n, besteller) and niessbraucher_in_verzug(n);
+        then besteller_kann_rueckgabe_wegen_verzugs_verlangen(n, besteller);
+    }
+}

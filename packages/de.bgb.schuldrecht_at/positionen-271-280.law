@@ -1,0 +1,31 @@
+// Weitere Positionen zu Fälligkeit und Pflichtverletzung.
+
+@source(BGB_P271)
+rule PositionLeistungFaelligkeit271(l: Leistung, s: Schuldverhaeltnis, glaeubiger: Person, schuldner: Person, faellig: Date) strict {
+    label de official "Der Schuldner hat die fällige Leistung ab dem Fälligkeitstag zu bewirken (§ 271)";
+    label en unofficial "The debtor must render the performance from the due date (§ 271)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when faelligkeit(l, faellig);
+    then duty LeistungFaelligkeit271 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve erfuellt(l) during [faellig, infinity);
+    };
+}
+
+@source(BGB_P280)
+rule PositionSchadensersatz280(s: Schuldverhaeltnis, sch: Schaden, schuldner: Person, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Schuldner hat den durch die Pflichtverletzung entstandenen Schaden zu ersetzen (§ 280 Abs. 1)";
+    label en unofficial "The debtor must compensate damage caused by the breach of duty (§ 280 (1))";
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when schadensersatz_wegen_pflichtverletzung(s, sch, schuldner);
+    then duty Schadensersatz280 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve schadensersatz_wegen_pflichtverletzung(s, sch, schuldner) during [beginn, infinity);
+    };
+}

@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 617 Abs. 1: Krankenfürsorgepflicht bis sechs Wochen ab der Erkrankung,
+// ohne Vorsorge durch Versicherung. Boundary zu t19 (vorsätzlich herbeigeführt).
+
+test "urn:query:bgb-dw-t18-617-pflicht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": dauerndes_dienstverhaeltnis(entity_ref("urn:de:bgb:dw:t18")) { origin case_input; }
+        assert "f2": haeusliche_gemeinschaft(entity_ref("urn:de:bgb:dw:t18")) { origin case_input; }
+        assert "f3": erkrankung_am_617(entity_ref("urn:de:bgb:dw:t18"), @2026-03-01) { origin case_input; }
+        assert "f4": kein_krankenversicherung_oder_oeffentliche_krankenpflege_vorgesorgt(entity_ref("urn:de:bgb:dw:t18")) { origin case_input; }
+        assert "f5": not erkrankung_vorsaetzlich_oder_grob_fahrlaessig_herbeigefuehrt(entity_ref("urn:de:bgb:dw:t18")) { origin adjudicated; }
+    }
+    evaluate truth(pflicht_krankenfuersorge_617(entity_ref("urn:de:bgb:dw:t18")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(krankenfuersorge_ende_617(entity_ref("urn:de:bgb:dw:t18"), @2026-04-12));
+    expect truth_status == TRUE_ONLY;
+}

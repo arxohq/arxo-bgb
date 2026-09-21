@@ -1,0 +1,99 @@
+// § 209, zwei sich möglicherweise überschneidende Hemmungszeiträume
+// (D-02-02, Koordinator 18.09). Ergänzt die bestehende Mechanik additiv:
+// eine zweite, alternative Falleingabe `hemmung_zwei_fenster` speist
+// denselben bestehenden Kopf `hemmungstage` (package.law, NICHT geändert)
+// über eine weitere Regel — Fälle mit einem Zeitraum nutzen weiter
+// `hemmung`/`Hemmungstage` unverändert, Fälle mit zwei möglicherweise
+// überschneidenden Zeiträumen diese hier. Vereinigungstage = Summe der
+// Fenstertage − Überschneidungstage (Einschluss-Ausschluss-Prinzip für
+// zwei Mengen). Ein drittes Fenster und mehr: Fallback `hemmungstage`
+// direkt als Falleingabe mit Rechenwache (README) — hier nicht
+// modelliert, weil die Kombinatorik für n > 2 Fenster (drei Paare plus
+// Dreifachschnitt) den Rahmen dieser Sitzung sprengt.
+
+pub relation hemmung_zwei_fenster(a: Anspruch, von1: Date, bis1: Date, von2: Date, bis2: Date) kind empirical {
+    key(a);
+    label de official "zwei Zeiträume, während derer die Verjährung gehemmt ist, möglicherweise überschneidend (§ 209)";
+    label en unofficial "two periods during which limitation is suspended, possibly overlapping (§ 209)";
+}
+
+relation ueberlappung_start(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "späterer der beiden Anfangstage der Hemmungsfenster (§ 209)";
+    label en unofficial "later of the two starting days of the suspension windows (§ 209)";
+}
+relation ueberlappung_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "früherer der beiden Endtage der Hemmungsfenster (§ 209)";
+    label en unofficial "earlier of the two end days of the suspension windows (§ 209)";
+}
+relation ueberlappungstage(a: Anspruch, tage: Integer) kind institutional {
+    key(a);
+    label de official "Zahl der Tage, an denen sich die beiden Hemmungsfenster überschneiden (0, wenn sie sich nicht überschneiden)";
+    label en unofficial "number of days on which the two suspension windows overlap (0 if they do not overlap)";
+}
+relation fenstertage_gesamt(a: Anspruch, tage: Integer) kind institutional {
+    key(a);
+    label de official "Zahl der Tage der Vereinigung beider Hemmungsfenster (§ 209): Summe der Fenstertage abzüglich der Überschneidungstage";
+    label en unofficial "number of days of the union of both suspension windows (§ 209): sum of the window days minus the overlap days";
+}
+
+@source(BGB_P209)
+rule UeberlappungStartFenster1Spaeter(a: Anspruch, v1: Date, v2: Date) strict {
+    label de official "Beginn der Überschneidung: der spätere der beiden Anfangstage — hier der des ersten Fensters";
+    label en unofficial "Start of the overlap: the later of the two starting days — here that of the first window";
+    when hemmung_zwei_fenster(a, v1, _, v2, _) and v1 >= v2;
+    then ueberlappung_start(a, v1);
+}
+@source(BGB_P209)
+rule UeberlappungStartFenster2Spaeter(a: Anspruch, v1: Date, v2: Date) strict {
+    label de official "Beginn der Überschneidung: der spätere der beiden Anfangstage — hier der des zweiten Fensters";
+    label en unofficial "Start of the overlap: the later of the two starting days — here that of the second window";
+    when hemmung_zwei_fenster(a, v1, _, v2, _) and v2 > v1;
+    then ueberlappung_start(a, v2);
+}
+@source(BGB_P209)
+rule UeberlappungEndeFenster1Frueher(a: Anspruch, b1: Date, b2: Date) strict {
+    label de official "Ende der Überschneidung: der frühere der beiden Endtage — hier der des ersten Fensters";
+    label en unofficial "End of the overlap: the earlier of the two end days — here that of the first window";
+    when hemmung_zwei_fenster(a, _, b1, _, b2) and b1 <= b2;
+    then ueberlappung_ende(a, b1);
+}
+@source(BGB_P209)
+rule UeberlappungEndeFenster2Frueher(a: Anspruch, b1: Date, b2: Date) strict {
+    label de official "Ende der Überschneidung: der frühere der beiden Endtage — hier der des zweiten Fensters";
+    label en unofficial "End of the overlap: the earlier of the two end days — here that of the second window";
+    when hemmung_zwei_fenster(a, _, b1, _, b2) and b2 < b1;
+    then ueberlappung_ende(a, b2);
+}
+
+@source(BGB_P209)
+rule UeberlappungstageMitUeberschneidung(a: Anspruch, start: Date, ende: Date) strict {
+    label de official "Überschneiden sich die beiden Fenster (Beginn der Überschneidung nicht nach ihrem Ende), zählen die Tage der Überschneidung, Grenzen eingeschlossen";
+    label en unofficial "If the two windows overlap (the start of the overlap is not after its end), the days of the overlap count, boundaries included";
+    when ueberlappung_start(a, start) and ueberlappung_ende(a, ende) and start <= ende;
+    then ueberlappungstage(a, days_between(start, ende) + 1);
+}
+@source(BGB_P209)
+rule UeberlappungstageOhneUeberschneidung(a: Anspruch, start: Date, ende: Date) strict {
+    label de official "Überschneiden sich die beiden Fenster nicht (Beginn der Überschneidung nach ihrem Ende), zählen null Tage";
+    label en unofficial "If the two windows do not overlap (the start of the overlap is after its end), the overlap counts zero days";
+    when ueberlappung_start(a, start) and ueberlappung_ende(a, ende) and start > ende;
+    then ueberlappungstage(a, 0);
+}
+
+@source(BGB_P209)
+rule FenstertageGesamt(a: Anspruch, v1: Date, b1: Date, v2: Date, b2: Date, ueb: Integer) strict {
+    label de official "Die Zahl der Tage der Vereinigung beider Hemmungsfenster ist die Summe ihrer Tage abzüglich der gemeinsam gezählten Überschneidungstage (§ 209: der gehemmte Zeitraum wird nicht doppelt eingerechnet)";
+    label en unofficial "The number of days of the union of both suspension windows is the sum of their days minus the overlap days counted in both (§ 209: the suspended period is not counted twice)";
+    when hemmung_zwei_fenster(a, v1, b1, v2, b2) and ueberlappungstage(a, ueb);
+    then fenstertage_gesamt(a, (days_between(v1, b1) + 1) + (days_between(v2, b2) + 1) - ueb);
+}
+
+@source(BGB_P209)
+rule HemmungstageZweiFenster(a: Anspruch, n: Integer) strict {
+    label de official "Der Zeitraum, während dessen die Verjährung gehemmt ist, wird in die Verjährungsfrist nicht eingerechnet (§ 209) — bei zwei möglicherweise überschneidenden Zeiträumen zählt die Vereinigung ihrer Tage, nicht ihre Summe";
+    label en unofficial "The period during which limitation is suspended is not counted towards the limitation period (§ 209) — with two possibly overlapping periods, the union of their days counts, not their sum";
+    when fenstertage_gesamt(a, n);
+    then hemmungstage(a, n);
+}

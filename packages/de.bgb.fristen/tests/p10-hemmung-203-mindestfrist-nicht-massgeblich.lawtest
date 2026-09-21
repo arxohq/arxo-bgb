@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 203 Satz 2 greift nicht: Verhandlungen das ganze Jahr 2021 (365 Tage) — verschobenes Ende 30. Dezember 2024; Mindestfrist 31. März 2022 liegt davor; maßgeblich bleibt der 30. Dezember 2024.
+test "§ 203 Satz 2: Mindestfrist vor dem verschobenen Ende ist nicht maßgeblich" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:a10"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:a10"), @2020-03-15) { origin adjudicated; }
+        assert "h": hemmung(entity_ref("urn:de:bgb:fristen:pilot:a10"), @2021-01-01, @2021-12-31) { origin case_input; }
+        assert "g": hemmungsgrund(entity_ref("urn:de:bgb:fristen:pilot:a10"), Verhandlungen) { origin case_input; }
+    }
+    evaluate truth(verjaehrung_fruehestens(entity_ref("urn:de:bgb:fristen:pilot:a10"), @2022-03-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:a10"), @2024-12-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

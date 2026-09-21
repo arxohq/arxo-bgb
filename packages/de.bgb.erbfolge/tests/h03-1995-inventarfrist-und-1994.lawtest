@@ -1,0 +1,37 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1995 Abs. 1: Die Inventarfrist soll mindestens einen, hoechstens drei
+// Monate betragen und beginnt mit der Zustellung des Beschlusses. Zustellung am
+// 2. Maerz 2026, bestimmte Dauer zwei Monate; zwei Monate enden nach § 188
+// Abs. 2 am Sonnabend, dem 2. Mai 2026, an dessen Stelle nach § 193 Montag, der
+// 4. Mai 2026 tritt. Das Inventar wird erst am 5. Mai eingereicht: nach § 1994
+// Abs. 1 Satz 2 haftet der Erbe unbeschraenkt, und nach § 2013 Abs. 1 Satz 1
+// stehen ihm die Einreden nicht mehr zu.
+test "§§ 1994, 1995: die versaeumte Inventarfrist fuehrt zur unbeschraenkten Haftung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:h03:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:h03:F"), entity_ref("urn:de:bgb:e:h03:D"), entity_ref("urn:de:bgb:e:h03:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K")) { origin case_input; }
+        assert "f6": zustellung_des_fristbeschlusses_am(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K"), @2026-03-02) { origin case_input; }
+        assert "f7": inventarfrist_dauer_monate(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K"), 2) { origin adjudicated; }
+        assert "f8": inventar_eingereicht_am(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K"), @2026-05-05) { origin case_input; }
+    }
+    evaluate truth(inventarfrist_dauer_zulaessig(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(inventarfrist_ende(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K"), @2026-05-04));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(unbeschraenkte_haftung(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einreden_ausgeschlossen(entity_ref("urn:de:bgb:e:h03:E"), entity_ref("urn:de:bgb:e:h03:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

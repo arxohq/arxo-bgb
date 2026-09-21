@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Kanarienvogel zu § 1280 — eine Bedingung weniger: Die Bestellung ist nach den Übertragungsvorschriften erfolgt, aber die Anzeige an den Schuldner fehlt. Das Pfandrecht an der Forderung entsteht nicht.
+test "Kanarienvogel § 1280: ohne Anzeige an den Schuldner kein Pfandrecht an der Forderung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": verpfaendetes_recht(entity_ref("urn:de:bgb:dr:q02:pfand"), entity_ref("urn:de:bgb:dr:q02:forderung")) { origin case_input; }
+        assert "f2": recht_ist_eine_forderung(entity_ref("urn:de:bgb:dr:q02:forderung")) { origin case_input; }
+        assert "f3": abtretungsvertrag_genuegt_zur_uebertragung(entity_ref("urn:de:bgb:dr:q02:forderung")) { origin case_input; }
+        assert "f4": bestellung_nach_den_uebertragungsvorschriften(entity_ref("urn:de:bgb:dr:q02:pfand")) { origin adjudicated; }
+        assert "f5": not recht_nicht_uebertragbar(entity_ref("urn:de:bgb:dr:q02:forderung")) { origin adjudicated; }
+    }
+    evaluate truth(anzeige_an_den_schuldner_erforderlich(entity_ref("urn:de:bgb:dr:q02:pfand")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(pfandrecht_am_recht_entstanden(entity_ref("urn:de:bgb:dr:q02:pfand"), entity_ref("urn:de:bgb:dr:q02:forderung")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1608 Abs. 1 Satz 1 und Satz 2 an einem Sachverhalt: der Ehegatte des Bedürftigen haftet vor dessen Verwandten, SOLANGE er leistungsfähig ist. Hier hat das Gericht seine Leistungsunfähigkeit festgestellt (§ 1603 Abs. 1) — damit haften nach Satz 2 die Verwandten vor dem Ehegatten, und Satz 1 greift nicht.
+test "§ 1608: der leistungsunfähige Ehegatte haftet nicht vor den Verwandten" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": ausserstande_sich_selbst_zu_unterhalten(entity_ref("urn:de:bgb:vw:u13:B")) { origin adjudicated; }
+        assert "f2": ehegatte_des_beduerftigen(entity_ref("urn:de:bgb:vw:u13:B"), entity_ref("urn:de:bgb:vw:u13:S")) { origin case_input; }
+        assert "f3": gefaehrdung_des_angemessenen_eigenen_unterhalts(entity_ref("urn:de:bgb:vw:u13:S"), entity_ref("urn:de:bgb:vw:u13:B")) { origin adjudicated; }
+    }
+    evaluate truth(verwandte_haften_vor_dem_ehegatten(entity_ref("urn:de:bgb:vw:u13:B"), entity_ref("urn:de:bgb:vw:u13:S")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ehegatte_haftet_vor_den_verwandten(entity_ref("urn:de:bgb:vw:u13:B"), entity_ref("urn:de:bgb:vw:u13:S")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

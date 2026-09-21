@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 880 Abs. 4: der Rang des vortretenden Rechts bleibt trotz Aufhebung des zurücktretenden Rechts erhalten. Abs. 5: ein Zwischenrecht wird durch die Rangänderung nicht berührt.
+test "§ 880 Abs. 4, 5: Rangbestand trotz Aufhebung und unberührtes Zwischenrecht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": rangaenderung_vereinbart(entity_ref("urn:de:bgb:be:gb09:zuruecktretend"), entity_ref("urn:de:bgb:be:gb09:vortretend")) { origin case_input; }
+        assert "f2": rangaenderung_eingetragen(entity_ref("urn:de:bgb:be:gb09:zuruecktretend"), entity_ref("urn:de:bgb:be:gb09:vortretend")) { origin adjudicated; }
+        assert "f3": keine_hypothek_grundschuld_oder_rentenschuld(entity_ref("urn:de:bgb:be:gb09:zuruecktretend")) { origin case_input; }
+        assert "f4": aufhebungserklaerung_des_berechtigten(entity_ref("urn:de:bgb:be:gb09:zuruecktretend")) { origin case_input; }
+        assert "f5": im_grundbuch_geloescht(entity_ref("urn:de:bgb:be:gb09:zuruecktretend")) { origin adjudicated; }
+        assert "f6": zwischenrecht_der_rangaenderung(entity_ref("urn:de:bgb:be:gb09:zwischenrecht"), entity_ref("urn:de:bgb:be:gb09:zuruecktretend"), entity_ref("urn:de:bgb:be:gb09:vortretend")) { origin case_input; }
+    }
+    evaluate truth(rang_bleibt_trotz_aufhebung_des_zuruecktretenden_rechts(entity_ref("urn:de:bgb:be:gb09:vortretend")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(zwischenrecht_durch_rangaenderung_unberuehrt(entity_ref("urn:de:bgb:be:gb09:zwischenrecht")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1030(n: Niessbrauch, niesser: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Nutzung des Nießbrauchs (§ 1030)"; label en unofficial "case input for usufruct use (§ 1030)"; }
+pub relation nutzung_1030_ausgeuebt(n: Niessbrauch, niesser: Person) kind empirical { label de official "Der Nießbraucher zieht die Nutzungen der Sache (§ 1030)"; label en unofficial "The usufructuary draws the benefits of the thing (§ 1030)"; }
+pub relation position_trigger_1041(n: Niessbrauch, niesser: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Erhaltung der Sache (§ 1041)"; label en unofficial "case input for preservation of the thing (§ 1041)"; }
+pub relation erhaltung_1041_geschuldet(n: Niessbrauch) kind empirical { label de official "Die Sache ist in ihrem wirtschaftlichen Bestand zu erhalten (§ 1041)"; label en unofficial "The thing's economic substance must be preserved (§ 1041)"; }
+pub relation position_trigger_1052(n: Niessbrauch, eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur gerichtlichen Verwaltung (§ 1052)"; label en unofficial "case input for court-appointed administration (§ 1052)"; }
+pub relation verwaltung_1052_ausuebbar(n: Niessbrauch, eigentuemer: Person) kind empirical { label de official "Der Eigentümer kann die Verwaltung verlangen (§ 1052)"; label en unofficial "The owner may demand administration (§ 1052)"; }
+
+@source(BGB_P1030)
+rule PositionNutzung1030(n: Niessbrauch, niesser: Person, tag: Date) strict { label de official "Der Nießbraucher ist berechtigt, die Nutzungen der Sache zu ziehen (§ 1030)"; label en unofficial "The usufructuary may draw the benefits of the thing (§ 1030)"; when position_trigger_1030(n, niesser, tag); then liberty Nutzung1030 { holder niesser; action nutzung_1030_ausgeuebt(n, niesser); window [tag, infinity); }; }
+@source(BGB_P1041)
+rule PositionErhaltung1041(n: Niessbrauch, niesser: Person, tag: Date) strict { label de official "Der Nießbraucher hat für die Erhaltung der Sache zu sorgen (§ 1041)"; label en unofficial "The usufructuary must preserve the thing (§ 1041)"; when position_trigger_1041(n, niesser, tag); then duty Erhaltung1041 { bearer niesser; achieve erhaltung_1041_geschuldet(n) during [tag, infinity); }; }
+@source(BGB_P1052)
+rule PositionVerwaltung1052(n: Niessbrauch, eigentuemer: Person, tag: Date) strict { label de official "Der Eigentümer kann die Verwaltung durch einen gerichtlich bestellten Verwalter verlangen (§ 1052)"; label en unofficial "The owner may demand court-appointed administration (§ 1052)"; when position_trigger_1052(n, eigentuemer, tag); then power Verwaltung1052 { holder eigentuemer; over n; exercise verwaltung_1052_ausuebbar(n, eigentuemer); valid_when verwaltung_1052_ausuebbar(n, eigentuemer); effect create(verwaltung_1052_ausuebbar(n, eigentuemer)); window [tag, infinity); }; }

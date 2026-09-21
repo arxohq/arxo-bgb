@@ -1,0 +1,32 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 861 Abs. 2: der entzogene Besitz war dem Gegner gegenüber fehlerhaft und am 10. März 2025 erlangt; die Verübung am 10. März 2026 liegt im letzten Jahr (§§ 187 Abs. 1, 188 Abs. 2: die Jahresfrist vom 10. März 2025 endet mit dem Ablauf des 10. März 2026) — der Anspruch ist ausgeschlossen.
+test "§ 861 Abs. 2: Ausschluss bei fehlerhaftem Besitz aus dem letzten Jahr (Grenztag)" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:b:besitz-a"), entity_ref("urn:de:bgb:be:b:fahrrad")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:b:besitz-a"), entity_ref("urn:de:bgb:be:b:A")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:b:besitz-a"), @2025-03-10) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:b:besitz-a")) { origin case_input; }
+        assert "f5": bewegliche_sache(entity_ref("urn:de:bgb:be:b:fahrrad")) { origin case_input; }
+        assert "f6": tat_betrifft_besitz(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:besitz-a")) { origin case_input; }
+        assert "f7": taeter(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:B")) { origin case_input; }
+        assert "f8": besitzentziehung(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "f9": ohne_willen_des_besitzers(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "f11": veruebt_am(entity_ref("urn:de:bgb:be:b:tat"), @2026-03-10) { origin case_input; }
+        assert "f12": besitzlage_sache(entity_ref("urn:de:bgb:be:b:besitz-b"), entity_ref("urn:de:bgb:be:b:fahrrad")) { origin case_input; }
+        assert "f13": besitzlage_person(entity_ref("urn:de:bgb:be:b:besitz-b"), entity_ref("urn:de:bgb:be:b:B")) { origin case_input; }
+        assert "f14": besitz_des_gegners(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:besitz-b")) { origin case_input; }
+        assert "f15": besitz_erlangt_durch(entity_ref("urn:de:bgb:be:b:besitz-b"), entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "f10": keine_gesetzliche_gestattung(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "g1": entzogener_besitz_fehlerhaft_gegenueber_gegner(entity_ref("urn:de:bgb:be:b:tat")) { origin case_input; }
+        assert "g2": entzogener_besitz_erlangt_am(entity_ref("urn:de:bgb:be:b:tat"), @2025-03-10) { origin case_input; }
+    }
+    evaluate truth(besitzschutzanspruch_ausgeschlossen(entity_ref("urn:de:bgb:be:b:tat")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anspruch_auf_wiedereinraeumung(entity_ref("urn:de:bgb:be:b:tat"), entity_ref("urn:de:bgb:be:b:A"), entity_ref("urn:de:bgb:be:b:B")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

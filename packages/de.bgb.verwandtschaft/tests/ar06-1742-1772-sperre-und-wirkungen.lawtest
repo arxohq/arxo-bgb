@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1742: ein angenommenes Kind kann bei Lebzeiten des Annehmenden nur von dessen Ehegatten angenommen werden. § 1772 Abs. 1 Buchstabe b: beim Ausspruch der Annahme eines Volljährigen kann das Gericht bestimmen, dass sich die Wirkungen nach den Vorschriften über die Annahme eines Minderjährigen richten, wenn der Anzunehmende bereits als Minderjähriger in die Familie aufgenommen worden war — überwiegende Interessen der Eltern sind nicht beantwortet.
+test "§§ 1742, 1772: die Sperre der weiteren Annahme und die Wirkungen der Minderjährigenannahme" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": annahmeverhaeltnis_besteht(entity_ref("urn:de:bgb:vw:ar06:A"), entity_ref("urn:de:bgb:vw:ar06:K")) { origin case_input; }
+        assert "f2": annehmender_lebt(entity_ref("urn:de:bgb:vw:ar06:A")) { origin case_input; }
+        assert "f3": annehmender_verheiratet_mit(entity_ref("urn:de:bgb:vw:ar06:A"), entity_ref("urn:de:bgb:vw:ar06:S")) { origin case_input; }
+        assert "f4": anzunehmender_volljaehrig(entity_ref("urn:de:bgb:vw:ar06:K")) { origin case_input; }
+        assert "f5": bestimmung_nach_1772_beantragt(entity_ref("urn:de:bgb:vw:ar06:A"), entity_ref("urn:de:bgb:vw:ar06:K")) { origin case_input; }
+        assert "f6": als_minderjaehriger_in_die_familie_aufgenommen(entity_ref("urn:de:bgb:vw:ar06:A"), entity_ref("urn:de:bgb:vw:ar06:K")) { origin case_input; }
+    }
+    evaluate truth(weitere_annahme_nur_durch_den_ehegatten(entity_ref("urn:de:bgb:vw:ar06:K"), entity_ref("urn:de:bgb:vw:ar06:S")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aufhebung_nur_nach_1760_und_1763(entity_ref("urn:de:bgb:vw:ar06:A"), entity_ref("urn:de:bgb:vw:ar06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(wirkungen_der_minderjaehrigenannahme(entity_ref("urn:de:bgb:vw:ar06:A"), entity_ref("urn:de:bgb:vw:ar06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

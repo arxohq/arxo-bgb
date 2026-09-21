@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// Kanarienvogel zu z03 auf der anderen Seite der Obergrenze: dasselbe Endvermögen von 20 000,00 €, aber ein Anfangsvermögen von null. Der Zugewinn ist dann 20 000,00 €, die Hälfte 10 000,00 € — UNTER der Grenze von 20 000,00 €, und die Forderung wird nicht gekappt.
+test "§ 1378 Abs. 2: unterhalb der Obergrenze wird nicht gekappt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:A"), entity_ref("urn:de:bgb:ehe:z04:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:z04:E")) { origin case_input; }
+        assert "f3": gueterstand_beendet_am(entity_ref("urn:de:bgb:ehe:z04:E"), @2025-09-30) { origin case_input; }
+        assert "f4": gueterstand_auf_andere_weise_als_durch_tod_beendet(entity_ref("urn:de:bgb:ehe:z04:E")) { origin case_input; }
+        assert "f5": vermoegen_beim_eintritt_des_gueterstands(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:A"), 0.00 EUR) { origin case_input; }
+        assert "f6": vermoegen_beim_eintritt_des_gueterstands(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:B"), 0.00 EUR) { origin case_input; }
+        assert "f7": vermoegen_bei_beendigung_des_gueterstands(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:A"), 20000.00 EUR) { origin case_input; }
+        assert "f8": vermoegen_bei_beendigung_des_gueterstands(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:B"), 0.00 EUR) { origin case_input; }
+        assert "f9": keine_hinzurechnung_zum_anfangsvermoegen(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:A")) { origin case_input; }
+        assert "f10": keine_hinzurechnung_zum_anfangsvermoegen(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:B")) { origin case_input; }
+        assert "f11": keine_illoyale_minderung(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:A")) { origin case_input; }
+        assert "f12": keine_illoyale_minderung(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:B")) { origin case_input; }
+    }
+    evaluate truth(ausgleichsforderung(entity_ref("urn:de:bgb:ehe:z04:E"), entity_ref("urn:de:bgb:ehe:z04:B"), entity_ref("urn:de:bgb:ehe:z04:A"), 10000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.uebergang version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-uebergang";
+// Art. 229 § 6 Abs. 4 Satz 2: Anspruch entstanden 1.6.1999, alte Frist 4 Jahre (§ 196 Abs. 2 a.F.) endet 1.6.2003 — früher als die vom 1.1.2002 an gerechnete neue Frist (31.12.2004): vollendet mit Ablauf des 1.6.2003.
+test "Art. 229 § 6 Abs. 4 Satz 2: längere alte Frist läuft früher ab" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_UEBERGANG_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:uebergang:pilot:a02"), @1999-06-01) { origin case_input; }
+        assert "b": alte_verjaehrung_begann_am(entity_ref("urn:de:bgb:uebergang:pilot:a02"), @1999-06-01) { origin case_input; }
+        assert "alt": alte_verjaehrungsfrist(entity_ref("urn:de:bgb:uebergang:pilot:a02"), 4 calendar_year) { origin case_input; }
+        assert "neu": neue_verjaehrungsfrist(entity_ref("urn:de:bgb:uebergang:pilot:a02"), 3 calendar_year) { origin case_input; }
+    }
+    evaluate truth(neue_frist_kuerzer(entity_ref("urn:de:bgb:uebergang:pilot:a02")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(alte_frist_ende(entity_ref("urn:de:bgb:uebergang:pilot:a02"), @2003-06-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_vollendet_am(entity_ref("urn:de:bgb:uebergang:pilot:a02"), @2003-06-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_vollendet_am(entity_ref("urn:de:bgb:uebergang:pilot:a02"), @2004-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

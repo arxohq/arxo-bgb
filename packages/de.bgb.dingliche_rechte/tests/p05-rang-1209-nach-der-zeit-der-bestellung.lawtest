@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1209: Für den Rang des Pfandrechts ist die Zeit der Bestellung maßgebend — auch wenn das ältere Pfandrecht für eine KÜNFTIGE Forderung bestellt worden ist. Das am 10.01.2026 bestellte geht dem am 20.02.2026 bestellten vor.
+test "§ 1209: Rang nach der Zeit der Bestellung, auch bei künftiger Forderung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:p05:erst"), entity_ref("urn:de:bgb:dr:p05:uhr")) { origin case_input; }
+        assert "f2": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:p05:zweit"), entity_ref("urn:de:bgb:dr:p05:uhr")) { origin case_input; }
+        assert "f3": bestellt_am(entity_ref("urn:de:bgb:dr:p05:erst"), @2026-01-10) { origin adjudicated; }
+        assert "f4": bestellt_am(entity_ref("urn:de:bgb:dr:p05:zweit"), @2026-02-20) { origin adjudicated; }
+        assert "f5": kuenftige_oder_bedingte_forderung_des_pfandes(entity_ref("urn:de:bgb:dr:p05:erst")) { origin case_input; }
+    }
+    evaluate truth(pfandrang_vor(entity_ref("urn:de:bgb:dr:p05:erst"), entity_ref("urn:de:bgb:dr:p05:zweit")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(pfandrang_vor(entity_ref("urn:de:bgb:dr:p05:zweit"), entity_ref("urn:de:bgb:dr:p05:erst")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

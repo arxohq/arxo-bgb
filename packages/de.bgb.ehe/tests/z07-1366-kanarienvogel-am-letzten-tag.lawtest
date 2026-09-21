@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// Kanarienvogel zu z06: derselbe Sachverhalt, aber der Bewertungstag ist der letzte Tag der Frist selbst (16.06.2025). Die Frist ist noch nicht abgelaufen, die Genehmigung gilt daher NICHT als verweigert, und der Vertrag ist nicht unwirksam.
+test "§ 1366 Abs. 3: am letzten Tag der Frist gilt die Genehmigung noch nicht als verweigert" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:z07:E"), entity_ref("urn:de:bgb:ehe:z07:A"), entity_ref("urn:de:bgb:ehe:z07:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:z07:E")) { origin case_input; }
+        assert "f3": aufforderung_zur_genehmigung_empfangen_am(entity_ref("urn:de:bgb:ehe:z07:E"), entity_ref("urn:de:bgb:ehe:z07:G"), @2025-06-02) { origin case_input; }
+        assert "f4": genehmigungsfrist(entity_ref("urn:de:bgb:ehe:z07:E"), entity_ref("urn:de:bgb:ehe:z07:G"), entity_ref("urn:de:bgb:ehe:z07:F")) { origin case_input; }
+        assert "f5": bewertungstag(entity_ref("urn:de:bgb:ehe:z07:E"), @2025-06-16) { origin case_input; }
+    }
+    evaluate truth(genehmigung_gilt_als_verweigert(entity_ref("urn:de:bgb:ehe:z07:E"), entity_ref("urn:de:bgb:ehe:z07:G")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(rechtsgeschaeft_unwirksam(entity_ref("urn:de:bgb:ehe:z07:E"), entity_ref("urn:de:bgb:ehe:z07:G")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

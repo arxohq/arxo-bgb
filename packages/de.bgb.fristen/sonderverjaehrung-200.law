@@ -1,0 +1,139 @@
+// § 200 Satz 1: EINSPEISUNG BESONDERER VERJÄHRUNGSFRISTEN ANDERER PAKETE
+// IN DIE GEMEINSAME LINIE DER HEMMUNG UND DER WIRKUNG (§§ 203–218).
+//
+// DAS PROBLEM. Die Kette der Wirkung der Verjährung (§§ 214–218,
+// wirkung-214-218.law) hängt an `verjaehrung_eingetreten_am`, und dieser Kopf
+// wurde bisher AUSSCHLIESSLICH aus der regelmäßigen Verjährung
+// (`regelmaessige_verjaehrungsfrist_ende`, §§ 195, 199, package.law) gespeist.
+// Die besonderen Verjährungsfristen der Normen anderer Pakete — § 438
+// (de.bgb.kauf), § 634a (de.bgb.dienst_werk), § 548 (de.bgb.miete), § 606
+// (de.bgb.sonstige_vertraege), §§ 1028, 1057 (de.bgb.dingliche_rechte),
+// §§ 1302, 1378, 1390 (de.bgb.ehe), § 2332 (de.bgb.verfuegungen) — rechnen
+// ihr Ende bei ihrer eigenen Norm und erreichten diese Linie nicht. Für sie
+// waren §§ 203–213 (Hemmung, Ablaufhemmung, Neubeginn) und §§ 214–218
+// (Leistungsverweigerungsrecht, Aufrechnung, Nebenleistung, Unwirksamkeit des
+// Rücktritts) daher NICHT erreichbar, obwohl das Gesetz diese Vorschriften
+// unterschiedslos auf „die Verjährung“ anwendet.
+//
+// DER GRUNDSATZ. Die gemeinsame Mechanik gehört an EINE Stelle (DECISION-0319,
+// Р4: dieses Paket ist der einzige Eigentümer der Fristenberechnung der
+// Familie de.bgb.*), die Normen lesen sie über Brücken. Die Sondernorm weiß,
+// WANN ihre Frist beginnt und WIE LANG sie ist — beides ist ihr eigener,
+// vollständig bei ihr belegter Inhalt. Alles Übrige — Kalenderschritt des
+// § 188 Abs. 2, Hemmung, Mindestfrist des § 203 Satz 2, Ablaufhemmung,
+// Neubeginn, Wirkung — ist Mechanik dieses Pakets und wird hier EINMAL
+// gerechnet, nicht bei jeder Norm erneut.
+//
+// DIE FORM (D-02-05). Zwei neue Eingänge, in die das Paket der Sondernorm mit
+// einem eigenen Regelkopf schreibt (§ 23 SPEC, qualifizierte Ziel-Relation —
+// die Sprache lässt den fremden Kopf zu; Prädikatzyklen entstehen nicht, weil
+// die Eingänge in diesem Paket nur GELESEN werden):
+//
+//     de.bgb.fristen::sonderverjaehrung_beginn(a, tag)
+//     de.bgb.fristen::sonderverjaehrung_dauer(a, dauer)
+//
+// EIGENE Eingänge statt der vorhandenen `besondere_verjaehrungsfrist_beginn`/
+// `_dauer` (verjaehrung-fristen.law): dort leitet `BesondereFristBeginnAus-
+// Entstehung` (§ 200 Satz 1 Halbsatz 1) den Beginn UNBEDINGT aus der
+// Entstehung des Anspruchs ab. Eine Sondernorm mit abweichendem Anfang
+// (§ 438 Abs. 2: Ablieferung; § 548 Abs. 1: Rückgabe) bekäme dort einen
+// ZWEITEN Wert für denselben Schlüssel `key(a)` — ein KEY_CONFLICT, kein BOTH.
+//
+// DER INVARIANT DES FALLS. Ein Anspruch trägt ENTWEDER die regelmäßige
+// Verjährung (`kenntnis_erlangt_am` + Entstehung) ODER eine Sonderfrist ODER
+// eine besondere Frist der §§ 196, 197 — nicht zweierlei zugleich. Werden
+// zwei Linien in einem Fall belegt, entstehen zwei Werte des Schlüssels
+// `verjaehrungsfrist_ende(a)` und das Dokument meldet KEY_CONFLICT. Das ist
+// richtig so: welche Frist gilt, entscheidet die Norm, nicht die Mechanik;
+// die Auswahl unter mehreren möglichen Fristen (§ 438 Abs. 3 Satz 1: die
+// regelmäßige Frist TRITT AN DIE STELLE der zwei Jahre) trifft das Paket der
+// Sondernorm mit seinen Gates und schreibt nur EIN Ergebnis hierher.
+// Kanarienvogel `so06` zeigt den Konflikt ausdrücklich.
+//
+// § 193 UND DER KALENDERHORIZONT. Der Schritt ist `add_calendar_period` unter
+// BGB_FRISTEN_KALENDER (roll no_roll) — wie bei der regelmäßigen Frist
+// (`RegelmaessigeVerjaehrungsfrist`) und wie bei § 438 in de.bgb.kauf: die
+// Verjährung tritt mit Zeitablauf ein, sie verlangt keine Erklärung innerhalb
+// der Frist, und § 193 wird auf sie hier NICHT angewandt (erklärte Grenze
+// dieses Pakets, gleichlautend für alle drei Linien). Das hat eine zweite,
+// erwünschte Folge: der Schnappschuss der Feiertage reicht nur bis zum
+// 1. Januar 2028 (KALENDER_BUNDESWEIT, package.law), und `add_business_days`
+// über diesen Horizont hinaus wäre nicht belegt — eine dreißigjährige
+// Sonderfrist (§ 438 Abs. 1 Nr. 1) endet daher rechnerisch sauber, weil sie
+// den Kalender überhaupt nicht befragt.
+
+// --- § 200 Satz 1: Beginn und Dauer einer Sonderfrist als Eingang ----------------------------------
+
+pub relation sonderverjaehrung_beginn(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Beginn einer besonderen Verjährungsfrist, die eine Norm außerhalb dieses Pakets bestimmt (§ 200 Satz 1: die Verjährungsfrist von Ansprüchen, die nicht der regelmäßigen Verjährungsfrist unterliegen, beginnt mit der Entstehung des Anspruchs, soweit nicht ein anderer Verjährungsbeginn bestimmt ist) — Eingang der Brücke, beschrieben von der Sondernorm";
+    label en unofficial "beginning of a special limitation period determined by a provision outside this package (§ 200 sentence 1: unless another commencement of limitation is determined) — bridge input written by the special provision";
+}
+
+pub relation sonderverjaehrung_dauer(a: Anspruch, dauer: Quantity) kind institutional {
+    key(a);
+    label de official "Dauer einer besonderen Verjährungsfrist, die eine Norm außerhalb dieses Pakets bestimmt (z. B. § 438 Abs. 1 Nr. 3: zwei Jahre) — Eingang der Brücke, beschrieben von der Sondernorm";
+    label en unofficial "length of a special limitation period determined by a provision outside this package (e.g. § 438 (1) no. 3: two years) — bridge input written by the special provision";
+}
+
+pub relation sonderverjaehrungsfrist_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die von einer Sondernorm bestimmte Verjährungsfrist ohne Hemmung endet (§ 188 Abs. 2)";
+    label en unofficial "day at whose end the limitation period determined by a special provision ends without suspension (§ 188 (2))";
+}
+
+@source(BGB_P188)
+rule SonderverjaehrungsfristEnde(a: Anspruch, b: Date, d: Quantity) strict {
+    label de official "Die von einer Sondernorm bestimmte Verjährungsfrist endet mit dem Ablauf desjenigen Tages, welcher durch seine Zahl dem Tag des Fristbeginns entspricht (§ 188 Abs. 2, Politik BGB_FRISTEN_KALENDER); fehlt dieser Tag, so endet sie mit dem letzten Tag des Monats (§ 188 Abs. 3)";
+    label en unofficial "The limitation period determined by a special provision ends on the day corresponding by its number to the day it began (§ 188 (2), policy BGB_FRISTEN_KALENDER); if that day is missing, on the last day of the month (§ 188 (3))";
+    when sonderverjaehrung_beginn(a, b) and sonderverjaehrung_dauer(a, d);
+    then sonderverjaehrungsfrist_ende(a, add_calendar_period(b, d));
+}
+
+// --- § 209: die Hemmung gilt für die Sonderfrist wie für die regelmäßige ---------------------------
+//
+// Zwillinge zu `VerjaehrungsfristEndeMitHemmung`/`…OhneHemmung` (package.law),
+// die an die Stelle des regelmäßigen Endes das Sonderfristende setzen. Der
+// bestehende Kopf `verjaehrungsfrist_ende` bleibt unverändert; ab ihm laufen
+// §§ 203 Satz 2, 204–208, 210–213 und 214–218 ohne jede weitere Änderung.
+
+@source(BGB_P209)
+rule SonderverjaehrungsfristEndeMitHemmung(a: Anspruch, d0: Date, n: Integer) strict {
+    label de official "Der Zeitraum, während dessen die Verjährung gehemmt ist, wird in die Verjährungsfrist nicht eingerechnet (§ 209) — auch bei einer von einer Sondernorm bestimmten Frist verschiebt sich das Ende um die nicht eingerechneten Tage";
+    label en unofficial "The period during which limitation is suspended is not counted towards the limitation period (§ 209) — for a period determined by a special provision too, the end moves by the days not counted";
+    when sonderverjaehrungsfrist_ende(a, d0) and hemmungstage(a, n);
+    then verjaehrungsfrist_ende(a, add_calendar_period(d0, with_unit(n, "calendar_day")));
+}
+
+@source(BGB_P209)
+rule SonderverjaehrungsfristEndeOhneHemmung(a: Anspruch, d0: Date) strict {
+    label de official "Ohne festgestellte Hemmung endet die von einer Sondernorm bestimmte Verjährungsfrist mit ihrem eigenen Ende (§ 209 greift nicht)";
+    label en unofficial "Without an established suspension the period determined by a special provision ends with its own end (§ 209 does not apply)";
+    when sonderverjaehrungsfrist_ende(a, d0) and keine_hemmung(a);
+    then verjaehrungsfrist_ende(a, d0);
+}
+
+// --- §§ 196, 197: die eigenen besonderen Fristen dieses Pakets in dieselbe Linie -------------------
+//
+// Dieselbe Lücke bestand für die im Paket selbst gerechneten besonderen
+// Fristen (verjaehrung-fristen.law): `besondere_verjaehrungsfrist_ende` war
+// ein terminaler Kopf und erreichte weder § 209 noch §§ 214–218. Die beiden
+// Zwillinge schließen sie an, ohne eine bestehende Regel zu berühren; Fälle
+// ohne Angabe zur Hemmung (die bisherigen Szenarien r01–r11) ändern sich
+// nicht, weil beide Regeln eine solche Angabe voraussetzen.
+
+@source(BGB_P209)
+rule BesondereVerjaehrungsfristEndeMitHemmung(a: Anspruch, d0: Date, n: Integer) strict {
+    label de official "Auch bei den besonderen Fristen der §§ 196, 197 wird der Zeitraum der Hemmung nicht eingerechnet (§ 209)";
+    label en unofficial "For the special periods of §§ 196, 197 too the period of suspension is not counted (§ 209)";
+    when besondere_verjaehrungsfrist_ende(a, d0) and hemmungstage(a, n);
+    then verjaehrungsfrist_ende(a, add_calendar_period(d0, with_unit(n, "calendar_day")));
+}
+
+@source(BGB_P209)
+rule BesondereVerjaehrungsfristEndeOhneHemmung(a: Anspruch, d0: Date) strict {
+    label de official "Ohne festgestellte Hemmung endet die besondere Frist der §§ 196, 197 mit ihrem eigenen Ende (§ 209 greift nicht)";
+    label en unofficial "Without an established suspension the special period of §§ 196, 197 ends with its own end (§ 209 does not apply)";
+    when besondere_verjaehrungsfrist_ende(a, d0) and keine_hemmung(a);
+    then verjaehrungsfrist_ende(a, d0);
+}

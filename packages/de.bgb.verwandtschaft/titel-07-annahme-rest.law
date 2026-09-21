@@ -1,0 +1,998 @@
+// --- Titel 7: Annahme als Kind — Fortsetzung (§§ 1742–1772) --------------------------------------
+//
+// `titel-07-annahme.law` trägt §§ 1741, 1743, 1746, 1747, 1754–1756, 1767,
+// 1770 und die Brücke zum Rechner. Hier folgen die übrigen Paragraphen: die
+// Sperre des § 1742, Probezeit und Verbote (§§ 1744, 1745), die Ersetzung der
+// elterlichen Einwilligung (§ 1748) und die Einwilligung des Ehegatten
+// (§ 1749), Form und Kraftverlust der Einwilligung (§ 1750), ihre Wirkungen
+// (§ 1751), Beschluss und Antrag (§§ 1752, 1753), Name (§ 1757),
+// Offenbarungsverbot (§ 1758), die AUFHEBUNG (§§ 1759–1766) samt Fristen und
+// die Volljährigenannahme (§§ 1768, 1769, 1771, 1772).
+//
+// DREI FRISTEN DES TITELS stehen in `DEADLINES.json` und werden vorwärts vom
+// jeweiligen Anfangstag gerechnet (Ledger D-13-03): drei Monate seit der
+// Belehrung durch das Jugendamt (§ 1748 Abs. 2 Satz 1), drei Jahre seit dem
+// Wirksamwerden der Einwilligung (§ 1750 Abs. 4 Satz 2) und die Antragsfrist
+// von einem Jahr innerhalb von drei Jahren seit der Annahme (§ 1762 Abs. 2).
+
+// --- § 1742 Annahme nur als gemeinschaftliches Kind ----------------------------------------------
+
+pub relation annahmeverhaeltnis_besteht(annehmender: Person, kind: Person) kind empirical {
+    label de official "Zwischen dem Annehmenden und dem Kind besteht ein Annahmeverhältnis (§ 1742)";
+    label en unofficial "an adoptive relationship exists between the adopter and the child (§ 1742)";
+}
+pub relation annehmender_lebt(annehmender: Person) kind empirical {
+    label de official "Der Annehmende lebt (§ 1742: „bei Lebzeiten eines Annehmenden“)";
+    label en unofficial "the adopter is alive (§ 1742: \"during the lifetime of an adopter\")";
+}
+pub relation weitere_annahme_nur_durch_den_ehegatten(kind: Person, weiterer: Person) kind institutional {
+    label de official "Ein angenommenes Kind kann, solange das Annahmeverhältnis besteht, bei Lebzeiten eines Annehmenden nur von dessen Ehegatten angenommen werden (§ 1742)";
+    label en unofficial "An adopted child may, while the adoptive relationship subsists and during an adopter's lifetime, be adopted only by that adopter's spouse (§ 1742)";
+}
+
+@source(BGB_P1742)
+rule WeitereAnnahmeNurDurchDenEhegatten(k: Person, a: Person, w: Person) strict {
+    label de official "Ein angenommenes Kind kann, solange das Annahmeverhältnis besteht, bei Lebzeiten eines Annehmenden nur von dessen Ehegatten angenommen werden (§ 1742)";
+    label en unofficial "An adopted child may, while the adoptive relationship subsists and during an adopter's lifetime, be adopted only by that adopter's spouse (§ 1742)";
+    when annahmeverhaeltnis_besteht(a, k) and annehmender_lebt(a) and annehmender_verheiratet_mit(a, w);
+    then weitere_annahme_nur_durch_den_ehegatten(k, w);
+}
+
+// --- § 1744 Probezeit, § 1745 Verbot der Annahme -------------------------------------------------
+
+// § 1744 liest die Pflegezeit aus `titel-07-annahme.law`
+// (`kind_in_pflege_gehabt`, dort bei § 1741 erklärt).
+pub relation interessen_des_anzunehmenden_gefaehrdet(annehmender: Person, kind: Person) kind empirical {
+    label de official "Es ist zu befürchten, dass Interessen des Anzunehmenden durch Kinder des Annehmenden gefährdet werden (§ 1745 Satz 1 Halbsatz 2)";
+    label en unofficial "it is to be feared that the interests of the person to be adopted will be endangered by the adopter's children (§ 1745 sentence 1)";
+}
+
+pub relation probezeit_erfuellt(annehmender: Person, kind: Person) kind institutional {
+    label de official "Die Annahme soll in der Regel erst ausgesprochen werden, wenn der Annehmende das Kind eine angemessene Zeit in Pflege gehabt hat (§ 1744)";
+    label en unofficial "As a rule the adoption should be pronounced only after the adopter has had the child in care for a reasonable time (§ 1744)";
+}
+pub relation annahme_darf_nicht_ausgesprochen_werden(annehmender: Person, kind: Person) kind institutional {
+    label de official "Die Annahme darf nicht ausgesprochen werden, wenn ihr überwiegende Interessen der Kinder des Annehmenden oder des Anzunehmenden entgegenstehen oder wenn zu befürchten ist, dass Interessen des Anzunehmenden durch Kinder des Annehmenden gefährdet werden (§ 1745 Satz 1)";
+    label en unofficial "The adoption may not be pronounced where overriding interests of the adopter's or the adoptee's children oppose it or where the adoptee's interests are feared to be endangered by the adopter's children (§ 1745 sentence 1)";
+}
+
+@source(BGB_P1744)
+rule ProbezeitErfuellt(a: Person, k: Person) strict {
+    label de official "Die Annahme soll in der Regel erst ausgesprochen werden, wenn der Annehmende das Kind eine angemessene Zeit in Pflege gehabt hat (§ 1744)";
+    label en unofficial "As a rule the adoption should be pronounced only after the adopter has had the child in care for a reasonable time (§ 1744)";
+    when kind_in_pflege_gehabt(a, k) and angemessene_pflegezeit(a, k);
+    then probezeit_erfuellt(a, k);
+}
+
+@source(BGB_P1745) {
+    rule AnnahmeVerbotenWegenEntgegenstehenderInteressen(a: Person, k: Person) strict {
+        label de official "Die Annahme darf nicht ausgesprochen werden, wenn ihr überwiegende Interessen der Kinder des Annehmenden oder des Anzunehmenden entgegenstehen (§ 1745 Satz 1 Halbsatz 1)";
+        label en unofficial "The adoption may not be pronounced where overriding interests of the adopter's or the adoptee's children oppose it (§ 1745 sentence 1)";
+        when annahmeantrag(a, k) and ueberwiegende_interessen_stehen_entgegen(a, k);
+        then annahme_darf_nicht_ausgesprochen_werden(a, k);
+    }
+    rule AnnahmeVerbotenWegenGefaehrdung(a: Person, k: Person) strict {
+        label de official "Die Annahme darf nicht ausgesprochen werden, wenn zu befürchten ist, dass Interessen des Anzunehmenden durch Kinder des Annehmenden gefährdet werden (§ 1745 Satz 1 Halbsatz 2)";
+        label en unofficial "The adoption may not be pronounced where the adoptee's interests are feared to be endangered by the adopter's children (§ 1745 sentence 1)";
+        when annahmeantrag(a, k) and interessen_des_anzunehmenden_gefaehrdet(a, k);
+        then annahme_darf_nicht_ausgesprochen_werden(a, k);
+    }
+}
+
+// --- § 1748 Ersetzung der Einwilligung eines Elternteils ----------------------------------------
+//
+// Die drei Monate des Abs. 2 Satz 1 laufen SEIT DER BELEHRUNG; Satz 3 setzt
+// einen frühesten Ablauf: fünf Monate nach der Geburt des Kindes. Beide Tage
+// werden vorwärts gerechnet und der spätere ist maßgebend.
+
+pub relation anhaltend_grobe_pflichtverletzung(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Elternteil hat seine Pflichten gegenüber dem Kind anhaltend gröblich verletzt (§ 1748 Abs. 1 Satz 1)";
+    label en unofficial "the parent has persistently grossly breached his duties towards the child (§ 1748 (1) sentence 1)";
+}
+pub relation gleichgueltigkeit_gegenueber_dem_kind(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Elternteil hat durch sein Verhalten gezeigt, dass ihm das Kind gleichgültig ist (§ 1748 Abs. 1 Satz 1)";
+    label en unofficial "the parent has shown by his conduct that he is indifferent to the child (§ 1748 (1) sentence 1)";
+}
+pub relation besonders_schwere_pflichtverletzung(kind: Person, elternteil: Person) kind empirical {
+    label de official "Die Pflichtverletzung ist zwar nicht anhaltend, aber besonders schwer, und das Kind kann voraussichtlich dauernd nicht mehr der Obhut des Elternteils anvertraut werden (§ 1748 Abs. 1 Satz 2)";
+    label en unofficial "the breach is not persistent but particularly serious and the child presumably can no longer be entrusted to the parent's care (§ 1748 (1) sentence 2)";
+}
+pub relation belehrung_durch_das_jugendamt_am(kind: Person, elternteil: Person, tag: Date) kind empirical {
+    label de official "Tag der Belehrung des Elternteils durch das Jugendamt über die Möglichkeit der Ersetzung und der Beratung nach § 51 Abs. 2 SGB VIII (§ 1748 Abs. 2 Satz 1)";
+    label en unofficial "day on which the youth welfare office informed the parent about the possibility of replacement and advised him under § 51 (2) SGB VIII (§ 1748 (2) sentence 1)";
+}
+pub relation dauernde_unfaehigkeit_wegen_krankheit(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Elternteil ist wegen einer besonders schweren psychischen Krankheit oder einer besonders schweren geistigen oder seelischen Behinderung zur Pflege und Erziehung des Kindes dauernd unfähig (§ 1748 Abs. 3)";
+    label en unofficial "the parent is permanently incapable of caring for and bringing up the child due to a particularly severe mental illness or disability (§ 1748 (3))";
+}
+pub relation entwicklung_ohne_familie_schwer_gefaehrdet(kind: Person) kind empirical {
+    label de official "Das Kind könnte bei Unterbleiben der Annahme nicht in einer Familie aufwachsen und wäre dadurch in seiner Entwicklung schwer gefährdet (§ 1748 Abs. 3)";
+    label en unofficial "without the adoption the child could not grow up in a family and would thereby be seriously endangered in its development (§ 1748 (3))";
+}
+pub relation alleinsorge_der_mutter_nach_1626a_abs3(kind: Person, vater: Person) kind empirical {
+    label de official "Fall des § 1626a Abs. 3: die Mutter hat die alleinige elterliche Sorge, die Einwilligung des Vaters ist zu ersetzen (§ 1748 Abs. 4)";
+    label en unofficial "case of § 1626a (3): the mother has sole custody, the father's consent is to be replaced (§ 1748 (4))";
+}
+pub relation ersetzung_beantragt(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das Kind beantragt die Ersetzung der Einwilligung des Elternteils (§ 1748 Abs. 1 Satz 1)";
+    label en unofficial "the child applies for the replacement of the parent's consent (§ 1748 (1) sentence 1)";
+}
+pub relation entscheidungstag_ueber_die_ersetzung(kind: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem über die Ersetzung der Einwilligung entschieden wird (Bezugstag der Fristen des § 1748 Abs. 2)";
+    label en unofficial "day on which the replacement of the consent is decided (reference day for the periods of § 1748 (2))";
+}
+
+@source(BGB_P1748)
+pub external judgment relation unterbleiben_gereicht_zu_unverhaeltnismaessigem_nachteil(kind: Person) {
+    authority Court;
+    label de official "§ 1748 Abs. 1 Satz 1, Abs. 4. Das Unterbleiben der Annahme würde dem Kind zu unverhältnismäßigem Nachteil gereichen";
+    label en unofficial "§ 1748 (1) sentence 1, (4). Failure to adopt would cause the child disproportionate disadvantage";
+}
+
+pub relation drei_monate_nach_der_belehrung(kind: Person, elternteil: Person, tag: Date) kind institutional {
+    label de official "Tag, mit dem die drei Monate seit der Belehrung durch das Jugendamt ablaufen (§ 1748 Abs. 2 Satz 1)";
+    label en unofficial "day on which the three months since the information by the youth welfare office expire (§ 1748 (2) sentence 1)";
+}
+pub relation fuenf_monate_nach_der_geburt(kind: Person, tag: Date) kind institutional {
+    label de official "Die Fristen des Absatzes 2 laufen frühestens fünf Monate nach der Geburt des Kindes ab (§ 1748 Abs. 2 Satz 3)";
+    label en unofficial "The periods of subsection (2) expire at the earliest five months after the birth of the child (§ 1748 (2) sentence 3)";
+}
+pub relation einwilligung_zu_ersetzen(kind: Person, elternteil: Person) kind institutional {
+    label de official "Das Familiengericht hat auf Antrag des Kindes die Einwilligung eines Elternteils zu ersetzen (§ 1748 Abs. 1, 3, 4)";
+    label en unofficial "On the child's application the family court must replace a parent's consent (§ 1748 (1), (3), (4))";
+}
+
+@source(BGB_P1748) {
+    rule DreiMonateNachDerBelehrung(k: Person, e: Person, t: Date) strict {
+        label de official "Die drei Monate laufen seit der Belehrung durch das Jugendamt (§ 1748 Abs. 2 Satz 1), vorwärts gerechnet vom Tag der Belehrung";
+        label en unofficial "The three months run from the information given by the youth welfare office (§ 1748 (2) sentence 1), counted forward from that day";
+        when belehrung_durch_das_jugendamt_am(k, e, t);
+        then drei_monate_nach_der_belehrung(k, e, add_calendar_period(t, 3 calendar_month));
+    }
+    rule FuenfMonateNachDerGeburt(k: Person, g: Date) strict {
+        label de official "Die Fristen laufen frühestens fünf Monate nach der Geburt des Kindes ab (§ 1748 Abs. 2 Satz 3)";
+        label en unofficial "The periods expire at the earliest five months after the birth of the child (§ 1748 (2) sentence 3)";
+        when geburt_des_kindes_am(k, g);
+        then fuenf_monate_nach_der_geburt(k, add_calendar_period(g, 5 calendar_month));
+    }
+    rule ErsetzungWegenAnhaltenderPflichtverletzung(k: Person, e: Person) strict {
+        label de official "Das Familiengericht hat auf Antrag des Kindes die Einwilligung eines Elternteils zu ersetzen, wenn dieser seine Pflichten gegenüber dem Kind anhaltend gröblich verletzt hat und das Unterbleiben der Annahme dem Kind zu unverhältnismäßigem Nachteil gereichen würde (§ 1748 Abs. 1 Satz 1)";
+        label en unofficial "On the child's application the court must replace a parent's consent where he persistently grossly breached his duties and failure to adopt would cause disproportionate disadvantage (§ 1748 (1) sentence 1)";
+        when ersetzung_beantragt(k, e) and anhaltend_grobe_pflichtverletzung(k, e)
+         and unterbleiben_gereicht_zu_unverhaeltnismaessigem_nachteil(k);
+        then einwilligung_zu_ersetzen(k, e);
+    }
+    rule ErsetzungWegenBesondersSchwererPflichtverletzung(k: Person, e: Person) strict {
+        label de official "Die Einwilligung kann auch ersetzt werden, wenn die Pflichtverletzung zwar nicht anhaltend, aber besonders schwer ist und das Kind voraussichtlich dauernd nicht mehr der Obhut des Elternteils anvertraut werden kann (§ 1748 Abs. 1 Satz 2)";
+        label en unofficial "The consent may also be replaced where the breach is not persistent but particularly serious and the child presumably can no longer be entrusted to the parent (§ 1748 (1) sentence 2)";
+        when ersetzung_beantragt(k, e) and besonders_schwere_pflichtverletzung(k, e);
+        then einwilligung_zu_ersetzen(k, e);
+    }
+    rule ErsetzungWegenGleichgueltigkeitNachFristablauf(k: Person, e: Person, f: Date, g: Date, t: Date) strict {
+        label de official "Wegen Gleichgültigkeit, die nicht zugleich eine anhaltende gröbliche Pflichtverletzung ist, darf die Einwilligung erst ersetzt werden, wenn seit der Belehrung wenigstens drei Monate verstrichen sind; die Fristen laufen frühestens fünf Monate nach der Geburt ab (§ 1748 Abs. 2 Satz 1, 3)";
+        label en unofficial "For indifference the consent may be replaced only once at least three months have passed since the information and at the earliest five months after the birth (§ 1748 (2) sentences 1, 3)";
+        when ersetzung_beantragt(k, e) and gleichgueltigkeit_gegenueber_dem_kind(k, e)
+         and unterbleiben_gereicht_zu_unverhaeltnismaessigem_nachteil(k)
+         and drei_monate_nach_der_belehrung(k, e, f) and fuenf_monate_nach_der_geburt(k, g)
+         and entscheidungstag_ueber_die_ersetzung(k, t) and t > f and t > g;
+        then einwilligung_zu_ersetzen(k, e);
+    }
+    rule ErsetzungWegenDauernderUnfaehigkeit(k: Person, e: Person) strict {
+        label de official "Die Einwilligung kann ferner ersetzt werden, wenn der Elternteil wegen einer besonders schweren psychischen Krankheit oder Behinderung zur Pflege und Erziehung dauernd unfähig ist und das Kind bei Unterbleiben der Annahme nicht in einer Familie aufwachsen könnte und dadurch schwer gefährdet wäre (§ 1748 Abs. 3)";
+        label en unofficial "The consent may also be replaced where the parent is permanently incapable due to severe illness or disability and the child could not otherwise grow up in a family and would be seriously endangered (§ 1748 (3))";
+        when ersetzung_beantragt(k, e) and dauernde_unfaehigkeit_wegen_krankheit(k, e)
+         and entwicklung_ohne_familie_schwer_gefaehrdet(k);
+        then einwilligung_zu_ersetzen(k, e);
+    }
+    rule ErsetzungDerVaeterlichenEinwilligung(k: Person, v: Person) strict {
+        label de official "In den Fällen des § 1626a Abs. 3 hat das Familiengericht die Einwilligung des Vaters zu ersetzen, wenn das Unterbleiben der Annahme dem Kind zu unverhältnismäßigem Nachteil gereichen würde (§ 1748 Abs. 4)";
+        label en unofficial "In the cases of § 1626a (3) the court must replace the father's consent where failure to adopt would cause the child disproportionate disadvantage (§ 1748 (4))";
+        when alleinsorge_der_mutter_nach_1626a_abs3(k, v) and unterbleiben_gereicht_zu_unverhaeltnismaessigem_nachteil(k);
+        then einwilligung_zu_ersetzen(k, v);
+    }
+}
+
+// --- § 1749 Einwilligung des Ehegatten ------------------------------------------------------------
+
+pub relation annahme_durch_einen_ehegatten_allein(annehmender: Person, kind: Person) kind empirical {
+    label de official "Ein Ehegatte nimmt das Kind allein an (§ 1749 Abs. 1 Satz 1)";
+    label en unofficial "one spouse adopts the child alone (§ 1749 (1) sentence 1)";
+}
+pub relation einwilligung_des_ehegatten_gerichtlich_ersetzt(annehmender: Person, ehegatte: Person) kind empirical {
+    label de official "Das Familiengericht hat auf Antrag des Annehmenden die Einwilligung des anderen Ehegatten ersetzt (§ 1749 Abs. 1 Satz 2) — festgestellte Tatsache";
+    label en unofficial "the family court replaced the other spouse's consent on the adopter's application (§ 1749 (1) sentence 2) — adjudicated fact";
+}
+pub relation ehegatte_dauernd_ausserstande_oder_unbekannt(annehmender: Person, ehegatte: Person) kind empirical {
+    label de official "Der Ehegatte ist zur Abgabe der Erklärung dauernd außerstande oder sein Aufenthalt ist dauernd unbekannt (§ 1749 Abs. 2)";
+    label en unofficial "the spouse is permanently unable to make the declaration or his whereabouts are permanently unknown (§ 1749 (2))";
+}
+
+@source(BGB_P1749)
+pub external judgment relation berechtigte_interessen_stehen_der_annahme_entgegen(annehmender: Person, ehegatte: Person) {
+    authority Court;
+    label de official "§ 1749 Abs. 1 Satz 3. Berechtigte Interessen des anderen Ehegatten und der Familie stehen der Annahme entgegen; die Einwilligung darf dann nicht ersetzt werden";
+    label en unofficial "§ 1749 (1) sentence 3. Legitimate interests of the other spouse and of the family oppose the adoption; the consent may then not be replaced";
+}
+
+pub relation einwilligung_des_ehegatten_erforderlich(annehmender: Person, ehegatte: Person) kind institutional {
+    label de official "Zur Annahme eines Kindes durch einen Ehegatten allein ist die Einwilligung des anderen Ehegatten erforderlich (§ 1749 Abs. 1 Satz 1)";
+    label en unofficial "The adoption of a child by one spouse alone requires the other spouse's consent (§ 1749 (1) sentence 1)";
+}
+pub relation einwilligung_des_ehegatten_ersetzt(annehmender: Person, ehegatte: Person) kind institutional {
+    label de official "Das Familiengericht kann auf Antrag des Annehmenden die Einwilligung ersetzen; sie darf nicht ersetzt werden, wenn berechtigte Interessen des anderen Ehegatten und der Familie der Annahme entgegenstehen (§ 1749 Abs. 1 Satz 2, 3)";
+    label en unofficial "The family court may replace the consent on the adopter's application; it may not be replaced where legitimate interests of the spouse and family oppose the adoption (§ 1749 (1) sentences 2, 3)";
+}
+pub relation einwilligung_des_ehegatten_entbehrlich(annehmender: Person, ehegatte: Person) kind institutional {
+    label de official "Die Einwilligung des Ehegatten ist nicht erforderlich, wenn er zur Abgabe der Erklärung dauernd außerstande oder sein Aufenthalt dauernd unbekannt ist (§ 1749 Abs. 2)";
+    label en unofficial "The spouse's consent is not required where he is permanently unable to declare or his whereabouts are permanently unknown (§ 1749 (2))";
+}
+
+@source(BGB_P1749) {
+    rule EinwilligungDesEhegattenErforderlich(a: Person, k: Person, s: Person) strict {
+        label de official "Zur Annahme eines Kindes durch einen Ehegatten allein ist die Einwilligung des anderen Ehegatten erforderlich (§ 1749 Abs. 1 Satz 1)";
+        label en unofficial "The adoption of a child by one spouse alone requires the other spouse's consent (§ 1749 (1) sentence 1)";
+        when annahme_durch_einen_ehegatten_allein(a, k) and annehmender_verheiratet_mit(a, s)
+         and not_known(ehegatte_dauernd_ausserstande_oder_unbekannt(a, s));
+        then einwilligung_des_ehegatten_erforderlich(a, s);
+    }
+    rule EinwilligungDesEhegattenErsetzt(a: Person, s: Person) strict {
+        label de official "Das Familiengericht kann auf Antrag des Annehmenden die Einwilligung ersetzen; die Einwilligung darf nicht ersetzt werden, wenn berechtigte Interessen des anderen Ehegatten und der Familie der Annahme entgegenstehen (§ 1749 Abs. 1 Satz 2, 3)";
+        label en unofficial "The family court may replace the consent; it may not be replaced where legitimate interests oppose the adoption (§ 1749 (1) sentences 2, 3)";
+        when einwilligung_des_ehegatten_erforderlich(a, s) and einwilligung_des_ehegatten_gerichtlich_ersetzt(a, s)
+         and not_known(berechtigte_interessen_stehen_der_annahme_entgegen(a, s));
+        then einwilligung_des_ehegatten_ersetzt(a, s);
+    }
+    rule EinwilligungDesEhegattenEntbehrlich(a: Person, s: Person) strict {
+        label de official "Die Einwilligung des Ehegatten ist nicht erforderlich, wenn er zur Abgabe der Erklärung dauernd außerstande oder sein Aufenthalt dauernd unbekannt ist (§ 1749 Abs. 2)";
+        label en unofficial "The spouse's consent is not required where he is permanently unable to declare or his whereabouts are permanently unknown (§ 1749 (2))";
+        when annehmender_verheiratet_mit(a, s) and ehegatte_dauernd_ausserstande_oder_unbekannt(a, s);
+        then einwilligung_des_ehegatten_entbehrlich(a, s);
+    }
+}
+
+// --- § 1750 Einwilligungserklärung ---------------------------------------------------------------
+//
+// Abs. 4 Satz 2 nennt DREI JAHRE seit dem Wirksamwerden der Einwilligung: wird
+// das Kind nicht innerhalb dieser Zeit angenommen, so verliert die Einwilligung
+// des Elternteils ihre Kraft. Der Tag wird vorwärts vom Wirksamwerden gerechnet.
+
+pub relation einwilligung_dem_gericht_zugegangen_am(kind: Person, elternteil: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem die Einwilligung dem Familiengericht zugeht; in diesem Zeitpunkt wird sie wirksam (§ 1750 Abs. 1 Satz 3)";
+    label en unofficial "day on which the consent reaches the family court; it becomes effective at that time (§ 1750 (1) sentence 3)";
+}
+pub relation einwilligung_notariell_beurkundet(kind: Person, elternteil: Person) kind empirical {
+    label de official "Die Erklärung der Einwilligung ist notariell beurkundet (§ 1750 Abs. 1 Satz 2)";
+    label en unofficial "the declaration of consent has been notarially recorded (§ 1750 (1) sentence 2)";
+}
+pub relation einwilligung_unter_bedingung_oder_zeitbestimmung(kind: Person, elternteil: Person) kind empirical {
+    label de official "Die Einwilligung ist unter einer Bedingung oder einer Zeitbestimmung erteilt worden (§ 1750 Abs. 2 Satz 1)";
+    label en unofficial "the consent was given subject to a condition or a time provision (§ 1750 (2) sentence 1)";
+}
+pub relation einwilligung_durch_einen_vertreter_erteilt(kind: Person, elternteil: Person) kind empirical {
+    label de official "Die Einwilligung ist durch einen Vertreter erteilt worden (§ 1750 Abs. 3 Satz 1)";
+    label en unofficial "the consent was given by a representative (§ 1750 (3) sentence 1)";
+}
+pub relation antrag_zurueckgenommen_oder_annahme_versagt(kind: Person) kind empirical {
+    label de official "Der Antrag ist zurückgenommen oder die Annahme ist versagt worden (§ 1750 Abs. 4 Satz 1)";
+    label en unofficial "the application was withdrawn or the adoption refused (§ 1750 (4) sentence 1)";
+}
+pub relation annahme_ausgesprochen_am(kind: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem die Annahme ausgesprochen worden ist (Bezugstag der drei Jahre des § 1750 Abs. 4 Satz 2 und der Fristen des § 1762 Abs. 2)";
+    label en unofficial "day on which the adoption was pronounced (reference day for the three years of § 1750 (4) sentence 2 and the periods of § 1762 (2))";
+}
+
+pub relation einwilligung_wirksam_geworden_am(kind: Person, elternteil: Person, tag: Date) kind institutional {
+    label de official "Die Einwilligung wird in dem Zeitpunkt wirksam, in dem sie dem Familiengericht zugeht (§ 1750 Abs. 1 Satz 3)";
+    label en unofficial "The consent becomes effective when it reaches the family court (§ 1750 (1) sentence 3)";
+}
+pub relation einwilligung_unwirksam_1750(kind: Person, elternteil: Person) kind institutional {
+    label de official "Die Einwilligung kann nicht unter einer Bedingung oder einer Zeitbestimmung und nicht durch einen Vertreter erteilt werden (§ 1750 Abs. 2 Satz 1, Abs. 3 Satz 1)";
+    label en unofficial "The consent may not be given subject to a condition or time provision, nor by a representative (§ 1750 (2) sentence 1, (3) sentence 1)";
+}
+pub relation einwilligung_unwiderruflich(kind: Person, elternteil: Person) kind institutional {
+    label de official "Die Einwilligung ist unwiderruflich; die Vorschrift des § 1746 Abs. 2 bleibt unberührt (§ 1750 Abs. 2 Satz 2)";
+    label en unofficial "The consent is irrevocable; § 1746 (2) remains unaffected (§ 1750 (2) sentence 2)";
+}
+pub relation drei_jahre_seit_dem_wirksamwerden(kind: Person, elternteil: Person, tag: Date) kind institutional {
+    label de official "Tag, mit dem die drei Jahre seit dem Wirksamwerden der Einwilligung ablaufen (§ 1750 Abs. 4 Satz 2)";
+    label en unofficial "day on which the three years since the consent became effective expire (§ 1750 (4) sentence 2)";
+}
+pub relation einwilligung_verliert_ihre_kraft(kind: Person, elternteil: Person) kind institutional {
+    label de official "Die Einwilligung verliert ihre Kraft, wenn der Antrag zurückgenommen oder die Annahme versagt wird; die Einwilligung eines Elternteils ferner, wenn das Kind nicht innerhalb von drei Jahren seit dem Wirksamwerden angenommen wird (§ 1750 Abs. 4)";
+    label en unofficial "The consent loses its force where the application is withdrawn or the adoption refused; a parent's consent also where the child is not adopted within three years (§ 1750 (4))";
+}
+
+@source(BGB_P1750) {
+    rule EinwilligungWirksamMitZugang(k: Person, e: Person, t: Date) strict {
+        label de official "Die Einwilligung ist dem Familiengericht gegenüber zu erklären, bedarf der notariellen Beurkundung und wird in dem Zeitpunkt wirksam, in dem sie dem Familiengericht zugeht (§ 1750 Abs. 1)";
+        label en unofficial "The consent must be declared to the family court, requires notarial recording and becomes effective when it reaches the court (§ 1750 (1))";
+        when einwilligung_dem_gericht_zugegangen_am(k, e, t) and einwilligung_notariell_beurkundet(k, e)
+         and not_known(einwilligung_unter_bedingung_oder_zeitbestimmung(k, e))
+         and not_known(einwilligung_durch_einen_vertreter_erteilt(k, e));
+        then einwilligung_wirksam_geworden_am(k, e, t);
+    }
+    rule EinwilligungUnwirksamWegenBedingung(k: Person, e: Person) strict {
+        label de official "Die Einwilligung kann nicht unter einer Bedingung oder einer Zeitbestimmung erteilt werden (§ 1750 Abs. 2 Satz 1)";
+        label en unofficial "The consent may not be given subject to a condition or a time provision (§ 1750 (2) sentence 1)";
+        when einwilligung_unter_bedingung_oder_zeitbestimmung(k, e);
+        then einwilligung_unwirksam_1750(k, e);
+    }
+    rule EinwilligungUnwirksamWegenVertretung(k: Person, e: Person) strict {
+        label de official "Die Einwilligung kann nicht durch einen Vertreter erteilt werden (§ 1750 Abs. 3 Satz 1)";
+        label en unofficial "The consent may not be given by a representative (§ 1750 (3) sentence 1)";
+        when einwilligung_durch_einen_vertreter_erteilt(k, e);
+        then einwilligung_unwirksam_1750(k, e);
+    }
+    rule EinwilligungUnwiderruflich(k: Person, e: Person, t: Date) strict {
+        label de official "Die Einwilligung ist unwiderruflich (§ 1750 Abs. 2 Satz 2)";
+        label en unofficial "The consent is irrevocable (§ 1750 (2) sentence 2)";
+        when einwilligung_wirksam_geworden_am(k, e, t);
+        then einwilligung_unwiderruflich(k, e);
+    }
+    rule DreiJahreSeitDemWirksamwerden(k: Person, e: Person, t: Date) strict {
+        label de official "Die drei Jahre laufen seit dem Wirksamwerden der Einwilligung (§ 1750 Abs. 4 Satz 2)";
+        label en unofficial "The three years run from the consent becoming effective (§ 1750 (4) sentence 2)";
+        when einwilligung_wirksam_geworden_am(k, e, t);
+        then drei_jahre_seit_dem_wirksamwerden(k, e, add_calendar_period(t, 3 calendar_year));
+    }
+    rule KraftverlustBeiRuecknahme(k: Person, e: Person, t: Date) strict {
+        label de official "Die Einwilligung verliert ihre Kraft, wenn der Antrag zurückgenommen oder die Annahme versagt wird (§ 1750 Abs. 4 Satz 1)";
+        label en unofficial "The consent loses its force where the application is withdrawn or the adoption refused (§ 1750 (4) sentence 1)";
+        when einwilligung_wirksam_geworden_am(k, e, t) and antrag_zurueckgenommen_oder_annahme_versagt(k);
+        then einwilligung_verliert_ihre_kraft(k, e);
+    }
+    rule KraftverlustNachDreiJahren(k: Person, e: Person, f: Date, t: Date) strict {
+        label de official "Die Einwilligung eines Elternteils verliert ihre Kraft, wenn das Kind nicht innerhalb von drei Jahren seit dem Wirksamwerden der Einwilligung angenommen wird (§ 1750 Abs. 4 Satz 2)";
+        label en unofficial "A parent's consent loses its force where the child is not adopted within three years of the consent becoming effective (§ 1750 (4) sentence 2)";
+        when drei_jahre_seit_dem_wirksamwerden(k, e, f) and annahme_ausgesprochen_am(k, t) and t > f;
+        then einwilligung_verliert_ihre_kraft(k, e);
+    }
+}
+
+// --- § 1751 Wirkung der elterlichen Einwilligung -------------------------------------------------
+
+pub relation kind_in_die_obhut_des_annehmenden_aufgenommen(kind: Person, annehmender: Person) kind empirical {
+    label de official "Das Kind ist in die Obhut des Annehmenden mit dem Ziel der Annahme aufgenommen (§ 1751 Abs. 4 Satz 1)";
+    label en unofficial "the child has been taken into the adopter's care with a view to adoption (§ 1751 (4) sentence 1)";
+}
+pub relation vormund_bereits_bestellt(kind: Person) kind empirical {
+    label de official "Für das Kind ist bereits ein Vormund bestellt (§ 1751 Abs. 1 Satz 2)";
+    label en unofficial "a guardian has already been appointed for the child (§ 1751 (1) sentence 2)";
+}
+
+pub relation sorge_des_einwilligenden_ruht(kind: Person, elternteil: Person) kind institutional {
+    label de official "Mit der Einwilligung eines Elternteils in die Annahme ruht die elterliche Sorge dieses Elternteils; die Befugnis zum persönlichen Umgang darf nicht ausgeübt werden (§ 1751 Abs. 1 Satz 1)";
+    label en unofficial "With a parent's consent to the adoption his parental custody is suspended; the power of personal contact may not be exercised (§ 1751 (1) sentence 1)";
+}
+pub relation jugendamt_wird_vormund(kind: Person) kind institutional {
+    label de official "Das Jugendamt wird Vormund; dies gilt nicht, wenn der andere Elternteil die elterliche Sorge allein ausübt oder wenn bereits ein Vormund bestellt ist (§ 1751 Abs. 1 Satz 2)";
+    label en unofficial "The youth welfare office becomes guardian; not where the other parent exercises custody alone or a guardian has already been appointed (§ 1751 (1) sentence 2)";
+}
+pub relation annehmender_vorrangig_unterhaltspflichtig(annehmender: Person, kind: Person) kind institutional {
+    label de official "Der Annehmende ist dem Kind vor den Verwandten des Kindes zur Gewährung des Unterhalts verpflichtet, sobald die Eltern die erforderliche Einwilligung erteilt haben und das Kind in die Obhut des Annehmenden aufgenommen ist (§ 1751 Abs. 4 Satz 1)";
+    label en unofficial "The adopter is obliged to maintain the child in priority to the child's relatives once the parents have given the required consent and the child has been taken into his care (§ 1751 (4) sentence 1)";
+}
+
+@source(BGB_P1751) {
+    rule SorgeDesEinwilligendenRuht(k: Person, e: Person, t: Date) strict {
+        label de official "Mit der Einwilligung eines Elternteils in die Annahme ruht die elterliche Sorge dieses Elternteils (§ 1751 Abs. 1 Satz 1)";
+        label en unofficial "With a parent's consent to the adoption his parental custody is suspended (§ 1751 (1) sentence 1)";
+        when einwilligung_wirksam_geworden_am(k, e, t);
+        then sorge_des_einwilligenden_ruht(k, e);
+    }
+    rule JugendamtWirdVormund(k: Person, e: Person) strict {
+        label de official "Das Jugendamt wird Vormund; dies gilt nicht, wenn der andere Elternteil die elterliche Sorge allein ausübt oder wenn bereits ein Vormund bestellt ist (§ 1751 Abs. 1 Satz 2)";
+        label en unofficial "The youth welfare office becomes guardian; not where the other parent exercises custody alone or a guardian has already been appointed (§ 1751 (1) sentence 2)";
+        when sorge_des_einwilligenden_ruht(k, e) and not_known(vormund_bereits_bestellt(k))
+         and not_known(elterliche_sorge_allein(k, e));
+        then jugendamt_wird_vormund(k);
+    }
+    rule AnnehmenderVorrangigUnterhaltspflichtig(k: Person, a: Person, e: Person, t: Date) strict {
+        label de official "Der Annehmende ist dem Kind vor den Verwandten des Kindes zur Gewährung des Unterhalts verpflichtet, sobald die Eltern die erforderliche Einwilligung erteilt haben und das Kind in die Obhut des Annehmenden mit dem Ziel der Annahme aufgenommen ist (§ 1751 Abs. 4 Satz 1)";
+        label en unofficial "The adopter is obliged to maintain the child in priority to its relatives once the parents have consented and the child has been taken into his care (§ 1751 (4) sentence 1)";
+        when einwilligung_wirksam_geworden_am(k, e, t) and kind_in_die_obhut_des_annehmenden_aufgenommen(k, a);
+        then annehmender_vorrangig_unterhaltspflichtig(a, k);
+    }
+}
+
+// --- §§ 1752, 1753 Beschluss und Antrag ----------------------------------------------------------
+
+pub relation antrag_notariell_beurkundet(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Annahmeantrag ist notariell beurkundet (§ 1752 Abs. 2 Satz 2)";
+    label en unofficial "the application for adoption has been notarially recorded (§ 1752 (2) sentence 2)";
+}
+pub relation antrag_unter_bedingung_oder_durch_vertreter(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Antrag ist unter einer Bedingung oder einer Zeitbestimmung oder durch einen Vertreter gestellt worden (§ 1752 Abs. 2 Satz 1)";
+    label en unofficial "the application was made subject to a condition or time provision or by a representative (§ 1752 (2) sentence 1)";
+}
+pub relation annehmender_verstorben(annehmender: Person) kind empirical {
+    label de official "Der Annehmende ist gestorben (§ 1753 Abs. 2, 3)";
+    label en unofficial "the adopter has died (§ 1753 (2), (3))";
+}
+pub relation antrag_vor_dem_tod_eingereicht_oder_notar_betraut(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Annehmende hat den Antrag beim Familiengericht eingereicht oder bei oder nach der notariellen Beurkundung den Notar damit betraut, den Antrag einzureichen (§ 1753 Abs. 2)";
+    label en unofficial "the adopter filed the application with the family court or instructed the notary to file it (§ 1753 (2))";
+}
+
+pub relation antrag_wirksam(annehmender: Person, kind: Person) kind institutional {
+    label de official "Der Annahmeantrag ist wirksam gestellt: notariell beurkundet, ohne Bedingung oder Zeitbestimmung und nicht durch einen Vertreter (§ 1752)";
+    label en unofficial "the application for adoption is validly made: notarially recorded, unconditional and not by a representative (§ 1752)";
+}
+pub relation ausspruch_nach_dem_tod_des_kindes_ausgeschlossen(kind: Person) kind institutional {
+    label de official "Der Ausspruch der Annahme kann nicht nach dem Tode des Kindes erfolgen (§ 1753 Abs. 1)";
+    label en unofficial "The adoption may not be pronounced after the child's death (§ 1753 (1))";
+}
+pub relation ausspruch_nach_dem_tod_des_annehmenden_zulaessig(annehmender: Person, kind: Person) kind institutional {
+    label de official "Nach dem Tode des Annehmenden ist der Ausspruch nur zulässig, wenn der Annehmende den Antrag eingereicht oder den Notar damit betraut hat; die Annahme hat dann die gleiche Wirkung, wie wenn sie vor dem Tode erfolgt wäre (§ 1753 Abs. 2, 3)";
+    label en unofficial "After the adopter's death the pronouncement is admissible only where he filed the application or instructed the notary; the adoption then has the same effect as before the death (§ 1753 (2), (3))";
+}
+
+@source(BGB_P1752)
+rule AntragWirksam(a: Person, k: Person) strict {
+    label de official "Die Annahme als Kind wird auf Antrag des Annehmenden vom Familiengericht ausgesprochen; der Antrag kann nicht unter einer Bedingung oder einer Zeitbestimmung oder durch einen Vertreter gestellt werden und bedarf der notariellen Beurkundung (§ 1752)";
+    label en unofficial "The adoption is pronounced by the family court on the adopter's application; the application may not be conditional or made by a representative and requires notarial recording (§ 1752)";
+    when annahmeantrag(a, k) and antrag_notariell_beurkundet(a, k)
+     and not_known(antrag_unter_bedingung_oder_durch_vertreter(a, k));
+    then antrag_wirksam(a, k);
+}
+
+@source(BGB_P1753) {
+    rule KeinAusspruchNachDemTodDesKindes(k: Person) strict {
+        label de official "Der Ausspruch der Annahme kann nicht nach dem Tode des Kindes erfolgen (§ 1753 Abs. 1)";
+        label en unofficial "The adoption may not be pronounced after the child's death (§ 1753 (1))";
+        when kind_verstorben(k);
+        then ausspruch_nach_dem_tod_des_kindes_ausgeschlossen(k);
+    }
+    rule AusspruchNachDemTodDesAnnehmenden(a: Person, k: Person) strict {
+        label de official "Nach dem Tode des Annehmenden ist der Ausspruch nur zulässig, wenn der Annehmende den Antrag beim Familiengericht eingereicht oder den Notar damit betraut hat (§ 1753 Abs. 2); wird die Annahme danach ausgesprochen, so hat sie die gleiche Wirkung, wie wenn sie vor dem Tode erfolgt wäre (Abs. 3)";
+        label en unofficial "After the adopter's death the pronouncement is admissible only where he filed the application or instructed the notary (§ 1753 (2)); it then has the same effect as before the death ((3))";
+        when annehmender_verstorben(a) and antrag_wirksam(a, k) and antrag_vor_dem_tod_eingereicht_oder_notar_betraut(a, k)
+         and not_known(kind_verstorben(k));
+        then ausspruch_nach_dem_tod_des_annehmenden_zulaessig(a, k);
+    }
+}
+
+// --- § 1757 Name des Kindes, § 1758 Offenbarungs- und Ausforschungsverbot -----------------------
+
+pub relation ehepaar_ohne_ehenamen(annehmender: Person, ehegatte: Person) kind empirical {
+    label de official "Die annehmenden Ehegatten führen keinen Ehenamen (§ 1757 Abs. 2 Satz 1)";
+    label en unofficial "the adopting spouses bear no married name (§ 1757 (2) sentence 1)";
+}
+pub relation anschluss_vor_dem_ausspruch_erklaert(kind: Person) kind empirical {
+    label de official "Das Kind schließt sich der Bestimmung vor dem Ausspruch der Annahme durch Erklärung gegenüber dem Familiengericht an (§ 1757 Abs. 2 Satz 2)";
+    label en unofficial "the child joins the determination before the pronouncement by declaration to the family court (§ 1757 (2) sentence 2)";
+}
+pub relation vornamensaenderung_beantragt(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Annehmende beantragt mit Einwilligung des Kindes die Änderung oder Beigabe von Vornamen (§ 1757 Abs. 3 Nr. 1)";
+    label en unofficial "the adopter applies, with the child's consent, for a change or addition of first names (§ 1757 (3) no. 1)";
+}
+pub relation voranstellung_des_bisherigen_namens_beantragt(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Annehmende beantragt, dem neuen Familiennamen den bisherigen voranzustellen oder anzufügen (§ 1757 Abs. 3 Nr. 2)";
+    label en unofficial "the adopter applies to prefix or append the former family name to the new one (§ 1757 (3) no. 2)";
+}
+pub relation zustimmung_zur_offenbarung(kind: Person, annehmender: Person) kind empirical {
+    label de official "Der Annehmende und das Kind stimmen der Offenbarung zu (§ 1758 Abs. 1)";
+    label en unofficial "the adopter and the child consent to the disclosure (§ 1758 (1))";
+}
+pub relation besondere_gruende_des_oeffentlichen_interesses(kind: Person) kind empirical {
+    label de official "Besondere Gründe des öffentlichen Interesses erfordern die Offenbarung oder Ausforschung (§ 1758 Abs. 1)";
+    label en unofficial "special reasons of public interest require the disclosure or investigation (§ 1758 (1))";
+}
+
+@source(BGB_P1757)
+pub external judgment relation vornamensaenderung_entspricht_dem_kindeswohl(kind: Person) {
+    authority Court;
+    label de official "§ 1757 Abs. 3 Nr. 1. Die Änderung oder Beigabe von Vornamen entspricht dem Wohl des Kindes";
+    label en unofficial "§ 1757 (3) no. 1. Changing or adding first names serves the child's welfare";
+}
+@source(BGB_P1757)
+pub external judgment relation schwerwiegende_gruende_fuer_die_namensfortfuehrung(kind: Person) {
+    authority Court;
+    label de official "§ 1757 Abs. 3 Nr. 2. Die Voranstellung oder Anfügung des bisherigen Familiennamens ist aus schwerwiegenden Gründen zum Wohl des Kindes erforderlich";
+    label en unofficial "§ 1757 (3) no. 2. Prefixing or appending the former family name is necessary for serious reasons for the child's welfare";
+}
+
+pub relation geburtsname_ist_der_name_des_annehmenden(kind: Person, annehmender: Person) kind institutional {
+    label de official "Das Kind erhält als Geburtsnamen den Familiennamen des Annehmenden (§ 1757 Abs. 1 Satz 1)";
+    label en unofficial "The child receives the adopter's family name as its birth name (§ 1757 (1) sentence 1)";
+}
+pub relation geburtsname_vor_dem_ausspruch_zu_bestimmen(kind: Person) kind institutional {
+    label de official "Nimmt ein Ehepaar ein Kind an und führen die Ehegatten keinen Ehenamen, so bestimmen sie den Geburtsnamen des Kindes vor dem Ausspruch der Annahme durch Erklärung gegenüber dem Familiengericht (§ 1757 Abs. 2 Satz 1)";
+    label en unofficial "Where a married couple adopts and the spouses bear no married name, they determine the child's birth name before the pronouncement by declaration to the family court (§ 1757 (2) sentence 1)";
+}
+pub relation vornamen_koennen_geaendert_werden(kind: Person) kind institutional {
+    label de official "Das Familiengericht kann auf Antrag des Annehmenden mit Einwilligung des Kindes Vornamen ändern oder neue beigeben, wenn dies dem Wohl des Kindes entspricht (§ 1757 Abs. 3 Nr. 1)";
+    label en unofficial "On the adopter's application and with the child's consent the family court may change or add first names where this serves the child's welfare (§ 1757 (3) no. 1)";
+}
+pub relation bisheriger_name_kann_vorangestellt_werden(kind: Person) kind institutional {
+    label de official "Das Familiengericht kann dem neuen Familiennamen den bisherigen voranstellen oder anfügen, wenn dies aus schwerwiegenden Gründen zum Wohl des Kindes erforderlich ist (§ 1757 Abs. 3 Nr. 2)";
+    label en unofficial "The family court may prefix or append the former family name where this is necessary for serious reasons for the child's welfare (§ 1757 (3) no. 2)";
+}
+pub relation offenbarung_und_ausforschung_verboten(kind: Person) kind institutional {
+    label de official "Tatsachen, die geeignet sind, die Annahme und ihre Umstände aufzudecken, dürfen ohne Zustimmung des Annehmenden und des Kindes nicht offenbart oder ausgeforscht werden (§ 1758 Abs. 1)";
+    label en unofficial "Facts apt to reveal the adoption and its circumstances may not be disclosed or investigated without the consent of the adopter and the child (§ 1758 (1))";
+}
+
+@source(BGB_P1757) {
+    rule GeburtsnameIstDerNameDesAnnehmenden(a: Person, k: Person) strict {
+        label de official "Das Kind erhält als Geburtsnamen den Familiennamen des Annehmenden (§ 1757 Abs. 1 Satz 1)";
+        label en unofficial "The child receives the adopter's family name as its birth name (§ 1757 (1) sentence 1)";
+        when annahme_ausgesprochen(a, k);
+        then geburtsname_ist_der_name_des_annehmenden(k, a);
+    }
+    rule GeburtsnameVorDemAusspruchZuBestimmen(a: Person, s: Person, k: Person) strict {
+        label de official "Nimmt ein Ehepaar ein Kind an oder nimmt ein Ehegatte ein Kind des anderen an und führen die Ehegatten keinen Ehenamen, so bestimmen sie den Geburtsnamen vor dem Ausspruch der Annahme (§ 1757 Abs. 2 Satz 1)";
+        label en unofficial "Where a couple adopts and bears no married name, they determine the birth name before the pronouncement (§ 1757 (2) sentence 1)";
+        when annahmeantrag(a, k) and ehepaar_ohne_ehenamen(a, s);
+        then geburtsname_vor_dem_ausspruch_zu_bestimmen(k);
+    }
+    rule AnschlussAbFuenfErforderlich(a: Person, s: Person, k: Person) strict {
+        label de official "Hat das Kind das fünfte Lebensjahr vollendet, so ist die Bestimmung nur wirksam, wenn es sich der Bestimmung vor dem Ausspruch der Annahme anschließt (§ 1757 Abs. 2 Satz 2)";
+        label en unofficial "Where the child has completed its fifth year, the determination is effective only if it joins before the pronouncement (§ 1757 (2) sentence 2)";
+        when geburtsname_vor_dem_ausspruch_zu_bestimmen(k) and fuenftes_lebensjahr_vollendet(k)
+         and anschluss_vor_dem_ausspruch_erklaert(k);
+        then einwilligung_des_kindes_erforderlich(k);
+    }
+    rule VornamenKoennenGeaendertWerden(a: Person, k: Person) strict {
+        label de official "Das Familiengericht kann auf Antrag des Annehmenden mit Einwilligung des Kindes Vornamen des Kindes ändern oder ihm neue beigeben, wenn dies dem Wohl des Kindes entspricht (§ 1757 Abs. 3 Nr. 1)";
+        label en unofficial "On the adopter's application and with the child's consent the court may change or add first names where this serves the child's welfare (§ 1757 (3) no. 1)";
+        when vornamensaenderung_beantragt(a, k) and einwilligung_des_kindes_erteilt(k, a)
+         and vornamensaenderung_entspricht_dem_kindeswohl(k);
+        then vornamen_koennen_geaendert_werden(k);
+    }
+    rule BisherigerNameKannVorangestelltWerden(a: Person, k: Person) strict {
+        label de official "Das Familiengericht kann dem neuen Familiennamen des Kindes den bisherigen voranstellen oder anfügen, wenn dies aus schwerwiegenden Gründen zum Wohl des Kindes erforderlich ist (§ 1757 Abs. 3 Nr. 2)";
+        label en unofficial "The court may prefix or append the former family name where necessary for serious reasons for the child's welfare (§ 1757 (3) no. 2)";
+        when voranstellung_des_bisherigen_namens_beantragt(a, k) and einwilligung_des_kindes_erteilt(k, a)
+         and schwerwiegende_gruende_fuer_die_namensfortfuehrung(k);
+        then bisheriger_name_kann_vorangestellt_werden(k);
+    }
+}
+
+@source(BGB_P1758)
+rule OffenbarungVerboten(a: Person, k: Person) strict {
+    label de official "Tatsachen, die geeignet sind, die Annahme und ihre Umstände aufzudecken, dürfen ohne Zustimmung des Annehmenden und des Kindes nicht offenbart oder ausgeforscht werden, es sei denn, dass besondere Gründe des öffentlichen Interesses dies erfordern (§ 1758 Abs. 1)";
+    label en unofficial "Facts apt to reveal the adoption may not be disclosed or investigated without the consent of adopter and child unless special reasons of public interest require it (§ 1758 (1))";
+    when annahme_ausgesprochen(a, k) and not_known(zustimmung_zur_offenbarung(k, a))
+     and not_known(besondere_gruende_des_oeffentlichen_interesses(k));
+    then offenbarung_und_ausforschung_verboten(k);
+}
+
+// --- §§ 1759–1766a Aufhebung des Annahmeverhältnisses --------------------------------------------
+//
+// § 1759 ist die SPERRE: aufgehoben werden kann nur in den Fällen der §§ 1760,
+// 1763. § 1760 nennt einen GESCHLOSSENEN Katalog von fünf Unwirksamkeitsgründen
+// (Abs. 2 Buchstaben a–e), § 1761 zwei Aufhebungshindernisse, § 1762 die
+// Antragsberechtigung und die Frist (ein Jahr, längstens drei Jahre seit der
+// Annahme), § 1763 die Aufhebung von Amts wegen.
+
+pub enum Unwirksamkeitsgrund1760 {
+    label de official "Gründe, aus denen ein Antrag oder eine Einwilligung unwirksam ist (§ 1760 Abs. 2 Buchstaben a–e)";
+    label en unofficial "grounds on which an application or consent is ineffective (§ 1760 (2) letters a–e)";
+    BewusstlosigkeitOderGeschaeftsunfaehigkeit,
+    IrrtumUeberDieAnnahme,
+    ArglistigeTaeuschung,
+    WiderrechtlicheDrohung,
+    EinwilligungVorAblaufDerAchtWochen
+}
+
+pub relation annahme_ohne_erforderliche_erklaerung_begruendet(annehmender: Person, kind: Person) kind empirical {
+    label de official "Das Annahmeverhältnis ist ohne Antrag des Annehmenden, ohne die Einwilligung des Kindes oder ohne die erforderliche Einwilligung eines Elternteils begründet worden (§ 1760 Abs. 1)";
+    label en unofficial "the adoptive relationship was established without the adopter's application, the child's consent or a parent's required consent (§ 1760 (1))";
+}
+pub relation erklaerung_unwirksam_aus_grund(annehmender: Person, kind: Person, grund: Unwirksamkeitsgrund1760) kind empirical {
+    label de official "Der Antrag oder die Einwilligung ist aus einem der Gründe des § 1760 Abs. 2 unwirksam";
+    label en unofficial "the application or consent is ineffective on one of the grounds of § 1760 (2)";
+}
+pub relation erklaerung_nachgeholt_oder_bestaetigt(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Erklärende hat den Antrag oder die Einwilligung nachgeholt oder sonst zu erkennen gegeben, dass das Annahmeverhältnis aufrechterhalten werden soll (§ 1760 Abs. 3 Satz 1, Abs. 5 Satz 1)";
+    label en unofficial "the declarant has made good the application or consent or otherwise indicated that the relationship is to be maintained (§ 1760 (3) sentence 1, (5) sentence 1)";
+}
+pub relation taeuschung_ueber_vermoegensverhaeltnisse_oder_durch_dritte(annehmender: Person, kind: Person) kind empirical {
+    label de official "Über Vermögensverhältnisse ist getäuscht worden oder die Täuschung ist ohne Wissen eines Antrags- oder Einwilligungsberechtigten von einem Dritten verübt worden (§ 1760 Abs. 4)";
+    label en unofficial "the deception concerned financial circumstances or was committed by a third party without the knowledge of an entitled person (§ 1760 (4))";
+}
+pub relation voraussetzungen_der_ersetzung_lagen_vor(annehmender: Person, kind: Person) kind empirical {
+    label de official "Die Voraussetzungen für die Ersetzung der Einwilligung haben beim Ausspruch der Annahme vorgelegen oder liegen zum Zeitpunkt der Entscheidung über den Aufhebungsantrag vor (§ 1761 Abs. 1)";
+    label en unofficial "the conditions for replacing the consent existed at the pronouncement or exist at the time of the decision on the application (§ 1761 (1))";
+}
+pub relation aufhebungsantrag_gestellt_am(annehmender: Person, kind: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Aufhebungsantrag gestellt worden ist (§ 1762 Abs. 2)";
+    label en unofficial "day on which the application for annulment was made (§ 1762 (2))";
+}
+pub relation fristbeginn_des_aufhebungsantrags(annehmender: Person, kind: Person, tag: Date) kind empirical {
+    label de official "Tag, mit dem die Jahresfrist des § 1762 Abs. 2 Satz 2 nach den Buchstaben a bis e beginnt";
+    label en unofficial "day on which the one-year period of § 1762 (2) sentence 2 begins under letters a to e";
+}
+pub relation antrag_ohne_dessen_erklaerung(antragsteller: Person, annehmender: Person, kind: Person) kind empirical {
+    label de official "Antragsberechtigt ist nur derjenige, ohne dessen Antrag oder Einwilligung das Kind angenommen worden ist (§ 1762 Abs. 1 Satz 1)";
+    label en unofficial "only the person without whose application or consent the child was adopted is entitled to apply (§ 1762 (1) sentence 1)";
+}
+pub relation aufhebungsantrag_notariell_beurkundet(annehmender: Person, kind: Person) kind empirical {
+    label de official "Der Aufhebungsantrag ist notariell beurkundet (§ 1762 Abs. 3)";
+    label en unofficial "the application for annulment has been notarially recorded (§ 1762 (3))";
+}
+pub relation aufhebung_von_amts_wegen_eingeleitet(annehmender: Person, kind: Person) kind empirical {
+    label de official "Das Familiengericht leitet die Aufhebung von Amts wegen ein (§ 1763 Abs. 1)";
+    label en unofficial "the family court initiates the annulment of its own motion (§ 1763 (1))";
+}
+pub relation bereitschaft_zur_pflege_und_erziehung(kind: Person, person: Person) kind empirical {
+    label de official "Der andere Ehegatte oder ein leiblicher Elternteil ist bereit, die Pflege und Erziehung des Kindes zu übernehmen (§ 1763 Abs. 3 Buchstabe a)";
+    label en unofficial "the other spouse or a biological parent is willing to take over the care and upbringing of the child (§ 1763 (3) letter a)";
+}
+pub relation aufhebung_ermoeglicht_erneute_annahme(kind: Person) kind empirical {
+    label de official "Die Aufhebung soll eine erneute Annahme des Kindes ermöglichen (§ 1763 Abs. 3 Buchstabe b)";
+    label en unofficial "the annulment is to make a new adoption of the child possible (§ 1763 (3) letter b)";
+}
+pub relation aufhebung_ausgesprochen(annehmender: Person, kind: Person) kind empirical {
+    label de official "Das Familiengericht hat das Annahmeverhältnis aufgehoben (§§ 1760, 1763) — festgestellte Tatsache";
+    label en unofficial "the family court has annulled the adoptive relationship (§§ 1760, 1763) — adjudicated fact";
+}
+pub relation aufhebung_nur_zu_einem_ehegatten(annehmender: Person, kind: Person) kind empirical {
+    label de official "Das Annahmeverhältnis besteht zu einem Ehepaar und die Aufhebung erfolgt nur im Verhältnis zu einem Ehegatten (§ 1764 Abs. 5)";
+    label en unofficial "the adoptive relationship exists with a married couple and the annulment concerns only one spouse (§ 1764 (5))";
+}
+pub relation berechtigtes_interesse_an_der_namensfuehrung(kind: Person) kind empirical {
+    label de official "Das Kind hat ein berechtigtes Interesse an der Führung des durch die Annahme erworbenen Namens (§ 1765 Abs. 2)";
+    label en unofficial "the child has a legitimate interest in bearing the name acquired by the adoption (§ 1765 (2))";
+}
+pub relation ehe_zwischen_annehmendem_und_angenommenem(annehmender: Person, angenommener: Person) kind empirical {
+    label de official "Der Annehmende schließt mit dem Angenommenen oder einem seiner Abkömmlinge den eherechtlichen Vorschriften zuwider die Ehe (§ 1766)";
+    label en unofficial "the adopter marries the adoptee or one of his descendants contrary to marriage law (§ 1766)";
+}
+pub relation verfestigte_lebensgemeinschaft_seit_vier_jahren(erster: Person, zweiter: Person) kind empirical {
+    label de official "Zwei Personen leben seit mindestens vier Jahren eheähnlich in einem gemeinsamen Haushalt zusammen (§ 1766a Abs. 2 Satz 1 Nr. 1)";
+    label en unofficial "two persons have lived together in a marriage-like manner in a joint household for at least four years (§ 1766a (2) sentence 1 no. 1)";
+}
+pub relation eltern_eines_gemeinschaftlichen_kindes(erster: Person, zweiter: Person) kind empirical {
+    label de official "Die Personen leben als Eltern eines gemeinschaftlichen Kindes mit diesem eheähnlich zusammen (§ 1766a Abs. 2 Satz 1 Nr. 2)";
+    label en unofficial "the persons live together in a marriage-like manner as parents of a common child (§ 1766a (2) sentence 1 no. 2)";
+}
+pub relation partner_mit_einem_dritten_verheiratet(person: Person, dritter: Person) kind empirical {
+    label de official "Ein Partner ist mit einem Dritten verheiratet (§ 1766a Abs. 2 Satz 2, Abs. 3)";
+    label en unofficial "one partner is married to a third person (§ 1766a (2) sentence 2, (3))";
+}
+
+@source(BGB_P1761)
+pub external judgment relation kindeswohl_durch_aufhebung_erheblich_gefaehrdet(kind: Person) {
+    authority Court;
+    label de official "§ 1761 Abs. 2. Durch die Aufhebung würde das Wohl des Kindes erheblich gefährdet, es sei denn, dass überwiegende Interessen des Annehmenden die Aufhebung erfordern";
+    label en unofficial "§ 1761 (2). The annulment would seriously endanger the child's welfare, unless overriding interests of the adopter require it";
+}
+@source(BGB_P1763)
+pub external judgment relation schwerwiegende_gruende_fuer_die_aufhebung(kind: Person) {
+    authority Court;
+    label de official "§ 1763 Abs. 1. Die Aufhebung des Annahmeverhältnisses ist aus schwerwiegenden Gründen zum Wohl des Kindes erforderlich";
+    label en unofficial "§ 1763 (1). The annulment of the adoptive relationship is necessary for serious reasons for the child's welfare";
+}
+
+pub relation aufhebung_nur_nach_1760_und_1763(annehmender: Person, kind: Person) kind institutional {
+    label de official "Das Annahmeverhältnis kann nur in den Fällen der §§ 1760, 1763 aufgehoben werden (§ 1759)";
+    label en unofficial "The adoptive relationship may be annulled only in the cases of §§ 1760, 1763 (§ 1759)";
+}
+pub relation aufhebung_moeglich(annehmender: Person, kind: Person) kind institutional {
+    label de official "Das Annahmeverhältnis kann auf Antrag vom Familiengericht aufgehoben werden, wenn es ohne die erforderlichen Erklärungen begründet worden ist (§ 1760 Abs. 1, 2)";
+    label en unofficial "The adoptive relationship may be annulled on application where it was established without the required declarations (§ 1760 (1), (2))";
+}
+pub relation aufhebung_ausgeschlossen(annehmender: Person, kind: Person) kind institutional {
+    label de official "Die Aufhebung ist ausgeschlossen (§ 1760 Abs. 3 bis 5, § 1761)";
+    label en unofficial "the annulment is excluded (§ 1760 (3) to (5), § 1761)";
+}
+pub relation letzter_tag_der_aufhebungsfrist(annehmender: Person, kind: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Jahresfrist des § 1762 Abs. 2 Satz 1, vorwärts vom Beginn nach Satz 2 gerechnet";
+    label en unofficial "last day of the one-year period of § 1762 (2) sentence 1, counted forward from the start under sentence 2";
+}
+pub relation drei_jahre_seit_der_annahme(kind: Person, tag: Date) kind institutional {
+    label de official "Tag, mit dem drei Jahre seit der Annahme verstrichen sind: danach ist der Antrag ausgeschlossen (§ 1762 Abs. 2 Satz 1)";
+    label en unofficial "day on which three years since the adoption have elapsed: thereafter the application is excluded (§ 1762 (2) sentence 1)";
+}
+pub relation aufhebungsantrag_zulaessig(antragsteller: Person, annehmender: Person, kind: Person) kind institutional {
+    label de official "Antragsberechtigt ist nur derjenige, ohne dessen Antrag oder Einwilligung das Kind angenommen worden ist; der Antrag bedarf der notariellen Beurkundung und ist fristgebunden (§ 1762)";
+    label en unofficial "Only the person without whose application or consent the child was adopted may apply; the application requires notarial recording and is time-limited (§ 1762)";
+}
+pub relation aufhebung_von_amts_wegen_zulaessig(annehmender: Person, kind: Person) kind institutional {
+    label de official "Während der Minderjährigkeit des Kindes kann das Familiengericht das Annahmeverhältnis von Amts wegen aufheben, wenn dies aus schwerwiegenden Gründen zum Wohl des Kindes erforderlich ist (§ 1763 Abs. 1, 3)";
+    label en unofficial "During the child's minority the family court may annul the relationship of its own motion where necessary for serious reasons for the child's welfare (§ 1763 (1), (3))";
+}
+pub relation annahmeverwandtschaft_erlischt(kind: Person, annehmender: Person) kind institutional {
+    label de official "Mit der Aufhebung der Annahme erlöschen das durch die Annahme begründete Verwandtschaftsverhältnis und die sich aus ihm ergebenden Rechte und Pflichten (§ 1764 Abs. 2)";
+    label en unofficial "With the annulment the kinship established by the adoption and the rights and duties arising from it expire (§ 1764 (2))";
+}
+pub relation leibliche_verwandtschaft_lebt_wieder_auf(kind: Person) kind institutional {
+    label de official "Gleichzeitig leben das Verwandtschaftsverhältnis des Kindes und seiner Abkömmlinge zu den leiblichen Verwandten und die sich aus ihm ergebenden Rechte und Pflichten, mit Ausnahme der elterlichen Sorge, wieder auf (§ 1764 Abs. 3)";
+    label en unofficial "At the same time the kinship to the biological relatives and the rights and duties arising from it revive, except parental custody (§ 1764 (3))";
+}
+pub relation sorge_an_die_leiblichen_eltern_zurueck(kind: Person) kind institutional {
+    label de official "Das Familiengericht hat den leiblichen Eltern die elterliche Sorge zurückzuübertragen, wenn und soweit dies dem Wohl des Kindes nicht widerspricht; andernfalls bestellt es einen Vormund oder Pfleger (§ 1764 Abs. 4)";
+    label en unofficial "The family court must retransfer parental custody to the biological parents unless this conflicts with the child's welfare; otherwise it appoints a guardian or curator (§ 1764 (4))";
+}
+pub relation namensrecht_verloren(kind: Person, annehmender: Person) kind institutional {
+    label de official "Mit der Aufhebung der Annahme verliert das Kind das Recht, den Familiennamen des Annehmenden als Geburtsnamen zu führen (§ 1765 Abs. 1 Satz 1)";
+    label en unofficial "With the annulment the child loses the right to bear the adopter's family name as its birth name (§ 1765 (1) sentence 1)";
+}
+pub relation name_darf_behalten_werden(kind: Person) kind institutional {
+    label de official "Auf Antrag des Kindes kann das Familiengericht anordnen, dass das Kind den durch die Annahme erworbenen Familiennamen behält, wenn es ein berechtigtes Interesse hat (§ 1765 Abs. 2)";
+    label en unofficial "On the child's application the court may order that it keep the name acquired by the adoption where it has a legitimate interest (§ 1765 (2))";
+}
+pub relation rechtsverhaeltnis_durch_eheschliessung_aufgehoben(annehmender: Person, angenommener: Person) kind institutional {
+    label de official "Schließt ein Annehmender mit dem Angenommenen oder einem seiner Abkömmlinge den eherechtlichen Vorschriften zuwider die Ehe, so wird mit der Eheschließung das durch die Annahme begründete Rechtsverhältnis aufgehoben (§ 1766)";
+    label en unofficial "Where an adopter marries the adoptee or a descendant contrary to marriage law, the legal relationship established by the adoption is annulled by the marriage (§ 1766)";
+}
+pub relation verfestigte_lebensgemeinschaft(erster: Person, zweiter: Person) kind institutional {
+    label de official "Verfestigte Lebensgemeinschaft im Sinne des § 1766a Abs. 1: auf sie sind die Vorschriften über die Annahme eines Kindes des anderen Ehegatten entsprechend anzuwenden";
+    label en unofficial "settled life partnership within § 1766a (1): the provisions on adopting a spouse's child apply accordingly";
+}
+
+@source(BGB_P1759)
+rule AufhebungNurNach1760Und1763(a: Person, k: Person) strict {
+    label de official "Das Annahmeverhältnis kann nur in den Fällen der §§ 1760, 1763 aufgehoben werden (§ 1759)";
+    label en unofficial "The adoptive relationship may be annulled only in the cases of §§ 1760, 1763 (§ 1759)";
+    when annahmeverhaeltnis_besteht(a, k);
+    then aufhebung_nur_nach_1760_und_1763(a, k);
+}
+
+@source(BGB_P1760) {
+    rule AufhebungWegenFehlenderErklaerung(a: Person, k: Person) strict {
+        label de official "Das Annahmeverhältnis kann auf Antrag vom Familiengericht aufgehoben werden, wenn es ohne Antrag des Annehmenden, ohne die Einwilligung des Kindes oder ohne die erforderliche Einwilligung eines Elternteils begründet worden ist (§ 1760 Abs. 1)";
+        label en unofficial "The relationship may be annulled on application where it was established without the adopter's application or a required consent (§ 1760 (1))";
+        when annahme_ohne_erforderliche_erklaerung_begruendet(a, k) and not_known(aufhebung_ausgeschlossen(a, k));
+        then aufhebung_moeglich(a, k);
+    }
+    rule AufhebungWegenUnwirksamerErklaerung(a: Person, k: Person, g: Unwirksamkeitsgrund1760) strict {
+        label de official "Der Antrag oder eine Einwilligung ist nur aus den in Absatz 2 Buchstaben a bis e genannten Gründen unwirksam (§ 1760 Abs. 2)";
+        label en unofficial "The application or a consent is ineffective only on the grounds listed in subsection (2) letters a to e (§ 1760 (2))";
+        when erklaerung_unwirksam_aus_grund(a, k, g) and not_known(aufhebung_ausgeschlossen(a, k));
+        then aufhebung_moeglich(a, k);
+    }
+    rule AufhebungAusgeschlossenNachNachholung(a: Person, k: Person) strict {
+        label de official "Die Aufhebung ist ausgeschlossen, wenn der Erklärende den Antrag oder die Einwilligung nachgeholt oder sonst zu erkennen gegeben hat, dass das Annahmeverhältnis aufrechterhalten werden soll (§ 1760 Abs. 3 Satz 1, Abs. 5 Satz 1)";
+        label en unofficial "The annulment is excluded where the declarant made good the declaration or indicated that the relationship is to be maintained (§ 1760 (3) sentence 1, (5) sentence 1)";
+        when erklaerung_nachgeholt_oder_bestaetigt(a, k);
+        then aufhebung_ausgeschlossen(a, k);
+    }
+    rule AufhebungAusgeschlossenBeiTaeuschungUeberVermoegen(a: Person, k: Person) strict {
+        label de official "Die Aufhebung wegen arglistiger Täuschung ist ausgeschlossen, wenn über Vermögensverhältnisse getäuscht wurde oder die Täuschung von einem nicht berechtigten Dritten verübt worden ist (§ 1760 Abs. 4)";
+        label en unofficial "Annulment for fraudulent deception is excluded where it concerned financial circumstances or was committed by an unauthorised third party (§ 1760 (4))";
+        when taeuschung_ueber_vermoegensverhaeltnisse_oder_durch_dritte(a, k);
+        then aufhebung_ausgeschlossen(a, k);
+    }
+}
+
+@source(BGB_P1761) {
+    rule AufhebungshindernisErsetzungsvoraussetzungen(a: Person, k: Person) strict {
+        label de official "Das Annahmeverhältnis kann nicht aufgehoben werden, weil eine erforderliche Einwilligung nicht eingeholt worden oder unwirksam ist, wenn die Voraussetzungen für die Ersetzung der Einwilligung vorgelegen haben oder vorliegen (§ 1761 Abs. 1)";
+        label en unofficial "The relationship cannot be annulled for a missing or ineffective consent where the conditions for replacing it existed or exist (§ 1761 (1))";
+        when voraussetzungen_der_ersetzung_lagen_vor(a, k);
+        then aufhebung_ausgeschlossen(a, k);
+    }
+    rule AufhebungshindernisKindeswohl(a: Person, k: Person) strict {
+        label de official "Das Annahmeverhältnis darf nicht aufgehoben werden, wenn dadurch das Wohl des Kindes erheblich gefährdet würde, es sei denn, dass überwiegende Interessen des Annehmenden die Aufhebung erfordern (§ 1761 Abs. 2)";
+        label en unofficial "The relationship may not be annulled where this would seriously endanger the child's welfare, unless overriding interests of the adopter require it (§ 1761 (2))";
+        when kindeswohl_durch_aufhebung_erheblich_gefaehrdet(k) and annahmeverhaeltnis_besteht(a, k);
+        then aufhebung_ausgeschlossen(a, k);
+    }
+}
+
+@source(BGB_P1762) {
+    rule DreiJahreSeitDerAnnahme(k: Person, t: Date) strict {
+        label de official "Der Antrag kann nur gestellt werden, wenn seit der Annahme noch keine drei Jahre verstrichen sind (§ 1762 Abs. 2 Satz 1)";
+        label en unofficial "The application may be made only where fewer than three years have elapsed since the adoption (§ 1762 (2) sentence 1)";
+        when annahme_ausgesprochen_am(k, t);
+        then drei_jahre_seit_der_annahme(k, add_calendar_period(t, 3 calendar_year));
+    }
+    rule LetzterTagDerAufhebungsfrist(a: Person, k: Person, b: Date) strict {
+        label de official "Der Antrag kann nur innerhalb eines Jahres gestellt werden; die Frist beginnt nach § 1762 Abs. 2 Satz 2 Buchstaben a bis e";
+        label en unofficial "The application may be made only within one year; the period begins under § 1762 (2) sentence 2 letters a to e";
+        when fristbeginn_des_aufhebungsantrags(a, k, b);
+        then letzter_tag_der_aufhebungsfrist(a, k, add_calendar_period(b, 1 calendar_year));
+    }
+    rule AufhebungsantragZulaessig(p: Person, a: Person, k: Person, e: Date, d: Date, t: Date) strict {
+        label de official "Antragsberechtigt ist nur derjenige, ohne dessen Antrag oder Einwilligung das Kind angenommen worden ist; der Antrag ist innerhalb eines Jahres und längstens drei Jahre seit der Annahme zu stellen und bedarf der notariellen Beurkundung (§ 1762)";
+        label en unofficial "Only the person without whose application or consent the child was adopted may apply; the application must be made within one year and at most three years after the adoption, and requires notarial recording (§ 1762)";
+        when antrag_ohne_dessen_erklaerung(p, a, k) and aufhebungsantrag_notariell_beurkundet(a, k)
+         and letzter_tag_der_aufhebungsfrist(a, k, e) and drei_jahre_seit_der_annahme(k, d)
+         and aufhebungsantrag_gestellt_am(a, k, t) and t <= e and t <= d;
+        then aufhebungsantrag_zulaessig(p, a, k);
+    }
+}
+
+@source(BGB_P1763) {
+    rule AufhebungVonAmtsWegenBeiBereitschaft(a: Person, k: Person, p: Person) strict {
+        label de official "Während der Minderjährigkeit des Kindes kann das Familiengericht das Annahmeverhältnis von Amts wegen aufheben, wenn dies aus schwerwiegenden Gründen zum Wohl des Kindes erforderlich ist; es darf nur aufgehoben werden, wenn der andere Ehegatte oder ein leiblicher Elternteil bereit ist, die Pflege und Erziehung zu übernehmen (§ 1763 Abs. 1, Abs. 3 Buchstabe a)";
+        label en unofficial "During the child's minority the court may annul of its own motion where necessary for serious reasons; only where the other spouse or a biological parent is willing to take over care and upbringing (§ 1763 (1), (3) letter a)";
+        when aufhebung_von_amts_wegen_eingeleitet(a, k) and minderjaehriges_kind(k)
+         and schwerwiegende_gruende_fuer_die_aufhebung(k) and bereitschaft_zur_pflege_und_erziehung(k, p);
+        then aufhebung_von_amts_wegen_zulaessig(a, k);
+    }
+    rule AufhebungVonAmtsWegenFuerErneuteAnnahme(a: Person, k: Person) strict {
+        label de official "Das Annahmeverhältnis darf ferner aufgehoben werden, wenn die Aufhebung eine erneute Annahme des Kindes ermöglichen soll (§ 1763 Abs. 3 Buchstabe b)";
+        label en unofficial "The relationship may also be annulled where the annulment is to make a new adoption possible (§ 1763 (3) letter b)";
+        when aufhebung_von_amts_wegen_eingeleitet(a, k) and minderjaehriges_kind(k)
+         and schwerwiegende_gruende_fuer_die_aufhebung(k) and aufhebung_ermoeglicht_erneute_annahme(k);
+        then aufhebung_von_amts_wegen_zulaessig(a, k);
+    }
+}
+
+@source(BGB_P1764) {
+    rule AnnahmeverwandtschaftErlischt(a: Person, k: Person) strict {
+        label de official "Mit der Aufhebung der Annahme als Kind erlöschen das durch die Annahme begründete Verwandtschaftsverhältnis des Kindes und seiner Abkömmlinge zu den bisherigen Verwandten und die sich aus ihm ergebenden Rechte und Pflichten (§ 1764 Abs. 2)";
+        label en unofficial "With the annulment the kinship established by the adoption and the rights and duties arising from it expire (§ 1764 (2))";
+        when aufhebung_ausgesprochen(a, k);
+        then annahmeverwandtschaft_erlischt(k, a);
+    }
+    rule LeiblicheVerwandtschaftLebtWiederAuf(a: Person, k: Person) strict {
+        label de official "Gleichzeitig leben das Verwandtschaftsverhältnis des Kindes und seiner Abkömmlinge zu den leiblichen Verwandten und die sich aus ihm ergebenden Rechte und Pflichten, mit Ausnahme der elterlichen Sorge, wieder auf (§ 1764 Abs. 3); die Wirkung tritt nicht ein, wenn nur im Verhältnis zu einem Ehegatten aufgehoben wird (Abs. 5)";
+        label en unofficial "At the same time the kinship to the biological relatives revives, except parental custody ((3)); not where only one spouse's relationship is annulled ((5))";
+        when aufhebung_ausgesprochen(a, k) and not_known(aufhebung_nur_zu_einem_ehegatten(a, k));
+        then leibliche_verwandtschaft_lebt_wieder_auf(k);
+    }
+    rule SorgeZurueckZuUebertragen(a: Person, k: Person) strict {
+        label de official "Das Familiengericht hat den leiblichen Eltern die elterliche Sorge zurückzuübertragen, wenn und soweit dies dem Wohl des Kindes nicht widerspricht (§ 1764 Abs. 4)";
+        label en unofficial "The family court must retransfer parental custody to the biological parents unless this conflicts with the child's welfare (§ 1764 (4))";
+        when leibliche_verwandtschaft_lebt_wieder_auf(k) and annahmeverhaeltnis_besteht(a, k)
+         and not_known(uebertragung_widerspricht_dem_kindeswohl(k, a));
+        then sorge_an_die_leiblichen_eltern_zurueck(k);
+    }
+}
+
+@source(BGB_P1765) {
+    rule NamensrechtVerloren(a: Person, k: Person) strict {
+        label de official "Mit der Aufhebung der Annahme als Kind verliert das Kind das Recht, den Familiennamen des Annehmenden als Geburtsnamen zu führen (§ 1765 Abs. 1 Satz 1)";
+        label en unofficial "With the annulment the child loses the right to bear the adopter's family name as its birth name (§ 1765 (1) sentence 1)";
+        when aufhebung_ausgesprochen(a, k) and not_known(aufhebung_nur_zu_einem_ehegatten(a, k));
+        then namensrecht_verloren(k, a);
+    }
+    rule NameDarfBehaltenWerden(a: Person, k: Person) strict {
+        label de official "Auf Antrag des Kindes kann das Familiengericht mit der Aufhebung anordnen, dass das Kind den Familiennamen behält, den es durch die Annahme erworben hat, wenn das Kind ein berechtigtes Interesse an der Führung dieses Namens hat (§ 1765 Abs. 2)";
+        label en unofficial "On the child's application the court may order that it keep the name acquired by the adoption where it has a legitimate interest (§ 1765 (2))";
+        when aufhebung_ausgesprochen(a, k) and berechtigtes_interesse_an_der_namensfuehrung(k);
+        then name_darf_behalten_werden(k);
+    }
+}
+
+@source(BGB_P1766)
+rule EheHebtDasRechtsverhaeltnisAuf(a: Person, ang: Person) strict {
+    label de official "Schließt ein Annehmender mit dem Angenommenen oder einem seiner Abkömmlinge den eherechtlichen Vorschriften zuwider die Ehe, so wird mit der Eheschließung das durch die Annahme zwischen ihnen begründete Rechtsverhältnis aufgehoben; §§ 1764, 1765 sind nicht anzuwenden (§ 1766)";
+    label en unofficial "Where an adopter marries the adoptee or a descendant contrary to marriage law, the legal relationship established by the adoption is annulled by the marriage; §§ 1764, 1765 do not apply (§ 1766)";
+    when ehe_zwischen_annehmendem_und_angenommenem(a, ang);
+    then rechtsverhaeltnis_durch_eheschliessung_aufgehoben(a, ang);
+}
+
+@source(BGB_P1766a) {
+    rule VerfestigteLebensgemeinschaftNachVierJahren(p: Person, q: Person) strict {
+        label de official "Eine verfestigte Lebensgemeinschaft liegt in der Regel vor, wenn die Personen seit mindestens vier Jahren eheähnlich zusammenleben; sie liegt in der Regel nicht vor, wenn ein Partner mit einem Dritten verheiratet ist (§ 1766a Abs. 1, Abs. 2)";
+        label en unofficial "A settled life partnership as a rule exists where the persons have lived together in a marriage-like manner for at least four years; as a rule not where one partner is married to a third person (§ 1766a (1), (2))";
+        when verfestigte_lebensgemeinschaft_seit_vier_jahren(p, q) and not_known(partner_mit_einem_dritten_verheiratet(p, q));
+        then verfestigte_lebensgemeinschaft(p, q);
+    }
+    rule VerfestigteLebensgemeinschaftAlsEltern(p: Person, q: Person) strict {
+        label de official "Eine verfestigte Lebensgemeinschaft liegt in der Regel auch vor, wenn die Personen als Eltern eines gemeinschaftlichen Kindes mit diesem eheähnlich zusammenleben (§ 1766a Abs. 2 Satz 1 Nr. 2)";
+        label en unofficial "A settled life partnership as a rule also exists where the persons live together as parents of a common child (§ 1766a (2) sentence 1 no. 2)";
+        when eltern_eines_gemeinschaftlichen_kindes(p, q) and not_known(partner_mit_einem_dritten_verheiratet(p, q));
+        then verfestigte_lebensgemeinschaft(p, q);
+    }
+}
+
+// --- §§ 1768, 1769, 1771, 1772 Annahme Volljähriger ----------------------------------------------
+
+pub relation antrag_des_anzunehmenden(annehmender: Person, anzunehmender: Person) kind empirical {
+    label de official "Der Anzunehmende stellt den Antrag auf Annahme eines Volljährigen (§ 1768 Abs. 1 Satz 1)";
+    label en unofficial "the person to be adopted applies for the adoption of an adult (§ 1768 (1) sentence 1)";
+}
+pub relation anzunehmender_geschaeftsunfaehig(anzunehmender: Person) kind empirical {
+    label de official "Der Anzunehmende ist geschäftsunfähig: der Antrag kann nur von seinem gesetzlichen Vertreter gestellt werden (§ 1768 Abs. 2)";
+    label en unofficial "the person to be adopted lacks capacity: the application may be made only by his legal representative (§ 1768 (2))";
+}
+pub relation antrag_des_gesetzlichen_vertreters(annehmender: Person, anzunehmender: Person) kind empirical {
+    label de official "Der gesetzliche Vertreter des geschäftsunfähigen Anzunehmenden stellt den Antrag (§ 1768 Abs. 2)";
+    label en unofficial "the legal representative of the incapable person to be adopted makes the application (§ 1768 (2))";
+}
+pub relation aufhebungsantrag_beider_teile(annehmender: Person, angenommener: Person) kind empirical {
+    label de official "Der Annehmende und der Angenommene beantragen gemeinsam die Aufhebung des Annahmeverhältnisses (§ 1771 Satz 1)";
+    label en unofficial "the adopter and the adoptee jointly apply for the annulment of the relationship (§ 1771 sentence 1)";
+}
+pub relation geschwister_des_anzunehmenden_angenommen(annehmender: Person, anzunehmender: Person) kind empirical {
+    label de official "Ein minderjähriger Bruder oder eine minderjährige Schwester des Anzunehmenden ist von dem Annehmenden angenommen worden oder wird gleichzeitig angenommen (§ 1772 Abs. 1 Buchstabe a)";
+    label en unofficial "a minor brother or sister of the person to be adopted has been or is simultaneously adopted by the adopter (§ 1772 (1) letter a)";
+}
+pub relation als_minderjaehriger_in_die_familie_aufgenommen(annehmender: Person, anzunehmender: Person) kind empirical {
+    label de official "Der Anzunehmende ist bereits als Minderjähriger in die Familie des Annehmenden aufgenommen worden (§ 1772 Abs. 1 Buchstabe b)";
+    label en unofficial "the person to be adopted was already taken into the adopter's family as a minor (§ 1772 (1) letter b)";
+}
+pub relation bei_antragstellung_noch_minderjaehrig(anzunehmender: Person) kind empirical {
+    label de official "Der Anzunehmende ist in dem Zeitpunkt, in dem der Antrag beim Familiengericht eingereicht wird, noch nicht volljährig (§ 1772 Abs. 1 Buchstabe d)";
+    label en unofficial "the person to be adopted is not yet of full age when the application is filed with the family court (§ 1772 (1) letter d)";
+}
+pub relation bestimmung_nach_1772_beantragt(annehmender: Person, anzunehmender: Person) kind empirical {
+    label de official "Annehmender und Anzunehmender beantragen die Bestimmung, dass sich die Wirkungen nach den Vorschriften über die Annahme eines Minderjährigen richten (§ 1772 Abs. 1 Satz 1)";
+    label en unofficial "adopter and adoptee apply for the determination that the effects follow the rules on the adoption of a minor (§ 1772 (1) sentence 1)";
+}
+
+@source(BGB_P1772)
+pub external judgment relation ueberwiegende_interessen_der_eltern_stehen_entgegen(anzunehmender: Person) {
+    authority Court;
+    label de official "§ 1772 Abs. 1 Satz 2. Überwiegende Interessen der Eltern des Anzunehmenden stehen der Bestimmung entgegen";
+    label en unofficial "§ 1772 (1) sentence 2. Overriding interests of the adoptee's parents oppose the determination";
+}
+
+pub relation antrag_auf_volljaehrigenannahme_wirksam(annehmender: Person, anzunehmender: Person) kind institutional {
+    label de official "Die Annahme eines Volljährigen wird auf Antrag des Annehmenden und des Anzunehmenden vom Familiengericht ausgesprochen (§ 1768 Abs. 1 Satz 1)";
+    label en unofficial "The adoption of an adult is pronounced by the family court on the application of the adopter and the adoptee (§ 1768 (1) sentence 1)";
+}
+pub relation volljaehrigenannahme_verboten(annehmender: Person, anzunehmender: Person) kind institutional {
+    label de official "Die Annahme eines Volljährigen darf nicht ausgesprochen werden, wenn ihr überwiegende Interessen der Kinder des Annehmenden oder des Anzunehmenden entgegenstehen (§ 1769)";
+    label en unofficial "The adoption of an adult may not be pronounced where overriding interests of the adopter's or the adoptee's children oppose it (§ 1769)";
+}
+pub relation volljaehrigenannahme_aufhebbar(annehmender: Person, angenommener: Person) kind institutional {
+    label de official "Das Familiengericht kann das Annahmeverhältnis zu einem Volljährigen auf Antrag beider Teile aufheben, wenn ein wichtiger Grund vorliegt (§ 1771 Satz 1)";
+    label en unofficial "The family court may annul the relationship with an adult on the application of both parties where there is an important reason (§ 1771 sentence 1)";
+}
+pub relation wirkungen_der_minderjaehrigenannahme(annehmender: Person, anzunehmender: Person) kind institutional {
+    label de official "Das Familiengericht kann beim Ausspruch der Annahme eines Volljährigen bestimmen, dass sich die Wirkungen nach den Vorschriften über die Annahme eines Minderjährigen richten (§ 1772 Abs. 1)";
+    label en unofficial "On pronouncing the adoption of an adult the court may determine that the effects follow the rules on the adoption of a minor (§ 1772 (1))";
+}
+
+@source(BGB_P1768) {
+    rule AntragAufVolljaehrigenannahme(a: Person, p: Person) strict {
+        label de official "Die Annahme eines Volljährigen wird auf Antrag des Annehmenden und des Anzunehmenden vom Familiengericht ausgesprochen (§ 1768 Abs. 1 Satz 1)";
+        label en unofficial "The adoption of an adult is pronounced on the application of the adopter and the adoptee (§ 1768 (1) sentence 1)";
+        when annahmeantrag(a, p) and antrag_des_anzunehmenden(a, p) and anzunehmender_volljaehrig(p)
+         and not_known(anzunehmender_geschaeftsunfaehig(p));
+        then antrag_auf_volljaehrigenannahme_wirksam(a, p);
+    }
+    rule AntragDurchDenGesetzlichenVertreter(a: Person, p: Person) strict {
+        label de official "Für einen Anzunehmenden, der geschäftsunfähig ist, kann der Antrag nur von seinem gesetzlichen Vertreter gestellt werden (§ 1768 Abs. 2)";
+        label en unofficial "For an adoptee lacking capacity the application may be made only by his legal representative (§ 1768 (2))";
+        when annahmeantrag(a, p) and anzunehmender_volljaehrig(p) and anzunehmender_geschaeftsunfaehig(p)
+         and antrag_des_gesetzlichen_vertreters(a, p);
+        then antrag_auf_volljaehrigenannahme_wirksam(a, p);
+    }
+}
+
+@source(BGB_P1769)
+rule VolljaehrigenannahmeVerboten(a: Person, p: Person) strict {
+    label de official "Die Annahme eines Volljährigen darf nicht ausgesprochen werden, wenn ihr überwiegende Interessen der Kinder des Annehmenden oder des Anzunehmenden entgegenstehen (§ 1769)";
+    label en unofficial "The adoption of an adult may not be pronounced where overriding interests of the adopter's or the adoptee's children oppose it (§ 1769)";
+    when annahmeantrag(a, p) and anzunehmender_volljaehrig(p) and ueberwiegende_interessen_gegen_volljaehrigenannahme(a, p);
+    then volljaehrigenannahme_verboten(a, p);
+}
+
+@source(BGB_P1771)
+rule VolljaehrigenannahmeAufhebbar(a: Person, p: Person) strict {
+    label de official "Das Familiengericht kann das Annahmeverhältnis, das zu einem Volljährigen begründet worden ist, auf Antrag des Annehmenden und des Angenommenen aufheben, wenn ein wichtiger Grund vorliegt (§ 1771 Satz 1)";
+    label en unofficial "The family court may annul the relationship with an adult on the application of both parties where there is an important reason (§ 1771 sentence 1)";
+    when annahmeverhaeltnis_besteht(a, p) and anzunehmender_volljaehrig(p)
+     and aufhebungsantrag_beider_teile(a, p) and wichtiger_grund_fuer_aufhebung(a, p);
+    then volljaehrigenannahme_aufhebbar(a, p);
+}
+
+@source(BGB_P1772) {
+    rule WirkungenBeiGeschwisterannahme(a: Person, p: Person) strict {
+        label de official "Das Familiengericht kann bestimmen, dass sich die Wirkungen nach den Vorschriften über die Annahme eines Minderjährigen richten, wenn ein minderjähriger Bruder oder eine minderjährige Schwester des Anzunehmenden angenommen worden ist oder gleichzeitig angenommen wird (§ 1772 Abs. 1 Buchstabe a)";
+        label en unofficial "The court may determine that the effects follow the rules on adopting a minor where a minor sibling of the adoptee has been or is simultaneously adopted (§ 1772 (1) letter a)";
+        when bestimmung_nach_1772_beantragt(a, p) and geschwister_des_anzunehmenden_angenommen(a, p)
+         and not_known(ueberwiegende_interessen_der_eltern_stehen_entgegen(p));
+        then wirkungen_der_minderjaehrigenannahme(a, p);
+    }
+    rule WirkungenBeiFruehererAufnahme(a: Person, p: Person) strict {
+        label de official "Dasselbe gilt, wenn der Anzunehmende bereits als Minderjähriger in die Familie des Annehmenden aufgenommen worden ist (§ 1772 Abs. 1 Buchstabe b)";
+        label en unofficial "The same applies where the adoptee was already taken into the adopter's family as a minor (§ 1772 (1) letter b)";
+        when bestimmung_nach_1772_beantragt(a, p) and als_minderjaehriger_in_die_familie_aufgenommen(a, p)
+         and not_known(ueberwiegende_interessen_der_eltern_stehen_entgegen(p));
+        then wirkungen_der_minderjaehrigenannahme(a, p);
+    }
+    rule WirkungenBeiStiefkindannahme(a: Person, p: Person, s: Person) strict {
+        label de official "Dasselbe gilt, wenn der Annehmende das Kind seines Ehegatten annimmt (§ 1772 Abs. 1 Buchstabe c)";
+        label en unofficial "The same applies where the adopter adopts his spouse's child (§ 1772 (1) letter c)";
+        when bestimmung_nach_1772_beantragt(a, p) and stiefkindannahme(a, s, p)
+         and not_known(ueberwiegende_interessen_der_eltern_stehen_entgegen(p));
+        then wirkungen_der_minderjaehrigenannahme(a, p);
+    }
+    rule WirkungenBeiAntragVorDerVolljaehrigkeit(a: Person, p: Person) strict {
+        label de official "Dasselbe gilt, wenn der Anzunehmende in dem Zeitpunkt, in dem der Antrag beim Familiengericht eingereicht wird, noch nicht volljährig ist (§ 1772 Abs. 1 Buchstabe d)";
+        label en unofficial "The same applies where the adoptee is not yet of full age when the application is filed (§ 1772 (1) letter d)";
+        when bestimmung_nach_1772_beantragt(a, p) and bei_antragstellung_noch_minderjaehrig(p)
+         and not_known(ueberwiegende_interessen_der_eltern_stehen_entgegen(p));
+        then wirkungen_der_minderjaehrigenannahme(a, p);
+    }
+}

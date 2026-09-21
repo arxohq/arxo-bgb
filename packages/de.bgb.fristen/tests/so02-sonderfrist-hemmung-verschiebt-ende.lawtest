@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// Dieselbe Sonderfrist wie so01, aber mit einer Hemmung durch Rechtsverfolgung
+// (§ 204) vom 1. März bis zum 30. April 2024: 61 Tage (März 31 + April 30),
+// erster und letzter Tag eingeschlossen, werden nicht eingerechnet (§ 209).
+// Das Ende verschiebt sich vom 10. April 2025 um 61 Tage auf den 10. Juni 2025.
+// Das ist der Beleg, dass die Hemmung für die Sonderfrist ebenso gilt wie für
+// die regelmäßige — ohne dass die Sondernorm davon etwas wissen muss.
+test "§§ 200, 204, 209: 61 Hemmungstage verschieben das Ende der Sonderfrist auf den 10. Juni 2025" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "b": sonderverjaehrung_beginn(entity_ref("urn:de:bgb:fristen:so02"), @2023-04-10) { origin case_input; }
+        assert "d": sonderverjaehrung_dauer(entity_ref("urn:de:bgb:fristen:so02"), 2 calendar_year) { origin case_input; }
+        assert "h": hemmung(entity_ref("urn:de:bgb:fristen:so02"), @2024-03-01, @2024-04-30) { origin case_input; }
+        assert "g": hemmungsgrund(entity_ref("urn:de:bgb:fristen:so02"), Rechtsverfolgung) { origin case_input; }
+    }
+    evaluate truth(sonderverjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:so02"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:so02"), @2025-06-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:so02"), @2025-06-10));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:so02"), @2025-04-10));
+    expect truth_status == NEITHER;
+}

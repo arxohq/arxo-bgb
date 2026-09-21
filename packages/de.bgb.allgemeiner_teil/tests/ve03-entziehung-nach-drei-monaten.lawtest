@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// § 73: die Zahl der Mitglieder sinkt am 28. Februar 2026 unter drei. Die Dreimonatsfrist endet am Donnerstag, 28. Mai 2026 (§ 188 Abs. 2; § 193 greift nicht, der Tag ist ein Werktag). Der erst am 29. Mai gestellte Antrag ist verspätet: das Amtsgericht entzieht die Rechtsfähigkeit von Amts wegen.
+test "§ 73: der einen Tag nach der Dreimonatsfrist gestellte Antrag ist verspätet" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "a1": antragsfrist_73(entity_ref("urn:de:bgb:at:ve03:verein"), entity_ref("urn:de:bgb:at:ve03:frist")) { origin case_input; }
+        assert "a2": mitgliederzahl_unter_drei_seit(entity_ref("urn:de:bgb:at:ve03:verein"), @2026-02-28) { origin case_input; }
+        assert "a3": antrag_des_vorstands_am(entity_ref("urn:de:bgb:at:ve03:verein"), @2026-05-29) { origin case_input; }
+    }
+    evaluate truth(antragsfrist_73_ende(entity_ref("urn:de:bgb:at:ve03:verein"), @2026-05-28));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(entziehung_von_amts_wegen(entity_ref("urn:de:bgb:at:ve03:verein")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(rechtsfaehigkeit_entzogen(entity_ref("urn:de:bgb:at:ve03:verein")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

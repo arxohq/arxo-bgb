@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1067 Abs. 1: Gegenstand des Nießbrauchs ist ein Heizöl-Vorrat (verbrauchbare Sache) im Wert von 5 000 € zur Zeit der Bestellung; der Nießbrauch endet, und der Nießbraucher hat diesen Wert dem Besteller zu ersetzen.
+test "§ 1067 Abs. 1 Satz 1: Eigentumserwerb und Wertersatzpflicht bei verbrauchbaren Sachen" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:nb16:nb"), entity_ref("urn:de:bgb:dr:nb16:heizoel")) { origin case_input; }
+        assert "f2": gegenstand_ist_verbrauchbare_sache(entity_ref("urn:de:bgb:dr:nb16:nb")) { origin case_input; }
+        assert "f3": wert_der_sachen_zur_zeit_der_bestellung(entity_ref("urn:de:bgb:dr:nb16:nb"), 5000.00 EUR) { origin adjudicated; }
+        assert "f4": besteller(entity_ref("urn:de:bgb:dr:nb16:nb"), entity_ref("urn:de:bgb:dr:nb16:eigentuemer")) { origin case_input; }
+        assert "f5": niessbrauch_beendet(entity_ref("urn:de:bgb:dr:nb16:nb")) { origin adjudicated; }
+    }
+    evaluate truth(niessbraucher_wird_eigentuemer_der_verbrauchbaren_sachen(entity_ref("urn:de:bgb:dr:nb16:nb")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(wertersatzpflicht_nach_beendigung(entity_ref("urn:de:bgb:dr:nb16:nb"), entity_ref("urn:de:bgb:dr:nb16:eigentuemer"), 5000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+
+test "§§ 812 und 823: Herausgabe und Schadensersatz aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "b": herausgabepflicht(entity_ref("urn:de:bgb:bereicherung:b1")) { origin case_input; }
+        assert "bt": leistungstag(entity_ref("urn:de:bgb:bereicherung:b1"), @2026-06-01) { origin case_input; }
+        assert "s": schadensersatzpflicht(entity_ref("urn:de:bgb:handlung:h1"), entity_ref("urn:de:bgb:person:s"), entity_ref("urn:de:bgb:person:v")) { origin case_input; }
+        assert "ht": handlungstag(entity_ref("urn:de:bgb:handlung:h1"), @2026-06-02) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Herausgabe812, SATISFIED);
+    expect position(Schadensersatz823, SATISFIED);
+}
+
+test "§§ 812 und 823: ohne Pflicht keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Herausgabe812, ACTIVE);
+    expect not position(Schadensersatz823, ACTIVE);
+}

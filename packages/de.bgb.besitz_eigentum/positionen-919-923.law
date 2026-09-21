@@ -1,0 +1,47 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+
+pub relation position_trigger_919(g: Grundstueck, berechtigter: Person, nachbar: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls zur Mitwirkung an der Abmarkung (§ 919)";
+    label en unofficial "case input for cooperation in boundary demarcation (§ 919)";
+}
+pub relation abmarkung_919_geschuldet(g: Grundstueck, berechtigter: Person, nachbar: Person) kind empirical {
+    label de official "Der Nachbar schuldet die Mitwirkung an der Abmarkung (§ 919)";
+    label en unofficial "The neighbour owes cooperation in boundary demarcation (§ 919)";
+}
+pub relation position_trigger_923(s: Sache, verlangender: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls zur Beseitigung des Grenzbaums (§ 923)";
+    label en unofficial "case input for demanding removal of the boundary tree (§ 923)";
+}
+pub relation beseitigung_923_ausuebbar(s: Sache, verlangender: Person) kind empirical {
+    label de official "Der Nachbar kann die Beseitigung des Grenzbaums verlangen (§ 923)";
+    label en unofficial "The neighbour may demand removal of the boundary tree (§ 923)";
+}
+
+@source(BGB_P919)
+rule PositionAbmarkung919(g: Grundstueck, berechtigter: Person, nachbar: Person, tag: Date) strict {
+    label de official "Der Nachbar hat an der Errichtung oder Wiederherstellung des Grenzzeichens mitzuwirken (§ 919)";
+    label en unofficial "The neighbour must cooperate in erecting or restoring the boundary marker (§ 919)";
+    when position_trigger_919(g, berechtigter, nachbar, tag);
+    then duty Abmarkung919 {
+        bearer nachbar;
+        beneficiary berechtigter;
+        achieve abmarkung_919_geschuldet(g, berechtigter, nachbar) during [tag, infinity);
+    };
+}
+
+@source(BGB_P923)
+rule PositionBeseitigung923(s: Sache, verlangender: Person, tag: Date) strict {
+    label de official "Der Nachbar hat die Befugnis, die Beseitigung des Grenzbaums zu verlangen (§ 923)";
+    label en unofficial "The neighbour has the power to demand removal of the boundary tree (§ 923)";
+    when position_trigger_923(s, verlangender, tag);
+    then power Beseitigung923 {
+        holder verlangender;
+        over s;
+        exercise beseitigung_923_ausuebbar(s, verlangender);
+        valid_when beseitigung_923_ausuebbar(s, verlangender);
+        effect create(beseitigung_923_ausuebbar(s, verlangender));
+        window [tag, infinity);
+    };
+}

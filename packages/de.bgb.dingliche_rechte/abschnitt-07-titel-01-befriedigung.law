@@ -1,0 +1,571 @@
+// --- Buch 3 Abschnitt 7 Titel 1: Gefährdung, Einreden, Befriedigung, Übertragung (§§ 1133–1162) ---
+//
+// DIE BEFRIEDIGUNG AUS DEM GRUNDSTÜCK ERFOLGT IM WEGE DER ZWANGSVOLLSTRECKUNG
+// (§ 1147). Das Verfahren selbst — Zwangsversteigerung und Zwangsverwaltung —
+// steht im ZVG und ist ein ÄUSSERES VERFAHREN (SOURCES.json, external). Dieses
+// Paket sagt, WER wogegen und in welchem Umfang die Befriedigung aus dem
+// Grundstück verlangen kann, und rechnet den Erlös nach dem Rang der Rechte zu
+// (§§ 1113 Abs. 1, 1181; Ledger D-11-03); es rechnet kein Teilungsverfahren.
+
+pub entity Einrede {
+    label de official "Einrede gegen die Hypothek oder gegen die Forderung (§ 1137, § 1157, § 1169, § 1192 Abs. 1a)";
+    label en unofficial "defence against the mortgage or against the claim (§ 1137, § 1157, § 1169, § 1192 (1a))";
+}
+
+// --- Eingaben des Falls -----------------------------------------------------------------------------
+
+pub relation eigentuemer_des_belasteten_grundstuecks(h: Grundpfandrecht, p: Person) kind empirical {
+    label de official "Eigentümer des mit dem Grundpfandrecht belasteten Grundstücks (§ 1137 Abs. 1, § 1142 Abs. 1)";
+    label en unofficial "owner of the land encumbered with the charge (§ 1137 (1), § 1142 (1))";
+}
+pub relation persoenlicher_schuldner(b: Belastung, p: Person) kind empirical {
+    label de official "persönlicher Schuldner der gesicherten Forderung (§ 1137 Abs. 1, § 1143 Abs. 1, § 1164 Abs. 1)";
+    label en unofficial "personal debtor of the secured claim (§ 1137 (1), § 1143 (1), § 1164 (1))";
+}
+pub relation eigentuemer_ist_nicht_persoenlicher_schuldner(h: Grundpfandrecht) kind empirical {
+    label de official "der Eigentümer ist nicht der persönliche Schuldner (§ 1137 Abs. 2, § 1143 Abs. 1) — ausdrückliche Eingabe des Falls";
+    label en unofficial "the owner is not the personal debtor (§ 1137 (2), § 1143 (1)) — explicit case input";
+}
+pub relation verschlechterung_des_grundstuecks(h: Grundpfandrecht) kind empirical {
+    label de official "Verschlechterung des Grundstücks (§ 1133 Satz 1)";
+    label en unofficial "deterioration of the land (§ 1133 sentence 1)";
+}
+pub relation verschlechterung_oder_entfernung_des_zubehoers(h: Grundpfandrecht, x: Gegenstand) kind empirical {
+    label de official "Zubehörstücke, auf die sich die Hypothek erstreckt, sind verschlechtert oder den Regeln einer ordnungsmäßigen Wirtschaft zuwider von dem Grundstück entfernt worden (§ 1135)";
+    label en unofficial "accessories covered by the mortgage have been impaired or removed contrary to proper management (§ 1135)";
+}
+pub relation frist_zur_beseitigung_der_gefaehrdung_abgelaufen(h: Grundpfandrecht) kind empirical {
+    label de official "die vom Gläubiger bestimmte Frist zur Beseitigung der Gefährdung ist abgelaufen (§ 1133 Satz 2)";
+    label en unofficial "the period set by the creditor to remove the endangerment has expired (§ 1133 sentence 2)";
+}
+pub relation gefaehrdung_beseitigt(h: Grundpfandrecht) kind empirical {
+    label de official "die Gefährdung ist durch Verbesserung des Grundstücks oder durch anderweitige Hypothekenbestellung beseitigt worden (§ 1133 Satz 2 Halbsatz 2)";
+    label en unofficial "the endangerment has been removed by improving the land or by creating another mortgage (§ 1133 sentence 2)";
+}
+pub relation forderung_noch_nicht_faellig(h: Grundpfandrecht) kind empirical {
+    label de official "die Forderung ist noch nicht fällig (§ 1133 Satz 3)";
+    label en unofficial "the claim is not yet due (§ 1133 sentence 3)";
+}
+pub relation einwirkung_auf_das_grundstueck(h: Grundpfandrecht, wirkender: Person) kind empirical {
+    label de official "der Eigentümer oder ein Dritter wirkt auf das Grundstück ein (§ 1134 Abs. 1)";
+    label en unofficial "the owner or a third party acts upon the land (§ 1134 (1))";
+}
+pub relation einwirkung_geht_vom_eigentuemer_aus(h: Grundpfandrecht) kind empirical {
+    label de official "die Einwirkung geht von dem Eigentümer aus oder er unterlässt die erforderlichen Vorkehrungen (§ 1134 Abs. 2)";
+    label en unofficial "the interference proceeds from the owner or he omits the necessary precautions (§ 1134 (2))";
+}
+pub relation antrag_des_glaeubigers_auf_massregeln(h: Grundpfandrecht) kind empirical {
+    label de official "Antrag des Gläubigers auf Anordnung der zur Abwendung der Gefährdung erforderlichen Maßregeln (§ 1134 Abs. 2 Satz 1)";
+    label en unofficial "application of the creditor for the measures necessary to avert the endangerment (§ 1134 (2) sentence 1)";
+}
+pub relation vereinbarung_nicht_zu_veraeussern_oder_zu_belasten(h: Grundpfandrecht) kind empirical {
+    label de official "Vereinbarung, durch die sich der Eigentümer dem Gläubiger gegenüber verpflichtet, das Grundstück nicht zu veräußern oder nicht weiter zu belasten (§ 1136)";
+    label en unofficial "agreement by which the owner undertakes not to alienate or further encumber the land (§ 1136)";
+}
+pub relation einrede_des_persoenlichen_schuldners(e: Einrede, b: Belastung) kind empirical {
+    label de official "Einrede, die dem persönlichen Schuldner gegen die Forderung zusteht, oder eine dem Bürgen nach § 770 zustehende Einrede (§ 1137 Abs. 1 Satz 1)";
+    label en unofficial "defence available to the personal debtor against the claim, or a surety's defence under § 770 (§ 1137 (1) sentence 1)";
+}
+pub relation einrede_aus_dem_verhaeltnis_zum_bisherigen_glaeubiger(e: Einrede, h: Grundpfandrecht) kind empirical {
+    label de official "Einrede, die dem Eigentümer auf Grund eines zwischen ihm und dem bisherigen Gläubiger bestehenden Rechtsverhältnisses gegen die Hypothek zusteht (§ 1157 Satz 1)";
+    label en unofficial "defence available to the owner under a legal relationship with the previous creditor (§ 1157 sentence 1)";
+}
+pub relation einrede_aus_dem_sicherungsvertrag(e: Einrede, h: Grundpfandrecht) kind empirical {
+    label de official "Einrede, die dem Eigentümer auf Grund des Sicherungsvertrags mit dem bisherigen Gläubiger gegen die Grundschuld zusteht oder sich aus dem Sicherungsvertrag ergibt (§ 1192 Abs. 1a Satz 1)";
+    label en unofficial "defence of the owner arising from the security agreement with the previous creditor (§ 1192 (1a) sentence 1)";
+}
+pub relation einrede_schliesst_die_geltendmachung_dauernd_aus(e: Einrede) kind empirical {
+    label de official "die Einrede schließt die Geltendmachung der Hypothek dauernd aus (§ 1169)";
+    label en unofficial "the defence permanently excludes assertion of the mortgage (§ 1169)";
+}
+pub relation persoenlicher_schuldner_hat_verzichtet(e: Einrede) kind empirical {
+    label de official "der persönliche Schuldner hat auf die Einrede verzichtet (§ 1137 Abs. 2)";
+    label en unofficial "the personal debtor has waived the defence (§ 1137 (2))";
+}
+pub relation faelligkeit_haengt_von_kuendigung_ab(h: Grundpfandrecht) kind empirical {
+    label de official "die Fälligkeit der Forderung hängt von einer Kündigung ab (§ 1141 Abs. 1 Satz 1)";
+    label en unofficial "maturity of the claim depends on a notice of termination (§ 1141 (1) sentence 1)";
+}
+pub relation kuendigung_des_glaeubigers_dem_eigentuemer_gegenueber_am(h: Grundpfandrecht, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag, an dem der Gläubiger dem Eigentümer gegenüber gekündigt hat (§ 1141 Abs. 1 Satz 1, § 1193 Abs. 1 Satz 2)";
+    label en unofficial "day on which the creditor gave notice to the owner (§ 1141 (1) sentence 1, § 1193 (1) sentence 2)";
+}
+pub relation kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(h: Grundpfandrecht, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag, an dem der Eigentümer dem Gläubiger gegenüber gekündigt hat (§ 1141 Abs. 1 Satz 1, § 1193 Abs. 1 Satz 2, § 1202 Abs. 1)";
+    label en unofficial "day on which the owner gave notice to the creditor (§ 1141 (1) sentence 1, § 1193 (1) sentence 2, § 1202 (1))";
+}
+pub relation forderung_dem_eigentuemer_gegenueber_faellig(h: Grundpfandrecht) kind empirical {
+    label de official "die Forderung ist dem Eigentümer gegenüber fällig geworden (§ 1142 Abs. 1, § 1149)";
+    label en unofficial "the claim has fallen due vis-à-vis the owner (§ 1142 (1), § 1149)";
+}
+pub relation persoenlicher_schuldner_zur_leistung_berechtigt(h: Grundpfandrecht) kind empirical {
+    label de official "der persönliche Schuldner ist zur Leistung berechtigt (§ 1142 Abs. 1)";
+    label en unofficial "the personal debtor is entitled to perform (§ 1142 (1))";
+}
+pub relation befriedigung_durch_den_eigentuemer(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Betrag, mit dem der Eigentümer den Gläubiger befriedigt hat (§ 1142, § 1143 Abs. 1, § 1145 Abs. 1)";
+    label en unofficial "amount with which the owner has satisfied the creditor (§ 1142, § 1143 (1), § 1145 (1))";
+}
+pub relation befriedigung_durch_hinterlegung_oder_aufrechnung(h: Grundpfandrecht) kind empirical {
+    label de official "die Befriedigung ist durch Hinterlegung oder durch Aufrechnung erfolgt (§ 1142 Abs. 2)";
+    label en unofficial "satisfaction was effected by deposit or set-off (§ 1142 (2))";
+}
+pub relation voraussetzungen_des_verzugs_gegenueber_dem_eigentuemer(h: Grundpfandrecht) kind empirical {
+    label de official "gegenüber dem Eigentümer liegen die Voraussetzungen vor, unter denen ein Schuldner in Verzug kommt (§ 1146)";
+    label en unofficial "vis-à-vis the owner the conditions under which a debtor falls into default are met (§ 1146)";
+}
+pub relation abrede_ueber_uebertragung_des_eigentums_zur_befriedigung(h: Grundpfandrecht) kind empirical {
+    label de official "dem Gläubiger ist das Recht eingeräumt, zum Zwecke der Befriedigung die Übertragung des Eigentums zu verlangen oder die Veräußerung auf andere Weise als im Wege der Zwangsvollstreckung zu bewirken (§ 1149)";
+    label en unofficial "the creditor has been granted the right to demand transfer of ownership or to effect a sale otherwise than by enforcement (§ 1149)";
+}
+pub relation forderung_geteilt(h: Grundpfandrecht) kind empirical {
+    label de official "die Forderung ist geteilt worden (§ 1151, § 1152)";
+    label en unofficial "the claim has been divided (§ 1151, § 1152)";
+}
+pub relation forderung_uebertragen_auf(h: Grundpfandrecht, neuer: Person) kind empirical {
+    label de official "die Forderung ist auf den neuen Gläubiger übertragen worden (§ 1153 Abs. 1, § 1154)";
+    label en unofficial "the claim has been assigned to the new creditor (§ 1153 (1), § 1154)";
+}
+pub relation abtretungserklaerung_schriftlich(h: Grundpfandrecht) kind empirical {
+    label de official "die Abtretungserklärung ist in schriftlicher Form erteilt (§ 1154 Abs. 1 Satz 1)";
+    label en unofficial "the declaration of assignment was made in writing (§ 1154 (1) sentence 1)";
+}
+pub relation brief_dem_neuen_glaeubiger_uebergeben(h: Grundpfandrecht) kind empirical {
+    label de official "der Hypothekenbrief ist dem neuen Gläubiger übergeben worden (§ 1154 Abs. 1 Satz 1)";
+    label en unofficial "the mortgage certificate was handed over to the new creditor (§ 1154 (1) sentence 1)";
+}
+pub relation abtretung_im_grundbuch_eingetragen(h: Grundpfandrecht) kind empirical {
+    label de official "die Abtretung ist in das Grundbuch eingetragen; sie ersetzt die schriftliche Form (§ 1154 Abs. 2)";
+    label en unofficial "the assignment is registered; this replaces the written form (§ 1154 (2))";
+}
+pub relation zusammenhaengende_reihe_beglaubigter_abtretungserklaerungen(h: Grundpfandrecht, besitzer: Person) kind empirical {
+    label de official "das Gläubigerrecht des Besitzers des Briefes ergibt sich aus einer zusammenhängenden, auf einen eingetragenen Gläubiger zurückführenden Reihe öffentlich beglaubigter Abtretungserklärungen (§ 1155 Satz 1)";
+    label en unofficial "the certificate holder's creditor status follows from an unbroken chain of publicly certified declarations of assignment traceable to a registered creditor (§ 1155 sentence 1)";
+}
+pub relation uebertragung_dem_eigentuemer_bekannt_oder_eingetragen(h: Grundpfandrecht) kind empirical {
+    label de official "die Übertragung ist zur Zeit der Kündigung dem Eigentümer bekannt oder im Grundbuch eingetragen (§ 1156 Satz 2 Halbsatz 2)";
+    label en unofficial "at the time of the notice the assignment was known to the owner or registered (§ 1156 sentence 2)";
+}
+pub relation brief_vorgelegt(h: Grundpfandrecht) kind empirical {
+    label de official "der Gläubiger legt den Hypothekenbrief und, wenn er nicht eingetragen ist, die in § 1155 bezeichneten Urkunden vor (§ 1160 Abs. 1)";
+    label en unofficial "the creditor presents the certificate and, if not registered, the documents named in § 1155 (§ 1160 (1))";
+}
+pub relation kuendigung_oder_mahnung_unverzueglich_zurueckgewiesen(h: Grundpfandrecht) kind empirical {
+    label de official "der Eigentümer hat die Kündigung oder die Mahnung wegen fehlender Urkundenvorlage unverzüglich zurückgewiesen (§ 1160 Abs. 2)";
+    label en unofficial "the owner immediately rejected the notice or reminder for want of the documents (§ 1160 (2))";
+}
+pub relation brief_abhanden_gekommen_oder_vernichtet(h: Grundpfandrecht) kind empirical {
+    label de official "der Hypothekenbrief ist abhanden gekommen oder vernichtet (§ 1162)";
+    label en unofficial "the mortgage certificate has been lost or destroyed (§ 1162)";
+}
+
+// --- Urteilskanäle (DECISION-0194) --------------------------------------------------------------------
+
+@source(BGB_P1133)
+pub external judgment relation sicherheit_der_hypothek_gefaehrdet(h: Grundpfandrecht) {
+    authority Court;
+    label de official "infolge einer Verschlechterung des Grundstücks ist die Sicherheit der Hypothek gefährdet (§ 1133 Satz 1) — Wertung";
+    label en unofficial "as a result of a deterioration of the land the security of the mortgage is endangered (§ 1133 sentence 1) — evaluation";
+}
+@source(BGB_P1133)
+pub external judgment relation angemessene_frist_zur_beseitigung_bestimmt(h: Grundpfandrecht) {
+    authority Court;
+    label de official "der Gläubiger hat dem Eigentümer eine angemessene Frist zur Beseitigung der Gefährdung bestimmt (§ 1133 Satz 1) — die Angemessenheit ist eine Wertung";
+    label en unofficial "the creditor set the owner a reasonable period to remove the endangerment (§ 1133 sentence 1) — reasonableness is an evaluation";
+}
+@source(BGB_P1134)
+pub external judgment relation gefaehrdende_verschlechterung_zu_besorgen(h: Grundpfandrecht) {
+    authority Court;
+    label de official "es ist eine die Sicherheit der Hypothek gefährdende Verschlechterung des Grundstücks zu besorgen (§ 1134 Abs. 1) — Wertung";
+    label en unofficial "a deterioration endangering the security of the mortgage is to be feared (§ 1134 (1)) — evaluation";
+}
+@source(BGB_P1135)
+pub external judgment relation entfernung_den_regeln_ordnungsmaessiger_wirtschaft_zuwider(h: Grundpfandrecht, x: Gegenstand) {
+    authority Court;
+    label de official "die Zubehörstücke sind den Regeln einer ordnungsmäßigen Wirtschaft zuwider von dem Grundstück entfernt worden (§ 1135) — Wertung";
+    label en unofficial "the accessories were removed contrary to the rules of proper management (§ 1135) — evaluation";
+}
+
+// --- Abgeleitete Köpfe ----------------------------------------------------------------------------------
+
+pub relation sofortige_befriedigung_aus_dem_grundstueck_berechtigt(h: Grundpfandrecht, glaeubiger: Person) kind derived {
+    label de official "der Gläubiger ist berechtigt, sofort Befriedigung aus dem Grundstück zu suchen (§ 1133 Satz 2)";
+    label en unofficial "the creditor may immediately seek satisfaction out of the land (§ 1133 sentence 2)";
+}
+pub relation nur_die_abgezinste_summe_gebuehrt(h: Grundpfandrecht) kind derived {
+    label de official "ist die Forderung unverzinslich und noch nicht fällig, so gebührt dem Gläubiger nur die Summe, welche mit Hinzurechnung der gesetzlichen Zinsen für die Zeit von der Zahlung bis zur Fälligkeit dem Betrag der Forderung gleichkommt (§ 1133 Satz 3)";
+    label en unofficial "if the claim bears no interest and is not yet due, the creditor is entitled only to the sum which, with statutory interest added for the time from payment to maturity, equals the amount of the claim (§ 1133 sentence 3)";
+}
+pub relation unterlassungsanspruch_des_glaeubigers(h: Grundpfandrecht, glaeubiger: Person, wirkender: Person) kind derived {
+    label de official "der Gläubiger kann auf Unterlassung klagen (§ 1134 Abs. 1)";
+    label en unofficial "the creditor may sue for an injunction (§ 1134 (1))";
+}
+pub relation gericht_ordnet_massregeln_an(h: Grundpfandrecht) kind derived {
+    label de official "das Gericht hat auf Antrag des Gläubigers die zur Abwendung der Gefährdung erforderlichen Maßregeln anzuordnen (§ 1134 Abs. 2)";
+    label en unofficial "on the creditor's application the court must order the measures necessary to avert the endangerment (§ 1134 (2))";
+}
+pub relation vereinbarung_nichtig(h: Grundpfandrecht) kind derived {
+    label de official "die Vereinbarung ist nichtig (§ 1136, § 1149)";
+    label en unofficial "the agreement is void (§ 1136, § 1149)";
+}
+pub relation einrede_gegen_die_hypothek_geltend_zu_machen(e: Einrede, h: Grundpfandrecht, p: Person) kind derived {
+    label de official "der Eigentümer kann die Einrede gegen die Hypothek geltend machen (§ 1137 Abs. 1, § 1157 Satz 1, § 1192 Abs. 1a Satz 1)";
+    label en unofficial "the owner may raise the defence against the mortgage (§ 1137 (1), § 1157 sentence 1, § 1192 (1a) sentence 1)";
+}
+pub relation kuendigung_fuer_die_hypothek_wirksam(h: Grundpfandrecht, tag: Date) kind derived {
+    key(h);
+    label de official "die Kündigung ist für die Hypothek wirksam (§ 1141 Abs. 1 Satz 1)";
+    label en unofficial "the notice of termination is effective for the mortgage (§ 1141 (1) sentence 1)";
+}
+pub relation eigentuemer_zur_befriedigung_berechtigt(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "der Eigentümer ist berechtigt, den Gläubiger zu befriedigen (§ 1142 Abs. 1)";
+    label en unofficial "the owner is entitled to satisfy the creditor (§ 1142 (1))";
+}
+pub relation forderung_auf_den_eigentuemer_uebergegangen(h: Grundpfandrecht, p: Person, betrag: Money) kind derived {
+    key(h, p);
+    label de official "soweit der Eigentümer den Gläubiger befriedigt, geht die Forderung auf ihn über (§ 1143 Abs. 1 Satz 1)";
+    label en unofficial "in so far as the owner satisfies the creditor, the claim passes to them (§ 1143 (1) sentence 1)";
+}
+pub relation anspruch_auf_aushaendigung_der_urkunden(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "der Eigentümer kann gegen Befriedigung des Gläubigers die Aushändigung des Hypothekenbriefs und der sonstigen Urkunden verlangen (§ 1144)";
+    label en unofficial "against satisfaction of the creditor the owner may demand surrender of the certificate and the other documents (§ 1144)";
+}
+pub relation kein_anspruch_auf_aushaendigung_bei_teilbefriedigung(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "befriedigt der Eigentümer den Gläubiger nur teilweise, so kann er die Aushändigung des Briefes nicht verlangen (§ 1145 Abs. 1 Satz 1)";
+    label en unofficial "if the owner satisfies the creditor only in part, they may not demand surrender of the certificate (§ 1145 (1) sentence 1)";
+}
+pub relation verzugszinsen_aus_dem_grundstueck(h: Grundpfandrecht, glaeubiger: Person) kind derived {
+    label de official "dem Gläubiger gebühren Verzugszinsen aus dem Grundstück (§ 1146)";
+    label en unofficial "the creditor is entitled to default interest out of the land (§ 1146)";
+}
+pub relation befriedigung_im_wege_der_zwangsvollstreckung(h: Grundpfandrecht, glaeubiger: Person) kind derived {
+    label de official "die Befriedigung des Gläubigers aus dem Grundstück und den Gegenständen, auf die sich die Hypothek erstreckt, erfolgt im Wege der Zwangsvollstreckung (§ 1147) — das Verfahren selbst steht im ZVG";
+    label en unofficial "satisfaction out of the land and the objects covered by the mortgage takes place by way of enforcement (§ 1147) — the procedure itself is in the ZVG";
+}
+pub relation eingetragener_gilt_als_eigentuemer(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "bei der Verfolgung des Rechts aus der Hypothek gilt zugunsten des Gläubigers der im Grundbuch als Eigentümer Eingetragene als der Eigentümer (§ 1148 Satz 1, § 1141 Abs. 1 Satz 2)";
+    label en unofficial "in pursuing the mortgage the person registered as owner is deemed the owner in favour of the creditor (§ 1148 sentence 1, § 1141 (1) sentence 2)";
+}
+pub relation rangaenderung_ohne_zustimmung_des_eigentuemers(h: Grundpfandrecht) kind derived {
+    label de official "zur Änderung des Rangverhältnisses der Teilhypotheken untereinander ist die Zustimmung des Eigentümers nicht erforderlich (§ 1151)";
+    label en unofficial "no consent of the owner is required to change the ranking of partial mortgages among themselves (§ 1151)";
+}
+pub relation teilhypothekenbrief_herstellbar(h: Grundpfandrecht) kind derived {
+    label de official "im Falle einer Teilung der Forderung kann für jeden Teil ein Teilhypothekenbrief hergestellt werden (§ 1152 Satz 1)";
+    label en unofficial "where the claim is divided, a partial mortgage certificate may be produced for each part (§ 1152 sentence 1)";
+}
+pub relation hypothek_auf_den_neuen_glaeubiger_uebergegangen(h: Grundpfandrecht, neuer: Person) kind derived {
+    label de official "mit der Übertragung der Forderung geht die Hypothek auf den neuen Gläubiger über (§ 1153 Abs. 1)";
+    label en unofficial "with the assignment of the claim the mortgage passes to the new creditor (§ 1153 (1))";
+}
+pub relation trennung_von_forderung_und_hypothek_unzulaessig(h: Grundpfandrecht) kind derived {
+    label de official "die Forderung kann nicht ohne die Hypothek, die Hypothek kann nicht ohne die Forderung übertragen werden (§ 1153 Abs. 2)";
+    label en unofficial "the claim cannot be assigned without the mortgage, nor the mortgage without the claim (§ 1153 (2))";
+}
+pub relation abtretung_wirksam(h: Grundpfandrecht) kind derived {
+    label de official "die Abtretung der Forderung ist wirksam (§ 1154 Abs. 1, Abs. 2, Abs. 3)";
+    label en unofficial "the assignment of the claim is effective (§ 1154 (1), (2), (3))";
+}
+pub relation briefbesitzer_wie_eingetragener_glaeubiger(h: Grundpfandrecht, besitzer: Person) kind derived {
+    label de official "die Vorschriften der §§ 891 bis 899 finden in gleicher Weise Anwendung, wie wenn der Besitzer des Briefes als Gläubiger im Grundbuch eingetragen wäre (§ 1155 Satz 1)";
+    label en unofficial "§§ 891 to 899 apply as if the certificate holder were registered as creditor (§ 1155 sentence 1)";
+}
+pub relation kuendigung_gegen_den_neuen_glaeubiger_wirksam(h: Grundpfandrecht) kind derived {
+    label de official "der neue Gläubiger muss eine dem bisherigen Gläubiger gegenüber erfolgte Kündigung des Eigentümers gegen sich gelten lassen (§ 1156 Satz 2)";
+    label en unofficial "the new creditor must accept a notice given by the owner to the previous creditor (§ 1156 sentence 2)";
+}
+pub relation geltendmachung_der_hypothek_widersprechbar(h: Grundpfandrecht) kind derived {
+    label de official "der Geltendmachung der Hypothek kann widersprochen werden, wenn der Gläubiger den Brief nicht vorlegt (§ 1160 Abs. 1)";
+    label en unofficial "assertion of the mortgage may be objected to if the creditor does not present the certificate (§ 1160 (1))";
+}
+pub relation kuendigung_oder_mahnung_unwirksam(h: Grundpfandrecht) kind derived {
+    label de official "eine dem Eigentümer gegenüber erfolgte Kündigung oder Mahnung ist unwirksam, wenn der Gläubiger die erforderlichen Urkunden nicht vorlegt und der Eigentümer sie aus diesem Grunde unverzüglich zurückweist (§ 1160 Abs. 2)";
+    label en unofficial "a notice or reminder given to the owner is ineffective if the creditor does not present the required documents and the owner rejects it on that ground without undue delay (§ 1160 (2))";
+}
+pub relation brief_kraftlos_erklaerbar(h: Grundpfandrecht) kind derived {
+    label de official "der Hypothekenbrief kann im Wege des Aufgebotsverfahrens für kraftlos erklärt werden (§ 1162)";
+    label en unofficial "the mortgage certificate may be declared void in public notice proceedings (§ 1162)";
+}
+
+// --- Regeln ---------------------------------------------------------------------------------------------
+
+@source(BGB_P1133) {
+    rule SofortigeBefriedigungNachFristablauf(h: Grundpfandrecht, glaeubiger: Person) strict {
+        label de official "Ist infolge einer Verschlechterung des Grundstücks die Sicherheit der Hypothek gefährdet, so kann der Gläubiger dem Eigentümer eine angemessene Frist zur Beseitigung der Gefährdung bestimmen; nach dem Ablauf der Frist ist er berechtigt, sofort Befriedigung aus dem Grundstück zu suchen, wenn nicht die Gefährdung beseitigt worden ist (§ 1133 Satz 1, 2)";
+        label en unofficial "If the security of the mortgage is endangered by a deterioration of the land, the creditor may set the owner a reasonable period; after its expiry they may immediately seek satisfaction out of the land unless the endangerment has been removed (§ 1133 sentences 1, 2)";
+        when berechtigter(h, glaeubiger) and verschlechterung_des_grundstuecks(h) and sicherheit_der_hypothek_gefaehrdet(h)
+            and angemessene_frist_zur_beseitigung_bestimmt(h) and frist_zur_beseitigung_der_gefaehrdung_abgelaufen(h)
+            and not gefaehrdung_beseitigt(h);
+        then sofortige_befriedigung_aus_dem_grundstueck_berechtigt(h, glaeubiger);
+    }
+    rule NurDieAbgezinsteSumme(h: Grundpfandrecht, glaeubiger: Person) strict {
+        label de official "Ist die Forderung unverzinslich und noch nicht fällig, so gebührt dem Gläubiger nur die Summe, welche mit Hinzurechnung der gesetzlichen Zinsen für die Zeit von der Zahlung bis zur Fälligkeit dem Betrag der Forderung gleichkommt (§ 1133 Satz 3). Der Zinssatz steht in § 246 (Paket de.bgb.schuldrecht_at), das Abzinsungsverfahren nennt der Text nicht — Frage D-Q11-1";
+        label en unofficial "If the claim bears no interest and is not yet due, the creditor is entitled only to the discounted sum (§ 1133 sentence 3). The rate is in § 246 (package de.bgb.schuldrecht_at); the text names no discounting method — question D-Q11-1";
+        when sofortige_befriedigung_aus_dem_grundstueck_berechtigt(h, glaeubiger)
+            and forderung_unverzinslich(h) and forderung_noch_nicht_faellig(h);
+        then nur_die_abgezinste_summe_gebuehrt(h);
+    }
+}
+
+@source(BGB_P1134) {
+    rule UnterlassungsklageDesGlaeubigers(h: Grundpfandrecht, glaeubiger: Person, wirkender: Person) strict {
+        label de official "Wirkt der Eigentümer oder ein Dritter auf das Grundstück in solcher Weise ein, dass eine die Sicherheit der Hypothek gefährdende Verschlechterung zu besorgen ist, so kann der Gläubiger auf Unterlassung klagen (§ 1134 Abs. 1)";
+        label en unofficial "If the owner or a third party acts upon the land so that a deterioration endangering the security is to be feared, the creditor may sue for an injunction (§ 1134 (1))";
+        when berechtigter(h, glaeubiger) and einwirkung_auf_das_grundstueck(h, wirkender)
+            and gefaehrdende_verschlechterung_zu_besorgen(h);
+        then unterlassungsanspruch_des_glaeubigers(h, glaeubiger, wirkender);
+    }
+    rule MassregelnBeiEinwirkungDesEigentuemers(h: Grundpfandrecht) strict {
+        label de official "Geht die Einwirkung von dem Eigentümer aus, so hat das Gericht auf Antrag des Gläubigers die zur Abwendung der Gefährdung erforderlichen Maßregeln anzuordnen; das Gleiche gilt, wenn der Eigentümer die erforderlichen Vorkehrungen unterlässt (§ 1134 Abs. 2)";
+        label en unofficial "If the interference proceeds from the owner, the court must on the creditor's application order the measures necessary to avert the endangerment; the same applies where the owner omits the necessary precautions (§ 1134 (2))";
+        when gefaehrdende_verschlechterung_zu_besorgen(h) and einwirkung_geht_vom_eigentuemer_aus(h)
+            and antrag_des_glaeubigers_auf_massregeln(h);
+        then gericht_ordnet_massregeln_an(h);
+    }
+}
+
+@source(BGB_P1135)
+rule VerschlechterungDesZubehoersStehtGleich(h: Grundpfandrecht, x: Gegenstand) strict {
+    label de official "Einer Verschlechterung des Grundstücks im Sinne der §§ 1133, 1134 steht es gleich, wenn Zubehörstücke, auf die sich die Hypothek erstreckt, verschlechtert oder den Regeln einer ordnungsmäßigen Wirtschaft zuwider von dem Grundstück entfernt werden (§ 1135)";
+    label en unofficial "It is equivalent to a deterioration of the land within §§ 1133, 1134 if accessories covered by the mortgage are impaired or removed contrary to proper management (§ 1135)";
+    when haftet_fuer_die_hypothek(x, h) and verschlechterung_oder_entfernung_des_zubehoers(h, x)
+        and entfernung_den_regeln_ordnungsmaessiger_wirtschaft_zuwider(h, x);
+    then verschlechterung_des_grundstuecks(h);
+}
+
+@source(BGB_P1136)
+rule VerfuegungsbeschraenkungNichtig(h: Grundpfandrecht) strict {
+    label de official "Eine Vereinbarung, durch die sich der Eigentümer dem Gläubiger gegenüber verpflichtet, das Grundstück nicht zu veräußern oder nicht weiter zu belasten, ist nichtig (§ 1136)";
+    label en unofficial "An agreement by which the owner undertakes vis-à-vis the creditor not to alienate or further encumber the land is void (§ 1136)";
+    when vereinbarung_nicht_zu_veraeussern_oder_zu_belasten(h);
+    then vereinbarung_nichtig(h);
+}
+
+@source(BGB_P1137) {
+    rule EinredenDesPersoenlichenSchuldners(e: Einrede, h: Grundpfandrecht, p: Person) strict {
+        label de official "Der Eigentümer kann gegen die Hypothek die dem persönlichen Schuldner gegen die Forderung sowie die nach § 770 einem Bürgen zustehenden Einreden geltend machen (§ 1137 Abs. 1 Satz 1)";
+        label en unofficial "The owner may raise against the mortgage the defences of the personal debtor against the claim and those of a surety under § 770 (§ 1137 (1) sentence 1)";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and einrede_des_persoenlichen_schuldners(e, h);
+        then einrede_gegen_die_hypothek_geltend_zu_machen(e, h, p);
+    }
+    rule VerzichtDesSchuldnersSchadetDemEigentuemerNicht(e: Einrede, h: Grundpfandrecht, p: Person) strict {
+        label de official "Ist der Eigentümer nicht der persönliche Schuldner, so verliert er eine Einrede nicht dadurch, dass dieser auf sie verzichtet (§ 1137 Abs. 2)";
+        label en unofficial "If the owner is not the personal debtor, they do not lose a defence because the debtor waives it (§ 1137 (2))";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and einrede_des_persoenlichen_schuldners(e, h)
+            and eigentuemer_ist_nicht_persoenlicher_schuldner(h) and persoenlicher_schuldner_hat_verzichtet(e);
+        then einrede_gegen_die_hypothek_geltend_zu_machen(e, h, p);
+    }
+}
+
+@source(BGB_P1157)
+rule EinredeGegenDenNeuenGlaeubiger(e: Einrede, h: Grundpfandrecht, p: Person) strict {
+    label de official "Eine Einrede, die dem Eigentümer auf Grund eines zwischen ihm und dem bisherigen Gläubiger bestehenden Rechtsverhältnisses gegen die Hypothek zusteht, kann auch dem neuen Gläubiger entgegengesetzt werden (§ 1157 Satz 1)";
+    label en unofficial "A defence of the owner arising from a legal relationship with the previous creditor may also be raised against the new creditor (§ 1157 sentence 1)";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and einrede_aus_dem_verhaeltnis_zum_bisherigen_glaeubiger(e, h);
+    then einrede_gegen_die_hypothek_geltend_zu_machen(e, h, p);
+}
+
+@source(BGB_P1141) {
+    rule KuendigungDurchDenGlaeubiger(h: Grundpfandrecht, tag: Date) strict {
+        label de official "Hängt die Fälligkeit der Forderung von einer Kündigung ab, so ist die Kündigung für die Hypothek nur wirksam, wenn sie von dem Gläubiger dem Eigentümer erklärt wird (§ 1141 Abs. 1 Satz 1)";
+        label en unofficial "Where maturity depends on notice, the notice is effective for the mortgage only if given by the creditor to the owner (§ 1141 (1) sentence 1)";
+        when faelligkeit_haengt_von_kuendigung_ab(h) and kuendigung_des_glaeubigers_dem_eigentuemer_gegenueber_am(h, tag);
+        then kuendigung_fuer_die_hypothek_wirksam(h, tag);
+    }
+    rule KuendigungDurchDenEigentuemer(h: Grundpfandrecht, tag: Date) strict {
+        label de official "Die Kündigung ist auch wirksam, wenn sie von dem Eigentümer dem Gläubiger erklärt wird (§ 1141 Abs. 1 Satz 1)";
+        label en unofficial "The notice is also effective if given by the owner to the creditor (§ 1141 (1) sentence 1)";
+        when faelligkeit_haengt_von_kuendigung_ab(h) and kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(h, tag);
+        then kuendigung_fuer_die_hypothek_wirksam(h, tag);
+    }
+    rule EingetragenerGiltAlsEigentuemerBeiDerKuendigung(h: Grundpfandrecht, r: Recht, p: Person) strict {
+        label de official "Zugunsten des Gläubigers gilt derjenige, welcher im Grundbuch als Eigentümer eingetragen ist, als der Eigentümer (§ 1141 Abs. 1 Satz 2)";
+        label en unofficial "In favour of the creditor, the person registered as owner is deemed the owner (§ 1141 (1) sentence 2)";
+        when faelligkeit_haengt_von_kuendigung_ab(h) and de.bgb.besitz_eigentum::im_grundbuch_eingetragen_fuer(r, p)
+            and grundbuchblatt_des_eigentums(h, r);
+        then eingetragener_gilt_als_eigentuemer(h, p);
+    }
+}
+
+pub relation grundbuchblatt_des_eigentums(h: Grundpfandrecht, r: Recht) kind empirical {
+    key(h);
+    label de official "Eintragung des Eigentums an dem belasteten Grundstück im Grundbuch (§ 1141 Abs. 1 Satz 2, § 1148 Satz 1)";
+    label en unofficial "registration of ownership of the encumbered land (§ 1141 (1) sentence 2, § 1148 sentence 1)";
+}
+
+@source(BGB_P1142) {
+    rule BefriedigungsrechtBeiFaelligkeit(h: Grundpfandrecht, p: Person) strict {
+        label de official "Der Eigentümer ist berechtigt, den Gläubiger zu befriedigen, wenn die Forderung ihm gegenüber fällig geworden ist (§ 1142 Abs. 1)";
+        label en unofficial "The owner is entitled to satisfy the creditor once the claim has fallen due vis-à-vis them (§ 1142 (1))";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and forderung_dem_eigentuemer_gegenueber_faellig(h);
+        then eigentuemer_zur_befriedigung_berechtigt(h, p);
+    }
+    rule BefriedigungsrechtBeiLeistungsrechtDesSchuldners(h: Grundpfandrecht, p: Person) strict {
+        label de official "Der Eigentümer ist auch dann zur Befriedigung berechtigt, wenn der persönliche Schuldner zur Leistung berechtigt ist (§ 1142 Abs. 1)";
+        label en unofficial "The owner is also entitled to satisfy where the personal debtor is entitled to perform (§ 1142 (1))";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and persoenlicher_schuldner_zur_leistung_berechtigt(h);
+        then eigentuemer_zur_befriedigung_berechtigt(h, p);
+    }
+}
+
+@source(BGB_P1143)
+rule UebergangDerForderungAufDenEigentuemer(h: Grundpfandrecht, p: Person, betrag: Money) strict {
+    label de official "Ist der Eigentümer nicht der persönliche Schuldner, so geht, soweit er den Gläubiger befriedigt, die Forderung auf ihn über (§ 1143 Abs. 1 Satz 1)";
+    label en unofficial "If the owner is not the personal debtor, the claim passes to them in so far as they satisfy the creditor (§ 1143 (1) sentence 1)";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and eigentuemer_ist_nicht_persoenlicher_schuldner(h)
+        and befriedigung_durch_den_eigentuemer(h, betrag);
+    then forderung_auf_den_eigentuemer_uebergegangen(h, p, betrag);
+}
+
+@source(BGB_P1144)
+rule AushaendigungDerUrkundenGegenVolleBefriedigung(h: Grundpfandrecht, p: Person, betrag: Money, summe: Money) strict {
+    label de official "Der Eigentümer kann gegen Befriedigung des Gläubigers die Aushändigung des Hypothekenbriefs und der sonstigen Urkunden verlangen, die zur Berichtigung des Grundbuchs oder zur Löschung der Hypothek erforderlich sind (§ 1144)";
+    label en unofficial "Against satisfaction of the creditor the owner may demand surrender of the certificate and the other documents needed to correct the register or cancel the mortgage (§ 1144)";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and befriedigung_durch_den_eigentuemer(h, betrag)
+        and geldsumme(h, summe) and betrag >= summe;
+    then anspruch_auf_aushaendigung_der_urkunden(h, p);
+}
+
+@source(BGB_P1145)
+rule KeineAushaendigungBeiTeilweiserBefriedigung(h: Grundpfandrecht, p: Person, betrag: Money, summe: Money) strict {
+    label de official "Befriedigt der Eigentümer den Gläubiger nur teilweise, so kann er die Aushändigung des Hypothekenbriefs nicht verlangen (§ 1145 Abs. 1 Satz 1)";
+    label en unofficial "If the owner satisfies the creditor only in part, they may not demand surrender of the certificate (§ 1145 (1) sentence 1)";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and befriedigung_durch_den_eigentuemer(h, betrag)
+        and geldsumme(h, summe) and betrag < summe;
+    then kein_anspruch_auf_aushaendigung_bei_teilbefriedigung(h, p);
+}
+
+@source(BGB_P1146)
+rule VerzugszinsenAusDemGrundstueck(h: Grundpfandrecht, glaeubiger: Person) strict {
+    label de official "Liegen dem Eigentümer gegenüber die Voraussetzungen vor, unter denen ein Schuldner in Verzug kommt, so gebühren dem Gläubiger Verzugszinsen aus dem Grundstück (§ 1146)";
+    label en unofficial "If vis-à-vis the owner the conditions of a debtor's default are met, the creditor is entitled to default interest out of the land (§ 1146)";
+    when berechtigter(h, glaeubiger) and voraussetzungen_des_verzugs_gegenueber_dem_eigentuemer(h);
+    then verzugszinsen_aus_dem_grundstueck(h, glaeubiger);
+}
+
+@source(BGB_P1147)
+rule BefriedigungImWegeDerZwangsvollstreckung(h: Grundpfandrecht, glaeubiger: Person, g: Grundstueck) strict {
+    label de official "Die Befriedigung des Gläubigers aus dem Grundstück und den Gegenständen, auf die sich die Hypothek erstreckt, erfolgt im Wege der Zwangsvollstreckung (§ 1147)";
+    label en unofficial "Satisfaction of the creditor out of the land and the objects covered by the mortgage takes place by way of enforcement (§ 1147)";
+    when berechtigter(h, glaeubiger) and belastungsgegenstand_grundstueck(h, g);
+    then befriedigung_im_wege_der_zwangsvollstreckung(h, glaeubiger);
+}
+
+@source(BGB_P1148)
+rule EigentumsfiktionBeiDerRechtsverfolgung(h: Grundpfandrecht, r: Recht, p: Person) strict {
+    label de official "Bei der Verfolgung des Rechts aus der Hypothek gilt zugunsten des Gläubigers derjenige, welcher im Grundbuch als Eigentümer eingetragen ist, als der Eigentümer (§ 1148 Satz 1)";
+    label en unofficial "In pursuing the mortgage the person registered as owner is deemed the owner in favour of the creditor (§ 1148 sentence 1)";
+    when grundbuchblatt_des_eigentums(h, r) and de.bgb.besitz_eigentum::im_grundbuch_eingetragen_fuer(r, p);
+    then eingetragener_gilt_als_eigentuemer(h, p);
+}
+
+@source(BGB_P1149)
+rule UnzulaessigeBefriedigungsabredeNichtig(h: Grundpfandrecht) strict {
+    label de official "Der Eigentümer kann, solange nicht die Forderung ihm gegenüber fällig geworden ist, dem Gläubiger nicht das Recht einräumen, zum Zwecke der Befriedigung die Übertragung des Eigentums zu verlangen oder die Veräußerung auf andere Weise als im Wege der Zwangsvollstreckung zu bewirken (§ 1149)";
+    label en unofficial "As long as the claim has not fallen due vis-à-vis the owner, they may not grant the creditor the right to demand transfer of ownership or to effect a sale otherwise than by enforcement (§ 1149)";
+    when abrede_ueber_uebertragung_des_eigentums_zur_befriedigung(h) and not forderung_dem_eigentuemer_gegenueber_faellig(h);
+    then vereinbarung_nichtig(h);
+}
+
+@source(BGB_P1151)
+rule RangaenderungDerTeilhypothekenOhneZustimmung(h: Grundpfandrecht) strict {
+    label de official "Wird die Forderung geteilt, so ist zur Änderung des Rangverhältnisses der Teilhypotheken untereinander die Zustimmung des Eigentümers nicht erforderlich (§ 1151)";
+    label en unofficial "Where the claim is divided, no consent of the owner is required to change the ranking of the partial mortgages among themselves (§ 1151)";
+    when forderung_geteilt(h);
+    then rangaenderung_ohne_zustimmung_des_eigentuemers(h);
+}
+
+@source(BGB_P1152)
+rule TeilhypothekenbriefBeiTeilung(h: Grundpfandrecht) strict {
+    label de official "Im Falle einer Teilung der Forderung kann, sofern nicht die Erteilung des Hypothekenbriefs ausgeschlossen ist, für jeden Teil ein Teilhypothekenbrief hergestellt werden; die Zustimmung des Eigentümers ist nicht erforderlich (§ 1152 Satz 1)";
+    label en unofficial "Where the claim is divided, a partial certificate may be produced for each part unless issue of the certificate is excluded; no consent of the owner is required (§ 1152 sentence 1)";
+    when forderung_geteilt(h) and briefhypothek(h);
+    then teilhypothekenbrief_herstellbar(h);
+}
+
+@source(BGB_P1153) {
+    rule HypothekFolgtDerForderung(h: Grundpfandrecht, neuer: Person) strict {
+        label de official "Mit der Übertragung der Forderung geht die Hypothek auf den neuen Gläubiger über (§ 1153 Abs. 1)";
+        label en unofficial "With the assignment of the claim the mortgage passes to the new creditor (§ 1153 (1))";
+        when forderung_uebertragen_auf(h, neuer) and abtretung_wirksam(h);
+        then hypothek_auf_den_neuen_glaeubiger_uebergegangen(h, neuer);
+    }
+    rule KeineTrennungVonForderungUndHypothek(h: Grundpfandrecht, g: Grundstueck) strict {
+        label de official "Die Forderung kann nicht ohne die Hypothek, die Hypothek kann nicht ohne die Forderung übertragen werden (§ 1153 Abs. 2)";
+        label en unofficial "The claim cannot be assigned without the mortgage, nor the mortgage without the claim (§ 1153 (2))";
+        when belastungsgegenstand_grundstueck(h, g) and art_des_grundpfandrechts(h, Hypothek);
+        then trennung_von_forderung_und_hypothek_unzulaessig(h);
+    }
+}
+
+@source(BGB_P1154) {
+    rule AbtretungDurchSchriftformUndBriefuebergabe(h: Grundpfandrecht) strict {
+        label de official "Zur Abtretung der Forderung ist Erteilung der Abtretungserklärung in schriftlicher Form und Übergabe des Hypothekenbriefs erforderlich (§ 1154 Abs. 1 Satz 1)";
+        label en unofficial "Assignment of the claim requires a written declaration of assignment and handing over of the certificate (§ 1154 (1) sentence 1)";
+        when briefhypothek(h) and abtretungserklaerung_schriftlich(h) and brief_dem_neuen_glaeubiger_uebergeben(h);
+        then abtretung_wirksam(h);
+    }
+    rule AbtretungDurchEintragung(h: Grundpfandrecht) strict {
+        label de official "Die schriftliche Form der Abtretungserklärung kann dadurch ersetzt werden, dass die Abtretung in das Grundbuch eingetragen wird (§ 1154 Abs. 2)";
+        label en unofficial "The written form may be replaced by registration of the assignment (§ 1154 (2))";
+        when abtretung_im_grundbuch_eingetragen(h);
+        then abtretung_wirksam(h);
+    }
+}
+
+@source(BGB_P1155)
+rule OeffentlicherGlaubeDerAbtretungsreihe(h: Grundpfandrecht, besitzer: Person) strict {
+    label de official "Ergibt sich das Gläubigerrecht des Besitzers des Hypothekenbriefs aus einer zusammenhängenden, auf einen eingetragenen Gläubiger zurückführenden Reihe von öffentlich beglaubigten Abtretungserklärungen, so finden die §§ 891 bis 899 in gleicher Weise Anwendung, wie wenn der Besitzer des Briefes als Gläubiger im Grundbuch eingetragen wäre (§ 1155 Satz 1)";
+    label en unofficial "Where the certificate holder's creditor status follows from an unbroken chain of certified assignments traceable to a registered creditor, §§ 891 to 899 apply as if they were registered as creditor (§ 1155 sentence 1)";
+    when zusammenhaengende_reihe_beglaubigter_abtretungserklaerungen(h, besitzer);
+    then briefbesitzer_wie_eingetragener_glaeubiger(h, besitzer);
+}
+
+@source(BGB_P1156)
+rule KuendigungDesEigentuemersGegenDenNeuenGlaeubiger(h: Grundpfandrecht, tag: Date) strict {
+    label de official "Der neue Gläubiger muss eine dem bisherigen Gläubiger gegenüber erfolgte Kündigung des Eigentümers gegen sich gelten lassen, es sei denn, dass die Übertragung zur Zeit der Kündigung dem Eigentümer bekannt oder im Grundbuch eingetragen ist (§ 1156 Satz 2)";
+    label en unofficial "The new creditor must accept a notice given by the owner to the previous creditor unless at that time the assignment was known to the owner or registered (§ 1156 sentence 2)";
+    when kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(h, tag)
+        and not uebertragung_dem_eigentuemer_bekannt_oder_eingetragen(h);
+    then kuendigung_gegen_den_neuen_glaeubiger_wirksam(h);
+}
+
+@source(BGB_P1160) {
+    rule WiderspruchGegenDieGeltendmachungOhneBriefvorlage(h: Grundpfandrecht) strict {
+        label de official "Der Geltendmachung der Hypothek kann, sofern nicht die Erteilung des Hypothekenbriefs ausgeschlossen ist, widersprochen werden, wenn der Gläubiger nicht den Brief vorlegt (§ 1160 Abs. 1)";
+        label en unofficial "Unless issue of the certificate is excluded, assertion of the mortgage may be objected to if the creditor does not present the certificate (§ 1160 (1))";
+        when briefhypothek(h) and not brief_vorgelegt(h);
+        then geltendmachung_der_hypothek_widersprechbar(h);
+    }
+    rule KuendigungUnwirksamOhneUrkundenvorlage(h: Grundpfandrecht) strict {
+        label de official "Eine dem Eigentümer gegenüber erfolgte Kündigung oder Mahnung ist unwirksam, wenn der Gläubiger die nach Absatz 1 erforderlichen Urkunden nicht vorlegt und der Eigentümer die Kündigung oder die Mahnung aus diesem Grunde unverzüglich zurückweist (§ 1160 Abs. 2)";
+        label en unofficial "A notice or reminder given to the owner is ineffective if the creditor does not present the documents and the owner rejects it on that ground without undue delay (§ 1160 (2))";
+        when geltendmachung_der_hypothek_widersprechbar(h) and kuendigung_oder_mahnung_unverzueglich_zurueckgewiesen(h);
+        then kuendigung_oder_mahnung_unwirksam(h);
+    }
+}
+
+@source(BGB_P1161)
+rule VorlagepflichtAuchFuerDieForderung(h: Grundpfandrecht, p: Person) strict {
+    label de official "Ist der Eigentümer der persönliche Schuldner, so findet die Vorschrift des § 1160 auch auf die Geltendmachung der Forderung Anwendung (§ 1161)";
+    label en unofficial "If the owner is the personal debtor, § 1160 also applies to assertion of the claim (§ 1161)";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and persoenlicher_schuldner(h, p)
+        and geltendmachung_der_hypothek_widersprechbar(h);
+    then geltendmachung_der_forderung_widersprechbar(h);
+}
+
+pub relation geltendmachung_der_forderung_widersprechbar(h: Grundpfandrecht) kind derived {
+    label de official "auch der Geltendmachung der Forderung kann widersprochen werden (§ 1161)";
+    label en unofficial "assertion of the claim, too, may be objected to (§ 1161)";
+}
+
+@source(BGB_P1162)
+rule AufgebotDesHypothekenbriefs(h: Grundpfandrecht) strict {
+    label de official "Ist der Hypothekenbrief abhanden gekommen oder vernichtet, so kann er im Wege des Aufgebotsverfahrens für kraftlos erklärt werden (§ 1162)";
+    label en unofficial "If the certificate has been lost or destroyed, it may be declared void in public notice proceedings (§ 1162)";
+    when brief_abhanden_gekommen_oder_vernichtet(h);
+    then brief_kraftlos_erklaerbar(h);
+}

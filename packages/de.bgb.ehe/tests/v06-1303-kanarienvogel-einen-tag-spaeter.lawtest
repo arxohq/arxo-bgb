@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// Kanarienvogel zu v05: dieselbe Person, aber die Ehe wird einen Tag später geschlossen (10.05.2025). Mit Ablauf des 09.05.2025 ist das 16. Lebensjahr vollendet, die Ehe ist daher NICHT nach § 1303 Satz 2 unwirksam. Das Eheverbot des Satzes 1 (Volljährigkeit) greift gleichwohl, und die Ehe ist nach § 1314 Abs. 1 Nr. 1 aufhebbar.
+test "§ 1303: einen Tag nach Vollendung des 16. Lebensjahrs — nicht unwirksam, aber aufhebbar" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:v06:E"), entity_ref("urn:de:bgb:ehe:v06:P"), entity_ref("urn:de:bgb:ehe:v06:Q")) { origin case_input; }
+        assert "f2": eheschliessung_am(entity_ref("urn:de:bgb:ehe:v06:E"), @2025-05-10) { origin case_input; }
+        assert "f3": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:ehe:v06:P"), @2009-05-10) { origin case_input; }
+        assert "f4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:ehe:v06:P"), 16 calendar_year) { origin case_input; }
+        assert "f5": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:ehe:v06:P"), 18 calendar_year) { origin case_input; }
+        assert "f6": minderjaehrig_aber_sechzehn_bei_der_eheschliessung(entity_ref("urn:de:bgb:ehe:v06:E"), entity_ref("urn:de:bgb:ehe:v06:P")) { origin case_input; }
+    }
+    evaluate truth(ehe_unwirksam(entity_ref("urn:de:bgb:ehe:v06:E"), "§ 1303 Satz 2: Eheschließung mit einer Person, die das 16. Lebensjahr nicht vollendet hatte"));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eheverbot(entity_ref("urn:de:bgb:ehe:v06:E"), "§ 1303 Satz 1: Eheschließung vor Eintritt der Volljährigkeit"));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ehe_aufhebbar(entity_ref("urn:de:bgb:ehe:v06:E"), Minderjaehrigkeit_1303_Satz_1));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

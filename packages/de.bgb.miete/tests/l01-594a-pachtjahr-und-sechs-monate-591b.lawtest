@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 594a Abs. 1: bei unbestimmter Pachtzeit kann jeder Vertragsteil spätestens am dritten Werktag eines Pachtjahrs für den Schluss des NÄCHSTEN Pachtjahrs kündigen; im Zweifel gilt das Kalenderjahr. Das Pachtjahr beginnt am 1. Januar 2025 — ein Mittwoch (Neujahr ist ein bundesweiter Feiertag), der dritte Werktag ist Montag, der 6. Januar 2025. Die Kündigung an diesem Tag wirkt zum Schluss des Pachtjahrs 2026, also zum Ablauf des 31. Dezember 2026. § 591b Abs. 1 und 2: die Ersatzansprüche des Verpächters verjähren sechs Monate nach dem Rückerhalt am 15. Januar 2027, also mit dem Ablauf des 15. Juli 2027.
+test "§ 594a Abs. 1 und § 591b: dritter Werktag des Pachtjahrs und sechs Monate" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:l01"), entity_ref("urn:de:bgb:miete:l01:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:l01"), entity_ref("urn:de:bgb:miete:l01:P")) { origin case_input; }
+        assert "f3": vertragsart(entity_ref("urn:de:bgb:miete:l01"), Landpacht) { origin case_input; }
+        assert "f4": gegenstandsart(entity_ref("urn:de:bgb:miete:l01"), Grundstueck) { origin case_input; }
+        assert "f5": pachtzeit_nicht_bestimmt(entity_ref("urn:de:bgb:miete:l01")) { origin case_input; }
+        assert "f6": kuendigung_des(entity_ref("urn:de:bgb:miete:l01:K"), entity_ref("urn:de:bgb:miete:l01")) { origin case_input; }
+        assert "f7": pachtjahr_beginn(entity_ref("urn:de:bgb:miete:l01:K"), @2025-01-01) { origin case_input; }
+        assert "f8": kuendigung_erklaert_am(entity_ref("urn:de:bgb:miete:l01:K"), @2025-01-06) { origin case_input; }
+        assert "f9": kuendigung_schriftlich(entity_ref("urn:de:bgb:miete:l01:K")) { origin case_input; }
+        assert "f10": ersatzanspruch_des_vermieters(entity_ref("urn:de:bgb:miete:l01")) { origin case_input; }
+        assert "f11": rueckgabe_am(entity_ref("urn:de:bgb:miete:l01"), @2027-01-15) { origin case_input; }
+    }
+    evaluate truth(dritter_werktag_des_pachtjahrs(entity_ref("urn:de:bgb:miete:l01:K"), @2025-01-06));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(pachtkuendigung_fristgerecht(entity_ref("urn:de:bgb:miete:l01:K")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(beendigung_durch_kuendigung_am(entity_ref("urn:de:bgb:miete:l01:K"), @2026-12-31));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verjaehrung_591b_verpaechter_ende(entity_ref("urn:de:bgb:miete:l01"), @2027-07-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(landpachtvorschriften_anwendbar(entity_ref("urn:de:bgb:miete:l01")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

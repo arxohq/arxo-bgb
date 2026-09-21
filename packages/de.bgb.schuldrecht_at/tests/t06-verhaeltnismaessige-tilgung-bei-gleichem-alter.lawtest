@@ -1,0 +1,33 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 366 Abs. 2 Satz 1, Stufe 4: bei gleichem Alter wird jede Schuld
+// verhältnismäßig getilgt. a1 (3.000,00 EUR) und a2 (2.000,00 EUR) sind
+// gleich alt (1.1.2025); von den 500,00 EUR Zahlung entfallen im Verhältnis
+// 300.000 : 200.000 Cent 300,00 EUR auf a1 und 200,00 EUR auf a2 —
+// D-12-10-Muster (Quote über Centbeträge als Integer, kein Produkt zweier
+// Geldbeträge).
+test "§ 366 Abs. 2 Stufe 4: verhältnismäßige Tilgung bei gleichem Alter" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": mehrere_gleichartige_schulden(entity_ref("urn:de:bgb:sr-at:t06:schuldner"), entity_ref("urn:de:bgb:sr-at:t06:glaeubiger")) { origin case_input; }
+        assert "a2": keine_tilgungsbestimmung(entity_ref("urn:de:bgb:sr-at:t06:schuldner"), entity_ref("urn:de:bgb:sr-at:t06:glaeubiger")) { origin case_input; }
+        assert "a3": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t06:a1")) { origin case_input; }
+        assert "a4": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t06:a2")) { origin case_input; }
+        assert "a5": gleiche_sicherheit(entity_ref("urn:de:bgb:sr-at:t06:a1"), entity_ref("urn:de:bgb:sr-at:t06:a2")) { origin case_input; }
+        assert "a6": gleiche_sicherheit(entity_ref("urn:de:bgb:sr-at:t06:a2"), entity_ref("urn:de:bgb:sr-at:t06:a1")) { origin case_input; }
+        assert "a7": gleiche_laestigkeit(entity_ref("urn:de:bgb:sr-at:t06:a1"), entity_ref("urn:de:bgb:sr-at:t06:a2")) { origin case_input; }
+        assert "a8": gleiche_laestigkeit(entity_ref("urn:de:bgb:sr-at:t06:a2"), entity_ref("urn:de:bgb:sr-at:t06:a1")) { origin case_input; }
+        assert "a9": schuld_entstanden_am(entity_ref("urn:de:bgb:sr-at:t06:a1"), @2025-01-01) { origin case_input; }
+        assert "a10": schuld_entstanden_am(entity_ref("urn:de:bgb:sr-at:t06:a2"), @2025-01-01) { origin case_input; }
+        assert "a11": schuldbetrag_in_cent(entity_ref("urn:de:bgb:sr-at:t06:a1"), 300000) { origin case_input; }
+        assert "a12": schuldbetrag_in_cent(entity_ref("urn:de:bgb:sr-at:t06:a2"), 200000) { origin case_input; }
+        assert "a13": gezahlter_betrag_zur_verteilung(entity_ref("urn:de:bgb:sr-at:t06:schuldner"), entity_ref("urn:de:bgb:sr-at:t06:glaeubiger"), 500.00 EUR) { origin case_input; }
+    }
+    evaluate truth(verhaeltnismaessige_tilgung(entity_ref("urn:de:bgb:sr-at:t06:a1"), 300.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verhaeltnismaessige_tilgung(entity_ref("urn:de:bgb:sr-at:t06:a2"), 200.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

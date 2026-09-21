@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 366 Abs. 2 Satz 1: trifft der Schuldner keine Bestimmung, wird zunächst
+// die fällige Schuld getilgt. Baseline ohne Konkurrenz einer zweiten
+// fälligen Schuld — Stufen 1–4 kommen nicht zum Zug.
+test "§ 366 Abs. 2 Satz 1: die einzige fällige Schuld wird getilgt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": mehrere_gleichartige_schulden(entity_ref("urn:de:bgb:sr-at:t01:schuldner"), entity_ref("urn:de:bgb:sr-at:t01:glaeubiger")) { origin case_input; }
+        assert "a2": keine_tilgungsbestimmung(entity_ref("urn:de:bgb:sr-at:t01:schuldner"), entity_ref("urn:de:bgb:sr-at:t01:glaeubiger")) { origin case_input; }
+        assert "a3": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t01:a1")) { origin case_input; }
+        assert "a4": keine_konkurrierende_faellige_schuld(entity_ref("urn:de:bgb:sr-at:t01:a1")) { origin case_input; }
+    }
+    evaluate truth(getilgte_schuld(entity_ref("urn:de:bgb:sr-at:t01:a1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

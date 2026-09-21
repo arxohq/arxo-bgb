@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 366 Abs. 2 Satz 1, Stufe 2: bei gleicher Sicherheit wird die für den
+// Schuldner lästigere Schuld getilgt. Die Stufe 1 unterscheidet nicht —
+// eigener positiver Eingang `gleiche_sicherheit`, kein Schluss aus dem
+// Schweigen der Akte über `geringere_sicherheit_bietet`.
+test "§ 366 Abs. 2 Stufe 2: bei gleicher Sicherheit entscheidet die Lästigkeit" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": mehrere_gleichartige_schulden(entity_ref("urn:de:bgb:sr-at:t04:schuldner"), entity_ref("urn:de:bgb:sr-at:t04:glaeubiger")) { origin case_input; }
+        assert "a2": keine_tilgungsbestimmung(entity_ref("urn:de:bgb:sr-at:t04:schuldner"), entity_ref("urn:de:bgb:sr-at:t04:glaeubiger")) { origin case_input; }
+        assert "a3": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t04:a1")) { origin case_input; }
+        assert "a4": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t04:a2")) { origin case_input; }
+        assert "a5": gleiche_sicherheit(entity_ref("urn:de:bgb:sr-at:t04:a1"), entity_ref("urn:de:bgb:sr-at:t04:a2")) { origin case_input; }
+        assert "a6": laestigere_fuer_den_schuldner(entity_ref("urn:de:bgb:sr-at:t04:a1"), entity_ref("urn:de:bgb:sr-at:t04:a2")) { origin adjudicated; }
+    }
+    evaluate truth(getilgte_schuld(entity_ref("urn:de:bgb:sr-at:t04:a1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(getilgte_schuld(entity_ref("urn:de:bgb:sr-at:t04:a2")));
+    expect truth_status == NEITHER;
+}

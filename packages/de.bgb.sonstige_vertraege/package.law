@@ -1,0 +1,2469 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 2 ABSCHNITT 8 — TEILZEIT-WOHNRECHTE, DARLEHEN,
+// SCHENKUNG, LEIHE, SACHDARLEHEN, MÄKLERVERTRAG BIS VORLEGUNG VON SACHEN (BG-08)
+//
+// Paket BG-08 der vollständigen Formalisierung des geltenden BGB
+// (docs/foundations/de-bgb/, DECISION-0319). Bereich nach dem Register:
+// §§ 481–534, §§ 598–610, §§ 652–811 — 295 geltende Paragraphen, 756 Absätze,
+// fünf weggefallene Positionen (§§ 509, 610, 764, 786, 795).
+//
+// AUFBAU. Diese Datei trägt die Politiken der Fristen §86, den Kalender §85 und
+// Titel 16 (Gesellschaft, §§ 705–740c, MoPeG-Fassung seit 1.1.2024). Die
+// übrigen Titel liegen je in einer Datei:
+//   titel-03-darlehen.law                 §§ 488–515  (Darlehen, Verbraucherdarlehen,
+//                                                      Finanzierungshilfen, Ratenlieferung)
+//   titel-04-schenkung.law                §§ 516–534  (Schenkung)
+//   titel-12-auftrag-zahlungsdienste.law  §§ 662–676c (Auftrag, Geschäftsbesorgung,
+//                                                      Zahlungsdienste)
+//   titel-17-gemeinschaft.law             §§ 741–758  (Gemeinschaft nach Bruchteilen)
+//   titel-20-buergschaft.law              §§ 765–778  (Bürgschaft)
+//   titel-uebrige.law                     §§ 481–487, 598–610, 652–661a, 677–704,
+//                                                      759–763, 779–811
+// Umfang und Grenzen dieser Sitzung: DECISION-0319-Ledger
+// `docs/foundations/de-bgb/DECISIONS.md`, Einträge D-08-01 … D-08-08.
+//
+// EXAKTE BRÜCHE, NICHT GERUNDETE PROZENTE (D-08-01). § 709 Absatz 3 (Stimmkraft
+// und Anteil an Gewinn und Verlust), § 712 Absatz 1 (Anwachsung), § 728a und
+// § 737 (Fehlbetrag), § 742 und § 743 (Gemeinschaft) verteilen nach Anteilen.
+// Diese Anteile werden als Paar ganzer Zahlen (Zähler, Nenner) geführt und erst
+// am Ende zu einem exakten `Rational` zusammengesetzt — Muster `de.bgb.erbfolge`.
+// In Geld umgerechnet wird EINMAL, mit `div_round(Wert × z, n × 1.0, 2,
+// "HALF_UP")`; die Politik steht im README, Abschnitt „Rundung".
+//
+// DREI STUFEN DES § 709 ABSATZ 3 (D-08-02). Der Text staffelt ausdrücklich:
+// vorrangig die vereinbarten Beteiligungsverhältnisse, hilfsweise das Verhältnis
+// der vereinbarten Werte der Beiträge, hilfsweise nach Köpfen. Jede Stufe ist
+// eine eigene Regel; die nachrangige Stufe verlangt `not_known` der
+// vorrangigen Anknüpfung. Ein Vorrangkonflikt §116 entsteht damit nicht.
+//
+// KORRIDOR MoPeG (D-08-03). Titel 16 gilt in dieser Nummerierung erst seit dem
+// 1.1.2024 (Art. 137 MoPeG, Art. 229 § 61 EGBGB). Die Regeln des Titel 16
+// tragen daher `effective [@2024-01-01, infinity)`; für einen Fall mit
+// früherem `legal_time` schweigt das Paket, statt die alte Fassung zu
+// behaupten. Die Übergangsnorm selbst gehört `de.bgb.uebergang` (Koordinator).
+//
+// BEWERTENDE MERKMALE — DREI KANÄLE (DECISION-0194). „grober Undank" (§ 530),
+// „angemessener Unterhalt" (§§ 519, 528), „erforderliche Aufwendungen"
+// (§§ 670, 716), „wichtiger Grund" (§§ 725, 727, 749), „unverhältnismäßig hoher
+// Maklerlohn" (§ 655), „angemessene Vorfälligkeitsentschädigung" (§ 502) sind
+// `external judgment relation … { authority Court; }`; ein flacher Fall-Fakt,
+// der die Wertung nachspricht, ist verboten. „Unverzüglich" (§§ 663, 673, 675u,
+// 676b Abs. 1, 703) ist ein bewertendes Merkmal, KEINE Nullfrist (D-08-04).
+//
+// SPRACHE. Nur Deutsch und Englisch (DECISION-0319 Р7).
+
+language "law.core" version "0.2";
+package de.bgb.sonstige_vertraege version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-sonstige-vertraege";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Anspruch = de.bgb.core::Anspruch;
+type Sache = de.bgb.core::Sache;
+type Frist = de.bgb.fristen::Frist;
+type Gericht = de.bgb.core::Gericht;
+
+// --- Politiken der Fristen §86 ---------------------------------------------------------------
+//
+// Die Mechanik der Fristen gehört `de.bgb.fristen` (DECISION-0319 Р4); die
+// Politik des Falls muss im ausführenden Paket erklärt sein (§86/§168.2,
+// LDC-E1332). BGB_SONSTIGE_TAG trägt Tagesfristen, in denen eine Erklärung
+// GEGENÜBER einem Adressaten geschuldet ist (§ 498 Absatz 1 Satz 1 Nummer 2
+// zweiwöchige Zahlungsfrist, § 489 Absatz 3 zwei Wochen, § 486a Absatz 1
+// Satz 4 zwei Wochen) — § 187 Absatz 1, § 188 Absatz 1, § 193 Verlegung.
+// BGB_SONSTIGE_KALENDER trägt Monats- und Jahresfristen (§ 489 Absatz 1
+// Nummer 2 und Absatz 2, § 529 Absatz 1, § 532 Satz 1, § 606, § 725 Absatz 1
+// und 4, § 728b Absatz 1, § 739 Absatz 1, § 676b Absatz 2, § 801 Absatz 1 und
+// 2); die Verlegung nach § 193 rechnet dafür die cross-package Regel
+// `de.bgb.fristen::Verlegung193` aus `frist_ende_kalender`. Eine Frist des
+// Falls liest EINE Politik (§168.2).
+
+deadline policy BGB_SONSTIGE_TAG {
+    start_count next_day;
+    include_end true;
+    roll next_working_day;
+}
+
+deadline policy BGB_SONSTIGE_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// § 193 verlegt das Fristende auf den nächsten Werktag; welcher Tag Werktag
+// ist, sagt der Kalenderschnappschuss §85. Der Datensatz ist einmal definiert
+// (corpus/gen_kz_clir.py, Ledger D-03) und wird hier — wie in `de.bgb.fristen`
+// und `de.bgb.betreuung` — durch einen eigenen Knoten gebunden (D-04-03): die
+// Politik des Falls lebt im Paket, dessen Programm der Fall ausführt, und mit
+// ihr der Kalender, den sie liest (ohne Knoten: NON_EXECUTABLE). Die Zeile im
+// Lock schreibt `tools/gen_kalender.py`, nicht `law engine lock --write`.
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// ==================================================================================================
+// TITEL 16 — GESELLSCHAFT (§§ 705–740c), Fassung des MoPeG seit 1.1.2024
+// ==================================================================================================
+
+pub entity Gesellschaft {
+    label de official "Gesellschaft bürgerlichen Rechts (§ 705 Absatz 1)";
+    label en unofficial "civil-law partnership (§ 705 (1))";
+}
+
+// § 705: Rechtsnatur der Gesellschaft.
+
+pub relation gesellschaftsvertrag_geschlossen(g: Gesellschaft) kind empirical {
+    label de official "Der Gesellschaftsvertrag ist geschlossen, in dem sich die Gesellschafter verpflichten, die Erreichung eines gemeinsamen Zwecks in der durch den Vertrag bestimmten Weise zu fördern (§ 705 Absatz 1)";
+    label en unofficial "the partnership agreement has been concluded, in which the partners undertake to promote the attainment of a common purpose in the manner determined by the agreement (§ 705 (1))";
+}
+pub relation gesellschaft_errichtet(g: Gesellschaft) kind institutional {
+    label de official "Die Gesellschaft ist durch den Abschluss des Gesellschaftsvertrags errichtet (§ 705 Absatz 1)";
+    label en unofficial "the partnership is established by the conclusion of the partnership agreement (§ 705 (1))";
+}
+pub relation gesellschafter(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Gesellschafter der Gesellschaft (§ 705 Absatz 1)";
+    label en unofficial "partner of the partnership (§ 705 (1))";
+}
+pub relation teilnahme_am_rechtsverkehr_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschaft soll nach dem gemeinsamen Willen der Gesellschafter am Rechtsverkehr teilnehmen (§ 705 Absatz 2)";
+    label en unofficial "by the partners' common intention the partnership is to take part in legal transactions (§ 705 (2))";
+}
+pub relation gegenstand_unternehmen_unter_gemeinschaftlichem_namen(g: Gesellschaft) kind empirical {
+    label de official "Gegenstand der Gesellschaft ist der Betrieb eines Unternehmens unter gemeinschaftlichem Namen (§ 705 Absatz 3)";
+    label en unofficial "the object of the partnership is the operation of an enterprise under a common name (§ 705 (3))";
+}
+pub relation teilnahme_am_rechtsverkehr_gewollt(g: Gesellschaft) kind institutional {
+    label de official "Der gemeinsame Wille der Gesellschafter geht auf Teilnahme am Rechtsverkehr — vereinbart oder nach § 705 Absatz 3 vermutet";
+    label en unofficial "the partners' common intention is to take part in legal transactions — agreed or presumed under § 705 (3)";
+}
+pub relation rechtsfaehige_gesellschaft(g: Gesellschaft) kind institutional {
+    label de official "Rechtsfähige Gesellschaft: sie kann selbst Rechte erwerben und Verbindlichkeiten eingehen (§ 705 Absatz 2 Alternative 1)";
+    label en unofficial "partnership with legal capacity: it may itself acquire rights and incur liabilities (§ 705 (2) alternative 1)";
+}
+pub relation nicht_rechtsfaehige_gesellschaft(g: Gesellschaft) kind institutional {
+    label de official "Nicht rechtsfähige Gesellschaft: sie dient den Gesellschaftern zur Ausgestaltung ihres Rechtsverhältnisses untereinander (§ 705 Absatz 2 Alternative 2)";
+    label en unofficial "partnership without legal capacity: it serves the partners to shape their legal relationship among themselves (§ 705 (2) alternative 2)";
+}
+
+@source(BGB_P705) {
+    rule GesellschaftErrichtet(g: Gesellschaft) strict {
+        label de official "Die Gesellschaft wird durch den Abschluss des Gesellschaftsvertrags errichtet (§ 705 Absatz 1)";
+        label en unofficial "the partnership is established by the conclusion of the partnership agreement (§ 705 (1))";
+        effective [@2024-01-01, infinity);
+        when gesellschaftsvertrag_geschlossen(g);
+        then gesellschaft_errichtet(g);
+    }
+    rule TeilnahmeAmRechtsverkehrVereinbart(g: Gesellschaft) strict {
+        label de official "Der gemeinsame Wille der Gesellschafter, am Rechtsverkehr teilzunehmen, ist vereinbart (§ 705 Absatz 2)";
+        label en unofficial "the partners' common intention to take part in legal transactions is agreed (§ 705 (2))";
+        effective [@2024-01-01, infinity);
+        when teilnahme_am_rechtsverkehr_vereinbart(g);
+        then teilnahme_am_rechtsverkehr_gewollt(g);
+    }
+    rule TeilnahmeAmRechtsverkehrVermutet(g: Gesellschaft) defeasible {
+        label de official "Ist der Gegenstand der Gesellschaft der Betrieb eines Unternehmens unter gemeinschaftlichem Namen, so wird vermutet, dass die Gesellschaft nach dem gemeinsamen Willen der Gesellschafter am Rechtsverkehr teilnimmt (§ 705 Absatz 3)";
+        label en unofficial "where the object of the partnership is the operation of an enterprise under a common name, it is presumed that by the partners' common intention the partnership takes part in legal transactions (§ 705 (3))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_errichtet(g) and gegenstand_unternehmen_unter_gemeinschaftlichem_namen(g);
+        then teilnahme_am_rechtsverkehr_gewollt(g);
+    }
+    rule RechtsfaehigeGesellschaft(g: Gesellschaft) defeasible {
+        label de official "Die Gesellschaft kann selbst Rechte erwerben und Verbindlichkeiten eingehen, wenn sie nach dem gemeinsamen Willen der Gesellschafter am Rechtsverkehr teilnehmen soll (§ 705 Absatz 2)";
+        label en unofficial "the partnership may itself acquire rights and incur liabilities where by the partners' common intention it is to take part in legal transactions (§ 705 (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_errichtet(g) and teilnahme_am_rechtsverkehr_gewollt(g);
+        then rechtsfaehige_gesellschaft(g);
+    }
+    rule NichtRechtsfaehigeGesellschaft(g: Gesellschaft) defeasible {
+        label de official "Die Gesellschaft dient den Gesellschaftern zur Ausgestaltung ihres Rechtsverhältnisses untereinander, wenn sie nicht am Rechtsverkehr teilnehmen soll (§ 705 Absatz 2)";
+        label en unofficial "the partnership serves the partners to shape their legal relationship among themselves where it is not to take part in legal transactions (§ 705 (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_errichtet(g) and not_known(teilnahme_am_rechtsverkehr_gewollt(g));
+        then nicht_rechtsfaehige_gesellschaft(g);
+    }
+}
+
+// § 706: Sitz der Gesellschaft — Verwaltungssitz, bei eingetragener Gesellschaft
+// abweichend der vereinbarte Vertragssitz im Inland.
+
+pub relation verwaltungssitz(g: Gesellschaft, ort: Text) kind empirical {
+    key(g);
+    label de official "Ort, an dem die Geschäfte der Gesellschaft tatsächlich geführt werden (Verwaltungssitz, § 706 Satz 1)";
+    label en unofficial "place where the partnership's business is actually conducted (administrative seat, § 706 sentence 1)";
+}
+pub relation im_gesellschaftsregister_eingetragen(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschaft ist im Gesellschaftsregister eingetragen (§ 707 Absatz 1, § 706 Satz 2) — Eintragung ist ein Registervorgang außerhalb des BGB, im Fall origin adjudicated";
+    label en unofficial "the partnership is entered in the partnership register (§ 707 (1), § 706 sentence 2) — an act of the register outside the BGB, in the case origin adjudicated";
+}
+pub relation vertragssitz_im_inland_vereinbart(g: Gesellschaft, ort: Text) kind empirical {
+    key(g);
+    label de official "Die Gesellschafter haben einen Ort im Inland als Sitz vereinbart (Vertragssitz, § 706 Satz 2)";
+    label en unofficial "the partners have agreed a place within Germany as the seat (contractual seat, § 706 sentence 2)";
+}
+pub relation sitz_der_gesellschaft(g: Gesellschaft, ort: Text) kind institutional {
+    key(g);
+    label de official "Sitz der Gesellschaft (§ 706)";
+    label en unofficial "seat of the partnership (§ 706)";
+}
+
+@source(BGB_P706) {
+    rule SitzIstVerwaltungssitz(g: Gesellschaft, ort: Text) defeasible {
+        label de official "Sitz der Gesellschaft ist der Ort, an dem deren Geschäfte tatsächlich geführt werden (§ 706 Satz 1)";
+        label en unofficial "the seat of the partnership is the place where its business is actually conducted (§ 706 sentence 1)";
+        effective [@2024-01-01, infinity);
+        when verwaltungssitz(g, ort) and not_known(im_gesellschaftsregister_eingetragen(g));
+        then sitz_der_gesellschaft(g, ort);
+    }
+    rule SitzIstVertragssitz(g: Gesellschaft, ort: Text) strict {
+        label de official "Ist die Gesellschaft im Gesellschaftsregister eingetragen und haben die Gesellschafter einen Ort im Inland als Sitz vereinbart, so ist abweichend von Satz 1 dieser Ort Sitz der Gesellschaft (§ 706 Satz 2)";
+        label en unofficial "where the partnership is entered in the partnership register and the partners have agreed a place within Germany as its seat, that place is, by way of derogation from sentence 1, the seat of the partnership (§ 706 sentence 2)";
+        effective [@2024-01-01, infinity);
+        when im_gesellschaftsregister_eingetragen(g) and vertragssitz_im_inland_vereinbart(g, ort);
+        then sitz_der_gesellschaft(g, ort);
+    }
+}
+
+// § 709: Beiträge; Stimmkraft; Anteil an Gewinn und Verlust — die drei Stufen
+// des Absatzes 3 (D-08-02). Der Anteil ist ein Paar ganzer Zahlen; der exakte
+// `Rational` entsteht erst in `AnteilAlsBruch`.
+
+pub relation beitrag_geschuldet(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter schuldet einen Beitrag; der Beitrag kann in jeder Förderung des gemeinsamen Zwecks, auch in der Leistung von Diensten, bestehen (§ 709 Absatz 1)";
+    label en unofficial "the partner owes a contribution; it may consist in any promotion of the common purpose, including the rendering of services (§ 709 (1))";
+}
+pub relation beitraege_der_hoehe_nach_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Die Höhe der Beiträge ist im Gesellschaftsvertrag vereinbart — ohne diese Vereinbarung gilt die Zweifelsregel des § 709 Absatz 2";
+    label en unofficial "the amount of the contributions is agreed in the partnership agreement — absent such agreement the doubt rule of § 709 (2) applies";
+}
+pub relation zu_gleichen_beitraegen_verpflichtet(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Im Zweifel sind die Gesellschafter zu gleichen Beiträgen verpflichtet (§ 709 Absatz 2)";
+    label en unofficial "in case of doubt the partners owe equal contributions (§ 709 (2))";
+}
+pub relation beteiligungsverhaeltnis_vereinbart(g: Gesellschaft, p: Person, zaehler: Integer, nenner: Integer) kind empirical {
+    key(g, p);
+    label de official "Vereinbartes Beteiligungsverhältnis des Gesellschafters als Bruch aus Zähler und Nenner (§ 709 Absatz 3 Satz 1)";
+    label en unofficial "agreed participation ratio of the partner as a fraction of numerator and denominator (§ 709 (3) sentence 1)";
+}
+pub relation beteiligungsverhaeltnisse_vereinbart(g: Gesellschaft) kind institutional {
+    label de official "Für die Gesellschaft sind Beteiligungsverhältnisse vereinbart worden (§ 709 Absatz 3 Satz 1, 2)";
+    label en unofficial "participation ratios have been agreed for the partnership (§ 709 (3) sentences 1, 2)";
+}
+pub relation beitragswert_vereinbart(g: Gesellschaft, p: Person, wert: Integer) kind empirical {
+    key(g, p);
+    label de official "Vereinbarter Wert des Beitrags des Gesellschafters in vollen Euro (§ 709 Absatz 3 Satz 2) — der Text vergleicht Werte, nicht Geldschulden, daher eine ganze Zahl (D-08-01)";
+    label en unofficial "agreed value of the partner's contribution in whole euros (§ 709 (3) sentence 2) — the text compares values, not money debts, hence a whole number (D-08-01)";
+}
+pub relation beitragswerte_vereinbart(g: Gesellschaft) kind institutional {
+    label de official "Für die Gesellschaft sind Werte der Beiträge vereinbart worden (§ 709 Absatz 3 Satz 2, 3)";
+    label en unofficial "values of the contributions have been agreed for the partnership (§ 709 (3) sentences 2, 3)";
+}
+pub relation anteil_bruch(g: Gesellschaft, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(g, p);
+    label de official "Stimmkraft und Anteil des Gesellschafters an Gewinn und Verlust als Bruch aus Zähler und Nenner (§ 709 Absatz 3)";
+    label en unofficial "the partner's voting power and share in profit and loss as a fraction of numerator and denominator (§ 709 (3))";
+}
+pub relation anteil(g: Gesellschaft, p: Person, x: Rational) kind derived {
+    key(g, p);
+    label de official "Stimmkraft und Anteil des Gesellschafters an Gewinn und Verlust als exakter Bruch (§ 709 Absatz 3)";
+    label en unofficial "the partner's voting power and share in profit and loss as an exact fraction (§ 709 (3))";
+}
+pub relation zahl_der_gesellschafter(g: Gesellschaft, k: Integer) kind derived {
+    key(g);
+    label de official "Zahl der Gesellschafter — Bezugsgröße der dritten Stufe des § 709 Absatz 3 Satz 3 („nach Köpfen“)";
+    label en unofficial "number of partners — reference quantity of the third stage of § 709 (3) sentence 3 (per capita)";
+}
+pub relation summe_der_beitragswerte(g: Gesellschaft, s: Integer) kind derived {
+    key(g);
+    label de official "Summe der vereinbarten Werte der Beiträge — Nenner der zweiten Stufe des § 709 Absatz 3 Satz 2";
+    label en unofficial "sum of the agreed contribution values — denominator of the second stage of § 709 (3) sentence 2";
+}
+
+@source(BGB_P709) {
+    rule GleicheBeitraegeImZweifel(g: Gesellschaft, p: Person) defeasible {
+        label de official "Im Zweifel sind die Gesellschafter zu gleichen Beiträgen verpflichtet (§ 709 Absatz 2)";
+        label en unofficial "in case of doubt the partners owe equal contributions (§ 709 (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and not_known(beitraege_der_hoehe_nach_vereinbart(g));
+        then zu_gleichen_beitraegen_verpflichtet(g, p);
+    }
+    rule BeteiligungsverhaeltnisseVereinbart(g: Gesellschaft, p: Person, z: Integer, n: Integer) strict {
+        label de official "Für die Gesellschaft sind Beteiligungsverhältnisse vereinbart, wenn für mindestens einen Gesellschafter ein Beteiligungsverhältnis vereinbart ist (§ 709 Absatz 3 Satz 1)";
+        label en unofficial "participation ratios are agreed for the partnership where a participation ratio is agreed for at least one partner (§ 709 (3) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when beteiligungsverhaeltnis_vereinbart(g, p, z, n);
+        then beteiligungsverhaeltnisse_vereinbart(g);
+    }
+    rule BeitragswerteVereinbart(g: Gesellschaft, p: Person, w: Integer) strict {
+        label de official "Für die Gesellschaft sind Werte der Beiträge vereinbart, wenn für mindestens einen Gesellschafter ein Beitragswert vereinbart ist (§ 709 Absatz 3 Satz 2)";
+        label en unofficial "values of the contributions are agreed where a contribution value is agreed for at least one partner (§ 709 (3) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when beitragswert_vereinbart(g, p, w);
+        then beitragswerte_vereinbart(g);
+    }
+    rule AnteilStufe1Beteiligungsverhaeltnis(g: Gesellschaft, p: Person, z: Integer, n: Integer) strict {
+        label de official "Die Stimmkraft und der Anteil an Gewinn und Verlust richten sich vorrangig nach den vereinbarten Beteiligungsverhältnissen (§ 709 Absatz 3 Satz 1)";
+        label en unofficial "voting power and the share in profit and loss are governed primarily by the agreed participation ratios (§ 709 (3) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and beteiligungsverhaeltnis_vereinbart(g, p, z, n);
+        then anteil_bruch(g, p, z, n);
+    }
+    rule SummeDerBeitragswerte(g: Gesellschaft, p: Person, w: Integer) strict {
+        label de official "Nenner der zweiten Stufe: die Summe der vereinbarten Werte der Beiträge (§ 709 Absatz 3 Satz 2)";
+        label en unofficial "denominator of the second stage: the sum of the agreed contribution values (§ 709 (3) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when beitragswert_vereinbart(g, p, w);
+        then summe_der_beitragswerte(g, (sum all v: Integer for q: Person where beitragswert_vereinbart(g, q, v)));
+    }
+    rule AnteilStufe2Beitragswerte(g: Gesellschaft, p: Person, w: Integer, s: Integer) strict {
+        label de official "Sind keine Beteiligungsverhältnisse vereinbart worden, richten sich Stimmkraft und Anteil nach dem Verhältnis der vereinbarten Werte der Beiträge (§ 709 Absatz 3 Satz 2)";
+        label en unofficial "where no participation ratios have been agreed, voting power and share are governed by the ratio of the agreed values of the contributions (§ 709 (3) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and not_known(beteiligungsverhaeltnisse_vereinbart(g))
+            and beitragswert_vereinbart(g, p, w) and summe_der_beitragswerte(g, s);
+        then anteil_bruch(g, p, w, s);
+    }
+    rule ZahlDerGesellschafter(g: Gesellschaft, p: Person) strict {
+        label de official "Nenner der dritten Stufe: die Zahl der Gesellschafter (§ 709 Absatz 3 Satz 3)";
+        label en unofficial "denominator of the third stage: the number of partners (§ 709 (3) sentence 3)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p);
+        then zahl_der_gesellschafter(g, (count distinct q: Person where gesellschafter(g, q)));
+    }
+    rule AnteilStufe3NachKoepfen(g: Gesellschaft, p: Person, k: Integer) strict {
+        label de official "Sind auch Werte der Beiträge nicht vereinbart worden, hat jeder Gesellschafter ohne Rücksicht auf den Wert seines Beitrags die gleiche Stimmkraft und einen gleichen Anteil am Gewinn und Verlust (§ 709 Absatz 3 Satz 3)";
+        label en unofficial "where values of the contributions have not been agreed either, each partner has, regardless of the value of his contribution, the same voting power and an equal share in profit and loss (§ 709 (3) sentence 3)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and not_known(beteiligungsverhaeltnisse_vereinbart(g))
+            and not_known(beitragswerte_vereinbart(g)) and zahl_der_gesellschafter(g, k);
+        then anteil_bruch(g, p, 1, k);
+    }
+    rule AnteilAlsBruch(g: Gesellschaft, p: Person, z: Integer, n: Integer) strict {
+        label de official "Der Anteil als exakter Bruch: Zähler durch Nenner (§ 709 Absatz 3)";
+        label en unofficial "the share as an exact fraction: numerator over denominator (§ 709 (3))";
+        effective [@2024-01-01, infinity);
+        when anteil_bruch(g, p, z, n);
+        then anteil(g, p, z / n);
+    }
+}
+
+// § 710: Mehrbelastungsverbot.
+
+pub relation erhoehung_des_beitrags_zugestimmt(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter hat der Erhöhung seines Beitrags zugestimmt (§ 710 Satz 1)";
+    label en unofficial "the partner has consented to the increase of his contribution (§ 710 sentence 1)";
+}
+pub relation zur_erhoehung_des_beitrags_verpflichtet(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der Gesellschafter ist zur Erhöhung seines Beitrags verpflichtet (§ 710 Satz 1)";
+    label en unofficial "the partner is obliged to increase his contribution (§ 710 sentence 1)";
+}
+@source(BGB_P710)
+rule MehrbelastungNurMitZustimmung(g: Gesellschaft, p: Person) strict {
+    label de official "Zur Erhöhung seines Beitrags kann ein Gesellschafter nicht ohne seine Zustimmung verpflichtet werden; die §§ 728a und 737 bleiben unberührt (§ 710)";
+    label en unofficial "a partner may not be obliged to increase his contribution without his consent; §§ 728a and 737 remain unaffected (§ 710)";
+    effective [@2024-01-01, infinity);
+    when gesellschafter(g, p) and erhoehung_des_beitrags_zugestimmt(g, p);
+    then zur_erhoehung_des_beitrags_verpflichtet(g, p);
+}
+
+// § 711: Übertragung und Übergang von Gesellschaftsanteilen.
+
+pub relation uebertragung_des_anteils_erklaert(g: Gesellschaft, p: Person, erwerber: Person) kind empirical {
+    label de official "Der Gesellschafter hat die Übertragung seines Gesellschaftsanteils an einen Erwerber erklärt (§ 711 Absatz 1 Satz 1)";
+    label en unofficial "the partner has declared the transfer of his partnership share to an acquirer (§ 711 (1) sentence 1)";
+}
+pub relation uebertragung_von_allen_anderen_zugestimmt(g: Gesellschaft, p: Person, erwerber: Person) kind empirical {
+    label de official "Die anderen Gesellschafter haben der Übertragung zugestimmt (§ 711 Absatz 1 Satz 1)";
+    label en unofficial "the other partners have consented to the transfer (§ 711 (1) sentence 1)";
+}
+pub relation anteil_wirksam_uebertragen(g: Gesellschaft, p: Person, erwerber: Person) kind institutional {
+    label de official "Der Gesellschaftsanteil ist wirksam übertragen (§ 711 Absatz 1 Satz 1)";
+    label en unofficial "the partnership share has been effectively transferred (§ 711 (1) sentence 1)";
+}
+pub relation fortsetzungsklausel_mit_erben_vereinbart(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Im Gesellschaftsvertrag ist vereinbart, dass im Fall des Todes eines Gesellschafters die Gesellschaft mit seinem Erben fortgesetzt werden soll (§ 711 Absatz 2 Satz 1)";
+    label en unofficial "the partnership agreement provides that on a partner's death the partnership is to be continued with his heir (§ 711 (2) sentence 1)";
+}
+pub relation gesellschafter_verstorben(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter ist verstorben (§ 711 Absatz 2, § 723 Absatz 1 Nummer 1)";
+    label en unofficial "the partner has died (§ 711 (2), § 723 (1) no. 1)";
+}
+pub relation erbe_des_gesellschafters(g: Gesellschaft, p: Person, erbe: Person) kind empirical {
+    label de official "Erbe des verstorbenen Gesellschafters (§ 711 Absatz 2)";
+    label en unofficial "heir of the deceased partner (§ 711 (2))";
+}
+pub relation anteil_auf_erben_uebergegangen(g: Gesellschaft, erbe: Person) kind institutional {
+    label de official "Der Gesellschaftsanteil ist auf den Erben übergegangen (§ 711 Absatz 2 Satz 1)";
+    label en unofficial "the partnership share has passed to the heir (§ 711 (2) sentence 1)";
+}
+
+@source(BGB_P711) {
+    rule AnteilsuebertragungNurMitZustimmung(g: Gesellschaft, p: Person, erwerber: Person) strict {
+        label de official "Die Übertragung eines Gesellschaftsanteils bedarf der Zustimmung der anderen Gesellschafter (§ 711 Absatz 1 Satz 1)";
+        label en unofficial "the transfer of a partnership share requires the consent of the other partners (§ 711 (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when uebertragung_des_anteils_erklaert(g, p, erwerber) and uebertragung_von_allen_anderen_zugestimmt(g, p, erwerber);
+        then anteil_wirksam_uebertragen(g, p, erwerber);
+    }
+    rule AnteilGehtAufErbenUeber(g: Gesellschaft, p: Person, erbe: Person) strict {
+        label de official "Ist im Gesellschaftsvertrag vereinbart, dass im Fall des Todes eines Gesellschafters die Gesellschaft mit seinem Erben fortgesetzt werden soll, geht der Anteil auf den Erben über (§ 711 Absatz 2 Satz 1)";
+        label en unofficial "where the partnership agreement provides that on a partner's death the partnership is to be continued with his heir, the share passes to the heir (§ 711 (2) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when fortsetzungsklausel_mit_erben_vereinbart(g, p) and gesellschafter_verstorben(g, p) and erbe_des_gesellschafters(g, p, erbe);
+        then anteil_auf_erben_uebergegangen(g, erbe);
+    }
+}
+
+// § 714: Beschlussfassung — Zustimmung ALLER stimmberechtigten Gesellschafter.
+// Die im Prompt als „Mehrheitsbeschlüsse" geführte Stufe steht im geltenden
+// Text nicht in § 710, sondern in § 714 als Einstimmigkeitsregel; der Beschluss
+// mit Stimmenmehrheit nach Anteilen ist die Regel der Gemeinschaft (§ 745
+// Absatz 1 Satz 2, titel-17-gemeinschaft.law) — Ledger D-08-05.
+
+pub relation beschlussgegenstand(g: Gesellschaft, b: Text) kind empirical {
+    label de official "Gegenstand eines Gesellschafterbeschlusses (§ 714)";
+    label en unofficial "subject matter of a partners' resolution (§ 714)";
+}
+pub relation stimmberechtigt(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter ist für den Beschluss stimmberechtigt (§ 714)";
+    label en unofficial "the partner is entitled to vote on the resolution (§ 714)";
+}
+pub relation zugestimmt(g: Gesellschaft, b: Text, p: Person) kind empirical {
+    label de official "Der Gesellschafter hat dem Beschlussgegenstand zugestimmt (§ 714)";
+    label en unofficial "the partner has consented to the subject matter of the resolution (§ 714)";
+}
+pub relation zahl_der_stimmberechtigten(g: Gesellschaft, k: Integer) kind derived {
+    key(g);
+    label de official "Zahl der stimmberechtigten Gesellschafter (§ 714)";
+    label en unofficial "number of partners entitled to vote (§ 714)";
+}
+pub relation zahl_der_zustimmungen(g: Gesellschaft, b: Text, k: Integer) kind derived {
+    key(g, b);
+    label de official "Zahl der Zustimmungen zum Beschlussgegenstand (§ 714)";
+    label en unofficial "number of consents to the subject matter of the resolution (§ 714)";
+}
+pub relation beschluss_gefasst(g: Gesellschaft, b: Text) kind institutional {
+    label de official "Der Gesellschafterbeschluss ist gefasst (§ 714)";
+    label en unofficial "the partners' resolution has been passed (§ 714)";
+}
+
+@source(BGB_P714) {
+    rule ZahlDerStimmberechtigten(g: Gesellschaft, p: Person) strict {
+        label de official "Bezugsgröße der Einstimmigkeit: die Zahl der stimmberechtigten Gesellschafter (§ 714)";
+        label en unofficial "reference quantity of unanimity: the number of partners entitled to vote (§ 714)";
+        effective [@2024-01-01, infinity);
+        when stimmberechtigt(g, p);
+        then zahl_der_stimmberechtigten(g, (count distinct q: Person where stimmberechtigt(g, q)));
+    }
+    rule ZahlDerZustimmungen(g: Gesellschaft, b: Text, p: Person) strict {
+        label de official "Bezugsgröße der Einstimmigkeit: die Zahl der Zustimmungen stimmberechtigter Gesellschafter (§ 714)";
+        label en unofficial "reference quantity of unanimity: the number of consents by partners entitled to vote (§ 714)";
+        effective [@2024-01-01, infinity);
+        when beschlussgegenstand(g, b) and stimmberechtigt(g, p) and zugestimmt(g, b, p);
+        then zahl_der_zustimmungen(g, b, (count distinct q: Person where stimmberechtigt(g, q) and zugestimmt(g, b, q)));
+    }
+    rule BeschlussBedarfAllerStimmen(g: Gesellschaft, b: Text, k: Integer) strict {
+        label de official "Gesellschafterbeschlüsse bedürfen der Zustimmung aller stimmberechtigten Gesellschafter (§ 714)";
+        label en unofficial "partners' resolutions require the consent of all partners entitled to vote (§ 714)";
+        effective [@2024-01-01, infinity);
+        when beschlussgegenstand(g, b) and zahl_der_stimmberechtigten(g, k) and zahl_der_zustimmungen(g, b, k);
+        then beschluss_gefasst(g, b);
+    }
+}
+
+// § 715: Geschäftsführungsbefugnis.
+
+pub relation geschaeft_gewoehnlicher_art(g: Gesellschaft, geschaeft: Text) kind empirical {
+    label de official "Geschäft, das die Teilnahme der Gesellschaft am Rechtsverkehr gewöhnlich mit sich bringt (§ 715 Absatz 2 Satz 1)";
+    label en unofficial "transaction ordinarily entailed by the partnership's participation in legal transactions (§ 715 (2) sentence 1)";
+}
+pub relation geschaeftsfuehrungsbefugt(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der Gesellschafter ist zur Führung der Geschäfte der Gesellschaft berechtigt und verpflichtet (§ 715 Absatz 1)";
+    label en unofficial "the partner is entitled and obliged to conduct the partnership's business (§ 715 (1))";
+}
+pub relation geschaeftsfuehrungsbefugnis_entzogen(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die Befugnis zur Geschäftsführung ist dem Gesellschafter ganz oder teilweise entzogen (§ 715 Absatz 5 Satz 1)";
+    label en unofficial "the power to conduct business has been withdrawn from the partner in whole or in part (§ 715 (5) sentence 1)";
+}
+pub relation entziehungsbeschluss_der_anderen(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Beschluss der anderen Gesellschafter über die Entziehung der Geschäftsführungsbefugnis (§ 715 Absatz 5 Satz 1)";
+    label en unofficial "resolution of the other partners withdrawing the power to conduct business (§ 715 (5) sentence 1)";
+}
+pub relation grobe_pflichtverletzung(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Grobe Pflichtverletzung des Gesellschafters — vom Text als Regelbeispiel des wichtigen Grundes benannt (§ 715 Absatz 5 Satz 2)";
+    label en unofficial "gross breach of duty by the partner — named by the text as a standard example of good cause (§ 715 (5) sentence 2)";
+}
+pub relation unfaehig_zur_ordnungsgemaessen_geschaeftsfuehrung(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Unfähigkeit des Gesellschafters zur ordnungsgemäßen Geschäftsführung — Regelbeispiel des wichtigen Grundes (§ 715 Absatz 5 Satz 2)";
+    label en unofficial "the partner's inability to conduct business properly — standard example of good cause (§ 715 (5) sentence 2)";
+}
+@source(BGB_P715)
+pub external judgment relation wichtiger_grund_geschaeftsfuehrung(g: Gesellschaft, p: Person) {
+    authority Court;
+    label de official "Wichtiger Grund für die Entziehung der Geschäftsführungsbefugnis; ein wichtiger Grund ist insbesondere eine grobe Pflichtverletzung des Gesellschafters oder die Unfähigkeit des Gesellschafters zur ordnungsgemäßen Geschäftsführung (§ 715 Absatz 5 Satz 2)";
+    label en unofficial "good cause for withdrawing the power to conduct business; good cause exists in particular where the partner has grossly breached his duties or is unable to conduct business properly (§ 715 (5) sentence 2)";
+}
+
+@source(BGB_P715) {
+    rule AlleGesellschafterGeschaeftsfuehrungsbefugt(g: Gesellschaft, p: Person) defeasible {
+        label de official "Zur Führung der Geschäfte der Gesellschaft sind alle Gesellschafter berechtigt und verpflichtet (§ 715 Absatz 1)";
+        label en unofficial "all partners are entitled and obliged to conduct the partnership's business (§ 715 (1))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and not_known(geschaeftsfuehrungsbefugnis_entzogen(g, p));
+        then geschaeftsfuehrungsbefugt(g, p);
+    }
+    rule EntziehungDerGeschaeftsfuehrungsbefugnis(g: Gesellschaft, p: Person) strict {
+        label de official "Die Befugnis zur Geschäftsführung kann einem Gesellschafter durch Beschluss der anderen Gesellschafter ganz oder teilweise entzogen werden, wenn ein wichtiger Grund vorliegt (§ 715 Absatz 5 Satz 1)";
+        label en unofficial "the power to conduct business may be withdrawn from a partner in whole or in part by resolution of the other partners where good cause exists (§ 715 (5) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and entziehungsbeschluss_der_anderen(g, p) and wichtiger_grund_geschaeftsfuehrung(g, p);
+        then geschaeftsfuehrungsbefugnis_entzogen(g, p);
+    }
+}
+
+// § 716: Ersatz von Aufwendungen und Verlusten — Wertung „für erforderlich
+// halten darf" nach § 47.3, wie bei § 670 (titel-12).
+
+pub relation aufwendung_zur_geschaeftsbesorgung(g: Gesellschaft, p: Person, betrag: Money) kind empirical {
+    label de official "Aufwendung, die der Gesellschafter zum Zwecke der Geschäftsbesorgung für die Gesellschaft gemacht hat (§ 716 Absatz 1)";
+    label en unofficial "expense incurred by the partner for the purpose of conducting the partnership's business (§ 716 (1))";
+}
+@source(BGB_P716)
+pub external judgment relation aufwendung_den_umstaenden_nach_erforderlich(g: Gesellschaft, p: Person, betrag: Money) {
+    authority Court;
+    label de official "Die Aufwendung durfte der Gesellschafter den Umständen nach für erforderlich halten (§ 716 Absatz 1)";
+    label en unofficial "the partner was entitled in the circumstances to regard the expense as necessary (§ 716 (1))";
+}
+pub relation ersatzanspruch_gegen_die_gesellschaft(g: Gesellschaft, p: Person, betrag: Money) kind institutional {
+    label de official "Die Gesellschaft ist dem Gesellschafter zum Ersatz verpflichtet (§ 716 Absatz 1)";
+    label en unofficial "the partnership is obliged to reimburse the partner (§ 716 (1))";
+}
+@source(BGB_P716)
+rule ErsatzErforderlicherAufwendungen(g: Gesellschaft, p: Person, betrag: Money) strict {
+    label de official "Macht ein Gesellschafter zum Zwecke der Geschäftsbesorgung für die Gesellschaft Aufwendungen, die er den Umständen nach für erforderlich halten darf, ist ihm die Gesellschaft zum Ersatz verpflichtet (§ 716 Absatz 1)";
+    label en unofficial "where a partner incurs expenses for the purpose of conducting the partnership's business which he is entitled in the circumstances to regard as necessary, the partnership must reimburse him (§ 716 (1))";
+    effective [@2024-01-01, infinity);
+    when gesellschafter(g, p) and aufwendung_zur_geschaeftsbesorgung(g, p, betrag)
+        and aufwendung_den_umstaenden_nach_erforderlich(g, p, betrag);
+    then ersatzanspruch_gegen_die_gesellschaft(g, p, betrag);
+}
+pub relation aufwendungen_716_ersetzt_am(g: Gesellschaft, p: Person, betrag: Money, tag: Date) kind empirical {
+    label de official "Die Gesellschaft hat dem Gesellschafter die Aufwendungen ersetzt (§ 716)";
+    label en unofficial "the partnership reimbursed the partner's expenses (§ 716)";
+}
+pub relation aufwendungsersatz_716_beginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn des Aufwendungsersatzes nach § 716";
+    label en unofficial "start of reimbursement under § 716";
+}
+@source(BGB_P716)
+rule Position716Aufwendungsersatz(g: Gesellschaft, p: Person, betrag: Money, beginn: Date) strict {
+    label de official "Die Gesellschaft ist verpflichtet, dem Gesellschafter erforderliche Aufwendungen zu ersetzen (§ 716 Absatz 1)";
+    label en unofficial "The partnership is obliged to reimburse the partner's necessary expenses (§ 716 (1))";
+    when gesellschafter(g, p) and aufwendung_zur_geschaeftsbesorgung(g, p, betrag)
+     and aufwendung_den_umstaenden_nach_erforderlich(g, p, betrag)
+     and aufwendungsersatz_716_beginn_am(g, beginn);
+    then duty Duty716Aufwendungsersatz {
+        bearer g;
+        beneficiary p;
+        achieve aufwendungen_716_ersetzt_am(g, p, betrag, beginn) during [beginn, infinity);
+    };
+}
+
+// § 721, § 721a: Persönliche Haftung der Gesellschafter und des Eintretenden.
+
+pub relation verbindlichkeit_der_gesellschaft(g: Gesellschaft, v: Text) kind empirical {
+    label de official "Verbindlichkeit der Gesellschaft gegenüber einem Gläubiger (§ 721 Satz 1)";
+    label en unofficial "liability of the partnership towards a creditor (§ 721 sentence 1)";
+}
+pub relation verbindlichkeit_begruendet_am(g: Gesellschaft, v: Text, tag: Date) kind empirical {
+    key(g, v);
+    label de official "Tag, an dem die Verbindlichkeit der Gesellschaft begründet wurde (§ 721a Satz 1)";
+    label en unofficial "day on which the partnership's liability was established (§ 721a sentence 1)";
+}
+pub relation eingetreten_am(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    key(g, p);
+    label de official "Tag des Eintritts des Gesellschafters in die bestehende Gesellschaft (§ 721a Satz 1)";
+    label en unofficial "day on which the partner joined the existing partnership (§ 721a sentence 1)";
+}
+pub relation haftet_persoenlich_als_gesamtschuldner(g: Gesellschaft, p: Person, v: Text) kind institutional {
+    label de official "Der Gesellschafter haftet für die Verbindlichkeit der Gesellschaft den Gläubigern als Gesamtschuldner persönlich (§ 721 Satz 1, § 721a Satz 1)";
+    label en unofficial "the partner is personally liable to the creditors as a joint and several debtor for the partnership's liability (§ 721 sentence 1, § 721a sentence 1)";
+}
+
+@source(BGB_P721)
+rule PersoenlicheHaftungDerGesellschafter(g: Gesellschaft, p: Person, v: Text) strict {
+    label de official "Die Gesellschafter haften für die Verbindlichkeiten der Gesellschaft den Gläubigern als Gesamtschuldner persönlich; eine entgegenstehende Vereinbarung ist Dritten gegenüber unwirksam (§ 721)";
+    label en unofficial "the partners are personally liable to the creditors as joint and several debtors for the partnership's liabilities; an agreement to the contrary is ineffective against third parties (§ 721)";
+    effective [@2024-01-01, infinity);
+    when gesellschafter(g, p) and verbindlichkeit_der_gesellschaft(g, v);
+    then haftet_persoenlich_als_gesamtschuldner(g, p, v);
+}
+@source(BGB_P721a)
+rule HaftungDesEintretendenGesellschafters(g: Gesellschaft, p: Person, v: Text, eintritt: Date, begruendet: Date) strict {
+    label de official "Wer in eine bestehende Gesellschaft eintritt, haftet gleich den anderen Gesellschaftern für die VOR seinem Eintritt begründeten Verbindlichkeiten der Gesellschaft (§ 721a Satz 1)";
+    label en unofficial "a person joining an existing partnership is liable, like the other partners, for liabilities of the partnership established BEFORE he joined (§ 721a sentence 1)";
+    effective [@2024-01-01, infinity);
+    when gesellschafter(g, p) and eingetreten_am(g, p, eintritt)
+        and verbindlichkeit_der_gesellschaft(g, v) and verbindlichkeit_begruendet_am(g, v, begruendet)
+        and begruendet < eintritt;
+    then haftet_persoenlich_als_gesamtschuldner(g, p, v);
+}
+
+// § 723: Gründe für das Ausscheiden; Zeitpunkt des Ausscheidens.
+
+pub enum Ausscheidensgrund {
+    label de official "Grund für das Ausscheiden eines Gesellschafters (§ 723 Absatz 1)";
+    label en unofficial "ground for a partner's departure from the partnership (§ 723 (1))";
+    TodDesGesellschafters,
+    KuendigungDurchDenGesellschafter,
+    InsolvenzverfahrenUeberSeinVermoegen,
+    KuendigungDurchEinenPrivatglaeubiger,
+    AusschliessungAusWichtigemGrund
+}
+pub relation ausscheidensgrund_eingetreten(g: Gesellschaft, p: Person, grund: Ausscheidensgrund) kind empirical {
+    label de official "Ein Ausscheidensgrund des § 723 Absatz 1 ist in der Person des Gesellschafters eingetreten";
+    label en unofficial "a ground for departure under § 723 (1) has arisen in the partner's person";
+}
+pub relation aufloesung_statt_ausscheiden_vereinbart(g: Gesellschaft, grund: Ausscheidensgrund) kind empirical {
+    label de official "Der Gesellschaftsvertrag sieht für diesen Fall die Auflösung der Gesellschaft vor (§ 723 Absatz 1 Halbsatz 2)";
+    label en unofficial "the partnership agreement provides for dissolution of the partnership in this case (§ 723 (1) second half-sentence)";
+}
+pub relation scheidet_aus(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der Gesellschafter scheidet aus der Gesellschaft aus (§ 723 Absatz 1)";
+    label en unofficial "the partner departs from the partnership (§ 723 (1))";
+}
+@source(BGB_P723)
+rule AusscheidenBeiEintrittDesGrundes(g: Gesellschaft, p: Person, grund: Ausscheidensgrund) strict {
+    label de official "Die Gründe des § 723 Absatz 1 führen zum Ausscheiden eines Gesellschafters aus der Gesellschaft, sofern der Gesellschaftsvertrag für diese Fälle nicht die Auflösung der Gesellschaft vorsieht (§ 723 Absatz 1)";
+    label en unofficial "the grounds of § 723 (1) cause a partner to depart from the partnership unless the partnership agreement provides for dissolution in those cases (§ 723 (1))";
+    effective [@2024-01-01, infinity);
+    when gesellschafter(g, p) and ausscheidensgrund_eingetreten(g, p, grund)
+        and not_known(aufloesung_statt_ausscheiden_vereinbart(g, grund));
+    then scheidet_aus(g, p);
+}
+
+// § 725 Absatz 1: Kündigung der Mitgliedschaft — drei Monate zum Ablauf des
+// Kalenderjahres. Der Text nennt zwei Größen: die Frist und den Termin, auf
+// den sie zielt. Ausgeführt wird die Frist (frist_ende_kalender), der Termin
+// ist der 31. Dezember des Jahres, in dem sie abläuft — Zeile DEADLINES.json
+// BG-08 „725 Abs. 1" (D-08-06).
+
+pub relation gesellschaftsverhaeltnis_auf_unbestimmte_zeit(g: Gesellschaft) kind empirical {
+    label de official "Das Gesellschaftsverhältnis ist auf unbestimmte Zeit eingegangen (§ 725 Absatz 1)";
+    label en unofficial "the partnership relationship has been entered into for an indefinite period (§ 725 (1))";
+}
+pub relation kuendigungsfrist_725(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist des Gesellschafters für die Kündigung seiner Mitgliedschaft: drei Monate zum Ablauf des Kalenderjahres (§ 725 Absatz 1)";
+    label en unofficial "the partner's period for terminating his membership: three months to the end of the calendar year (§ 725 (1))";
+}
+pub relation kuendigung_erklaert_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag, an dem die Kündigung der Mitgliedschaft gegenüber der Gesellschaft erklärt wurde (§ 725 Absatz 1)";
+    label en unofficial "day on which membership was terminated vis-à-vis the partnership (§ 725 (1))";
+}
+pub relation abweichendes_aus_vertrag_oder_zweck(g: Gesellschaft) kind empirical {
+    label de official "Aus dem Gesellschaftsvertrag oder aus dem Zweck der Gesellschaft ergibt sich etwas anderes als die Dreimonatsfrist (§ 725 Absatz 1 Halbsatz 2)";
+    label en unofficial "something other than the three-month period follows from the partnership agreement or the purpose of the partnership (§ 725 (1) second half-sentence)";
+}
+
+@source(BGB_P725) {
+    rule Kuendigungsfrist725Ereignis(f: Frist, t: Date) strict {
+        label de official "Die Kündigungsfrist läuft von der Erklärung der Kündigung an (§ 725 Absatz 1, § 187 Absatz 2)";
+        label en unofficial "the notice period runs from the declaration of termination (§ 725 (1), § 187 (2))";
+        effective [@2024-01-01, infinity);
+        when kuendigungsfrist_725(f) and kuendigung_erklaert_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Kuendigungsfrist725Dauer(f: Frist) strict {
+        label de official "Ein Gesellschafter kann seine Mitgliedschaft unter Einhaltung einer Frist von drei Monaten zum Ablauf des Kalenderjahres gegenüber der Gesellschaft kündigen (§ 725 Absatz 1)";
+        label en unofficial "a partner may terminate his membership vis-à-vis the partnership on three months' notice to the end of the calendar year (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when kuendigungsfrist_725(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 3 calendar_month);
+    }
+}
+
+// § 727: Ausschließung aus wichtigem Grund.
+
+@source(BGB_P727)
+pub external judgment relation wichtiger_grund_ausschliessung(g: Gesellschaft, p: Person) {
+    authority Court;
+    label de official "Wichtiger Grund in der Person eines Gesellschafters; ein wichtiger Grund liegt insbesondere vor, wenn der Gesellschafter eine ihm nach dem Gesellschaftsvertrag obliegende wesentliche Verpflichtung vorsätzlich oder grob fahrlässig verletzt hat oder wenn ihm die Erfüllung einer solchen Verpflichtung unmöglich wird (§ 727 Satz 2)";
+    label en unofficial "good cause in the person of a partner; good cause exists in particular where the partner has intentionally or with gross negligence breached a material obligation under the partnership agreement or where performance of such an obligation becomes impossible for him (§ 727 sentence 2)";
+}
+pub relation ausschliessungsbeschluss_der_anderen(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Beschluss der anderen Gesellschafter über die Ausschließung des Gesellschafters (§ 727 Satz 1)";
+    label en unofficial "resolution of the other partners excluding the partner (§ 727 sentence 1)";
+}
+pub relation ausgeschlossen(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der Gesellschafter ist aus der Gesellschaft ausgeschlossen (§ 727 Satz 1)";
+    label en unofficial "the partner has been excluded from the partnership (§ 727 sentence 1)";
+}
+@source(BGB_P727)
+rule AusschliessungAusWichtigemGrund(g: Gesellschaft, p: Person) strict {
+    label de official "Tritt in der Person eines Gesellschafters ein wichtiger Grund ein, kann er durch Beschluss der anderen Gesellschafter aus der Gesellschaft ausgeschlossen werden (§ 727 Satz 1)";
+    label en unofficial "where good cause arises in the person of a partner he may be excluded from the partnership by resolution of the other partners (§ 727 sentence 1)";
+    effective [@2024-01-01, infinity);
+    when gesellschafter(g, p) and wichtiger_grund_ausschliessung(g, p) and ausschliessungsbeschluss_der_anderen(g, p);
+    then ausgeschlossen(g, p);
+}
+
+// § 728, § 728a: Abfindung des Ausgeschiedenen und seine Haftung für den
+// Fehlbetrag nach dem Verhältnis seines Anteils — EINE Rundung (D-08-01).
+
+pub relation wert_des_gesellschaftsanteils(g: Gesellschaft, p: Person, wert: Money) kind empirical {
+    key(g, p);
+    label de official "Wert des Gesellschaftsanteils des Ausgeschiedenen, soweit erforderlich im Wege der Schätzung ermittelt (§ 728 Absatz 1 Satz 1, Absatz 2)";
+    label en unofficial "value of the departing partner's share, ascertained by estimate where necessary (§ 728 (1) sentence 1, (2))";
+}
+pub relation abweichende_abfindungsregel_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Im Gesellschaftsvertrag ist über die Abfindung etwas anderes vereinbart (§ 728 Absatz 1 Satz 1 Halbsatz 1)";
+    label en unofficial "the partnership agreement provides otherwise as to the settlement payment (§ 728 (1) sentence 1 first half-sentence)";
+}
+pub relation abfindungsanspruch(g: Gesellschaft, p: Person, betrag: Money) kind derived {
+    key(g, p);
+    label de official "Anspruch des ausgeschiedenen Gesellschafters auf eine dem Wert seines Anteils angemessene Abfindung (§ 728 Absatz 1 Satz 1)";
+    label en unofficial "the departing partner's claim to a settlement payment commensurate with the value of his share (§ 728 (1) sentence 1)";
+}
+pub relation fehlbetrag_der_gesellschaft(g: Gesellschaft, betrag: Money) kind empirical {
+    key(g);
+    label de official "Betrag, um den der Wert des Gesellschaftsvermögens zur Deckung der Verbindlichkeiten der Gesellschaft nicht ausreicht (§ 728a, § 737 Satz 1)";
+    label en unofficial "amount by which the value of the partnership assets falls short of covering the partnership's liabilities (§ 728a, § 737 sentence 1)";
+}
+pub relation aufkommenspflicht_fuer_fehlbetrag(g: Gesellschaft, p: Person, betrag: Money) kind derived {
+    key(g, p);
+    label de official "Der ausgeschiedene Gesellschafter hat der Gesellschaft für den Fehlbetrag nach dem Verhältnis seines Anteils am Gewinn und Verlust aufzukommen (§ 728a)";
+    label en unofficial "the departing partner must account to the partnership for the shortfall in proportion to his share in profit and loss (§ 728a)";
+}
+
+@source(BGB_P728)
+rule AbfindungNachAnteilswert(g: Gesellschaft, p: Person, wert: Money) strict {
+    label de official "Sofern im Gesellschaftsvertrag nichts anderes vereinbart ist, ist die Gesellschaft verpflichtet, dem ausgeschiedenen Gesellschafter eine dem Wert seines Anteils angemessene Abfindung zu zahlen (§ 728 Absatz 1 Satz 1)";
+    label en unofficial "unless the partnership agreement provides otherwise, the partnership must pay the departing partner a settlement commensurate with the value of his share (§ 728 (1) sentence 1)";
+    effective [@2024-01-01, infinity);
+    when scheidet_aus(g, p) and wert_des_gesellschaftsanteils(g, p, wert)
+        and not_known(abweichende_abfindungsregel_vereinbart(g));
+    then abfindungsanspruch(g, p, wert);
+}
+@source(BGB_P728a)
+rule FehlbetragNachAnteil(g: Gesellschaft, p: Person, betrag: Money, z: Integer, n: Integer) strict {
+    label de official "Reicht der Wert des Gesellschaftsvermögens zur Deckung der Verbindlichkeiten der Gesellschaft nicht aus, hat der ausgeschiedene Gesellschafter der Gesellschaft für den Fehlbetrag nach dem Verhältnis seines Anteils am Gewinn und Verlust aufzukommen (§ 728a)";
+    label en unofficial "where the value of the partnership assets does not suffice to cover the partnership's liabilities, the departing partner must account to the partnership for the shortfall in proportion to his share in profit and loss (§ 728a)";
+    effective [@2024-01-01, infinity);
+    when scheidet_aus(g, p) and fehlbetrag_der_gesellschaft(g, betrag) and anteil_bruch(g, p, z, n);
+    then aufkommenspflicht_fuer_fehlbetrag(g, p, div_round(betrag * z, n * 1.0, 2, "HALF_UP"));
+}
+
+// § 728b: Nachhaftung des ausgeschiedenen Gesellschafters — fünf Jahre.
+
+pub relation nachhaftungsfrist_728b(f: Frist) kind empirical {
+    key(f);
+    label de official "Nachhaftungsfrist des ausgeschiedenen Gesellschafters: fünf Jahre nach seinem Ausscheiden (§ 728b Absatz 1 Satz 1)";
+    label en unofficial "the departing partner's continued-liability period: five years after his departure (§ 728b (1) sentence 1)";
+}
+pub relation nachhaftungsfrist_beginn_728b(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag, an dem der Gläubiger von dem Ausscheiden des Gesellschafters Kenntnis erlangt hat oder das Ausscheiden im Gesellschaftsregister eingetragen worden ist (§ 728b Absatz 1 Satz 3)";
+    label en unofficial "day on which the creditor learned of the partner's departure or the departure was entered in the partnership register (§ 728b (1) sentence 3)";
+}
+
+@source(BGB_P728b) {
+    rule Nachhaftungsfrist728bEreignis(f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt, sobald der Gläubiger von dem Ausscheiden des Gesellschafters Kenntnis erlangt hat oder das Ausscheiden des Gesellschafters im Gesellschaftsregister eingetragen worden ist (§ 728b Absatz 1 Satz 3)";
+        label en unofficial "the period begins once the creditor has learned of the partner's departure or the departure has been entered in the partnership register (§ 728b (1) sentence 3)";
+        effective [@2024-01-01, infinity);
+        when nachhaftungsfrist_728b(f) and nachhaftungsfrist_beginn_728b(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Nachhaftungsfrist728bDauer(f: Frist) strict {
+        label de official "Der ausgeschiedene Gesellschafter haftet für die bis zu seinem Ausscheiden begründeten Verbindlichkeiten, wenn sie vor Ablauf von fünf Jahren nach seinem Ausscheiden fällig sind (§ 728b Absatz 1 Satz 1)";
+        label en unofficial "the departing partner is liable for liabilities established up to his departure where they fall due before five years have elapsed after his departure (§ 728b (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when nachhaftungsfrist_728b(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 5 calendar_year);
+    }
+}
+
+// § 737: Haftung der Gesellschafter für den Fehlbetrag in der Liquidation —
+// dieselbe Quote wie § 728a, nur für die noch verbundenen Gesellschafter.
+
+pub relation gesellschaft_in_liquidation(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschaft ist aufgelöst und die Liquidation ist notwendig (§ 735 Absatz 1, § 737)";
+    label en unofficial "the partnership is dissolved and liquidation is required (§ 735 (1), § 737)";
+}
+pub relation haftung_fuer_fehlbetrag_in_liquidation(g: Gesellschaft, p: Person, betrag: Money) kind derived {
+    key(g, p);
+    label de official "Die Gesellschafter haben der Gesellschaft für den Fehlbetrag nach dem Verhältnis ihrer Anteile am Gewinn und Verlust aufzukommen (§ 737 Satz 1)";
+    label en unofficial "the partners must account to the partnership for the shortfall in proportion to their shares in profit and loss (§ 737 sentence 1)";
+}
+@source(BGB_P737)
+rule FehlbetragInLiquidation(g: Gesellschaft, p: Person, betrag: Money, z: Integer, n: Integer) strict {
+    label de official "Reicht das Gesellschaftsvermögen zur Berichtigung der Verbindlichkeiten und zur Rückerstattung der Beiträge nicht aus, haben die Gesellschafter der Gesellschaft für den Fehlbetrag nach dem Verhältnis ihrer Anteile am Gewinn und Verlust aufzukommen (§ 737 Satz 1)";
+    label en unofficial "where the partnership assets do not suffice to settle the liabilities and repay the contributions, the partners must account to the partnership for the shortfall in proportion to their shares in profit and loss (§ 737 sentence 1)";
+    effective [@2024-01-01, infinity);
+    when gesellschaft_in_liquidation(g) and gesellschafter(g, p)
+        and fehlbetrag_der_gesellschaft(g, betrag) and anteil_bruch(g, p, z, n);
+    then haftung_fuer_fehlbetrag_in_liquidation(g, p, div_round(betrag * z, n * 1.0, 2, "HALF_UP"));
+}
+
+// § 739: Verjährung von Ansprüchen aus der Gesellschafterhaftung — fünf Jahre
+// ab Kenntnis vom Erlöschen oder Eintragung des Erlöschens.
+
+pub relation gesellschaft_erloschen(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschaft ist durch Liquidation oder auf andere Weise erloschen (§ 739 Absatz 1)";
+    label en unofficial "the partnership has been extinguished by liquidation or otherwise (§ 739 (1))";
+}
+pub relation verjaehrungsfrist_739(f: Frist) kind empirical {
+    key(f);
+    label de official "Verjährungsfrist für Ansprüche gegen einen Gesellschafter aus Verbindlichkeiten der erloschenen Gesellschaft: fünf Jahre (§ 739 Absatz 1)";
+    label en unofficial "limitation period for claims against a partner arising from liabilities of the extinguished partnership: five years (§ 739 (1))";
+}
+pub relation kenntnis_vom_erloeschen_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag, an dem der Gläubiger von dem Erlöschen der Gesellschaft Kenntnis erlangt hat oder das Erlöschen im Gesellschaftsregister eingetragen worden ist (§ 739 Absatz 2)";
+    label en unofficial "day on which the creditor learned of the partnership's extinction or the extinction was entered in the partnership register (§ 739 (2))";
+}
+
+@source(BGB_P739) {
+    rule Verjaehrung739Ereignis(f: Frist, t: Date) strict {
+        label de official "Die Verjährung beginnt abweichend von § 199 Absatz 1, sobald der Gläubiger von dem Erlöschen der Gesellschaft Kenntnis erlangt hat oder das Erlöschen im Gesellschaftsregister eingetragen worden ist (§ 739 Absatz 2)";
+        label en unofficial "by way of derogation from § 199 (1) limitation begins once the creditor has learned of the partnership's extinction or the extinction has been entered in the partnership register (§ 739 (2))";
+        effective [@2024-01-01, infinity);
+        when verjaehrungsfrist_739(f) and kenntnis_vom_erloeschen_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Verjaehrung739Dauer(f: Frist) strict {
+        label de official "Ist die Gesellschaft erloschen, verjähren Ansprüche gegen einen Gesellschafter aus Verbindlichkeiten der Gesellschaft in fünf Jahren (§ 739 Absatz 1)";
+        label en unofficial "where the partnership has been extinguished, claims against a partner arising from the partnership's liabilities become time-barred in five years (§ 739 (1))";
+        effective [@2024-01-01, infinity);
+        when verjaehrungsfrist_739(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 5 calendar_year);
+    }
+}
+
+// § 740: Die nicht rechtsfähige Gesellschaft hat kein Vermögen; auf das
+// Rechtsverhältnis der Gesellschafter untereinander sind die §§ 708–718
+// entsprechend anzuwenden. Die entsprechende Anwendung ist hier KEINE zweite
+// Regelmaschinerie: die Regeln des § 709 lesen `gesellschafter(g, p)` und
+// gelten damit für beide Gesellschaftsformen (Muster D-14-01) — Ledger D-08-07.
+
+pub relation gesellschaft_hat_kein_vermoegen(g: Gesellschaft) kind institutional {
+    label de official "Eine nicht rechtsfähige Gesellschaft hat kein Vermögen (§ 740 Absatz 1)";
+    label en unofficial "a partnership without legal capacity has no assets (§ 740 (1))";
+}
+@source(BGB_P740)
+rule NichtRechtsfaehigeGesellschaftOhneVermoegen(g: Gesellschaft) defeasible {
+    label de official "Eine nicht rechtsfähige Gesellschaft hat kein Vermögen (§ 740 Absatz 1)";
+    label en unofficial "a partnership without legal capacity has no assets (§ 740 (1))";
+    effective [@2024-01-01, infinity);
+    when nicht_rechtsfaehige_gesellschaft(g);
+    then gesellschaft_hat_kein_vermoegen(g);
+}
+
+// ==================================================================================================
+// LIQUIDATION DER GESELLSCHAFT (§§ 730–736d, D-08-11, D-08-12)
+// ==================================================================================================
+//
+// EIN SAMMELPUNKT DER AUFLÖSUNG. §§ 730–732 nennen drei unabhängige Gründe
+// (Tod/Insolvenz eines Gesellschafters nach Vereinbarung, Kündigung aus
+// wichtigem Grund, Auflösungsbeschluss); jeder Grund führt zusätzlich zu
+// seiner eigenen Folge auch zu `gesellschaft_aufgeloest(g)` — dem Sammelpunkt,
+// von dem § 735 (Liquidationsnotwendigkeit) und § 736b (Erlöschen der
+// Geschäftsführungsbefugnis) abhängen. `gesellschaft_in_liquidation` (§ 737,
+// bereits oben ausgeführt) bleibt UNVERÄNDERT ein Eingang des Falls — die neue
+// Kette liefert `liquidation_findet_statt_735` als eigenständigen, aus dem
+// Auflösungsgrund GEFOLGERTEN Befund, ohne die bestehenden Regeln/Szenarien
+// von § 737 und dem Titel-Bündel g01–g07 zu berühren (D-08-11).
+//
+// REIHENFOLGE DER BERICHTIGUNG (§ 736d Absatz 4–6) — drei Stufen, jede eine
+// eigene Regel: zuerst die Gläubiger der Gesellschaft (Absatz 4), dann die
+// Rückerstattung der Beiträge (Absatz 5, in Geld, im Wert bei Einbringung oder
+// im Zweifel kein Ersatz für Dienste), zuletzt die Verteilung des Überschusses
+// NACH ANTEILEN am Gewinn und Verlust (Absatz 6) — dieselbe Rundungspolitik
+// wie § 728a/§ 737 (D-08-01): EIN `div_round(Betrag × Zähler, Nenner × 1.0, 2,
+// "HALF_UP")`.
+
+pub relation gesellschaft_aufgeloest(g: Gesellschaft) kind institutional {
+    label de official "Die Gesellschaft ist aufgelöst (§§ 729 ff.)";
+    label en unofficial "the partnership has been dissolved (§§ 729 et seq.)";
+}
+
+// --- § 730: Auflösung bei Tod oder Insolvenz eines Gesellschafters ---------------------------------
+
+pub relation aufloesung_bei_tod_vereinbart_730(g: Gesellschaft) kind empirical {
+    label de official "Im Gesellschaftsvertrag ist vereinbart, dass die Gesellschaft durch den Tod eines Gesellschafters aufgelöst wird (§ 730 Absatz 1 Satz 1)";
+    label en unofficial "the partnership agreement provides that the partnership is dissolved by a partner's death (§ 730 (1) sentence 1)";
+}
+pub relation gesellschaft_aufgeloest_durch_tod_730(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die Gesellschaft ist durch den Tod des Gesellschafters aufgelöst (§ 730 Absatz 1 Satz 1)";
+    label en unofficial "the partnership is dissolved by the partner's death (§ 730 (1) sentence 1)";
+}
+pub relation anzeigepflicht_des_erben_730(g: Gesellschaft, p: Person, erbe: Person) kind institutional {
+    label de official "Der Erbe des verstorbenen Gesellschafters hat den anderen Gesellschaftern dessen Tod unverzüglich anzuzeigen (§ 730 Absatz 1 Satz 1)";
+    label en unofficial "the deceased partner's heir must notify the other partners of the death without undue delay (§ 730 (1) sentence 1)";
+}
+pub relation fortfuehrungsbefugnis_des_erben_730(g: Gesellschaft, p: Person, erbe: Person) kind institutional {
+    label de official "Abweichend von § 736b Absatz 1 gilt die dem Erblasser durch den Gesellschaftsvertrag übertragene Geschäftsführungs- und Vertretungsbefugnis als fortbestehend; die anderen Gesellschafter sind in gleicher Weise zur einstweiligen Fortführung der laufenden Geschäfte berechtigt und verpflichtet (§ 730 Absatz 1 Sätze 3, 4)";
+    label en unofficial "by way of derogation from § 736b (1), the management and representation power conferred on the deceased by the partnership agreement is deemed to continue; the other partners are equally entitled and obliged to provisionally continue current business (§ 730 (1) sentences 3, 4)";
+}
+pub relation aufloesung_bei_insolvenz_eines_gesellschafters_vereinbart_730(g: Gesellschaft) kind empirical {
+    label de official "Im Gesellschaftsvertrag ist vereinbart, dass die Gesellschaft durch die Eröffnung des Insolvenzverfahrens über das Vermögen eines Gesellschafters aufgelöst wird (§ 730 Absatz 2)";
+    label en unofficial "the partnership agreement provides that the partnership is dissolved by the opening of insolvency proceedings over a partner's assets (§ 730 (2))";
+}
+pub relation insolvenzverfahren_ueber_gesellschafter_eroeffnet_730(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Über das Vermögen des Gesellschafters ist das Insolvenzverfahren eröffnet worden (§ 730 Absatz 2)";
+    label en unofficial "insolvency proceedings have been opened over the partner's assets (§ 730 (2))";
+}
+pub relation gesellschaft_aufgeloest_durch_insolvenz_730(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die Gesellschaft ist durch die Eröffnung des Insolvenzverfahrens über das Vermögen des Gesellschafters aufgelöst (§ 730 Absatz 2)";
+    label en unofficial "the partnership is dissolved by the opening of insolvency proceedings over the partner's assets (§ 730 (2))";
+}
+
+@source(BGB_P730) {
+    rule AufloesungDurchTod730(g: Gesellschaft, p: Person) strict {
+        label de official "Ist im Gesellschaftsvertrag vereinbart, dass die Gesellschaft durch den Tod eines Gesellschafters aufgelöst wird, so ist die Gesellschaft mit dem Tod des Gesellschafters aufgelöst (§ 730 Absatz 1 Satz 1)";
+        label en unofficial "where the partnership agreement provides that the partnership is dissolved by a partner's death, the partnership is dissolved upon the partner's death (§ 730 (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when aufloesung_bei_tod_vereinbart_730(g) and gesellschafter_verstorben(g, p);
+        then gesellschaft_aufgeloest_durch_tod_730(g, p);
+    }
+    rule GesellschaftAufgeloestSammelpunktTod730(g: Gesellschaft, p: Person) strict {
+        label de official "Auflösung durch Tod ist Auflösung der Gesellschaft (§ 730 Absatz 1, § 729)";
+        label en unofficial "dissolution by death is dissolution of the partnership (§ 730 (1), § 729)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest_durch_tod_730(g, p);
+        then gesellschaft_aufgeloest(g);
+    }
+    rule AnzeigepflichtDesErben730(g: Gesellschaft, p: Person, erbe: Person) strict {
+        label de official "Der Erbe des verstorbenen Gesellschafters hat den anderen Gesellschaftern dessen Tod unverzüglich anzuzeigen (§ 730 Absatz 1 Satz 1)";
+        label en unofficial "the deceased partner's heir must notify the other partners of the death without undue delay (§ 730 (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when aufloesung_bei_tod_vereinbart_730(g) and gesellschafter_verstorben(g, p) and erbe_des_gesellschafters(g, p, erbe);
+        then anzeigepflicht_des_erben_730(g, p, erbe);
+    }
+    rule FortfuehrungsbefugnisDesErben730(g: Gesellschaft, p: Person, erbe: Person) strict {
+        label de official "Wenn mit dem Aufschub Gefahr für die Gesellschaft oder das Gesellschaftsvermögen verbunden ist, gilt die dem Erblasser übertragene Geschäftsführungs- und Vertretungsbefugnis als fortbestehend, bis die anderen Gesellschafter anderweitig Fürsorge treffen können (§ 730 Absatz 1 Sätze 2–4)";
+        label en unofficial "where delay would endanger the partnership or its assets, the management and representation power conferred on the deceased is deemed to continue until the other partners can otherwise provide for the matter (§ 730 (1) sentences 2–4)";
+        effective [@2024-01-01, infinity);
+        when aufloesung_bei_tod_vereinbart_730(g) and gesellschafter_verstorben(g, p) and erbe_des_gesellschafters(g, p, erbe);
+        then fortfuehrungsbefugnis_des_erben_730(g, p, erbe);
+    }
+    rule AufloesungDurchInsolvenz730(g: Gesellschaft, p: Person) strict {
+        label de official "Absatz 1 Satz 4 gilt entsprechend, wenn im Gesellschaftsvertrag vereinbart ist, dass die Gesellschaft durch die Eröffnung des Insolvenzverfahrens über das Vermögen eines Gesellschafters aufgelöst wird (§ 730 Absatz 2)";
+        label en unofficial "sentence 4 of paragraph 1 applies mutatis mutandis where the partnership agreement provides that the partnership is dissolved by the opening of insolvency proceedings over a partner's assets (§ 730 (2))";
+        effective [@2024-01-01, infinity);
+        when aufloesung_bei_insolvenz_eines_gesellschafters_vereinbart_730(g) and insolvenzverfahren_ueber_gesellschafter_eroeffnet_730(g, p);
+        then gesellschaft_aufgeloest_durch_insolvenz_730(g, p);
+    }
+    rule GesellschaftAufgeloestSammelpunktInsolvenz730(g: Gesellschaft, p: Person) strict {
+        label de official "Auflösung durch Insolvenzeröffnung ist Auflösung der Gesellschaft (§ 730 Absatz 2, § 729)";
+        label en unofficial "dissolution by the opening of insolvency proceedings is dissolution of the partnership (§ 730 (2), § 729)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest_durch_insolvenz_730(g, p);
+        then gesellschaft_aufgeloest(g);
+    }
+}
+
+// --- § 731: Kündigung der Gesellschaft aus wichtigem Grund -----------------------------------------
+
+@source(BGB_P731)
+pub external judgment relation wichtiger_grund_kuendigung_731(g: Gesellschaft, p: Person) {
+    authority Court;
+    label de official "Der Gesellschafterin ist die Fortsetzung der Gesellschaft nicht zuzumuten; ein wichtiger Grund liegt insbesondere vor, wenn ein anderer Gesellschafter eine ihm obliegende wesentliche Verpflichtung vorsätzlich oder grob fahrlässig verletzt hat oder wenn deren Erfüllung unmöglich wird (§ 731 Absatz 1)";
+    label en unofficial "continuation of the partnership cannot reasonably be expected of the partner; good cause exists in particular where another partner has intentionally or with gross negligence breached a material obligation or performance of it becomes impossible (§ 731 (1))";
+}
+pub relation kuendigung_ohne_frist_erklaert_731(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter kündigt die Gesellschaft ohne Einhaltung einer Kündigungsfrist (§ 731 Absatz 1 Satz 1)";
+    label en unofficial "the partner terminates the partnership without observing a notice period (§ 731 (1) sentence 1)";
+}
+pub relation kuendigung_731_wirksam(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die Kündigung aus wichtigem Grund ist ohne Einhaltung einer Kündigungsfrist wirksam (§ 731 Absatz 1 Satz 1)";
+    label en unofficial "the termination for good cause is effective without a notice period (§ 731 (1) sentence 1)";
+}
+pub relation kuendigungsausschluss_731_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Der Gesellschaftsvertrag schließt das Kündigungsrecht aus oder beschränkt es entgegen § 731 (§ 731 Absatz 2)";
+    label en unofficial "the partnership agreement excludes the right of termination or restricts it contrary to § 731 (§ 731 (2))";
+}
+pub relation kuendigungsausschluss_731_unwirksam(g: Gesellschaft) kind institutional {
+    label de official "Die Vereinbarung, welche das Kündigungsrecht ausschließt oder § 731 zuwider beschränkt, ist unwirksam (§ 731 Absatz 2)";
+    label en unofficial "an agreement excluding the right of termination or restricting it contrary to § 731 is void (§ 731 (2))";
+}
+
+@source(BGB_P731) {
+    rule KuendigungAusWichtigemGrund731(g: Gesellschaft, p: Person) strict {
+        label de official "Ein Gesellschafter kann die Gesellschaft jederzeit aus wichtigem Grund ohne Einhaltung einer Kündigungsfrist kündigen, wenn ihm die Fortsetzung der Gesellschaft nicht zuzumuten ist (§ 731 Absatz 1 Satz 1)";
+        label en unofficial "a partner may terminate the partnership at any time for good cause without observing a notice period where continuation cannot reasonably be expected of him (§ 731 (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and wichtiger_grund_kuendigung_731(g, p) and kuendigung_ohne_frist_erklaert_731(g, p);
+        then kuendigung_731_wirksam(g, p);
+    }
+    rule GesellschaftAufgeloestSammelpunktKuendigung731(g: Gesellschaft, p: Person) strict {
+        label de official "Die wirksame Kündigung aus wichtigem Grund führt zur Auflösung der Gesellschaft, sofern der Gesellschaftsvertrag für diesen Fall nicht das Ausscheiden vorsieht (§ 731 Absatz 1, § 723 Absatz 1 Nummer 5, § 729)";
+        label en unofficial "effective termination for good cause dissolves the partnership unless the partnership agreement provides for departure instead in this case (§ 731 (1), § 723 (1) no. 5, § 729)";
+        effective [@2024-01-01, infinity);
+        when kuendigung_731_wirksam(g, p) and not_known(aufloesung_statt_ausscheiden_vereinbart(g, KuendigungDurchDenGesellschafter));
+        then gesellschaft_aufgeloest(g);
+    }
+    rule KuendigungsausschlussUnwirksam731(g: Gesellschaft) strict {
+        label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche das Kündigungsrecht des § 731 ausschließt oder dieser Vorschrift zuwider beschränkt, ist unwirksam (§ 731 Absatz 2)";
+        label en unofficial "an agreement in the partnership agreement excluding the right of termination under § 731 or restricting it contrary to this provision is void (§ 731 (2))";
+        effective [@2024-01-01, infinity);
+        when kuendigungsausschluss_731_vereinbart(g);
+        then kuendigungsausschluss_731_unwirksam(g);
+    }
+}
+
+// --- §§ 732, 734 Absatz 2: Dreiviertelmehrheit für Auflösungs- und Fortsetzungsbeschluss ------------
+//
+// Eine gemeinsame Schwelle (D-08-12): "abgegebene Stimmen" (wer tatsächlich
+// abgestimmt hat) statt "stimmberechtigte Gesellschafter" (§ 714) — der Text
+// beider Normen spricht ausdrücklich von der Mehrheit der ABGEGEBENEN
+// Stimmen. Ohne Bruchrechnung: 4 × Zustimmungen ≥ 3 × abgegebene Stimmen.
+
+pub relation mehrheitsklausel_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Nach dem Gesellschaftsvertrag hat die Mehrheit der Stimmen zu entscheiden (§ 732, § 734 Absatz 2)";
+    label en unofficial "under the partnership agreement, a majority of votes decides (§ 732, § 734 (2))";
+}
+pub relation hat_abgestimmt(g: Gesellschaft, b: Text, p: Person) kind empirical {
+    label de official "Der Gesellschafter hat bei der Abstimmung über den Beschlussgegenstand eine Stimme abgegeben (§ 732, § 734 Absatz 2)";
+    label en unofficial "the partner cast a vote on the subject matter (§ 732, § 734 (2))";
+}
+pub relation zahl_der_abgegebenen_stimmen(g: Gesellschaft, b: Text, k: Integer) kind derived {
+    key(g, b);
+    label de official "Zahl der bei der Abstimmung abgegebenen Stimmen (§ 732, § 734 Absatz 2)";
+    label en unofficial "number of votes cast in the resolution (§ 732, § 734 (2))";
+}
+pub relation zahl_der_zustimmenden_stimmen(g: Gesellschaft, b: Text, k: Integer) kind derived {
+    key(g, b);
+    label de official "Zahl der zustimmenden abgegebenen Stimmen (§ 732, § 734 Absatz 2)";
+    label en unofficial "number of votes cast in favour (§ 732, § 734 (2))";
+}
+pub relation dreiviertel_mehrheit_erreicht(g: Gesellschaft, b: Text) kind institutional {
+    label de official "Der Beschluss ist mit einer Mehrheit von mindestens drei Viertel der abgegebenen Stimmen gefasst (§ 732, § 734 Absatz 2 Satz 2)";
+    label en unofficial "the resolution is passed by a majority of at least three quarters of the votes cast (§ 732, § 734 (2) sentence 2)";
+}
+pub relation aufloesungsbeschluss_732(g: Gesellschaft, b: Text) kind empirical {
+    label de official "Beschlussgegenstand, der die Auflösung der Gesellschaft zum Gegenstand hat (§ 732)";
+    label en unofficial "subject matter of a resolution to dissolve the partnership (§ 732)";
+}
+pub relation aufloesungsbeschluss_732_gefasst(g: Gesellschaft, b: Text) kind institutional {
+    label de official "Der Beschluss, der die Auflösung der Gesellschaft zum Gegenstand hat, ist gefasst (§ 732)";
+    label en unofficial "the resolution to dissolve the partnership has been passed (§ 732)";
+}
+pub relation fortsetzungsbeschluss_734(g: Gesellschaft, b: Text) kind empirical {
+    label de official "Beschlussgegenstand, der die Fortsetzung der Gesellschaft nach Auflösung zum Gegenstand hat (§ 734 Absatz 2)";
+    label en unofficial "subject matter of a resolution to continue the partnership after dissolution (§ 734 (2))";
+}
+pub relation aufloesungsgrund_beseitigt_734(g: Gesellschaft) kind empirical {
+    label de official "Der Auflösungsgrund ist beseitigt (§ 734 Absatz 1)";
+    label en unofficial "the ground for dissolution has been removed (§ 734 (1))";
+}
+pub relation fortsetzungsbeschluss_734_gefasst(g: Gesellschaft, b: Text) kind institutional {
+    label de official "Der Beschluss über die Fortsetzung der Gesellschaft ist gefasst (§ 734 Absatz 1, 2)";
+    label en unofficial "the resolution to continue the partnership has been passed (§ 734 (1), (2))";
+}
+
+@source(BGB_P732) {
+    rule ZahlDerAbgegebenenStimmen732(g: Gesellschaft, b: Text, p: Person) strict {
+        label de official "Bezugsgröße der Dreiviertelmehrheit: die Zahl der abgegebenen Stimmen (§ 732, § 734 Absatz 2)";
+        label en unofficial "reference quantity of the three-quarters majority: the number of votes cast (§ 732, § 734 (2))";
+        effective [@2024-01-01, infinity);
+        when hat_abgestimmt(g, b, p);
+        then zahl_der_abgegebenen_stimmen(g, b, (count distinct q: Person where hat_abgestimmt(g, b, q)));
+    }
+    rule ZahlDerZustimmendenStimmen732(g: Gesellschaft, b: Text, p: Person) strict {
+        label de official "Bezugsgröße der Dreiviertelmehrheit: die Zahl der zustimmenden abgegebenen Stimmen (§ 732, § 734 Absatz 2)";
+        label en unofficial "reference quantity of the three-quarters majority: the number of votes cast in favour (§ 732, § 734 (2))";
+        effective [@2024-01-01, infinity);
+        when hat_abgestimmt(g, b, p) and zugestimmt(g, b, p);
+        then zahl_der_zustimmenden_stimmen(g, b, (count distinct q: Person where hat_abgestimmt(g, b, q) and zugestimmt(g, b, q)));
+    }
+    rule DreiviertelMehrheitErreicht732(g: Gesellschaft, b: Text, z: Integer, y: Integer) strict {
+        label de official "Muss ein Beschluss, der die Auflösung der Gesellschaft zum Gegenstand hat, mit einer Mehrheit von mindestens drei Viertel der abgegebenen Stimmen gefasst werden (§ 732)";
+        label en unofficial "a resolution to dissolve the partnership must be passed by a majority of at least three quarters of the votes cast (§ 732)";
+        effective [@2024-01-01, infinity);
+        when mehrheitsklausel_vereinbart(g) and zahl_der_abgegebenen_stimmen(g, b, z) and zahl_der_zustimmenden_stimmen(g, b, y)
+            and y * 4 >= z * 3;
+        then dreiviertel_mehrheit_erreicht(g, b);
+    }
+    rule AufloesungsbeschlussGefasst732(g: Gesellschaft, b: Text) strict {
+        label de official "Hat nach dem Gesellschaftsvertrag die Mehrheit der Stimmen zu entscheiden, muss ein Beschluss, der die Auflösung der Gesellschaft zum Gegenstand hat, mit einer Mehrheit von mindestens drei Viertel der abgegebenen Stimmen gefasst werden (§ 732)";
+        label en unofficial "where the partnership agreement provides for decision by majority of votes, a resolution to dissolve the partnership must be passed by a majority of at least three quarters of the votes cast (§ 732)";
+        effective [@2024-01-01, infinity);
+        when aufloesungsbeschluss_732(g, b) and dreiviertel_mehrheit_erreicht(g, b);
+        then aufloesungsbeschluss_732_gefasst(g, b);
+    }
+    rule GesellschaftAufgeloestSammelpunktBeschluss732(g: Gesellschaft, b: Text) strict {
+        label de official "Der gefasste Auflösungsbeschluss löst die Gesellschaft auf (§ 732, § 729 Absatz 1 Nummer 1)";
+        label en unofficial "the passed dissolution resolution dissolves the partnership (§ 732, § 729 (1) no. 1)";
+        effective [@2024-01-01, infinity);
+        when aufloesungsbeschluss_732_gefasst(g, b);
+        then gesellschaft_aufgeloest(g);
+    }
+}
+@source(BGB_P734) {
+    rule DreiviertelMehrheitErreicht734(g: Gesellschaft, b: Text, z: Integer, y: Integer) strict {
+        label de official "Muss der Beschluss über die Fortsetzung der Gesellschaft mit einer Mehrheit von mindestens drei Viertel der abgegebenen Stimmen gefasst werden (§ 734 Absatz 2)";
+        label en unofficial "the resolution to continue the partnership must be passed by a majority of at least three quarters of the votes cast (§ 734 (2))";
+        effective [@2024-01-01, infinity);
+        when mehrheitsklausel_vereinbart(g) and zahl_der_abgegebenen_stimmen(g, b, z) and zahl_der_zustimmenden_stimmen(g, b, y)
+            and y * 4 >= z * 3;
+        then dreiviertel_mehrheit_erreicht(g, b);
+    }
+    rule FortsetzungsbeschlussGefasstMitMehrheitsklausel734(g: Gesellschaft, b: Text) strict {
+        label de official "Die Gesellschafter können nach Auflösung der Gesellschaft deren Fortsetzung beschließen, sobald der Auflösungsgrund beseitigt ist; ist eine Mehrheitsklausel vereinbart, bedarf der Beschluss der Dreiviertelmehrheit (§ 734 Absatz 1, 2)";
+        label en unofficial "the partners may resolve to continue the partnership after dissolution once the ground for dissolution has been removed; where a majority clause applies, the resolution requires a three-quarters majority (§ 734 (1), (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest(g) and aufloesungsgrund_beseitigt_734(g) and fortsetzungsbeschluss_734(g, b) and dreiviertel_mehrheit_erreicht(g, b);
+        then fortsetzungsbeschluss_734_gefasst(g, b);
+    }
+    rule FortsetzungsbeschlussGefasstOhneMehrheitsklausel734(g: Gesellschaft, b: Text) strict {
+        label de official "Ohne Mehrheitsklausel können die Gesellschafter nach Auflösung der Gesellschaft deren Fortsetzung beschließen, sobald der Auflösungsgrund beseitigt ist (§ 734 Absatz 1)";
+        label en unofficial "absent a majority clause, the partners may resolve to continue the partnership after dissolution once the ground for dissolution has been removed (§ 734 (1))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest(g) and aufloesungsgrund_beseitigt_734(g) and fortsetzungsbeschluss_734(g, b) and not_known(mehrheitsklausel_vereinbart(g));
+        then fortsetzungsbeschluss_734_gefasst(g, b);
+    }
+}
+pub relation fortsetzung_734_ausgeuebt_am(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    label de official "Der Gesellschafter hat die Fortsetzung der Gesellschaft beschlossen (§ 734)";
+    label en unofficial "the partner exercised the continuation power (§ 734)";
+}
+pub relation fortsetzungsrecht_734_beginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn des Fortsetzungsrechts nach § 734";
+    label en unofficial "start of the continuation power under § 734";
+}
+@source(BGB_P734)
+rule Position734Fortsetzung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist berechtigt, nach Beseitigung des Auflösungsgrundes die Fortsetzung der Gesellschaft zu beschließen (§ 734 Absatz 1)";
+    label en unofficial "The partner has the liberty to resolve to continue the partnership after the ground for dissolution is removed (§ 734 (1))";
+    when gesellschafter(g, p) and gesellschaft_aufgeloest(g)
+     and aufloesungsgrund_beseitigt_734(g) and fortsetzungsrecht_734_beginn_am(g, beginn);
+    then liberty Liberty734Fortsetzung {
+        holder p;
+        action fortsetzung_734_ausgeuebt_am(g, p, beginn);
+        window [beginn, infinity];
+    };
+}
+
+// --- § 733, § 736c: Anmeldung der Auflösung und der Liquidatoren (registerprozedural) ---------------
+
+pub relation anmeldepflicht_der_aufloesung_733(g: Gesellschaft) kind institutional {
+    label de official "Die Auflösung ist von sämtlichen Gesellschaftern zur Eintragung in das Gesellschaftsregister anzumelden (§ 733 Absatz 1 Satz 1)";
+    label en unofficial "the dissolution must be registered by all partners for entry in the partnership register (§ 733 (1) sentence 1)";
+}
+pub relation gesellschaft_register_beginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der registerbezogenen Pflicht der Gesellschaft (§ 733)";
+    label en unofficial "start of the partnership registration duty (§ 733)";
+}
+pub relation aufloesung_zur_eintragung_angemeldet_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Die Auflösung wurde zur Eintragung angemeldet (§ 733 Absatz 1)";
+    label en unofficial "the dissolution was filed for registration (§ 733 (1))";
+}
+@source(BGB_P733)
+rule Position733Anmeldung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist verpflichtet, die Auflösung zur Eintragung anzumelden (§ 733 Absatz 1)";
+    label en unofficial "The partner is obliged to file the dissolution for registration (§ 733 (1))";
+    when gesellschafter(g, p) and gesellschaft_aufgeloest(g)
+     and gesellschaft_register_beginn_am(g, beginn);
+    then duty Duty733Anmeldung {
+        bearer p;
+        achieve aufloesung_zur_eintragung_angemeldet_am(g, beginn) during [beginn, infinity);
+    };
+}
+pub relation aufloesung_durch_insolvenzeroeffnung_oder_ablehnung_733(g: Gesellschaft) kind empirical {
+    label de official "Die Auflösung beruht auf der Eröffnung oder der Ablehnung der Eröffnung des Insolvenzverfahrens über das Vermögen der Gesellschaft (§ 733 Absatz 1 Satz 2, § 729 Absatz 1 Nummer 2, Absatz 3 Satz 1 Nummer 1)";
+    label en unofficial "the dissolution results from the opening, or the refusal to open, insolvency proceedings over the partnership's assets (§ 733 (1) sentence 2, § 729 (1) no. 2, (3) sentence 1 no. 1)";
+}
+
+// --- § 735: Notwendigkeit der Liquidation -----------------------------------------------------------
+
+pub relation insolvenzverfahren_ueber_vermoegen_der_gesellschaft_eroeffnet_735(g: Gesellschaft) kind empirical {
+    label de official "Über das Vermögen der Gesellschaft ist das Insolvenzverfahren eröffnet (§ 735 Absatz 1 Satz 1)";
+    label en unofficial "insolvency proceedings have been opened over the partnership's assets (§ 735 (1) sentence 1)";
+}
+pub relation gesellschaft_durch_loeschung_wegen_vermoegenslosigkeit_aufgeloest_735(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschaft ist durch Löschung wegen Vermögenslosigkeit aufgelöst (§ 735 Absatz 1 Satz 2)";
+    label en unofficial "the partnership has been dissolved by deregistration for lack of assets (§ 735 (1) sentence 2)";
+}
+pub relation vermoegen_nach_loeschung_festgestellt_735(g: Gesellschaft) kind empirical {
+    label de official "Nach der Löschung stellt sich heraus, dass noch der Verteilung unterliegendes Vermögen vorhanden ist (§ 735 Absatz 1 Satz 2)";
+    label en unofficial "after deregistration it turns out that assets subject to distribution still exist (§ 735 (1) sentence 2)";
+}
+pub relation andere_abwicklungsart_vereinbart_735(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschafter vereinbaren anstelle der Liquidation eine andere Art der Abwicklung (§ 735 Absatz 2 Satz 1)";
+    label en unofficial "the partners agree on a different mode of winding up instead of liquidation (§ 735 (2) sentence 1)";
+}
+pub relation liquidation_findet_statt_735(g: Gesellschaft) kind institutional {
+    label de official "Nach Auflösung der Gesellschaft findet die Liquidation statt (§ 735 Absatz 1)";
+    label en unofficial "after dissolution of the partnership, liquidation takes place (§ 735 (1))";
+}
+
+@source(BGB_P735) {
+    rule LiquidationNotwendigNachAufloesung735(g: Gesellschaft) strict {
+        label de official "Nach Auflösung der Gesellschaft findet die Liquidation statt, sofern nicht über das Vermögen der Gesellschaft das Insolvenzverfahren eröffnet ist (§ 735 Absatz 1 Satz 1)";
+        label en unofficial "after dissolution of the partnership, liquidation takes place unless insolvency proceedings have been opened over the partnership's assets (§ 735 (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest(g) and not_known(insolvenzverfahren_ueber_vermoegen_der_gesellschaft_eroeffnet_735(g))
+            and not_known(andere_abwicklungsart_vereinbart_735(g));
+        then liquidation_findet_statt_735(g);
+    }
+    rule LiquidationNachLoeschungBeiVorhandenemVermoegen735(g: Gesellschaft) strict {
+        label de official "Ist die Gesellschaft durch Löschung wegen Vermögenslosigkeit aufgelöst, findet eine Liquidation nur statt, wenn sich nach der Löschung herausstellt, dass noch Vermögen vorhanden ist, das der Verteilung unterliegt (§ 735 Absatz 1 Satz 2)";
+        label en unofficial "where the partnership has been dissolved by deregistration for lack of assets, liquidation takes place only if it turns out after deregistration that assets subject to distribution still exist (§ 735 (1) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_durch_loeschung_wegen_vermoegenslosigkeit_aufgeloest_735(g) and vermoegen_nach_loeschung_festgestellt_735(g);
+        then liquidation_findet_statt_735(g);
+    }
+}
+
+@source(BGB_P733)
+rule AnmeldepflichtDerAufloesung733(g: Gesellschaft) strict {
+    label de official "Ist die Gesellschaft im Gesellschaftsregister eingetragen, ist ihre Auflösung von sämtlichen Gesellschaftern zur Eintragung in das Gesellschaftsregister anzumelden (§ 733 Absatz 1 Satz 1)";
+    label en unofficial "where the partnership is entered in the partnership register, its dissolution must be registered by all partners (§ 733 (1) sentence 1)";
+    effective [@2024-01-01, infinity);
+    when gesellschaft_aufgeloest(g) and im_gesellschaftsregister_eingetragen(g) and not_known(aufloesung_durch_insolvenzeroeffnung_oder_ablehnung_733(g));
+    then anmeldepflicht_der_aufloesung_733(g);
+}
+
+pub relation ist_liquidator(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der Gesellschafter oder die andere Person ist Liquidator der Gesellschaft (§ 736)";
+    label en unofficial "the partner or other person is a liquidator of the partnership (§ 736)";
+}
+pub relation liquidationsbeginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der Liquidation der Gesellschaft (§ 736 Absatz 1)";
+    label en unofficial "start of the partnership's liquidation (§ 736 (1))";
+}
+pub relation liquidator_berufen_am(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    label de official "Der Gesellschafter wurde zum Liquidator berufen (§ 736 Absatz 1)";
+    label en unofficial "the partner was called to act as liquidator (§ 736 (1))";
+}
+@source(BGB_P736)
+rule Position736Liquidator(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist verpflichtet, die Liquidation als Liquidator zu führen (§ 736 Absatz 1)";
+    label en unofficial "The partner is obliged to conduct the liquidation as liquidator (§ 736 (1))";
+    when gesellschafter(g, p) and gesellschaft_in_liquidation(g)
+     and not_known(abweichende_liquidatorenbestellung_vereinbart_736(g))
+     and liquidationsbeginn_am(g, beginn);
+    then duty Duty736Liquidator {
+        bearer p;
+        achieve liquidator_berufen_am(g, p, beginn) during [beginn, infinity);
+    };
+}
+pub relation abweichende_liquidatorenbestellung_vereinbart_736(g: Gesellschaft) kind empirical {
+    label de official "Durch Vereinbarung im Gesellschaftsvertrag oder durch Beschluss der Gesellschafter sind einzelne Gesellschafter oder andere Personen zu Liquidatoren berufen (§ 736 Absatz 4 Satz 1)";
+    label en unofficial "by agreement in the partnership agreement or by resolution of the partners, individual partners or other persons have been appointed liquidators (§ 736 (4) sentence 1)";
+}
+pub relation liquidator_durch_vereinbarung_oder_beschluss_berufen_736(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter oder die andere Person ist durch Vereinbarung im Gesellschaftsvertrag oder durch Beschluss zum Liquidator berufen (§ 736 Absatz 4 Satz 1)";
+    label en unofficial "the partner or other person has been appointed liquidator by agreement in the partnership agreement or by resolution (§ 736 (4) sentence 1)";
+}
+pub relation insolvenzverwalter_tritt_an_stelle_736(g: Gesellschaft, p: Person, verwalter: Person) kind empirical {
+    label de official "Über das Vermögen des Gesellschafters ist das Insolvenzverfahren eröffnet und ein Insolvenzverwalter bestellt worden (§ 736 Absatz 2)";
+    label en unofficial "insolvency proceedings have been opened over the partner's assets and an insolvency administrator appointed (§ 736 (2))";
+}
+pub relation mehrere_erben_gemeinsamer_vertreter_bestellt_736(g: Gesellschaft, p: Person, vertreter: Person) kind empirical {
+    label de official "Mehrere Erben eines Gesellschafters haben einen gemeinsamen Vertreter bestellt (§ 736 Absatz 3)";
+    label en unofficial "several heirs of a partner have appointed a joint representative (§ 736 (3))";
+}
+pub relation mehrheitsklausel_gilt_nicht_fuer_liquidatorenberufung_736(g: Gesellschaft) kind institutional {
+    label de official "Hat nach dem Gesellschaftsvertrag die Mehrheit der Stimmen zu entscheiden, gilt dies im Zweifel nicht für die Berufung und Abberufung eines Liquidators (§ 736 Absatz 5)";
+    label en unofficial "where the partnership agreement provides for decision by majority of votes, this does not, in case of doubt, apply to the appointment and removal of a liquidator (§ 736 (5))";
+}
+
+@source(BGB_P736) {
+    rule LiquidatorKraftGesetzes736(g: Gesellschaft, p: Person) strict {
+        label de official "Zur Liquidation sind alle Gesellschafter berufen (§ 736 Absatz 1)";
+        label en unofficial "all partners are called to act as liquidators (§ 736 (1))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and not_known(abweichende_liquidatorenbestellung_vereinbart_736(g));
+        then ist_liquidator(g, p);
+    }
+    rule LiquidatorDurchVereinbarungOderBeschluss736(g: Gesellschaft, p: Person) strict {
+        label de official "Durch Vereinbarung im Gesellschaftsvertrag oder durch Beschluss der Gesellschafter können auch einzelne Gesellschafter oder andere Personen zu Liquidatoren berufen werden (§ 736 Absatz 4 Satz 1)";
+        label en unofficial "by agreement in the partnership agreement or by resolution of the partners, individual partners or other persons may also be appointed liquidators (§ 736 (4) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when liquidator_durch_vereinbarung_oder_beschluss_berufen_736(g, p);
+        then ist_liquidator(g, p);
+    }
+    rule InsolvenzverwalterTrittAnStelle736(g: Gesellschaft, p: Person, verwalter: Person) strict {
+        label de official "Ist über das Vermögen eines Gesellschafters das Insolvenzverfahren eröffnet und ein Insolvenzverwalter bestellt worden, tritt dieser an die Stelle des Gesellschafters (§ 736 Absatz 2)";
+        label en unofficial "where insolvency proceedings have been opened over a partner's assets and an insolvency administrator appointed, the administrator takes the partner's place (§ 736 (2))";
+        effective [@2024-01-01, infinity);
+        when insolvenzverwalter_tritt_an_stelle_736(g, p, verwalter);
+        then ist_liquidator(g, verwalter);
+    }
+    rule GemeinsamerVertreterIstLiquidator736(g: Gesellschaft, p: Person, vertreter: Person) strict {
+        label de official "Mehrere Erben eines Gesellschafters haben einen gemeinsamen Vertreter zu bestellen; dieser ist Liquidator (§ 736 Absatz 3)";
+        label en unofficial "several heirs of a partner must appoint a joint representative; the representative is a liquidator (§ 736 (3))";
+        effective [@2024-01-01, infinity);
+        when mehrere_erben_gemeinsamer_vertreter_bestellt_736(g, p, vertreter);
+        then ist_liquidator(g, vertreter);
+    }
+    rule MehrheitsklauselGiltNichtFuerLiquidatorenberufung736(g: Gesellschaft) strict {
+        label de official "Hat nach dem Gesellschaftsvertrag die Mehrheit der Stimmen zu entscheiden, gilt dies im Zweifel nicht für die Berufung und Abberufung eines Liquidators (§ 736 Absatz 5)";
+        label en unofficial "where the partnership agreement provides for decision by majority of votes, this does not, in case of doubt, apply to the appointment and removal of a liquidator (§ 736 (5))";
+        effective [@2024-01-01, infinity);
+        when mehrheitsklausel_vereinbart(g);
+        then mehrheitsklausel_gilt_nicht_fuer_liquidatorenberufung_736(g);
+    }
+}
+
+// --- § 736a: Gerichtliche Berufung und Abberufung von Liquidatoren ----------------------------------
+
+@source(BGB_P736a)
+pub external judgment relation wichtiger_grund_liquidatorenberufung_736a(g: Gesellschaft, p: Person) {
+    authority Court;
+    label de official "Wichtiger Grund für die gerichtliche Berufung oder Abberufung eines Liquidators (§ 736a Absatz 1 Satz 1)";
+    label en unofficial "good cause for the judicial appointment or removal of a liquidator (§ 736a (1) sentence 1)";
+}
+pub relation antrag_eines_beteiligten_736a(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Antrag eines Beteiligten im Sinne des § 736a Absatz 2 auf gerichtliche Berufung oder Abberufung eines Liquidators (§ 736a Absatz 1 Satz 1)";
+    label en unofficial "application by a party under § 736a (2) for the judicial appointment or removal of a liquidator (§ 736a (1) sentence 1)";
+}
+pub relation gerichtliche_berufung_oder_abberufung_moeglich_736a(g: Gesellschaft) kind institutional {
+    label de official "Ein Liquidator kann aus wichtigem Grund durch das Gericht, in dessen Bezirk die Gesellschaft ihren Sitz hat, berufen und abberufen werden (§ 736a Absatz 1 Satz 1)";
+    label en unofficial "a liquidator may be appointed and removed for good cause by the court of the district where the partnership has its seat (§ 736a (1) sentence 1)";
+}
+pub relation ausschluss_der_gerichtlichen_berufung_vereinbart_736a(g: Gesellschaft) kind empirical {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag schließt das Recht auf gerichtliche Berufung oder Abberufung aus (§ 736a Absatz 1 Satz 2)";
+    label en unofficial "an agreement in the partnership agreement excludes the right to judicial appointment or removal (§ 736a (1) sentence 2)";
+}
+pub relation ausschlussvereinbarung_736a_unwirksam(g: Gesellschaft) kind institutional {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche das Recht auf gerichtliche Berufung oder Abberufung ausschließt, ist unwirksam (§ 736a Absatz 1 Satz 2)";
+    label en unofficial "an agreement in the partnership agreement excluding the right to judicial appointment or removal is void (§ 736a (1) sentence 2)";
+}
+pub relation liquidator_gehoert_nicht_zu_gesellschaftern_736a(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Liquidator gehört nicht zu den Gesellschaftern (§ 736a Absatz 3 Satz 1)";
+    label en unofficial "the liquidator is not one of the partners (§ 736a (3) sentence 1)";
+}
+pub relation anspruch_auf_aufwendungsersatz_und_verguetung_736a(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Gehört der Liquidator nicht zu den Gesellschaftern, hat er Anspruch auf Ersatz der erforderlichen Aufwendungen und auf Vergütung für seine Tätigkeit (§ 736a Absatz 3 Satz 1)";
+    label en unofficial "where the liquidator is not one of the partners, he is entitled to reimbursement of necessary expenses and to remuneration for his activity (§ 736a (3) sentence 1)";
+}
+
+@source(BGB_P736a) {
+    rule GerichtlicheBerufungOderAbberufung736a(g: Gesellschaft, p: Person) strict {
+        label de official "Ist die Gesellschaft im Gesellschaftsregister eingetragen, kann auf Antrag eines Beteiligten ein Liquidator aus wichtigem Grund durch das Gericht, in dessen Bezirk die Gesellschaft ihren Sitz hat, berufen und abberufen werden (§ 736a Absatz 1 Satz 1)";
+        label en unofficial "where the partnership is entered in the partnership register, a liquidator may, on the application of a party, be appointed and removed for good cause by the court of the district where the partnership has its seat (§ 736a (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when im_gesellschaftsregister_eingetragen(g) and antrag_eines_beteiligten_736a(g, p) and wichtiger_grund_liquidatorenberufung_736a(g, p);
+        then gerichtliche_berufung_oder_abberufung_moeglich_736a(g);
+    }
+    rule AusschlussvereinbarungUnwirksam736a(g: Gesellschaft) strict {
+        label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche das Recht auf gerichtliche Berufung oder Abberufung ausschließt, ist unwirksam (§ 736a Absatz 1 Satz 2)";
+        label en unofficial "an agreement in the partnership agreement excluding the right to judicial appointment or removal is void (§ 736a (1) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when ausschluss_der_gerichtlichen_berufung_vereinbart_736a(g);
+        then ausschlussvereinbarung_736a_unwirksam(g);
+    }
+    rule AnspruchAufAufwendungsersatzUndVerguetung736a(g: Gesellschaft, p: Person) strict {
+        label de official "Gehört der Liquidator nicht zu den Gesellschaftern, hat er Anspruch auf Ersatz der erforderlichen Aufwendungen und auf Vergütung für seine Tätigkeit (§ 736a Absatz 3 Satz 1)";
+        label en unofficial "where the liquidator is not one of the partners, he is entitled to reimbursement of necessary expenses and to remuneration for his activity (§ 736a (3) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when ist_liquidator(g, p) and liquidator_gehoert_nicht_zu_gesellschaftern_736a(g, p);
+        then anspruch_auf_aufwendungsersatz_und_verguetung_736a(g, p);
+    }
+}
+
+// --- § 736b: Geschäftsführungs- und Vertretungsbefugnis der Liquidatoren ----------------------------
+
+pub relation geschaeftsfuehrungsbefugnis_erlischt_bei_aufloesung_736b(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Mit der Auflösung der Gesellschaft erlischt die einem Gesellschafter im Gesellschaftsvertrag übertragene Befugnis zur Geschäftsführung und Vertretung (§ 736b Absatz 1 Satz 1)";
+    label en unofficial "on dissolution of the partnership, the power to conduct business and represent it conferred on a partner by the partnership agreement lapses (§ 736b (1) sentence 1)";
+}
+pub relation gemeinsame_befugnis_der_liquidatoren_736b(g: Gesellschaft) kind institutional {
+    label de official "Von der Auflösung an steht die Befugnis zur Geschäftsführung und Vertretung allen Liquidatoren gemeinsam zu (§ 736b Absatz 1 Satz 2)";
+    label en unofficial "from dissolution on, the power to conduct business and represent the partnership belongs to all liquidators jointly (§ 736b (1) sentence 2)";
+}
+pub relation kenntnis_oder_kennenmuessen_der_aufloesung_736b(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter hat von der Auflösung der Gesellschaft Kenntnis erlangt oder muss sie kennen (§ 736b Absatz 2)";
+    label en unofficial "the partner has learned of the partnership's dissolution or must be aware of it (§ 736b (2))";
+}
+pub relation fortbestehen_zugunsten_des_gesellschafters_736b(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die bisherige Befugnis zur Geschäftsführung und, sofern die Gesellschaft nicht im Gesellschaftsregister eingetragen ist, zur Vertretung gilt gleichwohl zu seinen Gunsten als fortbestehend, bis er von der Auflösung Kenntnis erlangt hat oder sie kennen muss (§ 736b Absatz 2)";
+    label en unofficial "the partner's existing power to conduct business and, unless the partnership is entered in the partnership register, to represent it nonetheless remains deemed to continue in his favour until he has learned of the dissolution or must be aware of it (§ 736b (2))";
+}
+pub relation befugnis_beginn_736b_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der Rechtsfolge des § 736b (§ 736b Absatz 1)";
+    label en unofficial "start of the legal effect under § 736b (1)";
+}
+pub relation geschaeftsfuehrungsbefugnis_erlischt_am(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    label de official "Die Geschäftsführungs- und Vertretungsbefugnis ist erloschen (§ 736b Absatz 1)";
+    label en unofficial "the power to conduct business and represent the partnership lapsed (§ 736b (1))";
+}
+@source(BGB_P736b)
+rule Position736bErloschen(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Die Geschäftsführungs- und Vertretungsbefugnis des Gesellschafters erlischt mit der Auflösung (§ 736b Absatz 1)";
+    label en unofficial "The partner's power to conduct business and represent the partnership lapses on dissolution (§ 736b (1))";
+    when gesellschaft_aufgeloest(g) and geschaeftsfuehrungsbefugt(g, p)
+     and befugnis_beginn_736b_am(g, beginn);
+    then duty Duty736bErloschen {
+        bearer p;
+        achieve geschaeftsfuehrungsbefugnis_erlischt_am(g, p, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P736b) {
+    rule ErloeschenDerBefugnisBeiAufloesung736b(g: Gesellschaft, p: Person) defeasible {
+        label de official "Mit der Auflösung der Gesellschaft erlischt die einem Gesellschafter im Gesellschaftsvertrag übertragene Befugnis zur Geschäftsführung und Vertretung (§ 736b Absatz 1 Satz 1)";
+        label en unofficial "on dissolution of the partnership, the power to conduct business and represent it conferred on a partner by the partnership agreement lapses (§ 736b (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest(g) and geschaeftsfuehrungsbefugt(g, p);
+        then geschaeftsfuehrungsbefugnis_erlischt_bei_aufloesung_736b(g, p);
+    }
+    rule GemeinsameBefugnisDerLiquidatoren736b(g: Gesellschaft, p: Person) strict {
+        label de official "Diese Befugnis steht von der Auflösung an allen Liquidatoren gemeinsam zu (§ 736b Absatz 1 Satz 2)";
+        label en unofficial "this power belongs, from dissolution on, to all liquidators jointly (§ 736b (1) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest(g) and ist_liquidator(g, p);
+        then gemeinsame_befugnis_der_liquidatoren_736b(g);
+    }
+    rule FortbestehenZugunstenDesGesellschafters736b(g: Gesellschaft, p: Person) defeasible {
+        label de official "Die bisherige Befugnis eines Gesellschafters zur Geschäftsführung und, sofern die Gesellschaft nicht im Gesellschaftsregister eingetragen ist, zur Vertretung gilt gleichwohl zu seinen Gunsten als fortbestehend, bis er von der Auflösung der Gesellschaft Kenntnis erlangt hat oder die Auflösung kennen muss (§ 736b Absatz 2)";
+        label en unofficial "a partner's existing power to conduct business and, unless the partnership is entered in the partnership register, to represent it nonetheless remains deemed to continue in his favour until he has learned of the partnership's dissolution or must be aware of it (§ 736b (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_aufgeloest(g) and geschaeftsfuehrungsbefugt(g, p) and not_known(kenntnis_oder_kennenmuessen_der_aufloesung_736b(g, p));
+        then fortbestehen_zugunsten_des_gesellschafters_736b(g, p);
+    }
+}
+
+@source(BGB_P736c)
+rule AnmeldepflichtDerLiquidatoren736c(g: Gesellschaft, p: Person) strict {
+    label de official "Ist die Gesellschaft im Gesellschaftsregister eingetragen, sind die Liquidatoren und ihre Vertretungsbefugnis von sämtlichen Gesellschaftern zur Eintragung in das Gesellschaftsregister anzumelden (§ 736c Absatz 1 Satz 1)";
+    label en unofficial "where the partnership is entered in the partnership register, the liquidators and their representative power must be registered by all partners (§ 736c (1) sentence 1)";
+    effective [@2024-01-01, infinity);
+    when im_gesellschaftsregister_eingetragen(g) and ist_liquidator(g, p);
+    then anmeldepflicht_der_liquidatoren_736c(g);
+}
+pub relation anmeldepflicht_der_liquidatoren_736c(g: Gesellschaft) kind institutional {
+    label de official "Die Liquidatoren und ihre Vertretungsbefugnis sind von sämtlichen Gesellschaftern zur Eintragung in das Gesellschaftsregister anzumelden (§ 736c Absatz 1 Satz 1)";
+    label en unofficial "the liquidators and their representative power must be registered by all partners (§ 736c (1) sentence 1)";
+}
+
+// --- § 736d: Rechtstellung der Liquidatoren — Reihenfolge der Berichtigung und Verteilung -----------
+
+pub relation glaeubiger_der_gesellschaft_736d(g: Gesellschaft, v: Text, forderung: Money) kind empirical {
+    key(g, v);
+    label de official "Forderung eines Gläubigers der Gesellschaft (§ 736d Absatz 4 Satz 1)";
+    label en unofficial "a claim of a creditor of the partnership (§ 736d (4) sentence 1)";
+}
+pub relation verbindlichkeit_noch_nicht_faellig_oder_streitig_736d(g: Gesellschaft, v: Text) kind empirical {
+    label de official "Die Verbindlichkeit ist noch nicht fällig oder ist streitig (§ 736d Absatz 4 Satz 2)";
+    label en unofficial "the liability is not yet due or is disputed (§ 736d (4) sentence 2)";
+}
+pub relation glaeubiger_zu_befriedigen_736d(g: Gesellschaft, v: Text, forderung: Money) kind institutional {
+    label de official "Aus dem Vermögen der Gesellschaft sind zunächst die Gläubiger der Gesellschaft zu befriedigen (§ 736d Absatz 4 Satz 1)";
+    label en unofficial "creditors of the partnership must first be satisfied out of the partnership's assets (§ 736d (4) sentence 1)";
+}
+pub relation zurueckbehalt_fuer_verbindlichkeit_736d(g: Gesellschaft, v: Text, betrag: Money) kind institutional {
+    label de official "Ist eine Verbindlichkeit noch nicht fällig oder ist sie streitig, ist das zur Berichtigung der Verbindlichkeit Erforderliche zurückzubehalten (§ 736d Absatz 4 Satz 2)";
+    label en unofficial "where a liability is not yet due or is disputed, the amount required to settle it must be retained (§ 736d (4) sentence 2)";
+}
+pub relation geleisteter_beitrag_in_geld_736d(g: Gesellschaft, p: Person, betrag: Money) kind empirical {
+    key(g, p);
+    label de official "Geleisteter Beitrag in Geld (§ 736d Absatz 5 Satz 1)";
+    label en unofficial "contribution rendered in money (§ 736d (5) sentence 1)";
+}
+pub relation geleisteter_sachbeitrag_wert_bei_einbringung_736d(g: Gesellschaft, p: Person, betrag: Money) kind empirical {
+    key(g, p);
+    label de official "Wert, den ein nicht in Geld bestehender Beitrag zur Zeit der Einbringung gehabt hat (§ 736d Absatz 5 Satz 2)";
+    label en unofficial "value that a contribution not consisting of money had at the time it was made (§ 736d (5) sentence 2)";
+}
+pub relation beitrag_bestand_in_diensten_oder_nutzungsueberlassung_736d(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Beitrag bestand in der Leistung von Diensten oder in der Überlassung der Benutzung eines Gegenstands (§ 736d Absatz 5 Satz 3)";
+    label en unofficial "the contribution consisted in the rendering of services or in granting the use of an object (§ 736d (5) sentence 3)";
+}
+pub relation beitrag_zurueckzuerstatten_736d(g: Gesellschaft, p: Person, betrag: Money) kind institutional {
+    label de official "Aus dem nach der Berichtigung der Verbindlichkeiten verbleibenden Gesellschaftsvermögen sind die geleisteten Beiträge zurückzuerstatten (§ 736d Absatz 5 Sätze 1, 2)";
+    label en unofficial "out of the partnership assets remaining after settling the liabilities, the contributions rendered must be returned (§ 736d (5) sentences 1, 2)";
+}
+pub relation kein_ersatz_im_zweifel_736d(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Für Beiträge, die in der Leistung von Diensten oder in der Überlassung der Benutzung eines Gegenstands bestanden haben, kann im Zweifel kein Ersatz verlangt werden (§ 736d Absatz 5 Satz 3)";
+    label en unofficial "for contributions consisting in services or in granting the use of an object, no reimbursement may, in case of doubt, be claimed (§ 736d (5) sentence 3)";
+}
+pub relation verbleibendes_vermoegen_nach_beitragsrueckerstattung_736d(g: Gesellschaft, betrag: Money) kind empirical {
+    key(g);
+    label de official "Das nach Berichtigung der Verbindlichkeiten und Rückerstattung der Beiträge verbleibende Vermögen der Gesellschaft (§ 736d Absatz 6)";
+    label en unofficial "the partnership assets remaining after settling the liabilities and returning the contributions (§ 736d (6))";
+}
+pub relation verteilungsanspruch_nach_anteil_736d(g: Gesellschaft, p: Person, betrag: Money) kind derived {
+    key(g, p);
+    label de official "Das verbleibende Vermögen der Gesellschaft ist unter den Gesellschaftern nach dem Verhältnis ihrer Anteile am Gewinn und Verlust zu verteilen (§ 736d Absatz 6)";
+    label en unofficial "the partnership's remaining assets must be distributed among the partners in proportion to their shares in profit and loss (§ 736d (6))";
+}
+
+@source(BGB_P736d) {
+    rule GlaeubigerZuerstBefriedigen736d(g: Gesellschaft, v: Text, forderung: Money) strict {
+        label de official "Aus dem Vermögen der Gesellschaft sind zunächst die Gläubiger der Gesellschaft zu befriedigen (§ 736d Absatz 4 Satz 1)";
+        label en unofficial "creditors of the partnership must first be satisfied out of the partnership's assets (§ 736d (4) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_in_liquidation(g) and glaeubiger_der_gesellschaft_736d(g, v, forderung) and not_known(verbindlichkeit_noch_nicht_faellig_oder_streitig_736d(g, v));
+        then glaeubiger_zu_befriedigen_736d(g, v, forderung);
+    }
+    rule ZurueckbehaltFuerStreitigeVerbindlichkeit736d(g: Gesellschaft, v: Text, forderung: Money) strict {
+        label de official "Ist eine Verbindlichkeit noch nicht fällig oder ist sie streitig, ist das zur Berichtigung der Verbindlichkeit Erforderliche zurückzubehalten (§ 736d Absatz 4 Satz 2)";
+        label en unofficial "where a liability is not yet due or is disputed, the amount required to settle it must be retained (§ 736d (4) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_in_liquidation(g) and glaeubiger_der_gesellschaft_736d(g, v, forderung) and verbindlichkeit_noch_nicht_faellig_oder_streitig_736d(g, v);
+        then zurueckbehalt_fuer_verbindlichkeit_736d(g, v, forderung);
+    }
+    rule BeitragsrueckerstattungInGeld736d(g: Gesellschaft, p: Person, betrag: Money) strict {
+        label de official "Für Beiträge, die in Geld bestanden haben, ist der geleistete Betrag zurückzuerstatten (§ 736d Absatz 5 Satz 1)";
+        label en unofficial "for contributions that consisted in money, the amount rendered must be returned (§ 736d (5) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_in_liquidation(g) and geleisteter_beitrag_in_geld_736d(g, p, betrag);
+        then beitrag_zurueckzuerstatten_736d(g, p, betrag);
+    }
+    rule BeitragsrueckerstattungSachbeitrag736d(g: Gesellschaft, p: Person, betrag: Money) strict {
+        label de official "Für Beiträge, die nicht in Geld bestanden haben, ist der Wert zu ersetzen, den sie zur Zeit der Einbringung gehabt haben (§ 736d Absatz 5 Satz 2)";
+        label en unofficial "for contributions not consisting in money, the value they had at the time they were made must be reimbursed (§ 736d (5) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_in_liquidation(g) and geleisteter_sachbeitrag_wert_bei_einbringung_736d(g, p, betrag);
+        then beitrag_zurueckzuerstatten_736d(g, p, betrag);
+    }
+    rule KeinErsatzFuerDiensteImZweifel736d(g: Gesellschaft, p: Person) defeasible {
+        label de official "Für Beiträge, die in der Leistung von Diensten oder in der Überlassung der Benutzung eines Gegenstands bestanden haben, kann im Zweifel kein Ersatz verlangt werden (§ 736d Absatz 5 Satz 3)";
+        label en unofficial "for contributions consisting in services or in granting the use of an object, no reimbursement may, in case of doubt, be claimed (§ 736d (5) sentence 3)";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_in_liquidation(g) and beitrag_bestand_in_diensten_oder_nutzungsueberlassung_736d(g, p);
+        then kein_ersatz_im_zweifel_736d(g, p);
+    }
+    rule VerteilungNachAnteil736d(g: Gesellschaft, p: Person, betrag: Money, z: Integer, n: Integer) strict {
+        label de official "Das nach Berichtigung der Verbindlichkeiten und Rückerstattung der Beiträge verbleibende Vermögen der Gesellschaft ist unter den Gesellschaftern nach dem Verhältnis ihrer Anteile am Gewinn und Verlust zu verteilen (§ 736d Absatz 6)";
+        label en unofficial "the partnership assets remaining after settling the liabilities and returning the contributions must be distributed among the partners in proportion to their shares in profit and loss (§ 736d (6))";
+        effective [@2024-01-01, infinity);
+        when gesellschaft_in_liquidation(g) and verbleibendes_vermoegen_nach_beitragsrueckerstattung_736d(g, betrag) and anteil_bruch(g, p, z, n);
+        then verteilungsanspruch_nach_anteil_736d(g, p, div_round(betrag * z, n * 1.0, 2, "HALF_UP"));
+    }
+}
+
+// --- D-Q08-1 (gelöst): der Termin „zum Ablauf des Kalenderjahres" (§ 725 Absatz 1) -------------------
+//
+// Die dreimonatige Kündigungsfrist selbst ist seit V6-08-01 ausgeführt
+// (`kuendigungsfrist_725`); nicht ausgeführt war der TERMIN, auf den sie
+// zielt. Gelöst nach dem Muster des Ultimo-Mechanismus in
+// `de.bgb.fristen::jahresende` (§ 199 Absatz 1, Datei-Kopf dort, Mechanik 1):
+// zwölf Kandidaten `month_end_of(month_start_of(t) + k Monate)`, Auswahl des
+// Dezember-Kandidaten über die Monatslängen (31, 31, ≤ 29 → Dezember, Januar,
+// Februar) — ohne vergleichenden Term im Guard. `de.bgb.fristen::jahresende`
+// ist NICHT `pub` und an den Typ `Anspruch` gebunden; die Mechanik wird daher
+// lokal auf `Frist` repliziert, nicht importiert (kein Eingriff in den
+// Nachbarn). Der gesuchte Tag ist `Kündigung + drei Monate`: das Jahresende
+// DIESES Tages ist genau das kleinste Jahresende, das mindestens drei Monate
+// nach der Erklärung liegt — vor dem 1. Oktober erklärt endet die
+// Mitgliedschaft zum 31.12. desselben Jahres, ab dem 1. Oktober zum 31.12.
+// des Folgejahres (Szenarien g08/g09).
+
+pub relation jahresende_gesucht_725(f: Frist, tag: Date) kind institutional {
+    label de official "Für den Tag drei Monate nach der Kündigungserklärung wird der Schluss des Kalenderjahres gesucht (§ 725 Absatz 1)";
+    label en unofficial "the close of the calendar year is sought for the day three months after the declaration of termination (§ 725 (1))";
+}
+pub relation jahresende_kandidat_725(f: Frist, tag: Date, monatsende: Date) kind institutional {
+    label de official "Monatsende eines der zwölf Monate vom Monat des Tages an (§ 725 Absatz 1)";
+    label en unofficial "month end of one of the twelve months from the month of the day on (§ 725 (1))";
+}
+pub relation kalenderjahresende_der_kuendigung_725(f: Frist, ultimo: Date) kind institutional {
+    key(f);
+    label de official "Ablauf des Kalenderjahres, zu dem die Kündigung unter Einhaltung der Dreimonatsfrist wirksam wird — der 31. Dezember des Jahres, in dem der Tag drei Monate nach der Erklärung liegt (§ 725 Absatz 1)";
+    label en unofficial "end of the calendar year at which the termination takes effect subject to the three-month period — 31 December of the year in which the day three months after the declaration falls (§ 725 (1))";
+}
+
+@source(BGB_P725) {
+    rule JahresendeGesucht725(f: Frist, t: Date) strict {
+        label de official "Gesucht wird der Schluss des Kalenderjahres, in das der Tag drei Monate nach der Kündigungserklärung fällt (§ 725 Absatz 1)";
+        label en unofficial "sought is the close of the calendar year into which the day three months after the declaration of termination falls (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when kuendigung_erklaert_am(f, t);
+        then jahresende_gesucht_725(f, add_calendar_period(t, 3 calendar_month));
+    }
+    rule JahresendeKandidat725_00(f: Frist, e: Date) strict {
+        label de official "Kandidat 0 — Ende des Monats des gesuchten Tages (§ 725 Absatz 1)";
+        label en unofficial "candidate 0 — end of the month of the sought day (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(month_start_of(e)));
+    }
+    rule JahresendeKandidat725_01(f: Frist, e: Date) strict {
+        label de official "Kandidat 1 — Ende des 1. Monats nach dem Monat des gesuchten Tages (§ 725 Absatz 1)";
+        label en unofficial "candidate 1 — end of the month 1 month after the month of the sought day (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 1 calendar_month)));
+    }
+    rule JahresendeKandidat725_02(f: Frist, e: Date) strict {
+        label de official "Kandidat 2 (§ 725 Absatz 1)";
+        label en unofficial "candidate 2 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 2 calendar_month)));
+    }
+    rule JahresendeKandidat725_03(f: Frist, e: Date) strict {
+        label de official "Kandidat 3 (§ 725 Absatz 1)";
+        label en unofficial "candidate 3 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 3 calendar_month)));
+    }
+    rule JahresendeKandidat725_04(f: Frist, e: Date) strict {
+        label de official "Kandidat 4 (§ 725 Absatz 1)";
+        label en unofficial "candidate 4 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 4 calendar_month)));
+    }
+    rule JahresendeKandidat725_05(f: Frist, e: Date) strict {
+        label de official "Kandidat 5 (§ 725 Absatz 1)";
+        label en unofficial "candidate 5 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 5 calendar_month)));
+    }
+    rule JahresendeKandidat725_06(f: Frist, e: Date) strict {
+        label de official "Kandidat 6 (§ 725 Absatz 1)";
+        label en unofficial "candidate 6 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 6 calendar_month)));
+    }
+    rule JahresendeKandidat725_07(f: Frist, e: Date) strict {
+        label de official "Kandidat 7 (§ 725 Absatz 1)";
+        label en unofficial "candidate 7 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 7 calendar_month)));
+    }
+    rule JahresendeKandidat725_08(f: Frist, e: Date) strict {
+        label de official "Kandidat 8 (§ 725 Absatz 1)";
+        label en unofficial "candidate 8 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 8 calendar_month)));
+    }
+    rule JahresendeKandidat725_09(f: Frist, e: Date) strict {
+        label de official "Kandidat 9 (§ 725 Absatz 1)";
+        label en unofficial "candidate 9 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 9 calendar_month)));
+    }
+    rule JahresendeKandidat725_10(f: Frist, e: Date) strict {
+        label de official "Kandidat 10 (§ 725 Absatz 1)";
+        label en unofficial "candidate 10 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 10 calendar_month)));
+    }
+    rule JahresendeKandidat725_11(f: Frist, e: Date) strict {
+        label de official "Kandidat 11 (§ 725 Absatz 1)";
+        label en unofficial "candidate 11 (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_gesucht_725(f, e);
+        then jahresende_kandidat_725(f, e, month_end_of(add_calendar_period(month_start_of(e), 11 calendar_month)));
+    }
+    rule KalenderjahresendeDerKuendigung725(f: Frist, e: Date, m: Date) strict {
+        label de official "Der Kandidat ist der 31. Dezember, wenn sein Monat 31 Tage hat, der folgende Monat 31 Tage und der übernächste höchstens 29 — Dezember, Januar, Februar (§ 725 Absatz 1)";
+        label en unofficial "the candidate is 31 December when its month has 31 days, the next month 31 and the one after at most 29 — December, January, February (§ 725 (1))";
+        effective [@2024-01-01, infinity);
+        when jahresende_kandidat_725(f, e, m)
+            and days_between(month_start_of(m), m) == 30
+            and days_between(month_start_of(add_calendar_period(m, 1 calendar_day)), month_end_of(add_calendar_period(m, 1 calendar_day))) == 30
+            and days_between(month_start_of(add_calendar_period(month_end_of(add_calendar_period(m, 1 calendar_day)), 1 calendar_day)), month_end_of(add_calendar_period(month_end_of(add_calendar_period(m, 1 calendar_day)), 1 calendar_day))) <= 28;
+        then kalenderjahresende_der_kuendigung_725(f, m);
+    }
+}
+
+// ==================================================================================================
+// GESELLSCHAFT, FORTSETZUNG (§§ 708, 711a, 712, 712a, 713, 715a, 715b, 717–722,
+// 726, 729, 740a–740c, D-08-17)
+// ==================================================================================================
+//
+// §§ 707, 707a Absatz 1, 3, 4, 707b, 707c Absatz 1–4, 707d bleiben SOURCE_ONLY:
+// Gesellschaftsregister-VERFAHREN selbst (Gerichtszuständigkeit, Inhalt der
+// Anmeldung, Publizitätswirkung nach § 15 HGB, Statuswechsel-Verfahren,
+// Verordnungsermächtigung) — kein eigenständiges materielles BGB-Ergebnis
+// außerhalb des Registriervorgangs; die Eintragung selbst bleibt Eingang des
+// Falls (`im_gesellschaftsregister_eingetragen`, bereits ausgeführt). § 707a
+// Absatz 2 (Namenszusatz eGbR) hat dagegen eine eigene materielle Folge und
+// ist ausgeführt. § 724 bleibt SOURCE_ONLY: die Vorschrift regelt im
+// Schwerpunkt die Umwandlung des Erben in einen Kommanditisten nach dem HGB
+// (Handelsregister-Voraussetzungen § 107 Absatz 1 HGB) — kein eigenständiges
+// materielles BGB-Ergebnis außerhalb dieses Kommanditisten-Status.
+//
+// § 726 TEILT DEN TERMIN DES § 725 (D-08-16/D-08-17): „drei Monate zum
+// Ablauf des Kalenderjahrs" — dieselbe Ultimo-Mechanik wird über denselben
+// Sammelpunkt `jahresende_gesucht_725` wiederverwendet (Muster D-08-07), statt
+// einer zweiten Kandidatenkette.
+//
+// §§ 740a–740c SIND VERWEISUNGSNORMEN AUF BEREITS AUSGEFÜHRTE VORSCHRIFTEN
+// (§§ 725, 726, 730, 732, 734, 736d, 737, 707–728a). Da die dort ausgeführten
+// Regeln generisch auf `gesellschafter(g, p)`/`Gesellschaft` lesen und nicht
+// auf Rechtsfähigkeit prüfen, gelten sie bereits für die nicht rechtsfähige
+// Gesellschaft (Muster D-08-07, wie § 740 für §§ 708–718 bereits genutzt).
+// Ausgeführt sind schlanke Bestätigungsregeln mit eigenem `@source`, die die
+// Verweisung nachvollziehen, ohne die Mechanik zu verdoppeln.
+
+pub relation namenszusatz_egbr_pflicht_707a(g: Gesellschaft) kind institutional {
+    label de official "Mit der Eintragung ist die Gesellschaft verpflichtet, als Namenszusatz die Bezeichnung „eingetragene Gesellschaft bürgerlichen Rechts“ oder „eGbR“ zu führen (§ 707a Absatz 2 Satz 1)";
+    label en unofficial "upon registration the partnership must use the designation \"eingetragene Gesellschaft bürgerlichen Rechts\" or \"eGbR\" as a name suffix (§ 707a (2) sentence 1)";
+}
+@source(BGB_P707a)
+rule NamenszusatzEgbrPflicht707a(g: Gesellschaft) strict {
+    label de official "Mit der Eintragung ist die Gesellschaft verpflichtet, als Namenszusatz die Bezeichnung „eingetragene Gesellschaft bürgerlichen Rechts“ oder „eGbR“ zu führen (§ 707a Absatz 2 Satz 1)";
+    label en unofficial "upon registration the partnership must use the designation \"eingetragene Gesellschaft bürgerlichen Rechts\" or \"eGbR\" as a name suffix (§ 707a (2) sentence 1)";
+    effective [@2024-01-01, infinity);
+    when im_gesellschaftsregister_eingetragen(g);
+    then namenszusatz_egbr_pflicht_707a(g);
+}
+
+pub relation abweichung_durch_gesellschaftsvertrag_708(g: Gesellschaft) kind empirical {
+    label de official "Der Gesellschaftsvertrag weicht von den Vorschriften dieses Kapitels ab (§ 708)";
+    label en unofficial "the partnership agreement departs from the provisions of this chapter (§ 708)";
+}
+pub relation im_gesetz_zwingend_bestimmt_708(g: Gesellschaft) kind empirical {
+    label de official "Im Gesetz ist etwas anderes bestimmt — die Abweichung ist ausgeschlossen (§ 708)";
+    label en unofficial "the statute provides otherwise — the departure is excluded (§ 708)";
+}
+pub relation abweichung_wirksam_708(g: Gesellschaft) kind institutional {
+    label de official "Von den Vorschriften dieses Kapitels kann durch den Gesellschaftsvertrag abgewichen werden, soweit im Gesetz nichts anderes bestimmt ist (§ 708)";
+    label en unofficial "the provisions of this chapter may be departed from by the partnership agreement, unless the statute provides otherwise (§ 708)";
+}
+@source(BGB_P708)
+rule AbweichungWirksam708(g: Gesellschaft) strict {
+    label de official "Von den Vorschriften dieses Kapitels kann durch den Gesellschaftsvertrag abgewichen werden, soweit im Gesetz nichts anderes bestimmt ist (§ 708)";
+    label en unofficial "the provisions of this chapter may be departed from by the partnership agreement, unless the statute provides otherwise (§ 708)";
+    effective [@2024-01-01, infinity);
+    when abweichung_durch_gesellschaftsvertrag_708(g) and not_known(im_gesetz_zwingend_bestimmt_708(g));
+    then abweichung_wirksam_708(g);
+}
+
+pub relation geschaeftsbesorgungsanspruch_ausserhalb_liquidation_711a(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Anspruch, der einem Gesellschafter aus seiner Geschäftsbesorgung für die Gesellschaft zusteht, dessen Befriedigung außerhalb der Liquidation verlangt werden kann (§ 711a Satz 2)";
+    label en unofficial "a claim a partner has from managing the partnership's affairs, satisfaction of which may be demanded outside liquidation (§ 711a sentence 2)";
+}
+pub relation gewinnanteil_oder_liquidationsanspruch_711a(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Anspruch eines Gesellschafters auf einen Gewinnanteil oder auf dasjenige, was ihm im Fall der Liquidation zukommt (§ 711a Satz 2)";
+    label en unofficial "a partner's claim to a share of profit or to what accrues to him on liquidation (§ 711a sentence 2)";
+}
+pub relation uebertragung_der_rechte_versucht_711a(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Die Rechte des Gesellschafters aus dem Gesellschaftsverhältnis werden übertragen (§ 711a Satz 1)";
+    label en unofficial "the partner's rights arising from the partnership relationship are transferred (§ 711a sentence 1)";
+}
+pub relation uebertragung_unwirksam_711a(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die Rechte der Gesellschafter aus dem Gesellschaftsverhältnis sind nicht übertragbar (§ 711a Satz 1)";
+    label en unofficial "a partner's rights arising from the partnership relationship are not transferable (§ 711a sentence 1)";
+}
+pub relation uebertragung_wirksam_711a(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Hiervon ausgenommen sind Ansprüche, die einem Gesellschafter aus seiner Geschäftsbesorgung für die Gesellschaft zustehen, sowie Ansprüche auf einen Gewinnanteil oder auf dasjenige, was ihm im Fall der Liquidation zukommt (§ 711a Satz 2)";
+    label en unofficial "excepted are claims a partner has from managing the partnership's affairs, and claims to a share of profit or to what accrues to him on liquidation (§ 711a sentence 2)";
+}
+@source(BGB_P711a) {
+    rule UebertragungUnwirksam711a(g: Gesellschaft, p: Person) strict {
+        label de official "Die Rechte der Gesellschafter aus dem Gesellschaftsverhältnis sind nicht übertragbar (§ 711a Satz 1)";
+        label en unofficial "a partner's rights arising from the partnership relationship are not transferable (§ 711a sentence 1)";
+        effective [@2024-01-01, infinity);
+        when uebertragung_der_rechte_versucht_711a(g, p) and not_known(geschaeftsbesorgungsanspruch_ausserhalb_liquidation_711a(g, p))
+            and not_known(gewinnanteil_oder_liquidationsanspruch_711a(g, p));
+        then uebertragung_unwirksam_711a(g, p);
+    }
+    rule UebertragungWirksamGeschaeftsbesorgungsanspruch711a(g: Gesellschaft, p: Person) strict {
+        label de official "Ansprüche, die einem Gesellschafter aus seiner Geschäftsbesorgung für die Gesellschaft zustehen und deren Befriedigung außerhalb der Liquidation verlangt werden kann, sind übertragbar (§ 711a Satz 2)";
+        label en unofficial "claims a partner has from managing the partnership's affairs, satisfaction of which may be demanded outside liquidation, are transferable (§ 711a sentence 2)";
+        effective [@2024-01-01, infinity);
+        when uebertragung_der_rechte_versucht_711a(g, p) and geschaeftsbesorgungsanspruch_ausserhalb_liquidation_711a(g, p);
+        then uebertragung_wirksam_711a(g, p);
+    }
+    rule UebertragungWirksamGewinnanteilOderLiquidationsanspruch711a(g: Gesellschaft, p: Person) strict {
+        label de official "Ansprüche eines Gesellschafters auf einen Gewinnanteil oder auf dasjenige, was ihm im Fall der Liquidation zukommt, sind übertragbar (§ 711a Satz 2)";
+        label en unofficial "a partner's claims to a share of profit or to what accrues to him on liquidation are transferable (§ 711a sentence 2)";
+        effective [@2024-01-01, infinity);
+        when uebertragung_der_rechte_versucht_711a(g, p) and gewinnanteil_oder_liquidationsanspruch_711a(g, p);
+        then uebertragung_wirksam_711a(g, p);
+    }
+}
+
+pub relation abweichende_anwachsungsregel_vereinbart_712(g: Gesellschaft) kind empirical {
+    label de official "Im Gesellschaftsvertrag ist über die Anwachsung etwas anderes bestimmt (§ 712 Absatz 1)";
+    label en unofficial "the partnership agreement provides otherwise on accrual (§ 712 (1))";
+}
+pub relation anwachsung_bei_ausscheiden_712(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Scheidet ein Gesellschafter aus der Gesellschaft aus, so wächst sein Anteil an der Gesellschaft den übrigen Gesellschaftern im Zweifel im Verhältnis ihrer Anteile zu (§ 712 Absatz 1)";
+    label en unofficial "where a partner departs from the partnership, his share accrues, in case of doubt, to the other partners in proportion to their shares (§ 712 (1))";
+}
+pub relation neuer_gesellschafter_tritt_ein_712(g: Gesellschaft, neuer: Person) kind empirical {
+    label de official "Ein neuer Gesellschafter tritt in die Gesellschaft ein (§ 712 Absatz 2)";
+    label en unofficial "a new partner joins the partnership (§ 712 (2))";
+}
+pub relation minderung_der_anteile_bei_eintritt_712(g: Gesellschaft, neuer: Person) kind institutional {
+    label de official "Tritt ein neuer Gesellschafter in die Gesellschaft ein, mindern sich die Anteile der anderen Gesellschafter im Zweifel im Umfang des dem neuen Gesellschafter zuwachsenden Anteils und in dem Verhältnis ihrer bisherigen Anteile (§ 712 Absatz 2)";
+    label en unofficial "where a new partner joins the partnership, the other partners' shares are, in case of doubt, reduced to the extent of the share accruing to the new partner and in proportion to their existing shares (§ 712 (2))";
+}
+@source(BGB_P712) {
+    rule AnwachsungBeiAusscheiden712(g: Gesellschaft, p: Person) strict {
+        label de official "Scheidet ein Gesellschafter aus der Gesellschaft aus, so wächst sein Anteil an der Gesellschaft den übrigen Gesellschaftern im Zweifel im Verhältnis ihrer Anteile zu (§ 712 Absatz 1)";
+        label en unofficial "where a partner departs from the partnership, his share accrues, in case of doubt, to the other partners in proportion to their shares (§ 712 (1))";
+        effective [@2024-01-01, infinity);
+        when scheidet_aus(g, p) and not_known(abweichende_anwachsungsregel_vereinbart_712(g));
+        then anwachsung_bei_ausscheiden_712(g, p);
+    }
+    rule MinderungDerAnteileBeiEintritt712(g: Gesellschaft, neuer: Person) strict {
+        label de official "Tritt ein neuer Gesellschafter in die Gesellschaft ein, mindern sich die Anteile der anderen Gesellschafter im Zweifel im Umfang des dem neuen Gesellschafter zuwachsenden Anteils (§ 712 Absatz 2)";
+        label en unofficial "where a new partner joins the partnership, the other partners' shares are, in case of doubt, reduced to the extent of the share accruing to the new partner (§ 712 (2))";
+        effective [@2024-01-01, infinity);
+        when neuer_gesellschafter_tritt_ein_712(g, neuer) and not_known(abweichende_anwachsungsregel_vereinbart_712(g));
+        then minderung_der_anteile_bei_eintritt_712(g, neuer);
+    }
+}
+
+pub relation nur_noch_ein_gesellschafter_712a(g: Gesellschaft, verbleibender: Person) kind empirical {
+    label de official "Nach dem Ausscheiden des vorletzten Gesellschafters verbleibt nur noch ein Gesellschafter (§ 712a Absatz 1 Satz 1)";
+    label en unofficial "after the departure of the second-to-last partner, only one partner remains (§ 712a (1) sentence 1)";
+}
+pub relation gesellschaft_erlischt_ohne_liquidation_712a(g: Gesellschaft) kind institutional {
+    label de official "Verbleibt nur noch ein Gesellschafter, so erlischt die Gesellschaft ohne Liquidation (§ 712a Absatz 1 Satz 1)";
+    label en unofficial "where only one partner remains, the partnership is extinguished without liquidation (§ 712a (1) sentence 1)";
+}
+pub relation gesamtrechtsnachfolge_712a(g: Gesellschaft, verbleibender: Person) kind institutional {
+    label de official "Das Gesellschaftsvermögen geht zum Zeitpunkt des Ausscheidens des vorletzten Gesellschafters im Wege der Gesamtrechtsnachfolge auf den verbleibenden Gesellschafter über (§ 712a Absatz 1 Satz 2)";
+    label en unofficial "the partnership's assets pass to the remaining partner by universal succession at the time the second-to-last partner departs (§ 712a (1) sentence 2)";
+}
+@source(BGB_P712a)
+rule ErloeschenOhneLiquidationUndGesamtrechtsnachfolge712a(g: Gesellschaft, verbleibender: Person) strict {
+    label de official "Verbleibt nur noch ein Gesellschafter, so erlischt die Gesellschaft ohne Liquidation; das Gesellschaftsvermögen geht im Wege der Gesamtrechtsnachfolge auf den verbleibenden Gesellschafter über (§ 712a Absatz 1)";
+    label en unofficial "where only one partner remains, the partnership is extinguished without liquidation; its assets pass to the remaining partner by universal succession (§ 712a (1))";
+    effective [@2024-01-01, infinity);
+    when nur_noch_ein_gesellschafter_712a(g, verbleibender);
+    then gesellschaft_erlischt_ohne_liquidation_712a(g);
+    then gesamtrechtsnachfolge_712a(g, verbleibender);
+}
+
+pub relation erworbene_rechte_713(g: Gesellschaft) kind empirical {
+    label de official "Für oder durch die Gesellschaft erworbene Rechte (§ 713)";
+    label en unofficial "rights acquired for or through the partnership (§ 713)";
+}
+pub relation gegen_die_gesellschaft_begruendete_verbindlichkeiten_713(g: Gesellschaft) kind empirical {
+    label de official "Gegen die Gesellschaft begründete Verbindlichkeiten (§ 713)";
+    label en unofficial "liabilities incurred against the partnership (§ 713)";
+}
+pub relation gesellschaftsvermoegen_umfasst_713(g: Gesellschaft) kind institutional {
+    label de official "Die Beiträge der Gesellschafter sowie die für oder durch die Gesellschaft erworbenen Rechte und die gegen sie begründeten Verbindlichkeiten sind Vermögen der Gesellschaft (§ 713)";
+    label en unofficial "the partners' contributions, together with rights acquired for or through the partnership and liabilities incurred against it, are the partnership's assets (§ 713)";
+}
+@source(BGB_P713)
+rule GesellschaftsvermoegenUmfasst713(g: Gesellschaft, p: Person) strict {
+    label de official "Die Beiträge der Gesellschafter sowie die für oder durch die Gesellschaft erworbenen Rechte und die gegen sie begründeten Verbindlichkeiten sind Vermögen der Gesellschaft (§ 713)";
+    label en unofficial "the partners' contributions, together with rights acquired for or through the partnership and liabilities incurred against it, are the partnership's assets (§ 713)";
+    effective [@2024-01-01, infinity);
+    when beitrag_geschuldet(g, p) and erworbene_rechte_713(g) and gegen_die_gesellschaft_begruendete_verbindlichkeiten_713(g);
+    then gesellschaftsvermoegen_umfasst_713(g);
+}
+
+pub relation alle_geschaeftsfuehrungsbefugten_verhindert_715a(g: Gesellschaft) kind empirical {
+    label de official "Alle geschäftsführungsbefugten Gesellschafter sind verhindert, bei einem Geschäft mitzuwirken (§ 715a Satz 1)";
+    label en unofficial "all partners authorised to conduct business are prevented from taking part in a transaction (§ 715a sentence 1)";
+}
+pub relation gefahr_bei_aufschub_715a(g: Gesellschaft) kind empirical {
+    label de official "Mit dem Aufschub des Geschäfts ist Gefahr für die Gesellschaft oder das Gesellschaftsvermögen verbunden (§ 715a Satz 1)";
+    label en unofficial "delaying the transaction would endanger the partnership or its assets (§ 715a sentence 1)";
+}
+pub relation notgeschaeftsfuehrungsbefugnis_715a(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Jeder Gesellschafter kann das Geschäft vornehmen (§ 715a Satz 1)";
+    label en unofficial "any partner may carry out the transaction (§ 715a sentence 1)";
+}
+pub relation ausschluss_des_rechts_715a_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag schließt das Recht nach § 715a aus (§ 715a Satz 2)";
+    label en unofficial "an agreement in the partnership agreement excludes the right under § 715a (§ 715a sentence 2)";
+}
+pub relation ausschlussvereinbarung_715a_unwirksam(g: Gesellschaft) kind institutional {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche das Recht nach § 715a ausschließt, ist unwirksam (§ 715a Satz 2)";
+    label en unofficial "an agreement in the partnership agreement excluding the right under § 715a is void (§ 715a sentence 2)";
+}
+@source(BGB_P715a) {
+    rule Notgeschaeftsfuehrungsbefugnis715a(g: Gesellschaft, p: Person) strict {
+        label de official "Sind alle geschäftsführungsbefugten Gesellschafter verhindert, kann jeder Gesellschafter das Geschäft vornehmen, wenn mit dem Aufschub Gefahr für die Gesellschaft oder das Gesellschaftsvermögen verbunden ist (§ 715a Satz 1)";
+        label en unofficial "where all partners authorised to conduct business are prevented, any partner may carry out the transaction where delay would endanger the partnership or its assets (§ 715a sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and alle_geschaeftsfuehrungsbefugten_verhindert_715a(g) and gefahr_bei_aufschub_715a(g);
+        then notgeschaeftsfuehrungsbefugnis_715a(g, p);
+    }
+    rule AusschlussvereinbarungUnwirksam715a(g: Gesellschaft) strict {
+        label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche dieses Recht ausschließt, ist unwirksam (§ 715a Satz 2)";
+        label en unofficial "an agreement in the partnership agreement excluding this right is void (§ 715a sentence 2)";
+        effective [@2024-01-01, infinity);
+        when ausschluss_des_rechts_715a_vereinbart(g);
+        then ausschlussvereinbarung_715a_unwirksam(g);
+    }
+}
+
+pub relation geschaeftsfuehrer_unterlaesst_pflichtwidrig_715b(g: Gesellschaft, anspruchsgegner: Person) kind empirical {
+    label de official "Der dazu berufene geschäftsführungsbefugte Gesellschafter unterlässt pflichtwidrig die gerichtliche Geltendmachung eines auf dem Gesellschaftsverhältnis beruhenden Anspruchs der Gesellschaft gegen den Anspruchsgegner (§ 715b Absatz 1 Satz 1)";
+    label en unofficial "the partner authorised to conduct business wrongfully fails to judicially assert a claim of the partnership against the respondent founded on the partnership relationship (§ 715b (1) sentence 1)";
+}
+pub relation gesellschafterklagebefugnis_715b(g: Gesellschaft, p: Person, anspruchsgegner: Person) kind institutional {
+    label de official "Jeder Gesellschafter ist befugt, den Anspruch der Gesellschaft im eigenen Namen gerichtlich geltend zu machen (§ 715b Absatz 1 Satz 1)";
+    label en unofficial "each partner is entitled to judicially assert the partnership's claim in his own name (§ 715b (1) sentence 1)";
+}
+pub relation gesellschaftsrecht_beginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn des geltend gemachten Gesellschaftsrechts (§§ 715b, 717, 718)";
+    label en unofficial "start of the partnership right (§§ 715b, 717, 718)";
+}
+pub relation gesellschaftsanspruch_715b_geltend_gemacht_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Der Gesellschafter hat den Anspruch der Gesellschaft gerichtlich geltend gemacht (§ 715b)";
+    label en unofficial "the partner asserted the partnership's claim in court (§ 715b)";
+}
+@source(BGB_P715b)
+rule Position715bKlage(g: Gesellschaft, p: Person, gegner: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist befugt, den Anspruch der Gesellschaft im eigenen Namen geltend zu machen (§ 715b Absatz 1)";
+    label en unofficial "The partner has the liberty to assert the partnership's claim in his own name (§ 715b (1))";
+    when gesellschafter(g, p) and geschaeftsfuehrer_unterlaesst_pflichtwidrig_715b(g, gegner)
+     and gesellschaftsrecht_beginn_am(g, beginn);
+    then liberty Liberty715bKlage {
+        holder p;
+        against gegner;
+        action gesellschaftsanspruch_715b_geltend_gemacht_am(g, beginn);
+        window [beginn, infinity];
+    };
+}
+pub relation ausschluss_des_klagerechts_715b_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag schließt das Klagerecht nach § 715b aus oder beschränkt es dieser Vorschrift zuwider (§ 715b Absatz 2)";
+    label en unofficial "an agreement in the partnership agreement excludes the right of action under § 715b or restricts it contrary to that provision (§ 715b (2))";
+}
+pub relation ausschlussvereinbarung_715b_unwirksam(g: Gesellschaft) kind institutional {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche das Klagerecht ausschließt oder dieser Vorschrift zuwider beschränkt, ist unwirksam (§ 715b Absatz 2)";
+    label en unofficial "an agreement in the partnership agreement excluding the right of action or restricting it contrary to this provision is void (§ 715b (2))";
+}
+@source(BGB_P715b) {
+    rule Gesellschafterklagebefugnis715b(g: Gesellschaft, p: Person, anspruchsgegner: Person) strict {
+        label de official "Jeder Gesellschafter ist befugt, einen auf dem Gesellschaftsverhältnis beruhenden Anspruch der Gesellschaft gegen einen anderen Gesellschafter im eigenen Namen gerichtlich geltend zu machen, wenn der dazu berufene geschäftsführungsbefugte Gesellschafter dies pflichtwidrig unterlässt (§ 715b Absatz 1 Satz 1)";
+        label en unofficial "each partner is entitled to judicially assert, in his own name, a claim of the partnership against another partner founded on the partnership relationship, where the partner authorised to conduct business wrongfully fails to do so (§ 715b (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and geschaeftsfuehrer_unterlaesst_pflichtwidrig_715b(g, anspruchsgegner);
+        then gesellschafterklagebefugnis_715b(g, p, anspruchsgegner);
+    }
+    rule AusschlussvereinbarungUnwirksam715b(g: Gesellschaft) strict {
+        label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche das Klagerecht ausschließt oder dieser Vorschrift zuwider beschränkt, ist unwirksam (§ 715b Absatz 2)";
+        label en unofficial "an agreement in the partnership agreement excluding the right of action or restricting it contrary to this provision is void (§ 715b (2))";
+        effective [@2024-01-01, infinity);
+        when ausschluss_des_klagerechts_715b_vereinbart(g);
+        then ausschlussvereinbarung_715b_unwirksam(g);
+    }
+}
+
+pub relation einsichtsrecht_717(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Jeder Gesellschafter hat gegenüber der Gesellschaft das Recht, die Unterlagen der Gesellschaft einzusehen und sich aus ihnen Auszüge anzufertigen (§ 717 Absatz 1 Satz 1)";
+    label en unofficial "each partner has the right, vis-à-vis the partnership, to inspect its documents and make extracts from them (§ 717 (1) sentence 1)";
+}
+pub relation unterlagen_eingesehen_am_717(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    label de official "Der Gesellschafter hat die Unterlagen eingesehen (§ 717 Absatz 1)";
+    label en unofficial "the partner inspected the documents (§ 717 (1))";
+}
+@source(BGB_P717)
+rule Position717Einsicht(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist berechtigt, die Unterlagen der Gesellschaft einzusehen (§ 717 Absatz 1)";
+    label en unofficial "The partner has the liberty to inspect the partnership documents (§ 717 (1))";
+    when gesellschafter(g, p) and gesellschaftsrecht_beginn_am(g, beginn);
+    then liberty Liberty717Einsicht {
+        holder p;
+        against g;
+        action unterlagen_eingesehen_am_717(g, p, beginn);
+        window [beginn, infinity];
+    };
+}
+pub relation auskunftspflicht_der_geschaeftsfuehrer_717(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Die geschäftsführungsbefugten Gesellschafter haben der Gesellschaft von sich aus die erforderlichen Nachrichten zu geben, auf Verlangen über die Gesellschaftsangelegenheiten Auskunft zu erteilen und nach Beendigung der Geschäftsführertätigkeit Rechenschaft abzulegen (§ 717 Absatz 2 Satz 1)";
+    label en unofficial "partners authorised to conduct business must, of their own accord, give the partnership necessary notices, provide information on partnership matters on request, and render account after ceasing to manage its affairs (§ 717 (2) sentence 1)";
+}
+pub relation ausschluss_der_pflichten_717_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag schließt die Verpflichtungen nach § 717 Absatz 2 aus (§ 717 Absatz 2 Satz 2)";
+    label en unofficial "an agreement in the partnership agreement excludes the obligations under § 717 (2) (§ 717 (2) sentence 2)";
+}
+pub relation ausschlussvereinbarung_717_abs2_unwirksam(g: Gesellschaft) kind institutional {
+    label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche diese Verpflichtungen ausschließt, ist unwirksam (§ 717 Absatz 2 Satz 2)";
+    label en unofficial "an agreement in the partnership agreement excluding these obligations is void (§ 717 (2) sentence 2)";
+}
+@source(BGB_P717) {
+    rule Einsichtsrecht717(g: Gesellschaft, p: Person) strict {
+        label de official "Jeder Gesellschafter hat gegenüber der Gesellschaft das Recht, die Unterlagen der Gesellschaft einzusehen und sich aus ihnen Auszüge anzufertigen (§ 717 Absatz 1 Satz 1)";
+        label en unofficial "each partner has the right, vis-à-vis the partnership, to inspect its documents and make extracts from them (§ 717 (1) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p);
+        then einsichtsrecht_717(g, p);
+    }
+    rule AuskunftspflichtDerGeschaeftsfuehrer717(g: Gesellschaft, p: Person) defeasible {
+        label de official "Die geschäftsführungsbefugten Gesellschafter haben der Gesellschaft von sich aus die erforderlichen Nachrichten zu geben, auf Verlangen über die Gesellschaftsangelegenheiten Auskunft zu erteilen und nach Beendigung der Geschäftsführertätigkeit Rechenschaft abzulegen (§ 717 Absatz 2 Satz 1)";
+        label en unofficial "partners authorised to conduct business must, of their own accord, give the partnership necessary notices, provide information on request, and render account after ceasing to manage its affairs (§ 717 (2) sentence 1)";
+        effective [@2024-01-01, infinity);
+        when geschaeftsfuehrungsbefugt(g, p);
+        then auskunftspflicht_der_geschaeftsfuehrer_717(g, p);
+    }
+    rule AusschlussvereinbarungUnwirksam717(g: Gesellschaft) strict {
+        label de official "Eine Vereinbarung im Gesellschaftsvertrag, welche diese Verpflichtungen ausschließt, ist unwirksam (§ 717 Absatz 2 Satz 2)";
+        label en unofficial "an agreement in the partnership agreement excluding these obligations is void (§ 717 (2) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when ausschluss_der_pflichten_717_vereinbart(g);
+        then ausschlussvereinbarung_717_abs2_unwirksam(g);
+    }
+}
+
+pub relation abweichende_regelung_718_vereinbart(g: Gesellschaft) kind empirical {
+    label de official "Im Gesellschaftsvertrag ist über den Zeitpunkt des Rechnungsabschlusses und der Gewinnverteilung etwas anderes bestimmt (§ 718)";
+    label en unofficial "the partnership agreement provides otherwise as to the time of settling accounts and distributing profit (§ 718)";
+}
+pub relation rechnungsabschluss_zum_kalenderjahresende_718(g: Gesellschaft) kind institutional {
+    label de official "Der Rechnungsabschluss und die Gewinnverteilung haben im Zweifel zum Schluss jedes Kalenderjahrs zu erfolgen (§ 718)";
+    label en unofficial "settling accounts and distributing profit are, in case of doubt, to take place at the close of each calendar year (§ 718)";
+}
+pub relation rechnungsabschluss_beginn_718_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn des Zeitraums für den Rechnungsabschluss (§ 718)";
+    label en unofficial "start of the accounting period under § 718";
+}
+pub relation rechnungsabschluss_erfolgt_am_718(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Der Rechnungsabschluss und die Gewinnverteilung erfolgten (§ 718)";
+    label en unofficial "the accounts were settled and profit distributed (§ 718)";
+}
+@source(BGB_P718)
+rule Position718Rechnungsabschluss(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Rechnungsabschluss und die Gewinnverteilung haben zum Schluss jedes Kalenderjahrs zu erfolgen (§ 718)";
+    label en unofficial "Accounts must be settled and profit distributed at the end of each calendar year (§ 718)";
+    when gesellschaft_errichtet(g) and gesellschafter(g, p)
+     and not_known(abweichende_regelung_718_vereinbart(g))
+     and rechnungsabschluss_beginn_718_am(g, beginn);
+    then duty Duty718Rechnungsabschluss {
+        bearer p;
+        achieve rechnungsabschluss_erfolgt_am_718(g, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P718)
+rule RechnungsabschlussZumKalenderjahresende718(g: Gesellschaft) strict {
+    label de official "Der Rechnungsabschluss und die Gewinnverteilung haben im Zweifel zum Schluss jedes Kalenderjahrs zu erfolgen (§ 718)";
+    label en unofficial "settling accounts and distributing profit are, in case of doubt, to take place at the close of each calendar year (§ 718)";
+    effective [@2024-01-01, infinity);
+    when gesellschaft_errichtet(g) and not_known(abweichende_regelung_718_vereinbart(g));
+    then rechnungsabschluss_zum_kalenderjahresende_718(g);
+}
+
+pub relation teilnahme_am_rechtsverkehr_mit_zustimmung_aller_719(g: Gesellschaft) kind empirical {
+    label de official "Die Gesellschaft nimmt mit Zustimmung sämtlicher Gesellschafter am Rechtsverkehr teil (§ 719 Absatz 1)";
+    label en unofficial "the partnership participates in legal transactions with the consent of all partners (§ 719 (1))";
+}
+pub relation gesellschaft_entstanden_ggue_dritten_719(g: Gesellschaft) kind institutional {
+    label de official "Im Verhältnis zu Dritten entsteht die Gesellschaft, sobald sie mit Zustimmung sämtlicher Gesellschafter am Rechtsverkehr teilnimmt, spätestens aber mit ihrer Eintragung im Gesellschaftsregister (§ 719 Absatz 1)";
+    label en unofficial "vis-à-vis third parties, the partnership comes into existence once it participates in legal transactions with the consent of all partners, and at the latest upon its registration (§ 719 (1))";
+}
+pub relation spaeterer_zeitpunkt_vereinbart_719(g: Gesellschaft) kind empirical {
+    label de official "Es ist vereinbart, dass die Gesellschaft erst zu einem späteren Zeitpunkt entstehen soll (§ 719 Absatz 2)";
+    label en unofficial "it is agreed that the partnership is to come into existence only at a later time (§ 719 (2))";
+}
+pub relation vereinbarung_unwirksam_ggue_dritten_719(g: Gesellschaft) kind institutional {
+    label de official "Eine Vereinbarung, dass die Gesellschaft erst zu einem späteren Zeitpunkt entstehen soll, ist Dritten gegenüber unwirksam (§ 719 Absatz 2)";
+    label en unofficial "an agreement that the partnership is to come into existence only at a later time is ineffective against third parties (§ 719 (2))";
+}
+@source(BGB_P719) {
+    rule GesellschaftEntstandenDurchTeilnahme719(g: Gesellschaft) strict {
+        label de official "Im Verhältnis zu Dritten entsteht die Gesellschaft, sobald sie mit Zustimmung sämtlicher Gesellschafter am Rechtsverkehr teilnimmt (§ 719 Absatz 1)";
+        label en unofficial "vis-à-vis third parties, the partnership comes into existence once it participates in legal transactions with the consent of all partners (§ 719 (1))";
+        effective [@2024-01-01, infinity);
+        when teilnahme_am_rechtsverkehr_mit_zustimmung_aller_719(g);
+        then gesellschaft_entstanden_ggue_dritten_719(g);
+    }
+    rule GesellschaftEntstandenDurchEintragung719(g: Gesellschaft) strict {
+        label de official "Im Verhältnis zu Dritten entsteht die Gesellschaft spätestens mit ihrer Eintragung im Gesellschaftsregister (§ 719 Absatz 1)";
+        label en unofficial "vis-à-vis third parties, the partnership comes into existence at the latest upon its registration (§ 719 (1))";
+        effective [@2024-01-01, infinity);
+        when im_gesellschaftsregister_eingetragen(g);
+        then gesellschaft_entstanden_ggue_dritten_719(g);
+    }
+    rule VereinbarungUnwirksamGgueDritten719(g: Gesellschaft) strict {
+        label de official "Eine Vereinbarung, dass die Gesellschaft erst zu einem späteren Zeitpunkt entstehen soll, ist Dritten gegenüber unwirksam (§ 719 Absatz 2)";
+        label en unofficial "an agreement that the partnership is to come into existence only at a later time is ineffective against third parties (§ 719 (2))";
+        effective [@2024-01-01, infinity);
+        when spaeterer_zeitpunkt_vereinbart_719(g);
+        then vereinbarung_unwirksam_ggue_dritten_719(g);
+    }
+}
+
+pub relation abweichende_vertretungsregel_vereinbart_720(g: Gesellschaft) kind empirical {
+    label de official "Der Gesellschaftsvertrag bestimmt etwas anderes über die Vertretungsbefugnis (§ 720 Absatz 1)";
+    label en unofficial "the partnership agreement provides otherwise on representative authority (§ 720 (1))";
+}
+pub relation gesamtvertretungsbefugnis_720(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Zur Vertretung der Gesellschaft sind alle Gesellschafter gemeinsam befugt (§ 720 Absatz 1)";
+    label en unofficial "all partners are jointly authorised to represent the partnership (§ 720 (1))";
+}
+pub relation vertretungsbeginn_720_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der Vertretungsbefugnis nach § 720 Absatz 1";
+    label en unofficial "start of representative authority under § 720 (1)";
+}
+pub relation gesellschaft_vertreten_am_720(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Die Gesellschaft wurde gemeinschaftlich vertreten (§ 720 Absatz 1)";
+    label en unofficial "the partnership was jointly represented (§ 720 (1))";
+}
+@source(BGB_P720)
+rule Position720Gesamtvertretung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist verpflichtet, die Gesellschaft gemeinschaftlich zu vertreten (§ 720 Absatz 1)";
+    label en unofficial "The partner is obliged to represent the partnership jointly (§ 720 (1))";
+    when gesellschafter(g, p) and not_known(abweichende_vertretungsregel_vereinbart_720(g))
+     and vertretungsbeginn_720_am(g, beginn);
+    then duty Duty720Gesamtvertretung {
+        bearer p;
+        achieve gesellschaft_vertreten_am_720(g, beginn) during [beginn, infinity);
+    };
+}
+pub relation einzelvertretungsbeginn_720_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn der Ermächtigung zur Einzelvertretung für bestimmte Geschäfte (§ 720 Absatz 2)";
+    label en unofficial "start of authorisation for individual representation for specified transactions (§ 720 (2))";
+}
+pub relation einzelvertretung_ausgeuebt_am(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    label de official "Der Gesellschafter hat die Einzelvertretungsbefugnis ausgeübt (§ 720 Absatz 2)";
+    label en unofficial "the partner exercised individual representative authority (§ 720 (2))";
+}
+@source(BGB_P720)
+rule Position720Einzelvertretung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist berechtigt, bestimmte Geschäfte einzeln vorzunehmen (§ 720 Absatz 2)";
+    label en unofficial "The partner has the liberty to carry out specified transactions individually (§ 720 (2))";
+    when ermaechtigung_zu_bestimmten_geschaeften_720(g, p)
+     and einzelvertretungsbeginn_720_am(g, beginn);
+    then liberty Liberty720Einzelvertretung {
+        holder p;
+        action einzelvertretung_ausgeuebt_am(g, p, beginn);
+        window [beginn, infinity];
+    };
+}
+pub relation ermaechtigung_zu_bestimmten_geschaeften_720(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Die zur Gesamtvertretung befugten Gesellschafter ermächtigen einen von ihnen zur Vornahme bestimmter Geschäfte oder bestimmter Arten von Geschäften (§ 720 Absatz 2)";
+    label en unofficial "the partners authorised to joint representation authorise one of them to carry out specific transactions or types of transaction (§ 720 (2))";
+}
+pub relation einzelvertretungsbefugnis_fuer_geschaeft_720(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der ermächtigte Gesellschafter ist zur Vornahme der bestimmten Geschäfte allein vertretungsbefugt (§ 720 Absatz 2)";
+    label en unofficial "the authorised partner is solely entitled to represent the partnership for the specified transactions (§ 720 (2))";
+}
+pub relation beschraenkung_der_vertretungsbefugnis_vereinbart_720(g: Gesellschaft) kind empirical {
+    label de official "Der Umfang der Vertretungsbefugnis ist beschränkt (§ 720 Absatz 3 Satz 2)";
+    label en unofficial "the scope of representative authority is restricted (§ 720 (3) sentence 2)";
+}
+pub relation beschraenkung_unwirksam_ggue_dritten_720(g: Gesellschaft) kind institutional {
+    label de official "Eine Beschränkung des Umfangs der Vertretungsbefugnis ist Dritten gegenüber unwirksam (§ 720 Absatz 3 Satz 2)";
+    label en unofficial "a restriction of the scope of representative authority is ineffective against third parties (§ 720 (3) sentence 2)";
+}
+pub relation willenserklaerung_gegenueber_vertretungsbefugtem_abgegeben_720(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Die Willenserklärung wird gegenüber einem vertretungsbefugten Gesellschafter abgegeben (§ 720 Absatz 5)";
+    label en unofficial "the declaration of intent is made to a partner authorised to represent the partnership (§ 720 (5))";
+}
+pub relation abgabe_wirksam_720(g: Gesellschaft) kind institutional {
+    label de official "Ist der Gesellschaft gegenüber eine Willenserklärung abzugeben, genügt die Abgabe gegenüber einem vertretungsbefugten Gesellschafter (§ 720 Absatz 5)";
+    label en unofficial "where a declaration of intent must be made to the partnership, making it to a partner authorised to represent the partnership suffices (§ 720 (5))";
+}
+@source(BGB_P720) {
+    rule Gesamtvertretungsbefugnis720(g: Gesellschaft, p: Person) strict {
+        label de official "Zur Vertretung der Gesellschaft sind alle Gesellschafter gemeinsam befugt, es sei denn, der Gesellschaftsvertrag bestimmt etwas anderes (§ 720 Absatz 1)";
+        label en unofficial "all partners are jointly authorised to represent the partnership unless the partnership agreement provides otherwise (§ 720 (1))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and not_known(abweichende_vertretungsregel_vereinbart_720(g));
+        then gesamtvertretungsbefugnis_720(g, p);
+    }
+    rule EinzelvertretungsbefugnisFuerGeschaeft720(g: Gesellschaft, p: Person) strict {
+        label de official "Die zur Gesamtvertretung befugten Gesellschafter können einzelne von ihnen zur Vornahme bestimmter Geschäfte oder bestimmter Arten von Geschäften ermächtigen (§ 720 Absatz 2)";
+        label en unofficial "the partners authorised to joint representation may authorise one of them to carry out specific transactions or types of transaction (§ 720 (2))";
+        effective [@2024-01-01, infinity);
+        when ermaechtigung_zu_bestimmten_geschaeften_720(g, p);
+        then einzelvertretungsbefugnis_fuer_geschaeft_720(g, p);
+    }
+    rule BeschraenkungUnwirksamGgueDritten720(g: Gesellschaft) strict {
+        label de official "Eine Beschränkung des Umfangs der Vertretungsbefugnis ist Dritten gegenüber unwirksam (§ 720 Absatz 3 Satz 2)";
+        label en unofficial "a restriction of the scope of representative authority is ineffective against third parties (§ 720 (3) sentence 2)";
+        effective [@2024-01-01, infinity);
+        when beschraenkung_der_vertretungsbefugnis_vereinbart_720(g);
+        then beschraenkung_unwirksam_ggue_dritten_720(g);
+    }
+    rule AbgabeWirksam720(g: Gesellschaft, p: Person) strict {
+        label de official "Ist der Gesellschaft gegenüber eine Willenserklärung abzugeben, genügt die Abgabe gegenüber einem vertretungsbefugten Gesellschafter (§ 720 Absatz 5)";
+        label en unofficial "where a declaration of intent must be made to the partnership, making it to a partner authorised to represent the partnership suffices (§ 720 (5))";
+        effective [@2024-01-01, infinity);
+        when willenserklaerung_gegenueber_vertretungsbefugtem_abgegeben_720(g, p);
+        then abgabe_wirksam_720(g);
+    }
+}
+
+pub relation einwendung_nicht_in_person_begruendet_721b(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Der Gesellschafter macht Einwendungen oder Einreden geltend, die nicht in seiner Person begründet sind, soweit sie von der Gesellschaft erhoben werden können (§ 721b Absatz 1)";
+    label en unofficial "the partner raises objections or defences not founded in his own person, to the extent the partnership could raise them (§ 721b (1))";
+}
+pub relation einwendung_geltend_machbar_721b(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Wird ein Gesellschafter wegen einer Verbindlichkeit der Gesellschaft in Anspruch genommen, kann er Einwendungen und Einreden, die nicht in seiner Person begründet sind, insoweit geltend machen, als sie von der Gesellschaft erhoben werden können (§ 721b Absatz 1)";
+    label en unofficial "where a partner is held liable for a partnership obligation, he may raise objections and defences not founded in his own person, to the extent the partnership could raise them (§ 721b (1))";
+}
+pub relation gesellschaft_hat_anfechtungs_oder_aufrechnungsrecht_721b(g: Gesellschaft) kind empirical {
+    label de official "Der Gesellschaft steht in Ansehung der Verbindlichkeit das Recht zur Anfechtung oder Aufrechnung oder ein anderes Gestaltungsrecht zu, dessen Ausübung sie zur Leistungsverweigerung berechtigen würde (§ 721b Absatz 2)";
+    label en unofficial "the partnership has, in respect of the obligation, a right of avoidance or set-off or another right of formation whose exercise would entitle it to refuse performance (§ 721b (2))";
+}
+pub relation leistungsverweigerungsrecht_721b(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Der Gesellschafter kann die Befriedigung des Gläubigers verweigern, solange der Gesellschaft in Ansehung der Verbindlichkeit das Recht zur Anfechtung oder Aufrechnung oder ein anderes Gestaltungsrecht zusteht (§ 721b Absatz 2)";
+    label en unofficial "the partner may refuse to satisfy the creditor as long as the partnership has a right of avoidance, set-off or another right of formation in respect of the obligation (§ 721b (2))";
+}
+pub relation einwendung_beginn_721b_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn des Einwendungsrechts des Gesellschafters (§ 721b)";
+    label en unofficial "start of the partner's defence under § 721b";
+}
+pub relation befriedigung_721b_verweigert_am(g: Gesellschaft, p: Person, tag: Date) kind empirical {
+    label de official "Der Gesellschafter hat die Befriedigung verweigert (§ 721b Absatz 2)";
+    label en unofficial "the partner refused satisfaction (§ 721b (2))";
+}
+@source(BGB_P721b)
+rule Position721bEinwendung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gesellschafter ist berechtigt, die Befriedigung des Gläubigers zu verweigern (§ 721b Absatz 2)";
+    label en unofficial "The partner has the liberty to refuse satisfaction of the creditor (§ 721b (2))";
+    when gesellschafter(g, p) and gesellschaft_hat_anfechtungs_oder_aufrechnungsrecht_721b(g)
+     and einwendung_beginn_721b_am(g, beginn);
+    then liberty Liberty721bEinwendung {
+        holder p;
+        action befriedigung_721b_verweigert_am(g, p, beginn);
+        window [beginn, infinity];
+    };
+}
+@source(BGB_P721b) {
+    rule EinwendungGeltendMachbar721b(g: Gesellschaft, p: Person) strict {
+        label de official "Wird ein Gesellschafter wegen einer Verbindlichkeit der Gesellschaft in Anspruch genommen, kann er Einwendungen und Einreden, die nicht in seiner Person begründet sind, insoweit geltend machen, als sie von der Gesellschaft erhoben werden können (§ 721b Absatz 1)";
+        label en unofficial "where a partner is held liable for a partnership obligation, he may raise objections and defences not founded in his own person, to the extent the partnership could raise them (§ 721b (1))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and einwendung_nicht_in_person_begruendet_721b(g, p);
+        then einwendung_geltend_machbar_721b(g, p);
+    }
+    rule Leistungsverweigerungsrecht721b(g: Gesellschaft, p: Person) strict {
+        label de official "Der Gesellschafter kann die Befriedigung des Gläubigers verweigern, solange der Gesellschaft in Ansehung der Verbindlichkeit das Recht zur Anfechtung oder Aufrechnung oder ein anderes Gestaltungsrecht zusteht, dessen Ausübung sie zur Leistungsverweigerung berechtigen würde (§ 721b Absatz 2)";
+        label en unofficial "the partner may refuse to satisfy the creditor as long as the partnership has a right of avoidance, set-off or another right of formation in respect of the obligation whose exercise would entitle it to refuse performance (§ 721b (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and gesellschaft_hat_anfechtungs_oder_aufrechnungsrecht_721b(g);
+        then leistungsverweigerungsrecht_721b(g, p);
+    }
+}
+
+pub relation vollstreckungstitel_gegen_gesellschaft_722(g: Gesellschaft) kind empirical {
+    label de official "Ein gegen die Gesellschaft gerichteter Vollstreckungstitel liegt vor (§ 722 Absatz 1)";
+    label en unofficial "an enforcement title against the partnership exists (§ 722 (1))";
+}
+pub relation zwangsvollstreckung_in_gesellschaftsvermoegen_zulaessig_722(g: Gesellschaft) kind institutional {
+    label de official "Zur Zwangsvollstreckung in das Vermögen der Gesellschaft ist ein gegen die Gesellschaft gerichteter Vollstreckungstitel erforderlich (§ 722 Absatz 1)";
+    label en unofficial "enforcement against the partnership's assets requires an enforcement title directed against the partnership (§ 722 (1))";
+}
+pub relation vollstreckungstitel_nur_gegen_gesellschaft_722(g: Gesellschaft) kind empirical {
+    label de official "Es liegt nur ein gegen die Gesellschaft gerichteter Vollstreckungstitel vor (§ 722 Absatz 2)";
+    label en unofficial "only an enforcement title directed against the partnership exists (§ 722 (2))";
+}
+pub relation keine_zwangsvollstreckung_gegen_gesellschafter_722(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Aus einem gegen die Gesellschaft gerichteten Vollstreckungstitel findet die Zwangsvollstreckung gegen die Gesellschafter nicht statt (§ 722 Absatz 2)";
+    label en unofficial "an enforcement title against the partnership does not permit enforcement against the partners (§ 722 (2))";
+}
+@source(BGB_P722) {
+    rule ZwangsvollstreckungInGesellschaftsvermoegenZulaessig722(g: Gesellschaft) strict {
+        label de official "Zur Zwangsvollstreckung in das Vermögen der Gesellschaft ist ein gegen die Gesellschaft gerichteter Vollstreckungstitel erforderlich (§ 722 Absatz 1)";
+        label en unofficial "enforcement against the partnership's assets requires an enforcement title directed against the partnership (§ 722 (1))";
+        effective [@2024-01-01, infinity);
+        when vollstreckungstitel_gegen_gesellschaft_722(g);
+        then zwangsvollstreckung_in_gesellschaftsvermoegen_zulaessig_722(g);
+    }
+    rule KeineZwangsvollstreckungGegenGesellschafter722(g: Gesellschaft, p: Person) strict {
+        label de official "Aus einem gegen die Gesellschaft gerichteten Vollstreckungstitel findet die Zwangsvollstreckung gegen die Gesellschafter nicht statt (§ 722 Absatz 2)";
+        label en unofficial "an enforcement title against the partnership does not permit enforcement against the partners (§ 722 (2))";
+        effective [@2024-01-01, infinity);
+        when gesellschafter(g, p) and vollstreckungstitel_nur_gegen_gesellschaft_722(g);
+        then keine_zwangsvollstreckung_gegen_gesellschafter_722(g, p);
+    }
+}
+
+// --- § 726: Kündigung der Mitgliedschaft durch einen Privatgläubiger — dieselbe Ultimo-Mechanik wie § 725 ---
+
+pub relation privatglaeubiger_voraussetzungen_726(g: Gesellschaft, p: Person, glaeubiger: Person) kind empirical {
+    label de official "Ein Privatgläubiger hat, nachdem innerhalb der letzten sechs Monate eine Zwangsvollstreckung in das bewegliche Vermögen des Gesellschafters ohne Erfolg versucht wurde, aufgrund eines nicht bloß vorläufig vollstreckbaren Schuldtitels die Pfändung des Anteils des Gesellschafters an der Gesellschaft erwirkt (§ 726)";
+    label en unofficial "a private creditor, after an unsuccessful attempt within the last six months to enforce against the partner's movable assets, has attached the partner's share in the partnership on the basis of an enforcement title that is not merely provisionally enforceable (§ 726)";
+}
+pub relation kuendigungsfrist_726(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist des Privatgläubigers für die Kündigung der Mitgliedschaft des Gesellschafters: drei Monate zum Ablauf des Kalenderjahrs (§ 726)";
+    label en unofficial "the private creditor's period for terminating the partner's membership: three months to the end of the calendar year (§ 726)";
+}
+pub relation kuendigung_726_wirksam(g: Gesellschaft, p: Person, glaeubiger: Person) kind institutional {
+    label de official "Der Privatgläubiger kann die Mitgliedschaft des Gesellschafters gegenüber der Gesellschaft unter Einhaltung einer Frist von drei Monaten zum Ablauf des Kalenderjahrs kündigen (§ 726)";
+    label en unofficial "the private creditor may terminate the partner's membership vis-à-vis the partnership on three months' notice to the end of the calendar year (§ 726)";
+}
+
+@source(BGB_P726) {
+    rule Kuendigung726Wirksam(g: Gesellschaft, p: Person, glaeubiger: Person) strict {
+        label de official "Hat ein Privatgläubiger eines Gesellschafters unter den Voraussetzungen des § 726 die Pfändung des Anteils erwirkt, kann er dessen Mitgliedschaft gegenüber der Gesellschaft unter Einhaltung einer Frist von drei Monaten zum Ablauf des Kalenderjahrs kündigen (§ 726)";
+        label en unofficial "where a partner's private creditor has attached the share under the conditions of § 726, he may terminate the partner's membership vis-à-vis the partnership on three months' notice to the end of the calendar year (§ 726)";
+        effective [@2024-01-01, infinity);
+        when privatglaeubiger_voraussetzungen_726(g, p, glaeubiger);
+        then kuendigung_726_wirksam(g, p, glaeubiger);
+    }
+    rule JahresendeGesucht726(f: Frist, t: Date) strict {
+        label de official "Gesucht wird der Schluss des Kalenderjahres, in das der Tag drei Monate nach der Kündigungserklärung des Privatgläubigers fällt (§ 726, wie § 725 Absatz 1)";
+        label en unofficial "sought is the close of the calendar year into which the day three months after the private creditor's declaration of termination falls (§ 726, as § 725 (1))";
+        effective [@2024-01-01, infinity);
+        when kuendigungsfrist_726(f) and kuendigung_erklaert_am(f, t);
+        then jahresende_gesucht_725(f, add_calendar_period(t, 3 calendar_month));
+    }
+}
+
+// --- § 729: Auflösungsgründe — Zeitablauf, Insolvenz der Gesellschaft, Zweckerreichung (weitere in §§ 730–732) ---
+
+pub relation zeitablauf_729(g: Gesellschaft) kind empirical {
+    label de official "Die Zeit, für welche die Gesellschaft eingegangen wurde, ist abgelaufen (§ 729 Absatz 1 Nummer 1)";
+    label en unofficial "the period for which the partnership was entered into has expired (§ 729 (1) no. 1)";
+}
+pub relation insolvenz_der_gesellschaft_729(g: Gesellschaft) kind empirical {
+    label de official "Über das Vermögen der Gesellschaft ist das Insolvenzverfahren eröffnet worden (§ 729 Absatz 1 Nummer 2)";
+    label en unofficial "insolvency proceedings have been opened over the partnership's assets (§ 729 (1) no. 2)";
+}
+pub relation zweckerreichung_oder_unmoeglichkeit_729(g: Gesellschaft) kind empirical {
+    label de official "Der Zweck, zu dem die Gesellschaft errichtet wurde, ist erreicht oder seine Erreichung ist unmöglich geworden (§ 729 Absatz 2)";
+    label en unofficial "the purpose for which the partnership was established has been achieved or has become impossible (§ 729 (2))";
+}
+@source(BGB_P729) {
+    rule AufloesungDurchZeitablauf729(g: Gesellschaft) strict {
+        label de official "Die Gesellschaft wird aufgelöst durch Ablauf der Zeit, für welche sie eingegangen wurde (§ 729 Absatz 1 Nummer 1)";
+        label en unofficial "the partnership is dissolved by expiry of the period for which it was entered into (§ 729 (1) no. 1)";
+        effective [@2024-01-01, infinity);
+        when zeitablauf_729(g);
+        then gesellschaft_aufgeloest(g);
+    }
+    rule AufloesungDurchInsolvenzDerGesellschaft729(g: Gesellschaft) strict {
+        label de official "Die Gesellschaft wird aufgelöst durch Eröffnung des Insolvenzverfahrens über das Vermögen der Gesellschaft (§ 729 Absatz 1 Nummer 2)";
+        label en unofficial "the partnership is dissolved by the opening of insolvency proceedings over its assets (§ 729 (1) no. 2)";
+        effective [@2024-01-01, infinity);
+        when insolvenz_der_gesellschaft_729(g);
+        then gesellschaft_aufgeloest(g);
+    }
+    rule AufloesungDurchZweckerreichung729(g: Gesellschaft) strict {
+        label de official "Die Gesellschaft wird ferner aufgelöst, wenn der Zweck, zu dem sie errichtet wurde, erreicht oder seine Erreichung unmöglich geworden ist (§ 729 Absatz 2)";
+        label en unofficial "the partnership is also dissolved where the purpose for which it was established has been achieved or has become impossible (§ 729 (2))";
+        effective [@2024-01-01, infinity);
+        when zweckerreichung_oder_unmoeglichkeit_729(g);
+        then gesellschaft_aufgeloest(g);
+    }
+}
+
+// --- §§ 740a–740c: Verweisungsnormen für die nicht rechtsfähige Gesellschaft (Muster D-08-07) ---
+
+pub relation beendigung_740a(g: Gesellschaft) kind institutional {
+    label de official "Die nicht rechtsfähige Gesellschaft endet durch Ablauf der Zeit, für welche sie eingegangen wurde, Auflösungsbeschluss, Tod oder Insolvenz eines Gesellschafters, Kündigung durch einen Gesellschafter oder einen Privatgläubiger, oder wenn der vereinbarte Zweck erreicht oder seine Erreichung unmöglich geworden ist — dieselben Tatbestände wie §§ 725, 726, 729–732, 734 Absatz 1, 2 (§ 740a)";
+    label en unofficial "the partnership without legal capacity ends through expiry of its term, a dissolution resolution, a partner's death or insolvency, termination by a partner or a private creditor, or where the agreed purpose is achieved or becomes impossible — the same grounds as §§ 725, 726, 729–732, 734 (1), (2) (§ 740a)";
+}
+@source(BGB_P740a) {
+    rule Beendigung740aDurchZeitablauf(g: Gesellschaft) defeasible {
+        label de official "Die nicht rechtsfähige Gesellschaft endet durch Ablauf der Zeit, für welche sie eingegangen wurde (§ 740a Absatz 1 Nummer 1)";
+        label en unofficial "the partnership without legal capacity ends through expiry of the period for which it was entered into (§ 740a (1) no. 1)";
+        effective [@2024-01-01, infinity);
+        when nicht_rechtsfaehige_gesellschaft(g) and zeitablauf_729(g);
+        then beendigung_740a(g);
+    }
+    rule Beendigung740aDurchAndereGruende(g: Gesellschaft) defeasible {
+        label de official "Die Beendigung der nicht rechtsfähigen Gesellschaft folgt im Übrigen aus den §§ 725, 726, 730, 732 und 734 Absatz 1, 2, die entsprechend anzuwenden sind (§ 740a Absatz 3)";
+        label en unofficial "otherwise the ending of the partnership without legal capacity follows §§ 725, 726, 730, 732 and 734 (1), (2), which apply mutatis mutandis (§ 740a (3))";
+        effective [@2024-01-01, infinity);
+        when nicht_rechtsfaehige_gesellschaft(g) and gesellschaft_aufgeloest(g);
+        then beendigung_740a(g);
+    }
+}
+
+pub relation auseinandersetzung_740b(g: Gesellschaft) kind institutional {
+    label de official "Nach der Beendigung der nicht rechtsfähigen Gesellschaft findet die Auseinandersetzung unter den Gesellschaftern statt; § 736d Absatz 2, 4, 5 und 6 und § 737 sind entsprechend anzuwenden (§ 740b)";
+    label en unofficial "after the ending of the partnership without legal capacity, a settling of accounts takes place among the partners; § 736d (2), (4), (5) and (6) and § 737 apply mutatis mutandis (§ 740b)";
+}
+@source(BGB_P740b)
+rule Auseinandersetzung740b(g: Gesellschaft) defeasible {
+    label de official "Nach der Beendigung der nicht rechtsfähigen Gesellschaft findet die Auseinandersetzung unter den Gesellschaftern statt (§ 740b Absatz 1)";
+    label en unofficial "after the ending of the partnership without legal capacity, a settling of accounts takes place among the partners (§ 740b (1))";
+    effective [@2024-01-01, infinity);
+    when nicht_rechtsfaehige_gesellschaft(g) and beendigung_740a(g);
+    then auseinandersetzung_740b(g);
+}
+pub relation erbe_724(g: Gesellschaft, p: Person) kind empirical {
+    label de official "Erbe des Gesellschafters nach § 724";
+    label en unofficial "heir of a partner under § 724";
+}
+pub relation kommanditistenstellung_724_verlangt_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Der Erbe hat die Einräumung der Kommanditistenstellung verlangt (§ 724)";
+    label en unofficial "the heir demanded admission as a limited partner (§ 724)";
+}
+pub relation fortsetzungsrecht_724_beginn_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Beginn des Rechts nach § 724";
+    label en unofficial "start of the right under § 724";
+}
+@source(BGB_P724)
+rule Position724Kommanditist(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Erbe ist berechtigt, die Einräumung der Stellung eines Kommanditisten zu verlangen (§ 724)";
+    label en unofficial "The heir has the liberty to demand admission as a limited partner (§ 724)";
+    when erbe_724(g, p) and fortsetzungsrecht_724_beginn_am(g, beginn);
+    then liberty Liberty724Kommanditist {
+        holder p;
+        action kommanditistenstellung_724_verlangt_am(g, beginn);
+        window [beginn, infinity);
+    };
+}
+pub relation kuendigung_724_erklaert_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Der Erbe hat die Mitgliedschaft gekündigt (§ 724)";
+    label en unofficial "the heir terminated membership (§ 724)";
+}
+@source(BGB_P724)
+rule Position724Kuendigung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Erbe ist berechtigt, die Mitgliedschaft ohne Kündigungsfrist zu kündigen (§ 724)";
+    label en unofficial "The heir has the liberty to terminate membership without notice (§ 724)";
+    when erbe_724(g, p) and fortsetzungsrecht_724_beginn_am(g, beginn);
+    then liberty Liberty724Kuendigung {
+        holder p;
+        action kuendigung_724_erklaert_am(g, beginn);
+        window [beginn, infinity);
+    };
+}
+pub relation haftung_724_begrenzt_am(g: Gesellschaft, tag: Date) kind empirical {
+    label de official "Die Haftung des Erben wurde nach § 724 begrenzt";
+    label en unofficial "the heir's liability was limited under § 724";
+}
+@source(BGB_P724)
+rule Position724Haftung(g: Gesellschaft, p: Person, beginn: Date) strict {
+    label de official "Der Erbe ist berechtigt, seine Haftung für bisherige Gesellschaftsverbindlichkeiten zu begrenzen (§ 724)";
+    label en unofficial "The heir has the liberty to limit liability for prior partnership debts (§ 724)";
+    when erbe_724(g, p) and fortsetzungsrecht_724_beginn_am(g, beginn);
+    then liberty Liberty724Haftung {
+        holder p;
+        action haftung_724_begrenzt_am(g, beginn);
+        window [beginn, infinity);
+    };
+}
+
+pub relation ausscheiden_740c(g: Gesellschaft, p: Person) kind institutional {
+    label de official "Das Ausscheiden eines Gesellschafters aus der nicht rechtsfähigen Gesellschaft folgt den §§ 723 bis 728a, die entsprechend anzuwenden sind (§ 740c)";
+    label en unofficial "a partner's departure from the partnership without legal capacity follows §§ 723 to 728a, which apply mutatis mutandis (§ 740c)";
+}
+@source(BGB_P740c)
+rule Ausscheiden740c(g: Gesellschaft, p: Person) defeasible {
+    label de official "Auf das Ausscheiden eines Gesellschafters aus der nicht rechtsfähigen Gesellschaft sind die §§ 723 bis 728a entsprechend anzuwenden (§ 740c Absatz 1)";
+    label en unofficial "§§ 723 to 728a apply mutatis mutandis to a partner's departure from the partnership without legal capacity (§ 740c (1))";
+    effective [@2024-01-01, infinity);
+    when nicht_rechtsfaehige_gesellschaft(g) and scheidet_aus(g, p);
+    then ausscheiden_740c(g, p);
+}

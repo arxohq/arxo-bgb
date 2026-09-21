@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1593 Satz 1 mit § 187 Abs. 1: Auflösung der Ehe durch Tod am 10.01.2025, der Tag der Auflösung zählt nicht mit; der 300. Tag danach ist der 06.11.2025 (Januar 21 + Februar 28 + März 31 + April 30 + Mai 31 + Juni 30 + Juli 31 + August 31 + September 30 + Oktober 31 = 294, dazu 6 Tage im November). Das Kind wird am 15.10.2025 geboren — innerhalb.
+test "§ 1593: Geburt innerhalb von 300 Tagen nach Auflösung der Ehe durch Tod" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": ehe_durch_tod_aufgeloest_am(entity_ref("urn:de:bgb:vw:a03:K"), entity_ref("urn:de:bgb:vw:a03:V"), @2025-01-10) { origin case_input; }
+        assert "f2": geburtstag_des_kindes(entity_ref("urn:de:bgb:vw:a03:K"), @2025-10-15) { origin case_input; }
+    }
+    evaluate truth(letzter_tag_der_300_tage(entity_ref("urn:de:bgb:vw:a03:K"), @2025-11-06));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(innerhalb_von_300_tagen_geboren(entity_ref("urn:de:bgb:vw:a03:K"), entity_ref("urn:de:bgb:vw:a03:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vaterschaft_nach_1593(entity_ref("urn:de:bgb:vw:a03:K"), entity_ref("urn:de:bgb:vw:a03:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// §§ 642, 643: fehlende Mitwirkung begründet eine angemessene Entschädigung; bleibt die Nachholung bis zum Fristablauf aus, gilt der Vertrag als aufgehoben.
+
+test "urn:query:bgb-dw-t81-642-643-mitwirkung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": handlung_des_bestellers_erforderlich_642(entity_ref("urn:de:bgb:dw:t81")) { origin case_input; }
+        assert "f2": annahmeverzug_des_bestellers_642(entity_ref("urn:de:bgb:dw:t81")) { origin case_input; }
+        assert "f3": entschaedigung_angemessen_642(entity_ref("urn:de:bgb:dw:t81")) { origin adjudicated; }
+        assert "f4": nachholungsfrist_ablauf_643(entity_ref("urn:de:bgb:dw:t81"), @2026-04-30) { origin case_input; }
+        assert "f5": handlung_bis_fristablauf_nicht_nachgeholt_643(entity_ref("urn:de:bgb:dw:t81")) { origin case_input; }
+    }
+    evaluate truth(entschaedigungsanspruch_642(entity_ref("urn:de:bgb:dw:t81")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vertrag_aufgehoben_643(entity_ref("urn:de:bgb:dw:t81"), @2026-04-30));
+    expect truth_status == TRUE_ONLY;
+}

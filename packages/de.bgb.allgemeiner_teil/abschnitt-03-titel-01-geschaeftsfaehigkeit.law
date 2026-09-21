@@ -1,0 +1,525 @@
+// BUCH 1 ABSCHNITT 3 TITEL 1 — GESCHÄFTSFÄHIGKEIT (§§ 104–113)
+//
+// ZUSTAND AN EINEM TAG. Geschäftsunfähigkeit und beschränkte
+// Geschäftsfähigkeit werden am Prüfungstag gemessen; bei einer
+// Willenserklärung ist das der Tag ihrer Abgabe (Regel
+// `PruefungszeitpunktAbgabe`). Das Lebensalter rechnet `de.bgb.fristen`
+// (§ 187 Abs. 2 Satz 2, § 188 Abs. 2).
+//
+// KANÄLE (DECISION-0194). Der die freie Willensbestimmung ausschließende
+// Zustand krankhafter Störung der Geistestätigkeit (§ 104 Nr. 2) ist eine
+// FESTGESTELLTE TATSACHE (im Fall `origin adjudicated`). „Lediglich ein
+// rechtlicher Vorteil“ (§ 107), „Geschäft des täglichen Lebens mit
+// geringwertigen Mitteln“ und die „erhebliche Gefahr“ (§ 105a) sowie
+// „unverzüglich“ (§ 111 Satz 2) sind WERTUNGEN des Gerichts.
+//
+// FRIST DES § 108 Abs. 2. Zwei Wochen nach dem Empfang der Aufforderung,
+// gerechnet von `de.bgb.fristen` (§ 188 Abs. 2, § 193); Zeile in
+// docs/foundations/de-bgb/DEADLINES.json, BG-03.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+// --- Gemeinsame Zustände ---------------------------------------------------------------------------
+
+pub relation geschaeftsunfaehig_am(p: Person, tag: Date) kind institutional {
+    label de official "die Person ist an diesem Tag geschäftsunfähig (§ 104)";
+    label en unofficial "the person lacks capacity to contract on this day (§ 104)";
+}
+pub relation beschraenkt_geschaeftsfaehig_am(p: Person, tag: Date) kind institutional {
+    label de official "die Person ist an diesem Tag in der Geschäftsfähigkeit beschränkt (§ 106)";
+    label en unofficial "the person has limited capacity to contract on this day (§ 106)";
+}
+pub relation nicht_voll_geschaeftsfaehig_am(p: Person, tag: Date) kind institutional {
+    label de official "die Person ist an diesem Tag geschäftsunfähig oder in der Geschäftsfähigkeit beschränkt (§§ 104, 106; vgl. § 8)";
+    label en unofficial "the person lacks or is limited in capacity to contract on this day (§§ 104, 106; cf. § 8)";
+}
+
+// Der Tag der Abgabe der Willenserklärung ist der Tag, an dem der Zustand
+// des Erklärenden gemessen wird.
+rule PruefungszeitpunktAbgabe(w: Willenserklaerung, p: Person, t: Date) strict {
+    label de official "Der Zustand des Erklärenden wird am Tag der Abgabe der Willenserklärung gemessen";
+    label en unofficial "The state of the declaring person is measured on the day the declaration is made";
+    when erklaerender(w, p) and erklaerung_abgegeben_am(w, t);
+    then pruefungszeitpunkt(p, t);
+}
+
+// --- § 104 Geschäftsunfähigkeit -----------------------------------------------------------------------
+
+pub relation siebtes_lebensjahr_vollendet_ab(p: Person, tag: Date) kind institutional {
+    key(p);
+    label de official "Tag, von dem an das siebente Lebensjahr vollendet ist (§ 104 Nr. 1, § 106; § 187 Abs. 2 Satz 2, § 188 Abs. 2)";
+    label en unofficial "day from which the seventh year of life is completed (§ 104 no. 1, § 106)";
+}
+pub relation zustand_krankhafter_stoerung(p: Person, tag: Date) kind empirical {
+    label de official "die Person befindet sich an diesem Tag in einem die freie Willensbestimmung ausschließenden Zustand krankhafter Störung der Geistestätigkeit, der seiner Natur nach nicht vorübergehend ist (§ 104 Nr. 2) — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "on this day the person is in a state of pathological mental disturbance excluding free volition and not temporary by nature (§ 104 no. 2) — established fact";
+}
+
+@source(BGB_P104)
+rule SiebtesLebensjahrGefragt(p: Person, g: Date) strict {
+    label de official "Geschäftsunfähig ist, wer nicht das siebente Lebensjahr vollendet hat (§ 104 Nr. 1): gefragt ist die Vollendung des siebenten Lebensjahres";
+    label en unofficial "A person who has not completed their seventh year of life lacks capacity to contract (§ 104 no. 1): the completion of the seventh year is asked";
+    when de.bgb.fristen::geburtstag(p, g);
+    then de.bgb.fristen::lebensjahr_gefragt(p, 7 calendar_year);
+}
+
+@source(BGB_P104)
+rule SiebtesLebensjahrVollendetAb(p: Person, v: Date) strict {
+    label de official "Vollendet ist das siebente Lebensjahr mit dem Ablauf des Vortags des siebenten Geburtstags (§ 187 Abs. 2 Satz 2, § 188 Abs. 2); vollendet HAT es die Person vom folgenden Tag an";
+    label en unofficial "The seventh year is completed at the end of the day before the seventh birthday; the person has completed it from the following day";
+    when de.bgb.fristen::lebensjahr_vollendet_am(p, 7 calendar_year, v);
+    then siebtes_lebensjahr_vollendet_ab(p, add_calendar_period(v, 1 calendar_day));
+}
+
+@source(BGB_P104)
+rule GeschaeftsunfaehigVorSiebenJahren(p: Person, t: Date, s: Date) strict {
+    label de official "Geschäftsunfähig ist, wer nicht das siebente Lebensjahr vollendet hat (§ 104 Nr. 1)";
+    label en unofficial "A person who has not completed the seventh year of life lacks capacity to contract (§ 104 no. 1)";
+    when pruefungszeitpunkt(p, t) and siebtes_lebensjahr_vollendet_ab(p, s) and t < s;
+    then geschaeftsunfaehig_am(p, t);
+}
+
+@source(BGB_P104)
+rule GeschaeftsunfaehigWegenKrankhafterStoerung(p: Person, t: Date) strict {
+    label de official "Geschäftsunfähig ist, wer sich in einem die freie Willensbestimmung ausschließenden Zustand krankhafter Störung der Geistestätigkeit befindet, sofern nicht der Zustand seiner Natur nach ein vorübergehender ist (§ 104 Nr. 2)";
+    label en unofficial "A person in a state of pathological mental disturbance excluding free volition, unless temporary by nature, lacks capacity to contract (§ 104 no. 2)";
+    when pruefungszeitpunkt(p, t) and zustand_krankhafter_stoerung(p, t);
+    then geschaeftsunfaehig_am(p, t);
+}
+
+@source(BGB_P104, BGB_P106)
+rule NichtVollGeschaeftsfaehigWegenGeschaeftsunfaehigkeit(p: Person, t: Date) strict {
+    label de official "Der Geschäftsunfähige ist nicht voll geschäftsfähig (§§ 104, 8)";
+    label en unofficial "A person lacking capacity to contract is not fully capable (§§ 104, 8)";
+    when geschaeftsunfaehig_am(p, t);
+    then nicht_voll_geschaeftsfaehig_am(p, t);
+}
+
+@source(BGB_P106)
+rule NichtVollGeschaeftsfaehigWegenBeschraenkung(p: Person, t: Date) strict {
+    label de official "Der in der Geschäftsfähigkeit Beschränkte ist nicht voll geschäftsfähig (§§ 106, 8)";
+    label en unofficial "A person with limited capacity to contract is not fully capable (§§ 106, 8)";
+    when beschraenkt_geschaeftsfaehig_am(p, t);
+    then nicht_voll_geschaeftsfaehig_am(p, t);
+}
+
+// --- § 105 Nichtigkeit der Willenserklärung ---------------------------------------------------------
+
+pub relation willenserklaerung_nichtig(w: Willenserklaerung) kind institutional {
+    label de official "die Willenserklärung ist nichtig (§§ 105, 116 Satz 2, 117 Abs. 1, 118)";
+    label en unofficial "the declaration of intent is void (§§ 105, 116 sentence 2, 117 (1), 118)";
+}
+pub relation bewusstlosigkeit_oder_voruebergehende_stoerung(w: Willenserklaerung) kind empirical {
+    label de official "die Willenserklärung wird im Zustand der Bewusstlosigkeit oder vorübergehender Störung der Geistestätigkeit abgegeben (§ 105 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "the declaration is made in a state of unconsciousness or temporary mental disturbance (§ 105 (2)) — established fact";
+}
+
+@source(BGB_P105)
+rule WillenserklaerungDesGeschaeftsunfaehigenNichtig(w: Willenserklaerung, p: Person, t: Date) strict {
+    label de official "Die Willenserklärung eines Geschäftsunfähigen ist nichtig (§ 105 Abs. 1)";
+    label en unofficial "The declaration of intent of a person lacking capacity to contract is void (§ 105 (1))";
+    when erklaerender(w, p) and erklaerung_abgegeben_am(w, t) and geschaeftsunfaehig_am(p, t);
+    then willenserklaerung_nichtig(w);
+}
+
+@source(BGB_P105)
+rule WillenserklaerungInBewusstlosigkeitNichtig(w: Willenserklaerung) strict {
+    label de official "Nichtig ist auch eine Willenserklärung, die im Zustand der Bewusstlosigkeit oder vorübergehender Störung der Geistestätigkeit abgegeben wird (§ 105 Abs. 2)";
+    label en unofficial "A declaration made in a state of unconsciousness or temporary mental disturbance is also void (§ 105 (2))";
+    when bewusstlosigkeit_oder_voruebergehende_stoerung(w);
+    then willenserklaerung_nichtig(w);
+}
+
+// --- § 105a Geschäfte des täglichen Lebens ------------------------------------------------------------
+
+@source(BGB_P105a)
+pub external judgment relation geschaeft_des_taeglichen_lebens_geringwertig(r: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 105a Satz 1: ein Geschäft des täglichen Lebens, das mit geringwertigen Mitteln bewirkt werden kann";
+    label en unofficial "§ 105a sentence 1: an everyday transaction that can be effected with funds of low value";
+}
+
+@source(BGB_P105a)
+pub external judgment relation erhebliche_gefahr_fuer_person_oder_vermoegen(r: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 105a Satz 2: erhebliche Gefahr für die Person oder das Vermögen des Geschäftsunfähigen";
+    label en unofficial "§ 105a sentence 2: considerable danger to the person or the property of the person lacking capacity";
+}
+
+pub relation leistung_und_gegenleistung_bewirkt(r: Rechtsgeschaeft) kind empirical {
+    label de official "Leistung und, soweit vereinbart, Gegenleistung sind bewirkt (§ 105a Satz 1)";
+    label en unofficial "performance and, where agreed, counter-performance have been effected (§ 105a sentence 1)";
+}
+pub relation gilt_als_wirksam(r: Rechtsgeschaeft) kind institutional {
+    label de official "der Vertrag gilt in Ansehung von Leistung und Gegenleistung als wirksam (§ 105a Satz 1)";
+    label en unofficial "the contract is deemed effective as regards performance and counter-performance (§ 105a sentence 1)";
+}
+
+@source(BGB_P105a)
+rule GeschaeftDesTaeglichenLebensGiltAlsWirksam(r: Rechtsgeschaeft, w: Willenserklaerung, p: Person, t: Date) strict {
+    label de official "Tätigt ein volljähriger Geschäftsunfähiger ein Geschäft des täglichen Lebens, das mit geringwertigen Mitteln bewirkt werden kann, so gilt der von ihm geschlossene Vertrag in Ansehung von Leistung und, soweit vereinbart, Gegenleistung als wirksam, sobald Leistung und Gegenleistung bewirkt sind; das gilt nicht bei einer erheblichen Gefahr für die Person oder das Vermögen des Geschäftsunfähigen (§ 105a)";
+    label en unofficial "If an adult lacking capacity to contract effects an everyday transaction with funds of low value, the contract is deemed effective once performance and counter-performance are effected; not so where there is considerable danger to the person or property (§ 105a)";
+    when erklaerung_gehoert_zu(w, r)
+        and erklaerender(w, p)
+        and erklaerung_abgegeben_am(w, t)
+        and geschaeftsunfaehig_am(p, t)
+        and volljaehrig_am(p, t)
+        and geschaeft_des_taeglichen_lebens_geringwertig(r)
+        and leistung_und_gegenleistung_bewirkt(r)
+        and not erhebliche_gefahr_fuer_person_oder_vermoegen(r);
+    then gilt_als_wirksam(r);
+}
+
+// --- § 106 Beschränkte Geschäftsfähigkeit Minderjähriger -------------------------------------------------
+
+@source(BGB_P106)
+rule BeschraenktGeschaeftsfaehigerMinderjaehriger(p: Person, t: Date, s: Date) strict {
+    label de official "Ein Minderjähriger, der das siebente Lebensjahr vollendet hat, ist nach Maßgabe der §§ 107 bis 113 in der Geschäftsfähigkeit beschränkt (§ 106)";
+    label en unofficial "A minor who has completed the seventh year of life has limited capacity to contract under §§ 107 to 113 (§ 106)";
+    when minderjaehrig_am(p, t) and siebtes_lebensjahr_vollendet_ab(p, s) and t >= s;
+    then beschraenkt_geschaeftsfaehig_am(p, t);
+}
+
+// --- § 107 Einwilligung des gesetzlichen Vertreters -------------------------------------------------------
+
+@source(BGB_P107)
+pub external judgment relation lediglich_rechtlicher_vorteil(w: Willenserklaerung) {
+    authority Court;
+    label de official "§ 107: durch die Willenserklärung erlangt der Minderjährige lediglich einen rechtlichen Vorteil";
+    label en unofficial "§ 107: by the declaration the minor obtains only a legal advantage";
+}
+
+pub relation einwilligung_des_vertreters(w: Willenserklaerung) kind empirical {
+    label de official "vorherige Zustimmung des gesetzlichen Vertreters zu der Willenserklärung (§§ 107, 183)";
+    label en unofficial "prior consent of the legal representative to the declaration (§§ 107, 183)";
+}
+pub relation einwilligung_erforderlich(w: Willenserklaerung) kind institutional {
+    label de official "der Minderjährige bedarf zu dieser Willenserklärung der Einwilligung seines gesetzlichen Vertreters (§ 107)";
+    label en unofficial "the minor needs the consent of their legal representative for this declaration (§ 107)";
+}
+
+@source(BGB_P107)
+rule EinwilligungErforderlich(w: Willenserklaerung, p: Person, t: Date) strict {
+    label de official "Der Minderjährige bedarf zu einer Willenserklärung, durch die er nicht lediglich einen rechtlichen Vorteil erlangt, der Einwilligung seines gesetzlichen Vertreters (§ 107)";
+    label en unofficial "A minor needs the consent of their legal representative for a declaration by which they do not merely obtain a legal advantage (§ 107)";
+    when erklaerender(w, p)
+        and erklaerung_abgegeben_am(w, t)
+        and beschraenkt_geschaeftsfaehig_am(p, t)
+        and not lediglich_rechtlicher_vorteil(w);
+    then einwilligung_erforderlich(w);
+}
+
+// --- § 108 Vertragsschluss ohne Einwilligung ---------------------------------------------------------------
+
+pub relation genehmigung_des_vertreters(r: Rechtsgeschaeft) kind empirical {
+    label de official "nachträgliche Zustimmung (Genehmigung) des gesetzlichen Vertreters zum Vertrag (§ 108 Abs. 1, § 184)";
+    label en unofficial "subsequent approval of the legal representative (§ 108 (1), § 184)";
+}
+pub relation genehmigung_verweigert(r: Rechtsgeschaeft) kind institutional {
+    label de official "die Genehmigung ist verweigert oder gilt als verweigert (§ 108 Abs. 2)";
+    label en unofficial "approval is refused or is deemed refused (§ 108 (2))";
+}
+pub relation schwebend_unwirksam(r: Rechtsgeschaeft) kind institutional {
+    label de official "die Wirksamkeit des Vertrags hängt von der Genehmigung ab (§ 108 Abs. 1, § 177 Abs. 1)";
+    label en unofficial "the effectiveness of the contract depends on approval (§ 108 (1), § 177 (1))";
+}
+pub relation aufforderung_zur_genehmigung_empfangen_am(r: Rechtsgeschaeft, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag des Empfangs der Aufforderung des anderen Teils, sich über die Genehmigung zu erklären (§ 108 Abs. 2, § 177 Abs. 2)";
+    label en unofficial "day of receipt of the other party's request to declare on approval (§ 108 (2), § 177 (2))";
+}
+pub relation genehmigung_erklaert_am(r: Rechtsgeschaeft, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag, an dem die Genehmigung gegenüber dem auffordernden Teil erklärt wurde (§ 108 Abs. 2)";
+    label en unofficial "day on which approval was declared to the requesting party (§ 108 (2))";
+}
+pub relation genehmigungsfrist(r: Rechtsgeschaeft, f: Frist) kind empirical {
+    key(r);
+    label de official "Frist der zwei Wochen, innerhalb deren die Genehmigung erklärt werden kann (§ 108 Abs. 2 Satz 2, § 177 Abs. 2 Satz 2)";
+    label en unofficial "the two-week period within which approval may be declared (§ 108 (2) sentence 2, § 177 (2) sentence 2)";
+}
+pub relation genehmigungsfrist_ende(r: Rechtsgeschaeft, tag: Date) kind institutional {
+    key(r);
+    label de official "Tag, mit dessen Ablauf die Frist des § 108 Abs. 2 Satz 2 endet (§§ 187 Abs. 1, 188 Abs. 2, 193)";
+    label en unofficial "day at whose end the period of § 108 (2) sentence 2 ends";
+}
+
+@source(BGB_P108)
+rule VertragOhneEinwilligungSchwebendUnwirksam(r: Rechtsgeschaeft, w: Willenserklaerung) strict {
+    label de official "Schließt der Minderjährige einen Vertrag ohne die erforderliche Einwilligung des gesetzlichen Vertreters, so hängt die Wirksamkeit des Vertrags von der Genehmigung des Vertreters ab (§ 108 Abs. 1)";
+    label en unofficial "If the minor enters into a contract without the required consent, its effectiveness depends on the representative's approval (§ 108 (1))";
+    when erklaerung_gehoert_zu(w, r)
+        and einwilligung_erforderlich(w)
+        and not einwilligung_des_vertreters(w);
+    then schwebend_unwirksam(r);
+}
+
+@source(BGB_P108)
+rule GenehmigungsfristEreignis(r: Rechtsgeschaeft, f: Frist, d: Date) strict {
+    label de official "Die Genehmigung kann nur bis zum Ablauf von zwei Wochen nach dem Empfang der Aufforderung erklärt werden (§ 108 Abs. 2 Satz 2) — Ereignis der Frist ist der Empfang der Aufforderung (§ 187 Abs. 1)";
+    label en unofficial "Approval may only be declared within two weeks of receipt of the request (§ 108 (2) sentence 2) — the event is the receipt";
+    when genehmigungsfrist(r, f) and aufforderung_zur_genehmigung_empfangen_am(r, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P108)
+rule GenehmigungsfristDauer(r: Rechtsgeschaeft, f: Frist, d: Date) strict {
+    label de official "Die Frist des § 108 Abs. 2 Satz 2 beträgt zwei Wochen (§ 188 Abs. 2: der Tag, der durch seine Zahl dem Ereignistag entspricht)";
+    label en unofficial "The period of § 108 (2) sentence 2 is two weeks (§ 188 (2))";
+    when genehmigungsfrist(r, f) and aufforderung_zur_genehmigung_empfangen_am(r, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 2 calendar_week);
+}
+
+@source(BGB_P108)
+rule GenehmigungsfristEndeUebernommen(r: Rechtsgeschaeft, f: Frist, e: Date) strict {
+    label de official "Das Ende der Frist berechnet sich nach den §§ 187 Abs. 1, 188 Abs. 2 und 193 (de.bgb.fristen)";
+    label en unofficial "The end of the period is computed under §§ 187 (1), 188 (2) and 193 (de.bgb.fristen)";
+    when genehmigungsfrist(r, f) and de.bgb.fristen::frist_ende(f, e);
+    then genehmigungsfrist_ende(r, e);
+}
+
+@source(BGB_P108)
+rule GenehmigungGiltAlsVerweigert(r: Rechtsgeschaeft, e: Date, g: Date) strict {
+    label de official "Wird die Genehmigung nicht bis zum Ablauf von zwei Wochen nach dem Empfang der Aufforderung erklärt, so gilt sie als verweigert (§ 108 Abs. 2 Satz 2)";
+    label en unofficial "If approval is not declared within two weeks of receipt of the request, it is deemed refused (§ 108 (2) sentence 2)";
+    when genehmigungsfrist_ende(r, e) and genehmigung_erklaert_am(r, g) and g > e;
+    then genehmigung_verweigert(r);
+}
+
+@source(BGB_P108)
+rule GenehmigungRechtzeitigErklaert(r: Rechtsgeschaeft, e: Date, g: Date) strict {
+    label de official "Die innerhalb der Frist erklärte Genehmigung macht den Vertrag wirksam (§ 108 Abs. 1, Abs. 2 Satz 2, § 184 Abs. 1)";
+    label en unofficial "Approval declared within the period makes the contract effective (§ 108 (1), (2), § 184 (1))";
+    when schwebend_unwirksam(r)
+        and genehmigungsfrist_ende(r, e)
+        and genehmigung_erklaert_am(r, g)
+        and g <= e;
+    then wirksam(r);
+}
+
+@source(BGB_P108)
+rule VertragBeiVerweigerterGenehmigungUnwirksam(r: Rechtsgeschaeft) strict {
+    label de official "Wird die Genehmigung verweigert, so ist der Vertrag unwirksam (§ 108 Abs. 1)";
+    label en unofficial "If approval is refused the contract is ineffective (§ 108 (1))";
+    when schwebend_unwirksam(r) and genehmigung_verweigert(r);
+    then unwirksam(r);
+}
+
+pub relation unbeschraenkt_geschaeftsfaehig_geworden(p: Person, r: Rechtsgeschaeft) kind empirical {
+    label de official "der Minderjährige ist unbeschränkt geschäftsfähig geworden (§ 108 Abs. 3)";
+    label en unofficial "the minor has acquired unlimited capacity to contract (§ 108 (3))";
+}
+pub relation eigene_genehmigung_tritt_an_die_stelle(p: Person, r: Rechtsgeschaeft) kind institutional {
+    label de official "die Genehmigung des volljährig Gewordenen tritt an die Stelle der Genehmigung des Vertreters (§ 108 Abs. 3)";
+    label en unofficial "the approval of the person who has come of age replaces that of the representative (§ 108 (3))";
+}
+
+@source(BGB_P108)
+rule EigeneGenehmigungNachEintrittDerGeschaeftsfaehigkeit(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "Ist der Minderjährige unbeschränkt geschäftsfähig geworden, so tritt seine Genehmigung an die Stelle der Genehmigung des Vertreters (§ 108 Abs. 3)";
+    label en unofficial "If the minor has acquired unlimited capacity, their own approval replaces the representative's (§ 108 (3))";
+    when schwebend_unwirksam(r) and unbeschraenkt_geschaeftsfaehig_geworden(p, r);
+    then eigene_genehmigung_tritt_an_die_stelle(p, r);
+}
+
+// --- § 109 Widerrufsrecht des anderen Teils -----------------------------------------------------------------
+
+pub relation widerruf_erklaert(r: Rechtsgeschaeft) kind empirical {
+    label de official "der andere Teil hat den Vertrag widerrufen (§ 109 Abs. 1, § 178)";
+    label en unofficial "the other party has revoked the contract (§ 109 (1), § 178)";
+}
+pub relation kannte_die_minderjaehrigkeit(r: Rechtsgeschaeft) kind empirical {
+    label de official "der andere Teil hat die Minderjährigkeit gekannt (§ 109 Abs. 2 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the other party knew of the minority (§ 109 (2) sentence 1) — established fact";
+}
+pub relation einwilligung_wahrheitswidrig_behauptet(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Minderjährige hat der Wahrheit zuwider die Einwilligung des Vertreters behauptet (§ 109 Abs. 2 Satz 1)";
+    label en unofficial "the minor untruthfully claimed the representative's consent (§ 109 (2) sentence 1)";
+}
+pub relation fehlen_der_einwilligung_bekannt(r: Rechtsgeschaeft) kind empirical {
+    label de official "dem anderen Teil war das Fehlen der Einwilligung bei dem Abschluss des Vertrags bekannt (§ 109 Abs. 2 Satz 2)";
+    label en unofficial "the other party knew at conclusion that consent was missing (§ 109 (2) sentence 2)";
+}
+pub relation widerruf_berechtigt(r: Rechtsgeschaeft) kind institutional {
+    label de official "der andere Teil ist zum Widerruf berechtigt (§ 109)";
+    label en unofficial "the other party is entitled to revoke (§ 109)";
+}
+
+@source(BGB_P109)
+rule WiderrufBisZurGenehmigung(r: Rechtsgeschaeft) strict {
+    label de official "Bis zur Genehmigung des Vertrags ist der andere Teil zum Widerruf berechtigt (§ 109 Abs. 1 Satz 1)";
+    label en unofficial "Until approval the other party is entitled to revoke (§ 109 (1) sentence 1)";
+    when schwebend_unwirksam(r)
+        and not genehmigung_des_vertreters(r)
+        and not kannte_die_minderjaehrigkeit(r);
+    then widerruf_berechtigt(r);
+}
+
+@source(BGB_P109)
+rule WiderrufBeiKenntnisNurNachTaeuschung(r: Rechtsgeschaeft) strict {
+    label de official "Hat der andere Teil die Minderjährigkeit gekannt, so kann er nur widerrufen, wenn der Minderjährige der Wahrheit zuwider die Einwilligung des Vertreters behauptet hat; auch dann nicht, wenn ihm das Fehlen der Einwilligung bei dem Abschluss bekannt war (§ 109 Abs. 2)";
+    label en unofficial "If the other party knew of the minority they may revoke only if the minor untruthfully claimed consent, and not if they knew consent was missing (§ 109 (2))";
+    when schwebend_unwirksam(r)
+        and kannte_die_minderjaehrigkeit(r)
+        and einwilligung_wahrheitswidrig_behauptet(r)
+        and not fehlen_der_einwilligung_bekannt(r);
+    then widerruf_berechtigt(r);
+}
+
+@source(BGB_P109)
+rule WiderrufBeendetDenSchwebezustand(r: Rechtsgeschaeft) strict {
+    label de official "Der Widerruf des berechtigten anderen Teils macht den Vertrag unwirksam (§ 109 Abs. 1)";
+    label en unofficial "Revocation by the entitled party renders the contract ineffective (§ 109 (1))";
+    when widerruf_berechtigt(r) and widerruf_erklaert(r);
+    then unwirksam(r);
+}
+
+// --- § 110 Bewirken der Leistung mit eigenen Mitteln -------------------------------------------------------
+
+pub relation leistung_mit_ueberlassenen_mitteln_bewirkt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Minderjährige bewirkt die vertragsmäßige Leistung mit Mitteln, die ihm zu diesem Zweck oder zu freier Verfügung von dem Vertreter oder mit dessen Zustimmung von einem Dritten überlassen worden sind (§ 110)";
+    label en unofficial "the minor effects performance with means given to them for that purpose or at their free disposal (§ 110)";
+}
+
+@source(BGB_P110)
+rule TaschengeldVertragWirksam(r: Rechtsgeschaeft) strict {
+    label de official "Ein von dem Minderjährigen ohne Zustimmung des gesetzlichen Vertreters geschlossener Vertrag gilt als von Anfang an wirksam, wenn der Minderjährige die vertragsmäßige Leistung mit Mitteln bewirkt, die ihm zu diesem Zweck oder zu freier Verfügung überlassen worden sind (§ 110)";
+    label en unofficial "A contract concluded by the minor without consent is deemed effective from the outset if performance is effected with means given to them (§ 110)";
+    when schwebend_unwirksam(r) and leistung_mit_ueberlassenen_mitteln_bewirkt(r);
+    then wirksam(r);
+}
+
+// --- § 111 Einseitige Rechtsgeschäfte ---------------------------------------------------------------------
+
+pub enum Geschaeftsart {
+    label de official "Art des Rechtsgeschäfts: Vertrag oder einseitiges Rechtsgeschäft";
+    label en unofficial "kind of transaction: contract or unilateral transaction";
+    Vertrag,
+    EinseitigesRechtsgeschaeft
+}
+pub relation geschaeftsart(r: Rechtsgeschaeft, art: Geschaeftsart) kind empirical {
+    key(r);
+    label de official "Art des Rechtsgeschäfts (§§ 111, 180, 182 Abs. 1)";
+    label en unofficial "kind of the legal transaction (§§ 111, 180, 182 (1))";
+}
+pub relation einwilligung_in_schriftlicher_form_vorgelegt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Minderjährige legt die Einwilligung in schriftlicher Form vor (§ 111 Satz 2)";
+    label en unofficial "the minor presents the consent in written form (§ 111 sentence 2)";
+}
+pub relation zurueckweisung_erklaert(r: Rechtsgeschaeft) kind empirical {
+    label de official "der andere weist das Rechtsgeschäft aus diesem Grunde zurück (§ 111 Satz 2, § 174 Satz 1)";
+    label en unofficial "the other party rejects the transaction on that ground (§ 111 sentence 2, § 174 sentence 1)";
+}
+pub relation von_der_einwilligung_in_kenntnis_gesetzt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Vertreter hatte den anderen von der Einwilligung in Kenntnis gesetzt (§ 111 Satz 3)";
+    label en unofficial "the representative had informed the other party of the consent (§ 111 sentence 3)";
+}
+
+@source(BGB_P111)
+pub external judgment relation zurueckweisung_unverzueglich(r: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 111 Satz 2, § 174 Satz 1: die Zurückweisung ist unverzüglich (ohne schuldhaftes Zögern, § 121 Abs. 1 Satz 1) erfolgt";
+    label en unofficial "§ 111 sentence 2, § 174 sentence 1: the rejection was made without undue delay";
+}
+
+@source(BGB_P111)
+rule EinseitigesRechtsgeschaeftOhneEinwilligungUnwirksam(r: Rechtsgeschaeft, w: Willenserklaerung) strict {
+    label de official "Ein einseitiges Rechtsgeschäft, das der Minderjährige ohne die erforderliche Einwilligung des gesetzlichen Vertreters vornimmt, ist unwirksam (§ 111 Satz 1)";
+    label en unofficial "A unilateral transaction effected by the minor without the required consent is ineffective (§ 111 sentence 1)";
+    when geschaeftsart(r, EinseitigesRechtsgeschaeft)
+        and erklaerung_gehoert_zu(w, r)
+        and einwilligung_erforderlich(w)
+        and not einwilligung_des_vertreters(w);
+    then unwirksam(r);
+}
+
+@source(BGB_P111)
+rule EinseitigesRechtsgeschaeftNachZurueckweisungUnwirksam(r: Rechtsgeschaeft, w: Willenserklaerung) strict {
+    label de official "Nimmt der Minderjährige mit Einwilligung ein einseitiges Rechtsgeschäft einem anderen gegenüber vor, so ist es unwirksam, wenn er die Einwilligung nicht in schriftlicher Form vorlegt und der andere das Rechtsgeschäft aus diesem Grunde unverzüglich zurückweist; die Zurückweisung ist ausgeschlossen, wenn der Vertreter den anderen von der Einwilligung in Kenntnis gesetzt hatte (§ 111 Sätze 2, 3)";
+    label en unofficial "A unilateral transaction effected with consent is ineffective if the consent is not presented in writing and the other party rejects it without undue delay, unless they had been informed of the consent (§ 111 sentences 2, 3)";
+    when geschaeftsart(r, EinseitigesRechtsgeschaeft)
+        and erklaerung_gehoert_zu(w, r)
+        and einwilligung_erforderlich(w)
+        and einwilligung_des_vertreters(w)
+        and not einwilligung_in_schriftlicher_form_vorgelegt(r)
+        and zurueckweisung_erklaert(r)
+        and zurueckweisung_unverzueglich(r)
+        and not von_der_einwilligung_in_kenntnis_gesetzt(r);
+    then unwirksam(r);
+}
+
+// --- §§ 112, 113 Ermächtigungen ---------------------------------------------------------------------------
+
+pub relation ermaechtigung_erwerbsgeschaeft(p: Person) kind empirical {
+    label de official "der gesetzliche Vertreter hat den Minderjährigen mit Genehmigung des Familiengerichts zum selbständigen Betrieb eines Erwerbsgeschäfts ermächtigt (§ 112 Abs. 1 Satz 1)";
+    label en unofficial "the representative, with the family court's approval, authorised the minor to run a business independently (§ 112 (1))";
+}
+pub relation geschaeft_des_erwerbsbetriebs(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "das Rechtsgeschäft bringt der Geschäftsbetrieb mit sich (§ 112 Abs. 1 Satz 1)";
+    label en unofficial "the transaction is one that the business entails (§ 112 (1))";
+}
+pub relation bedarf_der_genehmigung_des_familiengerichts(r: Rechtsgeschaeft) kind empirical {
+    label de official "zu dem Rechtsgeschäft bedarf der Vertreter der Genehmigung des Familiengerichts (§ 112 Abs. 1 Satz 2, § 113 Abs. 1 Satz 2)";
+    label en unofficial "for this transaction the representative needs the family court's approval (§ 112 (1) sentence 2, § 113 (1) sentence 2)";
+}
+pub relation ermaechtigung_dienst_oder_arbeit(p: Person) kind empirical {
+    label de official "der gesetzliche Vertreter hat den Minderjährigen ermächtigt, in Dienst oder in Arbeit zu treten (§ 113 Abs. 1 Satz 1)";
+    label en unofficial "the representative authorised the minor to enter service or employment (§ 113 (1))";
+}
+pub relation geschaeft_des_dienstverhaeltnisses(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "das Rechtsgeschäft betrifft die Eingehung oder Aufhebung eines Dienst- oder Arbeitsverhältnisses der gestatteten Art oder die Erfüllung der sich daraus ergebenden Verpflichtungen (§ 113 Abs. 1 Satz 1)";
+    label en unofficial "the transaction concerns entering into or terminating a service relationship of the permitted kind or performing obligations arising from it (§ 113 (1))";
+}
+pub relation ermaechtigung_zurueckgenommen(p: Person) kind empirical {
+    label de official "die Ermächtigung ist zurückgenommen oder eingeschränkt worden (§ 112 Abs. 2, § 113 Abs. 2)";
+    label en unofficial "the authorisation has been withdrawn or restricted (§ 112 (2), § 113 (2))";
+}
+pub relation unbeschraenkt_geschaeftsfaehig_fuer(p: Person, r: Rechtsgeschaeft) kind institutional {
+    label de official "der Minderjährige ist für dieses Rechtsgeschäft unbeschränkt geschäftsfähig (§§ 112, 113)";
+    label en unofficial "the minor has unlimited capacity to contract for this transaction (§§ 112, 113)";
+}
+
+@source(BGB_P112)
+rule UnbeschraenktFuerGeschaefteDesErwerbsbetriebs(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "Ermächtigt der gesetzliche Vertreter mit Genehmigung des Familiengerichts den Minderjährigen zum selbständigen Betrieb eines Erwerbsgeschäfts, so ist der Minderjährige für solche Rechtsgeschäfte unbeschränkt geschäftsfähig, welche der Geschäftsbetrieb mit sich bringt; ausgenommen sind Rechtsgeschäfte, zu denen der Vertreter der Genehmigung des Familiengerichts bedarf (§ 112 Abs. 1)";
+    label en unofficial "A minor authorised to run a business independently has unlimited capacity for transactions the business entails, except those requiring the family court's approval (§ 112 (1))";
+    when ermaechtigung_erwerbsgeschaeft(p)
+        and geschaeft_des_erwerbsbetriebs(r, p)
+        and not bedarf_der_genehmigung_des_familiengerichts(r)
+        and not ermaechtigung_zurueckgenommen(p);
+    then unbeschraenkt_geschaeftsfaehig_fuer(p, r);
+}
+
+@source(BGB_P113)
+rule UnbeschraenktFuerGeschaefteDesDienstverhaeltnisses(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "Ermächtigt der gesetzliche Vertreter den Minderjährigen, in Dienst oder in Arbeit zu treten, so ist der Minderjährige für solche Rechtsgeschäfte unbeschränkt geschäftsfähig, welche die Eingehung oder Aufhebung eines Dienst- oder Arbeitsverhältnisses der gestatteten Art oder die Erfüllung der sich daraus ergebenden Verpflichtungen betreffen; ausgenommen sind Verträge, zu denen der Vertreter der Genehmigung des Familiengerichts bedarf (§ 113 Abs. 1)";
+    label en unofficial "A minor authorised to enter service has unlimited capacity for transactions concerning that relationship, except contracts requiring the family court's approval (§ 113 (1))";
+    when ermaechtigung_dienst_oder_arbeit(p)
+        and geschaeft_des_dienstverhaeltnisses(r, p)
+        and not bedarf_der_genehmigung_des_familiengerichts(r)
+        and not ermaechtigung_zurueckgenommen(p);
+    then unbeschraenkt_geschaeftsfaehig_fuer(p, r);
+}
+
+pub relation ersetzung_der_ermaechtigung_beantragt(p: Person) kind empirical {
+    label de official "der Vormund verweigert die Ermächtigung; der Minderjährige beantragt ihre Ersetzung durch das Familiengericht (§ 113 Abs. 3)";
+    label en unofficial "the guardian refuses the authorisation and the minor applies for its substitution by the family court (§ 113 (3))";
+}
+pub relation ermaechtigung_im_interesse_des_muendels(p: Person) kind empirical {
+    label de official "die Ermächtigung liegt im Interesse des Mündels (§ 113 Abs. 3 Satz 2) — festgestellte Tatsache des Familiengerichts";
+    label en unofficial "the authorisation is in the ward's interest (§ 113 (3) sentence 2)";
+}
+pub relation familiengericht_ersetzt_ermaechtigung(p: Person) kind institutional {
+    label de official "das Familiengericht hat die Ermächtigung zu ersetzen (§ 113 Abs. 3 Satz 2)";
+    label en unofficial "the family court must substitute the authorisation (§ 113 (3) sentence 2)";
+}
+
+@source(BGB_P113)
+rule FamiliengerichtErsetztErmaechtigung(p: Person) strict {
+    label de official "Das Familiengericht hat die Ermächtigung zu ersetzen, wenn sie im Interesse des Mündels liegt (§ 113 Abs. 3)";
+    label en unofficial "The family court must substitute the authorisation if it is in the ward's interest (§ 113 (3))";
+    when ersetzung_der_ermaechtigung_beantragt(p) and ermaechtigung_im_interesse_des_muendels(p);
+    then familiengericht_ersetzt_ermaechtigung(p);
+}

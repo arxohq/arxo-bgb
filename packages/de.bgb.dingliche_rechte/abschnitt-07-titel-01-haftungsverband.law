@@ -1,0 +1,686 @@
+// --- Buch 3 Abschnitt 7 Titel 1: Umfang der Haftung (§§ 1118–1135) ------------------------------
+//
+// DER HAFTUNGSVERBAND IST EINE MENGE VON GEGENSTÄNDEN. `haftet_fuer_die_hypothek`
+// sammelt, worauf sich die Hypothek erstreckt: Erzeugnisse und Bestandteile
+// (§ 1120), Zubehör (§ 1120), Miet- und Pachtforderungen (§ 1123), wiederkehrende
+// Leistungen (§ 1126) und die Versicherungsforderung (§ 1127). Die Enthaftung der
+// §§ 1121, 1122 und 1123 Abs. 2 setzt ihr jeweils eine EIGENE Kopfnorm entgegen;
+// das Ergebnis liest die Regel `HaftungBestehtFort`.
+//
+// BESCHLAGNAHME IST EINE FESTGESTELLTE TATSACHE des Zwangsversteigerungs- oder
+// Zwangsverwaltungsverfahrens (ZVG, äußeres Verfahren): der Fall trägt Tag und
+// Gegenstand; fehlt sie, so trägt der Fall die ausdrückliche Eingabe
+// `keine_beschlagnahme` (Kopf des Pakets, Nummer 6).
+//
+// § 1123 Abs. 2 ist eine ENTHAFTUNGSFRIST: mit ihrem Ablauf wird die Forderung
+// frei, ohne dass jemand innerhalb der Frist zu handeln hätte. Ihr Ende liest
+// daher `frist_ende_kalender` ohne die Verlegung des § 193 (Ledger D-11-04);
+// die Monatsfrist des § 1128 Abs. 1, innerhalb deren der Hypothekengläubiger
+// der Zahlung widersprechen kann, liest `frist_ende` mit der Verlegung.
+
+pub entity Gegenstand {
+    label de official "Gegenstand, auf den sich die Hypothek erstreckt: Erzeugnis, Bestandteil, Zubehörstück, Miet- oder Pachtforderung, Versicherungsforderung (§§ 1120–1130)";
+    label en unofficial "object to which the mortgage extends: product, component, accessory, rent claim, insurance claim (§§ 1120–1130)";
+}
+
+// --- Eingaben des Falls ----------------------------------------------------------------------------
+
+pub relation gegenstand_des_grundstuecks(x: Gegenstand, g: Grundstueck) kind empirical {
+    key(x);
+    label de official "Grundstück, zu dem der Gegenstand gehört (§ 1120)";
+    label en unofficial "land to which the object belongs (§ 1120)";
+}
+pub relation getrenntes_erzeugnis_oder_bestandteil(x: Gegenstand) kind empirical {
+    label de official "von dem Grundstück getrenntes Erzeugnis oder sonstiger Bestandteil (§ 1120)";
+    label en unofficial "product or other component separated from the land (§ 1120)";
+}
+pub relation zubehoerstueck(x: Gegenstand) kind empirical {
+    label de official "Zubehörstück des Grundstücks (§ 1120)";
+    label en unofficial "accessory of the land (§ 1120)";
+}
+pub relation mit_der_trennung_in_fremdes_eigentum_gelangt(x: Gegenstand) kind empirical {
+    label de official "das Erzeugnis ist mit der Trennung nach den §§ 954 bis 957 in das Eigentum eines anderen als des Eigentümers oder Eigenbesitzers gelangt (§ 1120)";
+    label en unofficial "on separation the product passed into the ownership of a person other than the owner or proprietary possessor (§ 1120)";
+}
+pub relation zubehoer_nicht_im_eigentum_des_grundstueckseigentuemers(x: Gegenstand) kind empirical {
+    label de official "das Zubehörstück ist nicht in das Eigentum des Eigentümers des Grundstücks gelangt (§ 1120 Halbsatz 2)";
+    label en unofficial "the accessory did not pass into the ownership of the owner of the land (§ 1120)";
+}
+pub relation beschlagnahme_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem der Gegenstand zugunsten des Gläubigers in Beschlag genommen worden ist (§ 1121 Abs. 1, § 1123 Abs. 2) — Vorgang des Zwangsversteigerungsverfahrens, festgestellte Tatsache";
+    label en unofficial "day on which the object was seized in favour of the creditor (§ 1121 (1), § 1123 (2)) — act of the enforcement procedure, established fact";
+}
+pub relation keine_beschlagnahme(x: Gegenstand) kind empirical {
+    label de official "eine Beschlagnahme zugunsten des Gläubigers ist nicht erfolgt (§ 1121 Abs. 1, § 1123 Abs. 2) — ausdrückliche Eingabe des Falls";
+    label en unofficial "no seizure in favour of the creditor has taken place (§ 1121 (1), § 1123 (2)) — explicit case input";
+}
+pub relation veraeussert_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag der Veräußerung des Gegenstands (§ 1121 Abs. 1, Abs. 2)";
+    label en unofficial "day on which the object was alienated (§ 1121 (1), (2))";
+}
+pub relation vom_grundstueck_entfernt_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag der Entfernung des Gegenstands von dem Grundstück (§ 1121 Abs. 1, § 1122 Abs. 1)";
+    label en unofficial "day on which the object was removed from the land (§ 1121 (1), § 1122 (1))";
+}
+pub relation entfernung_zu_voruebergehendem_zweck(x: Gegenstand) kind empirical {
+    label de official "die Entfernung erfolgt zu einem vorübergehenden Zwecke (§ 1122 Abs. 1 Halbsatz 2)";
+    label en unofficial "removal is for a temporary purpose (§ 1122 (1))";
+}
+pub relation zubehoereigenschaft_aufgehoben_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem die Zubehöreigenschaft aufgehoben worden ist (§ 1122 Abs. 2)";
+    label en unofficial "day on which the quality as accessory was removed (§ 1122 (2))";
+}
+pub relation grundstueck_vermietet_oder_verpachtet(g: Grundstueck) kind empirical {
+    label de official "das Grundstück ist vermietet oder verpachtet (§ 1123 Abs. 1)";
+    label en unofficial "the land is let or leased (§ 1123 (1))";
+}
+pub relation miet_oder_pachtforderung(x: Gegenstand) kind empirical {
+    label de official "der Gegenstand ist eine Miet- oder Pachtforderung (§ 1123 Abs. 1)";
+    label en unofficial "the object is a claim for rent or lease payments (§ 1123 (1))";
+}
+pub relation faellig_geworden_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag des Eintritts der Fälligkeit der Miet- oder Pachtforderung (§ 1123 Abs. 2 Satz 1)";
+    label en unofficial "day on which the rent claim fell due (§ 1123 (2) sentence 1)";
+}
+pub relation miete_im_voraus_zu_entrichten(x: Gegenstand) kind empirical {
+    label de official "die Miete oder Pacht ist im Voraus zu entrichten (§ 1123 Abs. 2 Satz 2)";
+    label en unofficial "the rent is payable in advance (§ 1123 (2) sentence 2)";
+}
+pub relation enthaftungsfrist(x: Gegenstand, f: Frist) kind empirical {
+    key(x);
+    label de official "Frist des § 1123 Abs. 2 Satz 1, mit deren Ablauf die fällige Forderung von der Haftung frei wird";
+    label en unofficial "period of § 1123 (2) sentence 1 at whose end the matured claim is released from liability";
+}
+pub relation versicherungsforderung(x: Gegenstand) kind empirical {
+    label de official "der Gegenstand ist eine Forderung gegen den Versicherer (§ 1127 Abs. 1)";
+    label en unofficial "the object is a claim against the insurer (§ 1127 (1))";
+}
+pub relation versicherter_gegenstand_unterliegt_der_hypothek(x: Gegenstand) kind empirical {
+    label de official "der versicherte Gegenstand unterliegt der Hypothek und ist für den Eigentümer oder Eigenbesitzer unter Versicherung gebracht (§ 1127 Abs. 1)";
+    label en unofficial "the insured object is subject to the mortgage and insured for the owner or proprietary possessor (§ 1127 (1))";
+}
+pub relation versicherter_gegenstand_wiederhergestellt_oder_ersetzt(x: Gegenstand) kind empirical {
+    label de official "der versicherte Gegenstand ist wiederhergestellt oder Ersatz für ihn beschafft (§ 1127 Abs. 2)";
+    label en unofficial "the insured object has been restored or replaced (§ 1127 (2))";
+}
+pub relation gebaeude_versichert(x: Gegenstand) kind empirical {
+    label de official "versichert ist ein Gebäude (§ 1128 Abs. 1)";
+    label en unofficial "a building is insured (§ 1128 (1))";
+}
+pub relation schadensanzeige_empfangen_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem der Hypothekengläubiger die Anzeige des Schadenseintritts empfangen hat (§ 1128 Abs. 1 Satz 1)";
+    label en unofficial "day on which the mortgage creditor received notice of the loss (§ 1128 (1) sentence 1)";
+}
+pub relation widerspruchsfrist(x: Gegenstand, f: Frist) kind empirical {
+    key(x);
+    label de official "Monatsfrist des § 1128 Abs. 1 Satz 2, bis zu deren Ablauf der Hypothekengläubiger der Zahlung widersprechen kann";
+    label en unofficial "one-month period of § 1128 (1) sentence 2 up to whose end the mortgage creditor may object to payment";
+}
+pub relation widerspruch_gegen_die_zahlung_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem der Hypothekengläubiger dem Versicherer gegenüber der Zahlung widersprochen hat (§ 1128 Abs. 1 Satz 2)";
+    label en unofficial "day on which the mortgage creditor objected to payment vis-à-vis the insurer (§ 1128 (1) sentence 2)";
+}
+pub relation hypothek_dem_versicherer_angemeldet(x: Gegenstand) kind empirical {
+    label de official "der Hypothekengläubiger hat seine Hypothek dem Versicherer angemeldet (§ 1128 Abs. 2)";
+    label en unofficial "the mortgage creditor has notified the insurer of the mortgage (§ 1128 (2))";
+}
+pub relation schriftliche_zustimmung_des_hypothekenglaeubigers(x: Gegenstand) kind empirical {
+    label de official "der Hypothekengläubiger hat der Zahlung schriftlich zugestimmt (§ 1128 Abs. 2)";
+    label en unofficial "the mortgage creditor consented to payment in writing (§ 1128 (2))";
+}
+pub relation zahlung_nur_zur_wiederherstellung_geschuldet(x: Gegenstand) kind empirical {
+    label de official "der Versicherer ist nach den Versicherungsbestimmungen nur verpflichtet, die Versicherungssumme zur Wiederherstellung zu zahlen (§ 1130)";
+    label en unofficial "under the insurance terms the insurer owes the sum only for restoration (§ 1130)";
+}
+pub relation zahlung_entspricht_den_versicherungsbestimmungen(x: Gegenstand) kind empirical {
+    label de official "die Zahlung an den Versicherten entspricht diesen Bestimmungen (§ 1130)";
+    label en unofficial "payment to the insured complies with those terms (§ 1130)";
+}
+pub relation recht_auf_wiederkehrende_leistungen_mit_dem_eigentum_verbunden(g: Grundstueck) kind empirical {
+    label de official "mit dem Eigentum an dem Grundstück ist ein Recht auf wiederkehrende Leistungen verbunden (§ 1126 Satz 1)";
+    label en unofficial "a right to recurring payments is connected with ownership of the land (§ 1126 sentence 1)";
+}
+pub relation anspruch_auf_wiederkehrende_leistung(x: Gegenstand) kind empirical {
+    label de official "der Gegenstand ist ein Anspruch auf eine solche wiederkehrende Leistung (§ 1126 Satz 1)";
+    label en unofficial "the object is a claim to such a recurring payment (§ 1126 sentence 1)";
+}
+pub relation verfuegung_ueber_die_leistung_vor_der_beschlagnahme(x: Gegenstand) kind empirical {
+    label de official "über den Anspruch auf die Leistung ist vor der Beschlagnahme verfügt worden (§ 1126 Satz 3)";
+    label en unofficial "the claim to the payment was disposed of before the seizure (§ 1126 sentence 3)";
+}
+pub relation leistung_faellig_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem die wiederkehrende Leistung fällig wird (§ 1126 Satz 3)";
+    label en unofficial "day on which the recurring payment falls due (§ 1126 sentence 3)";
+}
+pub relation miete_eingezogen_oder_darueber_verfuegt_am(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem die Miete oder Pacht eingezogen oder in anderer Weise über sie verfügt worden ist (§ 1124 Abs. 1 Satz 1)";
+    label en unofficial "day on which the rent was collected or otherwise disposed of (§ 1124 (1) sentence 1)";
+}
+pub relation verfuegung_besteht_in_der_uebertragung_auf_einen_dritten(x: Gegenstand) kind empirical {
+    label de official "die Verfügung besteht in der Übertragung der Forderung auf einen Dritten oder das Grundstück wird ohne die Forderung veräußert (§ 1124 Abs. 1 Satz 2, Abs. 3)";
+    label en unofficial "the disposition consists in the assignment of the claim to a third party, or the land is alienated without the claim (§ 1124 (1) sentence 2, (3))";
+}
+pub relation miete_betrifft_die_zeit_nach_dem_laufenden_kalendermonat(x: Gegenstand) kind empirical {
+    label de official "die Verfügung bezieht sich auf die Miete oder Pacht für eine spätere Zeit als den zur Zeit der Beschlagnahme laufenden Kalendermonat (§ 1124 Abs. 2)";
+    label en unofficial "the disposition relates to rent for a period later than the calendar month running at the time of seizure (§ 1124 (2))";
+}
+pub relation miete_betrifft_nur_den_folgenden_kalendermonat(x: Gegenstand) kind empirical {
+    label de official "die Verfügung bezieht sich nur auf die Miete oder Pacht für den folgenden Kalendermonat (§ 1124 Abs. 2 Halbsatz 2)";
+    label en unofficial "the disposition relates only to the rent for the following calendar month (§ 1124 (2))";
+}
+pub relation zugeschriebenes_grundstueck(g: Grundstueck, zugeschrieben: Grundstueck) kind empirical {
+    label de official "das Grundstück ist dem anderen Grundstück nach § 890 Abs. 2 im Grundbuch zugeschrieben (§ 1131 Satz 1)";
+    label en unofficial "the land has been added to the other land in the register under § 890 (2) (§ 1131 sentence 1)";
+}
+pub relation belastung_des_zugeschriebenen_grundstuecks(zugeschrieben: Grundstueck, r: Recht) kind empirical {
+    label de official "Recht, mit dem das zugeschriebene Grundstück belastet ist (§ 1131 Satz 2)";
+    label en unofficial "right encumbering the added land (§ 1131 sentence 2)";
+}
+
+// --- Abgeleitete Köpfe -------------------------------------------------------------------------------
+
+pub relation haftet_fuer_die_hypothek(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "der Gegenstand gehört zum Haftungsverband der Hypothek (§ 1120, § 1123 Abs. 1, § 1126 Satz 1, § 1127 Abs. 1)";
+    label en unofficial "the object belongs to the objects liable under the mortgage (§ 1120, § 1123 (1), § 1126 sentence 1, § 1127 (1))";
+}
+pub relation von_der_haftung_frei(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "der Gegenstand ist von der Haftung frei geworden (§ 1121, § 1122, § 1123 Abs. 2, § 1127 Abs. 2)";
+    label en unofficial "the object has been released from liability (§ 1121, § 1122, § 1123 (2), § 1127 (2))";
+}
+pub relation enthaftung_eingetreten_am(x: Gegenstand, tag: Date) kind derived {
+    key(x);
+    label de official "Tag, mit dessen Ablauf die fällige Miet- oder Pachtforderung von der Haftung frei wird (§ 1123 Abs. 2 Satz 1)";
+    label en unofficial "day at whose end the matured rent claim is released from liability (§ 1123 (2) sentence 1)";
+}
+pub relation verfuegung_dem_hypothekenglaeubiger_gegenueber_wirksam(x: Gegenstand) kind derived {
+    label de official "die Verfügung über die Miete oder Pacht ist dem Hypothekengläubiger gegenüber wirksam (§ 1124 Abs. 1, Abs. 2 Halbsatz 2)";
+    label en unofficial "the disposition of the rent is effective vis-à-vis the mortgage creditor (§ 1124 (1), (2))";
+}
+pub relation verfuegung_dem_hypothekenglaeubiger_gegenueber_unwirksam(x: Gegenstand) kind derived {
+    label de official "die Verfügung ist dem Hypothekengläubiger gegenüber unwirksam (§ 1124 Abs. 2 Satz 1, § 1126 Satz 3)";
+    label en unofficial "the disposition is ineffective vis-à-vis the mortgage creditor (§ 1124 (2) sentence 1, § 1126 sentence 3)";
+}
+pub relation aufrechnung_gegen_den_hypothekenglaeubiger_ausgeschlossen(x: Gegenstand) kind derived {
+    label de official "der Mieter oder Pächter kann nicht gegen den Hypothekengläubiger aufrechnen (§ 1125)";
+    label en unofficial "the tenant may not set off against the mortgage creditor (§ 1125)";
+}
+pub relation zahlung_an_den_versicherten_unwirksam(x: Gegenstand) kind derived {
+    label de official "der Versicherer kann die Versicherungssumme mit Wirkung gegen den Hypothekengläubiger noch nicht an den Versicherten zahlen (§ 1128 Abs. 1, Abs. 2)";
+    label en unofficial "the insurer may not yet pay the sum to the insured with effect against the mortgage creditor (§ 1128 (1), (2))";
+}
+pub relation zahlung_an_den_versicherten_wirksam(x: Gegenstand) kind derived {
+    label de official "die Zahlung an den Versicherten ist dem Hypothekengläubiger gegenüber wirksam (§ 1128 Abs. 1 Satz 1, Abs. 2, § 1130)";
+    label en unofficial "payment to the insured is effective vis-à-vis the mortgage creditor (§ 1128 (1) sentence 1, (2), § 1130)";
+}
+pub relation hypothek_erstreckt_sich_auf_das_zugeschriebene_grundstueck(h: Grundpfandrecht, zugeschrieben: Grundstueck) kind derived {
+    label de official "die an dem Grundstück bestehende Hypothek erstreckt sich auf das zugeschriebene Grundstück (§ 1131 Satz 1)";
+    label en unofficial "the mortgage on the land extends to the added land (§ 1131 sentence 1)";
+}
+pub relation recht_geht_der_hypothek_im_range_vor(r: Recht, h: Grundpfandrecht) kind derived {
+    label de official "das Recht, mit dem das zugeschriebene Grundstück belastet ist, geht der Hypothek im Range vor (§ 1131 Satz 2); ebenso das Recht des Dritten an der Miet- oder Pachtforderung (§ 1124 Abs. 1 Satz 2)";
+    label en unofficial "the right encumbering the added land ranks ahead of the mortgage (§ 1131 sentence 2); likewise a third party's right in the rent claim (§ 1124 (1) sentence 2)";
+}
+
+// --- §§ 1118, 1119: Nebenforderungen und Zinsen -------------------------------------------------------
+
+pub relation haftung_fuer_gesetzliche_zinsen_und_kosten(h: Grundpfandrecht, g: Grundstueck) kind derived {
+    label de official "das Grundstück haftet auch für die gesetzlichen Zinsen der Forderung sowie für die Kosten der Kündigung und der Rechtsverfolgung (§ 1118)";
+    label en unofficial "the land is also liable for the statutory interest on the claim and for the costs of termination and of enforcement (§ 1118)";
+}
+pub relation erweiterung_der_zinshaftung_ohne_zustimmung_zulaessig(h: Grundpfandrecht) kind derived {
+    label de official "die Hypothek kann ohne Zustimmung der im Range gleich- oder nachstehenden Berechtigten auf Zinsen bis zu fünf vom Hundert erweitert werden (§ 1119 Abs. 1)";
+    label en unofficial "the mortgage may be extended to interest of up to five per cent without the consent of equal or subsequent holders (§ 1119 (1))";
+}
+pub relation hoechstbetrag_der_zinshaftung(h: Grundpfandrecht, betrag: Money) kind derived {
+    key(h);
+    label de official "Betrag der Zinsen von fünf vom Hundert, bis zu dem das Grundstück ohne Zustimmung haften kann (§ 1119 Abs. 1) — eine Rundung auf den Cent";
+    label en unofficial "amount of interest at five per cent up to which the land may be liable without consent (§ 1119 (1)) — one rounding to the cent";
+}
+pub relation aenderung_der_zahlungszeit_ohne_zustimmung_zulaessig(h: Grundpfandrecht) kind derived {
+    label de official "zu einer Änderung der Zahlungszeit und des Zahlungsorts ist die Zustimmung dieser Berechtigten gleichfalls nicht erforderlich (§ 1119 Abs. 2)";
+    label en unofficial "the consent of those holders is likewise not required for a change of time and place of payment (§ 1119 (2))";
+}
+
+@source(BGB_P1118)
+rule HaftungFuerGesetzlicheZinsenUndKosten(h: Grundpfandrecht, g: Grundstueck) strict {
+    label de official "Kraft der Hypothek haftet das Grundstück auch für die gesetzlichen Zinsen der Forderung sowie für die Kosten der Kündigung und der die Befriedigung aus dem Grundstück bezweckenden Rechtsverfolgung (§ 1118)";
+    label en unofficial "By virtue of the mortgage the land is also liable for the statutory interest on the claim and for the costs of termination and of proceedings aimed at satisfaction out of the land (§ 1118)";
+    when belastungsgegenstand_grundstueck(h, g);
+    then haftung_fuer_gesetzliche_zinsen_und_kosten(h, g);
+}
+
+@source(BGB_P1119) {
+    rule ErweiterungBeiUnverzinslicherForderung(h: Grundpfandrecht) strict {
+        label de official "Ist die Forderung unverzinslich, so kann die Hypothek ohne Zustimmung der im Range gleich- oder nachstehenden Berechtigten dahin erweitert werden, dass das Grundstück für Zinsen bis zu fünf vom Hundert haftet (§ 1119 Abs. 1)";
+        label en unofficial "If the claim bears no interest, the mortgage may be extended without consent so that the land is liable for interest of up to five per cent (§ 1119 (1))";
+        when forderung_unverzinslich(h);
+        then erweiterung_der_zinshaftung_ohne_zustimmung_zulaessig(h);
+    }
+    rule ErweiterungBeiZinssatzUnterFuenfProzent(h: Grundpfandrecht, satz: Decimal) strict {
+        label de official "Ist der Zinssatz niedriger als fünf vom Hundert, so kann die Hypothek ohne Zustimmung der im Range gleich- oder nachstehenden Berechtigten auf Zinsen bis zu fünf vom Hundert erweitert werden (§ 1119 Abs. 1)";
+        label en unofficial "If the rate is lower than five per cent, the mortgage may be extended without consent to interest of up to five per cent (§ 1119 (1))";
+        when forderung_verzinslich_mit(h, satz) and satz < 5.0;
+        then erweiterung_der_zinshaftung_ohne_zustimmung_zulaessig(h);
+    }
+    rule BetragDerZinsenVonFuenfVomHundert(h: Grundpfandrecht, betrag: Money) strict {
+        label de official "Grenze der Erweiterung: Zinsen bis zu fünf vom Hundert der Geldsumme (§ 1119 Abs. 1) — ein Mal auf den Cent gerundet (README „Rundung“)";
+        label en unofficial "Limit of the extension: interest of up to five per cent of the sum of money (§ 1119 (1)) — rounded once to the cent";
+        when erweiterung_der_zinshaftung_ohne_zustimmung_zulaessig(h) and geldsumme(h, betrag);
+        then hoechstbetrag_der_zinshaftung(h, div_round(betrag * 5.0, 100.0, 2, "HALF_UP"));
+    }
+    rule AenderungDerZahlungszeitOhneZustimmung(h: Grundpfandrecht) strict {
+        label de official "Zu einer Änderung der Zahlungszeit und des Zahlungsorts ist die Zustimmung dieser Berechtigten gleichfalls nicht erforderlich (§ 1119 Abs. 2)";
+        label en unofficial "The consent of those holders is likewise not required for a change of the time and place of payment (§ 1119 (2))";
+        when erweiterung_der_zinshaftung_ohne_zustimmung_zulaessig(h);
+        then aenderung_der_zahlungszeit_ohne_zustimmung_zulaessig(h);
+    }
+}
+
+// --- §§ 1120–1122: Erzeugnisse, Bestandteile, Zubehör ---------------------------------------------------
+
+@source(BGB_P1120) {
+    rule HaftungDerGetrenntenErzeugnisse(x: Gegenstand, h: Grundpfandrecht, g: Grundstueck) strict {
+        label de official "Die Hypothek erstreckt sich auf die von dem Grundstück getrennten Erzeugnisse und sonstigen Bestandteile, soweit sie nicht mit der Trennung nach den §§ 954 bis 957 in das Eigentum eines anderen gelangt sind (§ 1120)";
+        label en unofficial "The mortgage extends to products and other components separated from the land unless on separation they passed into another's ownership under §§ 954 to 957 (§ 1120)";
+        when belastungsgegenstand_grundstueck(h, g) and gegenstand_des_grundstuecks(x, g)
+            and getrenntes_erzeugnis_oder_bestandteil(x) and not mit_der_trennung_in_fremdes_eigentum_gelangt(x);
+        then haftet_fuer_die_hypothek(x, h);
+    }
+    rule HaftungDesZubehoers(x: Gegenstand, h: Grundpfandrecht, g: Grundstueck) strict {
+        label de official "Die Hypothek erstreckt sich auf das Zubehör des Grundstücks mit Ausnahme der Zubehörstücke, welche nicht in das Eigentum des Eigentümers des Grundstücks gelangt sind (§ 1120)";
+        label en unofficial "The mortgage extends to the accessories of the land except those that did not pass into the owner's ownership (§ 1120)";
+        when belastungsgegenstand_grundstueck(h, g) and gegenstand_des_grundstuecks(x, g)
+            and zubehoerstueck(x) and not zubehoer_nicht_im_eigentum_des_grundstueckseigentuemers(x);
+        then haftet_fuer_die_hypothek(x, h);
+    }
+}
+
+@source(BGB_P1121) {
+    rule EnthaftungDurchVeraeusserungUndEntfernungVorDerBeschlagnahme(x: Gegenstand, h: Grundpfandrecht, tv: Date, te: Date, tb: Date) strict {
+        label de official "Erzeugnisse und sonstige Bestandteile des Grundstücks sowie Zubehörstücke werden von der Haftung frei, wenn sie veräußert und von dem Grundstück entfernt werden, bevor sie zugunsten des Gläubigers in Beschlag genommen worden sind (§ 1121 Abs. 1)";
+        label en unofficial "Products, components and accessories are released from liability if they are alienated and removed from the land before being seized in favour of the creditor (§ 1121 (1))";
+        when haftet_fuer_die_hypothek(x, h) and veraeussert_am(x, tv) and vom_grundstueck_entfernt_am(x, te)
+            and beschlagnahme_am(x, tb) and te < tb;
+        then enthaftung_nach_1121(x, h);
+    }
+    rule EnthaftungOhneBeschlagnahme(x: Gegenstand, h: Grundpfandrecht, tv: Date, te: Date) strict {
+        label de official "Ist eine Beschlagnahme nicht erfolgt, so werden veräußerte und entfernte Gegenstände von der Haftung frei (§ 1121 Abs. 1)";
+        label en unofficial "Where no seizure has taken place, objects alienated and removed are released from liability (§ 1121 (1))";
+        when haftet_fuer_die_hypothek(x, h) and veraeussert_am(x, tv) and vom_grundstueck_entfernt_am(x, te)
+            and keine_beschlagnahme(x);
+        then enthaftung_nach_1121(x, h);
+    }
+}
+
+// Jeder Enthaftungsgrund schreibt einen EIGENEN Kopf; die Urteilsanfragen des
+// § 1122 („ordnungsmäßige Wirtschaft“) liegen sonst im Schließungskegel jeder
+// Frage nach § 1121 und machen sie REQUIRES_JUDGMENT (Ledger D-11-06,
+// Anschluss an D-10-07 des Nachbarpakets).
+pub relation enthaftung_nach_1121(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "Enthaftung durch Veräußerung und Entfernung vor der Beschlagnahme (§ 1121 Abs. 1)";
+    label en unofficial "release from liability by alienation and removal before seizure (§ 1121 (1))";
+}
+pub relation enthaftung_nach_1122(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "Enthaftung ohne Veräußerung innerhalb der Grenzen einer ordnungsmäßigen Wirtschaft (§ 1122 Abs. 1, Abs. 2)";
+    label en unofficial "release from liability without alienation within the limits of proper management (§ 1122 (1), (2))";
+}
+pub relation enthaftung_nach_1127(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "Erlöschen der Haftung der Versicherungsforderung bei Wiederherstellung oder Ersatz (§ 1127 Abs. 2)";
+    label en unofficial "end of liability of the insurance claim upon restoration or replacement (§ 1127 (2))";
+}
+pub relation enthaftung_nach_1124(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "Erlöschen der Haftung der Miet- oder Pachtforderung durch Übertragung auf einen Dritten (§ 1124 Abs. 1 Satz 2, Abs. 3)";
+    label en unofficial "end of liability of the rent claim by assignment to a third party (§ 1124 (1) sentence 2, (3))";
+}
+
+@source(BGB_P1121)
+rule SammeltEnthaftungNach1121(x: Gegenstand, h: Grundpfandrecht) strict {
+    label de official "Sammlung der Enthaftungsgründe: Veräußerung und Entfernung (§ 1121)";
+    label en unofficial "collection of grounds of release: alienation and removal (§ 1121)";
+    when enthaftung_nach_1121(x, h);
+    then von_der_haftung_frei(x, h);
+}
+@source(BGB_P1122)
+rule SammeltEnthaftungNach1122(x: Gegenstand, h: Grundpfandrecht) strict {
+    label de official "Sammlung der Enthaftungsgründe: ordnungsmäßige Wirtschaft (§ 1122)";
+    label en unofficial "collection of grounds of release: proper management (§ 1122)";
+    when enthaftung_nach_1122(x, h);
+    then von_der_haftung_frei(x, h);
+}
+@source(BGB_P1124)
+rule SammeltEnthaftungNach1124(x: Gegenstand, h: Grundpfandrecht) strict {
+    label de official "Sammlung der Enthaftungsgründe: Übertragung der Miet- oder Pachtforderung (§ 1124)";
+    label en unofficial "collection of grounds of release: assignment of the rent claim (§ 1124)";
+    when enthaftung_nach_1124(x, h);
+    then von_der_haftung_frei(x, h);
+}
+@source(BGB_P1127)
+rule SammeltEnthaftungNach1127(x: Gegenstand, h: Grundpfandrecht) strict {
+    label de official "Sammlung der Enthaftungsgründe: Wiederherstellung des versicherten Gegenstands (§ 1127 Abs. 2)";
+    label en unofficial "collection of grounds of release: restoration of the insured object (§ 1127 (2))";
+    when enthaftung_nach_1127(x, h);
+    then von_der_haftung_frei(x, h);
+}
+
+@source(BGB_P1122) {
+    rule EnthaftungDerErzeugnisseOhneVeraeusserung(x: Gegenstand, h: Grundpfandrecht, te: Date, tb: Date) strict {
+        label de official "Sind die Erzeugnisse oder Bestandteile innerhalb der Grenzen einer ordnungsmäßigen Wirtschaft von dem Grundstück getrennt worden, so erlischt ihre Haftung auch ohne Veräußerung, wenn sie vor der Beschlagnahme von dem Grundstück entfernt werden, es sei denn, dass die Entfernung zu einem vorübergehenden Zwecke erfolgt (§ 1122 Abs. 1)";
+        label en unofficial "Where products were separated within the limits of proper management, their liability ends even without alienation if they are removed before seizure, unless removal is for a temporary purpose (§ 1122 (1))";
+        when haftet_fuer_die_hypothek(x, h) and getrenntes_erzeugnis_oder_bestandteil(x)
+            and trennung_innerhalb_ordnungsmaessiger_wirtschaft(x)
+            and vom_grundstueck_entfernt_am(x, te) and beschlagnahme_am(x, tb) and te < tb
+            and not entfernung_zu_voruebergehendem_zweck(x);
+        then enthaftung_nach_1122(x, h);
+    }
+    rule EnthaftungDesZubehoersOhneVeraeusserung(x: Gegenstand, h: Grundpfandrecht, ta: Date, tb: Date) strict {
+        label de official "Zubehörstücke werden ohne Veräußerung von der Haftung frei, wenn die Zubehöreigenschaft innerhalb der Grenzen einer ordnungsmäßigen Wirtschaft vor der Beschlagnahme aufgehoben wird (§ 1122 Abs. 2)";
+        label en unofficial "Accessories are released without alienation if their quality as accessory is removed within the limits of proper management before seizure (§ 1122 (2))";
+        when haftet_fuer_die_hypothek(x, h) and zubehoerstueck(x)
+            and aufhebung_innerhalb_ordnungsmaessiger_wirtschaft(x)
+            and zubehoereigenschaft_aufgehoben_am(x, ta) and beschlagnahme_am(x, tb) and ta < tb;
+        then enthaftung_nach_1122(x, h);
+    }
+}
+
+// „innerhalb der Grenzen einer ordnungsmäßigen Wirtschaft“ ist eine Wertung
+// (§ 1122 Abs. 1, Abs. 2, § 1135) — Kanal des Urteils, DECISION-0194.
+@source(BGB_P1122)
+pub external judgment relation trennung_innerhalb_ordnungsmaessiger_wirtschaft(x: Gegenstand) {
+    authority Court;
+    label de official "die Trennung ist innerhalb der Grenzen einer ordnungsmäßigen Wirtschaft erfolgt (§ 1122 Abs. 1)";
+    label en unofficial "the separation occurred within the limits of proper management (§ 1122 (1))";
+}
+@source(BGB_P1122)
+pub external judgment relation aufhebung_innerhalb_ordnungsmaessiger_wirtschaft(x: Gegenstand) {
+    authority Court;
+    label de official "die Zubehöreigenschaft ist innerhalb der Grenzen einer ordnungsmäßigen Wirtschaft aufgehoben worden (§ 1122 Abs. 2)";
+    label en unofficial "the quality as accessory was removed within the limits of proper management (§ 1122 (2))";
+}
+
+// --- §§ 1123–1126: Miete, Pacht und wiederkehrende Leistungen -------------------------------------------
+//
+// Die Frist des § 1123 Abs. 2 Satz 1 ist eine ENTHAFTUNGSFRIST: mit ihrem Ablauf
+// wird die Forderung frei; niemand hat innerhalb der Frist zu handeln. Ihr Ende
+// ist daher das KALENDARISCHE (Ledger D-11-04, Zeile in DEADLINES.json).
+
+@source(BGB_P1123) {
+    rule HaftungDerMietForderung(x: Gegenstand, h: Grundpfandrecht, g: Grundstueck) strict {
+        label de official "Ist das Grundstück vermietet oder verpachtet, so erstreckt sich die Hypothek auf die Miet- oder Pachtforderung (§ 1123 Abs. 1)";
+        label en unofficial "If the land is let or leased, the mortgage extends to the claim for rent (§ 1123 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and grundstueck_vermietet_oder_verpachtet(g)
+            and gegenstand_des_grundstuecks(x, g) and miet_oder_pachtforderung(x);
+        then haftet_fuer_die_hypothek(x, h);
+    }
+    rule EnthaftungsfristEreignis(x: Gegenstand, f: Frist, e: Date) strict {
+        label de official "Die Frist des § 1123 Abs. 2 Satz 1 läuft vom Eintritt der Fälligkeit an; der Tag des Ereignisses wird nicht mitgerechnet (§ 187 Abs. 1)";
+        label en unofficial "The period of § 1123 (2) sentence 1 runs from the maturity; the event day is not counted (§ 187 (1))";
+        when enthaftungsfrist(x, f) and faellig_geworden_am(x, e);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule EnthaftungsfristDauer(x: Gegenstand, f: Frist, e: Date) strict {
+        label de official "Soweit die Forderung fällig ist, wird sie mit dem Ablauf eines Jahres nach dem Eintritt der Fälligkeit von der Haftung frei (§ 1123 Abs. 2 Satz 1) — Jahresschritt nach § 188 Abs. 2";
+        label en unofficial "In so far as the claim has matured, it is released from liability one year after maturity (§ 1123 (2) sentence 1) — year step under § 188 (2)";
+        when enthaftungsfrist(x, f) and faellig_geworden_am(x, e);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule EnthaftungMitAblaufDesJahresOhneBeschlagnahme(x: Gegenstand, f: Frist, k: Date) strict {
+        label de official "Die fällige Miet- oder Pachtforderung wird mit dem Ablauf eines Jahres von der Haftung frei, wenn nicht vorher die Beschlagnahme zugunsten des Hypothekengläubigers erfolgt (§ 1123 Abs. 2 Satz 1)";
+        label en unofficial "The matured rent claim is released one year after maturity unless seizure in favour of the mortgage creditor occurs earlier (§ 1123 (2) sentence 1)";
+        when enthaftungsfrist(x, f) and de.bgb.fristen::frist_ende_kalender(f, k) and keine_beschlagnahme(x);
+        then enthaftung_eingetreten_am(x, k);
+    }
+    rule EnthaftungTrotzSpaeterBeschlagnahme(x: Gegenstand, f: Frist, k: Date, tb: Date) strict {
+        label de official "Erfolgt die Beschlagnahme erst nach dem Ablauf des Jahres, so ist die Forderung bereits frei geworden (§ 1123 Abs. 2 Satz 1)";
+        label en unofficial "If seizure occurs only after the year has run, the claim has already been released (§ 1123 (2) sentence 1)";
+        when enthaftungsfrist(x, f) and de.bgb.fristen::frist_ende_kalender(f, k)
+            and beschlagnahme_am(x, tb) and tb > k;
+        then enthaftung_eingetreten_am(x, k);
+    }
+    rule KeineEnthaftungBeiBeschlagnahmeVorAblauf(x: Gegenstand, h: Grundpfandrecht, f: Frist, k: Date, tb: Date) strict {
+        label de official "Erfolgt die Beschlagnahme vor dem Ablauf des Jahres, so bleibt die Forderung haftend (§ 1123 Abs. 2 Satz 1 Halbsatz 2)";
+        label en unofficial "If the seizure occurs before the year has run, the claim remains liable (§ 1123 (2) sentence 1)";
+        when haftet_fuer_die_hypothek(x, h) and enthaftungsfrist(x, f)
+            and de.bgb.fristen::frist_ende_kalender(f, k) and beschlagnahme_am(x, tb) and tb <= k;
+        then haftung_dauert_trotz_fristablaufs_fort(x, h);
+    }
+    rule VorausmieteBisZumLaufendenKalendermonat(x: Gegenstand, h: Grundpfandrecht, tb: Date) strict {
+        label de official "Ist die Miete oder Pacht im Voraus zu entrichten, so erstreckt sich die Befreiung nicht auf die Miete oder Pacht für eine spätere Zeit als den zur Zeit der Beschlagnahme laufenden Kalendermonat (§ 1123 Abs. 2 Satz 2 Halbsatz 1)";
+        label en unofficial "Where rent is payable in advance, the release does not extend to rent for a period later than the calendar month running at the time of seizure (§ 1123 (2) sentence 2)";
+        when haftet_fuer_die_hypothek(x, h) and miete_im_voraus_zu_entrichten(x) and beschlagnahme_am(x, tb)
+            and days_between(month_start_of(tb), tb) + 1 <= 15;
+        then befreiung_reicht_bis(x, month_end_of(tb));
+    }
+    rule VorausmieteBeiBeschlagnahmeNachDemFuenfzehnten(x: Gegenstand, h: Grundpfandrecht, tb: Date) strict {
+        label de official "Erfolgt die Beschlagnahme nach dem 15. Tage des Monats, so erstreckt sich die Befreiung auch auf den Miet- oder Pachtzins für den folgenden Kalendermonat (§ 1123 Abs. 2 Satz 2 Halbsatz 2)";
+        label en unofficial "If the seizure occurs after the 15th day of the month, the release also covers the rent for the following calendar month (§ 1123 (2) sentence 2)";
+        when haftet_fuer_die_hypothek(x, h) and miete_im_voraus_zu_entrichten(x) and beschlagnahme_am(x, tb)
+            and days_between(month_start_of(tb), tb) + 1 > 15;
+        then befreiung_reicht_bis(x, month_end_of(add_calendar_period(month_start_of(tb), 1 calendar_month)));
+    }
+}
+
+pub relation haftung_dauert_trotz_fristablaufs_fort(x: Gegenstand, h: Grundpfandrecht) kind derived {
+    label de official "die Haftung der fälligen Miet- oder Pachtforderung dauert fort, weil die Beschlagnahme vor dem Ablauf des Jahres erfolgt ist (§ 1123 Abs. 2 Satz 1)";
+    label en unofficial "liability of the matured rent claim continues because seizure occurred before the year had run (§ 1123 (2) sentence 1)";
+}
+pub relation befreiung_reicht_bis(x: Gegenstand, tag: Date) kind derived {
+    key(x);
+    label de official "letzter Tag des Zeitraums, für den die im Voraus zu entrichtende Miete oder Pacht von der Haftung frei wird (§ 1123 Abs. 2 Satz 2)";
+    label en unofficial "last day of the period for which rent payable in advance is released from liability (§ 1123 (2) sentence 2)";
+}
+
+@source(BGB_P1124) {
+    rule VorausverfuegungVorDerBeschlagnahmeWirksam(x: Gegenstand, tv: Date, tb: Date) strict {
+        label de official "Wird die Miete oder Pacht eingezogen, bevor sie zugunsten des Hypothekengläubigers in Beschlag genommen worden ist, oder wird vor der Beschlagnahme in anderer Weise über sie verfügt, so ist die Verfügung dem Hypothekengläubiger gegenüber wirksam (§ 1124 Abs. 1 Satz 1)";
+        label en unofficial "If the rent is collected or otherwise disposed of before seizure in favour of the mortgage creditor, the disposition is effective vis-à-vis that creditor (§ 1124 (1) sentence 1)";
+        when miete_eingezogen_oder_darueber_verfuegt_am(x, tv) and beschlagnahme_am(x, tb) and tv < tb;
+        then verfuegung_dem_hypothekenglaeubiger_gegenueber_wirksam(x);
+    }
+    rule VorausverfuegungOhneBeschlagnahmeWirksam(x: Gegenstand, tv: Date) strict {
+        label de official "Ist eine Beschlagnahme nicht erfolgt, so ist die Verfügung dem Hypothekengläubiger gegenüber wirksam (§ 1124 Abs. 1 Satz 1)";
+        label en unofficial "Where no seizure has taken place, the disposition is effective vis-à-vis the mortgage creditor (§ 1124 (1) sentence 1)";
+        when miete_eingezogen_oder_darueber_verfuegt_am(x, tv) and keine_beschlagnahme(x);
+        then verfuegung_dem_hypothekenglaeubiger_gegenueber_wirksam(x);
+    }
+    rule UebertragungAufEinenDrittenLoeschtDieHaftung(x: Gegenstand, h: Grundpfandrecht) strict {
+        label de official "Besteht die Verfügung in der Übertragung der Forderung auf einen Dritten, so erlischt die Haftung der Forderung; der Übertragung steht es gleich, wenn das Grundstück ohne die Forderung veräußert wird (§ 1124 Abs. 1 Satz 2, Abs. 3)";
+        label en unofficial "If the disposition consists in assigning the claim to a third party, the claim's liability ends; alienating the land without the claim is equivalent (§ 1124 (1) sentence 2, (3))";
+        when haftet_fuer_die_hypothek(x, h) and verfuegung_dem_hypothekenglaeubiger_gegenueber_wirksam(x)
+            and verfuegung_besteht_in_der_uebertragung_auf_einen_dritten(x);
+        then enthaftung_nach_1124(x, h);
+    }
+    rule VerfuegungUeberSpaetereMieteUnwirksam(x: Gegenstand) strict {
+        label de official "Die Verfügung ist dem Hypothekengläubiger gegenüber unwirksam, soweit sie sich auf die Miete oder Pacht für eine spätere Zeit als den zur Zeit der Beschlagnahme laufenden Kalendermonat bezieht (§ 1124 Abs. 2 Satz 1)";
+        label en unofficial "The disposition is ineffective vis-à-vis the mortgage creditor in so far as it relates to rent for a period later than the calendar month running at the time of seizure (§ 1124 (2) sentence 1)";
+        when miete_betrifft_die_zeit_nach_dem_laufenden_kalendermonat(x)
+            and not miete_betrifft_nur_den_folgenden_kalendermonat(x);
+        then verfuegung_dem_hypothekenglaeubiger_gegenueber_unwirksam(x);
+    }
+    rule VerfuegungUeberDenFolgemonatBeiSpaeterBeschlagnahmeWirksam(x: Gegenstand, tb: Date) strict {
+        label de official "Erfolgt die Beschlagnahme nach dem fünfzehnten Tage des Monats, so ist die Verfügung insoweit wirksam, als sie sich auf die Miete oder Pacht für den folgenden Kalendermonat bezieht (§ 1124 Abs. 2 Halbsatz 2)";
+        label en unofficial "If the seizure occurs after the fifteenth day of the month, the disposition is effective in so far as it relates to the rent for the following calendar month (§ 1124 (2))";
+        when miete_betrifft_nur_den_folgenden_kalendermonat(x) and beschlagnahme_am(x, tb)
+            and days_between(month_start_of(tb), tb) + 1 > 15;
+        then verfuegung_dem_hypothekenglaeubiger_gegenueber_wirksam(x);
+    }
+}
+
+@source(BGB_P1125)
+rule AufrechnungGegenDenHypothekenglaeubigerAusgeschlossen(x: Gegenstand) strict {
+    label de official "Soweit die Einziehung der Miete oder Pacht dem Hypothekengläubiger gegenüber unwirksam ist, kann der Mieter oder der Pächter nicht eine ihm gegen den Vermieter oder den Verpächter zustehende Forderung gegen den Hypothekengläubiger aufrechnen (§ 1125)";
+    label en unofficial "In so far as collection of the rent is ineffective vis-à-vis the mortgage creditor, the tenant may not set off a claim against the landlord against that creditor (§ 1125)";
+    when verfuegung_dem_hypothekenglaeubiger_gegenueber_unwirksam(x);
+    then aufrechnung_gegen_den_hypothekenglaeubiger_ausgeschlossen(x);
+}
+
+@source(BGB_P1126) {
+    rule HaftungDerWiederkehrendenLeistungen(x: Gegenstand, h: Grundpfandrecht, g: Grundstueck) strict {
+        label de official "Ist mit dem Eigentum an dem Grundstück ein Recht auf wiederkehrende Leistungen verbunden, so erstreckt sich die Hypothek auf die Ansprüche auf diese Leistungen (§ 1126 Satz 1)";
+        label en unofficial "If a right to recurring payments is connected with ownership of the land, the mortgage extends to the claims to those payments (§ 1126 sentence 1)";
+        when belastungsgegenstand_grundstueck(h, g) and recht_auf_wiederkehrende_leistungen_mit_dem_eigentum_verbunden(g)
+            and gegenstand_des_grundstuecks(x, g) and anspruch_auf_wiederkehrende_leistung(x);
+        then haftet_fuer_die_hypothek(x, h);
+    }
+    rule VerfuegungUeberSpaetFaelligeLeistungUnwirksam(x: Gegenstand, tb: Date, tf: Date) strict {
+        label de official "Eine vor der Beschlagnahme erfolgte Verfügung über den Anspruch auf eine Leistung, die erst drei Monate nach der Beschlagnahme fällig wird, ist dem Hypothekengläubiger gegenüber unwirksam (§ 1126 Satz 3)";
+        label en unofficial "A disposition made before the seizure of a claim to a payment falling due only three months after the seizure is ineffective vis-à-vis the mortgage creditor (§ 1126 sentence 3)";
+        when anspruch_auf_wiederkehrende_leistung(x) and verfuegung_ueber_die_leistung_vor_der_beschlagnahme(x)
+            and beschlagnahme_am(x, tb) and leistung_faellig_am(x, tf)
+            and tf > add_calendar_period(tb, 3 calendar_month);
+        then verfuegung_dem_hypothekenglaeubiger_gegenueber_unwirksam(x);
+    }
+}
+
+// --- §§ 1127–1130: Versicherungsforderung -----------------------------------------------------------------
+
+@source(BGB_P1127) {
+    rule HaftungDerVersicherungsforderung(x: Gegenstand, h: Grundpfandrecht, g: Grundstueck) strict {
+        label de official "Sind Gegenstände, die der Hypothek unterliegen, für den Eigentümer oder den Eigenbesitzer des Grundstücks unter Versicherung gebracht, so erstreckt sich die Hypothek auf die Forderung gegen den Versicherer (§ 1127 Abs. 1)";
+        label en unofficial "If objects subject to the mortgage are insured for the owner or proprietary possessor, the mortgage extends to the claim against the insurer (§ 1127 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and gegenstand_des_grundstuecks(x, g)
+            and versicherungsforderung(x) and versicherter_gegenstand_unterliegt_der_hypothek(x);
+        then haftet_fuer_die_hypothek(x, h);
+    }
+    rule HaftungErlischtBeiWiederherstellung(x: Gegenstand, h: Grundpfandrecht) strict {
+        label de official "Die Haftung der Forderung gegen den Versicherer erlischt, wenn der versicherte Gegenstand wiederhergestellt oder Ersatz für ihn beschafft ist (§ 1127 Abs. 2)";
+        label en unofficial "Liability of the claim against the insurer ends if the insured object is restored or replaced (§ 1127 (2))";
+        when haftet_fuer_die_hypothek(x, h) and versicherungsforderung(x)
+            and versicherter_gegenstand_wiederhergestellt_oder_ersetzt(x);
+        then enthaftung_nach_1127(x, h);
+    }
+}
+
+@source(BGB_P1128) {
+    rule WiderspruchsfristEreignis(x: Gegenstand, f: Frist, e: Date) strict {
+        label de official "Die Monatsfrist des § 1128 Abs. 1 Satz 1 läuft vom Empfang der Anzeige an; der Tag des Empfangs wird nicht mitgerechnet (§ 187 Abs. 1)";
+        label en unofficial "The one-month period of § 1128 (1) sentence 1 runs from receipt of the notice; the day of receipt is not counted (§ 187 (1))";
+        when widerspruchsfrist(x, f) and schadensanzeige_empfangen_am(x, e);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule WiderspruchsfristDauer(x: Gegenstand, f: Frist, e: Date) strict {
+        label de official "Der Versicherer kann erst zahlen, wenn seit dem Empfang der Anzeige ein Monat verstrichen ist (§ 1128 Abs. 1 Satz 1) — Monatsschritt nach § 188 Abs. 2";
+        label en unofficial "The insurer may pay only once one month has passed since receipt of the notice (§ 1128 (1) sentence 1) — month step under § 188 (2)";
+        when widerspruchsfrist(x, f) and schadensanzeige_empfangen_am(x, e);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_month);
+    }
+    rule ZahlungVorAblaufDerMonatsfristUnwirksam(x: Gegenstand, f: Frist, ende: Date, tz: Date) strict {
+        label de official "Ist ein Gebäude versichert, so kann der Versicherer die Versicherungssumme mit Wirkung gegen den Hypothekengläubiger an den Versicherten erst zahlen, wenn seit dem Empfang der Anzeige ein Monat verstrichen ist (§ 1128 Abs. 1 Satz 1) — Handlungsfrist, Ende mit der Verlegung des § 193";
+        label en unofficial "Where a building is insured, the insurer may pay the sum to the insured with effect against the mortgage creditor only once one month has passed since receipt of the notice (§ 1128 (1) sentence 1) — period for action, end with the transfer of § 193";
+        when gebaeude_versichert(x) and widerspruchsfrist(x, f) and de.bgb.fristen::frist_ende(f, ende)
+            and zahlungstag(x, tz) and tz <= ende;
+        then zahlung_an_den_versicherten_unwirksam(x);
+    }
+    rule WiderspruchInnerhalbDerFrist(x: Gegenstand, f: Frist, ende: Date, tw: Date) strict {
+        label de official "Der Hypothekengläubiger kann bis zum Ablauf der Frist dem Versicherer gegenüber der Zahlung widersprechen (§ 1128 Abs. 1 Satz 2)";
+        label en unofficial "Up to the end of the period the mortgage creditor may object to payment vis-à-vis the insurer (§ 1128 (1) sentence 2)";
+        when widerspruchsfrist(x, f) and de.bgb.fristen::frist_ende(f, ende)
+            and widerspruch_gegen_die_zahlung_am(x, tw) and tw <= ende;
+        then zahlung_an_den_versicherten_unwirksam(x);
+    }
+    rule ZahlungNachFristablaufOhneWiderspruchWirksam(x: Gegenstand, f: Frist, ende: Date, tz: Date) strict {
+        label de official "Ist die Frist verstrichen und der Zahlung nicht widersprochen, so wirkt die Zahlung an den Versicherten auch gegen den Hypothekengläubiger (§ 1128 Abs. 1 Satz 1, 2)";
+        label en unofficial "Once the period has run without objection, payment to the insured is effective also against the mortgage creditor (§ 1128 (1) sentences 1, 2)";
+        when gebaeude_versichert(x) and widerspruchsfrist(x, f) and de.bgb.fristen::frist_ende(f, ende)
+            and zahlungstag(x, tz) and tz > ende and not widerspruch_erhoben(x);
+        then zahlung_an_den_versicherten_wirksam(x);
+    }
+    rule AngemeldeteHypothekVerlangtSchriftlicheZustimmung(x: Gegenstand) strict {
+        label de official "Hat der Hypothekengläubiger seine Hypothek dem Versicherer angemeldet, so kann der Versicherer mit Wirkung gegen ihn an den Versicherten nur zahlen, wenn der Hypothekengläubiger der Zahlung schriftlich zugestimmt hat (§ 1128 Abs. 2)";
+        label en unofficial "If the mortgage creditor has notified the insurer of the mortgage, the insurer may pay the insured with effect against them only with the creditor's written consent (§ 1128 (2))";
+        when hypothek_dem_versicherer_angemeldet(x) and not schriftliche_zustimmung_des_hypothekenglaeubigers(x);
+        then zahlung_an_den_versicherten_unwirksam(x);
+    }
+}
+
+pub relation zahlungstag(x: Gegenstand, tag: Date) kind empirical {
+    key(x);
+    label de official "Tag, an dem der Versicherer die Versicherungssumme an den Versicherten zahlt oder zahlen will (§ 1128 Abs. 1) — Eingabe des Falls";
+    label en unofficial "day on which the insurer pays or intends to pay the sum to the insured (§ 1128 (1)) — case input";
+}
+pub relation widerspruch_erhoben(x: Gegenstand) kind empirical {
+    label de official "der Hypothekengläubiger hat der Zahlung widersprochen (§ 1128 Abs. 1 Satz 2) — ausdrückliche Eingabe des Falls; ihr Fehlen trägt der Fall als `assert not`";
+    label en unofficial "the mortgage creditor objected to the payment (§ 1128 (1) sentence 2) — explicit case input; its absence is carried by an explicit `assert not`";
+}
+
+@source(BGB_P1129)
+rule SonstigeSchadensversicherung(x: Gegenstand, h: Grundpfandrecht, f: Frist) strict {
+    label de official "Ist ein anderer Gegenstand als ein Gebäude versichert, so bestimmt sich die Haftung der Forderung gegen den Versicherer nach den Vorschriften des § 1123 Abs. 2 Satz 1 und des § 1124 Abs. 1, 3 (§ 1129)";
+    label en unofficial "If an object other than a building is insured, liability of the claim against the insurer follows § 1123 (2) sentence 1 and § 1124 (1), (3) (§ 1129)";
+    when haftet_fuer_die_hypothek(x, h) and versicherungsforderung(x) and not gebaeude_versichert(x)
+        and enthaftungsfrist(x, f);
+    then enthaftung_nach_1123_anwendbar(x);
+}
+
+pub relation enthaftung_nach_1123_anwendbar(x: Gegenstand) kind derived {
+    label de official "auf die Versicherungsforderung an einem anderen Gegenstand als einem Gebäude sind § 1123 Abs. 2 Satz 1 und § 1124 Abs. 1, 3 anzuwenden (§ 1129)";
+    label en unofficial "§ 1123 (2) sentence 1 and § 1124 (1), (3) apply to the insurance claim for an object other than a building (§ 1129)";
+}
+
+@source(BGB_P1130)
+rule WiederherstellungsklauselMachtDieZahlungWirksam(x: Gegenstand) strict {
+    label de official "Ist der Versicherer nach den Versicherungsbestimmungen nur verpflichtet, die Versicherungssumme zur Wiederherstellung des versicherten Gegenstands zu zahlen, so ist eine diesen Bestimmungen entsprechende Zahlung an den Versicherten dem Hypothekengläubiger gegenüber wirksam (§ 1130)";
+    label en unofficial "If under the insurance terms the insurer owes the sum only for restoration, a payment to the insured complying with those terms is effective vis-à-vis the mortgage creditor (§ 1130)";
+    when zahlung_nur_zur_wiederherstellung_geschuldet(x) and zahlung_entspricht_den_versicherungsbestimmungen(x);
+    then zahlung_an_den_versicherten_wirksam(x);
+}
+
+// --- §§ 1131, 1132: Zuschreibung und Gesamthypothek -------------------------------------------------------
+
+@source(BGB_P1131) {
+    rule ErstreckungAufDasZugeschriebeneGrundstueck(h: Grundpfandrecht, g: Grundstueck, zu: Grundstueck) strict {
+        label de official "Wird ein Grundstück nach § 890 Abs. 2 einem anderen Grundstück im Grundbuch zugeschrieben, so erstrecken sich die an diesem Grundstück bestehenden Hypotheken auf das zugeschriebene Grundstück (§ 1131 Satz 1)";
+        label en unofficial "Where land is added to other land in the register under § 890 (2), the mortgages on the latter extend to the added land (§ 1131 sentence 1)";
+        when belastungsgegenstand_grundstueck(h, g) and zugeschriebenes_grundstueck(g, zu);
+        then hypothek_erstreckt_sich_auf_das_zugeschriebene_grundstueck(h, zu);
+    }
+    rule BelastungDesZugeschriebenenGrundstuecksGehtVor(h: Grundpfandrecht, zu: Grundstueck, r: Recht) strict {
+        label de official "Rechte, mit denen das zugeschriebene Grundstück belastet ist, gehen diesen Hypotheken im Range vor (§ 1131 Satz 2)";
+        label en unofficial "Rights encumbering the added land rank ahead of those mortgages (§ 1131 sentence 2)";
+        when hypothek_erstreckt_sich_auf_das_zugeschriebene_grundstueck(h, zu) and belastung_des_zugeschriebenen_grundstuecks(zu, r);
+        then recht_geht_der_hypothek_im_range_vor(r, h);
+    }
+}
+
+pub relation gesamthypothek_an(h: Grundpfandrecht, g: Grundstueck) kind empirical {
+    label de official "Grundstück, an dem die Gesamthypothek für dieselbe Forderung besteht (§ 1132 Abs. 1 Satz 1)";
+    label en unofficial "land on which the aggregate mortgage for the same claim exists (§ 1132 (1) sentence 1)";
+}
+pub relation verteilungsbetrag(h: Grundpfandrecht, g: Grundstueck, betrag: Money) kind empirical {
+    key(h, g);
+    label de official "Betrag, den der Gläubiger dem einzelnen Grundstück nach § 1132 Abs. 2 Satz 1 zugeteilt hat";
+    label en unofficial "amount allocated by the creditor to the individual plot under § 1132 (2) sentence 1";
+}
+pub relation haftet_fuer_die_ganze_forderung(g: Grundstueck, h: Grundpfandrecht, betrag: Money) kind derived {
+    key(g, h);
+    label de official "jedes Grundstück haftet für die ganze Forderung (§ 1132 Abs. 1 Satz 1)";
+    label en unofficial "each plot is liable for the whole claim (§ 1132 (1) sentence 1)";
+}
+pub relation haftet_nur_fuer_den_zugeteilten_betrag(g: Grundstueck, h: Grundpfandrecht, betrag: Money) kind derived {
+    key(g, h);
+    label de official "nach der Verteilung haftet jedes Grundstück nur für den zugeteilten Betrag (§ 1132 Abs. 2 Satz 1)";
+    label en unofficial "after the allocation each plot is liable only for the amount allocated to it (§ 1132 (2) sentence 1)";
+}
+
+@source(BGB_P1132) {
+    rule JedesGrundstueckHaftetFuerDieGanzeForderung(h: Grundpfandrecht, g: Grundstueck, betrag: Money) strict {
+        label de official "Besteht für die Forderung eine Hypothek an mehreren Grundstücken (Gesamthypothek), so haftet jedes Grundstück für die ganze Forderung; der Gläubiger kann die Befriedigung nach seinem Belieben aus jedem der Grundstücke ganz oder zu einem Teil suchen (§ 1132 Abs. 1)";
+        label en unofficial "Where a mortgage for the claim exists on several plots (aggregate mortgage), each plot is liable for the whole claim; the creditor may seek satisfaction from any of them at will (§ 1132 (1))";
+        when gesamthypothek_an(h, g) and geldsumme(h, betrag);
+        then haftet_fuer_die_ganze_forderung(g, h, betrag);
+    }
+    rule VerteilungBeschraenktDieHaftung(h: Grundpfandrecht, g: Grundstueck, betrag: Money) strict {
+        label de official "Der Gläubiger ist berechtigt, den Betrag der Forderung auf die einzelnen Grundstücke in der Weise zu verteilen, dass jedes Grundstück nur für den zugeteilten Betrag haftet (§ 1132 Abs. 2 Satz 1)";
+        label en unofficial "The creditor may allocate the amount of the claim among the plots so that each is liable only for the amount allocated to it (§ 1132 (2) sentence 1)";
+        when gesamthypothek_an(h, g) and verteilungsbetrag(h, g, betrag);
+        then haftet_nur_fuer_den_zugeteilten_betrag(g, h, betrag);
+    }
+}

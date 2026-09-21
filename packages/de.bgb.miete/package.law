@@ -1,0 +1,331 @@
+// BÜRGERLICHES GESETZBUCH — MIETVERTRAG, PACHTVERTRAG, LANDPACHTVERTRAG (BG-06)
+//
+// Buch 2 Abschnitt 8 Titel 5, §§ 535–597, in fünf Untertiteln: Allgemeine
+// Vorschriften für Mietverhältnisse (§§ 535–548a), Mietverhältnisse über
+// Wohnraum (§§ 549–577a), Mietverhältnisse über andere Sachen (§§ 578–580a),
+// Pachtvertrag (§§ 581–584b) und Landpachtvertrag (§§ 585–597). Quellen:
+// sources.law, erzeugt aus dem Register DOKNR
+// (docs/foundations/de-bgb/registry/), Stand 2026-09-17.
+//
+// WAS DIESES PAKET IST. Es senkt das Gebrauchsüberlassungsverhältnis ab: die
+// Hauptpflichten (§ 535, § 581 Abs. 1, § 586), die Mängelrechte des Mieters
+// (§§ 536–536d), die Beendigung durch Zeitablauf und Kündigung (§§ 542–545,
+// 568–576b, 580a, 584, 594–594f), die Miethöhe bei Mietbeginn in Gebieten mit
+// angespanntem Wohnungsmarkt (§§ 556d–556g), die drei Wege der Mieterhöhung
+// (§§ 557a, 557b, 558–559f, 560), die Betriebskostenabrechnung (§§ 556–556c),
+// das Vermieterpfandrecht (§§ 562–562d, 592), den Eintritt beim Tod des
+// Mieters (§§ 563–564), den Grundsatz „Kauf bricht nicht Miete“
+// (§§ 566–567b) und den Landpachtvertrag mit seinen eigenen Fristen.
+//
+// EIN TRÄGER FÜR DREI VERTRAGSTYPEN. Miete, Pacht und Landpacht sind im Text
+// ein einziger Titel mit Verweisungsketten (§ 581 Abs. 2: auf den Pachtvertrag
+// sind die Vorschriften über den Mietvertrag entsprechend anzuwenden; § 585
+// Abs. 2 für die Landpacht). Deshalb trägt das Paket EIN Verhältnis
+// (`Mietverhaeltnis`) mit der Art als Angabe des Falls (`vertragsart`) und
+// nicht drei getrennte Entitäten: sonst müsste jede Regel des Untertitels 1
+// dreimal geschrieben werden, und die Verweisung des § 581 Abs. 2 wäre nicht
+// dieselbe Norm, sondern eine Kopie (Ledger D-06-01).
+//
+// VIER DINGE, DIE DIESES PAKET NICHT TUT (Grenzen aus dem Text, nicht aus dem
+// Arbeitsumfang):
+//
+// 1. Schadensersatz, Verzug und Rücktritt (§§ 280, 286, 323, 326) gehören dem
+//    Paket de.bgb.schuldrecht_at (BG-04); die §§ 536a, 546a, 571 nennen HIER
+//    nur, DASS und WOFÜR gehaftet wird. Ebenso liegen die Vorschriften über
+//    digitale Produkte (Abschnitt 3 Titel 2a, §§ 327 ff.), auf die § 548a und
+//    § 578b verweisen, bei BG-04: § 578b stellt nur FEST, welche Vorschriften
+//    dieses Titels nicht anzuwenden sind.
+// 2. Die Rechtsverordnungen der Länder — Gebiete mit angespanntem
+//    Wohnungsmarkt (§ 556d Abs. 2), das Kappungsgrenzengebiet des § 558 Abs. 3
+//    Satz 2 und die verlängerte Sperrfrist des § 577a Abs. 2 — sind KEIN
+//    Bundesrecht und werden nicht erfunden. Sie kommen als typisierte Eingabe
+//    des Falls mit Gebiet und Zeitraum herein (SOURCES.json, external;
+//    Ledger D-06-02). Dasselbe gilt für den Mietspiegel (§§ 558c–558e), die
+//    Betriebskostenverordnung (§ 556 Abs. 1 Satz 3), das
+//    Telekommunikationsgesetz (§§ 555b Nr. 4a, 556 Abs. 3a, 559 Abs. 1
+//    Satz 2), das Gebäudemodernisierungsgesetz (§§ 555b Nr. 1a, 559e Abs. 2,
+//    559f Abs. 1 Nr. 3), das Wohnraumförderungsgesetz (§ 558 Abs. 4), die ZPO
+//    (§§ 562 Abs. 1 Satz 2, 571 Abs. 2, 592) und das Landwirtschaftsgericht
+//    (§§ 588, 590, 591, 593, 594d, 595, 595a).
+// 3. Das Verfahren — Klage auf Zustimmung (§ 558b Abs. 2), Räumungsklage
+//    (§ 569 Abs. 3 Nr. 2), Urteil über die Fortsetzung (§ 574a Abs. 2) — wird
+//    nicht nachgebildet. Das Paket rechnet die FRISTEN dieser Schritte und
+//    nimmt ihr Ergebnis als festgestellte Tatsache (`origin adjudicated`).
+// 4. Ein Fall trägt GENAU EIN streitiges Mietverhältnis und darin höchstens
+//    einen streitigen Mangel, eine Kündigung, eine Mieterhöhung und eine
+//    Betriebskostenabrechnung: die Schlüssel der Prädikate sind das
+//    Verhältnis oder der jeweilige Träger (Ledger D-06-03).
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Jeder Fall ist nach dem WORTLAUT des
+// Paragraphen einem der drei Kanäle zugeordnet, nie einem Sammelkatalog:
+//
+//   WERTUNG (external judgment relation … { authority Court; }) — „eine
+//     unerhebliche Minderung der Tauglichkeit bleibt außer Betracht“ und „eine
+//     angemessen herabgesetzte Miete“ (§ 536 Abs. 1 Satz 2 und 3), „nicht
+//     zugemutet werden kann“ (§ 543 Abs. 1 Satz 2, § 553 Abs. 1 Satz 2, § 554
+//     Abs. 1 Satz 2, § 588 Abs. 3), „ein nicht unerheblicher Teil der Miete“
+//     (§ 543 Abs. 2 Satz 1 Nr. 3 Buchst. a, ergänzt durch die Schwelle des
+//     § 569 Abs. 3 Nr. 1), „eine zur Abhilfe bestimmte angemessene Frist“
+//     (§ 543 Abs. 3 Satz 1), „berechtigtes Interesse“ (§ 552 Abs. 1, § 553
+//     Abs. 1 Satz 1, § 573 Abs. 1 Satz 1), „eine Härte … die nicht zu
+//     rechtfertigen ist“ (§ 555d Abs. 2, § 559 Abs. 4, § 574 Abs. 1, § 588
+//     Abs. 2, § 595 Abs. 1), „unverzüglich“ (§ 536c Abs. 1, § 560 Abs. 3
+//     Satz 2, § 574b Abs. 1 Satz 2, § 593a Satz 2 — Wertung, kein Nullfrist,
+//     DECISION-0194), „angemessene Entschädigung“ (§ 552 Abs. 1, § 591a
+//     Satz 2), „schuldhaft nicht unerheblich verletzt“ (§ 573 Abs. 2 Nr. 1),
+//     „erhebliche Nachteile“ (§ 573 Abs. 2 Nr. 3), „ortsübliche
+//     Vergleichsmiete“ (§ 558 Abs. 2 — das Ergebnis der Ermittlung),
+//     „ordnungsmäßige Bewirtschaftung“ (§§ 586 Abs. 1 Satz 3, 596 Abs. 1);
+//   FESTGESTELLTE TATSACHE (relation kind empirical, im Fall origin
+//     adjudicated) — „kennt der Mieter bei Vertragsschluss den Mangel“
+//     (§ 536b Satz 1), „arglistig verschwiegen“ (§ 536d), die Tage der
+//     Überlassung, der Rückgabe, des Zugangs von Erklärungen, der Veräußerung
+//     und des Todes;
+//   LESARTEN (interpretation … any_of) — werden in diesem Paket nicht
+//     gebraucht: wo der Text auseinandergeht, delegiert er selbst an das
+//     Gericht (§ 574a Abs. 2, § 591 Abs. 3, § 595 Abs. 6).
+//
+// Ein flacher Fall-Fakt „das Mietverhältnis ist wirksam gekündigt“ ist
+// verboten (Lint evaluative-fact-without-producer): die Wirksamkeit ist immer
+// Schluss einer Regel über Grund, Form und Frist.
+//
+// ABWESENHEIT IST KEINE VERNEINUNG. `keine_abweichende_vereinbarung`,
+// `kein_wichtiger_grund_in_der_person_des_dritten`, `keine_erlaubnis_erteilt`
+// und `kein_widerspruch_erklaert` sind AUSDRÜCKLICHE Angaben des Falls; das
+// Schweigen des Falls verneint nichts.
+//
+// FRISTEN. Zeilen: DEADLINES.json, Abschnitt BG-06. Die Politik dieses Pakets
+// trägt denselben Feldsatz wie BGB_FRISTEN_KALENDER (BGB_MIETE_KALENDER,
+// Ledger D-06-05); § 193 wird nicht gerollt, sondern dort ausdrücklich
+// gerechnet, wo der Text eine Erklärung INNERHALB der Frist verlangt
+// (§ 545 Satz 1, § 556 Abs. 3, § 558b Abs. 2). Der „dritte Werktag“ der
+// §§ 573b Abs. 2, 573c Abs. 1, 573d Abs. 2, 575a Abs. 3, 576 Abs. 1, 580a,
+// 584 Abs. 1 und 594a wird mit demselben Kalender gezählt
+// (`add_business_days`, Kalender KALENDER_BUNDESWEIT aus de.bgb.fristen).
+//
+// GELD. Beträge sind EUR. Die Divisionen des Pakets sind gezählt und stehen je
+// Anspruch genau einmal (Ledger D-06-04): die drei Teilzahlungen der Kaution
+// (§ 551 Abs. 2 Satz 1), die zulässige Miete des § 556d Abs. 1 (110 %), die
+// Kappungsgrenze des § 558 Abs. 3 (120 % oder 115 %), die Umlage des § 559
+// Abs. 1 (8 % jährlich, auf den Monat), die Kappung des § 559 Abs. 3a
+// (3 €, 2 € oder 0,50 € je Quadratmeter), die Pauschalen des § 559c Abs. 1
+// (30 %) und des § 559e (10 %, 15 %) und die Minderungsquote des § 536, die
+// das Gericht als Verhältnis zweier ganzer Zahlen angibt. Jede rechnet
+// `div_round(…, n × 1.0, 2, "HALF_UP")`. Ein Zinssatz, ein Schwellenwert oder
+// eine Rundung, die der Text nicht nennt, ist hier nicht erfunden.
+//
+// SPRACHE. Nur Deutsch und Englisch (DECISION-0319, Р7).
+
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Sache = de.bgb.core::Sache;
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot";
+}
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+}
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// Kalenderschritt des § 188 Abs. 2 für die Fristen der §§ 545, 548, 556, 558,
+// 558b, 559b, 561, 573c, 577a, 584, 591b und 594a: derselbe Feldsatz wie
+// BGB_FRISTEN_KALENDER. Eine Politik je Fall (§168.2).
+deadline policy BGB_MIETE_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// --- Art des Vertrags und des Gegenstands -------------------------------------------------------
+
+pub enum Vertragsart {
+    label de official "Art des Gebrauchsüberlassungsvertrags dieses Titels (§ 535, § 581, § 585)";
+    label en unofficial "type of contract for the grant of use under this title (§ 535, § 581, § 585)";
+    Miete,
+    Pacht,
+    Landpacht
+}
+
+pub enum Gegenstandsart {
+    label de official "Art des überlassenen Gegenstands: sie entscheidet, welche Vorschriften des Titels gelten (§§ 549, 578, 578a, 578b, 580a)";
+    label en unofficial "type of the object let: it decides which provisions of the title apply (§§ 549, 578, 578a, 578b, 580a)";
+    Wohnraum,
+    Geschaeftsraum,
+    SonstigeRaeume,
+    Grundstueck,
+    BeweglicheSache,
+    DigitalesProdukt,
+    EingetragenesSchiff
+}
+
+// --- Träger des Titels ---------------------------------------------------------------------------
+
+pub entity Mietverhaeltnis {
+    label de official "Miet-, Pacht- oder Landpachtverhältnis (§ 535, § 581, § 585)";
+    label en unofficial "lease, usufructuary lease or farm lease (§ 535, § 581, § 585)";
+}
+
+pub entity Mangel {
+    label de official "Sach- oder Rechtsmangel der Mietsache (§§ 536, 536a)";
+    label en unofficial "material or legal defect of the leased property (§§ 536, 536a)";
+}
+
+pub entity Kuendigung {
+    label de official "Kündigung des Miet- oder Pachtverhältnisses (§§ 542, 543, 568, 573, 573c, 580a, 584, 594a)";
+    label en unofficial "notice terminating the lease (§§ 542, 543, 568, 573, 573c, 580a, 584, 594a)";
+}
+
+pub entity Modernisierungsmassnahme {
+    label de official "Modernisierungsmaßnahme und ihre Ankündigung (§§ 555b, 555c)";
+    label en unofficial "modernisation measure and its announcement (§§ 555b, 555c)";
+}
+
+pub entity Mieterhoehung {
+    label de official "Verlangen oder Erklärung der Mieterhöhung (§§ 558, 559, 559c, 559e, 560)";
+    label en unofficial "demand for or declaration of an increase in rent (§§ 558, 559, 559c, 559e, 560)";
+}
+
+pub entity Betriebskostenabrechnung {
+    label de official "Abrechnung über die Vorauszahlungen für Betriebskosten (§ 556 Abs. 3)";
+    label en unofficial "statement of account for advance payments on operating costs (§ 556 (3))";
+}
+
+pub entity Mietsicherheit {
+    label de official "Sicherheit, die der Mieter für die Erfüllung seiner Pflichten zu leisten hat (§ 551)";
+    label en unofficial "security to be provided by the tenant for the performance of his duties (§ 551)";
+}
+
+pub entity Vermieterpfandrecht {
+    label de official "Pfandrecht des Vermieters an den eingebrachten Sachen des Mieters (§ 562), des Verpächters (§ 592)";
+    label en unofficial "lessor's lien over the tenant's belongings brought onto the premises (§ 562), the lessor's lien (§ 592)";
+}
+
+// --- Parteien, Gegenstand und Zeit ---------------------------------------------------------------
+
+pub relation vermieter(m: Mietverhaeltnis, p: Person) kind empirical {
+    key(m);
+    label de official "Vermieter, Verpächter (§ 535 Abs. 1 Satz 1, § 581 Abs. 1 Satz 1)";
+    label en unofficial "lessor (§ 535 (1) sentence 1, § 581 (1) sentence 1)";
+}
+pub relation mieter(m: Mietverhaeltnis, p: Person) kind empirical {
+    key(m);
+    label de official "Mieter, Pächter (§ 535 Abs. 2, § 581 Abs. 1 Satz 2)";
+    label en unofficial "tenant, lessee (§ 535 (2), § 581 (1) sentence 2)";
+}
+pub relation mietsache(m: Mietverhaeltnis, s: Sache) kind empirical {
+    key(m);
+    label de official "die überlassene Sache (§ 535 Abs. 1 Satz 1)";
+    label en unofficial "the object let (§ 535 (1) sentence 1)";
+}
+pub relation vertragsart(m: Mietverhaeltnis, art: Vertragsart) kind empirical {
+    key(m);
+    label de official "Miete, Pacht oder Landpacht (§ 535, § 581, § 585)";
+    label en unofficial "lease, usufructuary lease or farm lease (§ 535, § 581, § 585)";
+}
+pub relation gegenstandsart(m: Mietverhaeltnis, art: Gegenstandsart) kind empirical {
+    key(m);
+    label de official "Art des überlassenen Gegenstands (§§ 549 Abs. 1, 578, 578a, 580a)";
+    label en unofficial "type of the object let (§§ 549 (1), 578, 578a, 580a)";
+}
+pub relation vertragsschluss_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag des Vertragsschlusses (§ 536b Satz 1, § 553 Abs. 1 Satz 1, § 556d Abs. 1)";
+    label en unofficial "day on which the contract was concluded (§ 536b sentence 1, § 553 (1) sentence 1, § 556d (1))";
+}
+pub relation ueberlassung_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag der Überlassung der Sache an den Mieter (§ 536 Abs. 1 Satz 1, § 544 Satz 1, § 573c Abs. 1 Satz 2, § 577a Abs. 1) — festgestellte Tatsache";
+    label en unofficial "day on which the object was made available to the tenant (§ 536 (1) sentence 1, § 544 sentence 1, § 573c (1) sentence 2, § 577a (1)) — established fact";
+}
+pub relation beendigung_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, mit dessen Ablauf das Miet- oder Pachtverhältnis endet (§ 542 Abs. 2, § 546 Abs. 1, § 548 Abs. 2, § 574b Abs. 2)";
+    label en unofficial "day at whose end the lease terminates (§ 542 (2), § 546 (1), § 548 (2), § 574b (2))";
+}
+pub relation mietzeit_bestimmt(m: Mietverhaeltnis) kind empirical {
+    label de official "das Mietverhältnis ist auf bestimmte Zeit eingegangen (§ 542 Abs. 2) — ausdrückliche Angabe des Falls; die unbestimmte Mietzeit ist ihre ausdrückliche Verneinung";
+    label en unofficial "the lease was entered into for a fixed term (§ 542 (2)) — express statement of the case; an indefinite term is its express negation";
+}
+pub relation mietzeit_ende(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, mit dessen Ablauf die vereinbarte Mietzeit endet (§ 542 Abs. 2, § 545 Satz 1, § 594 Satz 1)";
+    label en unofficial "day at whose end the agreed term expires (§ 542 (2), § 545 sentence 1, § 594 sentence 1)";
+}
+pub relation gebrauch_ueberlassen_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Vermieter dem Mieter den Gebrauch der Mietsache gewährt (§ 535 Abs. 1)";
+    label en unofficial "day on which the lessor grants the tenant use of the leased property (§ 535 (1))";
+}
+pub relation zustand_erhalten_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Vermieter den vertragsgemäßen Zustand der Mietsache erhält (§ 535 Abs. 1 Satz 2)";
+    label en unofficial "day on which the lessor maintains the property's contract-compliant condition (§ 535 (1) sentence 2)";
+}
+pub relation lasten_getragen_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Vermieter die auf der Mietsache ruhenden Lasten trägt (§ 535 Abs. 1 Satz 3)";
+    label en unofficial "day on which the lessor bears charges resting on the leased property (§ 535 (1) sentence 3)";
+}
+pub relation miete_entrichtet_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Mieter die vereinbarte Miete entrichtet (§ 535 Abs. 2)";
+    label en unofficial "day on which the tenant pays the agreed rent (§ 535 (2))";
+}
+pub relation gebrauch_gewaehrt(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter gewährt dem Mieter den vertragsgemäßen Gebrauch (§ 535 Abs. 1)";
+    label en unofficial "the lessor grants the tenant use in conformity with the contract (§ 535 (1))";
+}
+pub relation zustand_vertragsgemaess(m: Mietverhaeltnis) kind empirical {
+    label de official "die Mietsache bleibt während der Mietzeit in vertragsgemäßem Zustand (§ 535 Abs. 1 Satz 2)";
+    label en unofficial "the property remains in a condition suitable for contractual use during the lease (§ 535 (1) sentence 2)";
+}
+pub relation lasten_getragen(m: Mietverhaeltnis) kind empirical {
+    label de official "die auf der Mietsache ruhenden Lasten werden getragen (§ 535 Abs. 1 Satz 3)";
+    label en unofficial "charges resting on the leased property are borne (§ 535 (1) sentence 3)";
+}
+pub relation miete_entrichtet(m: Mietverhaeltnis) kind empirical {
+    label de official "der Mieter entrichtet die vereinbarte Miete (§ 535 Abs. 2)";
+    label en unofficial "the tenant pays the agreed rent (§ 535 (2))";
+}
+pub relation miete_monatlich(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "die vereinbarte Miete für einen Monat einschließlich der als Pauschale oder Vorauszahlung ausgewiesenen Betriebskosten (§ 535 Abs. 2)";
+    label en unofficial "the agreed rent for one month including operating costs shown as a flat rate or advance payment (§ 535 (2))";
+}
+pub relation nettomiete_monatlich(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "die auf einen Monat entfallende Miete OHNE die als Pauschale oder als Vorauszahlung ausgewiesenen Betriebskosten (§ 551 Abs. 1, § 569 Abs. 2a Satz 2)";
+    label en unofficial "the rent attributable to one month WITHOUT operating costs shown as a flat rate or advance payment (§ 551 (1), § 569 (2a) sentence 2)";
+}
+pub relation wohnflaeche_qm(m: Mietverhaeltnis, flaeche: Integer) kind empirical {
+    key(m);
+    label de official "Wohnfläche in vollen Quadratmetern (§ 556a Abs. 1 Satz 1, § 559 Abs. 3a)";
+    label en unofficial "living space in whole square metres (§ 556a (1) sentence 1, § 559 (3a))";
+}
+pub relation keine_abweichende_vereinbarung(m: Mietverhaeltnis) kind empirical {
+    label de official "die Vertragsparteien haben nichts zum Nachteil des Mieters Abweichendes vereinbart — ausdrückliche Angabe des Falls; das Schweigen des Falls verneint nichts";
+    label en unofficial "the parties agreed nothing deviating to the tenant's detriment — express statement of the case; the silence of the case negates nothing";
+}

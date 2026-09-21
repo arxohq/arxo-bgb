@@ -1,0 +1,47 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2353 (Antrag/Erteilung), § 2361 (Einziehung/Kraftlos), § 2362
+// (Herausgabe- und Auskunftsanspruch), § 2363 (dasselbe Recht für
+// Nacherbe und Testamentsvollstrecker).
+test "§§ 2353, 2361–2363: Erteilung, Einziehung, Herausgabe- und Auskunftsanspruch" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+
+        // § 2353
+        assert "i1": erbschein_beantragt_2353(entity_ref("urn:de:bgb:pilot:i01:E1"), entity_ref("urn:de:bgb:pilot:i01:ANTRAGSTELLER1")) { origin case_input; }
+        assert "i2": antragsteller_erbe_oder_miterbe_2353(entity_ref("urn:de:bgb:pilot:i01:E1"), entity_ref("urn:de:bgb:pilot:i01:ANTRAGSTELLER1")) { origin case_input; }
+
+        // § 2361
+        assert "i3": erbschein_unrichtig_2361(entity_ref("urn:de:bgb:pilot:i01:S1")) { origin case_input; }
+
+        // § 2362 Abs. 1: mit wirklichem Erben und Besitzer
+        assert "i4": wirklicher_erbe_2362(entity_ref("urn:de:bgb:pilot:i01:E2"), entity_ref("urn:de:bgb:pilot:i01:WIRKLICHER2")) { origin case_input; }
+        assert "i5": besitzer_unrichtigen_erbscheins_2362(entity_ref("urn:de:bgb:pilot:i01:S1"), entity_ref("urn:de:bgb:pilot:i01:BESITZER1")) { origin case_input; }
+        // § 2362 Abs. 2
+        assert "i6": erbscheinsinhaber_2362(entity_ref("urn:de:bgb:pilot:i01:S1"), entity_ref("urn:de:bgb:pilot:i01:INHABER1")) { origin case_input; }
+
+        // § 2363: Nacherbe und Testamentsvollstrecker haben dasselbe Recht wie § 2362 Abs. 1
+        assert "i7": nacherbe_bei_unrichtigem_erbschein_2363(entity_ref("urn:de:bgb:pilot:i01:E2"), entity_ref("urn:de:bgb:pilot:i01:NACHERBE1")) { origin case_input; }
+        assert "i8": testamentsvollstrecker_bei_unrichtigem_erbschein_2363(entity_ref("urn:de:bgb:pilot:i01:E2"), entity_ref("urn:de:bgb:pilot:i01:TV1")) { origin case_input; }
+    }
+
+    evaluate truth(erbschein_zu_erteilen_2353(entity_ref("urn:de:bgb:pilot:i01:E1"), entity_ref("urn:de:bgb:pilot:i01:ANTRAGSTELLER1")));
+    expect truth_status == TRUE_ONLY;
+
+    evaluate truth(erbschein_einzuziehen_2361(entity_ref("urn:de:bgb:pilot:i01:S1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(erbschein_durch_einziehung_kraftlos_2361(entity_ref("urn:de:bgb:pilot:i01:S1")));
+    expect truth_status == TRUE_ONLY;
+
+    evaluate truth(herausgabe_an_nachlassgericht_verlangbar_2362(entity_ref("urn:de:bgb:pilot:i01:S1"), entity_ref("urn:de:bgb:pilot:i01:WIRKLICHER2"), entity_ref("urn:de:bgb:pilot:i01:BESITZER1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(auskunftspflicht_ueber_bestand_und_verbleib_2362(entity_ref("urn:de:bgb:pilot:i01:S1"), entity_ref("urn:de:bgb:pilot:i01:INHABER1"), entity_ref("urn:de:bgb:pilot:i01:WIRKLICHER2")));
+    expect truth_status == TRUE_ONLY;
+
+    evaluate truth(herausgabe_an_nachlassgericht_verlangbar_2362(entity_ref("urn:de:bgb:pilot:i01:S1"), entity_ref("urn:de:bgb:pilot:i01:NACHERBE1"), entity_ref("urn:de:bgb:pilot:i01:BESITZER1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(herausgabe_an_nachlassgericht_verlangbar_2362(entity_ref("urn:de:bgb:pilot:i01:S1"), entity_ref("urn:de:bgb:pilot:i01:TV1"), entity_ref("urn:de:bgb:pilot:i01:BESITZER1")));
+    expect truth_status == TRUE_ONLY;
+}

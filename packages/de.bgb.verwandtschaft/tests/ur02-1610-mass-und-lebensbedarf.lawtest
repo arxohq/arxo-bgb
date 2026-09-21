@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1610: das MASS des Unterhalts ist die Lebensstellung des Bedürftigen (Abs. 1, Urteilskanal — das Gericht hat 900,00 € beantwortet); Abs. 2 sagt, WAS der Unterhalt umfasst. Der Katalog ist geschlossen: der gesamte Lebensbedarf und die Kosten einer angemessenen Vorbildung zu einem Beruf immer, die Kosten der Erziehung nur bei einer der Erziehung bedürftigen Person.
+test "§ 1610: Maß nach der Lebensstellung und der Katalog des Absatzes 2" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": familie_des_falls(entity_ref("urn:de:bgb:vw:ur02:F")) { origin case_input; }
+        assert "f2": abstammung(entity_ref("urn:de:bgb:vw:ur02:F"), entity_ref("urn:de:bgb:vw:ur02:V"), entity_ref("urn:de:bgb:vw:ur02:K")) { origin case_input; }
+        assert "f3": ausserstande_sich_selbst_zu_unterhalten(entity_ref("urn:de:bgb:vw:ur02:K")) { origin adjudicated; }
+        assert "f4": angemessener_unterhalt(entity_ref("urn:de:bgb:vw:ur02:K"), 900.00 EUR) { origin adjudicated; }
+        assert "f5": erziehung_beduerftige_person(entity_ref("urn:de:bgb:vw:ur02:K")) { origin case_input; }
+    }
+    evaluate truth(mass_des_unterhalts(entity_ref("urn:de:bgb:vw:ur02:V"), entity_ref("urn:de:bgb:vw:ur02:K"), 900.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(unterhalt_umfasst(entity_ref("urn:de:bgb:vw:ur02:K"), KostenDerVorbildungZumBeruf));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(unterhalt_umfasst(entity_ref("urn:de:bgb:vw:ur02:K"), KostenDerErziehung));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

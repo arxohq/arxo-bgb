@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1570 Abs. 1 Satz 1: das gemeinschaftliche Kind ist am 15.07.2024 geboren; die Dreijahresfrist endet mit Ablauf des 15.07.2027. Am 01.01.2026 betreut der geschiedene Ehegatte B das Kind und kann Unterhalt verlangen — innerhalb der drei Jahre bedarf es KEINER Billigkeitsprüfung.
+test "§ 1570 Abs. 1 Satz 1: Betreuungsunterhalt innerhalb der drei Jahre" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:A"), entity_ref("urn:de:bgb:ehe:u01:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:u01:E")) { origin case_input; }
+        assert "f3": geschiedener_ehegatte(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:B")) { origin case_input; }
+        assert "f4": gemeinschaftliches_kind(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:K")) { origin case_input; }
+        assert "f5": geburt_des_kindes_am(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:K"), @2024-07-15) { origin case_input; }
+        assert "f6": betreuungsfrist_1570(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:K"), entity_ref("urn:de:bgb:ehe:u01:F")) { origin case_input; }
+        assert "f7": pflege_oder_erziehung_des_kindes(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:B"), entity_ref("urn:de:bgb:ehe:u01:K")) { origin case_input; }
+        assert "f8": bewertungstag(entity_ref("urn:de:bgb:ehe:u01:E"), @2026-01-01) { origin case_input; }
+    }
+    evaluate truth(letzter_tag_der_betreuungsfrist(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:K"), @2027-07-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nachehelicher_unterhaltsanspruch(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:B"), entity_ref("urn:de:bgb:ehe:u01:A"), Kindesbetreuung_1570));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(unterhalt_als_geldrente_monatlich_im_voraus(entity_ref("urn:de:bgb:ehe:u01:E"), entity_ref("urn:de:bgb:ehe:u01:A"), entity_ref("urn:de:bgb:ehe:u01:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

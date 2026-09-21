@@ -1,0 +1,35 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1990 Abs. 1: Ist die Anordnung der Nachlassverwaltung mangels einer den
+// Kosten entsprechenden Masse nicht tunlich, so kann der Erbe die Befriedigung
+// eines Nachlassglaeubigers insoweit verweigern, als der Nachlass nicht
+// ausreicht. Nachlasswert 10 000,00 EUR, zu berichtigende Verbindlichkeiten
+// 15 000,00 EUR — der Nachlass reicht nicht aus. Ein VERGLEICH, keine Rechnung.
+test "§ 1990 Abs. 1: der Nachlass reicht nicht aus — Duerftigkeitseinrede" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:h04:E"), entity_ref("urn:de:bgb:e:h04:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:h04:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:h04:E"), entity_ref("urn:de:bgb:e:h04:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:h04:F"), entity_ref("urn:de:bgb:e:h04:D"), entity_ref("urn:de:bgb:e:h04:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:h04:E"), entity_ref("urn:de:bgb:e:h04:K")) { origin case_input; }
+        assert "f6": verbindlichkeit_des_erbfalls(entity_ref("urn:de:bgb:e:h04:V"), entity_ref("urn:de:bgb:e:h04:E")) { origin case_input; }
+        assert "f7": glaeubiger(entity_ref("urn:de:bgb:e:h04:V"), entity_ref("urn:de:bgb:e:h04:G")) { origin case_input; }
+        assert "f8": vom_erblasser_herruehrende_schuld(entity_ref("urn:de:bgb:e:h04:V")) { origin case_input; }
+        assert "f9": nachlasswert_des_erbfalls(entity_ref("urn:de:bgb:e:h04:E"), 10000.00 EUR) { origin case_input; }
+        assert "f10": summe_der_verbindlichkeiten(entity_ref("urn:de:bgb:e:h04:E"), 15000.00 EUR) { origin case_input; }
+        assert "f11": kostendeckende_masse_fehlt(entity_ref("urn:de:bgb:e:h04:E")) { origin adjudicated; }
+    }
+    evaluate truth(nachlass_reicht_nicht_aus(entity_ref("urn:de:bgb:e:h04:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(duerftigkeitseinrede(entity_ref("urn:de:bgb:e:h04:E"), entity_ref("urn:de:bgb:e:h04:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(herausgabe_des_nachlasses_geschuldet(entity_ref("urn:de:bgb:e:h04:E"), entity_ref("urn:de:bgb:e:h04:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

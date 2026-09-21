@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1617c Abs. 1 Satz 2: ein in der Geschäftsfähigkeit beschränktes Kind, das das 14. Lebensjahr vollendet hat, kann die Erklärung nur SELBST abgeben. Geburt am 05.03.2010; das 14. Lebensjahr ist mit Ablauf des 04.03.2024 vollendet, die Erklärung vom 18.09.2026 liegt danach. Zugleich Abs. 1 Satz 1: der nachträglich bestimmte Ehename erstreckt sich nur mit Anschluss des Kindes.
+test "§ 1617c Abs. 1: Erklärung nur durch das Kind selbst ab Vollendung des 14. Lebensjahrs" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": kind_in_der_geschaeftsfaehigkeit_beschraenkt(entity_ref("urn:de:bgb:vw:ek06:K")) { origin case_input; }
+        assert "f2": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:ek06:K"), @2010-03-05) { origin case_input; }
+        assert "f3": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:ek06:K"), 5 calendar_year) { origin case_input; }
+        assert "f4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:ek06:K"), 14 calendar_year) { origin case_input; }
+        assert "f5": erklaerungstag(entity_ref("urn:de:bgb:vw:ek06:K"), @2026-09-18) { origin case_input; }
+        assert "f6": ehename_nachtraeglich_bestimmt(entity_ref("urn:de:bgb:vw:ek06:K")) { origin case_input; }
+        assert "f7": anschluss_des_kindes_erklaert(entity_ref("urn:de:bgb:vw:ek06:K")) { origin case_input; }
+    }
+    evaluate truth(vierzehntes_lebensjahr_vollendet(entity_ref("urn:de:bgb:vw:ek06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erklaerung_nur_durch_das_kind_selbst(entity_ref("urn:de:bgb:vw:ek06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erstreckung_auf_den_geburtsnamen(entity_ref("urn:de:bgb:vw:ek06:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

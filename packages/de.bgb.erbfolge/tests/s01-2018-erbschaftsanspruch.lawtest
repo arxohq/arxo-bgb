@@ -1,0 +1,38 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// §§ 2018, 2020, 2027: Der Erbschaftsbesitzer B hat auf Grund eines ihm in
+// Wirklichkeit nicht zustehenden Erbrechts etwas aus der Erbschaft erlangt und
+// Nutzungen gezogen. Erwartung aus dem Text: der Erbe kann die Herausgabe des
+// Erlangten und der gezogenen Nutzungen verlangen; B schuldet Auskunft; solange
+// der Erbschaftsanspruch nicht verjaehrt ist, kann B sich nicht auf Ersitzung
+// berufen (§ 2026).
+test "§§ 2018, 2020, 2026, 2027: Herausgabe, Nutzungen, Auskunft, keine Ersitzung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:s01:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:s01:F"), entity_ref("urn:de:bgb:e:s01:D"), entity_ref("urn:de:bgb:e:s01:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:K")) { origin case_input; }
+        assert "f6": erbschaftsbesitz_erlangt(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:B")) { origin case_input; }
+        assert "f7": nutzungen_gezogen(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:B")) { origin case_input; }
+    }
+    evaluate truth(erbschaftsbesitzer(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(herausgabeanspruch_des_erben(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:K"), entity_ref("urn:de:bgb:e:s01:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nutzungen_herauszugeben(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:K"), entity_ref("urn:de:bgb:e:s01:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(auskunftspflicht_des_erbschaftsbesitzers(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(berufung_auf_ersitzung_ausgeschlossen(entity_ref("urn:de:bgb:e:s01:E"), entity_ref("urn:de:bgb:e:s01:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

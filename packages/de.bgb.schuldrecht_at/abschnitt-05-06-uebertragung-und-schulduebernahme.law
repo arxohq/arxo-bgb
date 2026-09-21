@@ -1,0 +1,465 @@
+// ABSCHNITT 5 ÜBERTRAGUNG EINER FORDERUNG (§§ 398–413) UND ABSCHNITT 6
+// SCHULDÜBERNAHME (§§ 414–419; § 419 weggefallen)
+//
+// KENNTNIS IST TATSACHE, NICHT WERTUNG (DECISION-0194): dass der Schuldner die
+// Abtretung kennt (§ 407 Abs. 1, Abs. 2, § 406), ist eine festgestellte
+// Tatsache — Relation `kind empirical`, im Fall mit `origin adjudicated`, wenn
+// sie durch Entscheidung festgestellt ist. Das Fehlen der Kenntnis ist
+// ausdrücklicher Eingang des Falls, keine Folge des Schweigens.
+//
+// DIE SECHS MONATE DES § 416 ABS. 1 SATZ 2 sind eine Monatsfrist vom Empfang
+// der Mitteilung (§ 188 Abs. 2, Politik `BGB_SCHULDRECHT_AT_KALENDER`; Zeile in
+// DEADLINES.json). Die Genehmigung gilt nach ihrem Ablauf als erteilt, wenn der
+// Gläubiger sie nicht vorher verweigert hat.
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- §§ 398–404 Abtretung -----------------------------------------------------------------------------
+
+pub relation abtretungsvertrag_geschlossen(a: Anspruch, bisheriger: Person, neuer: Person) kind empirical {
+    label de official "Die Forderung ist von dem Gläubiger durch Vertrag mit einem anderen auf diesen übertragen worden (Abtretung, § 398 Satz 1)";
+    label en unofficial "the claim was transferred by the creditor to another by contract (assignment, § 398 sentence 1)";
+}
+pub relation neuer_glaeubiger(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Mit dem Abschluss des Vertrags tritt der neue Gläubiger an die Stelle des bisherigen Gläubigers (§ 398 Satz 2)";
+    label en unofficial "on conclusion of the contract the new creditor takes the place of the former creditor (§ 398 sentence 2)";
+}
+pub relation leistung_nur_mit_inhaltsaenderung_moeglich(a: Anspruch) kind empirical {
+    label de official "Die Leistung kann an einen anderen als den ursprünglichen Gläubiger nicht ohne Veränderung ihres Inhalts erfolgen (§ 399 Alt. 1)";
+    label en unofficial "performance to a person other than the original creditor is impossible without changing its content (§ 399)";
+}
+pub relation abtretung_durch_vereinbarung_ausgeschlossen(a: Anspruch) kind empirical {
+    label de official "Die Abtretung ist durch Vereinbarung mit dem Schuldner ausgeschlossen (§ 399 Alt. 2)";
+    label en unofficial "assignment is excluded by agreement with the debtor (§ 399)";
+}
+pub relation abtretung_unzulaessig(a: Anspruch) kind institutional {
+    label de official "Die Forderung kann nicht abgetreten werden (§§ 399, 400)";
+    label en unofficial "the claim cannot be assigned (§§ 399, 400)";
+}
+pub relation nebenrechte_gehen_ueber(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Mit der abgetretenen Forderung gehen die Hypotheken, Schiffshypotheken oder Pfandrechte sowie die Rechte aus einer Bürgschaft auf den neuen Gläubiger über; ein Vorzugsrecht kann auch der neue Gläubiger geltend machen (§ 401)";
+    label en unofficial "with the assigned claim the mortgages, pledges and surety rights pass to the new creditor; he may also assert a preferential right (§ 401)";
+}
+pub relation auskunft_und_urkunden_geschuldet(a: Anspruch, bisheriger: Person, neuer: Person) kind institutional {
+    label de official "Der bisherige Gläubiger ist verpflichtet, dem neuen Gläubiger die zur Geltendmachung nötige Auskunft zu erteilen und die Beweisurkunden auszuliefern (§ 402)";
+    label en unofficial "the former creditor must give the information needed and deliver the documents of proof (§ 402)";
+}
+pub relation beurkundung_der_abtretung_verlangt(a: Anspruch, neuer: Person) kind empirical {
+    label de official "Der neue Gläubiger verlangt eine öffentlich beglaubigte Urkunde über die Abtretung (§ 403 Satz 1)";
+    label en unofficial "the new creditor demands a publicly certified document on the assignment (§ 403 sentence 1)";
+}
+pub relation beurkundung_geschuldet(a: Anspruch, bisheriger: Person) kind institutional {
+    label de official "Der bisherige Gläubiger hat auf Verlangen eine öffentlich beglaubigte Urkunde über die Abtretung auszustellen; die Kosten hat der neue Gläubiger zu tragen und vorzuschießen (§ 403)";
+    label en unofficial "the former creditor must issue a publicly certified document on demand; the new creditor bears and advances the costs (§ 403)";
+}
+pub relation einwendung_zur_zeit_der_abtretung_begruendet(a: Anspruch) kind empirical {
+    label de official "Die Einwendung war zur Zeit der Abtretung der Forderung gegen den bisherigen Gläubiger begründet (§ 404)";
+    label en unofficial "the defence was well founded against the former creditor at the time of the assignment (§ 404)";
+}
+pub relation einwendung_gegen_den_neuen_glaeubiger(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Der Schuldner kann dem neuen Gläubiger die Einwendungen entgegensetzen, die zur Zeit der Abtretung gegen den bisherigen Gläubiger begründet waren (§ 404)";
+    label en unofficial "the debtor may raise against the new creditor the defences well founded against the former creditor at the time of assignment (§ 404)";
+}
+
+@source(BGB_P398)
+rule AbtretungLaesstDenNeuenGlaeubigerEintreten(a: Anspruch, bisheriger: Person, neuer: Person) strict {
+    label de official "Eine Forderung kann von dem Gläubiger durch Vertrag mit einem anderen auf diesen übertragen werden; mit dem Abschluss des Vertrags tritt der neue Gläubiger an die Stelle des bisherigen Gläubigers (§ 398)";
+    label en unofficial "A claim may be transferred by the creditor to another by contract; on conclusion the new creditor replaces the former one (§ 398)";
+    when abtretungsvertrag_geschlossen(a, bisheriger, neuer);
+    then neuer_glaeubiger(a, neuer);
+}
+
+@source(BGB_P399)
+rule AbtretungsverbotBeiInhaltsaenderung(a: Anspruch) strict {
+    label de official "Eine Forderung kann nicht abgetreten werden, wenn die Leistung an einen anderen als den ursprünglichen Gläubiger nicht ohne Veränderung ihres Inhalts erfolgen kann (§ 399 Alt. 1)";
+    label en unofficial "A claim cannot be assigned where performance to another is impossible without changing its content (§ 399)";
+    when leistung_nur_mit_inhaltsaenderung_moeglich(a);
+    then abtretung_unzulaessig(a);
+}
+
+@source(BGB_P399)
+rule AbtretungsverbotDurchVereinbarung(a: Anspruch) strict {
+    label de official "Eine Forderung kann nicht abgetreten werden, wenn die Abtretung durch Vereinbarung mit dem Schuldner ausgeschlossen ist (§ 399 Alt. 2)";
+    label en unofficial "A claim cannot be assigned where assignment is excluded by agreement with the debtor (§ 399)";
+    when abtretung_durch_vereinbarung_ausgeschlossen(a);
+    then abtretung_unzulaessig(a);
+}
+
+@source(BGB_P400)
+rule KeineAbtretungUnpfaendbarerForderungen(a: Anspruch) strict {
+    label de official "Eine Forderung kann nicht abgetreten werden, soweit sie der Pfändung nicht unterworfen ist (§ 400)";
+    label en unofficial "A claim cannot be assigned so far as it is not attachable (§ 400)";
+    when forderung_unpfaendbar(a);
+    then abtretung_unzulaessig(a);
+}
+
+@source(BGB_P401)
+rule NebenUndVorzugsrechteGehenMitUeber(a: Anspruch, neuer: Person) strict {
+    label de official "Mit der abgetretenen Forderung gehen die Hypotheken, Schiffshypotheken oder Pfandrechte, die für sie bestehen, sowie die Rechte aus einer für sie bestellten Bürgschaft auf den neuen Gläubiger über (§ 401 Abs. 1); ein Vorzugsrecht kann auch der neue Gläubiger geltend machen (Abs. 2)";
+    label en unofficial "With the assigned claim its mortgages, pledges and surety rights pass to the new creditor (§ 401 (1)); he may also assert a preferential right ((2))";
+    when neuer_glaeubiger(a, neuer);
+    then nebenrechte_gehen_ueber(a, neuer);
+}
+
+@source(BGB_P402)
+rule AuskunftUndUrkundenNachAbtretung(a: Anspruch, bisheriger: Person, neuer: Person) strict {
+    label de official "Der bisherige Gläubiger ist verpflichtet, dem neuen Gläubiger die zur Geltendmachung der Forderung nötige Auskunft zu erteilen und ihm die zum Beweis dienenden Urkunden auszuliefern, soweit sie sich in seinem Besitz befinden (§ 402)";
+    label en unofficial "The former creditor must provide the information needed to assert the claim and deliver the documents of proof in his possession (§ 402)";
+    when abtretungsvertrag_geschlossen(a, bisheriger, neuer);
+    then auskunft_und_urkunden_geschuldet(a, bisheriger, neuer);
+}
+
+@source(BGB_P403)
+rule BeurkundungDerAbtretungAufVerlangen(a: Anspruch, bisheriger: Person, neuer: Person) strict {
+    label de official "Der bisherige Gläubiger hat dem neuen Gläubiger auf Verlangen eine öffentlich beglaubigte Urkunde über die Abtretung auszustellen; die Kosten hat der neue Gläubiger zu tragen und vorzuschießen (§ 403)";
+    label en unofficial "The former creditor must issue a publicly certified document on the assignment on demand; the new creditor bears and advances the costs (§ 403)";
+    when abtretungsvertrag_geschlossen(a, bisheriger, neuer);
+    when beurkundung_der_abtretung_verlangt(a, neuer);
+    then beurkundung_geschuldet(a, bisheriger);
+}
+
+@source(BGB_P404)
+rule EinwendungenGegenDenNeuenGlaeubiger(a: Anspruch, neuer: Person) strict {
+    label de official "Der Schuldner kann dem neuen Gläubiger die Einwendungen entgegensetzen, die zur Zeit der Abtretung der Forderung gegen den bisherigen Gläubiger begründet waren (§ 404)";
+    label en unofficial "The debtor may raise against the new creditor the defences well founded against the former creditor at the time of assignment (§ 404)";
+    when neuer_glaeubiger(a, neuer);
+    when einwendung_zur_zeit_der_abtretung_begruendet(a);
+    then einwendung_gegen_den_neuen_glaeubiger(a, neuer);
+}
+
+// --- §§ 405–411 Schutz des Schuldners -------------------------------------------------------------------
+
+pub relation schuldurkunde_ausgestellt(a: Anspruch) kind empirical {
+    label de official "Der Schuldner hat eine Urkunde über die Schuld ausgestellt und die Forderung wird unter Vorlegung der Urkunde abgetreten (§ 405)";
+    label en unofficial "the debtor issued a document on the debt and the claim is assigned on presentation of it (§ 405)";
+}
+pub relation neuer_glaeubiger_kannte_den_sachverhalt(a: Anspruch, neuer: Person) kind empirical {
+    label de official "Der neue Gläubiger kannte bei der Abtretung den Sachverhalt oder musste ihn kennen (§ 405 Halbsatz 2) — festgestellte Tatsache";
+    label en unofficial "the new creditor knew or ought to have known the facts at the assignment (§ 405) — established fact";
+}
+pub relation neuer_glaeubiger_kannte_den_sachverhalt_nicht(a: Anspruch, neuer: Person) kind empirical {
+    label de official "Der neue Gläubiger kannte den Sachverhalt nicht und musste ihn nicht kennen (§ 405) — ausdrückliche Angabe des Falls";
+    label en unofficial "the new creditor neither knew nor ought to have known the facts (§ 405) — explicit case input";
+}
+pub relation einwand_des_scheingeschaefts_ausgeschlossen(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Der Schuldner kann sich dem neuen Gläubiger gegenüber nicht darauf berufen, dass die Eingehung oder Anerkennung des Schuldverhältnisses nur zum Schein erfolgt oder dass die Abtretung durch Vereinbarung ausgeschlossen sei (§ 405)";
+    label en unofficial "the debtor may not invoke against the new creditor that the obligation was merely simulated or that assignment was excluded by agreement (§ 405)";
+}
+pub relation kenntnis_von_der_abtretung(a: Anspruch, schuldner: Person) kind empirical {
+    label de official "Der Schuldner kennt die Abtretung (§ 406, § 407 Abs. 1, Abs. 2) — festgestellte Tatsache, im Fall mit origin adjudicated";
+    label en unofficial "the debtor knows of the assignment (§ 406, § 407) — established fact, origin adjudicated in the case";
+}
+pub relation keine_kenntnis_von_der_abtretung(a: Anspruch, schuldner: Person) kind empirical {
+    label de official "Der Schuldner kennt die Abtretung nicht (§ 407 Abs. 1 Halbsatz 2) — ausdrückliche Angabe des Falls; das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "the debtor does not know of the assignment (§ 407 (1)) — explicit case input";
+}
+pub relation aufrechnung_gegenueber_dem_neuen_glaeubiger_zulaessig(a: Anspruch, gegenforderung: Anspruch) kind institutional {
+    label de official "Der Schuldner kann eine ihm gegen den bisherigen Gläubiger zustehende Forderung auch dem neuen Gläubiger gegenüber aufrechnen (§ 406)";
+    label en unofficial "the debtor may set off a claim against the former creditor also against the new creditor (§ 406)";
+}
+pub relation leistung_an_den_bisherigen_glaeubiger_nach_der_abtretung(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Der Schuldner bewirkt nach der Abtretung eine Leistung an den bisherigen Gläubiger oder nimmt mit ihm ein Rechtsgeschäft über die Forderung vor (§ 407 Abs. 1)";
+    label en unofficial "after the assignment the debtor renders performance to the former creditor or transacts with him about the claim (§ 407 (1))";
+}
+pub relation neuer_glaeubiger_muss_leistung_gegen_sich_gelten_lassen(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Der neue Gläubiger muss die Leistung und das Rechtsgeschäft gegen sich gelten lassen, es sei denn, dass der Schuldner die Abtretung kennt (§ 407 Abs. 1)";
+    label en unofficial "the new creditor must accept the performance and the transaction unless the debtor knew of the assignment (§ 407 (1))";
+}
+pub relation rechtskraeftiges_urteil_im_rechtsstreit_mit_dem_bisherigen_glaeubiger(a: Anspruch) kind empirical {
+    label de official "In einem nach der Abtretung zwischen dem Schuldner und dem bisherigen Gläubiger anhängig gewordenen Rechtsstreit ist ein rechtskräftiges Urteil über die Forderung ergangen (§ 407 Abs. 2)";
+    label en unofficial "a final judgment on the claim was given in proceedings begun after the assignment between debtor and former creditor (§ 407 (2))";
+}
+pub relation neuer_glaeubiger_muss_urteil_gegen_sich_gelten_lassen(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Der neue Gläubiger muss das Urteil gegen sich gelten lassen, es sei denn, dass der Schuldner die Abtretung bei dem Eintritt der Rechtshängigkeit gekannt hat (§ 407 Abs. 2)";
+    label en unofficial "the new creditor must accept the judgment unless the debtor knew of the assignment when the action became pending (§ 407 (2))";
+}
+pub relation nochmalige_abtretung_an_dritten(a: Anspruch, dritter: Person) kind empirical {
+    label de official "Die abgetretene Forderung ist von dem bisherigen Gläubiger nochmals an einen Dritten abgetreten worden, oder sie ist durch gerichtlichen Beschluss einem Dritten überwiesen oder ihm gegenüber als kraft Gesetzes übergegangen anerkannt worden (§ 408)";
+    label en unofficial "the assigned claim was assigned again to a third party, awarded to him by court order, or acknowledged as transferred by law (§ 408)";
+}
+pub relation schutz_des_schuldners_gegenueber_frueherem_erwerber(a: Anspruch, dritter: Person) kind institutional {
+    label de official "Zugunsten des Schuldners findet § 407 dem früheren Erwerber gegenüber entsprechende Anwendung (§ 408)";
+    label en unofficial "for the debtor's benefit § 407 applies accordingly towards the earlier assignee (§ 408)";
+}
+pub relation abtretung_angezeigt(a: Anspruch, bisheriger: Person, neuer: Person) kind empirical {
+    label de official "Der Gläubiger hat dem Schuldner angezeigt, dass er die Forderung abgetreten habe, oder der in einer Abtretungsurkunde bezeichnete neue Gläubiger legt sie dem Schuldner vor (§ 409 Abs. 1)";
+    label en unofficial "the creditor notified the debtor of the assignment, or the new creditor presents the assignment document (§ 409 (1))";
+}
+pub relation angezeigte_abtretung_muss_gelten_gelassen_werden(a: Anspruch, bisheriger: Person) kind institutional {
+    label de official "Der Gläubiger muss dem Schuldner gegenüber die angezeigte Abtretung gegen sich gelten lassen, auch wenn sie nicht erfolgt oder nicht wirksam ist; die Anzeige kann nur mit Zustimmung des als neuer Gläubiger Bezeichneten zurückgenommen werden (§ 409)";
+    label en unofficial "the creditor must accept the notified assignment towards the debtor even if it did not occur or is ineffective; the notice may be withdrawn only with the designated creditor's consent (§ 409)";
+}
+pub relation abtretungsurkunde_ausgehaendigt(a: Anspruch, neuer: Person) kind empirical {
+    label de official "Dem Schuldner ist eine von dem bisherigen Gläubiger über die Abtretung ausgestellte Urkunde ausgehändigt worden (§ 410 Abs. 1 Satz 1)";
+    label en unofficial "a document on the assignment issued by the former creditor was handed to the debtor (§ 410 (1) sentence 1)";
+}
+pub relation schriftliche_anzeige_der_abtretung(a: Anspruch) kind empirical {
+    label de official "Der bisherige Gläubiger hat dem Schuldner die Abtretung schriftlich angezeigt (§ 410 Abs. 2)";
+    label en unofficial "the former creditor notified the debtor of the assignment in writing (§ 410 (2))";
+}
+pub relation leistung_nur_gegen_urkunde_geschuldet(a: Anspruch, neuer: Person) kind institutional {
+    label de official "Der Schuldner ist dem neuen Gläubiger gegenüber zur Leistung nur gegen Aushändigung einer Urkunde über die Abtretung verpflichtet (§ 410 Abs. 1 Satz 1); dies gilt nicht bei schriftlicher Anzeige (Abs. 2)";
+    label en unofficial "the debtor owes performance to the new creditor only against handing over the assignment document (§ 410 (1)); not so upon written notice ((2))";
+}
+pub relation gehaltsabtretung_einer_amtsperson(a: Anspruch, bisheriger: Person) kind empirical {
+    label de official "Eine Militärperson, ein Beamter, ein Geistlicher oder ein Lehrer an einer öffentlichen Unterrichtsanstalt tritt den übertragbaren Teil des Diensteinkommens, des Wartegelds oder des Ruhegehalts ab (§ 411 Satz 1)";
+    label en unofficial "a soldier, civil servant, cleric or teacher assigns the transferable part of his salary or pension (§ 411 sentence 1)";
+}
+pub relation kasse_benachrichtigt(a: Anspruch) kind empirical {
+    label de official "Die auszahlende Kasse ist durch Aushändigung einer öffentlich oder amtlich beglaubigten Urkunde von der Abtretung benachrichtigt worden (§ 411 Satz 1)";
+    label en unofficial "the paying office was notified of the assignment by a publicly certified document (§ 411 sentence 1)";
+}
+pub relation abtretung_gilt_der_kasse_als_nicht_bekannt(a: Anspruch) kind institutional {
+    label de official "Bis zur Benachrichtigung gilt die Abtretung als der Kasse nicht bekannt (§ 411 Satz 2)";
+    label en unofficial "until notification the assignment is deemed unknown to the paying office (§ 411 sentence 2)";
+}
+pub relation gesetzlicher_forderungsuebergang(a: Anspruch, neuer: Person) kind empirical {
+    label de official "Die Forderung geht kraft Gesetzes über; die §§ 399 bis 404, 406 bis 410 finden entsprechende Anwendung (§ 412)";
+    label en unofficial "the claim passes by operation of law; §§ 399 to 404, 406 to 410 apply accordingly (§ 412)";
+}
+pub relation uebertragung_eines_anderen_rechts(a: Anspruch, neuer: Person) kind empirical {
+    label de official "Ein anderes Recht als eine Forderung wird übertragen; die Vorschriften über die Übertragung von Forderungen finden entsprechende Anwendung (§ 413)";
+    label en unofficial "a right other than a claim is transferred; the rules on assignment apply accordingly (§ 413)";
+}
+
+@source(BGB_P405)
+rule EinwandDesScheingeschaeftsBeiUrkundenvorlegungAusgeschlossen(a: Anspruch, neuer: Person) strict {
+    label de official "Hat der Schuldner eine Urkunde über die Schuld ausgestellt, so kann er sich, wenn die Forderung unter Vorlegung der Urkunde abgetreten wird, dem neuen Gläubiger gegenüber nicht auf Scheingeschäft oder Abtretungsverbot berufen, es sei denn, dass der neue Gläubiger den Sachverhalt kannte oder kennen musste (§ 405)";
+    label en unofficial "Where the debtor issued a document and the claim is assigned on its presentation, he may not invoke simulation or a ban on assignment unless the new creditor knew or should have known (§ 405)";
+    when schuldurkunde_ausgestellt(a);
+    when neuer_glaeubiger(a, neuer);
+    when neuer_glaeubiger_kannte_den_sachverhalt_nicht(a, neuer);
+    then einwand_des_scheingeschaefts_ausgeschlossen(a, neuer);
+}
+
+@source(BGB_P406)
+rule AufrechnungGegenueberDemNeuenGlaeubiger(a: Anspruch, gegenforderung: Anspruch, schuldner: Person, neuer: Person) strict {
+    label de official "Der Schuldner kann eine ihm gegen den bisherigen Gläubiger zustehende Forderung auch dem neuen Gläubiger gegenüber aufrechnen, es sei denn, dass er bei dem Erwerb der Forderung von der Abtretung Kenntnis hatte (§ 406)";
+    label en unofficial "The debtor may set off a claim against the former creditor also against the new creditor unless he knew of the assignment when acquiring it (§ 406)";
+    when neuer_glaeubiger(a, neuer);
+    when aufrechnungslage(a, gegenforderung);
+    when keine_kenntnis_von_der_abtretung(a, schuldner);
+    then aufrechnung_gegenueber_dem_neuen_glaeubiger_zulaessig(a, gegenforderung);
+}
+
+@source(BGB_P407)
+rule LeistungAnDenBisherigenGlaeubigerWirktGegenDenNeuen(a: Anspruch, neuer: Person, schuldner: Person, tag: Date) strict {
+    label de official "Der neue Gläubiger muss eine Leistung, die der Schuldner nach der Abtretung an den bisherigen Gläubiger bewirkt, sowie jedes Rechtsgeschäft zwischen ihnen gegen sich gelten lassen, es sei denn, dass der Schuldner die Abtretung bei der Leistung kennt (§ 407 Abs. 1)";
+    label en unofficial "The new creditor must accept a performance rendered to the former creditor after the assignment unless the debtor knew of the assignment (§ 407 (1))";
+    when neuer_glaeubiger(a, neuer);
+    when leistung_an_den_bisherigen_glaeubiger_nach_der_abtretung(a, tag);
+    when keine_kenntnis_von_der_abtretung(a, schuldner);
+    then neuer_glaeubiger_muss_leistung_gegen_sich_gelten_lassen(a, neuer);
+}
+
+@source(BGB_P407)
+rule UrteilImRechtsstreitMitDemBisherigenGlaeubiger(a: Anspruch, neuer: Person, schuldner: Person) strict {
+    label de official "Ist in einem nach der Abtretung anhängig gewordenen Rechtsstreit ein rechtskräftiges Urteil über die Forderung ergangen, so muss der neue Gläubiger das Urteil gegen sich gelten lassen, es sei denn, dass der Schuldner die Abtretung bei dem Eintritt der Rechtshängigkeit gekannt hat (§ 407 Abs. 2)";
+    label en unofficial "A final judgment in proceedings begun after the assignment binds the new creditor unless the debtor knew of the assignment when the action became pending (§ 407 (2))";
+    when neuer_glaeubiger(a, neuer);
+    when rechtskraeftiges_urteil_im_rechtsstreit_mit_dem_bisherigen_glaeubiger(a);
+    when keine_kenntnis_von_der_abtretung(a, schuldner);
+    then neuer_glaeubiger_muss_urteil_gegen_sich_gelten_lassen(a, neuer);
+}
+
+@source(BGB_P408)
+rule SchutzDesSchuldnersBeiMehrfacherAbtretung(a: Anspruch, dritter: Person) strict {
+    label de official "Wird eine abgetretene Forderung von dem bisherigen Gläubiger nochmals an einen Dritten abgetreten, so findet zugunsten des Schuldners § 407 dem früheren Erwerber gegenüber entsprechende Anwendung (§ 408)";
+    label en unofficial "Where an assigned claim is assigned again, § 407 applies for the debtor's benefit towards the earlier assignee (§ 408)";
+    when nochmalige_abtretung_an_dritten(a, dritter);
+    then schutz_des_schuldners_gegenueber_frueherem_erwerber(a, dritter);
+}
+
+@source(BGB_P409)
+rule AngezeigteAbtretungWirktGegenDenAnzeigenden(a: Anspruch, bisheriger: Person, neuer: Person) strict {
+    label de official "Zeigt der Gläubiger dem Schuldner an, dass er die Forderung abgetreten habe, so muss er dem Schuldner gegenüber die angezeigte Abtretung gegen sich gelten lassen, auch wenn sie nicht erfolgt oder nicht wirksam ist (§ 409 Abs. 1)";
+    label en unofficial "Where the creditor notifies the debtor of an assignment, he must accept it towards the debtor even if it did not occur or is ineffective (§ 409 (1))";
+    when abtretung_angezeigt(a, bisheriger, neuer);
+    then angezeigte_abtretung_muss_gelten_gelassen_werden(a, bisheriger);
+}
+
+@source(BGB_P410)
+rule LeistungNurGegenAushaendigungDerAbtretungsurkunde(a: Anspruch, neuer: Person) strict {
+    label de official "Der Schuldner ist dem neuen Gläubiger gegenüber zur Leistung nur gegen Aushändigung einer von dem bisherigen Gläubiger über die Abtretung ausgestellten Urkunde verpflichtet (§ 410 Abs. 1 Satz 1); diese Vorschriften finden keine Anwendung, wenn der bisherige Gläubiger dem Schuldner die Abtretung schriftlich angezeigt hat (Abs. 2)";
+    label en unofficial "The debtor owes performance to the new creditor only against handing over the assignment document (§ 410 (1)); not where written notice was given ((2))";
+    when neuer_glaeubiger(a, neuer);
+    when keine_schriftliche_anzeige_der_abtretung(a);
+    then leistung_nur_gegen_urkunde_geschuldet(a, neuer);
+}
+
+@source(BGB_P411)
+rule GehaltsabtretungGiltBisZurBenachrichtigungAlsUnbekannt(a: Anspruch, bisheriger: Person) strict {
+    label de official "Tritt eine Militärperson, ein Beamter, ein Geistlicher oder ein Lehrer den übertragbaren Teil des Diensteinkommens ab, so ist die auszahlende Kasse durch Aushändigung einer beglaubigten Urkunde zu benachrichtigen; bis zur Benachrichtigung gilt die Abtretung als der Kasse nicht bekannt (§ 411)";
+    label en unofficial "Where such a person assigns the transferable part of his salary, the paying office must be notified; until then the assignment is deemed unknown to it (§ 411)";
+    when gehaltsabtretung_einer_amtsperson(a, bisheriger);
+    when kasse_nicht_benachrichtigt(a);
+    then abtretung_gilt_der_kasse_als_nicht_bekannt(a);
+}
+
+@source(BGB_P412)
+rule GesetzlicherForderungsuebergangWieAbtretung(a: Anspruch, neuer: Person) strict {
+    label de official "Auf die Übertragung einer Forderung kraft Gesetzes finden die Vorschriften der §§ 399 bis 404, 406 bis 410 entsprechende Anwendung (§ 412)";
+    label en unofficial "The transfer of a claim by operation of law is governed accordingly by §§ 399 to 404, 406 to 410 (§ 412)";
+    when gesetzlicher_forderungsuebergang(a, neuer);
+    then neuer_glaeubiger(a, neuer);
+}
+
+@source(BGB_P413)
+rule UebertragungAndererRechte(a: Anspruch, neuer: Person) strict {
+    label de official "Die Vorschriften über die Übertragung von Forderungen finden auf die Übertragung anderer Rechte entsprechende Anwendung, soweit nicht das Gesetz ein anderes vorschreibt (§ 413)";
+    label en unofficial "The rules on the assignment of claims apply accordingly to the transfer of other rights unless the law provides otherwise (§ 413)";
+    when uebertragung_eines_anderen_rechts(a, neuer);
+    then neuer_glaeubiger(a, neuer);
+}
+
+@source(BGB_P410)
+pub relation keine_schriftliche_anzeige_der_abtretung(a: Anspruch) kind empirical {
+    label de official "Der bisherige Gläubiger hat dem Schuldner die Abtretung nicht schriftlich angezeigt (§ 410 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the former creditor did not notify the debtor in writing (§ 410 (2)) — explicit case input";
+}
+@source(BGB_P411)
+pub relation kasse_nicht_benachrichtigt(a: Anspruch) kind empirical {
+    label de official "Die auszahlende Kasse ist von der Abtretung nicht benachrichtigt worden (§ 411 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the paying office was not notified of the assignment (§ 411 sentence 2) — explicit case input";
+}
+
+// --- §§ 414–418 Schuldübernahme ---------------------------------------------------------------------------
+
+pub relation schulduebernahme_mit_dem_glaeubiger_vereinbart(s: Schuldverhaeltnis, uebernehmer: Person) kind empirical {
+    label de official "Eine Schuld ist von einem Dritten durch Vertrag mit dem Gläubiger in der Weise übernommen worden, dass der Dritte an die Stelle des bisherigen Schuldners tritt (§ 414)";
+    label en unofficial "a debt was assumed by a third party by contract with the creditor so that he takes the former debtor's place (§ 414)";
+}
+pub relation schulduebernahme_mit_dem_schuldner_vereinbart(s: Schuldverhaeltnis, uebernehmer: Person) kind empirical {
+    label de official "Die Schuldübernahme ist von dem Dritten mit dem Schuldner vereinbart worden (§ 415 Abs. 1 Satz 1)";
+    label en unofficial "the assumption of debt was agreed between the third party and the debtor (§ 415 (1) sentence 1)";
+}
+pub relation schulduebernahme_mitgeteilt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Schuldner oder der Dritte hat dem Gläubiger die Schuldübernahme mitgeteilt (§ 415 Abs. 1 Satz 2)";
+    label en unofficial "the debtor or the third party notified the creditor of the assumption (§ 415 (1) sentence 2)";
+}
+pub relation genehmigung_des_glaeubigers_erteilt(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Gläubiger hat die Schuldübernahme genehmigt (§ 415 Abs. 1 Satz 1)";
+    label en unofficial "the creditor approved the assumption of debt (§ 415 (1) sentence 1)";
+}
+pub relation genehmigung_verweigert(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Genehmigung ist verweigert worden oder nach Ablauf der gesetzten Frist nicht erklärt (§ 415 Abs. 2)";
+    label en unofficial "approval was refused or not declared within the period set (§ 415 (2))";
+}
+pub relation schulduebernahme_wirksam(s: Schuldverhaeltnis, uebernehmer: Person) kind institutional {
+    label de official "Die Schuldübernahme ist wirksam: der Übernehmer tritt an die Stelle des bisherigen Schuldners (§ 414, § 415 Abs. 1)";
+    label en unofficial "the assumption of debt is effective: the assuming party takes the former debtor's place (§ 414, § 415 (1))";
+}
+pub relation schulduebernahme_gilt_als_nicht_erfolgt(s: Schuldverhaeltnis) kind institutional {
+    label de official "Wird die Genehmigung verweigert, so gilt die Schuldübernahme als nicht erfolgt (§ 415 Abs. 2 Satz 1)";
+    label en unofficial "if approval is refused the assumption is deemed not to have occurred (§ 415 (2) sentence 1)";
+}
+pub relation uebernehmer_muss_glaeubiger_rechtzeitig_befriedigen(s: Schuldverhaeltnis, uebernehmer: Person) kind institutional {
+    label de official "Solange der Gläubiger die Genehmigung nicht erteilt hat, ist im Zweifel der Übernehmer dem Schuldner gegenüber verpflichtet, den Gläubiger rechtzeitig zu befriedigen; das Gleiche gilt bei Verweigerung (§ 415 Abs. 3)";
+    label en unofficial "until approval the assuming party is, in case of doubt, bound towards the debtor to satisfy the creditor in time; the same applies upon refusal (§ 415 (3))";
+}
+pub relation hypothekenschuld_vom_erwerber_uebernommen(s: Schuldverhaeltnis, erwerber: Person) kind empirical {
+    label de official "Der Erwerber eines Grundstücks übernimmt durch Vertrag mit dem Veräußerer eine Schuld des Veräußerers, für die eine Hypothek an dem Grundstück besteht (§ 416 Abs. 1 Satz 1)";
+    label en unofficial "the purchaser of land assumes by contract with the seller a debt secured by a mortgage on the land (§ 416 (1) sentence 1)";
+}
+pub relation empfang_der_mitteilung_des_veraeusserers(s: Schuldverhaeltnis, tag: Date) kind empirical {
+    key(s);
+    label de official "Tag des Empfangs der Mitteilung des Veräußerers über die Schuldübernahme; die Mitteilung muss in Textform geschehen und den Hinweis auf die Wirkung enthalten (§ 416 Abs. 1 Satz 2, Abs. 2)";
+    label en unofficial "day of receipt of the seller's notice of the assumption, which must be in text form and contain the required indication (§ 416 (1), (2))";
+}
+pub relation verweigerung_innerhalb_von_sechs_monaten_am(s: Schuldverhaeltnis, tag: Date) kind empirical {
+    key(s);
+    label de official "Tag, an dem der Gläubiger die Genehmigung dem Veräußerer gegenüber verweigert hat (§ 416 Abs. 1 Satz 2)";
+    label en unofficial "day on which the creditor refused approval towards the seller (§ 416 (1) sentence 2)";
+}
+pub relation genehmigung_gilt_als_erteilt(s: Schuldverhaeltnis) kind institutional {
+    label de official "Sind seit dem Empfang der Mitteilung sechs Monate verstrichen, so gilt die Genehmigung als erteilt, wenn nicht der Gläubiger sie vorher verweigert hat (§ 416 Abs. 1 Satz 2)";
+    label en unofficial "once six months have elapsed since receipt of the notice, approval is deemed given unless refused earlier (§ 416 (1) sentence 2)";
+}
+pub relation einwendung_aus_dem_verhaeltnis_glaeubiger_schuldner(s: Schuldverhaeltnis) kind empirical {
+    label de official "Die Einwendung ergibt sich aus dem Rechtsverhältnis zwischen dem Gläubiger und dem bisherigen Schuldner (§ 417 Abs. 1 Satz 1)";
+    label en unofficial "the defence arises from the relationship between creditor and former debtor (§ 417 (1) sentence 1)";
+}
+pub relation einwendung_des_uebernehmers(s: Schuldverhaeltnis, uebernehmer: Person) kind institutional {
+    label de official "Der Übernehmer kann dem Gläubiger die Einwendungen entgegensetzen, welche sich aus dem Rechtsverhältnis zwischen dem Gläubiger und dem bisherigen Schuldner ergeben; eine dem bisherigen Schuldner zustehende Forderung kann er nicht aufrechnen (§ 417 Abs. 1)";
+    label en unofficial "the assuming party may raise the defences arising from the relationship between creditor and former debtor; he may not set off the former debtor's claim (§ 417 (1))";
+}
+pub relation buergschaften_und_pfandrechte_erloschen(s: Schuldverhaeltnis) kind institutional {
+    label de official "Infolge der Schuldübernahme erlöschen die für die Forderung bestellten Bürgschaften und Pfandrechte; bei einer Hypothek tritt das Gleiche ein wie bei einem Verzicht; dies gilt nicht bei Einwilligung des Bürgen oder Eigentümers (§ 418 Abs. 1)";
+    label en unofficial "the assumption extinguishes the sureties and pledges for the claim; the same applies to a mortgage as upon waiver; not so with the surety's or owner's consent (§ 418 (1))";
+}
+pub relation einwilligung_des_buergen_oder_eigentuemers(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Bürge oder derjenige, welchem der verhaftete Gegenstand gehört, willigt in die Schuldübernahme ein (§ 418 Abs. 1 Satz 3)";
+    label en unofficial "the surety or the owner of the encumbered object consents to the assumption (§ 418 (1) sentence 3)";
+}
+pub relation keine_einwilligung_des_buergen_oder_eigentuemers(s: Schuldverhaeltnis) kind empirical {
+    label de official "Der Bürge oder Eigentümer hat nicht eingewilligt (§ 418 Abs. 1 Satz 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "the surety or owner did not consent (§ 418 (1) sentence 3) — explicit case input";
+}
+
+@source(BGB_P414)
+rule SchulduebernahmeDurchVertragMitDemGlaeubiger(s: Schuldverhaeltnis, uebernehmer: Person) strict {
+    label de official "Eine Schuld kann von einem Dritten durch Vertrag mit dem Gläubiger in der Weise übernommen werden, dass der Dritte an die Stelle des bisherigen Schuldners tritt (§ 414)";
+    label en unofficial "A debt may be assumed by a third party by contract with the creditor so that he takes the former debtor's place (§ 414)";
+    when schulduebernahme_mit_dem_glaeubiger_vereinbart(s, uebernehmer);
+    then schulduebernahme_wirksam(s, uebernehmer);
+}
+
+@source(BGB_P415)
+rule SchulduebernahmeMitDemSchuldnerBedarfDerGenehmigung(s: Schuldverhaeltnis, uebernehmer: Person) strict {
+    label de official "Wird die Schuldübernahme von dem Dritten mit dem Schuldner vereinbart, so hängt ihre Wirksamkeit von der Genehmigung des Gläubigers ab; die Genehmigung kann erst erfolgen, wenn ihm die Schuldübernahme mitgeteilt worden ist (§ 415 Abs. 1)";
+    label en unofficial "Where the assumption is agreed with the debtor, its effectiveness depends on the creditor's approval, which requires prior notification (§ 415 (1))";
+    when schulduebernahme_mit_dem_schuldner_vereinbart(s, uebernehmer);
+    when schulduebernahme_mitgeteilt(s);
+    when genehmigung_des_glaeubigers_erteilt(s);
+    then schulduebernahme_wirksam(s, uebernehmer);
+}
+
+@source(BGB_P415)
+rule VerweigerteGenehmigungLaesstDieSchulduebernahmeEntfallen(s: Schuldverhaeltnis, uebernehmer: Person) strict {
+    label de official "Wird die Genehmigung verweigert, so gilt die Schuldübernahme als nicht erfolgt (§ 415 Abs. 2 Satz 1)";
+    label en unofficial "If approval is refused the assumption of debt is deemed not to have occurred (§ 415 (2) sentence 1)";
+    when schulduebernahme_mit_dem_schuldner_vereinbart(s, uebernehmer);
+    when genehmigung_verweigert(s);
+    then schulduebernahme_gilt_als_nicht_erfolgt(s);
+}
+
+@source(BGB_P415)
+rule UebernehmerMussVorDerGenehmigungBefriedigen(s: Schuldverhaeltnis, uebernehmer: Person) strict {
+    label de official "Solange nicht der Gläubiger die Genehmigung erteilt hat, ist im Zweifel der Übernehmer dem Schuldner gegenüber verpflichtet, den Gläubiger rechtzeitig zu befriedigen; das Gleiche gilt, wenn der Gläubiger die Genehmigung verweigert (§ 415 Abs. 3)";
+    label en unofficial "Until approval the assuming party is, in case of doubt, bound to satisfy the creditor in time; the same applies upon refusal (§ 415 (3))";
+    when schulduebernahme_mit_dem_schuldner_vereinbart(s, uebernehmer);
+    when genehmigung_verweigert(s);
+    then uebernehmer_muss_glaeubiger_rechtzeitig_befriedigen(s, uebernehmer);
+}
+
+@source(BGB_P416)
+rule GenehmigungGiltNachSechsMonatenAlsErteilt(s: Schuldverhaeltnis, erwerber: Person, mitteilung: Date, verweigerung: Date) strict {
+    label de official "Sind seit dem Empfang der Mitteilung sechs Monate verstrichen, so gilt die Genehmigung als erteilt, wenn nicht der Gläubiger sie dem Veräußerer gegenüber vorher verweigert hat (§ 416 Abs. 1 Satz 2) — Monatsfrist nach § 188 Abs. 2, Politik BGB_SCHULDRECHT_AT_KALENDER";
+    label en unofficial "Once six months have elapsed since receipt of the notice, approval is deemed given unless refused earlier (§ 416 (1) sentence 2)";
+    when hypothekenschuld_vom_erwerber_uebernommen(s, erwerber);
+    when empfang_der_mitteilung_des_veraeusserers(s, mitteilung);
+    when verweigerung_innerhalb_von_sechs_monaten_am(s, verweigerung);
+    when verweigerung > add_calendar_period(mitteilung, 6 calendar_month);
+    then genehmigung_gilt_als_erteilt(s);
+}
+
+@source(BGB_P417)
+rule EinwendungenDesUebernehmers(s: Schuldverhaeltnis, uebernehmer: Person) strict {
+    label de official "Der Übernehmer kann dem Gläubiger die Einwendungen entgegensetzen, welche sich aus dem Rechtsverhältnis zwischen dem Gläubiger und dem bisherigen Schuldner ergeben (§ 417 Abs. 1 Satz 1); aus dem Rechtsverhältnis zwischen ihm und dem bisherigen Schuldner kann er keine Einwendungen herleiten (Abs. 2)";
+    label en unofficial "The assuming party may raise defences from the relationship between creditor and former debtor (§ 417 (1)); not from his relationship with the former debtor ((2))";
+    when schulduebernahme_wirksam(s, uebernehmer);
+    when einwendung_aus_dem_verhaeltnis_glaeubiger_schuldner(s);
+    then einwendung_des_uebernehmers(s, uebernehmer);
+}
+
+@source(BGB_P418)
+rule SicherungsrechteErloeschenMitDerSchulduebernahme(s: Schuldverhaeltnis, uebernehmer: Person) strict {
+    label de official "Infolge der Schuldübernahme erlöschen die für die Forderung bestellten Bürgschaften und Pfandrechte; diese Vorschriften finden keine Anwendung, wenn der Bürge oder der Eigentümer des verhafteten Gegenstands in die Schuldübernahme einwilligt (§ 418 Abs. 1)";
+    label en unofficial "The assumption extinguishes sureties and pledges; not where the surety or owner consents (§ 418 (1))";
+    when schulduebernahme_wirksam(s, uebernehmer);
+    when keine_einwilligung_des_buergen_oder_eigentuemers(s);
+    then buergschaften_und_pfandrechte_erloschen(s);
+}

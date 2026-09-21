@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 435 Satz 1 und § 444: Dritte können ein nicht übernommenes Recht geltend machen, der Verkäufer hat den Rechtsmangel arglistig verschwiegen und sich freigezeichnet. Auf die Freizeichnung kann er sich nicht berufen.
+test "§§ 435, 444: auf den Haftungsausschluss kann sich der arglistige Verkäufer nicht berufen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:s07"), entity_ref("urn:de:bgb:kauf:s07:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:s07"), entity_ref("urn:de:bgb:kauf:s07:K")) { origin case_input; }
+        assert "f3": dritte_rechte_geltend_machbar(entity_ref("urn:de:bgb:kauf:s07")) { origin case_input; }
+        assert "f4": haftungsausschlussvereinbarung(entity_ref("urn:de:bgb:kauf:s07")) { origin case_input; }
+        assert "f5": mangel_arglistig_verschwiegen(entity_ref("urn:de:bgb:kauf:s07")) { origin adjudicated; }
+        assert "f6": not kenntnis_des_mangels_bei_vertragsschluss(entity_ref("urn:de:bgb:kauf:s07")) { origin adjudicated; }
+        assert "f7": not unkenntnis_infolge_grober_fahrlaessigkeit(entity_ref("urn:de:bgb:kauf:s07")) { origin adjudicated; }
+        assert "f8": not pfandverkauf_in_oeffentlicher_versteigerung(entity_ref("urn:de:bgb:kauf:s07")) { origin case_input; }
+    }
+    evaluate truth(rechtsmangel(entity_ref("urn:de:bgb:kauf:s07")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(berufung_auf_haftungsausschluss_unwirksam(entity_ref("urn:de:bgb:kauf:s07")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(recht_auf_ruecktritt(entity_ref("urn:de:bgb:kauf:s07"), entity_ref("urn:de:bgb:kauf:s07:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

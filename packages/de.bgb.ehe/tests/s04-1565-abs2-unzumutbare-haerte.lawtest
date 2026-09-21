@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1565 Abs. 2: die Ehegatten leben erst seit dem 01.03.2026 getrennt, der Bewertungstag ist der 01.06.2026 — das Trennungsjahr ist nicht abgelaufen. Das Gericht hat jedoch die unzumutbare Härte der Fortsetzung festgestellt, und die Ehe ist gescheitert: sie kann trotz der kurzen Trennung geschieden werden. Die Härteklausel des § 1568 ist nicht festgestellt.
+test "§ 1565 Abs. 2: Scheidung vor dem Trennungsjahr bei unzumutbarer Härte" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:s04:E"), entity_ref("urn:de:bgb:ehe:s04:A"), entity_ref("urn:de:bgb:ehe:s04:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:s04:E")) { origin case_input; }
+        assert "f3": trennung_am(entity_ref("urn:de:bgb:ehe:s04:E"), @2026-03-01) { origin case_input; }
+        assert "f4": trennungsfrist_ein_jahr(entity_ref("urn:de:bgb:ehe:s04:E"), entity_ref("urn:de:bgb:ehe:s04:F")) { origin case_input; }
+        assert "f5": bewertungstag(entity_ref("urn:de:bgb:ehe:s04:E"), @2026-06-01) { origin case_input; }
+        assert "f6": scheidungsantrag_gestellt(entity_ref("urn:de:bgb:ehe:s04:E"), entity_ref("urn:de:bgb:ehe:s04:A")) { origin case_input; }
+        assert "f7": ehe_gescheitert(entity_ref("urn:de:bgb:ehe:s04:E")) { origin adjudicated; }
+        assert "f8": unzumutbare_haerte_der_fortsetzung(entity_ref("urn:de:bgb:ehe:s04:E"), entity_ref("urn:de:bgb:ehe:s04:A")) { origin adjudicated; }
+    }
+    evaluate truth(ehe_kann_geschieden_werden(entity_ref("urn:de:bgb:ehe:s04:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(scheidung_vor_ablauf_eines_jahres_gesperrt(entity_ref("urn:de:bgb:ehe:s04:E"), entity_ref("urn:de:bgb:ehe:s04:A")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

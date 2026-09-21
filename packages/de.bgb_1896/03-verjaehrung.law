@@ -1,0 +1,29 @@
+// ERSTES BUCH, ABSCHNITT 5 — Anspruch and Verjährung: the right to require
+// another to do or refrain from an act (Anspruch) is subject to limitation
+// (§ 194); the regular period is thirty years (§ 195); limitation begins with
+// the accrual of the claim (§ 198); after completion the obligor may refuse
+// performance, and what was rendered cannot be reclaimed (§ 222).
+//
+// Anspruch § 194 is the nearest kin of the dictionary’s Causa; limitation
+// under the BGB is an Einrede (§ 222), not extinction of the right: a bare
+// right in the dictionary.
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+pub relation anspruch(glaeubiger: Persona, schuldner: Persona, causa: Causa) kind institutional { label de official "Anspruch"; label en unofficial "the right to require another to do or refrain from an act (§ 194)"; }
+pub relation verjaehrung_vollendet(causa: Causa) kind institutional { label de official "Verjährung vollendet"; label en unofficial "the thirty-year limitation of the claim has been completed (§ 195, § 198)"; }
+pub relation leistung_verweigern_berechtigt(schuldner: Persona, glaeubiger: Persona, causa: Causa) kind institutional { label de official "berechtigt, die Leistung zu verweigern"; label en unofficial "the obligor is entitled to refuse performance of a time-barred claim — Einrede (§ 222)"; }
+pub relation geleistetes_nicht_zurueckforderbar(causa: Causa) kind institutional { label de official "das Geleistete kann nicht zurückgefordert werden"; label en unofficial "what was rendered on a time-barred claim cannot be reclaimed (§ 222 (2))"; }
+
+@source(BGB_P195, BGB_P198)
+rule RegelmaessigeVerjaehrungNochNicht(c: Causa, n: Integer) strict { label de official "Die regelmäßige Verjährungsfrist beträgt dreißig Jahre"; label en unofficial "A claim that arose fewer than thirty years ago is not yet time-barred (§ 195; § 198)"; when doctrine.ius_privatum::actio_nata_ante_annos(c, n) and n < 30; then not verjaehrung_vollendet(c); }
+@source(BGB_P195, BGB_P198)
+rule RegelmaessigeVerjaehrung(c: Causa, n: Integer) strict { label de official "Die regelmäßige Verjährungsfrist beträgt dreißig Jahre"; label en unofficial "A claim that arose thirty or more years ago is time-barred (§ 195; § 198)"; when doctrine.ius_privatum::actio_nata_ante_annos(c, n) and n >= 30; then verjaehrung_vollendet(c); }
+@source(BGB_P194, BGB_P198)
+rule HerausgabeanspruchVerjaehrt(c: Causa, x: Persona, y: Persona, r: Res, n: Integer) strict { label de official "Die Verjährung beginnt mit der Entstehung des Anspruchs"; label en unofficial "The owner’s claim to recover the thing arose when another’s possession began; thirty years of possession complete limitation (§ 194, § 198; § 195)"; when doctrine.ius_privatum::petitio(c, x, y) and doctrine.ius_privatum::petitio_de_re(c, r) and doctrine.ius_privatum::possessio_continua_annos(y, r, n) and n >= 30; then verjaehrung_vollendet(c); }
+@source(BGB_P222)
+rule LeistungVerweigern(c: Causa, x: Persona, y: Persona) defeasible { label de official "Nach der Vollendung der Verjährung ist der Verpflichtete berechtigt, die Leistung zu verweigern"; label en unofficial "After limitation is completed the obligor is entitled to refuse performance (§ 222 (1))"; when verjaehrung_vollendet(c) and anspruch(x, y, c); then leistung_verweigern_berechtigt(y, x, c); }
+@source(BGB_P222)
+rule GeleistetesNichtZurueck(c: Causa) strict { label de official "Das zur Befriedigung eines verjährten Anspruchs Geleistete kann nicht zurückgefordert werden"; label en unofficial "What was rendered on a time-barred claim cannot be reclaimed: the claim survives as a bare right (§ 222 (2))"; when verjaehrung_vollendet(c); then geleistetes_nicht_zurueckforderbar(c); }

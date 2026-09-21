@@ -1,0 +1,301 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 4 ABSCHNITT 2 — VERWANDTSCHAFT (BG-13)
+//
+// Paket BG-13 der vollständigen Formalisierung des geltenden BGB
+// (docs/foundations/de-bgb/, DECISION-0319). Bereich: §§ 1589–1772 —
+// Titel 1 Allgemeine Vorschriften, Titel 2 Abstammung, Titel 3
+// Unterhaltspflicht, Titel 4 Rechtsverhältnis zwischen Eltern und Kind,
+// Titel 5 Elterliche Sorge, Titel 6 Beistandschaft, Titel 7 Annahme als Kind.
+//
+// AUFBAU. Diese Datei trägt die Typen, die Politiken der Fristen §86 und den
+// Titel 1 mit der BRÜCKE zum Rechner `calc.kinship` (Muster: Schicht A von
+// `de.bgb.erbfolge`). Die übrigen Titel liegen in eigenen Dateien
+// `titel-NN-<thema>.law`.
+//
+// BRÜCKE ZU calc.kinship (§ 1589, §§ 1754–1756, § 1770). Der Grad der
+// Verwandtschaft bestimmt sich nach der Zahl der sie vermittelnden Geburten
+// (§ 1589 Abs. 1 Satz 3) — das ist die römische Zählung des Rechners. Die
+// Annahme eines MINDERJÄHRIGEN lässt das Verwandtschaftsverhältnis zu den
+// bisherigen Verwandten erlöschen (§ 1755 Abs. 1) — `ReplacesBlood`; die
+// Annahme eines VOLLJÄHRIGEN erstreckt sich nicht auf die Verwandten des
+// Annehmenden und lässt die bisherige Verwandtschaft bestehen (§ 1770
+// Abs. 1, 2) — `AddsBranch`. Beide Regeln sind `pub`: `de.bgb.erbfolge`
+// erklärt diese Politiken heute bei sich (Kommentar dort: „Paket
+// de.bgb.verwandtschaft“) und wird vom Koordinator auf diese Brücke
+// umgestellt (Ledger D-13-02).
+//
+// WELCHE POLITIK GILT, SAGT DER FALL. Eine Familie trägt genau eine
+// Adoptionspolitik (Rechnerbedingung). Ob eine Annahme eine solche eines
+// Minderjährigen oder eines Volljährigen ist, folgt aus dem Alter des
+// Angenommenen bei der Annahme und ist daher ein ausdrücklicher Eingang des
+// Falls (`annahme_eines_minderjaehrigen` / `annahme_eines_volljaehrigen`):
+// das Schweigen des Falls ist keine Verneinung.
+//
+// SPRACHE. Nur Deutsch und Englisch (DECISION-0319 Р7).
+
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import calc.kinship version "0.1.0";
+import de.bgb.ehe version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Familie = calc.kinship::Family;
+
+// --- Politiken der Fristen §86 --------------------------------------------------------------------
+//
+// Die Mechanik der Fristen gehört `de.bgb.fristen` (DECISION-0319 Р4); die
+// Politik des Falls muss jedoch in dem Paket erklärt sein, das der Fall
+// ausführt (§86/§168.2, LDC-E1332). Die Felder sind dieselben wie bei
+// BGB_FRISTEN_TAG und BGB_FRISTEN_KALENDER (PARALLEL.md §4); eine Politik je
+// Fall. EINE Politik genügt dem Paket: die 300 Tage des § 1593 und die
+// Empfängniszeit des § 1600d Abs. 3 werden als reine Datumsrechnung geführt
+// und dürfen NICHT verlegt werden (§ 193 setzt einen Adressaten der Handlung
+// voraus — Ledger D-10-05), und die Verlegung der Klagefristen der §§ 1598
+// Abs. 2, 1600b und 1613 Abs. 2 rechnet `de.bgb.fristen` mit seiner eigenen
+// Politik. Eine Tagespolitik mit `roll next_working_day` würde die 300 Tage
+// des § 1593 auf den nächsten Werktag schieben und damit eine Verlegung
+// erfinden, die der Text nicht kennt.
+
+// Tagesschritt: reine Datumsrechnung ohne Verlegung. `month_end` fehlt hier
+// absichtlich — die Tagesschritte der §§ 1593 und 1600d Abs. 3 lesen es nicht.
+deadline policy BGB_VERWANDTSCHAFT_TAG {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+}
+
+deadline policy BGB_VERWANDTSCHAFT_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// Kalenderschnappschuss für den Querschnitt mit de.bgb.ehe (§10 Nr. 7): eigene
+// Kopie, byteidentisch mit de.bgb.fristen/de.bgb.ehe (jedes ausführende Paket
+// erklärt seinen eigenen Kalender, D-09-07/§168.2 — dieselbe Falle wie
+// D-09-08 bei de.bgb.bereicherung_delikt: `calendar KALENDER_BUNDESWEIT;`
+// löst unqualifiziert nur im eigenen Namensraum auf, und Kalenderblöcke sind
+// nicht `pub` (§24); ohne eigene Erklärung AMBIGUOUS_CALENDAR, sobald zwei
+// Nachbarn (hier fristen UND ehe) denselben Namen deklarieren.
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Titel 1: Allgemeine Vorschriften (§§ 1589, 1590) ---------------------------------------------
+//
+// Eingänge des Falls: der Graph der Familie, die leibliche Abstammung, die
+// Annahme als Kind und die Ehe. Die Verwandtschaft selbst wird NICHT vom Fall
+// behauptet, sondern aus den Kanten gerechnet.
+
+pub relation familie_des_falls(f: Familie) kind empirical {
+    label de official "Graph der Familie, nach dem die Verwandtschaft dieses Falls berechnet wird";
+    label en unofficial "graph of the family from which the kinship of this case is computed";
+}
+pub relation abstammung(f: Familie, elternteil: Person, kind: Person) kind empirical {
+    label de official "Leibliche Abstammung: Elternteil und Kind (§ 1589 Abs. 1 Satz 1, § 1591, § 1592)";
+    label en unofficial "biological parentage: parent and child (§ 1589 (1) sentence 1, § 1591, § 1592)";
+}
+pub relation annahme_als_kind(f: Familie, annehmender: Person, kind: Person) kind empirical {
+    label de official "Annahme als Kind: das Kind erlangt die rechtliche Stellung eines Kindes des Annehmenden (§ 1754)";
+    label en unofficial "adoption: the child acquires the legal status of a child of the adopter (§ 1754)";
+}
+pub relation annahme_eines_minderjaehrigen(f: Familie, kind: Person) kind empirical {
+    label de official "Die Annahme ist die eines Minderjährigen (§§ 1741 ff.): mit ihr erlischt das Verwandtschaftsverhältnis zu den bisherigen Verwandten (§ 1755 Abs. 1)";
+    label en unofficial "the adoption is that of a minor (§§ 1741 et seq.): with it the kinship to the former relatives expires (§ 1755 (1))";
+}
+pub relation annahme_eines_volljaehrigen(f: Familie, kind: Person) kind empirical {
+    label de official "Die Annahme ist die eines Volljährigen (§§ 1767 ff.): die bisherige Verwandtschaft bleibt bestehen (§ 1770 Abs. 2)";
+    label en unofficial "the adoption is that of a person of full age (§§ 1767 et seq.): the former kinship continues (§ 1770 (2))";
+}
+pub relation ehegatte(f: Familie, erster: Person, zweiter: Person) kind empirical {
+    label de official "Ehegatten, deren Ehe besteht (§ 1590 Abs. 1)";
+    label en unofficial "spouses whose marriage subsists (§ 1590 (1))";
+}
+pub relation frueherer_ehegatte(f: Familie, erster: Person, zweiter: Person) kind empirical {
+    label de official "Ehegatten einer aufgelösten Ehe: die durch sie begründete Schwägerschaft dauert fort (§ 1590 Abs. 2)";
+    label en unofficial "spouses of a dissolved marriage: the affinity established by it continues (§ 1590 (2))";
+}
+
+// Ergebnisse des Titels 1 — gerechnet, nicht behauptet.
+
+pub relation verwandt(f: Familie, erster: Person, zweiter: Person, grad: Integer) kind institutional {
+    label de official "Verwandtschaft und ihr Grad (§ 1589 Abs. 1): der Grad bestimmt sich nach der Zahl der sie vermittelnden Geburten";
+    label en unofficial "kinship and its degree (§ 1589 (1)): the degree is determined by the number of mediating births";
+}
+pub relation verwandt_in_gerader_linie(f: Familie, erster: Person, zweiter: Person) kind institutional {
+    label de official "Personen, deren eine von der anderen abstammt, sind in gerader Linie verwandt (§ 1589 Abs. 1 Satz 1)";
+    label en unofficial "persons one of whom is descended from the other are related in the direct line (§ 1589 (1) sentence 1)";
+}
+pub relation verwandt_in_der_seitenlinie(f: Familie, erster: Person, zweiter: Person) kind institutional {
+    label de official "Personen, die nicht in gerader Linie verwandt sind, aber von derselben dritten Person abstammen, sind in der Seitenlinie verwandt (§ 1589 Abs. 1 Satz 2)";
+    label en unofficial "persons not related in the direct line but descended from the same third person are related in the collateral line (§ 1589 (1) sentence 2)";
+}
+pub relation verschwaegert(f: Familie, erster: Person, zweiter: Person, grad: Integer) kind institutional {
+    label de official "Die Verwandten eines Ehegatten sind mit dem anderen Ehegatten verschwägert; Linie und Grad der Schwägerschaft bestimmen sich nach Linie und Grad der sie vermittelnden Verwandtschaft (§ 1590 Abs. 1)";
+    label en unofficial "the relatives of one spouse are related by marriage to the other spouse; line and degree of affinity follow those of the mediating kinship (§ 1590 (1))";
+}
+pub relation verschwaegert_in_gerader_linie(f: Familie, erster: Person, zweiter: Person) kind institutional {
+    label de official "Schwägerschaft in gerader Linie: die vermittelnde Verwandtschaft ist eine solche in gerader Linie (§ 1590 Abs. 1 Satz 2)";
+    label en unofficial "affinity in the direct line: the mediating kinship is one in the direct line (§ 1590 (1) sentence 2)";
+}
+pub relation verschwaegert_in_der_seitenlinie(f: Familie, erster: Person, zweiter: Person) kind institutional {
+    label de official "Schwägerschaft in der Seitenlinie: die vermittelnde Verwandtschaft ist eine solche in der Seitenlinie (§ 1590 Abs. 1 Satz 2)";
+    label en unofficial "affinity in the collateral line: the mediating kinship is one in the collateral line (§ 1590 (1) sentence 2)";
+}
+
+// --- Brücke: Kanten und Politiken des Rechners ----------------------------------------------------
+
+@source(BGB_P1589) {
+    pub rule AbstammungIstBlutkante(f: Familie, p: Person, c: Person) strict {
+        label de official "Personen, deren eine von der anderen abstammt, sind in gerader Linie verwandt (§ 1589 Abs. 1 Satz 1): die leibliche Abstammung ist eine Blutkante des Graphen";
+        label en unofficial "Persons one of whom is descended from the other are related in the direct line (§ 1589 (1) sentence 1): biological parentage is a blood edge of the graph";
+        when abstammung(f, p, c);
+        then calc.kinship::parent_edge(f, p, c, calc.kinship::Blood);
+    }
+    pub rule AnnahmeIstAdoptivkante(f: Familie, a: Person, c: Person) strict {
+        label de official "Das angenommene Kind erlangt die rechtliche Stellung eines Kindes des Annehmenden (§ 1754 Abs. 1, 2): die Annahme ist eine Adoptivkante des Graphen";
+        label en unofficial "The adopted child acquires the legal status of a child of the adopter (§ 1754 (1), (2)): adoption is an adoptive edge of the graph";
+        when annahme_als_kind(f, a, c);
+        then calc.kinship::parent_edge(f, a, c, calc.kinship::Adoptive);
+    }
+    pub rule GradNachDerZahlDerGeburten(f: Familie) strict {
+        label de official "Der Grad der Verwandtschaft bestimmt sich nach der Zahl der sie vermittelnden Geburten (§ 1589 Abs. 1 Satz 3): römische Zählung des Rechners";
+        label en unofficial "The degree of kinship is determined by the number of births mediating it (§ 1589 (1) sentence 3): Roman count of the calculator";
+        when familie_des_falls(f);
+        then calc.kinship::family_degree_count(f, calc.kinship::Roman);
+    }
+    pub rule Rechentiefe(f: Familie) strict {
+        label de official "Technische Rechentiefe des Rechners, keine Norm: § 1589 kennt keine Grenze der Geburten; gerechnet werden Vorfahren bis zur zwölften Generation";
+        label en unofficial "Technical computation depth of the calculator, not a norm: § 1589 knows no limit of births; ancestors are computed up to the twelfth generation";
+        when familie_des_falls(f);
+        then calc.kinship::family_depth_cap(f, 12);
+    }
+}
+
+pub relation volljaehrigenannahme_in_der_familie(f: Familie) kind institutional {
+    label de official "In dieser Familie ist ein Volljähriger angenommen (§ 1770): einstelliger Kopf für die Wahl der Adoptionspolitik des Rechners";
+    label en unofficial "a person of full age has been adopted in this family (§ 1770): one-place head for choosing the calculator's adoption policy";
+}
+
+@source(BGB_P1770)
+rule VolljaehrigenannahmeInDerFamilie(f: Familie, c: Person) strict {
+    label de official "Einstelliger Kopf: die Familie kennt eine Annahme eines Volljährigen (§ 1770)";
+    label en unofficial "One-place head: the family knows an adoption of a person of full age (§ 1770)";
+    when annahme_eines_volljaehrigen(f, c);
+    then volljaehrigenannahme_in_der_familie(f);
+}
+
+@source(BGB_P1755)
+pub rule MinderjaehrigenannahmeErsetztDieBlutlinie(f: Familie) strict {
+    label de official "Mit der Annahme eines Minderjährigen erlöschen das Verwandtschaftsverhältnis des Kindes zu seinen bisherigen Verwandten und die sich aus ihm ergebenden Rechte und Pflichten (§ 1755 Abs. 1 Satz 1): die Adoptivkante ERSETZT die Blutlinie. Das ist die Politik JEDER Familie, solange in ihr kein Volljähriger angenommen ist — der Rechner verlangt genau eine Politik je Familie, und die Annahme Minderjähriger ist der Grundfall der §§ 1741 ff.";
+    label en unofficial "With the adoption of a minor the child's kinship to its former relatives and the rights and duties arising from it expire (§ 1755 (1) sentence 1): the adoptive edge REPLACES the blood line";
+    when familie_des_falls(f) and not_known(volljaehrigenannahme_in_der_familie(f));
+    then calc.kinship::family_adoption_effect(f, calc.kinship::ReplacesBlood);
+}
+
+@source(BGB_P1770)
+pub rule VolljaehrigenannahmeTrittHinzu(f: Familie) strict {
+    label de official "Die Wirkungen der Annahme eines Volljährigen erstrecken sich nicht auf die Verwandten des Annehmenden; die Rechte und Pflichten aus dem Verwandtschaftsverhältnis des Angenommenen zu seinen Verwandten bleiben unberührt (§ 1770 Abs. 1 Satz 1, Abs. 2): die Adoptivkante TRITT HINZU";
+    label en unofficial "The effects of the adoption of a person of full age do not extend to the relatives of the adopter; the rights and duties from the kinship of the adoptee to his relatives remain unaffected (§ 1770 (1) sentence 1, (2)): the adoptive edge IS ADDED";
+    when familie_des_falls(f) and volljaehrigenannahme_in_der_familie(f);
+    then calc.kinship::family_adoption_effect(f, calc.kinship::AddsBranch);
+}
+
+@source(BGB_P1590)
+pub rule EheIstEhekante(f: Familie, a: Person, b: Person) strict {
+    label de official "Die Verwandten eines Ehegatten sind mit dem anderen Ehegatten verschwägert (§ 1590 Abs. 1 Satz 1): die bestehende Ehe ist eine Ehekante des Graphen";
+    label en unofficial "The relatives of one spouse are related by marriage to the other spouse (§ 1590 (1) sentence 1): the subsisting marriage is a spouse edge of the graph";
+    when ehegatte(f, a, b);
+    then calc.kinship::spouse_edge(f, a, b);
+}
+
+// --- § 1589: Verwandtschaft, Linie und Grad -------------------------------------------------------
+
+@source(BGB_P1589) {
+    rule VerwandtschaftUndGrad(f: Familie, a: Person, b: Person, n: Integer) strict {
+        label de official "Der Grad der Verwandtschaft bestimmt sich nach der Zahl der sie vermittelnden Geburten (§ 1589 Abs. 1 Satz 3)";
+        label en unofficial "The degree of kinship is determined by the number of births mediating it (§ 1589 (1) sentence 3)";
+        when calc.kinship::kin_degree(f, a, b, n);
+        then verwandt(f, a, b, n);
+    }
+    rule GeradeLinie(f: Familie, a: Person, b: Person) strict {
+        label de official "Personen, deren eine von der anderen abstammt, sind in gerader Linie verwandt (§ 1589 Abs. 1 Satz 1)";
+        label en unofficial "Persons one of whom is descended from the other are related in the direct line (§ 1589 (1) sentence 1)";
+        when calc.kinship::kin_line(f, a, b, calc.kinship::Ascending);
+        then verwandt_in_gerader_linie(f, a, b);
+    }
+    rule GeradeLinieAbsteigend(f: Familie, a: Person, b: Person) strict {
+        label de official "Die gerade Linie zählt in beide Richtungen: auch der Abkömmling ist mit dem Vorfahren in gerader Linie verwandt (§ 1589 Abs. 1 Satz 1)";
+        label en unofficial "The direct line counts in both directions: the descendant too is related in the direct line to the ancestor (§ 1589 (1) sentence 1)";
+        when calc.kinship::kin_line(f, a, b, calc.kinship::Descending);
+        then verwandt_in_gerader_linie(f, a, b);
+    }
+    rule Seitenlinie(f: Familie, a: Person, b: Person) strict {
+        label de official "Personen, die nicht in gerader Linie verwandt sind, aber von derselben dritten Person abstammen, sind in der Seitenlinie verwandt (§ 1589 Abs. 1 Satz 2)";
+        label en unofficial "Persons not related in the direct line but descended from the same third person are related in the collateral line (§ 1589 (1) sentence 2)";
+        when calc.kinship::kin_line(f, a, b, calc.kinship::Collateral);
+        then verwandt_in_der_seitenlinie(f, a, b);
+    }
+}
+
+// --- § 1590: Schwägerschaft ------------------------------------------------------------------------
+//
+// Die Schwägerschaft wird über den Ehegatten VERMITTELT: `s` ist der Ehegatte
+// von `a`, `b` ist ein Verwandter von `s`. Linie und Grad der Schwägerschaft
+// sind die der vermittelnden Verwandtschaft (Abs. 1 Satz 2). Abs. 2: die
+// Schwägerschaft dauert fort, auch wenn die Ehe aufgelöst ist — dafür trägt
+// der Fall die aufgelöste Ehe als eigenen Eingang (eine aufgelöste Ehe ist
+// KEINE Ehekante des Graphen, sonst rechnete der Rechner mit ihr weiter).
+
+@source(BGB_P1590) {
+    rule SchwaegerschaftBestehendeEhe(f: Familie, a: Person, s: Person, b: Person, n: Integer) strict {
+        label de official "Die Verwandten eines Ehegatten sind mit dem anderen Ehegatten verschwägert; der Grad der Schwägerschaft bestimmt sich nach dem Grade der sie vermittelnden Verwandtschaft (§ 1590 Abs. 1)";
+        label en unofficial "The relatives of one spouse are related by marriage to the other spouse; the degree of affinity follows the degree of the mediating kinship (§ 1590 (1))";
+        when ehegatte(f, a, s) and verwandt(f, s, b, n);
+        then verschwaegert(f, a, b, n);
+    }
+    rule SchwaegerschaftAufgelousteEhe(f: Familie, a: Person, s: Person, b: Person, n: Integer) strict {
+        label de official "Die Schwägerschaft dauert fort, auch wenn die Ehe, durch die sie begründet wurde, aufgelöst ist (§ 1590 Abs. 2)";
+        label en unofficial "The affinity continues even if the marriage by which it was established has been dissolved (§ 1590 (2))";
+        when frueherer_ehegatte(f, a, s) and verwandt(f, s, b, n);
+        then verschwaegert(f, a, b, n);
+    }
+    rule SchwaegerschaftGeradeLinie(f: Familie, a: Person, s: Person, b: Person) strict {
+        label de official "Die Linie der Schwägerschaft bestimmt sich nach der Linie der sie vermittelnden Verwandtschaft (§ 1590 Abs. 1 Satz 2): gerade Linie";
+        label en unofficial "The line of affinity follows the line of the mediating kinship (§ 1590 (1) sentence 2): direct line";
+        when ehegatte(f, a, s) and verwandt_in_gerader_linie(f, s, b);
+        then verschwaegert_in_gerader_linie(f, a, b);
+    }
+    rule SchwaegerschaftSeitenlinie(f: Familie, a: Person, s: Person, b: Person) strict {
+        label de official "Die Linie der Schwägerschaft bestimmt sich nach der Linie der sie vermittelnden Verwandtschaft (§ 1590 Abs. 1 Satz 2): Seitenlinie";
+        label en unofficial "The line of affinity follows the line of the mediating kinship (§ 1590 (1) sentence 2): collateral line";
+        when ehegatte(f, a, s) and verwandt_in_der_seitenlinie(f, s, b);
+        then verschwaegert_in_der_seitenlinie(f, a, b);
+    }
+}

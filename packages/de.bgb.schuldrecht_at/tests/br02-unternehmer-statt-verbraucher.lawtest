@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Negativer Fall der Brücke: die Person handelt bei Abschluss in Ausübung
+// ihrer gewerblichen Tätigkeit (§ 14 Abs. 1) — über BG-03 wird `unternehmer`
+// hergeleitet, `verbraucher` bleibt unbewiesen (kein Schluss aus dem
+// Schweigen der Akte: die Köpfe schließen sich nicht gegenseitig aus, aber
+// hier ist nur die gewerbliche Tatsache gesetzt).
+test "Brücke §§ 13/14: gewerbliches Handeln leitet Unternehmer her, nicht Verbraucher" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:sr-at:br02:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::handelt_in_ausuebung_der_taetigkeit(entity_ref("urn:de:bgb:sr-at:br02:p1"), entity_ref("urn:de:bgb:sr-at:br02:r1")) { origin case_input; }
+        assert "a3": rechtsgeschaeft_des_vertrags(entity_ref("urn:de:bgb:sr-at:br02:v1"), entity_ref("urn:de:bgb:sr-at:br02:r1")) { origin case_input; }
+    }
+    evaluate truth(unternehmer(entity_ref("urn:de:bgb:sr-at:br02:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:sr-at:br02:p1")));
+    expect truth_status == NEITHER;
+}

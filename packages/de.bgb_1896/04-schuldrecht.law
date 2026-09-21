@@ -1,0 +1,49 @@
+// ZWEITES BUCH, ABSCHNITTE 1–3 AND TITEL 3, 10 — obligation: by virtue of the
+// obligation the creditor may require performance from the debtor (§ 241); a
+// juristic act creating an obligation requires a contract (§ 305); the
+// obligation is extinguished by performance (§ 362) and by a contract of
+// release (§ 397); one who has received money as a loan must restore it
+// (§ 607) — the loan arises on receipt, a promise of a loan is revocable
+// (§ 610); the depositary must keep the thing delivered (§ 688), the
+// depositor may reclaim it at any time (§ 695).
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+relation schuldverhaeltnis(glaeubiger: Persona, schuldner: Persona, causa: Causa) kind institutional { label de official "Schuldverhältniß"; label en unofficial "an obligation between creditor and debtor (§ 241, § 305)"; }
+relation leistung_bewirkt(causa: Causa) kind empirical { label de official "die geschuldete Leistung bewirkt"; label en unofficial "the performance owed has been rendered to the creditor (§ 362)"; }
+relation erlassvertrag(causa: Causa) kind institutional { label de official "Erlaßvertrag"; label en unofficial "the creditor released the debt by contract (§ 397)"; }
+relation schuldverhaeltnis_erloschen(causa: Causa) kind institutional { label de official "Schuldverhältniß erloschen"; label en unofficial "the obligation is extinguished by performance or release (§ 362, § 397)"; }
+relation darlehen_empfangen(darleiher: Persona, empfaenger: Persona, causa: Causa) kind institutional { label de official "als Darlehen empfangen"; label en unofficial "money received as a loan — the loan has arisen (§ 607)"; }
+relation rueckerstattung_verpflichtet(empfaenger: Persona, darleiher: Persona, causa: Causa) kind institutional { label de official "verpflichtet, das Empfangene zurückzuerstatten"; label en unofficial "the recipient of the loan must restore the same amount of the same kind (§ 607)"; }
+relation darlehensversprechen(darleiher: Persona, empfaenger: Persona, causa: Causa) kind institutional { label de official "Versprechen der Hingabe eines Darlehens"; label en unofficial "a promise to make a loan (§ 610)"; }
+relation vermoegensverschlechterung(causa: Causa) kind empirical { label de official "wesentliche Verschlechterung der Vermögensverhältnisse"; label en unofficial "the borrower’s financial circumstances have substantially deteriorated (§ 610)"; }
+relation widerruf_berechtigt(darleiher: Persona, causa: Causa) kind institutional { label de official "kann das Versprechen widerrufen"; label en unofficial "the promisor may revoke the promise of a loan (§ 610)"; }
+relation verwahrung(hinterleger: Persona, verwahrer: Persona, sache: Res) kind institutional { label de official "Verwahrungsvertrag"; label en unofficial "a movable has been delivered to a depositary for safekeeping (§ 688)"; }
+relation rueckforderung_berechtigt(hinterleger: Persona, verwahrer: Persona, sache: Res) kind institutional { label de official "kann die hinterlegte Sache jederzeit zurückfordern"; label en unofficial "the depositor may reclaim the thing at any time (§ 695)"; }
+
+@source(BGB_P305, BGB_P241)
+rule VertragBegruendetSchuldverhaeltnis(x: Persona, y: Persona, c: Causa) strict { label de official "Zur Begründung eines Schuldverhältnisses durch Rechtsgeschäft ist ein Vertrag erforderlich"; label en unofficial "A contract creates an obligation: the creditor may require performance from the debtor (§ 305; § 241)"; when doctrine.ius_privatum::contractus(x, y, c) and not_known(schuldverhaeltnis_erloschen(c)); then schuldverhaeltnis(x, y, c); }
+@source(BGB_P362)
+rule ErloschenDurchErfuellung(c: Causa) strict { label de official "Das Schuldverhältniß erlischt, wenn die geschuldete Leistung an den Gläubiger bewirkt wird"; label en unofficial "The obligation is extinguished by performance (§ 362)"; when leistung_bewirkt(c); then schuldverhaeltnis_erloschen(c); }
+@source(BGB_P397)
+rule Erlassvertrag(c: Causa) strict { label de official "wenn der Gläubiger dem Schuldner durch Vertrag die Schuld erläßt"; label en unofficial "The creditor’s agreement not to sue is a contract of release (§ 397)"; when doctrine.ius_privatum::pactum_de_non_petendo(c); then erlassvertrag(c); }
+@source(BGB_P397)
+rule ErloschenDurchErlass(c: Causa) strict { label de official "Das Schuldverhältniß erlischt"; label en unofficial "Release extinguishes the obligation (§ 397)"; when erlassvertrag(c); then schuldverhaeltnis_erloschen(c); }
+@source(BGB_P607)
+rule DarlehenEmpfangen(x: Persona, y: Persona, c: Causa) strict { label de official "Wer Geld als Darlehen empfangen hat"; label en unofficial "A promised loan of which the money has been received is a loan (§ 607)"; when doctrine.ius_privatum::stipulatio_de_mutuo(x, y, c) and not_known(doctrine.ius_privatum::pecunia_non_numerata(c)); then darlehen_empfangen(x, y, c); }
+@source(BGB_P607)
+rule Rueckerstattung(x: Persona, y: Persona, c: Causa) strict { label de official "ist verpflichtet, dem Darleiher das Empfangene zurückzuerstatten"; label en unofficial "The recipient of the loan must restore the same amount of the same kind (§ 607)"; when darlehen_empfangen(x, y, c); then rueckerstattung_verpflichtet(y, x, c); }
+@source(BGB_P607, BGB_P241)
+rule DarlehenSchuldverhaeltnis(x: Persona, y: Persona, c: Causa) strict { label de official "Schuldverhältniß aus Darlehen"; label en unofficial "The duty to restore the loan is an obligation toward the lender (§ 607; § 241)"; when rueckerstattung_verpflichtet(y, x, c); then schuldverhaeltnis(x, y, c); }
+@source(BGB_P610)
+rule Darlehensversprechen(x: Persona, y: Persona, c: Causa) strict { label de official "Wer die Hingabe eines Darlehens verspricht"; label en unofficial "A promise of a loan without delivery of the money is a promise to make a loan (§ 610)"; when doctrine.ius_privatum::stipulatio_de_mutuo(x, y, c) and doctrine.ius_privatum::pecunia_non_numerata(c); then darlehensversprechen(x, y, c); }
+@source(BGB_P610)
+rule WiderrufDarlehensversprechen(x: Persona, y: Persona, c: Causa) strict { label de official "kann im Zweifel das Versprechen widerrufen, wenn in den Vermögensverhältnissen des anderen Theiles eine wesentliche Verschlechterung eintritt"; label en unofficial "The promisor may revoke the promise if the borrower’s circumstances substantially deteriorate (§ 610)"; when darlehensversprechen(x, y, c) and vermoegensverschlechterung(c); then widerruf_berechtigt(x, c); }
+@source(BGB_P688)
+rule Verwahrung(d: Persona, s: Persona, r: Res) strict { label de official "Durch den Verwahrungsvertrag wird der Verwahrer verpflichtet, eine ihm übergebene bewegliche Sache aufzubewahren"; label en unofficial "A thing delivered for safekeeping is a deposit (§ 688)"; when doctrine.ius_privatum::depositum(d, s, r); then verwahrung(d, s, r); }
+@source(BGB_P695)
+rule Rueckforderung(d: Persona, s: Persona, r: Res) strict { label de official "Der Hinterleger kann die hinterlegte Sache jederzeit zurückfordern"; label en unofficial "The depositor may reclaim the thing at any time (§ 695)"; when verwahrung(d, s, r); then rueckforderung_berechtigt(d, s, r); }
+@source(BGB_P695, BGB_P241)
+rule VerwahrungSchuldverhaeltnis(d: Persona, s: Persona, r: Res, c: Causa) strict { label de official "Schuldverhältniß aus Verwahrung"; label en unofficial "The right to reclaim the thing is the depositary’s contractual obligation toward the depositor (§ 695; § 241)"; when rueckforderung_berechtigt(d, s, r) and doctrine.ius_privatum::res_non_reddita(s, r) and doctrine.ius_privatum::contractus(d, s, c); then schuldverhaeltnis(d, s, c); }

@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1612a Abs. 1 Satz 3 Nr. 2 mit Abs. 3, andere Seite derselben Schwelle: für den Monat Mai 2024 — den Monat, in dem das Kind das sechste Lebensjahr vollendet — gilt bereits die ZWEITE Stufe: 100 Prozent von 537,00 € sind 537,00 €.
+test "§ 1612a: zweite Altersstufe ab dem Beginn des Monats der Vollendung — 100 Prozent" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": minderjaehriges_kind(entity_ref("urn:de:bgb:vw:u03:K")) { origin case_input; }
+        assert "f2": lebt_nicht_im_haushalt_des_elternteils(entity_ref("urn:de:bgb:vw:u03:K"), entity_ref("urn:de:bgb:vw:u03:E")) { origin case_input; }
+        assert "f3": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:u03:K"), @2018-05-10) { origin case_input; }
+        assert "f4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:u03:K"), 6 calendar_year) { origin case_input; }
+        assert "f5": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:u03:K"), 12 calendar_year) { origin case_input; }
+        assert "f6": unterhaltsmonat(entity_ref("urn:de:bgb:vw:u03:K"), @2024-05-01) { origin case_input; }
+        assert "f7": mindestunterhalt(@2024-01-01, @2024-12-31, 537.00 EUR) { origin case_input; }
+    }
+    evaluate truth(prozentsatz_des_mindestunterhalts(entity_ref("urn:de:bgb:vw:u03:K"), 100));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(mindestunterhaltsanspruch(entity_ref("urn:de:bgb:vw:u03:K"), entity_ref("urn:de:bgb:vw:u03:E"), 537.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

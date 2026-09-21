@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2325 Abs. 3 and § 188 Abs. 2: on the matching calendar day one year
+// after performance, the first window has elapsed and the second window
+// (nine tenths) applies.
+test "§ 2325 Abs. 3: Tag genau an der Jahresgrenze liegt im zweiten Jahr" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+        assert "f1": de.bgb.erbfolge::erbfall_am(entity_ref("urn:de:bgb:pilot:v06:E"), @2026-03-01) { origin case_input; }
+        assert "f2": geleistet_am(entity_ref("urn:de:bgb:pilot:v06:SCH"), @2025-03-01) { origin case_input; }
+        assert "f3": schenkung_nicht_an_ehegatten(entity_ref("urn:de:bgb:pilot:v06:SCH")) { origin case_input; }
+    }
+    evaluate truth(schenkung_im_jahr_vor_dem_erbfall(entity_ref("urn:de:bgb:pilot:v06:E"), entity_ref("urn:de:bgb:pilot:v06:SCH"), 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(abschmelzung_zehntel(entity_ref("urn:de:bgb:pilot:v06:E"), entity_ref("urn:de:bgb:pilot:v06:SCH"), 9));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

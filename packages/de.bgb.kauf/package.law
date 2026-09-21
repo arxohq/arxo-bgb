@@ -1,0 +1,229 @@
+// BÜRGERLICHES GESETZBUCH — KAUF, TAUSCH (BG-05)
+//
+// Buch 2 Abschnitt 8 Titel 1, §§ 433–480, in fünf Untertiteln: Allgemeine
+// Vorschriften (§§ 433–453), Besondere Arten des Kaufs (§§ 454–473),
+// Verbrauchsgüterkauf (§§ 474–479), Reparaturverpflichtung des Herstellers
+// (§§ 479a–479g) und Tausch (§ 480). Quellen: sources.law, erzeugt aus dem
+// Register DOKNR (docs/foundations/de-bgb/registry/), Stand 2026-09-17.
+//
+// WAS DIESES PAKET IST. Es senkt den Kaufvertrag als Schuldverhältnis ab: die
+// Hauptpflichten (§ 433), den Begriff des Mangels (§§ 434, 435, 475b, 475c),
+// den geschlossenen Katalog der Käuferrechte (§ 437) samt Nacherfüllung
+// (§ 439), Minderung (§ 441) und ihrer Verjährung (§§ 438, 445b, 475e), den
+// Gefahrübergang (§§ 446, 447), die besonderen Kaufarten (Kauf auf Probe,
+// Wiederkauf, Vorkauf), den Verbrauchsgüterkauf mit der Beweislastumkehr des
+// § 477 und die Reparaturverpflichtung des Herstellers.
+//
+// VIER DINGE, DIE DIESES PAKET NICHT TUT (Grenzen aus dem Text, nicht aus dem
+// Arbeitsumfang):
+//
+// 1. Rücktritt (§§ 323, 326 Abs. 5, 346–348), Schadensersatz (§§ 280, 281,
+//    283, 284, 311a) und die Fristsetzung gehören dem Paket
+//    de.bgb.schuldrecht_at (BG-04). § 437 nennt hier NUR, WELCHES RECHT dem
+//    Käufer zusteht; ob der Rücktritt wirksam erklärt ist, entscheidet das
+//    Nachbarpaket. Bis zur Zusammenführung erklärt BG-05 die wenigen
+//    Voraussetzungen, die es selbst braucht, lokal (Ledger D-05-02).
+// 2. Die Vorschriften über digitale Produkte (Abschnitt 3 Titel 2a, §§ 327 ff.),
+//    an deren Stelle die §§ 453 Abs. 1 Satz 2, 445c und 475a verweisen, liegen
+//    ebenfalls bei BG-04. BG-05 stellt nur FEST, dass die kaufrechtlichen
+//    Vorschriften nicht anzuwenden sind.
+// 3. Fremde Gesetze — § 377 HGB (Rügeobliegenheit), ZPO (Zwangsvollstreckung,
+//    §§ 450, 471), InsO (Insolvenzmasse), Richtlinie (EU) 2024/1799 Anhang II
+//    und Verordnung (EU) 2024/1781 (Produktgruppen und Reparaturbegriff des
+//    § 479a, § 479b) — kommen als typisierte Eingabe des Falls herein und
+//    werden nicht formalisiert (SOURCES.json, external).
+// 4. Ein Fall trägt GENAU EINEN streitigen Mangel je Kaufvertrag: die
+//    Mangelprädikate haben den Vertrag als Schlüssel (Ledger D-05-01). Mehrere
+//    Mängel desselben Vertrags sind mehrere Fälle.
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Jeder Fall ist nach dem WORTLAUT des
+// Paragraphen einem der drei Kanäle zugeordnet, nie einem Sammelkatalog:
+//
+//   WERTUNG (external judgment relation … { authority Court; }) — „die bei
+//     Sachen derselben Art üblich ist und die der Käufer erwarten kann“
+//     (§ 434 Abs. 3 Satz 1 Nr. 2), „deren Erhalt der Käufer erwarten kann“
+//     (Nr. 4), „nur mit unverhältnismäßigen Kosten möglich“ (§ 439 Abs. 4),
+//     „unzumutbar“ und „fehlgeschlagen“ (§ 440), „soweit erforderlich, durch
+//     Schätzung“ (§ 441 Abs. 3 Satz 2), „grobe Fahrlässigkeit“ (§ 442 Abs. 1
+//     Satz 2), „angemessene Frist“ (§§ 455, 475 Abs. 6, 475b Abs. 5, 475d
+//     Abs. 1 Nr. 1), „unverzüglich“ (§ 469 Abs. 1 — Wertung, kein Nullfrist,
+//     DECISION-0194), „Zeitraum, den der Verbraucher … erwarten kann“
+//     (§ 475b Abs. 4 Nr. 2), „mit der Art der Ware oder des mangelhaften
+//     Zustands unvereinbar“ (§ 477 Abs. 1), „derart schwerwiegend“ (§ 475d
+//     Abs. 1 Nr. 3), „angemessenes Entgelt“ und „angemessener Preis“
+//     (§§ 479b Abs. 3, 479c);
+//   FESTGESTELLTE TATSACHE (relation kind empirical, im Fall origin
+//     adjudicated) — „kennt der Käufer den Mangel bei Vertragsschluss“
+//     (§ 442 Abs. 1 Satz 1), „arglistig verschwiegen“ (§§ 438 Abs. 3, 442,
+//     444, 445), die Tage der Ablieferung, der Übergabe und des
+//     Gefahrübergangs;
+//   LESARTEN (interpretation … any_of) — § 434 Abs. 3 Satz 1 Nr. 2 Buchst. b:
+//     ob die öffentliche Äußerung eines anderen Glieds der Vertragskette den
+//     Verkäufer bindet, wenn er sie kannte, wird nicht gebraucht; der Text
+//     nennt seine drei Ausnahmen selbst (Satz 3) und wird als Defeater-Schicht
+//     ausgeführt.
+//
+// Ein flacher Fall-Fakt „die Sache ist mangelhaft“ ist verboten (Lint
+// evaluative-fact-without-producer): der Mangel ist immer Schluss einer Regel
+// über die einzelnen Anforderungen der §§ 434, 435, 475b.
+//
+// ABWESENHEIT IST KEINE VERNEINUNG. Die Anforderungen der §§ 434, 435 sind
+// POSITIVE Eingaben des Falls; der Mangel folgt aus ihrer AUSDRÜCKLICHEN
+// Verneinung (`not vereinbarte_beschaffenheit_vorhanden(k)` als Angabe des
+// Falls), nicht aus dem Schweigen. Ebenso verlangen `keine_montage_geschuldet`,
+// `keine_abweichende_vereinbarung`, `kein_haftungsausschluss` eine Angabe.
+//
+// FRISTEN. § 438 (zwei, fünf, dreißig Jahre ab Ablieferung oder Übergabe),
+// § 445b (zwei Jahre, Ablaufhemmung zwei Monate), § 455 (Billigungsfrist),
+// § 462 (dreißig und drei Jahre), § 469 Abs. 2 (zwei Monate, eine Woche),
+// § 477 (ein Jahr, sechs Monate beim Tier, zwei Jahre bei digitalen Elementen)
+// und § 475e rechnen mit den Kalenderschritten des § 188 Abs. 2; die Politik
+// dieses Pakets trägt denselben Feldsatz wie BGB_FRISTEN_KALENDER
+// (BGB_KAUF_KALENDER, Ledger D-05-03). Zeilen: DEADLINES.json, Abschnitt
+// BG-05. Die regelmäßige Verjährungsfrist des § 438 Abs. 3 (Arglist) rechnet
+// de.bgb.fristen (§§ 195, 199 Abs. 1, Ultimo).
+//
+// GELD. Beträge sind EUR. Die EINZIGE Division des Pakets steht bei § 441
+// Abs. 3: der Kaufpreis wird im Verhältnis der beiden Werte herabgesetzt und
+// EINMAL je Anspruch auf den Cent gerundet — `div_round(Kaufpreis ×
+// wirklicher Wert, Wert ohne Mangel × 1.0, 2, "HALF_UP")` (Ledger D-05-04).
+// Ein Zinssatz, ein Schwellenwert oder eine Rundung, die der Text nicht nennt,
+// ist hier nicht erfunden.
+//
+// SPRACHE. Nur Deutsch und Englisch (DECISION-0319, Р7).
+
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import de.bgb.allgemeiner_teil version "0.1.0";
+import de.bgb.schuldrecht_at version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Sache = de.bgb.core::Sache;
+type Tier = de.bgb.core::Tier;
+type Anspruch = de.bgb.core::Anspruch;
+type Rechtsgeschaeft = de.bgb.allgemeiner_teil::Rechtsgeschaeft;
+type Vertrag = de.bgb.schuldrecht_at::Vertrag;
+
+// Kalenderschritt des § 188 Abs. 2 für die Fristen der §§ 438, 445b, 455, 462,
+// 469, 475e und 477: derselbe Feldsatz wie BGB_FRISTEN_KALENDER. § 193 wird
+// bei Kalenderschritten nicht gerollt, sondern dort ausdrücklich gerechnet, wo
+// der Text eine Erklärung innerhalb der Frist verlangt. Eine Politik je Fall
+// (§168.2).
+deadline policy BGB_KAUF_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// Eigener Kalenderknoten (D-05-10, Muster D-04-03/V5-CALENDAR-01): seit die
+// Brücke zu de.bgb.schuldrecht_at importiert wird, trägt das kompilierte
+// Programm ZWEI calendar_snapshot-Knoten (den von de.bgb.fristen und den von
+// de.bgb.schuldrecht_at) — `calendar <Name>` löst nur im eigenen Namensraum
+// auf, ein `pkg::Name` ist dafür nicht exportierbar (§24 gilt nur für
+// Relationen). Byteidentische Felder zu de.bgb.fristen/de.bgb.schuldrecht_at.
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Gemeinsame Träger des Titels ---------------------------------------------------------------
+
+pub entity Kaufvertrag {
+    label de official "Kaufvertrag über eine Sache, ein Recht oder einen sonstigen Gegenstand (§§ 433, 453)";
+    label en unofficial "contract of sale of a thing, a right or another object (§§ 433, 453)";
+}
+
+pub entity Wiederkaufsrecht {
+    label de official "in dem Kaufvertrag vorbehaltenes Recht des Wiederkaufs (§ 456)";
+    label en unofficial "right of repurchase reserved in the contract of sale (§ 456)";
+}
+
+pub entity Vorkaufsrecht {
+    label de official "Recht, in Ansehung eines Gegenstandes den Vorkauf auszuüben (§ 463)";
+    label en unofficial "right of pre-emption in respect of an object (§ 463)";
+}
+
+pub entity Garantie {
+    label de official "Garantie im Sinne des § 443 Abs. 1";
+    label en unofficial "guarantee within the meaning of § 443 (1)";
+}
+
+pub entity Reparaturverlangen {
+    label de official "Verlangen eines Verbrauchers, eine Ware zu reparieren (§ 479b Abs. 1)";
+    label en unofficial "consumer's request to have goods repaired (§ 479b (1))";
+}
+
+// --- Parteien und Gegenstand des Kaufvertrags ---------------------------------------------------
+
+pub relation verkaeufer(k: Kaufvertrag, p: Person) kind empirical {
+    key(k);
+    label de official "Verkäufer des Kaufvertrags (§ 433 Abs. 1)";
+    label en unofficial "seller under the contract of sale (§ 433 (1))";
+}
+pub relation kaeufer(k: Kaufvertrag, p: Person) kind empirical {
+    key(k);
+    label de official "Käufer des Kaufvertrags (§ 433 Abs. 2)";
+    label en unofficial "buyer under the contract of sale (§ 433 (2))";
+}
+pub relation kaufsache(k: Kaufvertrag, s: Sache) kind empirical {
+    key(k);
+    label de official "die verkaufte Sache (§ 433 Abs. 1 Satz 1)";
+    label en unofficial "the thing sold (§ 433 (1) sentence 1)";
+}
+pub relation kaufpreis(k: Kaufvertrag, betrag: Money) kind empirical {
+    key(k);
+    label de official "der vereinbarte Kaufpreis (§ 433 Abs. 2)";
+    label en unofficial "the agreed purchase price (§ 433 (2))";
+}
+pub relation vertragsschluss_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag des Vertragsschlusses (§ 434 Abs. 3 Satz 3, § 441 Abs. 3, § 436 Abs. 1) — zugleich Anknüpfungspunkt des Korridors 2022 (Art. 229 § 58 EGBGB)";
+    label en unofficial "day on which the contract was concluded (§ 434 (3) sentence 3, § 441 (3), § 436 (1)) — also the connecting factor of the 2022 corridor (Art. 229 § 58 EGBGB)";
+}
+pub relation grundstueckskauf(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Kaufs ist ein Grundstück (§ 436, § 438 Abs. 2, § 448 Abs. 2); dem Grundstück stehen eingetragene Schiffe und Schiffsbauwerke gleich (§ 452)";
+    label en unofficial "the object of the sale is a plot of land (§ 436, § 438 (2), § 448 (2)); registered ships and ships under construction are treated alike (§ 452)";
+}
+pub relation ablieferung_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag der Ablieferung der Sache (§ 438 Abs. 2, § 445b Abs. 1) — festgestellte Tatsache";
+    label en unofficial "day of delivery of the thing (§ 438 (2), § 445b (1)) — established fact";
+}
+pub relation uebergabe_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag der Übergabe (§ 438 Abs. 2 bei Grundstücken, § 446 Satz 1) — festgestellte Tatsache";
+    label en unofficial "day of handover (§ 438 (2) for land, § 446 sentence 1) — established fact";
+}
+pub relation gefahruebergang_am(k: Kaufvertrag, tag: Date) kind institutional {
+    key(k);
+    label de official "Tag des Übergangs der Gefahr des zufälligen Untergangs und der zufälligen Verschlechterung (§§ 434 Abs. 1, 446, 447, 477)";
+    label en unofficial "day on which the risk of accidental destruction and deterioration passes (§§ 434 (1), 446, 447, 477)";
+}

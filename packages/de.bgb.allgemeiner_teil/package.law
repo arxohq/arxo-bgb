@@ -1,0 +1,180 @@
+// BÜRGERLICHES GESETZBUCH — ALLGEMEINER TEIL (BG-03)
+//
+// Buch 1: Personen (§§ 1–89), Sachen und Tiere (§§ 90–103), Rechtsgeschäfte
+// (§§ 104–185), Ausübung der Rechte, Selbstverteidigung, Selbsthilfe
+// (§§ 226–231) und Sicherheitsleistung (§§ 232–240a). Paket BG-03 der
+// vollständigen Formalisierung des geltenden BGB (docs/foundations/de-bgb/,
+// DECISION-0319). Quellen: sources.law, erzeugt aus dem Register DOKNR —
+// nicht von Hand ändern.
+//
+// AUFBAU. Diese Datei trägt den gemeinsamen Wortschatz des Pakets: die Typen
+// aus der Nabe, die Träger des Rechtsgeschäfts und den Prüfungszeitpunkt, an
+// dem der Zustand einer Person gemessen wird. Je Abschnitt und Titel des
+// Gesetzes steht eine eigene Datei (abschnitt-…, titel-…).
+//
+// FRISTEN UND LEBENSALTER. Jede Frist und jedes Lebensalter kommt aus
+// `de.bgb.fristen` (DECISION-0319 Р4): das Paket schreibt die Eingänge jenes
+// Rechners (`frist_ereignis`, `frist_dauer_kalender`, `lebensjahr_gefragt`)
+// und liest seine Ergebnisse. Eigene Datums-Arithmetik steht hier nicht;
+// jede Frist ist zuvor in docs/foundations/de-bgb/DEADLINES.json eingetragen.
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Wo das Gesetz eine WERTUNG delegiert
+// („gute Sitten“, „auffälliges Missverhältnis“, „erforderlich“, „wirtschaftlicher
+// Zweck“, „ohne schuldhaftes Zögern“), steht eine `external judgment relation`
+// mit `authority Court` und dem Normtext als `label de official`; ohne Antwort
+// bleibt der Schluss NEITHER mit REQUIRES_JUDGMENT. Wo das Gesetz eine
+// FESTGESTELLTE TATSACHE verlangt (Kenntnis und ihr Tag, Eintragung im
+// Register, Zustand krankhafter Störung), steht `relation … kind empirical`,
+// im Fall mit `origin adjudicated`. Ein flacher Fall-Fakt, der die
+// Rechtsfolge nachspricht, ist verboten.
+//
+// SPRACHE: nur Deutsch und Englisch (DECISION-0319 Р7).
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import calc.kinship version "0.1.0";
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind";
+    label en unofficial "Public holidays recognised in every Land";
+}
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070";
+    label en unofficial "Nationwide public holidays 1991–2070";
+}
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Typen aus der Nabe (eingefrorene API, README de.bgb.core) ---------------------------------
+
+type Person = de.bgb.core::Person;
+type NatuerlichePerson = de.bgb.core::NatuerlichePerson;
+type JuristischePerson = de.bgb.core::JuristischePerson;
+type Sache = de.bgb.core::Sache;
+type Tier = de.bgb.core::Tier;
+type Familie = calc.kinship::Family;
+type Frist = de.bgb.fristen::Frist;
+
+// --- Politiken der Fristen §86 -----------------------------------------------------------------
+//
+// Die Mechanik der Fristen gehört `de.bgb.fristen` (DECISION-0319 Р4); die
+// Politik des Falls muss jedoch im Paket erklärt sein, das der Fall ausführt
+// (§86/§168.2, LDC-E1332). Diese beiden Politiken tragen daher dieselben
+// Felder wie BGB_FRISTEN_TAG und BGB_FRISTEN_KALENDER (Muster
+// BGB_VERFUEGUNGEN_JAHR, PARALLEL.md §4); eine Politik je Fall.
+
+// Tagesfrist: § 187 Abs. 1 (Ereignistag nicht mitgerechnet), § 188 Abs. 1
+// (Ablauf des letzten Tages), § 193 (Roll auf den nächsten Werktag).
+deadline policy BGB_ALLGEMEINER_TEIL_TAG {
+    start_count next_day;
+    include_end true;
+    roll next_working_day;
+}
+
+// Wochen-, Monats- und Jahresfrist: § 188 Abs. 2 (Tag, der durch seine Zahl
+// dem Ereignistag entspricht), § 188 Abs. 3 (fehlt der Tag: letzter Tag des
+// Monats); § 193 wird von `de.bgb.fristen` ausdrücklich gerechnet.
+deadline policy BGB_ALLGEMEINER_TEIL_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// --- Träger des Rechtsgeschäfts ------------------------------------------------------------------
+
+pub entity Rechtsgeschaeft {
+    label de official "Rechtsgeschäft (§§ 104 ff.)";
+    label en unofficial "legal transaction (§§ 104 et seq.)";
+}
+pub entity Willenserklaerung {
+    label de official "Willenserklärung (§§ 116 ff.)";
+    label en unofficial "declaration of intent (§§ 116 et seq.)";
+}
+pub entity Ort {
+    label de official "Ort (Wohnsitz, Sitz, Standort, Leistungsort)";
+    label en unofficial "place (domicile, seat, garrison, place of performance)";
+}
+
+pub relation erklaerender(w: Willenserklaerung, p: Person) kind empirical {
+    key(w);
+    label de official "Person, die die Willenserklärung abgibt (der Erklärende)";
+    label en unofficial "person making the declaration of intent";
+}
+pub relation erklaerungsempfaenger(w: Willenserklaerung, p: Person) kind empirical {
+    key(w);
+    label de official "Person, gegenüber der die Willenserklärung abzugeben ist (§ 130 Abs. 1)";
+    label en unofficial "person to whom the declaration is to be made (§ 130 (1))";
+}
+pub relation erklaerung_abgegeben_am(w: Willenserklaerung, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Abgabe der Willenserklärung";
+    label en unofficial "day on which the declaration of intent was made";
+}
+pub relation erklaerung_gehoert_zu(w: Willenserklaerung, r: Rechtsgeschaeft) kind empirical {
+    label de official "Rechtsgeschäft, zu dem die Willenserklärung gehört";
+    label en unofficial "legal transaction to which the declaration belongs";
+}
+pub relation vornahme_des_rechtsgeschaefts_am(r: Rechtsgeschaeft, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag der Vornahme des Rechtsgeschäfts";
+    label en unofficial "day on which the legal transaction was effected";
+}
+
+// Wirksamkeit und Nichtigkeit sind die gemeinsamen Schlüsse der Titel 1–6;
+// ihre Gründe stehen bei den einzelnen Paragraphen.
+pub relation nichtig(r: Rechtsgeschaeft) kind institutional {
+    label de official "das Rechtsgeschäft ist nichtig";
+    label en unofficial "the legal transaction is void";
+}
+pub relation unwirksam(r: Rechtsgeschaeft) kind institutional {
+    label de official "das Rechtsgeschäft ist (schwebend oder endgültig) unwirksam";
+    label en unofficial "the legal transaction is (provisionally or finally) ineffective";
+}
+pub relation wirksam(r: Rechtsgeschaeft) kind institutional {
+    label de official "das Rechtsgeschäft ist wirksam";
+    label en unofficial "the legal transaction is effective";
+}
+
+// --- Prüfungszeitpunkt: der Tag, an dem der Zustand einer Person gemessen wird -------------------
+//
+// Geschäftsfähigkeit, Volljährigkeit und Minderjährigkeit sind Zustände AN
+// EINEM TAG. Der Fall nennt den Tag entweder unmittelbar (`stichtag`) oder
+// über die Abgabe einer Willenserklärung (Regel `PruefungszeitpunktAbgabe`
+// in titel-01-geschaeftsfaehigkeit.law).
+
+pub relation stichtag(p: Person, tag: Date) kind empirical {
+    label de official "Tag, für den der Zustand der Person gefragt ist (Angabe des Falls)";
+    label en unofficial "day for which the state of the person is asked (case input)";
+}
+pub relation pruefungszeitpunkt(p: Person, tag: Date) kind institutional {
+    label de official "Tag, an dem der Zustand der Person gemessen wird";
+    label en unofficial "day on which the state of the person is measured";
+}
+
+// Technische Regel ohne Norm: sie trägt keinen Paragraphen, sondern nur den
+// vom Fall genannten Tag weiter (kein @source, damit die Messung §33.1 keine
+// Norm als ausgeführt zählt, die hier nicht steht).
+rule PruefungszeitpunktAusStichtag(p: Person, t: Date) strict {
+    label de official "Der vom Fall genannte Stichtag ist der Tag, an dem der Zustand der Person gemessen wird";
+    label en unofficial "The day named by the case is the day on which the state of the person is measured";
+    when stichtag(p, t);
+    then pruefungszeitpunkt(p, t);
+}

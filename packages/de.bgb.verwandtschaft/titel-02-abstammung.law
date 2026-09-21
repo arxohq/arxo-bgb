@@ -1,0 +1,934 @@
+// --- Titel 2: Abstammung (§§ 1591–1600d) ------------------------------------------------------
+//
+// Der Titel beantwortet ZWEI Fragen und hält sie auseinander: WER ist Mutter
+// (§ 1591 — eine Tatsache der Geburt), und WER ist Vater (§ 1592 — drei
+// Zuordnungsgründe: Ehe, Anerkennung, gerichtliche Feststellung). Die
+// Vaterschaft ist damit KEINE Tatsache des Falls, sondern ein Ergebnis: der
+// Fall trägt Ehe, Anerkennung und Feststellung, die Norm ordnet zu.
+//
+// KANÄLE (DECISION-0194). Die gerichtliche Feststellung (§ 1592 Nr. 3), die
+// rechtskräftige Feststellung der Nichtvaterschaft (§ 1599 Abs. 1) und die
+// Beiwohnung (§ 1600d Abs. 2) sind FESTGESTELLTE TATSACHEN — der Fall trägt
+// sie mit `origin adjudicated`. Wertungen bleiben dem Gericht: die
+// sozial-familiäre Beziehung (§ 1600 Abs. 3 Satz 1 mit Abs. 5), die grobe
+// Unbilligkeit (Abs. 3 Satz 2 Nr. 4), die Erforderlichkeit für das Kindeswohl
+// (Abs. 3 Satz 3) und die schwerwiegenden Zweifel (§ 1600d Abs. 2 Satz 2)
+// sind `external judgment relation`.
+//
+// FRISTEN. § 1593 (300 Tage), § 1598 Abs. 2 (fünf Jahre), § 1600b Abs. 1
+// (zwei Jahre) und § 1600d Abs. 3 (Empfängniszeit 300.–181. Tag) laufen über
+// `de.bgb.fristen`; die Zeilen stehen in DEADLINES.json (BG-13).
+
+// --- § 1591 Mutterschaft ---------------------------------------------------------------------
+
+pub relation geboren_von(kind: Person, frau: Person) kind empirical {
+    key(kind);
+    label de official "Die Frau, die das Kind geboren hat (§ 1591)";
+    label en unofficial "the woman who gave birth to the child (§ 1591)";
+}
+pub relation mutter(kind: Person, frau: Person) kind institutional {
+    label de official "Mutter eines Kindes ist die Frau, die es geboren hat (§ 1591)";
+    label en unofficial "The mother of a child is the woman who gave birth to it (§ 1591)";
+}
+
+@source(BGB_P1591)
+rule MutterIstDieGebaerende(k: Person, m: Person) strict {
+    label de official "Mutter eines Kindes ist die Frau, die es geboren hat (§ 1591)";
+    label en unofficial "The mother of a child is the woman who gave birth to it (§ 1591)";
+    when geboren_von(k, m);
+    then mutter(k, m);
+}
+
+// --- § 1592, § 1593 Vaterschaft ----------------------------------------------------------------
+//
+// Eingänge des Falls für die drei Nummern des § 1592 und für § 1593.
+
+pub relation geburtstag_des_kindes(kind: Person, tag: Date) kind empirical {
+    key(kind);
+    label de official "Tag der Geburt des Kindes (§ 1592 Nr. 1, § 1593, § 1600d Abs. 3)";
+    label en unofficial "day of the child's birth (§ 1592 no. 1, § 1593, § 1600d (3))";
+}
+pub relation mit_der_mutter_verheiratet_bei_geburt(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann ist zum Zeitpunkt der Geburt mit der Mutter des Kindes verheiratet (§ 1592 Nr. 1)";
+    label en unofficial "the man is married to the mother of the child at the time of birth (§ 1592 no. 1)";
+}
+pub relation vaterschaft_anerkannt(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann hat die Vaterschaft anerkannt (§ 1592 Nr. 2); ihre Wirksamkeit richtet sich nach den §§ 1594–1598";
+    label en unofficial "the man has acknowledged paternity (§ 1592 no. 2); its effectiveness follows §§ 1594–1598";
+}
+pub relation vaterschaft_gerichtlich_festgestellt(kind: Person, mann: Person) kind empirical {
+    label de official "Die Vaterschaft des Mannes ist nach § 1600d oder § 182 Abs. 1 FamFG gerichtlich festgestellt (§ 1592 Nr. 3) — Tatsache des Falls mit `origin adjudicated`";
+    label en unofficial "the man's paternity has been established by the court under § 1600d or § 182 (1) FamFG (§ 1592 no. 3) — a fact of the case with `origin adjudicated`";
+}
+pub relation ehe_durch_tod_aufgeloest_am(kind: Person, mann: Person, tag: Date) kind empirical {
+    label de official "Die Ehe mit der Mutter wurde durch den Tod des Mannes aufgelöst; Tag der Auflösung (§ 1593 Satz 1)";
+    label en unofficial "the marriage to the mother was dissolved by the man's death; day of dissolution (§ 1593 sentence 1)";
+}
+pub relation empfaengnis_mehr_als_300_tage_vor_der_geburt(kind: Person) kind empirical {
+    label de official "Es steht fest, dass das Kind mehr als 300 Tage vor seiner Geburt empfangen wurde; dieser Zeitraum ist maßgebend (§ 1593 Satz 2) — Tatsache des Falls mit `origin adjudicated`";
+    label en unofficial "it is established that the child was conceived more than 300 days before its birth; that period is decisive (§ 1593 sentence 2) — a fact of the case with `origin adjudicated`";
+}
+pub relation neuer_ehemann_der_mutter(kind: Person, mann: Person) kind empirical {
+    label de official "Die Mutter hat eine weitere Ehe geschlossen; der Mann ist ihr neuer Ehemann (§ 1593 Satz 3)";
+    label en unofficial "the mother has entered into a further marriage; the man is her new husband (§ 1593 sentence 3)";
+}
+pub relation nichtvaterschaft_des_neuen_ehemanns_rechtskraeftig(kind: Person, mann: Person) kind empirical {
+    label de official "Die Vaterschaft wurde angefochten und es ist rechtskräftig festgestellt, dass der neue Ehemann nicht Vater des Kindes ist (§ 1593 Satz 4) — Tatsache des Falls mit `origin adjudicated`";
+    label en unofficial "paternity was challenged and it has been finally established that the new husband is not the father (§ 1593 sentence 4) — a fact of the case with `origin adjudicated`";
+}
+
+pub relation letzter_tag_der_300_tage(kind: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag des Zeitraums von 300 Tagen nach der Auflösung der Ehe (§ 1593 Satz 1)";
+    label en unofficial "last day of the period of 300 days after the dissolution of the marriage (§ 1593 sentence 1)";
+}
+pub relation innerhalb_von_300_tagen_geboren(kind: Person, mann: Person) kind institutional {
+    label de official "Das Kind ist innerhalb von 300 Tagen nach der Auflösung der Ehe durch Tod geboren (§ 1593 Satz 1)";
+    label en unofficial "the child was born within 300 days after the dissolution of the marriage by death (§ 1593 sentence 1)";
+}
+
+pub relation vater(kind: Person, mann: Person) kind institutional {
+    label de official "Vater eines Kindes (§ 1592, § 1593)";
+    label en unofficial "father of a child (§ 1592, § 1593)";
+}
+pub relation vaterschaft_nach_1592_nr1(kind: Person, mann: Person) kind institutional {
+    label de official "Vaterschaft kraft Ehe zum Zeitpunkt der Geburt (§ 1592 Nr. 1)";
+    label en unofficial "paternity by virtue of marriage at the time of birth (§ 1592 no. 1)";
+}
+pub relation vaterschaft_nach_1592_nr2(kind: Person, mann: Person) kind institutional {
+    label de official "Vaterschaft kraft wirksamer Anerkennung (§ 1592 Nr. 2)";
+    label en unofficial "paternity by virtue of an effective acknowledgement (§ 1592 no. 2)";
+}
+pub relation vaterschaft_nach_1592_nr3(kind: Person, mann: Person) kind institutional {
+    label de official "Vaterschaft kraft gerichtlicher Feststellung (§ 1592 Nr. 3)";
+    label en unofficial "paternity by virtue of judicial establishment (§ 1592 no. 3)";
+}
+pub relation vaterschaft_nach_1593(kind: Person, mann: Person) kind institutional {
+    label de official "Vaterschaft des früheren Ehemanns bei Auflösung der Ehe durch Tod (§ 1593 Satz 1)";
+    label en unofficial "paternity of the former husband where the marriage was dissolved by death (§ 1593 sentence 1)";
+}
+
+// Die drei Nummern des § 1592 schreiben je einen EIGENEN Kopf und werden erst
+// danach zusammengeführt: eine Frage nach einem Zuordnungsgrund darf nicht die
+// Urteilsanfragen der anderen Gründe einsammeln (Schließung §70, Ledger
+// D-10-07).
+
+@source(BGB_P1592) {
+    rule VaterschaftDurchEhe(k: Person, m: Person) strict {
+        label de official "Vater eines Kindes ist der Mann, der zum Zeitpunkt der Geburt mit der Mutter des Kindes verheiratet ist (§ 1592 Nr. 1)";
+        label en unofficial "The father of a child is the man who is married to the child's mother at the time of the birth (§ 1592 no. 1)";
+        when mit_der_mutter_verheiratet_bei_geburt(k, m);
+        then vaterschaft_nach_1592_nr1(k, m);
+    }
+    rule VaterschaftDurchAnerkennung(k: Person, m: Person) strict {
+        label de official "Vater eines Kindes ist der Mann, der die Vaterschaft anerkannt hat (§ 1592 Nr. 2); die Anerkennung muss wirksam sein (§ 1594 Abs. 2, 3, § 1598 Abs. 1)";
+        label en unofficial "The father of a child is the man who has acknowledged paternity (§ 1592 no. 2); the acknowledgement must be effective (§ 1594 (2), (3), § 1598 (1))";
+        when vaterschaft_anerkannt(k, m) and anerkennung_wirksam(k, m);
+        then vaterschaft_nach_1592_nr2(k, m);
+    }
+    rule VaterschaftDurchFeststellung(k: Person, m: Person) strict {
+        label de official "Vater eines Kindes ist der Mann, dessen Vaterschaft nach § 1600d oder § 182 Abs. 1 FamFG gerichtlich festgestellt ist (§ 1592 Nr. 3)";
+        label en unofficial "The father of a child is the man whose paternity has been judicially established under § 1600d or § 182 (1) FamFG (§ 1592 no. 3)";
+        when vaterschaft_gerichtlich_festgestellt(k, m);
+        then vaterschaft_nach_1592_nr3(k, m);
+    }
+    rule VaterNr1(k: Person, m: Person) strict {
+        label de official "Zusammenführung: wer nach § 1592 Nr. 1 zugeordnet ist, ist Vater";
+        label en unofficial "Collection: whoever is assigned under § 1592 no. 1 is the father";
+        when vaterschaft_nach_1592_nr1(k, m);
+        then vater(k, m);
+    }
+    rule VaterNr2(k: Person, m: Person) strict {
+        label de official "Zusammenführung: wer nach § 1592 Nr. 2 zugeordnet ist, ist Vater";
+        label en unofficial "Collection: whoever is assigned under § 1592 no. 2 is the father";
+        when vaterschaft_nach_1592_nr2(k, m);
+        then vater(k, m);
+    }
+    rule Vater1593(k: Person, m: Person) strict {
+        label de official "Zusammenführung: wer nach § 1593 zugeordnet ist, ist Vater";
+        label en unofficial "Collection: whoever is assigned under § 1593 is the father";
+        when vaterschaft_nach_1593(k, m);
+        then vater(k, m);
+    }
+    rule VaterNr3(k: Person, m: Person) strict {
+        label de official "Zusammenführung: wer nach § 1592 Nr. 3 zugeordnet ist, ist Vater";
+        label en unofficial "Collection: whoever is assigned under § 1592 no. 3 is the father";
+        when vaterschaft_nach_1592_nr3(k, m);
+        then vater(k, m);
+    }
+}
+
+// § 1593: die 300 Tage sind eine TAGESFRIST vom Tag der Auflösung an
+// (§ 187 Abs. 1: der Ereignistag zählt nicht mit). Ihr Ende rechnet
+// `de.bgb.fristen`; § 193 wird hier NICHT gelesen: innerhalb der 300 Tage ist
+// weder eine Willenserklärung abzugeben noch eine Leistung zu bewirken —
+// der Zeitraum beschreibt die Geburt (Ledger D-10-05 für dieselbe Unterscheidung).
+
+@source(BGB_P1593) {
+    rule LetzterTagDer300Tage(k: Person, m: Person, t: Date) strict {
+        label de official "Innerhalb von 300 Tagen nach der Auflösung der Ehe (§ 1593 Satz 1): der Tag der Auflösung wird nicht mitgerechnet (§ 187 Abs. 1), der letzte Tag des Zeitraums ist der 300. Tag danach";
+        label en unofficial "Within 300 days after the dissolution of the marriage (§ 1593 sentence 1): the day of the dissolution is not counted (§ 187 (1)); the last day is the 300th day thereafter";
+        when ehe_durch_tod_aufgeloest_am(k, m, t);
+        then letzter_tag_der_300_tage(k, add_calendar_period(t, 300 calendar_day));
+    }
+    rule InnerhalbVon300Tagen(k: Person, m: Person, g: Date, b: Date, e: Date) strict {
+        label de official "Das Kind wird innerhalb von 300 Tagen nach der Auflösung der Ehe durch Tod geboren (§ 1593 Satz 1)";
+        label en unofficial "The child is born within 300 days after the dissolution of the marriage by death (§ 1593 sentence 1)";
+        when ehe_durch_tod_aufgeloest_am(k, m, g) and geburtstag_des_kindes(k, b) and letzter_tag_der_300_tage(k, e) and b <= e;
+        then innerhalb_von_300_tagen_geboren(k, m);
+    }
+    rule VaterschaftNach1593(k: Person, m: Person) strict {
+        label de official "§ 1592 Nr. 1 gilt entsprechend, wenn die Ehe durch Tod aufgelöst wurde und innerhalb von 300 Tagen nach der Auflösung ein Kind geboren wird (§ 1593 Satz 1); wird von einer Frau, die eine weitere Ehe geschlossen hat, ein Kind geboren, das sowohl nach den Sätzen 1 und 2 Kind des früheren Ehemanns als auch nach § 1592 Nr. 1 Kind des neuen Ehemanns wäre, so ist es nur als Kind des neuen Ehemanns anzusehen (Satz 3)";
+        label en unofficial "§ 1592 no. 1 applies mutatis mutandis where the marriage was dissolved by death and a child is born within 300 days (§ 1593 sentence 1); where the mother has entered a further marriage and the child would be the child of both husbands, it is regarded only as the child of the new husband (sentence 3)";
+        when innerhalb_von_300_tagen_geboren(k, m) and not_known(neuer_ehemann_verdraengt(k, m));
+        then vaterschaft_nach_1593(k, m);
+    }
+    rule NeuerEhemannVerdraengt(k: Person, m: Person, n: Person) strict {
+        label de official "Wird von einer Frau, die eine weitere Ehe geschlossen hat, ein Kind geboren, das sowohl nach den Sätzen 1 und 2 Kind des früheren Ehemanns als auch nach § 1592 Nr. 1 Kind des neuen Ehemanns wäre, so ist es nur als Kind des neuen Ehemanns anzusehen (§ 1593 Satz 3)";
+        label en unofficial "Where a woman who has entered a further marriage bears a child that would be the child of both the former and the new husband, it is regarded only as the child of the new husband (§ 1593 sentence 3)";
+        when innerhalb_von_300_tagen_geboren(k, m) and neuer_ehemann_der_mutter(k, n) and mit_der_mutter_verheiratet_bei_geburt(k, n)
+         and not_known(nichtvaterschaft_des_neuen_ehemanns_rechtskraeftig(k, n));
+        then neuer_ehemann_verdraengt(k, m);
+    }
+    rule FruehererEhemannNachAnfechtung(k: Person, m: Person, n: Person) strict {
+        label de official "Wird die Vaterschaft angefochten und wird rechtskräftig festgestellt, dass der neue Ehemann nicht Vater des Kindes ist, so ist es Kind des früheren Ehemanns (§ 1593 Satz 4)";
+        label en unofficial "If the paternity is challenged and it is finally established that the new husband is not the father, the child is the child of the former husband (§ 1593 sentence 4)";
+        when innerhalb_von_300_tagen_geboren(k, m) and neuer_ehemann_der_mutter(k, n) and nichtvaterschaft_des_neuen_ehemanns_rechtskraeftig(k, n);
+        then vaterschaft_nach_1593(k, m);
+    }
+}
+
+pub relation neuer_ehemann_verdraengt(kind: Person, frueherer_ehemann: Person) kind institutional {
+    label de official "Das Kind ist nur als Kind des neuen Ehemanns anzusehen (§ 1593 Satz 3): der frühere Ehemann wird verdrängt";
+    label en unofficial "the child is regarded only as the child of the new husband (§ 1593 sentence 3): the former husband is displaced";
+}
+
+// --- §§ 1594–1598 Anerkennung der Vaterschaft ---------------------------------------------------
+//
+// § 1598 Abs. 1 nennt die Unwirksamkeitsgründe ABSCHLIESSEND: „Anerkennung und
+// Zustimmung sind NUR DANN unwirksam, wenn sie den Erfordernissen nach § 1594
+// Absatz 2, 3 und 5 und den §§ 1595 bis 1597 nicht genügen.“ Der geschlossene
+// Katalog wird deshalb als POSITIVE Norm des Verdrängens geschrieben (Muster
+// D-03-05): jeder Grund schreibt `anerkennung_unwirksam`, und die Wirksamkeit
+// liest diesen Kopf über `not_known`. Als negative Köpfe gäbe dasselbe auf
+// demselben Fall BOTH.
+
+pub relation zustimmung_der_mutter(kind: Person, mann: Person) kind empirical {
+    label de official "Die Mutter hat der Anerkennung zugestimmt (§ 1595 Abs. 1 Satz 1)";
+    label en unofficial "the mother has consented to the acknowledgement (§ 1595 (1) sentence 1)";
+}
+pub relation mutter_verstorben(kind: Person) kind empirical {
+    label de official "Die Mutter ist verstorben; ihre Zustimmung ist nicht erforderlich (§ 1595 Abs. 1 Satz 2)";
+    label en unofficial "the mother has died; her consent is not required (§ 1595 (1) sentence 2)";
+}
+pub relation zustimmung_des_kindes(kind: Person, mann: Person) kind empirical {
+    label de official "Das Kind hat der Anerkennung zugestimmt (§ 1595 Abs. 2)";
+    label en unofficial "the child has consented to the acknowledgement (§ 1595 (2))";
+}
+pub relation anerkennung_oeffentlich_beurkundet(kind: Person, mann: Person) kind empirical {
+    label de official "Anerkennung und Zustimmungen sind öffentlich beurkundet (§ 1597 Abs. 1)";
+    label en unofficial "acknowledgement and consents have been publicly recorded (§ 1597 (1))";
+}
+pub relation anerkennung_unter_bedingung_oder_zeitbestimmung(kind: Person, mann: Person) kind empirical {
+    label de official "Die Anerkennung ist unter einer Bedingung oder Zeitbestimmung erklärt (§ 1594 Abs. 3)";
+    label en unofficial "the acknowledgement was declared subject to a condition or a time provision (§ 1594 (3))";
+}
+pub relation verfahren_auf_feststellung_eines_anderen_anhaengig(kind: Person, mann: Person) kind empirical {
+    label de official "Nach Einleitung eines Verfahrens, in dem die Vaterschaft eines anderen Mannes festgestellt werden soll, ist die Anerkennung nicht wirksam, solange das Verfahren anhängig ist (§ 1594 Abs. 5 Satz 1)";
+    label en unofficial "after proceedings to establish another man's paternity have begun, the acknowledgement is not effective while they are pending (§ 1594 (5) sentence 1)";
+}
+pub relation anerkennung_zur_niederschrift_des_gerichts(kind: Person, mann: Person) kind empirical {
+    label de official "Der Anerkennende hat die Anerkennung zur Niederschrift des Gerichts nach § 180 Abs. 2 FamFG erklärt (§ 1594 Abs. 5 Satz 2)";
+    label en unofficial "the acknowledging man declared the acknowledgement for the record of the court under § 180 (2) FamFG (§ 1594 (5) sentence 2)";
+}
+pub relation leiblicher_vater(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann ist der leibliche Vater des Kindes (§ 1595a Abs. 1, § 1600 Abs. 1 Satz 2) — Tatsache des Falls mit `origin adjudicated`";
+    label en unofficial "the man is the biological father of the child (§ 1595a (1), § 1600 (1) sentence 2) — a fact of the case with `origin adjudicated`";
+}
+pub relation zustimmung_des_anderen_mannes(kind: Person, mann: Person) kind empirical {
+    label de official "Der andere Mann stimmt der Anerkennung des leiblichen Vaters zu (§ 1595a Abs. 1 Nr. 2)";
+    label en unofficial "the other man consents to the acknowledgement by the biological father (§ 1595a (1) no. 2)";
+}
+pub relation anderer_mann_verstorben(kind: Person, mann: Person) kind empirical {
+    label de official "Der andere Mann ist verstorben; seine Zustimmung ist nicht erforderlich (§ 1595a Abs. 3 Satz 2)";
+    label en unofficial "the other man has died; his consent is not required (§ 1595a (3) sentence 2)";
+}
+pub relation eintragung_in_personenstandsregister_am(kind: Person, mann: Person, tag: Date) kind empirical {
+    label de official "Tag der Eintragung in ein deutsches Personenstandsregister (§ 1598 Abs. 2 Satz 1)";
+    label en unofficial "day of entry in a German civil status register (§ 1598 (2) sentence 1)";
+}
+pub relation heilungsfrist_1598(kind: Person, f: de.bgb.fristen::Frist) kind empirical {
+    key(kind);
+    label de official "Träger der Fünfjahresfrist des § 1598 Abs. 2 Satz 1";
+    label en unofficial "carrier of the five-year period of § 1598 (2) sentence 1";
+}
+pub relation bewertungstag(kind: Person, tag: Date) kind empirical {
+    key(kind);
+    label de official "Tag, auf den der Fall die Abstammung beurteilt (Eingang des Falls, keine Norm)";
+    label en unofficial "day on which the case assesses parentage (input of the case, not a norm)";
+}
+
+pub relation anerkennung_unwirksam(kind: Person, mann: Person) kind institutional {
+    label de official "Die Anerkennung ist unwirksam: sie genügt den Erfordernissen des § 1594 Abs. 2, 3, 5 oder der §§ 1595–1597 nicht (§ 1598 Abs. 1 Satz 1)";
+    label en unofficial "the acknowledgement is ineffective: it does not meet the requirements of § 1594 (2), (3), (5) or §§ 1595–1597 (§ 1598 (1) sentence 1)";
+}
+pub relation anerkennung_wirksam(kind: Person, mann: Person) kind institutional {
+    label de official "Die Anerkennung ist wirksam (§ 1598 Abs. 1 Satz 1 im Umkehrschluss; § 1598 Abs. 2 Satz 1 Heilung)";
+    label en unofficial "the acknowledgement is effective (§ 1598 (1) sentence 1 a contrario; § 1598 (2) sentence 1 cure)";
+}
+pub relation anerkennung_geheilt(kind: Person, mann: Person) kind institutional {
+    label de official "Seit der Eintragung in ein deutsches Personenstandsregister sind fünf Jahre verstrichen: die Anerkennung ist wirksam, auch wenn sie den Erfordernissen nicht genügt (§ 1598 Abs. 2 Satz 1)";
+    label en unofficial "five years have passed since the entry in a German civil status register: the acknowledgement is effective even if it does not meet the requirements (§ 1598 (2) sentence 1)";
+}
+pub relation letzter_tag_der_heilungsfrist(kind: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Fünfjahresfrist des § 1598 Abs. 2 Satz 1";
+    label en unofficial "last day of the five-year period of § 1598 (2) sentence 1";
+}
+
+// § 1594 Abs. 2: „nicht wirksam, solange die Vaterschaft eines anderen Mannes
+// besteht“ — die bestehende Vaterschaft eines anderen ist ein Grund der
+// Unwirksamkeit. § 1595a Abs. 1 nimmt davon den Fall aus, dass der leibliche
+// Vater anerkennt und der andere Mann zustimmt; das ist eine Ausnahme, die
+// die Grundnorm VERDRÄNGT, und wird deshalb als eigener positiver Kopf
+// geschrieben, den die Grundnorm über `not_known` liest (D-03-05).
+
+pub relation anerkennung_nach_1595a_wirksam(kind: Person, mann: Person) kind institutional {
+    label de official "Die Anerkennung der Vaterschaft durch den leiblichen Vater ist entgegen § 1594 Abs. 2 wirksam (§ 1595a Abs. 1)";
+    label en unofficial "the acknowledgement of paternity by the biological father is effective contrary to § 1594 (2) (§ 1595a (1))";
+}
+
+@source(BGB_P1595a) {
+    rule AnerkennungTrotzBestehenderVaterschaft(k: Person, m: Person, a: Person) strict {
+        label de official "Die Anerkennung der Vaterschaft durch den leiblichen Vater ist entgegen § 1594 Absatz 2 wirksam, wenn die Vaterschaft des anderen Mannes nach § 1592 Nummer 1 oder 2 oder nach § 1593 besteht und der andere Mann der Anerkennung des leiblichen Vaters zustimmt (§ 1595a Abs. 1)";
+        label en unofficial "The acknowledgement by the biological father is effective contrary to § 1594 (2) if the other man's paternity exists under § 1592 no. 1 or 2 or § 1593 and the other man consents (§ 1595a (1))";
+        when leiblicher_vater(k, m) and vaterschaft_anerkannt(k, m) and vaterschaft_eines_anderen_mannes(k, m, a) and zustimmung_des_anderen_mannes(k, m);
+        then anerkennung_nach_1595a_wirksam(k, m);
+    }
+    rule AnerkennungTrotzBestehenderVaterschaftVerstorben(k: Person, m: Person, a: Person) strict {
+        label de official "Die Zustimmung des anderen Mannes ist nicht erforderlich, wenn er verstorben ist (§ 1595a Abs. 3 Satz 2)";
+        label en unofficial "The consent of the other man is not required if he has died (§ 1595a (3) sentence 2)";
+        when leiblicher_vater(k, m) and vaterschaft_anerkannt(k, m) and vaterschaft_eines_anderen_mannes(k, m, a) and anderer_mann_verstorben(k, a);
+        then anerkennung_nach_1595a_wirksam(k, m);
+    }
+}
+
+pub relation vaterschaft_eines_anderen_mannes(kind: Person, anerkennender: Person, anderer: Person) kind institutional {
+    label de official "Die Vaterschaft eines anderen Mannes als des Anerkennenden besteht (§ 1594 Abs. 2)";
+    label en unofficial "the paternity of a man other than the acknowledging man exists (§ 1594 (2))";
+}
+
+@source(BGB_P1594) {
+    rule VaterschaftEinesAnderenNr1(k: Person, m: Person, a: Person) strict {
+        label de official "Die Vaterschaft eines anderen Mannes besteht nach § 1592 Nr. 1 (§ 1594 Abs. 2, § 1595a Abs. 1 Nr. 1)";
+        label en unofficial "The paternity of another man exists under § 1592 no. 1 (§ 1594 (2), § 1595a (1) no. 1)";
+        when vaterschaft_nach_1592_nr1(k, a) and vaterschaft_anerkannt(k, m) and a != m;
+        then vaterschaft_eines_anderen_mannes(k, m, a);
+    }
+    rule VaterschaftEinesAnderenNr3(k: Person, m: Person, a: Person) strict {
+        label de official "Die Vaterschaft eines anderen Mannes besteht nach § 1592 Nr. 3 (§ 1594 Abs. 2)";
+        label en unofficial "The paternity of another man exists under § 1592 no. 3 (§ 1594 (2))";
+        when vaterschaft_nach_1592_nr3(k, a) and vaterschaft_anerkannt(k, m) and a != m;
+        then vaterschaft_eines_anderen_mannes(k, m, a);
+    }
+    rule VaterschaftEinesAnderen1593(k: Person, m: Person, a: Person) strict {
+        label de official "Die Vaterschaft eines anderen Mannes besteht nach § 1593 (§ 1594 Abs. 2, § 1595a Abs. 1 Nr. 1)";
+        label en unofficial "The paternity of another man exists under § 1593 (§ 1594 (2), § 1595a (1) no. 1)";
+        when vaterschaft_nach_1593(k, a) and vaterschaft_anerkannt(k, m) and a != m;
+        then vaterschaft_eines_anderen_mannes(k, m, a);
+    }
+    rule UnwirksamWegenBestehenderVaterschaft(k: Person, m: Person, a: Person) strict {
+        label de official "Eine Anerkennung der Vaterschaft ist nicht wirksam, solange die Vaterschaft eines anderen Mannes besteht (§ 1594 Abs. 2); die Ausnahme des § 1595a Abs. 1 verdrängt diesen Grund";
+        label en unofficial "An acknowledgement is not effective while another man's paternity exists (§ 1594 (2)); the exception of § 1595a (1) displaces this ground";
+        when vaterschaft_eines_anderen_mannes(k, m, a) and not_known(anerkennung_nach_1595a_wirksam(k, m));
+        then anerkennung_unwirksam(k, m);
+    }
+    rule UnwirksamWegenBedingung(k: Person, m: Person) strict {
+        label de official "Eine Anerkennung unter einer Bedingung oder Zeitbestimmung ist unwirksam (§ 1594 Abs. 3)";
+        label en unofficial "An acknowledgement subject to a condition or a time provision is ineffective (§ 1594 (3))";
+        when anerkennung_unter_bedingung_oder_zeitbestimmung(k, m);
+        then anerkennung_unwirksam(k, m);
+    }
+    rule UnwirksamWegenAnhaengigenVerfahrens(k: Person, m: Person) strict {
+        label de official "Eine Anerkennung, die nach Einleitung eines Verfahrens erfolgt, in dem die Vaterschaft eines anderen Mannes festgestellt werden soll, ist nicht wirksam, solange das Verfahren anhängig ist (§ 1594 Abs. 5 Satz 1); Satz 1 gilt nicht bei Erklärung zur Niederschrift des Gerichts (Satz 2)";
+        label en unofficial "An acknowledgement made after proceedings to establish another man's paternity have begun is not effective while they are pending (§ 1594 (5) sentence 1); sentence 1 does not apply where it was declared for the record of the court (sentence 2)";
+        when verfahren_auf_feststellung_eines_anderen_anhaengig(k, m) and not_known(anerkennung_zur_niederschrift_des_gerichts(k, m));
+        then anerkennung_unwirksam(k, m);
+    }
+}
+
+@source(BGB_P1595) {
+    rule UnwirksamOhneZustimmungDerMutter(k: Person, m: Person) strict {
+        label de official "Die Anerkennung bedarf der Zustimmung der Mutter (§ 1595 Abs. 1 Satz 1); Satz 1 gilt nicht, wenn die Mutter verstorben ist (Satz 2)";
+        label en unofficial "The acknowledgement requires the mother's consent (§ 1595 (1) sentence 1); sentence 1 does not apply if the mother has died (sentence 2)";
+        when vaterschaft_anerkannt(k, m) and not_known(zustimmung_der_mutter(k, m)) and not_known(mutter_verstorben(k));
+        then anerkennung_unwirksam(k, m);
+    }
+    rule UnwirksamOhneZustimmungDesKindes(k: Person, m: Person) strict {
+        label de official "Die Anerkennung bedarf auch der Zustimmung des Kindes (§ 1595 Abs. 2)";
+        label en unofficial "The acknowledgement also requires the child's consent (§ 1595 (2))";
+        when vaterschaft_anerkannt(k, m) and not_known(zustimmung_des_kindes(k, m));
+        then anerkennung_unwirksam(k, m);
+    }
+}
+
+@source(BGB_P1597)
+rule UnwirksamOhneForm(k: Person, m: Person) strict {
+    label de official "Die Anerkennung und die Zustimmungen müssen öffentlich beurkundet werden (§ 1597 Abs. 1); fehlt die Form, ist die Anerkennung unwirksam (§ 1598 Abs. 1 Satz 1)";
+    label en unofficial "Acknowledgement and consents must be publicly recorded (§ 1597 (1)); without that form the acknowledgement is ineffective (§ 1598 (1) sentence 1)";
+    when vaterschaft_anerkannt(k, m) and not_known(anerkennung_oeffentlich_beurkundet(k, m));
+    then anerkennung_unwirksam(k, m);
+}
+
+// § 1598 Abs. 2: die Fünfjahresfrist ist eine KALENDERFRIST von der Eintragung
+// an. Ihr Ablauf HEILT die Anerkennung; die Heilung verdrängt jeden Grund der
+// Unwirksamkeit („auch wenn sie den Erfordernissen der vorstehenden
+// Vorschriften nicht genügt“).
+
+@source(BGB_P1598) {
+    rule Heilungsfrist1598Ereignis(k: Person, m: Person, f: de.bgb.fristen::Frist, t: Date) strict {
+        label de official "Die Fünfjahresfrist läuft von der Eintragung in ein deutsches Personenstandsregister an (§ 1598 Abs. 2 Satz 1)";
+        label en unofficial "The five-year period runs from the entry in a German civil status register (§ 1598 (2) sentence 1)";
+        when heilungsfrist_1598(k, f) and eintragung_in_personenstandsregister_am(k, m, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Heilungsfrist1598Dauer(k: Person, f: de.bgb.fristen::Frist) strict {
+        label de official "Die Frist beträgt fünf Jahre (§ 1598 Abs. 2 Satz 1)";
+        label en unofficial "The period is five years (§ 1598 (2) sentence 1)";
+        when heilungsfrist_1598(k, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 5 calendar_year);
+    }
+    rule Heilungsfrist1598Ende(k: Person, f: de.bgb.fristen::Frist, e: Date) strict {
+        label de official "Letzter Tag der Fünfjahresfrist (§ 1598 Abs. 2 Satz 1, § 188 Abs. 2)";
+        label en unofficial "Last day of the five-year period (§ 1598 (2) sentence 1, § 188 (2))";
+        when heilungsfrist_1598(k, f) and de.bgb.fristen::frist_ende_kalender(f, e);
+        then letzter_tag_der_heilungsfrist(k, e);
+    }
+    rule Heilung1598(k: Person, m: Person, e: Date, b: Date) strict {
+        label de official "Sind seit der Eintragung in ein deutsches Personenstandsregister fünf Jahre verstrichen, so ist die Anerkennung wirksam, auch wenn sie den Erfordernissen der vorstehenden Vorschriften nicht genügt (§ 1598 Abs. 2 Satz 1)";
+        label en unofficial "If five years have passed since the entry in a German civil status register, the acknowledgement is effective even if it does not meet the requirements of the preceding provisions (§ 1598 (2) sentence 1)";
+        when vaterschaft_anerkannt(k, m) and letzter_tag_der_heilungsfrist(k, e) and bewertungstag(k, b) and b > e;
+        then anerkennung_geheilt(k, m);
+    }
+    rule AnerkennungWirksam(k: Person, m: Person) strict {
+        label de official "Anerkennung und Zustimmung sind NUR DANN unwirksam, wenn sie den Erfordernissen nach § 1594 Abs. 2, 3 und 5 und den §§ 1595 bis 1597 nicht genügen (§ 1598 Abs. 1 Satz 1): sonst ist die Anerkennung wirksam";
+        label en unofficial "Acknowledgement and consent are ineffective ONLY IF they fail the requirements of § 1594 (2), (3), (5) and §§ 1595 to 1597 (§ 1598 (1) sentence 1): otherwise the acknowledgement is effective";
+        when vaterschaft_anerkannt(k, m) and not_known(anerkennung_unwirksam(k, m));
+        then anerkennung_wirksam(k, m);
+    }
+    rule AnerkennungWirksamDurchHeilung(k: Person, m: Person) strict {
+        label de official "Die geheilte Anerkennung ist wirksam (§ 1598 Abs. 2 Satz 1)";
+        label en unofficial "The cured acknowledgement is effective (§ 1598 (2) sentence 1)";
+        when anerkennung_geheilt(k, m);
+        then anerkennung_wirksam(k, m);
+    }
+}
+
+// --- §§ 1599–1600d Anfechtung und gerichtliche Feststellung -------------------------------------
+//
+// § 1599 Abs. 1 ist eine FESTSTELLUNG DES GERICHTS, keine Rechnung des Pakets:
+// stellt das Familiengericht rechtskräftig fest, dass der zugeordnete Mann
+// nicht der leibliche Vater ist, entfällt die Vaterschaft rückwirkend ab
+// Geburt. Der Fall trägt sie mit `origin adjudicated`; die Norm zieht die
+// Folge. Abs. 2 „Die Mutterschaft ist unanfechtbar“ ist eine GRENZE des
+// Kanals: es gibt keinen Weg, die Mutterschaft des § 1591 anzugreifen, und
+// deshalb auch keine Regel — die Grenze steht im README.
+
+pub relation nichtvaterschaft_rechtskraeftig_festgestellt(kind: Person, mann: Person) kind empirical {
+    label de official "Das Familiengericht hat auf Grund einer Anfechtung rechtskräftig festgestellt, dass der Mann nicht der leibliche Vater des Kindes ist (§ 1599 Abs. 1) — Tatsache des Falls mit `origin adjudicated`";
+    label en unofficial "the family court has finally established upon a challenge that the man is not the child's biological father (§ 1599 (1)) — a fact of the case with `origin adjudicated`";
+}
+pub relation vaterschaft_entfallen(kind: Person, mann: Person) kind institutional {
+    label de official "Die Vaterschaft entfällt rückwirkend ab Geburt des Kindes (§ 1599 Abs. 1)";
+    label en unofficial "the paternity falls away retroactively from the birth of the child (§ 1599 (1))";
+}
+
+@source(BGB_P1599)
+rule VaterschaftEntfaelltRueckwirkend(k: Person, m: Person) strict {
+    label de official "Stellt das Familiengericht auf Grund einer Anfechtung rechtskräftig fest, dass der dem Kind nach § 1592 Nummer 1 oder 2 oder nach § 1593 als Vater zugeordnete Mann nicht der leibliche Vater des Kindes ist, entfällt die Vaterschaft rückwirkend ab Geburt des Kindes (§ 1599 Abs. 1)";
+    label en unofficial "If the family court finally establishes upon a challenge that the man assigned as father under § 1592 no. 1 or 2 or § 1593 is not the biological father, the paternity falls away retroactively from the birth of the child (§ 1599 (1))";
+    when nichtvaterschaft_rechtskraeftig_festgestellt(k, m);
+    then vaterschaft_entfallen(k, m);
+}
+
+// § 1600: die vier Anfechtungsberechtigten des Abs. 1 und die Ausschlüsse der
+// Abs. 2, 3 und 6. Jede Nummer schreibt ihren eigenen Kopf; die Ausschlüsse
+// treffen ausdrücklich NUR die Nummer 2 (Abs. 2, 3) bzw. die Nummern 1 und 3
+// (Abs. 6) und sind deshalb auf diese Köpfe gelegt.
+
+pub relation kind_volljaehrig(kind: Person) kind empirical {
+    label de official "Das Kind ist volljährig (§ 1600 Abs. 2)";
+    label en unofficial "the child is of full age (§ 1600 (2))";
+}
+pub relation kind_minderjaehrig(kind: Person) kind empirical {
+    label de official "Das Kind ist minderjährig (§ 1600 Abs. 3 Satz 1)";
+    label en unofficial "the child is a minor (§ 1600 (3) sentence 1)";
+}
+pub relation widerspruch_des_kindes(kind: Person) kind empirical {
+    label de official "Das volljährige Kind widerspricht der Anfechtung (§ 1600 Abs. 2)";
+    label en unofficial "the child of full age objects to the challenge (§ 1600 (2))";
+}
+pub relation beiwohnung_an_eides_statt_versichert(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann versichert an Eides statt, der Mutter des Kindes während der Empfängniszeit beigewohnt zu haben (§ 1600 Abs. 1 Satz 1 Nr. 2)";
+    label en unofficial "the man declares in lieu of an oath that he had sexual intercourse with the mother during the conception period (§ 1600 (1) sentence 1 no. 2)";
+}
+pub relation kenntnis_der_nichtabstammung_bei_anerkennung(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann wusste bei Anerkennung der Vaterschaft, dass das Kind nicht von ihm abstammt (§ 1600 Abs. 6 Satz 1)";
+    label en unofficial "at the acknowledgement the man knew that the child is not descended from him (§ 1600 (6) sentence 1)";
+}
+pub relation zeugung_durch_samenspende_mit_einwilligung(kind: Person) kind empirical {
+    label de official "Das Kind ist mit Einwilligung des Mannes und der Mutter durch künstliche Befruchtung mittels Samenspende eines Dritten gezeugt worden (§ 1600 Abs. 6 Satz 1, 2)";
+    label en unofficial "the child was conceived by artificial insemination using a third party's sperm donation with the consent of the man and the mother (§ 1600 (6) sentences 1, 2)";
+}
+
+@source(BGB_P1600)
+pub external judgment relation sozial_familiaere_beziehung(kind: Person, mann: Person) {
+    authority Court;
+    label de official "§ 1600 Abs. 3 Satz 1 mit Abs. 5. Zwischen dem Kind und dem Mann, dessen Vaterschaft nach § 1592 Nummer 1 oder 2 oder § 1593 besteht, besteht eine sozial-familiäre Beziehung: der Mann trägt für das Kind tatsächliche Verantwortung; eine Übernahme tatsächlicher Verantwortung liegt in der Regel vor, wenn der Mann mit dem Kind längere Zeit in häuslicher Gemeinschaft zusammengelebt hat";
+    label en unofficial "§ 1600 (3) sentence 1 with (5). A socio-familial relationship exists between the child and the man whose paternity exists under § 1592 no. 1 or 2 or § 1593: the man bears actual responsibility for the child; assumption of actual responsibility is as a rule present where the man has lived with the child in a domestic community for a longer time";
+}
+@source(BGB_P1600)
+pub external judgment relation ausschluss_grob_unbillig(kind: Person, anfechtender: Person) {
+    authority Court;
+    label de official "§ 1600 Abs. 3 Satz 2 Nr. 4. Der Ausschluss der Anfechtung wäre aus anderen Gründen, die der Anfechtungsberechtigte nicht zu vertreten hat, grob unbillig";
+    label en unofficial "§ 1600 (3) sentence 2 no. 4. The exclusion of the challenge would be grossly inequitable for other reasons for which the challenger is not responsible";
+}
+@source(BGB_P1600)
+pub external judgment relation fortbestand_fuer_das_kindeswohl_erforderlich(kind: Person) {
+    authority Court;
+    label de official "§ 1600 Abs. 3 Satz 3, Abs. 4. Der Fortbestand der Vaterschaft nach § 1592 Nummer 1 oder 2 oder § 1593 ist unter Berücksichtigung der berechtigten Interessen der Beteiligten für das Wohl des Kindes erforderlich";
+    label en unofficial "§ 1600 (3) sentence 3, (4). The continuation of the paternity under § 1592 no. 1 or 2 or § 1593 is necessary for the child's welfare, taking the legitimate interests of those involved into account";
+}
+
+pub relation anfechtungsberechtigt(kind: Person, anfechtender: Person) kind institutional {
+    label de official "Berechtigt, die Vaterschaft anzufechten (§ 1600 Abs. 1)";
+    label en unofficial "entitled to challenge the paternity (§ 1600 (1))";
+}
+pub relation anfechtungsberechtigt_nr2(kind: Person, anfechtender: Person) kind institutional {
+    label de official "Anfechtungsberechtigung des leiblichen Vaters, der die Beiwohnung an Eides statt versichert (§ 1600 Abs. 1 Satz 1 Nr. 2, Satz 2)";
+    label en unofficial "entitlement of the biological father who declares intercourse in lieu of an oath (§ 1600 (1) sentence 1 no. 2, sentence 2)";
+}
+pub relation anfechtung_nr2_ausgeschlossen(kind: Person, anfechtender: Person) kind institutional {
+    label de official "Die Anfechtung nach § 1600 Abs. 1 Satz 1 Nr. 2 ist ausgeschlossen (§ 1600 Abs. 2, 3)";
+    label en unofficial "the challenge under § 1600 (1) sentence 1 no. 2 is excluded (§ 1600 (2), (3))";
+}
+pub relation anfechtung_des_zugeordneten_mannes_ausgeschlossen(kind: Person, mann: Person) kind institutional {
+    label de official "Die Anfechtung des Mannes, dessen Vaterschaft besteht, ist ausgeschlossen (§ 1600 Abs. 6 Satz 1)";
+    label en unofficial "the challenge by the man whose paternity exists is excluded (§ 1600 (6) sentence 1)";
+}
+
+@source(BGB_P1600) {
+    rule AnfechtungsberechtigtNr1(k: Person, m: Person) strict {
+        label de official "Berechtigt, die Vaterschaft anzufechten, ist der Mann, dessen Vaterschaft nach § 1592 Nummer 1 oder 2 oder § 1593 besteht (§ 1600 Abs. 1 Satz 1 Nr. 1)";
+        label en unofficial "The man whose paternity exists under § 1592 no. 1 or 2 or § 1593 is entitled to challenge it (§ 1600 (1) sentence 1 no. 1)";
+        when vater(k, m) and not_known(anfechtung_des_zugeordneten_mannes_ausgeschlossen(k, m));
+        then anfechtungsberechtigt(k, m);
+    }
+    rule AnfechtungsberechtigtNr2(k: Person, m: Person) strict {
+        label de official "Berechtigt ist der Mann, der an Eides statt versichert, der Mutter des Kindes während der Empfängniszeit beigewohnt zu haben (§ 1600 Abs. 1 Satz 1 Nr. 2); die Anfechtung setzt voraus, dass der Anfechtende der leibliche Vater des Kindes ist (Satz 2)";
+        label en unofficial "The man who declares in lieu of an oath that he had intercourse with the mother during the conception period is entitled (§ 1600 (1) sentence 1 no. 2); the challenge presupposes that he is the biological father (sentence 2)";
+        when beiwohnung_an_eides_statt_versichert(k, m) and leiblicher_vater(k, m) and not_known(anfechtung_nr2_ausgeschlossen(k, m));
+        then anfechtungsberechtigt_nr2(k, m);
+    }
+    rule AnfechtungsberechtigtNr2Zusammenfuehrung(k: Person, m: Person) strict {
+        label de official "Zusammenführung: der Berechtigte nach Nummer 2 ist anfechtungsberechtigt (§ 1600 Abs. 1 Satz 1 Nr. 2)";
+        label en unofficial "Collection: the person entitled under no. 2 may challenge (§ 1600 (1) sentence 1 no. 2)";
+        when anfechtungsberechtigt_nr2(k, m);
+        then anfechtungsberechtigt(k, m);
+    }
+    rule AnfechtungsberechtigtNr3(k: Person, m: Person) strict {
+        label de official "Berechtigt, die Vaterschaft anzufechten, ist die Mutter (§ 1600 Abs. 1 Satz 1 Nr. 3)";
+        label en unofficial "The mother is entitled to challenge the paternity (§ 1600 (1) sentence 1 no. 3)";
+        when mutter(k, m) and not_known(anfechtung_der_mutter_ausgeschlossen(k));
+        then anfechtungsberechtigt(k, m);
+    }
+    rule AnfechtungsberechtigtNr4(k: Person, t: Date) strict {
+        label de official "Berechtigt, die Vaterschaft anzufechten, ist das Kind (§ 1600 Abs. 1 Satz 1 Nr. 4)";
+        label en unofficial "The child is entitled to challenge the paternity (§ 1600 (1) sentence 1 no. 4)";
+        when geburtstag_des_kindes(k, t);
+        then anfechtungsberechtigt(k, k);
+    }
+    rule AusschlussWiderspruchDesVolljaehrigenKindes(k: Person, m: Person) strict {
+        label de official "Ist das Kind volljährig, ist die Anfechtung nach Absatz 1 Satz 1 Nummer 2 ausgeschlossen, wenn das Kind der Anfechtung widerspricht (§ 1600 Abs. 2)";
+        label en unofficial "If the child is of full age, the challenge under subsection (1) sentence 1 no. 2 is excluded where the child objects (§ 1600 (2))";
+        when beiwohnung_an_eides_statt_versichert(k, m) and kind_volljaehrig(k) and widerspruch_des_kindes(k);
+        then anfechtung_nr2_ausgeschlossen(k, m);
+    }
+    rule AusschlussSozialFamiliaereBeziehung(k: Person, m: Person, z: Person) strict {
+        label de official "Ist das Kind minderjährig, ist die Anfechtung nach Absatz 1 Satz 1 Nummer 2 ausgeschlossen, wenn zwischen dem Kind und dem Mann, dessen Vaterschaft besteht, eine sozial-familiäre Beziehung besteht (§ 1600 Abs. 3 Satz 1); Satz 2 Nr. 4 (grobe Unbilligkeit) und Satz 3 (Kindeswohl) sind gesondert ausgeführt";
+        label en unofficial "If the child is a minor, the challenge under subsection (1) sentence 1 no. 2 is excluded where a socio-familial relationship exists between the child and the man whose paternity exists (§ 1600 (3) sentence 1); sentence 2 no. 4 and sentence 3 are executed separately";
+        when beiwohnung_an_eides_statt_versichert(k, m) and kind_minderjaehrig(k) and vater(k, z) and sozial_familiaere_beziehung(k, z) and not_known(ausschluss_grob_unbillig(k, m));
+        then anfechtung_nr2_ausgeschlossen(k, m);
+    }
+    rule AusschlussFortbestandFuerDasKindeswohl(k: Person, m: Person) strict {
+        label de official "Satz 2 gilt nicht, wenn der Fortbestand der Vaterschaft unter Berücksichtigung der berechtigten Interessen der Beteiligten für das Wohl des Kindes erforderlich ist (§ 1600 Abs. 3 Satz 3)";
+        label en unofficial "Sentence 2 does not apply where the continuation of the paternity is necessary for the child's welfare (§ 1600 (3) sentence 3)";
+        when beiwohnung_an_eides_statt_versichert(k, m) and kind_minderjaehrig(k) and fortbestand_fuer_das_kindeswohl_erforderlich(k);
+        then anfechtung_nr2_ausgeschlossen(k, m);
+    }
+    rule AusschlussKenntnisBeiAnerkennung(k: Person, m: Person) strict {
+        label de official "Die Anfechtung des Mannes, dessen Vaterschaft besteht, ist ausgeschlossen, wenn der Mann bei Anerkennung der Vaterschaft wusste, dass das Kind nicht von ihm abstammt (§ 1600 Abs. 6 Satz 1)";
+        label en unofficial "The challenge by the man whose paternity exists is excluded where at the acknowledgement he knew that the child is not descended from him (§ 1600 (6) sentence 1)";
+        when kenntnis_der_nichtabstammung_bei_anerkennung(k, m);
+        then anfechtung_des_zugeordneten_mannes_ausgeschlossen(k, m);
+    }
+    rule AusschlussSamenspende(k: Person, m: Person) strict {
+        label de official "Die Anfechtung ist ausgeschlossen, wenn das Kind mit Einwilligung des Mannes und der Mutter durch künstliche Befruchtung mittels Samenspende eines Dritten gezeugt worden ist (§ 1600 Abs. 6 Satz 1)";
+        label en unofficial "The challenge is excluded where the child was conceived by artificial insemination using a third party's sperm with the consent of the man and the mother (§ 1600 (6) sentence 1)";
+        when vater(k, m) and zeugung_durch_samenspende_mit_einwilligung(k);
+        then anfechtung_des_zugeordneten_mannes_ausgeschlossen(k, m);
+    }
+    rule AusschlussAnfechtungDerMutter(k: Person) strict {
+        label de official "Die Anfechtung durch die Mutter ist ausgeschlossen, wenn das Kind mit Einwilligung des Mannes und der Mutter durch künstliche Befruchtung mittels Samenspende eines Dritten gezeugt worden ist (§ 1600 Abs. 6 Satz 2)";
+        label en unofficial "The challenge by the mother is excluded where the child was conceived by artificial insemination using a third party's sperm with the consent of the man and the mother (§ 1600 (6) sentence 2)";
+        when zeugung_durch_samenspende_mit_einwilligung(k);
+        then anfechtung_der_mutter_ausgeschlossen(k);
+    }
+}
+
+pub relation anfechtung_der_mutter_ausgeschlossen(kind: Person) kind institutional {
+    label de official "Die Anfechtung durch die Mutter ist ausgeschlossen (§ 1600 Abs. 6 Satz 2)";
+    label en unofficial "the challenge by the mother is excluded (§ 1600 (6) sentence 2)";
+}
+
+// § 1600b: zwei Jahre ab Kenntnis der Umstände, die gegen die Vaterschaft
+// sprechen (Abs. 1 Satz 2). Der Tag der Kenntnis ist eine FESTGESTELLTE
+// TATSACHE des Falls, kein Urteil und keine Vermutung.
+
+pub relation kenntnis_der_umstaende_am(kind: Person, anfechtender: Person, tag: Date) kind empirical {
+    label de official "Zeitpunkt, in dem der Anfechtungsberechtigte von den Umständen erfährt, die gegen die Vaterschaft sprechen (§ 1600b Abs. 1 Satz 2)";
+    label en unofficial "point in time at which the challenger learns of the circumstances that speak against the paternity (§ 1600b (1) sentence 2)";
+}
+pub relation anfechtungsfrist(kind: Person, anfechtender: Person, f: de.bgb.fristen::Frist) kind empirical {
+    label de official "Träger der Zweijahresfrist des § 1600b Abs. 1 Satz 1";
+    label en unofficial "carrier of the two-year period of § 1600b (1) sentence 1";
+}
+pub relation letzter_tag_der_anfechtungsfrist(kind: Person, anfechtender: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Anfechtungsfrist (§ 1600b Abs. 1, §§ 187 Abs. 1, 188 Abs. 2, 193)";
+    label en unofficial "last day of the period for challenging (§ 1600b (1), §§ 187 (1), 188 (2), 193)";
+}
+pub relation anfechtung_verfristet(kind: Person, anfechtender: Person) kind institutional {
+    label de official "Die Zweijahresfrist des § 1600b Abs. 1 ist abgelaufen";
+    label en unofficial "the two-year period of § 1600b (1) has elapsed";
+}
+
+@source(BGB_P1600b) {
+    rule AnfechtungsfristEreignis(k: Person, a: Person, f: de.bgb.fristen::Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit dem Zeitpunkt, in dem der Anfechtungsberechtigte von den Umständen erfährt, die gegen die Vaterschaft sprechen (§ 1600b Abs. 1 Satz 2)";
+        label en unofficial "The period begins when the challenger learns of the circumstances that speak against the paternity (§ 1600b (1) sentence 2)";
+        when anfechtungsfrist(k, a, f) and kenntnis_der_umstaende_am(k, a, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule AnfechtungsfristDauer(k: Person, a: Person, f: de.bgb.fristen::Frist) strict {
+        label de official "Die Vaterschaft kann binnen zwei Jahren gerichtlich angefochten werden (§ 1600b Abs. 1 Satz 1)";
+        label en unofficial "The paternity may be challenged in court within two years (§ 1600b (1) sentence 1)";
+        when anfechtungsfrist(k, a, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 2 calendar_year);
+    }
+    rule AnfechtungsfristEnde(k: Person, a: Person, f: de.bgb.fristen::Frist, e: Date) strict {
+        label de official "Letzter Tag der Anfechtungsfrist: innerhalb der Frist ist die Anfechtung gerichtlich zu erklären, daher gilt § 193 (Ledger D-03-01, D-10-05)";
+        label en unofficial "Last day of the period: the challenge must be declared in court within it, so § 193 applies (ledger D-03-01, D-10-05)";
+        when anfechtungsfrist(k, a, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_anfechtungsfrist(k, a, e);
+    }
+    rule AnfechtungVerfristet(k: Person, a: Person, e: Date, b: Date) strict {
+        label de official "Nach Ablauf des letzten Tages der Frist kann die Vaterschaft nicht mehr angefochten werden (§ 1600b Abs. 1 Satz 1)";
+        label en unofficial "After the last day of the period has elapsed the paternity can no longer be challenged (§ 1600b (1) sentence 1)";
+        when letzter_tag_der_anfechtungsfrist(k, a, e) and bewertungstag(k, b) and b > e;
+        then anfechtung_verfristet(k, a);
+    }
+}
+
+// § 1600d Abs. 2, 3: die Vermutung der Vaterschaft im Feststellungsverfahren.
+// Die Empfängniszeit ist ein INTERVALL, das vom Geburtstag ZURÜCK gerechnet
+// wird: vom 300. bis zum 181. Tage vor der Geburt, beide Tage eingeschlossen.
+// Beide Ränder werden ausgerechnet, und die Beiwohnung muss in das Intervall
+// fallen — die Prüfung liest beide Seiten.
+
+pub relation beiwohnung_am(kind: Person, mann: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem der Mann der Mutter beigewohnt hat (§ 1600d Abs. 2 Satz 1) — Tatsache des Falls";
+    label en unofficial "day on which the man had intercourse with the mother (§ 1600d (2) sentence 1) — a fact of the case";
+}
+pub relation abweichende_empfaengniszeit(kind: Person, von: Date, bis: Date) kind empirical {
+    label de official "Steht fest, dass das Kind außerhalb des Zeitraums des Satzes 1 empfangen worden ist, so gilt dieser abweichende Zeitraum als Empfängniszeit (§ 1600d Abs. 3 Satz 2)";
+    label en unofficial "if it is established that the child was conceived outside the period of sentence 1, that differing period counts as the conception period (§ 1600d (3) sentence 2)";
+}
+pub relation samenspender_einer_entnahmeeinrichtung(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann ist der Samenspender einer Entnahmeeinrichtung im Sinne des Samenspenderregistergesetzes (§ 1600d Abs. 4)";
+    label en unofficial "the man is the sperm donor of a procurement facility within the meaning of the Sperm Donor Register Act (§ 1600d (4))";
+}
+
+@source(BGB_P1600d)
+pub external judgment relation schwerwiegende_zweifel_an_der_vaterschaft(kind: Person, mann: Person) {
+    authority Court;
+    label de official "§ 1600d Abs. 2 Satz 2. Die Vermutung gilt nicht, wenn schwerwiegende Zweifel an der Vaterschaft bestehen";
+    label en unofficial "§ 1600d (2) sentence 2. The presumption does not apply where there are serious doubts as to the paternity";
+}
+
+pub relation empfaengniszeit_abweichend_bestimmt(kind: Person) kind institutional {
+    label de official "Für das Kind ist ein von Satz 1 abweichender Zeitraum der Empfängnis festgestellt (§ 1600d Abs. 3 Satz 2)";
+    label en unofficial "a period of conception differing from sentence 1 has been established for the child (§ 1600d (3) sentence 2)";
+}
+pub relation empfaengniszeit(kind: Person, von: Date, bis: Date) kind institutional {
+    label de official "Als Empfängniszeit gilt die Zeit von dem 300. bis zu dem 181. Tage vor der Geburt des Kindes, mit Einschluss sowohl des 300. als auch des 181. Tages (§ 1600d Abs. 3 Satz 1)";
+    label en unofficial "The period of conception is the time from the 300th to the 181st day before the birth of the child, including both the 300th and the 181st day (§ 1600d (3) sentence 1)";
+}
+pub relation fruehestmoegliche_geburt(kind: Person, mann: Person, tag: Date) kind institutional {
+    label de official "Der 181. Tag NACH der Beiwohnung: liegt die Geburt nicht vor ihm, so war die Beiwohnung nicht später als der 181. Tag vor der Geburt (§ 1600d Abs. 3 Satz 1, vorwärts gerechnet)";
+    label en unofficial "the 181st day AFTER the intercourse: if the birth is not before it, the intercourse was not later than the 181st day before the birth (§ 1600d (3) sentence 1, computed forwards)";
+}
+pub relation spaetestmoegliche_geburt(kind: Person, mann: Person, tag: Date) kind institutional {
+    label de official "Der 300. Tag NACH der Beiwohnung: liegt die Geburt nicht nach ihm, so war die Beiwohnung nicht früher als der 300. Tag vor der Geburt (§ 1600d Abs. 3 Satz 1, vorwärts gerechnet)";
+    label en unofficial "the 300th day AFTER the intercourse: if the birth is not after it, the intercourse was not earlier than the 300th day before the birth (§ 1600d (3) sentence 1, computed forwards)";
+}
+pub relation beiwohnung_in_der_empfaengniszeit(kind: Person, mann: Person) kind institutional {
+    label de official "Der Mann hat der Mutter während der Empfängniszeit beigewohnt (§ 1600d Abs. 2 Satz 1)";
+    label en unofficial "the man had intercourse with the mother during the period of conception (§ 1600d (2) sentence 1)";
+}
+pub relation als_vater_vermutet(kind: Person, mann: Person) kind institutional {
+    label de official "Im Verfahren auf gerichtliche Feststellung der Vaterschaft wird als Vater vermutet, wer der Mutter während der Empfängniszeit beigewohnt hat (§ 1600d Abs. 2 Satz 1)";
+    label en unofficial "In the proceedings for judicial establishment of paternity the man who had intercourse with the mother during the period of conception is presumed to be the father (§ 1600d (2) sentence 1)";
+}
+pub relation vaterschaft_ist_gerichtlich_festzustellen(kind: Person) kind institutional {
+    label de official "Besteht keine Vaterschaft nach § 1592 Nr. 1 und 2, § 1593, so ist die Vaterschaft gerichtlich festzustellen (§ 1600d Abs. 1)";
+    label en unofficial "If no paternity exists under § 1592 nos. 1 and 2, § 1593, the paternity is to be established judicially (§ 1600d (1))";
+}
+
+@source(BGB_P1600d) {
+    rule FruehestmoeglicheGeburt(k: Person, m: Person, t: Date) strict {
+        label de official "Die Empfängniszeit reicht bis zum 181. Tage vor der Geburt einschließlich (§ 1600d Abs. 3 Satz 1); vorwärts gerechnet heißt das: die Geburt liegt nicht vor dem 181. Tage nach der Beiwohnung";
+        label en unofficial "The period of conception extends to the 181st day before the birth inclusive (§ 1600d (3) sentence 1); computed forwards: the birth is not before the 181st day after the intercourse";
+        when beiwohnung_am(k, m, t);
+        then fruehestmoegliche_geburt(k, m, add_calendar_period(t, 181 calendar_day));
+    }
+    rule SpaetestmoeglicheGeburt(k: Person, m: Person, t: Date) strict {
+        label de official "Die Empfängniszeit beginnt mit dem 300. Tage vor der Geburt einschließlich (§ 1600d Abs. 3 Satz 1); vorwärts gerechnet heißt das: die Geburt liegt nicht nach dem 300. Tage nach der Beiwohnung";
+        label en unofficial "The period of conception begins with the 300th day before the birth inclusive (§ 1600d (3) sentence 1); computed forwards: the birth is not after the 300th day after the intercourse";
+        when beiwohnung_am(k, m, t);
+        then spaetestmoegliche_geburt(k, m, add_calendar_period(t, 300 calendar_day));
+    }
+    rule BeiwohnungInDerEmpfaengniszeit(k: Person, m: Person, g: Date, frueh: Date, spaet: Date) strict {
+        label de official "Der Mann hat der Mutter während der Empfängniszeit beigewohnt, wenn die Geburt zwischen dem 181. und dem 300. Tage nach der Beiwohnung liegt, beide Tage eingeschlossen (§ 1600d Abs. 2 Satz 1, Abs. 3 Satz 1)";
+        label en unofficial "The man had intercourse during the period of conception if the birth lies between the 181st and the 300th day after the intercourse, both days included (§ 1600d (2) sentence 1, (3) sentence 1)";
+        when geburtstag_des_kindes(k, g) and fruehestmoegliche_geburt(k, m, frueh) and spaetestmoegliche_geburt(k, m, spaet)
+         and g >= frueh and g <= spaet
+         and not_known(empfaengniszeit_abweichend_bestimmt(k));
+        then beiwohnung_in_der_empfaengniszeit(k, m);
+    }
+    rule AbweichendeEmpfaengniszeitBestimmt(k: Person, v: Date, b: Date) strict {
+        label de official "Für dieses Kind ist ein abweichender Zeitraum der Empfängnis festgestellt (§ 1600d Abs. 3 Satz 2)";
+        label en unofficial "For this child a differing period of conception has been established (§ 1600d (3) sentence 2)";
+        when abweichende_empfaengniszeit(k, v, b);
+        then empfaengniszeit_abweichend_bestimmt(k);
+    }
+    rule AbweichendeEmpfaengniszeitGilt(k: Person, v: Date, b: Date) strict {
+        label de official "Steht fest, dass das Kind außerhalb des Zeitraums des Satzes 1 empfangen worden ist, so gilt dieser abweichende Zeitraum als Empfängniszeit (§ 1600d Abs. 3 Satz 2)";
+        label en unofficial "If it is established that the child was conceived outside that period, the differing period counts as the period of conception (§ 1600d (3) sentence 2)";
+        when abweichende_empfaengniszeit(k, v, b);
+        then empfaengniszeit(k, v, b);
+    }
+    rule BeiwohnungInAbweichenderEmpfaengniszeit(k: Person, m: Person, t: Date, v: Date, b: Date) strict {
+        label de official "Die Beiwohnung fällt in den abweichenden Zeitraum der Empfängnis (§ 1600d Abs. 2 Satz 1, Abs. 3 Satz 2)";
+        label en unofficial "The intercourse falls within the differing period of conception (§ 1600d (2) sentence 1, (3) sentence 2)";
+        when beiwohnung_am(k, m, t) and empfaengniszeit(k, v, b) and t >= v and t <= b;
+        then beiwohnung_in_der_empfaengniszeit(k, m);
+    }
+    rule VermutungDerVaterschaft(k: Person, m: Person) strict {
+        label de official "Im Verfahren auf gerichtliche Feststellung der Vaterschaft wird als Vater vermutet, wer der Mutter während der Empfängniszeit beigewohnt hat; die Vermutung gilt nicht, wenn schwerwiegende Zweifel an der Vaterschaft bestehen (§ 1600d Abs. 2)";
+        label en unofficial "In the proceedings the man who had intercourse with the mother during the period of conception is presumed to be the father; the presumption does not apply where serious doubts exist (§ 1600d (2))";
+        when beiwohnung_in_der_empfaengniszeit(k, m) and not_known(schwerwiegende_zweifel_an_der_vaterschaft(k, m)) and not_known(samenspender_einer_entnahmeeinrichtung(k, m));
+        then als_vater_vermutet(k, m);
+    }
+}
+
+// --- § 1596, § 1600a, § 1600c: persönliche Erklärungen und die Vermutung im Verfahren -------------
+
+pub relation anerkennung_persoenlich_erklaert(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann hat die Vaterschaft persönlich anerkannt (§ 1596 Abs. 1 Satz 1)";
+    label en unofficial "the man acknowledged paternity personally (§ 1596 (1) sentence 1)";
+}
+pub relation mann_geschaeftsunfaehig(mann: Person) kind empirical {
+    label de official "Der Mann ist geschäftsunfähig (§ 1596 Abs. 2 Satz 1)";
+    label en unofficial "the man lacks capacity to contract (§ 1596 (2) sentence 1)";
+}
+pub relation genehmigung_des_familiengerichts(kind: Person, mann: Person) kind empirical {
+    label de official "Das Familiengericht hat die Anerkennung durch den gesetzlichen Vertreter genehmigt (§ 1596 Abs. 2 Satz 1) — Tatsache des Falls mit `origin adjudicated`";
+    label en unofficial "the family court approved the acknowledgement by the legal representative (§ 1596 (2) sentence 1) — a fact of the case with `origin adjudicated`";
+}
+pub relation anfechtung_durch_bevollmaechtigten(kind: Person, anfechtender: Person) kind empirical {
+    label de official "Die Anfechtung ist durch einen Bevollmächtigten erklärt (§ 1600a Abs. 1)";
+    label en unofficial "the challenge was declared by an authorised representative (§ 1600a (1))";
+}
+pub relation willensmangel_der_anerkennung(kind: Person, mann: Person) kind empirical {
+    label de official "Die Anerkennung leidet unter einem Willensmangel nach § 119 Abs. 1 oder § 123 (§ 1600c Abs. 2)";
+    label en unofficial "the acknowledgement suffers from a defect of intent under § 119 (1) or § 123 (§ 1600c (2))";
+}
+pub relation anfechtungsverfahren_anhaengig(kind: Person, mann: Person) kind empirical {
+    label de official "Das Verfahren auf Anfechtung der Vaterschaft ist anhängig (§ 1600c Abs. 1)";
+    label en unofficial "the proceedings challenging the paternity are pending (§ 1600c (1))";
+}
+
+pub relation anerkennung_nicht_persoenlich(kind: Person, mann: Person) kind institutional {
+    label de official "Die Anerkennung ist weder persönlich noch mit Genehmigung des Familiengerichts durch den gesetzlichen Vertreter eines geschäftsunfähigen Mannes erklärt (§ 1596 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "the acknowledgement was declared neither personally nor, for a man lacking capacity, by his legal representative with the approval of the family court (§ 1596 (1) sentence 1, (2))";
+}
+pub relation anfechtung_unwirksam(kind: Person, anfechtender: Person) kind institutional {
+    label de official "Die Anfechtung kann nicht durch einen Bevollmächtigten erfolgen (§ 1600a Abs. 1)";
+    label en unofficial "The challenge cannot be made by an authorised representative (§ 1600a (1))";
+}
+pub relation abstammung_vom_mann_vermutet(kind: Person, mann: Person) kind institutional {
+    label de official "In dem Verfahren auf Anfechtung der Vaterschaft wird vermutet, dass das Kind von dem Mann abstammt, dessen Vaterschaft nach § 1592 Nr. 1 und 2, § 1593 besteht (§ 1600c Abs. 1)";
+    label en unofficial "In the proceedings challenging the paternity it is presumed that the child is descended from the man whose paternity exists under § 1592 nos. 1 and 2, § 1593 (§ 1600c (1))";
+}
+
+@source(BGB_P1596) {
+    rule AnerkennungNichtPersoenlich(k: Person, m: Person) strict {
+        label de official "Ein Mann kann die Vaterschaft nur persönlich anerkennen (§ 1596 Abs. 1 Satz 1); abweichend kann der gesetzliche Vertreter eines geschäftsunfähigen Mannes für diesen mit Genehmigung des Familiengerichts anerkennen (Abs. 2 Satz 1)";
+        label en unofficial "A man may acknowledge paternity only personally (§ 1596 (1) sentence 1); by way of exception the legal representative of a man lacking capacity may acknowledge with the approval of the family court ((2) sentence 1)";
+        when vaterschaft_anerkannt(k, m) and not_known(anerkennung_persoenlich_erklaert(k, m))
+         and not_known(anerkennung_durch_vertreter_mit_genehmigung(k, m));
+        then anerkennung_nicht_persoenlich(k, m);
+    }
+    rule AnerkennungDurchVertreterMitGenehmigung(k: Person, m: Person) strict {
+        label de official "Der gesetzliche Vertreter eines geschäftsunfähigen Mannes kann für diesen die Vaterschaft mit Genehmigung des Familiengerichts anerkennen (§ 1596 Abs. 2 Satz 1)";
+        label en unofficial "The legal representative of a man lacking capacity may acknowledge paternity for him with the approval of the family court (§ 1596 (2) sentence 1)";
+        when mann_geschaeftsunfaehig(m) and genehmigung_des_familiengerichts(k, m);
+        then anerkennung_durch_vertreter_mit_genehmigung(k, m);
+    }
+    rule UnwirksamWegenFehlenderPersoenlichkeit(k: Person, m: Person) strict {
+        label de official "Die Anerkennung, die den Erfordernissen des § 1596 nicht genügt, ist unwirksam (§ 1598 Abs. 1 Satz 1)";
+        label en unofficial "An acknowledgement failing the requirements of § 1596 is ineffective (§ 1598 (1) sentence 1)";
+        when anerkennung_nicht_persoenlich(k, m);
+        then anerkennung_unwirksam(k, m);
+    }
+}
+
+pub relation anerkennung_durch_vertreter_mit_genehmigung(kind: Person, mann: Person) kind institutional {
+    label de official "Die Anerkennung ist durch den gesetzlichen Vertreter eines geschäftsunfähigen Mannes mit Genehmigung des Familiengerichts erklärt (§ 1596 Abs. 2 Satz 1)";
+    label en unofficial "the acknowledgement was declared by the legal representative of a man lacking capacity with the approval of the family court (§ 1596 (2) sentence 1)";
+}
+
+@source(BGB_P1600a)
+rule AnfechtungDurchBevollmaechtigtenUnwirksam(k: Person, a: Person) strict {
+    label de official "Die Anfechtung kann nicht durch einen Bevollmächtigten erfolgen (§ 1600a Abs. 1)";
+    label en unofficial "The challenge cannot be made by an authorised representative (§ 1600a (1))";
+    when anfechtung_durch_bevollmaechtigten(k, a);
+    then anfechtung_unwirksam(k, a);
+}
+
+@source(BGB_P1600c) {
+    presumption AbstammungImAnfechtungsverfahren(k: Person, m: Person) {
+        label de official "In dem Verfahren auf Anfechtung der Vaterschaft wird vermutet, dass das Kind von dem Mann abstammt, dessen Vaterschaft nach § 1592 Nr. 1 und 2, § 1593 besteht (§ 1600c Abs. 1); die Vermutung gilt nicht, wenn der Anerkennende anficht und seine Anerkennung unter einem Willensmangel leidet (Abs. 2)";
+        label en unofficial "In the proceedings the child is presumed to be descended from the man whose paternity exists under § 1592 nos. 1 and 2, § 1593 (§ 1600c (1)); the presumption does not apply where the acknowledging man challenges and his acknowledgement suffers from a defect of intent ((2))";
+        when anfechtungsverfahren_anhaengig(k, m);
+        presume abstammung_vom_mann_vermutet(k, m);
+        unless willensmangel_der_anerkennung(k, m);
+    }
+}
+
+// --- § 1598a Anspruch auf Einwilligung in eine genetische Untersuchung ---------------------------
+//
+// Abs. 1 nennt einen GESCHLOSSENEN Kreis von Klärungsberechtigten und je
+// Berechtigtem einen geschlossenen Kreis von Verpflichteten: der Vater von
+// Mutter und Kind, die Mutter von Vater und Kind, das Kind von beiden
+// Elternteilen — sechs Köpfe, jeder für sich. Abs. 2 ist die Ersetzung durch
+// das Familiengericht (festgestellte Tatsache, `origin adjudicated` im Fall);
+// Abs. 3 ist eine WERTUNG (erhebliche Beeinträchtigung des Kindeswohls, die
+// unzumutbar wäre) und bleibt im Urteilskanal. Abs. 4 gibt dem Untersuchten
+// den Anspruch auf Einsicht in das Gutachten.
+
+pub relation klaerung_der_leiblichen_abstammung_verlangt(berechtigter: Person, verpflichteter: Person, kind: Person) kind empirical {
+    label de official "Der Klärungsberechtigte verlangt die Einwilligung in eine genetische Abstammungsuntersuchung und die Duldung der Probeentnahme (§ 1598a Abs. 1 Satz 1)";
+    label en unofficial "the person entitled to clarification demands consent to a genetic parentage test and toleration of the taking of a sample (§ 1598a (1) sentence 1)";
+}
+pub relation einwilligung_gerichtlich_ersetzt_1598a(berechtigter: Person, verpflichteter: Person) kind empirical {
+    label de official "Auf Antrag eines Klärungsberechtigten hat das Familiengericht die nicht erteilte Einwilligung ersetzt und die Duldung einer Probeentnahme angeordnet (§ 1598a Abs. 2) — festgestellte Tatsache";
+    label en unofficial "on the application of a person entitled to clarification, the family court replaced the consent not given and ordered toleration of a sample being taken (§ 1598a (2)) — adjudicated fact";
+}
+pub relation genetische_probe_abgegeben(untersuchter: Person, berechtigter: Person) kind empirical {
+    label de official "Die Person hat in eine genetische Abstammungsuntersuchung eingewilligt und eine genetische Probe abgegeben (§ 1598a Abs. 4 Satz 1)";
+    label en unofficial "the person consented to a genetic parentage test and provided a genetic sample (§ 1598a (4) sentence 1)";
+}
+pub relation abstammungsuntersuchung_durchgefuehrt(berechtigter: Person) kind empirical {
+    label de official "Der Klärungsberechtigte hat eine Abstammungsuntersuchung durchführen lassen (§ 1598a Abs. 4 Satz 1)";
+    label en unofficial "the person entitled to clarification had a parentage test carried out (§ 1598a (4) sentence 1)";
+}
+
+@source(BGB_P1598a)
+pub external judgment relation klaerung_fuer_das_kind_unzumutbar(kind: Person) {
+    authority Court;
+    label de official "§ 1598a Abs. 3. Die Klärung der leiblichen Abstammung würde eine erhebliche Beeinträchtigung des Wohls des minderjährigen Kindes begründen, die auch unter Berücksichtigung der Belange des Klärungsberechtigten für das Kind unzumutbar wäre";
+    label en unofficial "§ 1598a (3). Clarifying the biological parentage would cause a substantial impairment of the minor child's welfare which, even taking the interests of the person entitled into account, would be unreasonable for the child";
+}
+
+pub relation klaerungsanspruch(berechtigter: Person, verpflichteter: Person, kind: Person) kind institutional {
+    label de official "Anspruch auf Einwilligung in eine genetische Abstammungsuntersuchung und auf Duldung der Probeentnahme (§ 1598a Abs. 1)";
+    label en unofficial "claim to consent to a genetic parentage test and to toleration of the taking of a sample (§ 1598a (1))";
+}
+pub relation verfahren_ausgesetzt_1598a(kind: Person) kind institutional {
+    label de official "Das Gericht setzt das Verfahren aus, wenn und solange die Klärung für das minderjährige Kind unzumutbar wäre (§ 1598a Abs. 3)";
+    label en unofficial "the court stays the proceedings if and as long as clarification would be unreasonable for the minor child (§ 1598a (3))";
+}
+pub relation einsicht_in_das_abstammungsgutachten(untersuchter: Person, berechtigter: Person) kind institutional {
+    label de official "Wer eingewilligt und eine Probe abgegeben hat, kann Einsicht in das Abstammungsgutachten oder Aushändigung einer Abschrift verlangen (§ 1598a Abs. 4 Satz 1)";
+    label en unofficial "a person who consented and provided a sample may demand inspection of the parentage report or the issue of a copy (§ 1598a (4) sentence 1)";
+}
+pub relation duldung_der_probeentnahme_angeordnet(berechtigter: Person, verpflichteter: Person) kind institutional {
+    label de official "Auf Antrag eines Klärungsberechtigten hat das Familiengericht eine nicht erteilte Einwilligung zu ersetzen und die Duldung einer Probeentnahme anzuordnen (§ 1598a Abs. 2)";
+    label en unofficial "On application of a person entitled to clarification the family court must replace consent not given and order toleration of the taking of a sample (§ 1598a (2))";
+}
+
+@source(BGB_P1598a) {
+    rule KlaerungsanspruchDesVaters(k: Person, v: Person, m: Person) strict {
+        label de official "Zur Klärung der leiblichen Abstammung des Kindes kann der Vater jeweils von Mutter und Kind verlangen, dass diese in eine genetische Abstammungsuntersuchung einwilligen und die Entnahme einer Probe dulden (§ 1598a Abs. 1 Satz 1 Nr. 1): gegenüber der Mutter";
+        label en unofficial "To clarify the child's biological parentage the father may demand of the mother that she consent to a genetic parentage test and tolerate the taking of a sample (§ 1598a (1) sentence 1 no. 1): against the mother";
+        when vater(k, v) and mutter(k, m) and klaerung_der_leiblichen_abstammung_verlangt(v, m, k);
+        then klaerungsanspruch(v, m, k);
+    }
+    rule KlaerungsanspruchDesVatersGegenDasKind(k: Person, v: Person) strict {
+        label de official "Zur Klärung der leiblichen Abstammung kann der Vater auch vom Kind die Einwilligung und die Duldung verlangen (§ 1598a Abs. 1 Satz 1 Nr. 1): gegenüber dem Kind";
+        label en unofficial "To clarify biological parentage the father may also demand consent and toleration from the child (§ 1598a (1) sentence 1 no. 1): against the child";
+        when vater(k, v) and klaerung_der_leiblichen_abstammung_verlangt(v, k, k);
+        then klaerungsanspruch(v, k, k);
+    }
+    rule KlaerungsanspruchDerMutter(k: Person, m: Person, v: Person) strict {
+        label de official "Zur Klärung der leiblichen Abstammung kann die Mutter jeweils von Vater und Kind die Einwilligung und die Duldung verlangen (§ 1598a Abs. 1 Satz 1 Nr. 2): gegenüber dem Vater";
+        label en unofficial "To clarify biological parentage the mother may demand consent and toleration from father and child (§ 1598a (1) sentence 1 no. 2): against the father";
+        when mutter(k, m) and vater(k, v) and klaerung_der_leiblichen_abstammung_verlangt(m, v, k);
+        then klaerungsanspruch(m, v, k);
+    }
+    rule KlaerungsanspruchDerMutterGegenDasKind(k: Person, m: Person) strict {
+        label de official "Zur Klärung der leiblichen Abstammung kann die Mutter auch vom Kind die Einwilligung und die Duldung verlangen (§ 1598a Abs. 1 Satz 1 Nr. 2): gegenüber dem Kind";
+        label en unofficial "To clarify biological parentage the mother may also demand consent and toleration from the child (§ 1598a (1) sentence 1 no. 2): against the child";
+        when mutter(k, m) and klaerung_der_leiblichen_abstammung_verlangt(m, k, k);
+        then klaerungsanspruch(m, k, k);
+    }
+    rule KlaerungsanspruchDesKindesGegenDenVater(k: Person, v: Person) strict {
+        label de official "Zur Klärung der leiblichen Abstammung kann das Kind jeweils von beiden Elternteilen die Einwilligung und die Duldung verlangen (§ 1598a Abs. 1 Satz 1 Nr. 3): gegenüber dem Vater";
+        label en unofficial "To clarify biological parentage the child may demand consent and toleration from both parents (§ 1598a (1) sentence 1 no. 3): against the father";
+        when vater(k, v) and klaerung_der_leiblichen_abstammung_verlangt(k, v, k);
+        then klaerungsanspruch(k, v, k);
+    }
+    rule KlaerungsanspruchDesKindesGegenDieMutter(k: Person, m: Person) strict {
+        label de official "Zur Klärung der leiblichen Abstammung kann das Kind jeweils von beiden Elternteilen die Einwilligung und die Duldung verlangen (§ 1598a Abs. 1 Satz 1 Nr. 3): gegenüber der Mutter";
+        label en unofficial "To clarify biological parentage the child may demand consent and toleration from both parents (§ 1598a (1) sentence 1 no. 3): against the mother";
+        when mutter(k, m) and klaerung_der_leiblichen_abstammung_verlangt(k, m, k);
+        then klaerungsanspruch(k, m, k);
+    }
+    rule DuldungAngeordnet(k: Person, b: Person, w: Person) strict {
+        label de official "Auf Antrag eines Klärungsberechtigten hat das Familiengericht eine nicht erteilte Einwilligung zu ersetzen und die Duldung einer Probeentnahme anzuordnen (§ 1598a Abs. 2)";
+        label en unofficial "On application of a person entitled to clarification the family court must replace consent not given and order toleration of the taking of a sample (§ 1598a (2))";
+        when klaerungsanspruch(b, w, k) and einwilligung_gerichtlich_ersetzt_1598a(b, w);
+        then duldung_der_probeentnahme_angeordnet(b, w);
+    }
+    rule VerfahrenAusgesetzt(k: Person) strict {
+        label de official "Das Gericht setzt das Verfahren aus, wenn und solange die Klärung der leiblichen Abstammung eine erhebliche Beeinträchtigung des Wohls des minderjährigen Kindes begründen würde, die für das Kind unzumutbar wäre (§ 1598a Abs. 3)";
+        label en unofficial "The court stays the proceedings if and as long as clarification would cause a substantial impairment of the minor child's welfare that would be unreasonable for the child (§ 1598a (3))";
+        when kind_minderjaehrig(k) and klaerung_fuer_das_kind_unzumutbar(k);
+        then verfahren_ausgesetzt_1598a(k);
+    }
+    rule EinsichtInDasGutachten(u: Person, b: Person) strict {
+        label de official "Wer in eine genetische Abstammungsuntersuchung eingewilligt und eine genetische Probe abgegeben hat, kann von dem Klärungsberechtigten, der eine Abstammungsuntersuchung hat durchführen lassen, Einsicht in das Abstammungsgutachten oder Aushändigung einer Abschrift verlangen (§ 1598a Abs. 4 Satz 1)";
+        label en unofficial "A person who consented to a genetic parentage test and provided a sample may demand from the person entitled to clarification who had the test carried out inspection of the report or the issue of a copy (§ 1598a (4) sentence 1)";
+        when genetische_probe_abgegeben(u, b) and abstammungsuntersuchung_durchgefuehrt(b);
+        then einsicht_in_das_abstammungsgutachten(u, b);
+    }
+}

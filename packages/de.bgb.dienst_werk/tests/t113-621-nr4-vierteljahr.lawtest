@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 621 Nr. 4: Vierteljahreslohn — das am 1. April 2026 beginnende Kalendervierteljahr endet am 30. Juni; die Kündigung vom 1. Mai wahrt die Sechswochenfrist (12. Juni).
+
+test "urn:query:bgb-dw-t113-621-nr4-vierteljahr" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": kein_arbeitsverhaeltnis_im_sinne_des_622(entity_ref("urn:de:bgb:dw:t113")) { origin case_input; }
+        assert "f2": dienstverhaeltnis_unbestimmte_dauer(entity_ref("urn:de:bgb:dw:t113")) { origin case_input; }
+        assert "f3": verguetung_nach_vierteljahren_bemessen_621(entity_ref("urn:de:bgb:dw:t113")) { origin case_input; }
+        assert "f4": kalendervierteljahr_beginn_621(entity_ref("urn:de:bgb:dw:t113"), @2026-04-01) { origin case_input; }
+        assert "f5": kuendigungserklaerung_am(entity_ref("urn:de:bgb:dw:t113"), @2026-05-01) { origin case_input; }
+    }
+    evaluate truth(kalendervierteljahr_ende_621(entity_ref("urn:de:bgb:dw:t113"), @2026-06-30));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(kuendigung_plus_sechs_wochen_621(entity_ref("urn:de:bgb:dw:t113"), @2026-06-12));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(kuendigungstermin_621(entity_ref("urn:de:bgb:dw:t113"), @2026-06-30));
+    expect truth_status == TRUE_ONLY;
+}

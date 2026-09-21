@@ -1,0 +1,712 @@
+// --- Buch 3 Abschnitt 3 Titel 1: Inhalt des Eigentums (§§ 903–924) --------------------------------
+//
+// Der Titel besteht aus Duldungspflichten und ihren Ausgleichen. Fast jede
+// Grenze, die er zieht, benennt eine WERTUNG: „unverhältnismäßig groß“
+// (§ 904), „unwesentlich“, „ortsüblich“, „wirtschaftlich zumutbar“,
+// „angemessener Ausgleich“ (§ 906), „angemessene Frist“ (§ 910), „Vorsatz
+// oder grobe Fahrlässigkeit“ und „sofort … Widerspruch“ (§ 912). Alle stehen
+// im Kanal §47.3 (`external judgment relation`, authority Court): ohne Antwort
+// des Gerichts antwortet das Recht REQUIRES_JUDGMENT und nicht „nein“.
+//
+// § 906 Abs. 1 Satz 2 und 3 ist die einzige Stelle, an der das Gesetz die
+// Wertung an ZAHLEN äußerer Vorschriften bindet: werden die in Gesetzen oder
+// Rechtsverordnungen festgelegten Grenz- oder Richtwerte nicht überschritten,
+// liegt „in der Regel“ eine unwesentliche Beeinträchtigung vor. Das ist eine
+// widerlegliche Vermutung (`presumption`): die Werte selbst gehören dem
+// Immissionsschutzrecht und sind Eingabe des Falls (SOURCES.json, external:
+// BImSchG § 48, TA Lärm, TA Luft) — dieses Paket erfindet keine Zahl.
+//
+// „Zu gleichen Teilen“ (§ 919 Abs. 3, § 922 Satz 2, § 923) und „je zur
+// Hälfte“ werden als Paar ganzer Zahlen geführt; bei zwei Nachbarn ist das
+// (1, 2). Die Zahl der Beteiligten nennt der Fall.
+
+pub entity Einwirkung {
+    label de official "Einwirkung auf eine Sache oder ein Grundstück (§ 904, § 906, § 1004)";
+    label en unofficial "interference with a thing or a plot of land (§ 904, § 906, § 1004)";
+}
+pub entity Ueberbau {
+    label de official "Überbau: Gebäude, das bei der Errichtung über die Grenze gebaut worden ist (§ 912)";
+    label en unofficial "encroaching building erected across the boundary (§ 912)";
+}
+pub entity Grenzanlage {
+    label de official "Einrichtung, die zwei Grundstücke voneinander scheidet und zum Vorteil beider Grundstücke dient (§ 921)";
+    label en unofficial "installation separating two plots and serving both of them (§ 921)";
+}
+
+// --- § 903: Befugnisse des Eigentümers ------------------------------------------------------------
+
+pub relation kein_entgegenstehendes_gesetz_oder_recht(s: Sache) kind empirical {
+    label de official "weder das Gesetz noch Rechte Dritter stehen entgegen — ausdrückliche Angabe des Falls (§ 903 Satz 1)";
+    label en unofficial "neither the law nor third-party rights conflict — explicit case input (§ 903 sentence 1)";
+}
+pub relation darf_nach_belieben_verfahren(s: Sache, p: Person) kind derived {
+    label de official "der Eigentümer kann mit der Sache nach Belieben verfahren und andere von jeder Einwirkung ausschließen (§ 903 Satz 1)";
+    label en unofficial "the owner may deal with the thing at their discretion and exclude others from any interference (§ 903 sentence 1)";
+}
+
+@source(BGB_P903)
+rule BefugnisseDesEigentuemers(s: Sache, p: Person) defeasible {
+    label de official "Der Eigentümer einer Sache kann, soweit nicht das Gesetz oder Rechte Dritter entgegenstehen, mit der Sache nach Belieben verfahren und andere von jeder Einwirkung ausschließen (§ 903 Satz 1)";
+    label en unofficial "The owner of a thing may, in so far as the law or third-party rights do not conflict, deal with the thing at their discretion and exclude others from any interference (§ 903 sentence 1)";
+    when eigentuemer(s, p) and kein_entgegenstehendes_gesetz_oder_recht(s);
+    then darf_nach_belieben_verfahren(s, p);
+}
+
+// --- § 904: Notstand ------------------------------------------------------------------------------
+
+pub relation einwirkung_auf_sache(e: Einwirkung, s: Sache) kind empirical {
+    key(e);
+    label de official "Sache, auf die eingewirkt wird (§ 904 Satz 1)";
+    label en unofficial "thing interfered with (§ 904 sentence 1)";
+}
+pub relation einwirkender(e: Einwirkung, p: Person) kind empirical {
+    key(e);
+    label de official "Person, die auf die Sache einwirkt (§ 904 Satz 1)";
+    label en unofficial "person interfering with the thing (§ 904 sentence 1)";
+}
+pub external judgment relation einwirkung_zur_gefahrabwendung_notwendig(e: Einwirkung) {
+    authority Court;
+    label de official "§ 904 Satz 1: die Einwirkung ist zur Abwendung einer gegenwärtigen Gefahr notwendig — Wertung des Gerichts";
+    label en unofficial "§ 904 sentence 1: the interference is necessary to avert a present danger — evaluation by the court";
+}
+pub external judgment relation drohender_schaden_unverhaeltnismaessig_gross(e: Einwirkung) {
+    authority Court;
+    label de official "§ 904 Satz 1: der drohende Schaden ist gegenüber dem aus der Einwirkung dem Eigentümer entstehenden Schaden unverhältnismäßig groß — Wertung des Gerichts";
+    label en unofficial "§ 904 sentence 1: the impending damage is disproportionately large compared with the damage caused to the owner by the interference — evaluation by the court";
+}
+pub relation duldungspflicht_notstand(s: Sache, eigentuemer: Person, einwirkender: Person) kind derived {
+    label de official "Der Eigentümer ist nicht berechtigt, die Einwirkung eines anderen auf die Sache zu verbieten (§ 904 Satz 1)";
+    label en unofficial "The owner is not entitled to prohibit another's interference with the thing (§ 904 sentence 1)";
+}
+pub relation ersatzanspruch_wegen_notstandseinwirkung(s: Sache, eigentuemer: Person, einwirkender: Person) kind derived {
+    label de official "Der Eigentümer kann Ersatz des ihm entstehenden Schadens verlangen (§ 904 Satz 2)";
+    label en unofficial "The owner may demand compensation for the damage caused to them (§ 904 sentence 2)";
+}
+
+@source(BGB_P904) {
+    rule DuldungspflichtImNotstand(e: Einwirkung, s: Sache, halter: Person, handelnder: Person) strict {
+        label de official "Der Eigentümer einer Sache ist nicht berechtigt, die Einwirkung eines anderen auf die Sache zu verbieten, wenn die Einwirkung zur Abwendung einer gegenwärtigen Gefahr notwendig und der drohende Schaden gegenüber dem aus der Einwirkung dem Eigentümer entstehenden Schaden unverhältnismäßig groß ist (§ 904 Satz 1)";
+        label en unofficial "The owner may not prohibit another's interference if it is necessary to avert a present danger and the impending damage is disproportionately large compared with the owner's damage (§ 904 sentence 1)";
+        when einwirkung_auf_sache(e, s) and einwirkender(e, handelnder) and eigentuemer_vor_dem_vorgang(s, halter)
+            and einwirkung_zur_gefahrabwendung_notwendig(e) and drohender_schaden_unverhaeltnismaessig_gross(e);
+        then duldungspflicht_notstand(s, halter, handelnder);
+    }
+    rule ErsatzanspruchDesEigentuemersImNotstand(s: Sache, halter: Person, handelnder: Person) strict {
+        label de official "Der Eigentümer kann Ersatz des ihm entstehenden Schadens verlangen (§ 904 Satz 2)";
+        label en unofficial "The owner may demand compensation for the damage caused to them (§ 904 sentence 2)";
+        when duldungspflicht_notstand(s, halter, handelnder);
+        then ersatzanspruch_wegen_notstandseinwirkung(s, halter, handelnder);
+    }
+}
+
+// --- § 905, § 907, § 909: Begrenzung, Anlagen, Vertiefung -----------------------------------------
+
+pub relation einwirkung_in_hoehe_oder_tiefe_ohne_interesse(e: Einwirkung) kind empirical {
+    label de official "die Einwirkung wird in solcher Höhe oder Tiefe vorgenommen, dass der Eigentümer an der Ausschließung kein Interesse hat (§ 905 Satz 2)";
+    label en unofficial "the interference occurs at such a height or depth that the owner has no interest in excluding it (§ 905 sentence 2)";
+}
+pub relation einwirkung_nicht_verbietbar(e: Einwirkung) kind derived {
+    label de official "der Eigentümer kann die Einwirkung nicht verbieten (§ 905 Satz 2, § 906 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "the owner may not prohibit the interference (§ 905 sentence 2, § 906 (1) sentence 1, (2) sentence 1)";
+}
+
+@source(BGB_P905)
+rule KeinVerbotOhneInteresse(e: Einwirkung) strict {
+    label de official "Der Eigentümer kann Einwirkungen nicht verbieten, die in solcher Höhe oder Tiefe vorgenommen werden, dass er an der Ausschließung kein Interesse hat (§ 905 Satz 2)";
+    label en unofficial "The owner may not prohibit interferences carried out at a height or depth at which they have no interest in exclusion (§ 905 sentence 2)";
+    when einwirkung_in_hoehe_oder_tiefe_ohne_interesse(e);
+    then einwirkung_nicht_verbietbar(e);
+}
+
+pub relation anlage_auf_dem_nachbargrundstueck(e: Einwirkung, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "Anlage, die auf dem Nachbargrundstück hergestellt oder gehalten wird (§ 907 Abs. 1 Satz 1)";
+    label en unofficial "installation constructed or maintained on the neighbouring land (§ 907 (1) sentence 1)";
+}
+pub relation unzulaessige_einwirkung_mit_sicherheit_vorauszusehen(e: Einwirkung) kind empirical {
+    label de official "von der Anlage ist mit Sicherheit vorauszusehen, dass ihr Bestand oder ihre Benutzung eine unzulässige Einwirkung auf das Grundstück zur Folge hat (§ 907 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "it is certain to be foreseen that the installation will cause an impermissible interference (§ 907 (1) sentence 1) — established fact";
+}
+pub relation anlage_haelt_landesgesetzliche_abstaende_ein(e: Einwirkung) kind empirical {
+    label de official "die Anlage genügt den landesgesetzlichen Vorschriften über Abstand oder Schutzmaßregeln (§ 907 Abs. 1 Satz 2)";
+    label en unofficial "the installation complies with the Land statutes on distance or protective measures (§ 907 (1) sentence 2)";
+}
+pub relation unzulaessige_einwirkung_tritt_tatsaechlich_hervor(e: Einwirkung) kind empirical {
+    label de official "die unzulässige Einwirkung tritt tatsächlich hervor (§ 907 Abs. 1 Satz 2)";
+    label en unofficial "the impermissible interference actually appears (§ 907 (1) sentence 2)";
+}
+pub relation anspruch_auf_beseitigung_der_anlage(e: Einwirkung, berechtigter: Person, nachbar: Person) kind derived {
+    label de official "Anspruch, dass auf den Nachbargrundstücken die gefahrdrohende Anlage nicht hergestellt oder gehalten wird (§ 907 Abs. 1)";
+    label en unofficial "claim that the dangerous installation not be constructed or maintained on neighbouring land (§ 907 (1))";
+}
+
+@source(BGB_P907) {
+    rule BeseitigungDerGefahrDrohendenAnlage(e: Einwirkung, g: Grundstueck, nachbargrundstueck: Grundstueck, berechtigter: Person, nachbar: Person) defeasible {
+        label de official "Der Eigentümer eines Grundstücks kann verlangen, dass auf den Nachbargrundstücken nicht Anlagen hergestellt oder gehalten werden, von denen mit Sicherheit vorauszusehen ist, dass ihr Bestand oder ihre Benutzung eine unzulässige Einwirkung auf sein Grundstück zur Folge hat (§ 907 Abs. 1 Satz 1)";
+        label en unofficial "The owner may demand that no installations be constructed or maintained on neighbouring land which are certain to cause an impermissible interference (§ 907 (1) sentence 1)";
+        when einwirkung_auf_sache(e, g) and eigentuemer_vor_dem_vorgang(g, berechtigter)
+            and anlage_auf_dem_nachbargrundstueck(e, nachbargrundstueck) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar)
+            and unzulaessige_einwirkung_mit_sicherheit_vorauszusehen(e);
+        unless einwirkung_auf_sache(e, g) and eigentuemer_vor_dem_vorgang(g, berechtigter)
+            and anlage_auf_dem_nachbargrundstueck(e, nachbargrundstueck) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar)
+            and beseitigung_erst_bei_tatsaechlicher_einwirkung(e);
+        then anspruch_auf_beseitigung_der_anlage(e, berechtigter, nachbar);
+    }
+    rule BeseitigungErstBeiTatsaechlicherEinwirkung(e: Einwirkung) strict {
+        label de official "Genügt eine Anlage den landesgesetzlichen Vorschriften, die einen bestimmten Abstand von der Grenze oder sonstige Schutzmaßregeln vorschreiben, so kann die Beseitigung der Anlage erst verlangt werden, wenn die unzulässige Einwirkung tatsächlich hervortritt (§ 907 Abs. 1 Satz 2)";
+        label en unofficial "If the installation complies with the Land statutes on distance or protection, removal may be demanded only once the impermissible interference actually appears (§ 907 (1) sentence 2)";
+        when anlage_haelt_landesgesetzliche_abstaende_ein(e) and keine_tatsaechliche_einwirkung(e);
+        then beseitigung_erst_bei_tatsaechlicher_einwirkung(e);
+    }
+}
+
+pub relation keine_tatsaechliche_einwirkung(e: Einwirkung) kind empirical {
+    label de official "die unzulässige Einwirkung ist noch nicht tatsächlich hervorgetreten — ausdrückliche Angabe des Falls (§ 907 Abs. 1 Satz 2)";
+    label en unofficial "the impermissible interference has not yet actually appeared — explicit case input (§ 907 (1) sentence 2)";
+}
+pub relation beseitigung_erst_bei_tatsaechlicher_einwirkung(e: Einwirkung) kind derived {
+    label de official "die Beseitigung der Anlage kann noch nicht verlangt werden (§ 907 Abs. 1 Satz 2)";
+    label en unofficial "removal of the installation may not yet be demanded (§ 907 (1) sentence 2)";
+}
+
+pub relation vertiefung_nimmt_dem_nachbarboden_die_stuetze(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "das Grundstück wird so vertieft, dass der Boden des Nachbargrundstücks die erforderliche Stütze verliert (§ 909)";
+    label en unofficial "the land is excavated so that the neighbouring soil loses the necessary support (§ 909)";
+}
+pub relation genuegende_anderweitige_befestigung(g: Grundstueck) kind empirical {
+    label de official "für eine genügende anderweitige Befestigung ist gesorgt (§ 909 Halbsatz 2)";
+    label en unofficial "sufficient other reinforcement has been provided (§ 909)";
+}
+pub relation vertiefung_unzulaessig(g: Grundstueck, nachbargrundstueck: Grundstueck) kind derived {
+    label de official "die Vertiefung ist unzulässig (§ 909)";
+    label en unofficial "the excavation is impermissible (§ 909)";
+}
+
+@source(BGB_P909)
+rule UnzulaessigeVertiefung(g: Grundstueck, nachbargrundstueck: Grundstueck) defeasible {
+    label de official "Ein Grundstück darf nicht in der Weise vertieft werden, dass der Boden des Nachbargrundstücks die erforderliche Stütze verliert, es sei denn, dass für eine genügende anderweitige Befestigung gesorgt ist (§ 909)";
+    label en unofficial "Land may not be excavated so that the neighbouring soil loses the necessary support, unless sufficient other reinforcement is provided (§ 909)";
+    when vertiefung_nimmt_dem_nachbarboden_die_stuetze(g, nachbargrundstueck);
+    unless vertiefung_nimmt_dem_nachbarboden_die_stuetze(g, nachbargrundstueck) and genuegende_anderweitige_befestigung(g);
+    then vertiefung_unzulaessig(g, nachbargrundstueck);
+}
+
+// --- § 906: Zuführung unwägbarer Stoffe -----------------------------------------------------------
+
+pub relation zufuehrung_von_einem_anderen_grundstueck(e: Einwirkung, quelle: Grundstueck, ziel: Grundstueck) kind empirical {
+    label de official "Zuführung von Gasen, Dämpfen, Gerüchen, Rauch, Ruß, Wärme, Geräusch, Erschütterungen und ähnliche von einem anderen Grundstück ausgehende Einwirkungen (§ 906 Abs. 1 Satz 1)";
+    label en unofficial "emission of gases, vapours, smells, smoke, soot, heat, noise, vibrations and similar interferences from another plot (§ 906 (1) sentence 1)";
+}
+pub relation grenz_oder_richtwerte_nicht_ueberschritten(e: Einwirkung) kind empirical {
+    label de official "die in Gesetzen oder Rechtsverordnungen festgelegten Grenz- oder Richtwerte werden von den nach diesen Vorschriften ermittelten und bewerteten Einwirkungen nicht überschritten; Gleiches gilt für Werte allgemeiner Verwaltungsvorschriften nach § 48 des Bundes-Immissionsschutzgesetzes (§ 906 Abs. 1 Satz 2, 3) — Eingabe des Falls aus dem Immissionsschutzrecht";
+    label en unofficial "the limit or guide values laid down in statutes or ordinances are not exceeded; the same applies to values in general administrative provisions under § 48 BImSchG (§ 906 (1) sentences 2, 3) — case input from emission-control law";
+}
+pub external judgment relation beeintraechtigung_unwesentlich(e: Einwirkung) {
+    authority Court;
+    label de official "§ 906 Abs. 1 Satz 1: die Einwirkung beeinträchtigt die Benutzung des Grundstücks nicht oder nur unwesentlich — Wertung des Gerichts";
+    label en unofficial "§ 906 (1) sentence 1: the interference does not impair the use of the land or does so only insignificantly — evaluation by the court";
+}
+pub external judgment relation beeintraechtigung_trotz_einhaltung_wesentlich(e: Einwirkung) {
+    authority Court;
+    label de official "§ 906 Abs. 1 Satz 2 („in der Regel“): die Beeinträchtigung ist trotz Einhaltung der Grenz- oder Richtwerte wesentlich — Wertung des Gerichts, die die Regelvermutung widerlegt";
+    label en unofficial "§ 906 (1) sentence 2 („as a rule“): the impairment is significant despite compliance with the limit values — evaluation by the court rebutting the presumption";
+}
+pub external judgment relation benutzung_ortsueblich(e: Einwirkung) {
+    authority Court;
+    label de official "§ 906 Abs. 2 Satz 1: die wesentliche Beeinträchtigung wird durch eine ortsübliche Benutzung des anderen Grundstücks herbeigeführt — Wertung des Gerichts";
+    label en unofficial "§ 906 (2) sentence 1: the significant impairment is caused by a use customary in the locality — evaluation by the court";
+}
+pub external judgment relation keine_wirtschaftlich_zumutbaren_massnahmen(e: Einwirkung) {
+    authority Court;
+    label de official "§ 906 Abs. 2 Satz 1: die Beeinträchtigung kann nicht durch Maßnahmen verhindert werden, die Benutzern dieser Art wirtschaftlich zumutbar sind — Wertung des Gerichts";
+    label en unofficial "§ 906 (2) sentence 1: the impairment cannot be prevented by measures economically reasonable for such users — evaluation by the court";
+}
+pub external judgment relation beeintraechtigung_ueber_das_zumutbare_mass(e: Einwirkung) {
+    authority Court;
+    label de official "§ 906 Abs. 2 Satz 2: die Einwirkung beeinträchtigt eine ortsübliche Benutzung des Grundstücks oder dessen Ertrag über das zumutbare Maß hinaus — Wertung des Gerichts";
+    label en unofficial "§ 906 (2) sentence 2: the interference impairs a customary use of the land or its yield beyond the reasonable degree — evaluation by the court";
+}
+pub relation zufuehrung_durch_besondere_leitung(e: Einwirkung) kind empirical {
+    label de official "die Zuführung erfolgt durch eine besondere Leitung (§ 906 Abs. 3)";
+    label en unofficial "the emission is conveyed through a special conduit (§ 906 (3))";
+}
+pub relation unwesentliche_beeintraechtigung_vermutet(e: Einwirkung) kind derived {
+    label de official "Regelvermutung der unwesentlichen Beeinträchtigung bei Einhaltung der Grenz- oder Richtwerte (§ 906 Abs. 1 Satz 2)";
+    label en unofficial "presumption of insignificant impairment where limit values are observed (§ 906 (1) sentence 2)";
+}
+pub relation duldungspflicht_immission(ziel: Grundstueck, eigentuemer: Person, benutzer: Person) kind derived {
+    label de official "Pflicht des Eigentümers, die Einwirkung zu dulden (§ 906 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "duty of the owner to tolerate the interference (§ 906 (1) sentence 1, (2) sentence 1)";
+}
+pub relation ausgleichsanspruch_in_geld(ziel: Grundstueck, eigentuemer: Person, benutzer: Person) kind derived {
+    label de official "Anspruch auf einen angemessenen Ausgleich in Geld gegen den Benutzer des anderen Grundstücks (§ 906 Abs. 2 Satz 2)";
+    label en unofficial "claim to reasonable compensation in money against the user of the other plot (§ 906 (2) sentence 2)";
+}
+pub relation zufuehrung_unzulaessig(e: Einwirkung) kind derived {
+    label de official "die Zuführung durch eine besondere Leitung ist unzulässig (§ 906 Abs. 3)";
+    label en unofficial "conveying the emission through a special conduit is impermissible (§ 906 (3))";
+}
+
+@source(BGB_P906) {
+    rule VermutungDerUnwesentlichkeitBeiEingehaltenenWerten(e: Einwirkung) defeasible {
+        label de official "Eine unwesentliche Beeinträchtigung liegt in der Regel vor, wenn die in Gesetzen oder Rechtsverordnungen festgelegten Grenz- oder Richtwerte von den nach diesen Vorschriften ermittelten und bewerteten Einwirkungen nicht überschritten werden (§ 906 Abs. 1 Satz 2)";
+        label en unofficial "An insignificant impairment is presumed as a rule where the limit or guide values laid down in statutes or ordinances are not exceeded (§ 906 (1) sentence 2)";
+        when grenz_oder_richtwerte_nicht_ueberschritten(e);
+        unless grenz_oder_richtwerte_nicht_ueberschritten(e) and beeintraechtigung_trotz_einhaltung_wesentlich(e);
+        then unwesentliche_beeintraechtigung_vermutet(e);
+    }
+    rule DuldungBeiUnwesentlicherBeeintraechtigungNachWerten(e: Einwirkung, quelle: Grundstueck, ziel: Grundstueck, halter: Person, benutzer: Person) defeasible {
+        label de official "Der Eigentümer eines Grundstücks kann die Zuführung insoweit nicht verbieten, als die Einwirkung die Benutzung seines Grundstücks nicht oder nur unwesentlich beeinträchtigt (§ 906 Abs. 1 Satz 1) — Unwesentlichkeit nach der Regelvermutung des Satzes 2";
+        label en unofficial "The owner may not prohibit the emission in so far as it does not impair the use of their land or does so only insignificantly (§ 906 (1) sentence 1) — insignificance under the presumption of sentence 2";
+        when zufuehrung_von_einem_anderen_grundstueck(e, quelle, ziel) and eigentuemer_vor_dem_vorgang(ziel, halter)
+            and eigentuemer_vor_dem_vorgang(quelle, benutzer) and unwesentliche_beeintraechtigung_vermutet(e);
+        then duldungspflicht_immission(ziel, halter, benutzer);
+    }
+    rule DuldungBeiGerichtlichFestgestellterUnwesentlichkeit(e: Einwirkung, quelle: Grundstueck, ziel: Grundstueck, halter: Person, benutzer: Person) strict {
+        label de official "Der Eigentümer eines Grundstücks kann die Zuführung insoweit nicht verbieten, als die Einwirkung die Benutzung seines Grundstücks nicht oder nur unwesentlich beeinträchtigt (§ 906 Abs. 1 Satz 1) — Unwesentlichkeit als Wertung des Gerichts";
+        label en unofficial "The owner may not prohibit the emission in so far as it impairs the use of their land only insignificantly (§ 906 (1) sentence 1) — insignificance as the court's evaluation";
+        when zufuehrung_von_einem_anderen_grundstueck(e, quelle, ziel) and eigentuemer_vor_dem_vorgang(ziel, halter)
+            and eigentuemer_vor_dem_vorgang(quelle, benutzer) and beeintraechtigung_unwesentlich(e);
+        then duldungspflicht_immission(ziel, halter, benutzer);
+    }
+    rule DuldungBeiOrtsueblicherBenutzung(e: Einwirkung, quelle: Grundstueck, ziel: Grundstueck, halter: Person, benutzer: Person) strict {
+        label de official "Das Gleiche gilt insoweit, als eine wesentliche Beeinträchtigung durch eine ortsübliche Benutzung des anderen Grundstücks herbeigeführt wird und nicht durch Maßnahmen verhindert werden kann, die Benutzern dieser Art wirtschaftlich zumutbar sind (§ 906 Abs. 2 Satz 1)";
+        label en unofficial "The same applies in so far as a significant impairment is caused by a locally customary use which cannot be prevented by economically reasonable measures (§ 906 (2) sentence 1)";
+        when zufuehrung_von_einem_anderen_grundstueck(e, quelle, ziel) and eigentuemer_vor_dem_vorgang(ziel, halter)
+            and eigentuemer_vor_dem_vorgang(quelle, benutzer)
+            and benutzung_ortsueblich(e) and keine_wirtschaftlich_zumutbaren_massnahmen(e);
+        then duldungspflicht_immission(ziel, halter, benutzer);
+    }
+    rule AusgleichInGeldBeiDuldungspflicht(e: Einwirkung, quelle: Grundstueck, ziel: Grundstueck, halter: Person, benutzer: Person) strict {
+        label de official "Hat der Eigentümer hiernach eine Einwirkung zu dulden, so kann er von dem Benutzer des anderen Grundstücks einen angemessenen Ausgleich in Geld verlangen, wenn die Einwirkung eine ortsübliche Benutzung seines Grundstücks oder dessen Ertrag über das zumutbare Maß hinaus beeinträchtigt (§ 906 Abs. 2 Satz 2)";
+        label en unofficial "If the owner must tolerate the interference, they may demand reasonable compensation in money if it impairs a customary use of their land or its yield beyond the reasonable degree (§ 906 (2) sentence 2)";
+        when zufuehrung_von_einem_anderen_grundstueck(e, quelle, ziel) and eigentuemer_vor_dem_vorgang(ziel, halter)
+            and eigentuemer_vor_dem_vorgang(quelle, benutzer)
+            and benutzung_ortsueblich(e) and keine_wirtschaftlich_zumutbaren_massnahmen(e)
+            and beeintraechtigung_ueber_das_zumutbare_mass(e);
+        then ausgleichsanspruch_in_geld(ziel, halter, benutzer);
+    }
+    rule ZufuehrungDurchBesondereLeitungUnzulaessig(e: Einwirkung) strict {
+        label de official "Die Zuführung durch eine besondere Leitung ist unzulässig (§ 906 Abs. 3)";
+        label en unofficial "Conveying the emission through a special conduit is impermissible (§ 906 (3))";
+        when zufuehrung_durch_besondere_leitung(e);
+        then zufuehrung_unzulaessig(e);
+    }
+}
+
+// --- §§ 910, 911: Überhang und Überfall -----------------------------------------------------------
+
+pub relation wurzeln_vom_nachbargrundstueck_eingedrungen(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "Wurzeln eines Baumes oder eines Strauches sind von einem Nachbargrundstück eingedrungen (§ 910 Abs. 1 Satz 1)";
+    label en unofficial "roots of a tree or shrub have penetrated from neighbouring land (§ 910 (1) sentence 1)";
+}
+pub relation zweige_ragen_herueber(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "Zweige ragen von dem Nachbargrundstück herüber (§ 910 Abs. 1 Satz 2)";
+    label en unofficial "branches project over from the neighbouring land (§ 910 (1) sentence 2)";
+}
+pub external judgment relation angemessene_frist_zur_beseitigung_bestimmt(g: Grundstueck, nachbargrundstueck: Grundstueck) {
+    authority Court;
+    label de official "§ 910 Abs. 1 Satz 2: der Eigentümer hat dem Besitzer des Nachbargrundstücks eine angemessene Frist zur Beseitigung bestimmt — die Angemessenheit der Frist ist Wertung des Gerichts";
+    label en unofficial "§ 910 (1) sentence 2: the owner set the possessor of the neighbouring land a reasonable period for removal — reasonableness is the court's evaluation";
+}
+pub relation beseitigung_innerhalb_der_frist_unterblieben(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "die Beseitigung ist nicht innerhalb der bestimmten Frist erfolgt (§ 910 Abs. 1 Satz 2)";
+    label en unofficial "removal did not take place within the period set (§ 910 (1) sentence 2)";
+}
+pub relation keine_beeintraechtigung_der_benutzung(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "die Wurzeln oder die Zweige beeinträchtigen die Benutzung des Grundstücks nicht (§ 910 Abs. 2)";
+    label en unofficial "the roots or branches do not impair the use of the land (§ 910 (2))";
+}
+pub relation recht_zum_abschneiden_und_behalten(g: Grundstueck, nachbargrundstueck: Grundstueck) kind derived {
+    label de official "Recht, die eingedrungenen Wurzeln oder die herüberragenden Zweige abzuschneiden und zu behalten (§ 910 Abs. 1)";
+    label en unofficial "right to cut off and keep the penetrating roots or projecting branches (§ 910 (1))";
+}
+pub relation frucht_gehoert_dem_nachbargrundstueck(g: Grundstueck, nachbargrundstueck: Grundstueck) kind derived {
+    label de official "Früchte, die von einem Baume oder einem Strauche auf ein Nachbargrundstück hinüberfallen, gelten als Früchte dieses Grundstücks (§ 911 Satz 1)";
+    label en unofficial "Fruit falling from a tree or shrub onto neighbouring land is deemed to be fruit of that land (§ 911 sentence 1)";
+}
+pub relation fruechte_hinuebergefallen(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "Früchte sind von einem Baume oder einem Strauche auf das Nachbargrundstück hinübergefallen (§ 911 Satz 1)";
+    label en unofficial "fruit has fallen from a tree or shrub onto the neighbouring land (§ 911 sentence 1)";
+}
+pub relation nachbargrundstueck_dient_dem_oeffentlichen_gebrauch(g: Grundstueck) kind empirical {
+    label de official "das Nachbargrundstück dient dem öffentlichen Gebrauch (§ 911 Satz 2)";
+    label en unofficial "the neighbouring land serves public use (§ 911 sentence 2)";
+}
+
+@source(BGB_P910) {
+    rule WurzelnAbschneidenUndBehalten(g: Grundstueck, nachbargrundstueck: Grundstueck) defeasible {
+        label de official "Der Eigentümer eines Grundstücks kann Wurzeln eines Baumes oder eines Strauches, die von einem Nachbargrundstück eingedrungen sind, abschneiden und behalten (§ 910 Abs. 1 Satz 1); dieses Recht steht ihm nicht zu, wenn die Wurzeln die Benutzung des Grundstücks nicht beeinträchtigen (Abs. 2)";
+        label en unofficial "The owner may cut off and keep roots penetrating from neighbouring land (§ 910 (1) sentence 1); not so if they do not impair the use of the land ((2))";
+        when wurzeln_vom_nachbargrundstueck_eingedrungen(g, nachbargrundstueck);
+        unless wurzeln_vom_nachbargrundstueck_eingedrungen(g, nachbargrundstueck) and keine_beeintraechtigung_der_benutzung(g, nachbargrundstueck);
+        then recht_zum_abschneiden_und_behalten(g, nachbargrundstueck);
+    }
+    rule ZweigeNachFristablaufAbschneiden(g: Grundstueck, nachbargrundstueck: Grundstueck) defeasible {
+        label de official "Das Gleiche gilt von herüberragenden Zweigen, wenn der Eigentümer dem Besitzer des Nachbargrundstücks eine angemessene Frist zur Beseitigung bestimmt hat und die Beseitigung nicht innerhalb der Frist erfolgt (§ 910 Abs. 1 Satz 2)";
+        label en unofficial "The same applies to projecting branches if the owner set the neighbour a reasonable period for removal and removal did not occur within it (§ 910 (1) sentence 2)";
+        when zweige_ragen_herueber(g, nachbargrundstueck)
+            and angemessene_frist_zur_beseitigung_bestimmt(g, nachbargrundstueck)
+            and beseitigung_innerhalb_der_frist_unterblieben(g, nachbargrundstueck);
+        unless zweige_ragen_herueber(g, nachbargrundstueck) and keine_beeintraechtigung_der_benutzung(g, nachbargrundstueck);
+        then recht_zum_abschneiden_und_behalten(g, nachbargrundstueck);
+    }
+}
+
+@source(BGB_P911)
+rule UeberfallDerFruechte(g: Grundstueck, nachbargrundstueck: Grundstueck) defeasible {
+    label de official "Früchte, die von einem Baume oder einem Strauche auf ein Nachbargrundstück hinüberfallen, gelten als Früchte dieses Grundstücks; diese Vorschrift findet keine Anwendung, wenn das Nachbargrundstück dem öffentlichen Gebrauch dient (§ 911)";
+    label en unofficial "Fruit falling onto neighbouring land is deemed fruit of that land; this does not apply if the neighbouring land serves public use (§ 911)";
+    when fruechte_hinuebergefallen(g, nachbargrundstueck);
+    unless fruechte_hinuebergefallen(g, nachbargrundstueck) and nachbargrundstueck_dient_dem_oeffentlichen_gebrauch(nachbargrundstueck);
+    then frucht_gehoert_dem_nachbargrundstueck(g, nachbargrundstueck);
+}
+
+// --- §§ 912, 913: Überbau und Überbaurente --------------------------------------------------------
+
+pub relation ueberbau_des_grundstuecks(u: Ueberbau, bauendes: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    key(u);
+    label de official "der Eigentümer eines Grundstücks hat bei der Errichtung eines Gebäudes über die Grenze gebaut (§ 912 Abs. 1)";
+    label en unofficial "the owner of a plot built across the boundary when erecting a building (§ 912 (1))";
+}
+pub relation grenzueberschreitung_am(u: Ueberbau, tag: Date) kind empirical {
+    key(u);
+    label de official "Zeit der Grenzüberschreitung, die für die Höhe der Rente maßgebend ist (§ 912 Abs. 2 Satz 2)";
+    label en unofficial "time of the boundary crossing decisive for the amount of the rent (§ 912 (2) sentence 2)";
+}
+pub external judgment relation vorsatz_oder_grobe_fahrlaessigkeit_beim_ueberbau(u: Ueberbau) {
+    authority Court;
+    label de official "§ 912 Abs. 1: dem Bauenden fällt Vorsatz oder grobe Fahrlässigkeit zur Last — Wertung des Gerichts";
+    label en unofficial "§ 912 (1): the builder is chargeable with intent or gross negligence — evaluation by the court";
+}
+pub external judgment relation widerspruch_vor_oder_sofort_nach_der_grenzueberschreitung(u: Ueberbau) {
+    authority Court;
+    label de official "§ 912 Abs. 1: der Nachbar hat vor oder sofort nach der Grenzüberschreitung Widerspruch erhoben — die Unverzüglichkeit ist Wertung des Gerichts, kein Nullfristmaß";
+    label en unofficial "§ 912 (1): the neighbour objected before or immediately after the boundary crossing — immediacy is the court's evaluation, not a zero period";
+}
+pub relation duldungspflicht_ueberbau(u: Ueberbau, nachbar: Person, bauender: Person) kind derived {
+    label de official "Der Nachbar hat den Überbau zu dulden (§ 912 Abs. 1)";
+    label en unofficial "The neighbour must tolerate the encroachment (§ 912 (1))";
+}
+pub relation ueberbaurente_geschuldet(u: Ueberbau, nachbar: Person, bauender: Person) kind derived {
+    label de official "Der Nachbar ist durch eine Geldrente zu entschädigen; für die Höhe der Rente ist die Zeit der Grenzüberschreitung maßgebend (§ 912 Abs. 2)";
+    label en unofficial "The neighbour is to be compensated by a money rent; its amount is determined by the time of the boundary crossing (§ 912 (2))";
+}
+pub relation rente_jaehrlich_im_voraus_zu_entrichten(u: Ueberbau) kind derived {
+    label de official "Die Rente ist jährlich im Voraus zu entrichten (§ 913 Abs. 2)";
+    label en unofficial "The rent is payable annually in advance (§ 913 (2))";
+}
+
+@source(BGB_P912) {
+    rule DuldungspflichtDesNachbarnBeimUeberbau(u: Ueberbau, bauendes: Grundstueck, nachbargrundstueck: Grundstueck, bauender: Person, nachbar: Person) defeasible {
+        label de official "Hat der Eigentümer eines Grundstücks bei der Errichtung eines Gebäudes über die Grenze gebaut, ohne dass ihm Vorsatz oder grobe Fahrlässigkeit zur Last fällt, so hat der Nachbar den Überbau zu dulden, es sei denn, dass er vor oder sofort nach der Grenzüberschreitung Widerspruch erhoben hat (§ 912 Abs. 1)";
+        label en unofficial "If the owner built across the boundary without intent or gross negligence, the neighbour must tolerate the encroachment unless they objected before or immediately after the crossing (§ 912 (1))";
+        when ueberbau_des_grundstuecks(u, bauendes, nachbargrundstueck)
+            and eigentuemer_vor_dem_vorgang(bauendes, bauender) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar);
+        unless ueberbau_des_grundstuecks(u, bauendes, nachbargrundstueck)
+            and eigentuemer_vor_dem_vorgang(bauendes, bauender) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar)
+            and duldungspflicht_ausgeschlossen(u);
+        then duldungspflicht_ueberbau(u, nachbar, bauender);
+    }
+    rule DuldungAusgeschlossenBeiVerschulden(u: Ueberbau) strict {
+        label de official "Die Duldungspflicht entfällt, wenn dem Bauenden Vorsatz oder grobe Fahrlässigkeit zur Last fällt (§ 912 Abs. 1)";
+        label en unofficial "The duty to tolerate falls away if the builder is chargeable with intent or gross negligence (§ 912 (1))";
+        when vorsatz_oder_grobe_fahrlaessigkeit_beim_ueberbau(u);
+        then duldungspflicht_ausgeschlossen(u);
+    }
+    rule DuldungAusgeschlossenBeiWiderspruch(u: Ueberbau) strict {
+        label de official "Die Duldungspflicht entfällt, wenn der Nachbar vor oder sofort nach der Grenzüberschreitung Widerspruch erhoben hat (§ 912 Abs. 1)";
+        label en unofficial "The duty to tolerate falls away if the neighbour objected before or immediately after the crossing (§ 912 (1))";
+        when widerspruch_vor_oder_sofort_nach_der_grenzueberschreitung(u);
+        then duldungspflicht_ausgeschlossen(u);
+    }
+    rule UeberbaurenteBeiDuldungspflicht(u: Ueberbau, nachbar: Person, bauender: Person, tag: Date) defeasible {
+        label de official "Der Nachbar ist durch eine Geldrente zu entschädigen; für die Höhe der Rente ist die Zeit der Grenzüberschreitung maßgebend (§ 912 Abs. 2)";
+        label en unofficial "The neighbour is to be compensated by a money rent determined as at the time of the crossing (§ 912 (2))";
+        when duldungspflicht_ueberbau(u, nachbar, bauender) and grenzueberschreitung_am(u, tag);
+        then ueberbaurente_geschuldet(u, nachbar, bauender);
+    }
+}
+
+pub relation duldungspflicht_ausgeschlossen(u: Ueberbau) kind derived {
+    label de official "die Duldungspflicht des Nachbarn ist ausgeschlossen (§ 912 Abs. 1 Halbsatz 2)";
+    label en unofficial "the neighbour's duty to tolerate is excluded (§ 912 (1))";
+}
+
+@source(BGB_P913)
+rule RenteJaehrlichImVoraus(u: Ueberbau, nachbar: Person, bauender: Person) defeasible {
+    label de official "Die Rente für den Überbau ist dem jeweiligen Eigentümer des Nachbargrundstücks von dem jeweiligen Eigentümer des anderen Grundstücks zu entrichten; die Rente ist jährlich im Voraus zu entrichten (§ 913 Abs. 1, Abs. 2)";
+    label en unofficial "The rent is payable by the current owner of the other plot to the current owner of the neighbouring plot, annually in advance (§ 913 (1), (2))";
+    when ueberbaurente_geschuldet(u, nachbar, bauender);
+    then rente_jaehrlich_im_voraus_zu_entrichten(u);
+}
+
+// --- §§ 917, 918: Notweg --------------------------------------------------------------------------
+
+pub relation verbindung_mit_oeffentlichem_weg_fehlt(g: Grundstueck) kind empirical {
+    label de official "dem Grundstück fehlt die zur ordnungsmäßigen Benutzung notwendige Verbindung mit einem öffentlichen Wege (§ 917 Abs. 1 Satz 1)";
+    label en unofficial "the plot lacks the connection with a public road necessary for its proper use (§ 917 (1) sentence 1)";
+}
+pub relation nachbargrundstueck_des_notwegs(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "Nachbargrundstück, über das der Notweg führen soll (§ 917 Abs. 1 Satz 1)";
+    label en unofficial "neighbouring plot over which the way of necessity is to run (§ 917 (1) sentence 1)";
+}
+pub relation bisherige_verbindung_willkuerlich_aufgehoben(g: Grundstueck) kind empirical {
+    label de official "die bisherige Verbindung des Grundstücks mit dem öffentlichen Wege ist durch eine willkürliche Handlung des Eigentümers aufgehoben worden (§ 918 Abs. 1)";
+    label en unofficial "the previous connection with the public road was removed by an arbitrary act of the owner (§ 918 (1))";
+}
+pub relation duldungspflicht_notweg(g: Grundstueck, nachbar: Person, eigentuemer: Person) kind derived {
+    label de official "Pflicht des Nachbarn, die Benutzung seines Grundstücks zur Herstellung der erforderlichen Verbindung zu dulden (§ 917 Abs. 1 Satz 1)";
+    label en unofficial "duty of the neighbour to tolerate use of their land to establish the necessary connection (§ 917 (1) sentence 1)";
+}
+pub relation notwegrente_geschuldet(g: Grundstueck, nachbar: Person, eigentuemer: Person) kind derived {
+    label de official "Die Nachbarn, über deren Grundstücke der Notweg führt, sind durch eine Geldrente zu entschädigen (§ 917 Abs. 2 Satz 1)";
+    label en unofficial "The neighbours over whose land the way of necessity runs are to be compensated by a money rent (§ 917 (2) sentence 1)";
+}
+
+@source(BGB_P917) {
+    rule DuldungspflichtDesNotwegs(g: Grundstueck, nachbargrundstueck: Grundstueck, eigentuemer: Person, nachbar: Person) defeasible {
+        label de official "Fehlt einem Grundstück die zur ordnungsmäßigen Benutzung notwendige Verbindung mit einem öffentlichen Wege, so kann der Eigentümer von den Nachbarn verlangen, dass sie bis zur Hebung des Mangels die Benutzung ihrer Grundstücke zur Herstellung der erforderlichen Verbindung dulden (§ 917 Abs. 1 Satz 1); die Verpflichtung tritt nicht ein, wenn die bisherige Verbindung durch eine willkürliche Handlung des Eigentümers aufgehoben wird (§ 918 Abs. 1)";
+        label en unofficial "If a plot lacks the connection with a public road necessary for proper use, the owner may demand that the neighbours tolerate use of their land (§ 917 (1) sentence 1); not so if the owner removed the previous connection arbitrarily (§ 918 (1))";
+        when verbindung_mit_oeffentlichem_weg_fehlt(g) and nachbargrundstueck_des_notwegs(g, nachbargrundstueck)
+            and eigentuemer_vor_dem_vorgang(g, eigentuemer) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar);
+        unless verbindung_mit_oeffentlichem_weg_fehlt(g) and nachbargrundstueck_des_notwegs(g, nachbargrundstueck)
+            and eigentuemer_vor_dem_vorgang(g, eigentuemer) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar)
+            and notwegrecht_ausgeschlossen(g);
+        then duldungspflicht_notweg(g, nachbar, eigentuemer);
+    }
+    rule NotwegrenteBeiDuldungspflicht(g: Grundstueck, nachbar: Person, eigentuemer: Person) defeasible {
+        label de official "Die Nachbarn, über deren Grundstücke der Notweg führt, sind durch eine Geldrente zu entschädigen (§ 917 Abs. 2 Satz 1)";
+        label en unofficial "The neighbours over whose land the way runs are to be compensated by a money rent (§ 917 (2) sentence 1)";
+        when duldungspflicht_notweg(g, nachbar, eigentuemer);
+        then notwegrente_geschuldet(g, nachbar, eigentuemer);
+    }
+}
+
+pub relation notwegrecht_ausgeschlossen(g: Grundstueck) kind derived {
+    label de official "die Verpflichtung zur Duldung des Notwegs tritt nicht ein (§ 918 Abs. 1)";
+    label en unofficial "the duty to tolerate the way of necessity does not arise (§ 918 (1))";
+}
+pub relation teil_veraeussert_und_verbindung_abgeschnitten(g: Grundstueck, teil: Grundstueck) kind empirical {
+    label de official "infolge der Veräußerung eines Teils des Grundstücks ist der veräußerte oder der zurückbehaltene Teil von der Verbindung mit dem öffentlichen Wege abgeschnitten (§ 918 Abs. 2 Satz 1)";
+    label en unofficial "as a result of selling part of the plot, the sold or retained part is cut off from the public road (§ 918 (2) sentence 1)";
+}
+pub relation duldungspflicht_des_veraeussernden_teils(g: Grundstueck, teil: Grundstueck) kind derived {
+    label de official "der Eigentümer desjenigen Teils, über welchen die Verbindung bisher stattgefunden hat, hat den Notweg zu dulden (§ 918 Abs. 2 Satz 1)";
+    label en unofficial "the owner of the part over which the connection previously ran must tolerate the way of necessity (§ 918 (2) sentence 1)";
+}
+
+@source(BGB_P918) {
+    rule NotwegrechtAusgeschlossenBeiWillkuerlicherHandlung(g: Grundstueck) strict {
+        label de official "Die Verpflichtung zur Duldung des Notwegs tritt nicht ein, wenn die bisherige Verbindung des Grundstücks mit dem öffentlichen Wege durch eine willkürliche Handlung des Eigentümers aufgehoben wird (§ 918 Abs. 1)";
+        label en unofficial "The duty to tolerate the way of necessity does not arise if the owner removed the previous connection by an arbitrary act (§ 918 (1))";
+        when bisherige_verbindung_willkuerlich_aufgehoben(g);
+        then notwegrecht_ausgeschlossen(g);
+    }
+    rule NotwegUeberDenVeraeussertenTeil(g: Grundstueck, teil: Grundstueck) strict {
+        label de official "Wird infolge der Veräußerung eines Teils des Grundstücks der veräußerte oder der zurückbehaltene Teil von der Verbindung mit dem öffentlichen Wege abgeschnitten, so hat der Eigentümer desjenigen Teils, über welchen die Verbindung bisher stattgefunden hat, den Notweg zu dulden (§ 918 Abs. 2 Satz 1)";
+        label en unofficial "If part of the plot is sold and a part is cut off from the public road, the owner of the part over which the connection ran must tolerate the way of necessity (§ 918 (2) sentence 1)";
+        when teil_veraeussert_und_verbindung_abgeschnitten(g, teil);
+        then duldungspflicht_des_veraeussernden_teils(g, teil);
+    }
+}
+
+// --- §§ 919–923: Grenze, Grenzanlagen, Grenzbaum --------------------------------------------------
+
+pub relation grenzzeichen_zu_errichten_oder_wiederherzustellen(g: Grundstueck, nachbargrundstueck: Grundstueck) kind empirical {
+    label de official "feste Grenzzeichen sind zu errichten oder ein verrücktes oder unkenntlich gewordenes Grenzzeichen ist wiederherzustellen (§ 919 Abs. 1)";
+    label en unofficial "fixed boundary markers are to be erected or a displaced or illegible marker restored (§ 919 (1))";
+}
+pub relation zahl_der_beteiligten(g: Grundstueck, anzahl: Integer) kind empirical {
+    key(g);
+    label de official "Zahl der Beteiligten, die die Kosten zu gleichen Teilen tragen (§ 919 Abs. 3, § 922 Satz 2, § 923 Abs. 2 Satz 2)";
+    label en unofficial "number of participants bearing the costs in equal shares (§ 919 (3), § 922 sentence 2, § 923 (2) sentence 2)";
+}
+pub relation anspruch_auf_mitwirkung_bei_der_abmarkung(g: Grundstueck, berechtigter: Person, nachbar: Person) kind derived {
+    label de official "Anspruch auf Mitwirkung des Nachbarn zur Errichtung fester Grenzzeichen und zur Wiederherstellung (§ 919 Abs. 1)";
+    label en unofficial "claim to the neighbour's cooperation in erecting and restoring fixed boundary markers (§ 919 (1))";
+}
+pub relation kostenanteil_bruch(g: Grundstueck, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(g, p);
+    label de official "Anteil an den Kosten als Paar ganzer Zahlen: zu gleichen Teilen (§ 919 Abs. 3, § 922 Satz 2, § 923 Abs. 2 Satz 2)";
+    label en unofficial "share of the costs as a pair of integers: in equal shares (§ 919 (3), § 922 sentence 2, § 923 (2) sentence 2)";
+}
+
+@source(BGB_P919) {
+    rule AnspruchAufGrenzabmarkung(g: Grundstueck, nachbargrundstueck: Grundstueck, berechtigter: Person, nachbar: Person) strict {
+        label de official "Der Eigentümer eines Grundstücks kann von dem Eigentümer eines Nachbargrundstücks verlangen, dass dieser zur Errichtung fester Grenzzeichen und, wenn ein Grenzzeichen verrückt oder unkenntlich geworden ist, zur Wiederherstellung mitwirkt (§ 919 Abs. 1)";
+        label en unofficial "The owner may demand that the neighbour cooperate in erecting fixed boundary markers and in restoring a displaced or illegible marker (§ 919 (1))";
+        when grenzzeichen_zu_errichten_oder_wiederherzustellen(g, nachbargrundstueck)
+            and eigentuemer_vor_dem_vorgang(g, berechtigter) and eigentuemer_vor_dem_vorgang(nachbargrundstueck, nachbar);
+        then anspruch_auf_mitwirkung_bei_der_abmarkung(g, berechtigter, nachbar);
+    }
+    rule KostenDerAbmarkungZuGleichenTeilen(g: Grundstueck, berechtigter: Person, nachbar: Person, n: Integer) strict {
+        label de official "Die Kosten der Abmarkung sind von den Beteiligten zu gleichen Teilen zu tragen, sofern nicht aus einem zwischen ihnen bestehenden Rechtsverhältnis sich ein anderes ergibt (§ 919 Abs. 3)";
+        label en unofficial "The costs of demarcation are borne by the participants in equal shares unless a legal relationship between them provides otherwise (§ 919 (3))";
+        when anspruch_auf_mitwirkung_bei_der_abmarkung(g, berechtigter, nachbar) and zahl_der_beteiligten(g, n);
+        then kostenanteil_bruch(g, nachbar, 1, n);
+    }
+}
+
+// --- § 920 Grenzverwirrung (Welle B6, Block 4) --------------------------------------------------
+//
+// Drei Stufen, drei Regeln: (1) Besitzstand maßgebend, wenn feststellbar;
+// (2) sonst je Grundstück ein gleich großes Stück der streitigen Fläche;
+// (3) Billigkeitskorrektur, wenn das Ergebnis mit den ermittelten Umständen
+// (insbesondere der feststehenden Größe) nicht übereinstimmt — Kanal §47.3.
+// Kein Flächenmodell: das Paket entscheidet, WELCHE Regel die Grenze
+// bestimmt, nicht die exakte Linie oder Quadratmeterzahl.
+
+pub entity Grenzstreit {
+    label de official "Grenzverwirrung zwischen zwei Grundstücken: die richtige Grenze lässt sich nicht ermitteln (§ 920 Abs. 1 Satz 1)";
+    label en unofficial "boundary confusion between two plots: the correct boundary cannot be ascertained (§ 920 (1) sentence 1)";
+}
+pub relation beteiligte_grundstuecke_am_grenzstreit(streit: Grenzstreit, eins: Grundstueck, zwei: Grundstueck) kind empirical {
+    key(streit);
+    label de official "die beiden Grundstücke, zwischen denen die Grenze streitig ist (§ 920 Abs. 1)";
+    label en unofficial "the two plots between which the boundary is disputed (§ 920 (1))";
+}
+pub relation besitzstand_feststellbar(streit: Grenzstreit) kind empirical {
+    label de official "der Besitzstand lässt sich feststellen — Eingabe des Falls (§ 920 Abs. 1 Satz 1)";
+    label en unofficial "the state of possession can be ascertained — case input (§ 920 (1) sentence 1)";
+}
+pub relation besitzstand_nicht_feststellbar(streit: Grenzstreit) kind empirical {
+    label de official "der Besitzstand lässt sich nicht feststellen — Eingabe des Falls, das Fehlen der Angabe ist keine Verneinung (§ 920 Abs. 1 Satz 2)";
+    label en unofficial "the state of possession cannot be ascertained — case input, its absence is not a denial (§ 920 (1) sentence 2)";
+}
+pub external judgment relation ergebnis_stimmt_mit_umstaenden_nicht_ueberein(streit: Grenzstreit) {
+    authority Court;
+    label de official "die Bestimmung der Grenze nach Abs. 1 führt zu einem Ergebnis, das mit den ermittelten Umständen, insbesondere der feststehenden Größe der Grundstücke, nicht übereinstimmt — Wertung des Gerichts (§ 920 Abs. 2)";
+    label en unofficial "the boundary determined under (1) does not match the ascertained circumstances, in particular the established size of the plots — evaluation by the court (§ 920 (2))";
+}
+pub relation grenze_nach_besitzstand_massgeblich(streit: Grenzstreit) kind derived {
+    label de official "für die Abgrenzung ist der Besitzstand maßgebend (§ 920 Abs. 1 Satz 1)";
+    label en unofficial "the state of possession governs the demarcation (§ 920 (1) sentence 1)";
+}
+pub relation gleich_grosses_stueck_je_grundstueck(streit: Grenzstreit) kind derived {
+    label de official "jedem der Grundstücke ist ein gleich großes Stück der streitigen Fläche zuzuteilen (§ 920 Abs. 1 Satz 2)";
+    label en unofficial "each plot is to be allotted an equally sized piece of the disputed area (§ 920 (1) sentence 2)";
+}
+pub relation grenze_nach_billigkeit_zu_ziehen(streit: Grenzstreit) kind derived {
+    label de official "die Grenze ist so zu ziehen, wie es unter Berücksichtigung der ermittelten Umstände der Billigkeit entspricht (§ 920 Abs. 2)";
+    label en unofficial "the boundary is to be drawn as equity requires in view of the ascertained circumstances (§ 920 (2))";
+}
+
+@source(BGB_P920) {
+    rule GrenzeNachBesitzstand920Abs1Satz1(streit: Grenzstreit, eins: Grundstueck, zwei: Grundstueck) strict {
+        label de official "Lässt sich im Falle einer Grenzverwirrung die richtige Grenze nicht ermitteln, so ist für die Abgrenzung der Besitzstand maßgebend (§ 920 Abs. 1 Satz 1)";
+        label en unofficial "If the correct boundary cannot be ascertained, the state of possession governs the demarcation (§ 920 (1) sentence 1)";
+        when beteiligte_grundstuecke_am_grenzstreit(streit, eins, zwei) and besitzstand_feststellbar(streit);
+        then grenze_nach_besitzstand_massgeblich(streit);
+    }
+    rule GleichGrossesStueck920Abs1Satz2(streit: Grenzstreit, eins: Grundstueck, zwei: Grundstueck) strict {
+        label de official "Kann der Besitzstand nicht festgestellt werden, so ist jedem der Grundstücke ein gleich großes Stück der streitigen Fläche zuzuteilen (§ 920 Abs. 1 Satz 2)";
+        label en unofficial "If the state of possession cannot be ascertained, each plot is to be allotted an equally sized piece of the disputed area (§ 920 (1) sentence 2)";
+        when beteiligte_grundstuecke_am_grenzstreit(streit, eins, zwei) and besitzstand_nicht_feststellbar(streit);
+        then gleich_grosses_stueck_je_grundstueck(streit);
+    }
+    rule BilligkeitskorrekturBeiAbweichenderGroesse920Abs2(streit: Grenzstreit) strict {
+        label de official "Soweit eine diesen Vorschriften entsprechende Bestimmung der Grenze zu einem Ergebnis führt, das mit den ermittelten Umständen, insbesondere mit der feststehenden Größe der Grundstücke, nicht übereinstimmt, ist die Grenze so zu ziehen, wie es unter Berücksichtigung dieser Umstände der Billigkeit entspricht (§ 920 Abs. 2)";
+        label en unofficial "In so far as a determination under these provisions leads to a result not matching the ascertained circumstances, in particular the established size of the plots, the boundary is to be drawn as equity requires (§ 920 (2))";
+        when ergebnis_stimmt_mit_umstaenden_nicht_ueberein(streit);
+        then grenze_nach_billigkeit_zu_ziehen(streit);
+    }
+}
+
+pub relation grenzanlage_zwischen(a: Grenzanlage, eins: Grundstueck, zwei: Grundstueck) kind empirical {
+    key(a);
+    label de official "Zwischenraum, Rain, Winkel, Graben, Mauer, Hecke, Planke oder andere Einrichtung, die zum Vorteil beider Grundstücke dient und sie voneinander scheidet (§ 921)";
+    label en unofficial "space, ridge, corner, ditch, wall, hedge, fence or other installation serving both plots and separating them (§ 921)";
+}
+pub relation aeussere_merkmale_weisen_auf_alleineigentum(a: Grenzanlage) kind empirical {
+    label de official "äußere Merkmale weisen darauf hin, dass die Einrichtung einem der Nachbarn allein gehört (§ 921 Halbsatz 2) — festgestellte Tatsache";
+    label en unofficial "external features indicate that the installation belongs to one neighbour alone (§ 921) — established fact";
+}
+pub relation gemeinschaftliche_benutzung_berechtigt(a: Grenzanlage, p: Person) kind derived {
+    label de official "Vermutung, dass die Eigentümer der Grundstücke zur Benutzung der Einrichtung gemeinschaftlich berechtigt seien (§ 921)";
+    label en unofficial "presumption that the owners of the plots are jointly entitled to use the installation (§ 921)";
+}
+
+@source(BGB_P921)
+presumption VermutungGemeinschaftlicherBenutzung(a: Grenzanlage, g: Grundstueck, p: Person) {
+    label de official "Werden zwei Grundstücke durch eine Einrichtung, die zum Vorteil beider Grundstücke dient, voneinander geschieden, so wird vermutet, dass die Eigentümer der Grundstücke zur Benutzung der Einrichtung gemeinschaftlich berechtigt seien, sofern nicht äußere Merkmale darauf hinweisen, dass die Einrichtung einem der Nachbarn allein gehört (§ 921)";
+    label en unofficial "If two plots are separated by an installation serving both, the owners are presumed to be jointly entitled to use it unless external features indicate sole ownership by one neighbour (§ 921)";
+    when grenzanlage_zwischen(a, g, g) and eigentuemer_vor_dem_vorgang(g, p);
+    presume gemeinschaftliche_benutzung_berechtigt(a, p);
+    unless grenzanlage_zwischen(a, g, g) and eigentuemer_vor_dem_vorgang(g, p) and aeussere_merkmale_weisen_auf_alleineigentum(a)
+        then not gemeinschaftliche_benutzung_berechtigt(a, p);
+}
+
+pub relation interesse_am_fortbestand_der_einrichtung(a: Grenzanlage, p: Person) kind empirical {
+    label de official "einer der Nachbarn hat an dem Fortbestand der Einrichtung ein Interesse (§ 922 Satz 3)";
+    label en unofficial "one of the neighbours has an interest in the continued existence of the installation (§ 922 sentence 3)";
+}
+pub relation einrichtung_nicht_ohne_zustimmung_zu_beseitigen(a: Grenzanlage, p: Person) kind derived {
+    label de official "solange einer der Nachbarn an dem Fortbestand der Einrichtung ein Interesse hat, darf sie nicht ohne seine Zustimmung beseitigt oder geändert werden (§ 922 Satz 3)";
+    label en unofficial "as long as one neighbour has an interest in the installation, it may not be removed or altered without their consent (§ 922 sentence 3)";
+}
+pub relation unterhaltungskostenanteil_bruch(a: Grenzanlage, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(a, p);
+    label de official "Anteil an den Unterhaltungskosten der Grenzanlage als Paar ganzer Zahlen: zu gleichen Teilen (§ 922 Satz 2)";
+    label en unofficial "share of the maintenance costs of the boundary installation as a pair of integers: in equal parts (§ 922 sentence 2)";
+}
+
+@source(BGB_P922) {
+    rule UnterhaltungskostenZuGleichenTeilen(a: Grenzanlage, g: Grundstueck, p: Person, n: Integer) defeasible {
+        label de official "Sind die Nachbarn zur Benutzung einer der in § 921 bezeichneten Einrichtungen gemeinschaftlich berechtigt, so sind die Unterhaltungskosten von den Nachbarn zu gleichen Teilen zu tragen (§ 922 Satz 1, 2)";
+        label en unofficial "If the neighbours are jointly entitled to use an installation under § 921, the maintenance costs are borne in equal parts (§ 922 sentences 1, 2)";
+        when gemeinschaftliche_benutzung_berechtigt(a, p) and grenzanlage_zwischen(a, g, g) and zahl_der_beteiligten(g, n);
+        then unterhaltungskostenanteil_bruch(a, p, 1, n);
+    }
+    rule BeseitigungNurMitZustimmung(a: Grenzanlage, p: Person) strict {
+        label de official "Solange einer der Nachbarn an dem Fortbestand der Einrichtung ein Interesse hat, darf sie nicht ohne seine Zustimmung beseitigt oder geändert werden (§ 922 Satz 3)";
+        label en unofficial "As long as one neighbour has an interest in the installation, it may not be removed or altered without their consent (§ 922 sentence 3)";
+        when interesse_am_fortbestand_der_einrichtung(a, p);
+        then einrichtung_nicht_ohne_zustimmung_zu_beseitigen(a, p);
+    }
+}
+
+pub relation grenzbaum_auf_der_grenze(s: Sache, eins: Grundstueck, zwei: Grundstueck) kind empirical {
+    label de official "auf der Grenze steht ein Baum oder ein Strauch (§ 923 Abs. 1, Abs. 3)";
+    label en unofficial "a tree or shrub stands on the boundary (§ 923 (1), (3))";
+}
+pub relation baum_dient_als_grenzzeichen(s: Sache) kind empirical {
+    label de official "der Baum dient als Grenzzeichen und kann den Umständen nach nicht durch ein anderes zweckmäßiges Grenzzeichen ersetzt werden (§ 923 Abs. 2 Satz 4)";
+    label en unofficial "the tree serves as a boundary marker and cannot be replaced by another suitable marker (§ 923 (2) sentence 4)";
+}
+pub relation beseitigung_des_grenzbaums_verlangt(s: Sache, verlangender: Person) kind empirical {
+    label de official "einer der Nachbarn verlangt die Beseitigung des Baumes (§ 923 Abs. 2 Satz 1)";
+    label en unofficial "one of the neighbours demands removal of the tree (§ 923 (2) sentence 1)";
+}
+pub relation anspruch_auf_beseitigung_des_grenzbaums(s: Sache, verlangender: Person) kind derived {
+    label de official "Anspruch auf Beseitigung des Grenzbaums (§ 923 Abs. 2 Satz 1)";
+    label en unofficial "claim to removal of the boundary tree (§ 923 (2) sentence 1)";
+}
+
+@source(BGB_P923) {
+    rule GrenzbaumZuGleichenTeilen(s: Sache, eins: Grundstueck, zwei: Grundstueck, p: Person) strict {
+        label de official "Steht auf der Grenze ein Baum, so gebühren die Früchte und, wenn der Baum gefällt wird, auch der Baum den Nachbarn zu gleichen Teilen (§ 923 Abs. 1)";
+        label en unofficial "If a tree stands on the boundary, its fruit and, if felled, the tree belong to the neighbours in equal shares (§ 923 (1))";
+        when grenzbaum_auf_der_grenze(s, eins, zwei) and eigentuemer_vor_dem_vorgang(eins, p);
+        then miteigentumsanteil(s, p, 1, 2);
+    }
+    rule BeseitigungDesGrenzbaums(s: Sache, verlangender: Person) defeasible {
+        label de official "Jeder der Nachbarn kann die Beseitigung des Baumes verlangen; der Anspruch auf die Beseitigung ist ausgeschlossen, wenn der Baum als Grenzzeichen dient und den Umständen nach nicht durch ein anderes zweckmäßiges Grenzzeichen ersetzt werden kann (§ 923 Abs. 2 Satz 1, Satz 4)";
+        label en unofficial "Each neighbour may demand removal of the tree; the claim is excluded if the tree serves as a boundary marker that cannot be replaced (§ 923 (2) sentences 1, 4)";
+        when beseitigung_des_grenzbaums_verlangt(s, verlangender);
+        unless beseitigung_des_grenzbaums_verlangt(s, verlangender) and baum_dient_als_grenzzeichen(s);
+        then anspruch_auf_beseitigung_des_grenzbaums(s, verlangender);
+    }
+}
+
+@source(BGB_P924)
+rule NachbarrechtlicheAnspruecheUnverjaehrbar(g: Grundstueck, berechtigter: Person, nachbar: Person) strict {
+    label de official "Die Ansprüche, die sich aus den §§ 907 bis 909, 915, dem § 917 Abs. 1, dem § 918 Abs. 2, den §§ 919, 920 und dem § 923 Abs. 2 ergeben, unterliegen nicht der Verjährung (§ 924)";
+    label en unofficial "The claims arising from §§ 907 to 909, 915, § 917 (1), § 918 (2), §§ 919, 920 and § 923 (2) are not subject to limitation (§ 924)";
+    when anspruch_auf_mitwirkung_bei_der_abmarkung(g, berechtigter, nachbar);
+    then nachbarrechtlicher_anspruch_unverjaehrbar(g, berechtigter, nachbar);
+}
+
+pub relation nachbarrechtlicher_anspruch_unverjaehrbar(g: Grundstueck, berechtigter: Person, nachbar: Person) kind derived {
+    label de official "der nachbarrechtliche Anspruch unterliegt nicht der Verjährung (§ 924)";
+    label en unofficial "the neighbour-law claim is not subject to limitation (§ 924)";
+}

@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 288 Abs. 2 und Abs. 5: Entgeltforderung zwischen Unternehmern (kein
+// Verbraucher beteiligt). Der Zinssatz beträgt neun Prozentpunkte über dem
+// Basiszinssatz von 1,52 Prozent (Stand 17. September 2026): 10,52 Prozent;
+// Zinsen für ein volles Jahr aus 5 000,00 EUR sind 526,00 EUR. Außerdem
+// besteht ein Anspruch auf die Pauschale von 40 Euro (Abs. 5 Satz 1), die auf
+// Rechtsverfolgungskosten von 150,00 EUR anzurechnen ist (Satz 3): 110,00 EUR.
+test "§ 288 Abs. 2, 5: 10,52 Prozent, 526,00 EUR Jahreszinsen und Pauschale von 40 EUR" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": entgeltforderung(entity_ref("urn:de:bgb:sr-at:v04:a1")) { origin case_input; }
+        assert "a2": de.bgb.core::anspruch_geldbetrag(entity_ref("urn:de:bgb:sr-at:v04:a1"), 5000.00 EUR) { origin case_input; }
+        assert "a3": geldschuld_im_verzug(entity_ref("urn:de:bgb:sr-at:v04:a1"), @2026-08-01) { origin case_input; }
+        assert "a4": kein_verbraucher_am_rechtsgeschaeft_beteiligt(entity_ref("urn:de:bgb:sr-at:v04:a1")) { origin case_input; }
+        assert "a5": de.bgb.core::anspruch_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:v04:a1"), entity_ref("urn:de:bgb:sr-at:v04:s1")) { origin case_input; }
+        assert "a6": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:v04:s1"), entity_ref("urn:de:bgb:sr-at:v04:p1")) { origin case_input; }
+        assert "a7": unternehmer(entity_ref("urn:de:bgb:sr-at:v04:p1")) { origin case_input; }
+        assert "a8": schaden_in_kosten_der_rechtsverfolgung(entity_ref("urn:de:bgb:sr-at:v04:a1"), 150.00 EUR) { origin case_input; }
+    }
+    evaluate truth(verzugszinssatz(entity_ref("urn:de:bgb:sr-at:v04:a1"), 10.52));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verzugszinsen_fuer_ein_jahr(entity_ref("urn:de:bgb:sr-at:v04:a1"), 526.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(pauschale_wegen_verzugs(entity_ref("urn:de:bgb:sr-at:v04:a1"), 40.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(anzurechnender_schadensersatz(entity_ref("urn:de:bgb:sr-at:v04:a1"), 110.00 EUR));
+    expect truth_status == TRUE_ONLY;
+}

@@ -1,0 +1,314 @@
+// Art. 229 § 6 Abs. 1 Satz 2 (Hemmung vor 2002), Abs. 2 (Unterbrechung →
+// Hemmung), Abs. 4 (BGH-Lesart, §152 any_of); § 5 (allgemeine
+// Überleitung); § 23 (Erb- und Verjährungsrecht 2010). Additiv: keine der
+// bestehenden Regeln aus package.law (AlteFristEnde, NeueFristAbStichtag
+// usw.) wird geändert — jede Ergänzung ist ein zusätzlicher Produzent
+// oder ein neuer, eigenständiger Kopf.
+
+// --- Art. 229 § 6 Abs. 1 Satz 2: Hemmung nach altem Recht vor 2002 --------------------------------
+//
+// Eigener, PARALLELER Kopf `alte_frist_ende_mit_hemmung` statt eines
+// zweiten Produzenten für das bestehende `alte_frist_ende`: die
+// bestehende Regel `AlteFristEnde` (package.law) ist unbedingt — sie
+// feuert bereits, sobald Beginn und Frist vorliegen, unabhängig von einer
+// Hemmung. Ein zweiter Produzent für denselben Schlüssel läge in
+// Widerspruch (zwei Werte für `alte_frist_ende(a, …)`), sobald ein Fall
+// zugleich Hemmung angibt — das bestehende `AlteFristEnde` NICHT ändern
+// (vier bestehende Szenarien u01–u04 hängen unverändert daran). Fälle mit
+// Hemmung lesen daher den eigenen Kopf; die Korridorvergleiche
+// (`korridor_2002_anwendbar` usw.) bleiben auf `alte_frist_ende` bezogen
+// — dieselbe additive Grenze wie bei den Höchstfristen in `de.bgb.fristen`.
+
+pub relation alte_hemmung(a: Anspruch, von: Date, bis: Date) kind empirical {
+    key(a);
+    label de official "Zeitraum, während dessen die Verjährung vor dem 1. Januar 2002 nach dem Bürgerlichen Gesetzbuch in der bis zu diesem Tag geltenden Fassung gehemmt war (Art. 229 § 6 Abs. 1 Satz 2)";
+    label en unofficial "period during which limitation was suspended before 1 January 2002 under the Civil Code as in force until that day (Art. 229 § 6 (1) sentence 2)";
+}
+relation alte_hemmungstage(a: Anspruch, tage: Integer) kind derived {
+    key(a);
+    label de official "Zahl der Tage der Hemmung nach altem Recht, Grenzen eingeschlossen";
+    label en unofficial "number of days of suspension under the old law, boundaries included";
+}
+pub relation alte_frist_ende_mit_hemmung(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Ende der alten Frist unter Berücksichtigung einer nach altem Recht festgestellten Hemmung (Art. 229 § 6 Abs. 1 Satz 2)";
+    label en unofficial "end of the old period taking into account suspension established under the old law (Art. 229 § 6 (1) sentence 2)";
+}
+
+@source(EGBGB_ART229_P6)
+rule AlteHemmungstage(a: Anspruch, von: Date, bis: Date) strict {
+    label de official "Der Beginn und die Hemmung der Verjährung bestimmen sich für den Zeitraum vor dem 1. Januar 2002 nach dem bisherigen Recht (Art. 229 § 6 Abs. 1 Satz 2) — gezählt in Tagen, Grenzen eingeschlossen";
+    label en unofficial "The beginning and the suspension of limitation for the period before 1 January 2002 are governed by the old law (Art. 229 § 6 (1) sentence 2) — counted in days, boundaries included";
+    when alte_hemmung(a, von, bis);
+    then alte_hemmungstage(a, days_between(von, bis) + 1);
+}
+
+@source(EGBGB_ART229_P6)
+rule AlteFristEndeMitHemmung(a: Anspruch, b: Date, alt: Quantity, n: Integer) strict {
+    label de official "Endet die alte Frist unter Berücksichtigung einer nach altem Recht festgestellten Hemmung (Art. 229 § 6 Abs. 1 Satz 2): das Ende verschiebt sich um die Hemmungstage";
+    label en unofficial "The old period ends taking into account suspension established under the old law (Art. 229 § 6 (1) sentence 2): the end moves by the suspended days";
+    when alte_verjaehrung_begann_am(a, b) and alte_verjaehrungsfrist(a, alt) and alte_hemmungstage(a, n);
+    then alte_frist_ende_mit_hemmung(a, add_calendar_period(add_calendar_period(b, alt), with_unit(n, "calendar_day")));
+}
+
+// --- Art. 229 § 6 Abs. 2: Unterbrechung (alt) gilt als am 31.12.2001 beendet, neue Hemmung ab 1.1.2002 --
+
+pub relation unterbrechung_alt_nicht_beendet_am_31_12_2001(a: Anspruch) kind empirical {
+    label de official "eine vor dem 1. Januar 2002 eingetretene Unterbrechung der Verjährung nach altem Recht war mit Ablauf des 31. Dezember 2001 noch nicht beendigt (Art. 229 § 6 Abs. 2)";
+    label en unofficial "an interruption of limitation under the old law that occurred before 1 January 2002 had not ended by the close of 31 December 2001 (Art. 229 § 6 (2))";
+}
+pub relation korridor_hemmung_ende_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, an dem der die Unterbrechung tragende Umstand endet — Ende der neuen Hemmung ab dem 1. Januar 2002 (Art. 229 § 6 Abs. 2)";
+    label en unofficial "day on which the circumstance underlying the interruption ends — end of the new suspension from 1 January 2002 (Art. 229 § 6 (2))";
+}
+relation korridor_hemmungstage(a: Anspruch, tage: Integer) kind derived {
+    key(a);
+    label de official "Zahl der Tage der neuen Hemmung ab dem 1. Januar 2002 (Art. 229 § 6 Abs. 2)";
+    label en unofficial "number of days of the new suspension from 1 January 2002 (Art. 229 § 6 (2))";
+}
+pub relation verjaehrung_vollendet_am_mit_korridor_hemmung(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung vollendet ist, unter Berücksichtigung der Hemmung ab dem 1. Januar 2002 nach Art. 229 § 6 Abs. 2";
+    label en unofficial "day at whose end limitation is completed, taking into account the suspension from 1 January 2002 under Art. 229 § 6 (2)";
+}
+
+@source(EGBGB_ART229_P6)
+rule KorridorHemmungstage(a: Anspruch, bis: Date) strict {
+    label de official "Eine nach altem Recht am 31. Dezember 2001 noch nicht beendigte Unterbrechung gilt mit Ablauf dieses Tages als beendigt; die neue Verjährung ist mit Beginn des 1. Januar 2002 gehemmt (Art. 229 § 6 Abs. 2) — gezählt in Tagen ab dem Stichtag";
+    label en unofficial "An interruption under the old law not ended by 31 December 2001 is deemed ended at the close of that day; the new limitation is suspended from the beginning of 1 January 2002 (Art. 229 § 6 (2)) — counted in days from the reference date";
+    when unterbrechung_alt_nicht_beendet_am_31_12_2001(a) and korridor_hemmung_ende_am(a, bis);
+    then korridor_hemmungstage(a, days_between(@2002-01-01, bis) + 1);
+}
+
+@source(EGBGB_ART229_P6)
+rule VollendungMitKorridorHemmung(a: Anspruch, d0: Date, n: Integer) strict {
+    label de official "Die Verjährung, die nach Art. 229 § 6 Abs. 1, 3, 4 vollendet wäre, verschiebt sich um die Tage der neuen Hemmung ab dem 1. Januar 2002 (Art. 229 § 6 Abs. 2)";
+    label en unofficial "The limitation that would be completed under Art. 229 § 6 (1), (3), (4) moves by the days of the new suspension from 1 January 2002 (Art. 229 § 6 (2))";
+    when verjaehrung_vollendet_am(a, d0) and korridor_hemmungstage(a, n);
+    then verjaehrung_vollendet_am_mit_korridor_hemmung(a, add_calendar_period(d0, with_unit(n, "calendar_day")));
+}
+
+// --- Art. 229 § 6 Abs. 4: BGH-Lesart zum Beginn der kürzeren Frist ----------------------------------
+//
+// Zwei Lesarten des „von dem 1. Januar 2002 an berechnet“ (Abs. 4 Satz 1):
+// ob das Kenntniserfordernis der Regelverjährung (§ 199 Abs. 1 Nr. 2 BGB)
+// den Beginn der kürzeren Frist im Korridor verschiebt, wenn die Kenntnis
+// erst nach dem Stichtag erlangt wird. Additiv — parallel zur bestehenden
+// `NeueFristAbStichtag` (nicht geändert): zwei eigene Köpfe je Lesart.
+//
+// GRENZE (README): als `interpretation … of EGBGB_ART229_P6` mit
+// `interpretation_group … { selection any_of; }` (§152) formuliert und
+// kompiliert fehlerfrei, aber `evaluate truth(...)` auf den von einer
+// `interpretation`-Regel produzierten Kopf lieferte in dieser Sitzung
+// durchgehend NEITHER, obwohl kein `exactly_one` vorliegt und §156 der
+// Spezifikation für unabhängige/`any_of`-Fälle keine Vorauswahl verlangt
+// (`context.interpretation_selection` — kein Beispiel dafür existiert im
+// gesamten Korpus für eine `.lawtest`-Datei). Ob eine fehlende explizite
+// `interpretation_selection` im Kontext auch `any_of`-Gruppen blockiert,
+// bleibt offen — Frage für die nächste Sitzung oder den Koordinator.
+// Bis dahin: zwei GEWÖHNLICHE Regeln mit unterschiedlichen Köpfen, die
+// dieselbe Rechtsfrage in beiden Lesarten sichtbar machen.
+
+pub relation kenntnis_erlangt_uebergang_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, an dem der Gläubiger von den den Anspruch begründenden Umständen und der Person des Schuldners Kenntnis erlangt (§ 199 Abs. 1 Nr. 2 BGB), für die Frage des Beginns der kürzeren Frist im Korridor";
+    label en unofficial "day on which the creditor obtains knowledge of the circumstances giving rise to the claim and of the debtor's identity (§ 199 (1) no. 2 BGB), for the question of when the shorter corridor period begins";
+}
+pub relation neue_frist_beginn_lesart_stur_ab_stichtag(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Beginn der kürzeren neuen Frist im Korridor nach der wörtlichen Lesart des Art. 229 § 6 Abs. 4 Satz 1: stets der 1. Januar 2002, unabhängig von der Kenntnis";
+    label en unofficial "beginning of the shorter new corridor period under the literal reading of Art. 229 § 6 (4) sentence 1: always 1 January 2002, regardless of knowledge";
+}
+pub relation neue_frist_beginn_lesart_mit_kenntniserfordernis(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Beginn der kürzeren neuen Frist im Korridor nach der BGH-Lesart des Art. 229 § 6 Abs. 4 Satz 1 (z. B. BGHZ 171, 1): das spätere von 1. Januar 2002 und der Kenntnis des Gläubigers (§ 199 Abs. 1 Nr. 2 BGB)";
+    label en unofficial "beginning of the shorter new corridor period under the BGH reading of Art. 229 § 6 (4) sentence 1 (e.g. BGHZ 171, 1): the later of 1 January 2002 and the creditor's knowledge (§ 199 (1) no. 2 BGB)";
+}
+
+@source(EGBGB_ART229_P6)
+rule NeueFristBeginnSturAbStichtag(a: Anspruch) strict {
+    label de official "Wörtliche Lesart: der Beginn der kürzeren Frist ist stets der 1. Januar 2002 (Art. 229 § 6 Abs. 4 Satz 1)";
+    label en unofficial "Literal reading: the beginning of the shorter period is always 1 January 2002 (Art. 229 § 6 (4) sentence 1)";
+    when neue_frist_kuerzer(a);
+    then neue_frist_beginn_lesart_stur_ab_stichtag(a, @2002-01-01);
+}
+
+@source(EGBGB_ART229_P6)
+rule NeueFristBeginnKenntnisStichtagSpaeter(a: Anspruch, k: Date) strict {
+    label de official "BGH-Lesart: der Stichtag 1. Januar 2002 liegt nicht vor der Kenntnis — er ist der Beginn der kürzeren Frist";
+    label en unofficial "BGH reading: the reference date 1 January 2002 is not before knowledge — it is the beginning of the shorter period";
+    when neue_frist_kuerzer(a) and kenntnis_erlangt_uebergang_am(a, k) and @2002-01-01 >= k;
+    then neue_frist_beginn_lesart_mit_kenntniserfordernis(a, @2002-01-01);
+}
+@source(EGBGB_ART229_P6)
+rule NeueFristBeginnKenntnisNachStichtag(a: Anspruch, k: Date) strict {
+    label de official "BGH-Lesart: die Kenntnis liegt nach dem Stichtag — sie ist der Beginn der kürzeren Frist";
+    label en unofficial "BGH reading: knowledge is obtained after the reference date — it is the beginning of the shorter period";
+    when neue_frist_kuerzer(a) and kenntnis_erlangt_uebergang_am(a, k) and k > @2002-01-01;
+    then neue_frist_beginn_lesart_mit_kenntniserfordernis(a, k);
+}
+
+// --- § 5: Allgemeine Überleitungsvorschrift ----------------------------------------------------------
+
+pub enum Rechtsfassung {
+    label de official "Fassung des Bürgerlichen Gesetzbuchs, die anzuwenden ist (§ 5 EGBGB)";
+    label en unofficial "version of the Civil Code that applies (§ 5 EGBGB)";
+    AlteFassung,
+    NeueFassung
+}
+pub relation dauerschuldverhaeltnis(a: Anspruch) kind empirical {
+    label de official "das Schuldverhältnis, dem der Anspruch entspringt, ist ein Dauerschuldverhältnis (§ 5 Satz 2)";
+    label en unofficial "the obligation from which the claim arises is a continuing obligation (§ 5 sentence 2)";
+}
+pub relation kein_dauerschuldverhaeltnis(a: Anspruch) kind empirical {
+    label de official "das Schuldverhältnis ist kein Dauerschuldverhältnis — ausdrückliche Angabe des Falls (§ 5 Satz 1)";
+    label en unofficial "the obligation is not a continuing obligation — explicit case input (§ 5 sentence 1)";
+}
+pub relation beurteilungszeitpunkt_para5(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Zeitpunkt, zu dem die anwendbare Fassung bestimmt werden soll (§ 5 Satz 2)";
+    label en unofficial "point in time as of which the applicable version is to be determined (§ 5 sentence 2)";
+}
+pub relation anwendbare_fassung_para5(a: Anspruch, fassung: Rechtsfassung) kind derived {
+    key(a);
+    label de official "die nach § 5 EGBGB anzuwendende Fassung des Bürgerlichen Gesetzbuchs";
+    label en unofficial "the version of the Civil Code applicable under § 5 EGBGB";
+}
+
+@source(EGBGB_ART229_P5)
+rule Para5EinmaligesSchuldverhaeltnis(a: Anspruch, e: Date) strict {
+    label de official "Auf ein vor dem 1. Januar 2002 entstandenes, nicht dauerndes Schuldverhältnis ist das Bürgerliche Gesetzbuch in der bis zu diesem Tag geltenden Fassung anzuwenden (§ 5 Satz 1)";
+    label en unofficial "The Civil Code as in force until 1 January 2002 applies to a non-continuing obligation that arose before that day (§ 5 sentence 1)";
+    when de.bgb.core::anspruch_entstanden_am(a, e) and e < @2002-01-01 and kein_dauerschuldverhaeltnis(a);
+    then anwendbare_fassung_para5(a, AlteFassung);
+}
+@source(EGBGB_ART229_P5)
+rule Para5DauerschuldverhaeltnisVorUebergang(a: Anspruch, e: Date, b: Date) strict {
+    label de official "Für ein vor dem 1. Januar 2002 entstandenes Dauerschuldverhältnis gilt bis zum 1. Januar 2003 das bisherige Recht (§ 5 Satz 1, 2)";
+    label en unofficial "For a continuing obligation that arose before 1 January 2002, the previous law applies until 1 January 2003 (§ 5 sentences 1, 2)";
+    when de.bgb.core::anspruch_entstanden_am(a, e) and e < @2002-01-01 and dauerschuldverhaeltnis(a) and beurteilungszeitpunkt_para5(a, b) and b < @2003-01-01;
+    then anwendbare_fassung_para5(a, AlteFassung);
+}
+@source(EGBGB_ART229_P5)
+rule Para5DauerschuldverhaeltnisNachUebergang(a: Anspruch, e: Date, b: Date) strict {
+    label de official "Für ein vor dem 1. Januar 2002 entstandenes Dauerschuldverhältnis gilt ab dem 1. Januar 2003 das neue Recht (§ 5 Satz 2)";
+    label en unofficial "For a continuing obligation that arose before 1 January 2002, the new law applies from 1 January 2003 (§ 5 sentence 2)";
+    when de.bgb.core::anspruch_entstanden_am(a, e) and e < @2002-01-01 and dauerschuldverhaeltnis(a) and beurteilungszeitpunkt_para5(a, b) and b >= @2003-01-01;
+    then anwendbare_fassung_para5(a, NeueFassung);
+}
+
+// --- § 23: Überleitungsvorschrift zum Erb- und Verjährungsrecht 2010 --------------------------------
+
+pub relation alte_verjaehrungsfrist_2010(a: Anspruch, dauer: Quantity) kind empirical {
+    key(a);
+    label de official "Verjährungsfrist nach dem Bürgerlichen Gesetzbuch in der bis zum 31. Dezember 2009 geltenden Fassung (§ 23 Abs. 1, 2)";
+    label en unofficial "limitation period under the Civil Code as in force until 31 December 2009 (§ 23 (1), (2))";
+}
+pub relation alter_beginn_2010(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Beginn der Verjährung nach dem Bürgerlichen Gesetzbuch in der bis zum 31. Dezember 2009 geltenden Fassung (§ 23 Abs. 1, 2)";
+    label en unofficial "beginning of limitation under the Civil Code as in force until 31 December 2009 (§ 23 (1), (2))";
+}
+pub relation neue_verjaehrungsfrist_2010(a: Anspruch, dauer: Quantity) kind empirical {
+    key(a);
+    label de official "Verjährungsfrist nach dem Bürgerlichen Gesetzbuch in der seit dem 1. Januar 2010 geltenden Fassung (§ 23 Abs. 1, 2)";
+    label en unofficial "limitation period under the Civil Code as in force since 1 January 2010 (§ 23 (1), (2))";
+}
+relation alte_frist_ende_2010(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Ende der Frist nach dem Recht vor dem 1. Januar 2010 (§ 23 Abs. 1, 2)";
+    label en unofficial "end of the period under the law before 1 January 2010 (§ 23 (1), (2))";
+}
+relation neue_frist_beginn_2010(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Beginn der Frist nach neuem Recht, nicht vor dem 1. Januar 2010 (§ 23 Abs. 2 Satz 1)";
+    label en unofficial "beginning of the period under the new law, not before 1 January 2010 (§ 23 (2) sentence 1)";
+}
+relation neue_frist_ende_2010(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Ende der Frist nach neuem Recht (§ 23 Abs. 1, 2)";
+    label en unofficial "end of the period under the new law (§ 23 (1), (2))";
+}
+pub relation verjaehrung_vollendet_am_2010(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung nach dem Korridor des § 23 Abs. 1, 2 EGBGB vollendet ist";
+    label en unofficial "day at whose end limitation is completed under the corridor of § 23 (1), (2) EGBGB";
+}
+
+@source(EGBGB_ART229_P23)
+rule AlteFristEnde2010(a: Anspruch, b: Date, alt: Quantity) strict {
+    label de official "Das Ende der Frist nach dem Recht vor dem 1. Januar 2010, vom Beginn nach altem Recht an gerechnet (§ 23 Abs. 1 Satz 2, Abs. 2 Satz 2)";
+    label en unofficial "The end of the period under the law before 1 January 2010, computed from the beginning under the old law (§ 23 (1) sentence 2, (2) sentence 2)";
+    when alter_beginn_2010(a, b) and alte_verjaehrungsfrist_2010(a, alt);
+    then alte_frist_ende_2010(a, add_calendar_period(b, alt));
+}
+@source(EGBGB_ART229_P23)
+rule NeueFristBeginn2010StichtagSpaeter(a: Anspruch, b: Date) strict {
+    label de official "Bestimmen sich Beginn und Frist nach neuem Recht, beginnt die Frist nicht vor dem 1. Januar 2010 (§ 23 Abs. 2 Satz 1) — hier: der alte Beginn liegt nicht vor dem Stichtag";
+    label en unofficial "If the beginning and the period are governed by the new law, the period does not begin before 1 January 2010 (§ 23 (2) sentence 1) — here: the old beginning is not before the reference date";
+    when alter_beginn_2010(a, b) and b >= @2010-01-01;
+    then neue_frist_beginn_2010(a, b);
+}
+@source(EGBGB_ART229_P23)
+rule NeueFristBeginn2010BeginnFrueher(a: Anspruch, b: Date) strict {
+    label de official "Bestimmen sich Beginn und Frist nach neuem Recht, beginnt die Frist nicht vor dem 1. Januar 2010 (§ 23 Abs. 2 Satz 1) — hier: der alte Beginn liegt vor dem Stichtag, der Stichtag ist maßgeblich";
+    label en unofficial "If the beginning and the period are governed by the new law, the period does not begin before 1 January 2010 (§ 23 (2) sentence 1) — here: the old beginning is before the reference date, the reference date controls";
+    when alter_beginn_2010(a, b) and b < @2010-01-01;
+    then neue_frist_beginn_2010(a, @2010-01-01);
+}
+@source(EGBGB_ART229_P23)
+rule NeueFristEnde2010(a: Anspruch, b: Date, neu: Quantity) strict {
+    label de official "Das Ende der Frist nach neuem Recht, vom nicht vor dem 1. Januar 2010 liegenden Beginn an gerechnet (§ 23 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "The end of the period under the new law, computed from the beginning that is not before 1 January 2010 (§ 23 (1) sentence 1, (2) sentence 1)";
+    when neue_frist_beginn_2010(a, b) and neue_verjaehrungsfrist_2010(a, neu);
+    then neue_frist_ende_2010(a, add_calendar_period(b, neu));
+}
+@source(EGBGB_ART229_P23)
+rule Vollendung2010AltesRechtFrueher(a: Anspruch, ealt: Date, eneu: Date) strict {
+    label de official "Wird die Verjährung nach dem Recht vor dem 1. Januar 2010 früher vollendet als nach neuem Recht, gilt die Frist nach altem Recht (§ 23 Abs. 1 Satz 2, Abs. 2 Satz 2)";
+    label en unofficial "If limitation is completed earlier under the law before 1 January 2010 than under the new law, the period under the old law applies (§ 23 (1) sentence 2, (2) sentence 2)";
+    when alte_frist_ende_2010(a, ealt) and neue_frist_ende_2010(a, eneu) and ealt < eneu;
+    then verjaehrung_vollendet_am_2010(a, ealt);
+}
+@source(EGBGB_ART229_P23)
+rule Vollendung2010NeuesRechtMassgeblich(a: Anspruch, ealt: Date, eneu: Date) strict {
+    label de official "Wird die Verjährung nach neuem Recht nicht später vollendet als nach dem Recht vor dem 1. Januar 2010, gilt die Frist nach neuem Recht (§ 23 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "If limitation under the new law is not completed later than under the law before 1 January 2010, the period under the new law applies (§ 23 (1) sentence 1, (2) sentence 1)";
+    when alte_frist_ende_2010(a, ealt) and neue_frist_ende_2010(a, eneu) and eneu <= ealt;
+    then verjaehrung_vollendet_am_2010(a, eneu);
+}
+
+// § 23 Abs. 4: Erbfälle vor/ab dem 1. Januar 2010 -----------------------------------------------------
+
+pub enum Erbrechtsfassung {
+    label de official "Fassung des Erbrechts, die für den Erbfall gilt (§ 23 Abs. 4)";
+    label en unofficial "version of the law of succession that applies to the succession (§ 23 (4))";
+    AlteFassungErbrecht,
+    NeueFassungErbrecht
+}
+pub relation erbfall_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag des Erbfalls (§ 23 Abs. 4)";
+    label en unofficial "day of the succession (§ 23 (4))";
+}
+pub relation anwendbare_erbrechtsfassung(a: Anspruch, fassung: Erbrechtsfassung) kind derived {
+    key(a);
+    label de official "die für den Erbfall nach § 23 Abs. 4 anzuwendende Fassung des Erbrechts";
+    label en unofficial "the version of the law of succession applicable to the succession under § 23 (4)";
+}
+
+@source(EGBGB_ART229_P23)
+rule ErbfallVor2010(a: Anspruch, tag: Date) strict {
+    label de official "Für Erbfälle vor dem 1. Januar 2010 gelten die Vorschriften des Bürgerlichen Gesetzbuchs in der vor diesem Tag geltenden Fassung (§ 23 Abs. 4 Satz 1)";
+    label en unofficial "For successions before 1 January 2010, the provisions of the Civil Code as in force before that day apply (§ 23 (4) sentence 1)";
+    when erbfall_am(a, tag) and tag < @2010-01-01;
+    then anwendbare_erbrechtsfassung(a, AlteFassungErbrecht);
+}
+@source(EGBGB_ART229_P23)
+rule ErbfallAb2010(a: Anspruch, tag: Date) strict {
+    label de official "Für Erbfälle seit dem 1. Januar 2010 gelten die Vorschriften des Bürgerlichen Gesetzbuchs in der seit diesem Tag geltenden Fassung, unabhängig davon, ob an frühere Ereignisse angeknüpft wird (§ 23 Abs. 4 Satz 2)";
+    label en unofficial "For successions since 1 January 2010, the provisions of the Civil Code as in force since that day apply, regardless of whether earlier events are relied upon (§ 23 (4) sentence 2)";
+    when erbfall_am(a, tag) and tag >= @2010-01-01;
+    then anwendbare_erbrechtsfassung(a, NeueFassungErbrecht);
+}

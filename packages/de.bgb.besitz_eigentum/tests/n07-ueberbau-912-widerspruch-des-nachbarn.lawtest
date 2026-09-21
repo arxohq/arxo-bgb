@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 912 Abs. 1 Halbsatz 2 (Kanal §47.3): „sofort nach der Grenzüberschreitung Widerspruch erhoben“ ist eine Wertung des Gerichts, kein Nullfristmaß. Mit der Antwort entfällt die Duldungspflicht und mit ihr die Rente.
+test "§ 912 Abs. 1: Widerspruch des Nachbarn hebt die Duldungspflicht auf" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": ueberbau_des_grundstuecks(entity_ref("urn:de:bgb:be:n:ueberbau"), entity_ref("urn:de:bgb:be:n:bauendes"), entity_ref("urn:de:bgb:be:n:nachbar-gst")) { origin case_input; }
+        assert "f2": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:n:bauendes"), entity_ref("urn:de:bgb:be:n:Bauer")) { origin case_input; }
+        assert "f3": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:n:nachbar-gst"), entity_ref("urn:de:bgb:be:n:Nachbar")) { origin case_input; }
+        assert "f4": grenzueberschreitung_am(entity_ref("urn:de:bgb:be:n:ueberbau"), @2024-07-01) { origin case_input; }
+        assert "j1": widerspruch_vor_oder_sofort_nach_der_grenzueberschreitung(entity_ref("urn:de:bgb:be:n:ueberbau")) { origin adjudicated; }
+    }
+    evaluate truth(duldungspflicht_ausgeschlossen(entity_ref("urn:de:bgb:be:n:ueberbau")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(duldungspflicht_ueberbau(entity_ref("urn:de:bgb:be:n:ueberbau"), entity_ref("urn:de:bgb:be:n:Nachbar"), entity_ref("urn:de:bgb:be:n:Bauer")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ueberbaurente_geschuldet(entity_ref("urn:de:bgb:be:n:ueberbau"), entity_ref("urn:de:bgb:be:n:Nachbar"), entity_ref("urn:de:bgb:be:n:Bauer")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

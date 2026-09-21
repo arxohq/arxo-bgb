@@ -1,0 +1,819 @@
+// TITEL 7, UNTERTITEL 2 UND 3 — UNTERHALT DES GESCHIEDENEN EHEGATTEN
+// (§§ 1569–1586b), VERSORGUNGSAUSGLEICH (§ 1587) — UND TITEL 8 (§ 1588)
+//
+// Der Grundsatz steht in § 1569: nach der Scheidung obliegt es jedem Ehegatten,
+// SELBST für seinen Unterhalt zu sorgen; ein Anspruch besteht „nur nach den
+// folgenden Vorschriften“. Das Paket bildet diese Systematik ab: jeder
+// Unterhaltstatbestand (§§ 1570–1576) erzeugt denselben Kopf
+// `nachehelicher_unterhaltsanspruch` mit dem GRUND als Argument, weil §§ 1573
+// Abs. 1, 1577 Abs. 1 und 1578 Abs. 3 die Gründe einzeln in Bezug nehmen.
+//
+// WERTUNGEN. Fast der ganze Untertitel ist Wertung: „angemessene
+// Erwerbstätigkeit“ (§ 1574 Abs. 2), „Billigkeit“ (§§ 1570 Abs. 1 Satz 2,
+// 1576, 1577 Abs. 2), „unbillig“ (§ 1578b), „grob unbillig“ (§ 1579),
+// „Leistungsfähigkeit“ (§ 1581). Alle stehen im Urteilskanal §47.3, und die
+// Antwort des Gerichts darf auch VERNEINEND sein.
+//
+// „EHE VON KURZER DAUER“ (§ 1579 Nr. 1) IST KEINE SCHWELLE. Der Text nennt
+// keine Zahl von Jahren, und das Paket erfindet keine: der Grund steht als
+// Wertung (Ledger D-12-12). Die DREI JAHRE des § 1570 Abs. 1 Satz 1 dagegen
+// stehen im Text und werden gerechnet.
+//
+// § 1586b ABS. 1 SATZ 3 LIEST NICHT DAS ERBRECHT. Die Haftung des Erben ist
+// auf den Betrag begrenzt, „der dem Pflichtteil entspricht, welcher dem
+// Berechtigten zustände, wenn die Ehe nicht geschieden worden wäre“ — ein
+// FIKTIVER Pflichtteil. Ihn zu rechnen hieße, `de.bgb.verfuegungen` zu
+// importieren; das wäre der verbotene Rückimport. Der fiktive Pflichtteil ist
+// deshalb ein ausdrücklicher EINGANG des Falls (Ledger D-12-13); die Grenze
+// selbst rechnet das Paket mit zwei Regeln und sich ausschließenden Garden.
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+pub enum Unterhaltsgrund {
+    label de official "Grund des nachehelichen Unterhalts (§§ 1570 bis 1576), einzeln in Bezug genommen von §§ 1573, 1577, 1578";
+    label en unofficial "ground of post-marital maintenance (§§ 1570 to 1576), taken up individually by §§ 1573, 1577, 1578";
+    Kindesbetreuung_1570,
+    Alter_1571,
+    Krankheit_1572,
+    Erwerbslosigkeit_1573_Abs_1,
+    Aufstockung_1573_Abs_2,
+    Ausbildung_1575,
+    Billigkeit_1576
+}
+
+// --- Eingänge des Falls ---------------------------------------------------------------------------
+
+pub relation geschiedener_ehegatte(ehe: Ehe, p: Person) kind empirical {
+    label de official "Geschiedener Ehegatte (§ 1569)";
+    label en unofficial "divorced spouse (§ 1569)";
+}
+pub relation gemeinschaftliches_kind(ehe: Ehe, kind: Person) kind empirical {
+    label de official "Gemeinschaftliches Kind der geschiedenen Ehegatten (§ 1570 Abs. 1 Satz 1)";
+    label en unofficial "common child of the divorced spouses (§ 1570 (1) sentence 1)";
+}
+pub relation geburt_des_kindes_am(ehe: Ehe, kind: Person, tag: Date) kind empirical {
+    label de official "Tag der Geburt des gemeinschaftlichen Kindes (§ 1570 Abs. 1 Satz 1: mindestens drei Jahre nach der Geburt)";
+    label en unofficial "day of the birth of the common child (§ 1570 (1) sentence 1: at least three years after the birth)";
+}
+pub relation betreuungsfrist_1570(ehe: Ehe, kind: Person, f: Frist) kind empirical {
+    label de official "Dreijahresfrist des § 1570 Abs. 1 Satz 1";
+    label en unofficial "three-year period of § 1570 (1) sentence 1";
+}
+pub relation pflege_oder_erziehung_des_kindes(ehe: Ehe, berechtigter: Person, kind: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte pflegt oder erzieht ein gemeinschaftliches Kind (§ 1570 Abs. 1 Satz 1)";
+    label en unofficial "the divorced spouse cares for or educates a common child (§ 1570 (1) sentence 1)";
+}
+relation massgebender_zeitpunkt_1571(ehe: Ehe, berechtigter: Person, nummer: Integer) kind empirical {
+    label de official "Der für § 1571 maßgebende Zeitpunkt: die Scheidung (Nr. 1), die Beendigung der Pflege oder Erziehung eines gemeinschaftlichen Kindes (Nr. 2) oder der Wegfall der Voraussetzungen der §§ 1572, 1573 (Nr. 3)";
+    label en unofficial "the point in time decisive for § 1571: divorce (no. 1), end of the care of a common child (no. 2), or lapse of the requirements of §§ 1572, 1573 (no. 3)";
+}
+relation massgebender_zeitpunkt_1572(ehe: Ehe, berechtigter: Person, nummer: Integer) kind empirical {
+    label de official "Der für § 1572 maßgebende Zeitpunkt (Nr. 1 bis 4)";
+    label en unofficial "the point in time decisive for § 1572 (nos. 1 to 4)";
+}
+relation keine_angemessene_erwerbstaetigkeit_gefunden(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte vermag nach der Scheidung keine angemessene Erwerbstätigkeit zu finden (§ 1573 Abs. 1)";
+    label en unofficial "the divorced spouse is unable to find appropriate employment after the divorce (§ 1573 (1))";
+}
+relation einkuenfte_aus_angemessener_erwerbstaetigkeit(ehe: Ehe, berechtigter: Person, betrag: Money) kind empirical {
+    key(ehe, berechtigter);
+    label de official "Einkünfte des geschiedenen Ehegatten aus einer angemessenen Erwerbstätigkeit (§ 1573 Abs. 2, § 1577 Abs. 1)";
+    label en unofficial "income of the divorced spouse from appropriate employment (§ 1573 (2), § 1577 (1))";
+}
+relation einkuenfte_weggefallen(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Die Einkünfte aus einer angemessenen Erwerbstätigkeit sind weggefallen, weil es dem Berechtigten trotz seiner Bemühungen nicht gelungen war, den Unterhalt nachhaltig zu sichern (§ 1573 Abs. 4)";
+    label en unofficial "the income from appropriate employment has ceased because the entitled person could not secure his maintenance sustainably (§ 1573 (4))";
+}
+relation ausbildung_nicht_aufgenommen_oder_abgebrochen(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte hat in Erwartung der Ehe oder während der Ehe eine Schul- oder Berufsausbildung nicht aufgenommen oder abgebrochen (§ 1575 Abs. 1 Satz 1)";
+    label en unofficial "the divorced spouse did not take up or broke off schooling or vocational training in expectation of or during the marriage (§ 1575 (1) sentence 1)";
+}
+relation ausbildung_sobald_wie_moeglich_aufgenommen(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte nimmt diese oder eine entsprechende Ausbildung sobald wie möglich auf (§ 1575 Abs. 1 Satz 1)";
+    label en unofficial "the divorced spouse takes up this or a corresponding training as soon as possible (§ 1575 (1) sentence 1)";
+}
+relation fortbildung_oder_umschulung(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte lässt sich fortbilden oder umschulen, um ehebedingte Nachteile auszugleichen (§ 1575 Abs. 2)";
+    label en unofficial "the divorced spouse undergoes further training or retraining to compensate marriage-related disadvantages (§ 1575 (2))";
+}
+relation eigene_einkuenfte_und_vermoegen_reichen_aus(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte kann sich aus seinen Einkünften und seinem Vermögen selbst unterhalten (§ 1577 Abs. 1)";
+    label en unofficial "the divorced spouse can maintain himself from his income and assets (§ 1577 (1))";
+}
+relation keine_kindesbetreuung_beim_vermoegenswegfall(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Im Zeitpunkt des Vermögenswegfalls kann von dem Ehegatten wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes eine Erwerbstätigkeit nicht ERST RECHT nicht erwartet werden — der Fall erklärt ausdrücklich, dass kein Kind zu betreuen ist (§ 1577 Abs. 4 Satz 2); das Schweigen des Falls ist keine Verneinung";
+    label en unofficial "at the time the assets ceased, no care of a common child prevents employment — an explicit input (§ 1577 (4) sentence 2)";
+}
+relation vermoegen_spaeter_weggefallen(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "War zum Zeitpunkt der Ehescheidung zu erwarten, dass der Unterhalt des Berechtigten aus seinem Vermögen nachhaltig gesichert sein würde, fällt das Vermögen aber später weg (§ 1577 Abs. 4 Satz 1)";
+    label en unofficial "the assets expected to secure the maintenance later ceased to exist (§ 1577 (4) sentence 1)";
+}
+pub relation ehelicher_bedarf(ehe: Ehe, berechtigter: Person, betrag: Money) kind empirical {
+    key(ehe, berechtigter);
+    label de official "Maß des Unterhalts nach den ehelichen Lebensverhältnissen; der Unterhalt umfasst den gesamten Lebensbedarf (§ 1578 Abs. 1) — der BETRAG kommt aus dem Fall, das Paket erfindet keine Quote";
+    label en unofficial "measure of maintenance according to the marital standard of living; it covers the entire living needs (§ 1578 (1)) — the AMOUNT comes from the case";
+}
+relation kosten_der_kranken_und_pflegeversicherung(ehe: Ehe, berechtigter: Person, betrag: Money) kind empirical {
+    label de official "Kosten einer angemessenen Versicherung für den Fall der Krankheit und der Pflegebedürftigkeit sowie einer Ausbildung, Fortbildung oder Umschulung (§ 1578 Abs. 2)";
+    label en unofficial "costs of appropriate health and long-term care insurance and of training (§ 1578 (2))";
+}
+relation kosten_der_altersvorsorge(ehe: Ehe, berechtigter: Person, betrag: Money) kind empirical {
+    label de official "Kosten einer angemessenen Versicherung für den Fall des Alters sowie der verminderten Erwerbsfähigkeit (§ 1578 Abs. 3)";
+    label en unofficial "costs of appropriate old-age and reduced-earning-capacity insurance (§ 1578 (3))";
+}
+relation schadensbedingte_mehraufwendungen(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Aufwendungen infolge eines Körper- oder Gesundheitsschadens; für sie gilt § 1610a (§ 1578a)";
+    label en unofficial "expenses resulting from bodily or health damage; § 1610a applies (§ 1578a)";
+}
+relation beschraenkungsgrund_1579(ehe: Ehe, berechtigter: Person, nummer: Integer) kind empirical {
+    label de official "Einer der in § 1579 Nr. 2 bis 7 aufgezählten Gründe: verfestigte Lebensgemeinschaft (Nr. 2), Verbrechen gegen den Verpflichteten (Nr. 3), mutwillig herbeigeführte Bedürftigkeit (Nr. 4), Hinwegsetzen über Vermögensinteressen (Nr. 5), gröbliche Verletzung der Beitragspflicht (Nr. 6), schwerwiegendes Fehlverhalten (Nr. 7)";
+    label en unofficial "one of the grounds listed in § 1579 nos. 2 to 7";
+}
+relation auskunft_ueber_einkuenfte_verlangt(ehe: Ehe, verlangender: Person, verpflichteter: Person) kind empirical {
+    label de official "Ein geschiedener Ehegatte verlangt vom anderen Auskunft über dessen Einkünfte und Vermögen (§ 1580 Satz 1)";
+    label en unofficial "a divorced spouse demands information from the other about income and assets (§ 1580 sentence 1)";
+}
+relation mehrere_unterhaltsberechtigte(ehe: Ehe, pflichtiger: Person) kind empirical {
+    label de official "Es sind mehrere Unterhaltsberechtigte vorhanden (§ 1582)";
+    label en unofficial "there are several persons entitled to maintenance (§ 1582)";
+}
+relation wiederheirat_in_guetergemeinschaft(ehe: Ehe, pflichtiger: Person) kind empirical {
+    label de official "Der Verpflichtete lebt im Falle der Wiederheirat mit seinem neuen Ehegatten im Güterstand der Gütergemeinschaft (§ 1583)";
+    label en unofficial "in the case of remarriage the obligor lives with his new spouse under community of property (§ 1583)";
+}
+relation verwandter_des_berechtigten(ehe: Ehe, berechtigter: Person, verwandter: Person) kind empirical {
+    label de official "Verwandter des Berechtigten, der neben dem geschiedenen Ehegatten unterhaltspflichtig sein kann (§ 1584)";
+    label en unofficial "relative of the entitled person who may be liable for maintenance alongside the divorced spouse (§ 1584)";
+}
+relation abfindung_in_kapital_verlangt(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der Berechtigte verlangt statt der Rente eine Abfindung in Kapital (§ 1585 Abs. 2)";
+    label en unofficial "the entitled person demands a capital settlement instead of the annuity (§ 1585 (2))";
+}
+relation sicherheitsleistung_verlangt(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der Berechtigte verlangt Sicherheitsleistung (§ 1585a Abs. 1 Satz 1)";
+    label en unofficial "the entitled person demands security (§ 1585a (1) sentence 1)";
+}
+relation kein_grund_zur_annahme_der_gefaehrdung(ehe: Ehe, pflichtiger: Person) kind empirical {
+    label de official "Es besteht kein Grund zu der Annahme, dass die Unterhaltsleistung gefährdet ist (§ 1585a Abs. 1 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "there is no reason to assume that the maintenance is endangered (§ 1585a (1) sentence 2) — explicit input";
+}
+relation rechtshaengigkeit_des_unterhaltsantrags_am(ehe: Ehe, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Tag des Eintritts der Rechtshängigkeit des Unterhaltsantrags (§ 1585b Abs. 3)";
+    label en unofficial "day on which the maintenance application became pending (§ 1585b (3))";
+}
+relation rueckwirkungsfrist_1585b(ehe: Ehe, berechtigter: Person, f: Frist) kind empirical {
+    label de official "Jahresfrist des § 1585b Abs. 3 (Zeit vor der Rechtshängigkeit)";
+    label en unofficial "one-year period of § 1585b (3) (time before the application became pending)";
+}
+relation leistung_absichtlich_entzogen(ehe: Ehe, pflichtiger: Person) kind empirical {
+    label de official "Es ist anzunehmen, dass der Verpflichtete sich der Leistung absichtlich entzogen hat (§ 1585b Abs. 3 Halbsatz 2)";
+    label en unofficial "it is to be assumed that the obligor intentionally evaded performance (§ 1585b (3))";
+}
+relation sonderbedarf_des_geschiedenen(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Sonderbedarf im Sinne des § 1613 Abs. 2 (§ 1585b Abs. 1)";
+    label en unofficial "special need within the meaning of § 1613 (2) (§ 1585b (1))";
+}
+relation unterhaltsvereinbarung_getroffen(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten haben über die Unterhaltspflicht für die Zeit nach der Scheidung eine Vereinbarung getroffen (§ 1585c Satz 1)";
+    label en unofficial "the spouses have made an agreement on maintenance for the period after the divorce (§ 1585c sentence 1)";
+}
+relation vereinbarung_vor_rechtskraft_der_scheidung(ehe: Ehe) kind empirical {
+    label de official "Die Vereinbarung ist vor der Rechtskraft der Scheidung getroffen worden; sie bedarf der notariellen Beurkundung (§ 1585c Satz 2)";
+    label en unofficial "the agreement was made before the divorce became final; it requires notarial recording (§ 1585c sentence 2)";
+}
+relation vereinbarung_notariell_beurkundet(ehe: Ehe) kind empirical {
+    label de official "Die Vereinbarung ist notariell beurkundet oder in einem Verfahren in Ehesachen vor dem Prozessgericht protokolliert (§ 1585c Sätze 2, 3)";
+    label en unofficial "the agreement is notarised or recorded before the court in matrimonial proceedings (§ 1585c sentences 2, 3)";
+}
+relation wiederheirat_oder_tod_des_berechtigten(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der Berechtigte heiratet wieder, begründet eine Lebenspartnerschaft oder stirbt (§ 1586 Abs. 1)";
+    label en unofficial "the entitled person remarries, enters a civil partnership or dies (§ 1586 (1))";
+}
+relation faelliger_monatsbetrag(ehe: Ehe, berechtigter: Person, betrag: Money) kind empirical {
+    label de official "Der zur Zeit der Wiederheirat, der Begründung einer Lebenspartnerschaft oder des Todes fällige Monatsbetrag (§ 1586 Abs. 2 Satz 2)";
+    label en unofficial "the monthly amount due at the time of the remarriage or death ((2) sentence 2)";
+}
+relation neue_ehe_wieder_aufgeloest(ehe: Ehe, berechtigter: Person) kind empirical {
+    label de official "Der geschiedene Ehegatte ist eine neue Ehe oder Lebenspartnerschaft eingegangen und diese ist wieder aufgelöst worden (§ 1586a Abs. 1)";
+    label en unofficial "the divorced spouse entered a new marriage or partnership which has been dissolved again (§ 1586a (1))";
+}
+relation kind_aus_der_frueheren_ehe(ehe: Ehe, berechtigter: Person, kind: Person) kind empirical {
+    label de official "Kind aus der früheren Ehe oder Lebenspartnerschaft, das der Berechtigte zu pflegen oder zu erziehen hat (§ 1586a Abs. 1)";
+    label en unofficial "child of the earlier marriage or partnership whom the entitled person cares for or educates (§ 1586a (1))";
+}
+relation tod_des_verpflichteten(ehe: Ehe, pflichtiger: Person) kind empirical {
+    label de official "Der Unterhaltsverpflichtete ist gestorben (§ 1586b Abs. 1 Satz 1)";
+    label en unofficial "the obligor has died (§ 1586b (1) sentence 1)";
+}
+relation erbe_des_verpflichteten(ehe: Ehe, pflichtiger: Person, erbe: Person) kind empirical {
+    label de official "Erbe des verstorbenen Unterhaltsverpflichteten (§ 1586b Abs. 1 Satz 1)";
+    label en unofficial "heir of the deceased obligor (§ 1586b (1) sentence 1)";
+}
+pub relation fiktiver_pflichtteil(ehe: Ehe, berechtigter: Person, betrag: Money) kind empirical {
+    key(ehe, berechtigter);
+    label de official "Betrag, der dem Pflichtteil entspricht, welcher dem Berechtigten zustände, wenn die Ehe nicht geschieden worden wäre (§ 1586b Abs. 1 Satz 3); Besonderheiten auf Grund des Güterstands bleiben außer Betracht (Abs. 2) — ausdrücklicher EINGANG des Falls: `de.bgb.verfuegungen` wird nicht importiert (Rückimportverbot, Ledger D-12-13)";
+    label en unofficial "amount equal to the compulsory share the entitled person would have had if the marriage had not been dissolved (§ 1586b (1) sentence 3) — explicit input";
+}
+relation versorgungsanrecht(ehe: Ehe, p: Person) kind empirical {
+    label de official "Im In- oder Ausland bestehendes Anrecht, insbesondere aus der gesetzlichen Rentenversicherung oder der betrieblichen Altersversorgung (§ 1587)";
+    label en unofficial "pension right existing at home or abroad, in particular from the statutory pension insurance (§ 1587)";
+}
+relation kirchliche_verpflichtung_in_ansehung_der_ehe(ehe: Ehe, p: Person) kind empirical {
+    label de official "Kirchliche Verpflichtung in Ansehung der Ehe (§ 1588)";
+    label en unofficial "religious duty with regard to the marriage (§ 1588)";
+}
+
+// --- Kanäle der Wertung (§47.3) --------------------------------------------------------------------
+
+pub external judgment relation verlaengerung_der_betreuung_billig(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1570 Abs. 1 Sätze 2, 3, Abs. 2. Die Dauer des Unterhaltsanspruchs verlängert sich, solange und soweit dies der Billigkeit entspricht; dabei sind die Belange des Kindes, die Möglichkeiten der Kinderbetreuung, die Gestaltung von Kinderbetreuung und Erwerbstätigkeit in der Ehe sowie die Dauer der Ehe zu berücksichtigen";
+    label en unofficial "§ 1570 (1) sentences 2, 3, (2). The duration of the claim is extended as long as this is equitable";
+}
+pub external judgment relation erwerbstaetigkeit_wegen_alters_nicht_zu_erwarten(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1571. Von dem geschiedenen Ehegatten kann im maßgebenden Zeitpunkt wegen seines Alters eine Erwerbstätigkeit nicht mehr erwartet werden";
+    label en unofficial "§ 1571. Employment can no longer be expected of the divorced spouse because of his age";
+}
+pub external judgment relation erwerbstaetigkeit_wegen_krankheit_nicht_zu_erwarten(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1572. Von dem geschiedenen Ehegatten kann wegen Krankheit oder anderer Gebrechen oder Schwäche seiner körperlichen oder geistigen Kräfte eine Erwerbstätigkeit nicht erwartet werden";
+    label en unofficial "§ 1572. Employment cannot be expected of the divorced spouse because of illness or infirmity";
+}
+pub external judgment relation erwerbstaetigkeit_angemessen(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1574 Abs. 2. Angemessen ist eine Erwerbstätigkeit, die der Ausbildung, den Fähigkeiten, einer früheren Erwerbstätigkeit, dem Lebensalter und dem Gesundheitszustand entspricht, soweit sie nicht nach den ehelichen Lebensverhältnissen unbillig wäre; dabei sind insbesondere die Dauer der Ehe und die Dauer der Pflege oder Erziehung eines gemeinschaftlichen Kindes zu berücksichtigen";
+    label en unofficial "§ 1574 (2). Employment is appropriate if it corresponds to the training, abilities, earlier employment, age and state of health";
+}
+pub external judgment relation erfolgreicher_abschluss_zu_erwarten(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1574 Abs. 3, § 1575 Abs. 1 Satz 1. Ein erfolgreicher Abschluss der Ausbildung, Fortbildung oder Umschulung ist zu erwarten";
+    label en unofficial "§ 1574 (3), § 1575 (1) sentence 1. A successful completion of the training is to be expected";
+}
+pub external judgment relation schwerwiegende_gruende_und_versagung_grob_unbillig(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1576. Von dem geschiedenen Ehegatten kann aus sonstigen schwerwiegenden Gründen eine Erwerbstätigkeit nicht erwartet werden und die Versagung von Unterhalt wäre unter Berücksichtigung der Belange beider Ehegatten grob unbillig; schwerwiegende Gründe dürfen nicht allein deswegen berücksichtigt werden, weil sie zum Scheitern der Ehe geführt haben";
+    label en unofficial "§ 1576. Employment cannot be expected for other serious reasons and refusing maintenance would be grossly inequitable";
+}
+pub external judgment relation anrechnung_der_einkuenfte_billig(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1577 Abs. 2 Satz 2, Abs. 3. Einkünfte, die den vollen Unterhalt übersteigen, sind insoweit anzurechnen, als dies unter Berücksichtigung der beiderseitigen wirtschaftlichen Verhältnisse der Billigkeit entspricht; den Stamm des Vermögens braucht der Berechtigte nicht zu verwerten, soweit die Verwertung unwirtschaftlich oder unbillig wäre";
+    label en unofficial "§ 1577 (2), (3). Income exceeding the full maintenance is to be credited in so far as equitable";
+}
+pub external judgment relation bemessung_nach_ehelichen_verhaeltnissen_unbillig(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1578b Abs. 1, 2. Eine an den ehelichen Lebensverhältnissen orientierte Bemessung oder ein zeitlich unbegrenzter Unterhaltsanspruch wäre auch unter Wahrung der Belange eines gemeinschaftlichen Kindes unbillig; dabei ist insbesondere zu berücksichtigen, inwieweit durch die Ehe Nachteile eingetreten sind";
+    label en unofficial "§ 1578b (1), (2). A measure oriented at the marital standard of living or an unlimited claim would be inequitable";
+}
+pub external judgment relation inanspruchnahme_grob_unbillig(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1579. Die Inanspruchnahme des Verpflichteten wäre auch unter Wahrung der Belange eines gemeinschaftlichen Kindes GROB UNBILLIG; die Nummern 1 bis 8 nennen die Gründe, darunter die Ehe VON KURZER DAUER (Nr. 1) — der Text nennt keine Zahl von Jahren, und das Paket erfindet keine";
+    label en unofficial "§ 1579. Recourse against the obligor would be GROSSLY INEQUITABLE; nos. 1 to 8 name the grounds, among them a marriage OF SHORT DURATION (no. 1)";
+}
+pub external judgment relation ehe_von_kurzer_dauer(ehe: Ehe) {
+    authority Court;
+    label de official "§ 1579 Nr. 1. Die Ehe war von kurzer Dauer; dabei ist die Zeit zu berücksichtigen, in welcher der Berechtigte wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes nach § 1570 Unterhalt verlangen kann — eine WERTUNG, keine Schwelle in Jahren";
+    label en unofficial "§ 1579 no. 1. The marriage was of short duration — an EVALUATION, not a threshold in years";
+}
+pub external judgment relation leistungsfaehigkeit_eingeschraenkt(ehe: Ehe, pflichtiger: Person) {
+    authority Court;
+    label de official "§ 1581 Satz 1. Der Verpflichtete ist nach seinen Erwerbs- und Vermögensverhältnissen unter Berücksichtigung seiner sonstigen Verpflichtungen außerstande, ohne Gefährdung des eigenen angemessenen Unterhalts Unterhalt zu gewähren; er braucht nur insoweit zu leisten, als es der Billigkeit entspricht";
+    label en unofficial "§ 1581 sentence 1. The obligor is unable to grant maintenance without endangering his own reasonable maintenance";
+}
+pub external judgment relation wichtiger_grund_fuer_die_abfindung(ehe: Ehe, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1585 Abs. 2. Ein wichtiger Grund für eine Abfindung in Kapital liegt vor und der Verpflichtete wird dadurch nicht unbillig belastet";
+    label en unofficial "§ 1585 (2). There is a serious reason for a capital settlement and the obligor is not inequitably burdened";
+}
+pub external judgment relation sicherheitsleistung_unbillig_belastend(ehe: Ehe, pflichtiger: Person) {
+    authority Court;
+    label de official "§ 1585a Abs. 1 Satz 2. Der Verpflichtete würde durch die Sicherheitsleistung unbillig belastet";
+    label en unofficial "§ 1585a (1) sentence 2. The obligor would be inequitably burdened by providing security";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation eigenverantwortung(ehe: Ehe, p: Person) kind institutional {
+    label de official "Nach der Scheidung obliegt es jedem Ehegatten, selbst für seinen Unterhalt zu sorgen; ist er dazu außerstande, hat er einen Anspruch auf Unterhalt NUR nach den folgenden Vorschriften (§ 1569)";
+    label en unofficial "After the divorce it is for each spouse to provide for his own maintenance; if unable, he has a claim ONLY under the following provisions (§ 1569)";
+}
+pub relation nachehelicher_unterhaltsanspruch(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund) kind institutional {
+    label de official "Anspruch des geschiedenen Ehegatten auf nachehelichen Unterhalt aus dem benannten Grund (§§ 1570 bis 1576)";
+    label en unofficial "Claim of the divorced spouse to post-marital maintenance on the named ground (§§ 1570 to 1576)";
+}
+relation letzter_tag_der_betreuungsfrist(ehe: Ehe, kind: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Dreijahresfrist des § 1570 Abs. 1 Satz 1, gerechnet von der Geburt des Kindes an; die Frist misst verstrichene Zeit und wird nicht nach § 193 verlegt";
+    label en unofficial "Last day of the three-year period of § 1570 (1) sentence 1, counted from the birth of the child";
+}
+relation erwerbsobliegenheit(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Dem geschiedenen Ehegatten obliegt es, eine angemessene Erwerbstätigkeit auszuüben; soweit es zu deren Aufnahme erforderlich ist, obliegt es ihm, sich ausbilden, fortbilden oder umschulen zu lassen (§ 1574 Abs. 1, 3)";
+    label en unofficial "It is for the divorced spouse to pursue appropriate employment and, where necessary, to undergo training (§ 1574 (1), (3))";
+}
+relation kein_anspruch_wegen_eigener_mittel(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Der geschiedene Ehegatte kann den Unterhalt nach den §§ 1570 bis 1573, 1575 und 1576 nicht verlangen, solange und soweit er sich aus seinen Einkünften und seinem Vermögen selbst unterhalten kann (§ 1577 Abs. 1)";
+    label en unofficial "The divorced spouse cannot claim maintenance while he can maintain himself from his income and assets (§ 1577 (1))";
+}
+pub relation voller_unterhalt(ehe: Ehe, berechtigter: Person, betrag: Money) kind institutional {
+    key(ehe, berechtigter);
+    label de official "Das Maß des Unterhalts bestimmt sich nach den ehelichen Lebensverhältnissen; der Unterhalt umfasst den gesamten Lebensbedarf (§ 1578 Abs. 1)";
+    label en unofficial "The measure of maintenance is determined by the marital standard of living; it covers the entire living needs (§ 1578 (1))";
+}
+pub relation aufstockungsbetrag(ehe: Ehe, berechtigter: Person, betrag: Money) kind institutional {
+    label de official "Reichen die Einkünfte aus einer angemessenen Erwerbstätigkeit zum vollen Unterhalt nicht aus, so kann der Berechtigte den UNTERSCHIEDSBETRAG zwischen den Einkünften und dem vollen Unterhalt verlangen (§ 1573 Abs. 2)";
+    label en unofficial "Where the income from appropriate employment does not suffice for the full maintenance, the DIFFERENCE may be claimed (§ 1573 (2))";
+}
+relation altersvorsorge_gehoert_zum_lebensbedarf(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Hat der geschiedene Ehegatte einen Unterhaltsanspruch nach den §§ 1570 bis 1573 oder § 1576, so gehören zum Lebensbedarf auch die Kosten einer angemessenen Versicherung für den Fall des Alters sowie der verminderten Erwerbsfähigkeit (§ 1578 Abs. 3)";
+    label en unofficial "Where the claim rests on §§ 1570 to 1573 or § 1576, old-age and reduced-capacity insurance costs also belong to the living needs (§ 1578 (3))";
+}
+relation deckungsvermutung_1610a(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Für Aufwendungen infolge eines Körper- oder Gesundheitsschadens gilt § 1610a (§ 1578a) — die Vermutung steht in `de.bgb.verwandtschaft` und wird hier nicht nachgebaut";
+    label en unofficial "For expenses resulting from bodily or health damage § 1610a applies (§ 1578a)";
+}
+relation unterhalt_herabzusetzen_oder_zu_befristen(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Der Unterhaltsanspruch ist auf den angemessenen Lebensbedarf herabzusetzen und/oder zeitlich zu begrenzen, wenn eine an den ehelichen Lebensverhältnissen orientierte Bemessung unbillig wäre; Herabsetzung und Befristung können miteinander verbunden werden (§ 1578b Abs. 1 bis 3)";
+    label en unofficial "The claim is to be reduced to the appropriate living needs and/or limited in time where the marital measure would be inequitable (§ 1578b)";
+}
+relation unterhalt_zu_versagen_oder_zu_beschraenken(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Ein Unterhaltsanspruch ist zu versagen, herabzusetzen oder zeitlich zu begrenzen, soweit die Inanspruchnahme des Verpflichteten grob unbillig wäre (§ 1579)";
+    label en unofficial "A maintenance claim is to be refused, reduced or limited in time in so far as recourse against the obligor would be grossly inequitable (§ 1579)";
+}
+relation auskunftspflicht_der_geschiedenen(ehe: Ehe, verpflichteter: Person, berechtigter: Person) kind institutional {
+    label de official "Die geschiedenen Ehegatten sind einander verpflichtet, auf Verlangen über ihre Einkünfte und ihr Vermögen Auskunft zu erteilen; § 1605 ist entsprechend anzuwenden (§ 1580)";
+    label en unofficial "The divorced spouses must on demand give each other information about income and assets; § 1605 applies (§ 1580)";
+}
+relation nur_billigkeitsunterhalt_geschuldet(ehe: Ehe, pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Ist der Verpflichtete außerstande, ohne Gefährdung des eigenen angemessenen Unterhalts Unterhalt zu gewähren, so braucht er nur insoweit zu leisten, als es mit Rücksicht auf die Bedürfnisse und die Erwerbs- und Vermögensverhältnisse der geschiedenen Ehegatten der Billigkeit entspricht; den Stamm des Vermögens braucht er nicht zu verwerten (§ 1581)";
+    label en unofficial "Where the obligor cannot pay without endangering his own maintenance, he owes only what is equitable (§ 1581)";
+}
+relation rang_nach_1609(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Sind mehrere Unterhaltsberechtigte vorhanden, so richtet sich der Rang des geschiedenen Ehegatten nach § 1609 (§ 1582) — die Rangordnung steht in `de.bgb.verwandtschaft`";
+    label en unofficial "Where there are several persons entitled, the rank of the divorced spouse follows § 1609 (§ 1582)";
+}
+relation einfluss_des_gueterstands(ehe: Ehe, pflichtiger: Person) kind institutional {
+    label de official "Lebt der Verpflichtete im Falle der Wiederheirat mit seinem neuen Ehegatten im Güterstand der Gütergemeinschaft, so ist § 1604 entsprechend anzuwenden (§ 1583)";
+    label en unofficial "Where the obligor lives under community of property with a new spouse, § 1604 applies accordingly (§ 1583)";
+}
+relation ehegatte_haftet_vor_den_verwandten(ehe: Ehe, pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Der unterhaltspflichtige geschiedene Ehegatte haftet VOR den Verwandten des Berechtigten; soweit er nicht leistungsfähig ist, haften die Verwandten vor dem geschiedenen Ehegatten (§ 1584)";
+    label en unofficial "The liable divorced spouse is liable BEFORE the relatives of the entitled person (§ 1584)";
+}
+relation verwandte_haften_vor_dem_geschiedenen_ehegatten(ehe: Ehe, berechtigter: Person, verwandter: Person) kind institutional {
+    label de official "Soweit der geschiedene Ehegatte nicht leistungsfähig ist, haften die Verwandten vor ihm; § 1607 Abs. 2 und 4 gilt entsprechend (§ 1584 Sätze 2, 3)";
+    label en unofficial "In so far as the divorced spouse is unable to pay, the relatives are liable before him (§ 1584 sentences 2, 3)";
+}
+pub relation unterhalt_als_geldrente_monatlich_im_voraus(ehe: Ehe, pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Der laufende Unterhalt ist durch Zahlung einer Geldrente zu gewähren; die Rente ist monatlich im Voraus zu entrichten, und der Verpflichtete schuldet den vollen Monatsbetrag auch dann, wenn der Anspruch im Laufe des Monats durch Wiederheirat oder Tod erlischt (§ 1585 Abs. 1)";
+    label en unofficial "Current maintenance is to be paid as a money annuity monthly in advance; the full monthly amount is owed even if the claim expires during the month (§ 1585 (1))";
+}
+relation abfindung_in_kapital_geschuldet(ehe: Ehe, pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Statt der Rente kann der Berechtigte eine Abfindung in Kapital verlangen, wenn ein wichtiger Grund vorliegt und der Verpflichtete dadurch nicht unbillig belastet wird (§ 1585 Abs. 2)";
+    label en unofficial "Instead of the annuity the entitled person may demand a capital settlement (§ 1585 (2))";
+}
+relation sicherheit_zu_leisten(ehe: Ehe, pflichtiger: Person) kind institutional {
+    label de official "Der Verpflichtete hat auf Verlangen Sicherheit zu leisten; die Verpflichtung entfällt, wenn kein Grund zu der Annahme besteht, dass die Unterhaltsleistung gefährdet ist, oder wenn er dadurch unbillig belastet würde; der Betrag soll den einfachen Jahresbetrag der Unterhaltsrente nicht übersteigen (§ 1585a)";
+    label en unofficial "The obligor must provide security on demand; the duty lapses in the cases of sentence 2 (§ 1585a)";
+}
+relation unterhalt_fuer_die_vergangenheit(ehe: Ehe, berechtigter: Person, gegenstand: Text) kind institutional {
+    label de official "Der Berechtigte kann Unterhalt für die Vergangenheit verlangen: wegen eines Sonderbedarfs (§ 1585b Abs. 1) und im Übrigen nur entsprechend § 1613 Abs. 1 (Abs. 2)";
+    label en unofficial "The entitled person may claim maintenance for the past: for a special need ((1)) and otherwise only under § 1613 (1) ((2))";
+}
+relation letzter_tag_der_rueckwirkungsfrist(ehe: Ehe, berechtigter: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Jahresfrist des § 1585b Abs. 3, gerechnet von der Rechtshängigkeit an; der Anspruch ist innerhalb der Frist geltend zu MACHEN, daher gilt die Verlegung des § 193";
+    label en unofficial "Last day of the one-year period of § 1585b (3), counted from the pendency; § 193 applies";
+}
+relation kein_unterhalt_fuer_weiter_zurueckliegende_zeit(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Für eine mehr als ein Jahr vor der Rechtshängigkeit liegende Zeit kann Erfüllung oder Schadensersatz wegen Nichterfüllung nur verlangt werden, wenn anzunehmen ist, dass der Verpflichtete sich der Leistung absichtlich entzogen hat (§ 1585b Abs. 3)";
+    label en unofficial "For a time more than one year before the pendency performance may be claimed only if the obligor intentionally evaded it (§ 1585b (3))";
+}
+relation unterhaltsvereinbarung_wirksam(ehe: Ehe) kind institutional {
+    label de official "Die Ehegatten können über die Unterhaltspflicht für die Zeit nach der Scheidung Vereinbarungen treffen; eine vor der Rechtskraft der Scheidung getroffene Vereinbarung bedarf der notariellen Beurkundung; § 127a gilt auch für eine vor dem Prozessgericht protokollierte Vereinbarung (§ 1585c)";
+    label en unofficial "The spouses may agree on maintenance for the period after the divorce; an agreement made before the divorce becomes final requires notarial recording (§ 1585c)";
+}
+pub relation unterhaltsanspruch_erloschen(ehe: Ehe, berechtigter: Person) kind institutional {
+    label de official "Der Unterhaltsanspruch erlischt mit der Wiederheirat, der Begründung einer Lebenspartnerschaft oder dem Tode des Berechtigten (§ 1586 Abs. 1)";
+    label en unofficial "The maintenance claim expires upon the remarriage, the creation of a civil partnership or the death of the entitled person (§ 1586 (1))";
+}
+relation rueckstaende_bleiben_bestehen(ehe: Ehe, berechtigter: Person, betrag: Money) kind institutional {
+    label de official "Ansprüche auf Erfüllung oder Schadensersatz wegen Nichterfüllung für die Vergangenheit bleiben bestehen; das Gleiche gilt für den zur Zeit der Wiederheirat oder des Todes fälligen Monatsbetrag (§ 1586 Abs. 2)";
+    label en unofficial "Claims for performance for the past remain; the same applies to the monthly amount due at the time ((2))";
+}
+pub relation unterhaltsanspruch_wiederauflebend(ehe: Ehe, berechtigter: Person, pflichtiger: Person) kind institutional {
+    label de official "Geht ein geschiedener Ehegatte eine neue Ehe oder Lebenspartnerschaft ein und wird diese wieder aufgelöst, so kann er von dem früheren Ehegatten Unterhalt nach § 1570 verlangen, wenn er ein Kind aus der früheren Ehe zu pflegen oder zu erziehen hat; der Ehegatte der später aufgelösten Ehe haftet vor dem der früher aufgelösten (§ 1586a)";
+    label en unofficial "Where a new marriage is dissolved again, the spouse may claim maintenance under § 1570 from the former spouse (§ 1586a)";
+}
+pub relation haftung_des_erben(ehe: Ehe, erbe: Person, berechtigter: Person, betrag: Money) kind institutional {
+    label de official "Mit dem Tode des Verpflichteten geht die Unterhaltspflicht auf den Erben als Nachlassverbindlichkeit über; die Beschränkungen nach § 1581 fallen weg; der Erbe haftet jedoch nicht über einen Betrag hinaus, der dem Pflichtteil entspricht, welcher dem Berechtigten zustände, wenn die Ehe nicht geschieden worden wäre (§ 1586b Abs. 1)";
+    label en unofficial "On the obligor's death the duty passes to the heir as an estate liability, capped at the notional compulsory share (§ 1586b (1))";
+}
+relation versorgungsausgleich_findet_statt(ehe: Ehe) kind institutional {
+    label de official "Nach Maßgabe des Versorgungsausgleichsgesetzes findet zwischen den geschiedenen Ehegatten ein Ausgleich von im In- oder Ausland bestehenden Anrechten statt (§ 1587) — das Versorgungsausgleichsgesetz ist ein äußeres Gesetz und wird von diesem Paket nicht nachgebaut";
+    label en unofficial "Under the Pension Rights Equalisation Act an equalisation of pension rights takes place between the divorced spouses (§ 1587)";
+}
+relation kirchliche_verpflichtungen_unberuehrt(ehe: Ehe, p: Person) kind institutional {
+    label de official "Die kirchlichen Verpflichtungen in Ansehung der Ehe werden durch die Vorschriften dieses Abschnitts nicht berührt (§ 1588)";
+    label en unofficial "Religious duties with regard to the marriage are not affected by the provisions of this division (§ 1588)";
+}
+
+// --- Regeln -------------------------------------------------------------------------------------------
+
+@source(BGB_P1569)
+rule GrundsatzDerEigenverantwortung(ehe: Ehe, p: Person) strict {
+    label de official "Nach der Scheidung obliegt es jedem Ehegatten, selbst für seinen Unterhalt zu sorgen; ist er dazu außerstande, hat er gegen den anderen Ehegatten einen Anspruch auf Unterhalt nur nach den folgenden Vorschriften (§ 1569)";
+    label en unofficial "After the divorce it is for each spouse to provide for his own maintenance (§ 1569)";
+    when geschiedener_ehegatte(ehe, p);
+    then eigenverantwortung(ehe, p);
+}
+
+@source(BGB_P1570) {
+    rule BetreuungsfristEreignis(ehe: Ehe, kind: Person, f: Frist, t: Date) strict {
+        label de official "Die Dreijahresfrist des § 1570 Abs. 1 Satz 1 läuft von der Geburt des Kindes an";
+        label en unofficial "The three-year period of § 1570 (1) sentence 1 runs from the birth of the child";
+        when betreuungsfrist_1570(ehe, kind, f) and geburt_des_kindes_am(ehe, kind, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule BetreuungsfristDauer(ehe: Ehe, kind: Person, f: Frist) strict {
+        label de official "Ein geschiedener Ehegatte kann wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes für mindestens DREI JAHRE nach der Geburt Unterhalt verlangen (§ 1570 Abs. 1 Satz 1)";
+        label en unofficial "A divorced spouse may claim maintenance for the care of a common child for at least THREE YEARS after the birth ((1) sentence 1)";
+        when betreuungsfrist_1570(ehe, kind, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 3 calendar_year);
+    }
+    rule LetzterTagDerBetreuungsfrist(ehe: Ehe, kind: Person, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Dreijahresfrist des § 1570 Abs. 1 Satz 1: die Frist misst verstrichene Zeit, daher keine Verlegung nach § 193";
+        label en unofficial "Last day of the three-year period of § 1570 (1) sentence 1: elapsed time, no § 193 roll";
+        when betreuungsfrist_1570(ehe, kind, f) and de.bgb.fristen::frist_ende_kalender(f, e);
+        then letzter_tag_der_betreuungsfrist(ehe, kind, e);
+    }
+    rule BetreuungsunterhaltInnerhalbDerDreiJahre(ehe: Ehe, berechtigter: Person, pflichtiger: Person, kind: Person, e: Date, bewertung: Date) strict {
+        label de official "Ein geschiedener Ehegatte kann von dem anderen wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes für mindestens drei Jahre nach der Geburt Unterhalt verlangen (§ 1570 Abs. 1 Satz 1)";
+        label en unofficial "A divorced spouse may claim maintenance for the care of a common child for at least three years after the birth ((1) sentence 1)";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and gemeinschaftliches_kind(ehe, kind) and pflege_oder_erziehung_des_kindes(ehe, berechtigter, kind)
+         and letzter_tag_der_betreuungsfrist(ehe, kind, e) and bewertungstag(ehe, bewertung) and bewertung <= e
+         and not_known(eigene_einkuenfte_und_vermoegen_reichen_aus(ehe, berechtigter));
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Kindesbetreuung_1570);
+    }
+    rule VerlaengerungDesBetreuungsunterhalts(ehe: Ehe, berechtigter: Person, pflichtiger: Person, kind: Person, e: Date, bewertung: Date) strict {
+        label de official "Die Dauer des Unterhaltsanspruchs verlängert sich, solange und soweit dies der Billigkeit entspricht; dabei sind die Belange des Kindes und die bestehenden Möglichkeiten der Kinderbetreuung sowie die Gestaltung von Kinderbetreuung und Erwerbstätigkeit in der Ehe und die Dauer der Ehe zu berücksichtigen (§ 1570 Abs. 1 Sätze 2, 3, Abs. 2)";
+        label en unofficial "The duration of the claim is extended as long as this is equitable ((1) sentences 2, 3, (2))";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and gemeinschaftliches_kind(ehe, kind) and pflege_oder_erziehung_des_kindes(ehe, berechtigter, kind)
+         and letzter_tag_der_betreuungsfrist(ehe, kind, e) and bewertungstag(ehe, bewertung) and bewertung > e
+         and verlaengerung_der_betreuung_billig(ehe, berechtigter);
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Kindesbetreuung_1570);
+    }
+}
+
+@source(BGB_P1571)
+rule UnterhaltWegenAlters(ehe: Ehe, berechtigter: Person, pflichtiger: Person, nr: Integer) strict {
+    label de official "Ein geschiedener Ehegatte kann von dem anderen Unterhalt verlangen, soweit von ihm im Zeitpunkt der Scheidung (Nr. 1), der Beendigung der Pflege oder Erziehung eines gemeinschaftlichen Kindes (Nr. 2) oder des Wegfalls der Voraussetzungen der §§ 1572, 1573 (Nr. 3) wegen seines Alters eine Erwerbstätigkeit nicht mehr erwartet werden kann (§ 1571)";
+    label en unofficial "A divorced spouse may claim maintenance in so far as employment can no longer be expected of him because of his age (§ 1571)";
+    when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+     and massgebender_zeitpunkt_1571(ehe, berechtigter, nr)
+     and erwerbstaetigkeit_wegen_alters_nicht_zu_erwarten(ehe, berechtigter)
+     and not_known(eigene_einkuenfte_und_vermoegen_reichen_aus(ehe, berechtigter));
+    then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Alter_1571);
+}
+
+@source(BGB_P1572)
+rule UnterhaltWegenKrankheit(ehe: Ehe, berechtigter: Person, pflichtiger: Person, nr: Integer) strict {
+    label de official "Ein geschiedener Ehegatte kann von dem anderen Unterhalt verlangen, solange und soweit von ihm von einem der in § 1572 Nr. 1 bis 4 genannten Zeitpunkte an wegen Krankheit oder anderer Gebrechen oder Schwäche seiner körperlichen oder geistigen Kräfte eine Erwerbstätigkeit nicht erwartet werden kann (§ 1572)";
+    label en unofficial "A divorced spouse may claim maintenance so long as employment cannot be expected of him because of illness or infirmity (§ 1572)";
+    when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+     and massgebender_zeitpunkt_1572(ehe, berechtigter, nr)
+     and erwerbstaetigkeit_wegen_krankheit_nicht_zu_erwarten(ehe, berechtigter)
+     and not_known(eigene_einkuenfte_und_vermoegen_reichen_aus(ehe, berechtigter));
+    then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Krankheit_1572);
+}
+
+@source(BGB_P1573) {
+    rule UnterhaltWegenErwerbslosigkeit(ehe: Ehe, berechtigter: Person, pflichtiger: Person) strict {
+        label de official "Soweit ein geschiedener Ehegatte keinen Unterhaltsanspruch nach den §§ 1570 bis 1572 hat, kann er gleichwohl Unterhalt verlangen, solange und soweit er nach der Scheidung keine angemessene Erwerbstätigkeit zu finden vermag (§ 1573 Abs. 1)";
+        label en unofficial "Where a divorced spouse has no claim under §§ 1570 to 1572, he may nevertheless claim maintenance so long as he cannot find appropriate employment ((1))";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and keine_angemessene_erwerbstaetigkeit_gefunden(ehe, berechtigter)
+         and not_known(eigene_einkuenfte_und_vermoegen_reichen_aus(ehe, berechtigter));
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Erwerbslosigkeit_1573_Abs_1);
+    }
+    rule Aufstockungsunterhalt(ehe: Ehe, berechtigter: Person, pflichtiger: Person, einkuenfte: Money, voll: Money) strict {
+        label de official "Reichen die Einkünfte aus einer angemessenen Erwerbstätigkeit zum vollen Unterhalt (§ 1578) nicht aus, so kann der Berechtigte den UNTERSCHIEDSBETRAG zwischen den Einkünften und dem vollen Unterhalt verlangen (§ 1573 Abs. 2)";
+        label en unofficial "Where the income from appropriate employment does not suffice for the full maintenance, the DIFFERENCE may be claimed ((2))";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and einkuenfte_aus_angemessener_erwerbstaetigkeit(ehe, berechtigter, einkuenfte)
+         and voller_unterhalt(ehe, berechtigter, voll) and einkuenfte < voll;
+        then aufstockungsbetrag(ehe, berechtigter, voll - einkuenfte);
+    }
+    rule AufstockungsanspruchDemGrundeNach(ehe: Ehe, berechtigter: Person, pflichtiger: Person, betrag: Money) strict {
+        label de official "Der Aufstockungsanspruch ist ein Unterhaltsanspruch des § 1573 Abs. 2";
+        label en unofficial "The top-up claim is a maintenance claim under § 1573 (2)";
+        when aufstockungsbetrag(ehe, berechtigter, betrag) and anderer_ehegatte(ehe, berechtigter, pflichtiger);
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Aufstockung_1573_Abs_2);
+    }
+    rule UnterhaltNachWegfallDerEinkuenfte(ehe: Ehe, berechtigter: Person, pflichtiger: Person) strict {
+        label de official "Der geschiedene Ehegatte kann auch dann Unterhalt verlangen, wenn die Einkünfte aus einer angemessenen Erwerbstätigkeit wegfallen, weil es ihm trotz seiner Bemühungen nicht gelungen war, den Unterhalt durch die Erwerbstätigkeit nach der Scheidung nachhaltig zu sichern (§ 1573 Abs. 4)";
+        label en unofficial "The divorced spouse may also claim where the income ceases because he could not secure his maintenance sustainably ((4))";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and einkuenfte_weggefallen(ehe, berechtigter);
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Erwerbslosigkeit_1573_Abs_1);
+    }
+}
+
+@source(BGB_P1574)
+rule ErwerbsobliegenheitDesGeschiedenen(ehe: Ehe, berechtigter: Person) strict {
+    label de official "Dem geschiedenen Ehegatten obliegt es, eine angemessene Erwerbstätigkeit auszuüben (§ 1574 Abs. 1); angemessen ist eine Erwerbstätigkeit, die der Ausbildung, den Fähigkeiten, einer früheren Erwerbstätigkeit, dem Lebensalter und dem Gesundheitszustand entspricht (Abs. 2); soweit erforderlich, obliegt es ihm, sich ausbilden, fortbilden oder umschulen zu lassen (Abs. 3)";
+    label en unofficial "It is for the divorced spouse to pursue appropriate employment (§ 1574 (1) to (3))";
+    when geschiedener_ehegatte(ehe, berechtigter) and erwerbstaetigkeit_angemessen(ehe, berechtigter);
+    then erwerbsobliegenheit(ehe, berechtigter);
+}
+
+@source(BGB_P1575) {
+    rule AusbildungsunterhaltNachAbbruch(ehe: Ehe, berechtigter: Person, pflichtiger: Person) strict {
+        label de official "Ein geschiedener Ehegatte, der in Erwartung der Ehe oder während der Ehe eine Schul- oder Berufsausbildung nicht aufgenommen oder abgebrochen hat, kann von dem anderen Ehegatten Unterhalt verlangen, wenn er diese oder eine entsprechende Ausbildung sobald wie möglich aufnimmt und der erfolgreiche Abschluss zu erwarten ist; der Anspruch besteht längstens für die Zeit, in der eine solche Ausbildung im Allgemeinen abgeschlossen wird (§ 1575 Abs. 1)";
+        label en unofficial "A divorced spouse who did not take up or broke off training may claim maintenance if he takes it up as soon as possible and success is to be expected ((1))";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and ausbildung_nicht_aufgenommen_oder_abgebrochen(ehe, berechtigter)
+         and ausbildung_sobald_wie_moeglich_aufgenommen(ehe, berechtigter)
+         and erfolgreicher_abschluss_zu_erwarten(ehe, berechtigter);
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Ausbildung_1575);
+    }
+    rule UnterhaltBeiFortbildungOderUmschulung(ehe: Ehe, berechtigter: Person, pflichtiger: Person) strict {
+        label de official "Entsprechendes gilt, wenn sich der geschiedene Ehegatte fortbilden oder umschulen lässt, um Nachteile auszugleichen, die durch die Ehe eingetreten sind (§ 1575 Abs. 2); verlangt er nach Beendigung der Ausbildung Unterhalt nach § 1573, so bleibt der erreichte höhere Ausbildungsstand außer Betracht (Abs. 3)";
+        label en unofficial "The same applies where the divorced spouse undergoes further training or retraining to compensate marriage-related disadvantages ((2))";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and fortbildung_oder_umschulung(ehe, berechtigter)
+         and erfolgreicher_abschluss_zu_erwarten(ehe, berechtigter);
+        then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Ausbildung_1575);
+    }
+}
+
+@source(BGB_P1576)
+rule UnterhaltAusBilligkeitsgruenden(ehe: Ehe, berechtigter: Person, pflichtiger: Person) strict {
+    label de official "Ein geschiedener Ehegatte kann von dem anderen Unterhalt verlangen, soweit und solange von ihm aus sonstigen schwerwiegenden Gründen eine Erwerbstätigkeit nicht erwartet werden kann und die Versagung von Unterhalt unter Berücksichtigung der Belange beider Ehegatten grob unbillig wäre; schwerwiegende Gründe dürfen nicht allein deswegen berücksichtigt werden, weil sie zum Scheitern der Ehe geführt haben (§ 1576)";
+    label en unofficial "A divorced spouse may claim maintenance where employment cannot be expected for other serious reasons and refusal would be grossly inequitable (§ 1576)";
+    when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+     and schwerwiegende_gruende_und_versagung_grob_unbillig(ehe, berechtigter);
+    then nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, Billigkeit_1576);
+}
+
+@source(BGB_P1577) {
+    rule KeinAnspruchBeiEigenenMitteln(ehe: Ehe, berechtigter: Person) strict {
+        label de official "Der geschiedene Ehegatte kann den Unterhalt nach den §§ 1570 bis 1573, 1575 und 1576 nicht verlangen, solange und soweit er sich aus seinen Einkünften und seinem Vermögen selbst unterhalten kann (§ 1577 Abs. 1)";
+        label en unofficial "The divorced spouse cannot claim maintenance while he can maintain himself from his income and assets ((1))";
+        when geschiedener_ehegatte(ehe, berechtigter) and eigene_einkuenfte_und_vermoegen_reichen_aus(ehe, berechtigter);
+        then kein_anspruch_wegen_eigener_mittel(ehe, berechtigter);
+    }
+    rule KeinAnspruchNachWegfallDesVermoegens(ehe: Ehe, berechtigter: Person) strict {
+        label de official "War zum Zeitpunkt der Ehescheidung zu erwarten, dass der Unterhalt aus dem Vermögen nachhaltig gesichert sein würde, fällt das Vermögen aber später weg, so besteht kein Anspruch auf Unterhalt; dies gilt nicht, wenn im Zeitpunkt des Vermögenswegfalls wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes eine Erwerbstätigkeit nicht erwartet werden kann (§ 1577 Abs. 4)";
+        label en unofficial "Where the assets expected to secure the maintenance later cease, there is no claim, unless the care of a common child prevents employment ((4))";
+        when geschiedener_ehegatte(ehe, berechtigter) and vermoegen_spaeter_weggefallen(ehe, berechtigter)
+         and keine_kindesbetreuung_beim_vermoegenswegfall(ehe, berechtigter);
+        then kein_anspruch_wegen_eigener_mittel(ehe, berechtigter);
+    }
+}
+
+@source(BGB_P1578) {
+    rule MassDesUnterhalts(ehe: Ehe, berechtigter: Person, betrag: Money) strict {
+        label de official "Das Maß des Unterhalts bestimmt sich nach den ehelichen Lebensverhältnissen; der Unterhalt umfasst den gesamten Lebensbedarf (§ 1578 Abs. 1); zum Lebensbedarf gehören auch die Kosten einer angemessenen Kranken- und Pflegeversicherung sowie einer Ausbildung, Fortbildung oder Umschulung (Abs. 2)";
+        label en unofficial "The measure of maintenance follows the marital standard of living and covers the entire living needs ((1), (2))";
+        when ehelicher_bedarf(ehe, berechtigter, betrag);
+        then voller_unterhalt(ehe, berechtigter, betrag);
+    }
+    rule AltersvorsorgeGehoertZumLebensbedarf(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund, betrag: Money) strict {
+        label de official "Hat der geschiedene Ehegatte einen Unterhaltsanspruch nach den §§ 1570 bis 1573 oder § 1576, so gehören zum Lebensbedarf auch die Kosten einer angemessenen Versicherung für den Fall des Alters sowie der verminderten Erwerbsfähigkeit (§ 1578 Abs. 3)";
+        label en unofficial "Where the claim rests on §§ 1570 to 1573 or § 1576, old-age insurance costs also belong to the living needs ((3))";
+        when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+         and grund != Ausbildung_1575 and kosten_der_altersvorsorge(ehe, berechtigter, betrag);
+        then altersvorsorge_gehoert_zum_lebensbedarf(ehe, berechtigter);
+    }
+}
+
+@source(BGB_P1578a)
+rule DeckungsvermutungBeiSchadensbedingtenMehraufwendungen(ehe: Ehe, berechtigter: Person) strict {
+    label de official "Für Aufwendungen infolge eines Körper- oder Gesundheitsschadens gilt § 1610a (§ 1578a); die Vermutung selbst steht in `de.bgb.verwandtschaft` und wird hier nicht nachgebaut";
+    label en unofficial "For expenses resulting from bodily or health damage § 1610a applies (§ 1578a)";
+    when geschiedener_ehegatte(ehe, berechtigter) and schadensbedingte_mehraufwendungen(ehe, berechtigter);
+    then deckungsvermutung_1610a(ehe, berechtigter);
+}
+
+@source(BGB_P1578b)
+rule HerabsetzungUndBefristung(ehe: Ehe, berechtigter: Person) strict {
+    label de official "Der Unterhaltsanspruch des geschiedenen Ehegatten ist auf den angemessenen Lebensbedarf herabzusetzen und/oder zeitlich zu begrenzen, wenn eine an den ehelichen Lebensverhältnissen orientierte Bemessung oder ein zeitlich unbegrenzter Anspruch auch unter Wahrung der Belange eines gemeinschaftlichen Kindes unbillig wäre; Herabsetzung und Befristung können miteinander verbunden werden (§ 1578b Abs. 1 bis 3)";
+    label en unofficial "The claim is to be reduced and/or limited in time where the marital measure would be inequitable (§ 1578b)";
+    when geschiedener_ehegatte(ehe, berechtigter)
+     and bemessung_nach_ehelichen_verhaeltnissen_unbillig(ehe, berechtigter);
+    then unterhalt_herabzusetzen_oder_zu_befristen(ehe, berechtigter);
+}
+
+@source(BGB_P1579) {
+    rule BeschraenkungWegenKurzerEhedauer(ehe: Ehe, berechtigter: Person) strict {
+        label de official "Ein Unterhaltsanspruch ist zu versagen, herabzusetzen oder zeitlich zu begrenzen, soweit die Inanspruchnahme des Verpflichteten grob unbillig wäre, weil die Ehe von kurzer Dauer war; dabei ist die Zeit zu berücksichtigen, in welcher der Berechtigte wegen der Pflege oder Erziehung eines gemeinschaftlichen Kindes nach § 1570 Unterhalt verlangen kann (§ 1579 Nr. 1)";
+        label en unofficial "A claim is to be refused, reduced or limited where recourse would be grossly inequitable because the marriage was of short duration (§ 1579 no. 1)";
+        when geschiedener_ehegatte(ehe, berechtigter) and ehe_von_kurzer_dauer(ehe)
+         and inanspruchnahme_grob_unbillig(ehe, berechtigter);
+        then unterhalt_zu_versagen_oder_zu_beschraenken(ehe, berechtigter);
+    }
+    rule BeschraenkungAusDenUebrigenGruenden(ehe: Ehe, berechtigter: Person, nr: Integer) strict {
+        label de official "Dasselbe gilt in den Fällen der Nummern 2 bis 8: verfestigte Lebensgemeinschaft, Verbrechen gegen den Verpflichteten, mutwillig herbeigeführte Bedürftigkeit, Hinwegsetzen über Vermögensinteressen, gröbliche Verletzung der Beitragspflicht, schwerwiegendes Fehlverhalten oder ein ebenso schwer wiegender anderer Grund (§ 1579 Nr. 2 bis 8)";
+        label en unofficial "The same applies in the cases of nos. 2 to 8 (§ 1579)";
+        when geschiedener_ehegatte(ehe, berechtigter) and beschraenkungsgrund_1579(ehe, berechtigter, nr)
+         and inanspruchnahme_grob_unbillig(ehe, berechtigter);
+        then unterhalt_zu_versagen_oder_zu_beschraenken(ehe, berechtigter);
+    }
+}
+
+@source(BGB_P1580)
+rule AuskunftspflichtDerGeschiedenen(ehe: Ehe, verlangender: Person, verpflichteter: Person) strict {
+    label de official "Die geschiedenen Ehegatten sind einander verpflichtet, auf Verlangen über ihre Einkünfte und ihr Vermögen Auskunft zu erteilen; § 1605 ist entsprechend anzuwenden (§ 1580)";
+    label en unofficial "The divorced spouses must on demand give each other information about income and assets; § 1605 applies (§ 1580)";
+    when auskunft_ueber_einkuenfte_verlangt(ehe, verlangender, verpflichteter);
+    then auskunftspflicht_der_geschiedenen(ehe, verpflichteter, verlangender);
+}
+
+@source(BGB_P1581)
+rule EingeschraenkteLeistungspflicht(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund) strict {
+    label de official "Ist der Verpflichtete nach seinen Erwerbs- und Vermögensverhältnissen unter Berücksichtigung seiner sonstigen Verpflichtungen außerstande, ohne Gefährdung des eigenen angemessenen Unterhalts dem Berechtigten Unterhalt zu gewähren, so braucht er nur insoweit Unterhalt zu leisten, als es der Billigkeit entspricht; den Stamm des Vermögens braucht er nicht zu verwerten (§ 1581)";
+    label en unofficial "Where the obligor cannot pay without endangering his own maintenance, he owes only what is equitable (§ 1581)";
+    when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+     and leistungsfaehigkeit_eingeschraenkt(ehe, pflichtiger);
+    then nur_billigkeitsunterhalt_geschuldet(ehe, pflichtiger, berechtigter);
+}
+
+@source(BGB_P1582)
+rule RangDesGeschiedenenEhegatten(ehe: Ehe, berechtigter: Person, pflichtiger: Person) strict {
+    label de official "Sind mehrere Unterhaltsberechtigte vorhanden, so richtet sich der Rang des geschiedenen Ehegatten nach § 1609 (§ 1582); die Rangordnung selbst steht in `de.bgb.verwandtschaft`";
+    label en unofficial "Where there are several persons entitled, the rank of the divorced spouse follows § 1609 (§ 1582)";
+    when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+     and mehrere_unterhaltsberechtigte(ehe, pflichtiger);
+    then rang_nach_1609(ehe, berechtigter);
+}
+
+@source(BGB_P1583)
+rule EinflussDesGueterstands(ehe: Ehe, pflichtiger: Person) strict {
+    label de official "Lebt der Verpflichtete im Falle der Wiederheirat mit seinem neuen Ehegatten im Güterstand der Gütergemeinschaft, so ist § 1604 entsprechend anzuwenden (§ 1583)";
+    label en unofficial "Where the obligor lives under community of property with a new spouse, § 1604 applies accordingly (§ 1583)";
+    when wiederheirat_in_guetergemeinschaft(ehe, pflichtiger);
+    then einfluss_des_gueterstands(ehe, pflichtiger);
+}
+
+@source(BGB_P1584) {
+    rule GeschiedenerEhegatteHaftetVorDenVerwandten(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund) strict {
+        label de official "Der unterhaltspflichtige geschiedene Ehegatte haftet vor den Verwandten des Berechtigten (§ 1584 Satz 1)";
+        label en unofficial "The liable divorced spouse is liable before the relatives of the entitled person (§ 1584 sentence 1)";
+        when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+         and not_known(leistungsfaehigkeit_eingeschraenkt(ehe, pflichtiger));
+        then ehegatte_haftet_vor_den_verwandten(ehe, pflichtiger, berechtigter);
+    }
+    rule VerwandteHaftenVorDemNichtLeistungsfaehigen(ehe: Ehe, berechtigter: Person, pflichtiger: Person, verwandter: Person) strict {
+        label de official "Soweit jedoch der Verpflichtete nicht leistungsfähig ist, haften die Verwandten vor dem geschiedenen Ehegatten; § 1607 Abs. 2 und 4 gilt entsprechend (§ 1584 Sätze 2, 3)";
+        label en unofficial "In so far as the obligor cannot pay, the relatives are liable before the divorced spouse (§ 1584 sentences 2, 3)";
+        when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and leistungsfaehigkeit_eingeschraenkt(ehe, pflichtiger)
+         and verwandter_des_berechtigten(ehe, berechtigter, verwandter);
+        then verwandte_haften_vor_dem_geschiedenen_ehegatten(ehe, berechtigter, verwandter);
+    }
+}
+
+@source(BGB_P1585) {
+    rule GeldrenteMonatlichImVorausNachDerScheidung(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund) strict {
+        label de official "Der laufende Unterhalt ist durch Zahlung einer Geldrente zu gewähren; die Rente ist monatlich im Voraus zu entrichten; der Verpflichtete schuldet den vollen Monatsbetrag auch dann, wenn der Unterhaltsanspruch im Laufe des Monats durch Wiederheirat oder Tod des Berechtigten erlischt (§ 1585 Abs. 1)";
+        label en unofficial "Current maintenance is paid as a money annuity monthly in advance; the full monthly amount is owed even if the claim expires during the month ((1))";
+        when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund);
+        then unterhalt_als_geldrente_monatlich_im_voraus(ehe, pflichtiger, berechtigter);
+    }
+    rule AbfindungInKapital(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund) strict {
+        label de official "Statt der Rente kann der Berechtigte eine Abfindung in Kapital verlangen, wenn ein wichtiger Grund vorliegt und der Verpflichtete dadurch nicht unbillig belastet wird (§ 1585 Abs. 2)";
+        label en unofficial "Instead of the annuity the entitled person may demand a capital settlement ((2))";
+        when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+         and abfindung_in_kapital_verlangt(ehe, berechtigter)
+         and wichtiger_grund_fuer_die_abfindung(ehe, berechtigter);
+        then abfindung_in_kapital_geschuldet(ehe, pflichtiger, berechtigter);
+    }
+}
+
+@source(BGB_P1585a)
+rule SicherheitsleistungAufVerlangen(ehe: Ehe, berechtigter: Person, pflichtiger: Person, grund: Unterhaltsgrund) strict {
+    label de official "Der Verpflichtete hat auf Verlangen Sicherheit zu leisten; die Verpflichtung entfällt, wenn kein Grund zu der Annahme besteht, dass die Unterhaltsleistung gefährdet ist, oder wenn der Verpflichtete durch die Sicherheitsleistung unbillig belastet würde; der Betrag soll den einfachen Jahresbetrag der Unterhaltsrente nicht übersteigen (§ 1585a)";
+    label en unofficial "The obligor must provide security on demand, unless the cases of sentence 2 apply (§ 1585a)";
+    when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+     and sicherheitsleistung_verlangt(ehe, berechtigter)
+     and not_known(kein_grund_zur_annahme_der_gefaehrdung(ehe, pflichtiger))
+     and not_known(sicherheitsleistung_unbillig_belastend(ehe, pflichtiger));
+    then sicherheit_zu_leisten(ehe, pflichtiger);
+}
+
+@source(BGB_P1585b) {
+    rule UnterhaltFuerDenSonderbedarf(ehe: Ehe, berechtigter: Person) strict {
+        label de official "Wegen eines Sonderbedarfs (§ 1613 Abs. 2) kann der Berechtigte Unterhalt für die Vergangenheit verlangen (§ 1585b Abs. 1); im Übrigen kann er für die Vergangenheit Erfüllung oder Schadensersatz nur entsprechend § 1613 Abs. 1 fordern (Abs. 2)";
+        label en unofficial "For a special need the entitled person may claim maintenance for the past ((1), (2))";
+        when sonderbedarf_des_geschiedenen(ehe, berechtigter);
+        then unterhalt_fuer_die_vergangenheit(ehe, berechtigter, "§ 1585b Abs. 1: Sonderbedarf (§ 1613 Abs. 2)");
+    }
+    rule RueckwirkungsfristEreignis(ehe: Ehe, berechtigter: Person, f: Frist, t: Date) strict {
+        label de official "Die Jahresfrist des § 1585b Abs. 3 wird von der Rechtshängigkeit an vorwärts gerechnet; ihr Ende wird mit dem Tag verglichen, für den Unterhalt verlangt wird (Ledger D-13-03: ein negativer Kalenderschritt ist unzulässig)";
+        label en unofficial "The one-year period of § 1585b (3) is counted forward from the pendency";
+        when rueckwirkungsfrist_1585b(ehe, berechtigter, f)
+         and rechtshaengigkeit_des_unterhaltsantrags_am(ehe, berechtigter, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule RueckwirkungsfristDauer(ehe: Ehe, berechtigter: Person, f: Frist) strict {
+        label de official "Für eine mehr als EIN JAHR vor der Rechtshängigkeit liegende Zeit kann Erfüllung nur unter den Voraussetzungen des Halbsatzes 2 verlangt werden (§ 1585b Abs. 3)";
+        label en unofficial "For a time more than ONE YEAR before the pendency performance may be claimed only under the second half-sentence ((3))";
+        when rueckwirkungsfrist_1585b(ehe, berechtigter, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule LetzterTagDerRueckwirkungsfrist(ehe: Ehe, berechtigter: Person, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Jahresfrist des § 1585b Abs. 3; der Anspruch ist innerhalb der Frist geltend zu machen, daher gilt die Verlegung des § 193";
+        label en unofficial "Last day of the one-year period of § 1585b (3); § 193 applies";
+        when rueckwirkungsfrist_1585b(ehe, berechtigter, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_rueckwirkungsfrist(ehe, berechtigter, e);
+    }
+    rule KeinUnterhaltFuerWeiterZurueckliegendeZeit(ehe: Ehe, berechtigter: Person, pflichtiger: Person, e: Date, bewertung: Date) strict {
+        label de official "Für eine mehr als ein Jahr vor der Rechtshängigkeit liegende Zeit kann Erfüllung oder Schadensersatz wegen Nichterfüllung nur verlangt werden, wenn anzunehmen ist, dass der Verpflichtete sich der Leistung absichtlich entzogen hat (§ 1585b Abs. 3)";
+        label en unofficial "For a time more than one year before the pendency performance may be claimed only if the obligor intentionally evaded it ((3))";
+        when letzter_tag_der_rueckwirkungsfrist(ehe, berechtigter, e) and bewertungstag(ehe, bewertung)
+         and bewertung > e and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+         and not_known(leistung_absichtlich_entzogen(ehe, pflichtiger));
+        then kein_unterhalt_fuer_weiter_zurueckliegende_zeit(ehe, berechtigter);
+    }
+}
+
+@source(BGB_P1585c) {
+    rule VereinbarungNachRechtskraft(ehe: Ehe) strict {
+        label de official "Die Ehegatten können über die Unterhaltspflicht für die Zeit nach der Scheidung Vereinbarungen treffen (§ 1585c Satz 1); eine nach der Rechtskraft der Scheidung getroffene Vereinbarung ist formfrei";
+        label en unofficial "The spouses may agree on maintenance for the period after the divorce (§ 1585c sentence 1)";
+        when unterhaltsvereinbarung_getroffen(ehe)
+         and not_known(vereinbarung_vor_rechtskraft_der_scheidung(ehe));
+        then unterhaltsvereinbarung_wirksam(ehe);
+    }
+    rule VereinbarungVorRechtskraftBedarfDerBeurkundung(ehe: Ehe) strict {
+        label de official "Eine Vereinbarung, die vor der Rechtskraft der Scheidung getroffen wird, bedarf der notariellen Beurkundung; § 127a findet auch auf eine Vereinbarung Anwendung, die in einem Verfahren in Ehesachen vor dem Prozessgericht protokolliert wird (§ 1585c Sätze 2, 3)";
+        label en unofficial "An agreement made before the divorce becomes final requires notarial recording (§ 1585c sentences 2, 3)";
+        when unterhaltsvereinbarung_getroffen(ehe) and vereinbarung_vor_rechtskraft_der_scheidung(ehe)
+         and vereinbarung_notariell_beurkundet(ehe);
+        then unterhaltsvereinbarung_wirksam(ehe);
+    }
+}
+
+@source(BGB_P1586) {
+    rule ErloeschenDurchWiederheiratOderTod(ehe: Ehe, berechtigter: Person) strict {
+        label de official "Der Unterhaltsanspruch erlischt mit der Wiederheirat, der Begründung einer Lebenspartnerschaft oder dem Tode des Berechtigten (§ 1586 Abs. 1)";
+        label en unofficial "The maintenance claim expires upon the remarriage, the creation of a civil partnership or the death of the entitled person ((1))";
+        when wiederheirat_oder_tod_des_berechtigten(ehe, berechtigter);
+        then unterhaltsanspruch_erloschen(ehe, berechtigter);
+    }
+    rule RueckstaendeUndFaelligerMonatsbetragBleiben(ehe: Ehe, berechtigter: Person, betrag: Money) strict {
+        label de official "Ansprüche auf Erfüllung oder Schadensersatz wegen Nichterfüllung für die Vergangenheit bleiben bestehen; das Gleiche gilt für den zur Zeit der Wiederheirat, der Begründung einer Lebenspartnerschaft oder des Todes fälligen Monatsbetrag (§ 1586 Abs. 2)";
+        label en unofficial "Claims for the past remain, as does the monthly amount due at that time ((2))";
+        when unterhaltsanspruch_erloschen(ehe, berechtigter) and faelliger_monatsbetrag(ehe, berechtigter, betrag);
+        then rueckstaende_bleiben_bestehen(ehe, berechtigter, betrag);
+    }
+}
+
+@source(BGB_P1586a)
+rule WiederauflebenDesUnterhaltsanspruchs(ehe: Ehe, berechtigter: Person, pflichtiger: Person, kind: Person) strict {
+    label de official "Geht ein geschiedener Ehegatte eine neue Ehe oder Lebenspartnerschaft ein und wird die Ehe oder Lebenspartnerschaft wieder aufgelöst, so kann er von dem früheren Ehegatten Unterhalt nach § 1570 verlangen, wenn er ein Kind aus der früheren Ehe oder Lebenspartnerschaft zu pflegen oder zu erziehen hat; der Ehegatte der später aufgelösten Ehe haftet vor dem Ehegatten der früher aufgelösten Ehe (§ 1586a)";
+    label en unofficial "Where the new marriage is dissolved again, the spouse may claim maintenance under § 1570 from the former spouse (§ 1586a)";
+    when geschiedener_ehegatte(ehe, berechtigter) and anderer_ehegatte(ehe, berechtigter, pflichtiger)
+     and neue_ehe_wieder_aufgeloest(ehe, berechtigter) and kind_aus_der_frueheren_ehe(ehe, berechtigter, kind)
+     and pflege_oder_erziehung_des_kindes(ehe, berechtigter, kind);
+    then unterhaltsanspruch_wiederauflebend(ehe, berechtigter, pflichtiger);
+}
+
+@source(BGB_P1586b) {
+    rule HaftungDesErbenBisZumFiktivenPflichtteil(ehe: Ehe, berechtigter: Person, pflichtiger: Person, erbe: Person, grund: Unterhaltsgrund, voll: Money, grenze: Money) strict {
+        label de official "Mit dem Tode des Verpflichteten geht die Unterhaltspflicht auf den Erben als Nachlassverbindlichkeit über; die Beschränkungen nach § 1581 fallen weg; der Erbe haftet jedoch nicht über einen Betrag hinaus, der dem Pflichtteil entspricht, welcher dem Berechtigten zustände, wenn die Ehe nicht geschieden worden wäre (§ 1586b Abs. 1); für die Berechnung des Pflichtteils bleiben Besonderheiten auf Grund des Güterstands außer Betracht (Abs. 2). Hier bleibt der geschuldete Unterhalt UNTER der Grenze";
+        label en unofficial "On the obligor's death the duty passes to the heir, capped at the notional compulsory share ((1), (2)). Here the maintenance owed stays BELOW the cap";
+        when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+         and tod_des_verpflichteten(ehe, pflichtiger) and erbe_des_verpflichteten(ehe, pflichtiger, erbe)
+         and voller_unterhalt(ehe, berechtigter, voll) and fiktiver_pflichtteil(ehe, berechtigter, grenze)
+         and voll <= grenze;
+        then haftung_des_erben(ehe, erbe, berechtigter, voll);
+    }
+    rule HaftungDesErbenAufDenFiktivenPflichtteilBegrenzt(ehe: Ehe, berechtigter: Person, pflichtiger: Person, erbe: Person, grund: Unterhaltsgrund, voll: Money, grenze: Money) strict {
+        label de official "Der Erbe haftet nicht über den Betrag hinaus, der dem Pflichtteil entspricht, welcher dem Berechtigten zustände, wenn die Ehe nicht geschieden worden wäre (§ 1586b Abs. 1 Satz 3): übersteigt der Unterhalt diesen Betrag, so ist die Haftung auf ihn begrenzt";
+        label en unofficial "The heir is not liable beyond the notional compulsory share ((1) sentence 3): where the maintenance exceeds it, liability is capped at that amount";
+        when nachehelicher_unterhaltsanspruch(ehe, berechtigter, pflichtiger, grund)
+         and tod_des_verpflichteten(ehe, pflichtiger) and erbe_des_verpflichteten(ehe, pflichtiger, erbe)
+         and voller_unterhalt(ehe, berechtigter, voll) and fiktiver_pflichtteil(ehe, berechtigter, grenze)
+         and voll > grenze;
+        then haftung_des_erben(ehe, erbe, berechtigter, grenze);
+    }
+}
+
+@source(BGB_P1587)
+rule VersorgungsausgleichNachDemVersAusglG(ehe: Ehe, p: Person) strict {
+    label de official "Nach Maßgabe des Versorgungsausgleichsgesetzes findet zwischen den geschiedenen Ehegatten ein Ausgleich von im In- oder Ausland bestehenden Anrechten statt, insbesondere aus der gesetzlichen Rentenversicherung, aus anderen Regelsicherungssystemen wie der Beamtenversorgung oder der berufsständischen Versorgung, aus der betrieblichen Altersversorgung oder aus der privaten Alters- und Invaliditätsvorsorge (§ 1587)";
+    label en unofficial "Under the Pension Rights Equalisation Act an equalisation of pension rights takes place between the divorced spouses (§ 1587)";
+    when geschiedener_ehegatte(ehe, p) and versorgungsanrecht(ehe, p);
+    then versorgungsausgleich_findet_statt(ehe);
+}
+
+@source(BGB_P1588)
+rule KirchlicheVerpflichtungenUnberuehrt(ehe: Ehe, p: Person) strict {
+    label de official "Die kirchlichen Verpflichtungen in Ansehung der Ehe werden durch die Vorschriften dieses Abschnitts nicht berührt (§ 1588)";
+    label en unofficial "Religious duties with regard to the marriage are not affected by the provisions of this division (§ 1588)";
+    when kirchliche_verpflichtung_in_ansehung_der_ehe(ehe, p);
+    then kirchliche_verpflichtungen_unberuehrt(ehe, p);
+}

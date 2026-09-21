@@ -1,0 +1,527 @@
+// BÜRGERLICHES GESETZBUCH — FRISTEN, TERMINE UND VERJÄHRUNG (BG-02)
+//
+// Buch 1 Abschnitt 4 (§§ 186–193) und Abschnitt 5 (§§ 194–218; §§ 219–225
+// weggefallen). Dieses Paket ist der EINZIGE Eigentümer der Fristenberechnung
+// der Familie de.bgb.* (DECISION-0319, Р4): besondere Verjährungsfristen
+// (§ 438, § 548, § 634a) bleiben bei ihren Normen und lesen die Mechanik von
+// hier. Quellen: sources.law (generiert aus dem Register DOKNR).
+//
+// STAND: PILOT B0 der drei Mechaniken (Aufgabe, Abschnitt 6.3). Vollständige
+// Formalisierung der §§ 186–218 folgt in Welle B2 (README, Abschnitt
+// „Aufgabenkarte“). Was hier steht, ist an den Text gebunden; was fehlt, ist
+// TODO im Ledger, keine Grenze.
+//
+// DREI MECHANIKEN UND IHRE FORM IM KERN
+//
+// 1. Ultimo (§ 199 Abs. 1): Die regelmäßige Verjährungsfrist beginnt „mit
+//    dem Schluss des Jahres“. Die berechenbare Oberfläche v1 kennt
+//    `month_start_of`, `month_end_of`, `weekday_of` (§258), aber kein
+//    `year_end_of`. Der Plan sah eine A3-Entscheidungstabelle vor; im Pilot
+//    gemessen: der Eingang `<Tabelle>/input` einer rules-Tabelle ist aus
+//    `.law` nicht adressierbar (A3.3.4) und müsste je Datum als Fakt
+//    vorliegen — für Daten kein Domänenfakt. Daher REINE ARITHMETIK des
+//    Kerns: zwölf Kandidaten `month_end_of(month_start_of(e) + k Monate)`,
+//    k = 0..11, und die Auswahl des Dezembers über die Längen dreier
+//    aufeinanderfolgender Monate (31, 31, höchstens 29 Tage: Dezember,
+//    Januar, Februar — die einzige solche Folge im Jahr). Ohne Jahresgrenze,
+//    ohne Tabelle, ohne Fallangabe (Ledger D-02).
+//
+// 2. Hemmung (§§ 203–209): `add_calendar_period` kennt keine Aussetzung bei
+//    Monats- und Jahresschritten (§86). Die Hemmung ist daher eine Regel über
+//    Daten: § 209 rechnet den Hemmungszeitraum nicht ein — das Fristende
+//    verschiebt sich um die Zahl der gehemmten Tage (`days_between` + 1,
+//    Grenzen eingeschlossen, angeheftet mit `with_unit` als
+//    `calendar_day`-Schritt); § 203 Satz 2 setzt bei Verhandlungen eine
+//    Mindestfrist von drei Monaten nach dem Ende der Hemmung. Im Pilot: EIN
+//    Hemmungszeitraum je Anspruch; die Vereinigung sich überschneidender
+//    Zeiträume mehrerer Gründe ist Aufgabe der Welle B2 (Ledger), nicht
+//    stillschweigend „Summe der Dauern“.
+//
+// 3. Verlegung (§ 193): Fällt das Fristende auf einen Sonntag, einen am
+//    Leistungsort staatlich anerkannten Feiertag oder einen Sonnabend, tritt
+//    der nächste Werktag an seine Stelle. Bei der Tagesfrist trägt die
+//    Politik des Falls den Roll (`BGB_FRISTEN_TAG`: roll next_working_day);
+//    bei Monats- und Jahresfristen ist der Roll in der Politik verboten
+//    (§86), und die Verlegung wird ausdrücklich gerechnet:
+//    `add_business_days(kalendarisches Ende, 1 business_day)` unter
+//    `BGB_FRISTEN_KALENDER` (start_count same_day) — der erste Werktag vom
+//    Ende selbst an gezählt. Der Kalender ist der Schnappschuss §85
+//    `corpus/clir/de-feiertage-bundesweit.calendar.json`: Sonnabend, Sonntag und
+//    die in allen Ländern anerkannten Feiertage; Landesfeiertage (Leistungsort!)
+//    sind Datenpakete der Welle B2 (Gebiet: „bundesweit“, erklärte Grenze).
+//
+// EINE POLITIK JE FALL (§168.2). Die Tagesfrist nach § 187 Abs. 1 (der Tag
+// des Ereignisses wird nicht mitgerechnet) und § 188 Abs. 1 (Ende mit dem
+// Ablauf des letzten Tages) verlangt `BGB_FRISTEN_TAG`; Monats- und
+// Jahresfristen nach § 188 Abs. 2 und 3 verlangen `BGB_FRISTEN_KALENDER`
+// (start_count same_day: der Tag, der durch seine Zahl dem Ereignistag
+// entspricht; month_end last_day_of_month: § 188 Abs. 3). Welche Norm
+// welche Politik verlangt, steht je Zeile in docs/foundations/de-bgb/DEADLINES.json.
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Die Kenntnis des Gläubigers und ihr
+// Zeitpunkt (§ 199 Abs. 1 Nr. 2) sind eine FESTGESTELLTE TATSACHE: Relation
+// `kind empirical`, im Fall mit `origin adjudicated`. Die „grob fahrlässige
+// Unkenntnis“ desselben Absatzes ist eine WERTUNG des Gerichts (Kanal §47.3)
+// und wird in Welle B2 als `external judgment relation` erklärt.
+
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+import de.bgb.core version "0.1.0";
+
+type Anspruch = de.bgb.core::Anspruch;
+
+// --- Kalender §85 und Politiken §86 --------------------------------------------------------------
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// Tagesfrist: § 187 Abs. 1 (Ereignistag nicht mitgerechnet → next_day),
+// § 188 Abs. 1 (Ablauf des letzten Tages → include_end), § 193 (Roll).
+deadline policy BGB_FRISTEN_TAG {
+    start_count next_day;
+    include_end true;
+    roll next_working_day;
+}
+
+// Wochen-, Monats- und Jahresfrist: § 188 Abs. 2 (Tag, der durch seine Zahl
+// dem Ereignistag entspricht → same_day), § 188 Abs. 3 (fehlt der Tag, so
+// endet die Frist mit dem letzten Tag des Monats → last_day_of_month);
+// § 193 wird ausdrücklich gerechnet (siehe Verlegung193).
+deadline policy BGB_FRISTEN_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// --- Fristen und Termine (§§ 186–193) -----------------------------------------------------------
+
+pub entity Frist {
+    label de official "Frist, deren Ablauf nach den §§ 186–193 berechnet wird";
+    label en unofficial "Period whose end is computed under §§ 186–193";
+}
+
+pub relation frist_ereignis(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Ereignis oder Zeitpunkt, der für den Anfang der Frist maßgebend ist (§ 187 Abs. 1)";
+    label en unofficial "event or point in time decisive for the beginning of the period (§ 187 (1))";
+}
+pub relation frist_dauer_tage(f: Frist, dauer: Quantity) kind empirical {
+    key(f);
+    label de official "nach Tagen bestimmte Frist (§ 188 Abs. 1), als Zahl von Kalendertagen";
+    label en unofficial "period fixed by days (§ 188 (1)), as a number of calendar days";
+}
+pub relation frist_dauer_kalender(f: Frist, dauer: Quantity) kind empirical {
+    key(f);
+    label de official "nach Wochen, Monaten oder Jahren bestimmte Frist (§ 188 Abs. 2)";
+    label en unofficial "period fixed by weeks, months or years (§ 188 (2))";
+}
+pub relation frist_ende_kalender(f: Frist, tag: Date) kind institutional {
+    key(f);
+    label de official "kalendarisches Fristende vor Anwendung des § 193";
+    label en unofficial "calendar end of the period before applying § 193";
+}
+pub relation frist_ende(f: Frist, tag: Date) kind institutional {
+    key(f);
+    label de official "Tag, mit dessen Ablauf die Frist endet (§§ 187, 188, 193)";
+    label en unofficial "day at whose end the period ends (§§ 187, 188, 193)";
+}
+
+@source(BGB_P187)
+rule TagesfristEnde(f: Frist, e: Date, d: Quantity) strict {
+    label de official "Ist für den Anfang einer Frist ein Ereignis maßgebend, so wird der Tag des Ereignisses nicht mitgerechnet (§ 187 Abs. 1); die nach Tagen bestimmte Frist endigt mit dem Ablauf des letzten Tages (§ 188 Abs. 1) — Politik BGB_FRISTEN_TAG; Sonnabend, Sonntag und Feiertag am Fristende verlegt der Roll der Politik (§ 193)";
+    label en unofficial "Event day not counted (§ 187 (1)); a period fixed by days ends with the last day (§ 188 (1)) — policy BGB_FRISTEN_TAG; § 193 is the roll of the policy";
+    when frist_ereignis(f, e) and frist_dauer_tage(f, d);
+    then frist_ende(f, add_business_days(e, d));
+}
+
+@source(BGB_P188)
+rule KalenderfristEnde(f: Frist, e: Date, d: Quantity) strict {
+    label de official "Eine nach Wochen, Monaten oder Jahren bestimmte Frist endigt mit dem Ablauf desjenigen Tages der letzten Woche oder des letzten Monats, welcher durch seine Benennung oder Zahl dem Tag des Ereignisses entspricht; fehlt dieser Tag, so endigt die Frist mit dem Ablauf des letzten Tages dieses Monats (§ 188 Abs. 2, 3) — Politik BGB_FRISTEN_KALENDER";
+    label en unofficial "A period fixed by weeks, months or years ends on the day corresponding by number to the event day; if that day is missing, on the last day of the month (§ 188 (2), (3)) — policy BGB_FRISTEN_KALENDER";
+    when frist_ereignis(f, e) and frist_dauer_kalender(f, d);
+    then frist_ende_kalender(f, add_calendar_period(e, d));
+}
+
+@source(BGB_P193)
+rule Verlegung193(f: Frist, k: Date) strict {
+    label de official "Ist an einem bestimmten Tage oder innerhalb einer Frist eine Willenserklärung abzugeben oder eine Leistung zu bewirken und fällt der bestimmte Tag oder der letzte Tag der Frist auf einen Sonntag, einen am Erklärungs- oder Leistungsort staatlich anerkannten allgemeinen Feiertag oder einen Sonnabend, so tritt an die Stelle eines solchen Tages der nächste Werktag (§ 193) — gerechnet als erster Werktag vom kalendarischen Ende an";
+    label en unofficial "If the last day falls on a Sunday, a state-recognised public holiday at the place of performance, or a Saturday, the next working day takes its place (§ 193) — computed as the first working day counted from the calendar end itself";
+    when frist_ende_kalender(f, k);
+    then frist_ende(f, add_business_days(k, 1 business_day));
+}
+
+// --- Verjährung: Beginn und regelmäßige Frist (§§ 195, 199) ---------------------------------------
+
+// Schluss des Jahres: zwölf Monatsenden vom Monat des Tages an, Auswahl des
+// Dezembers über die Monatslängen (siehe Kopf, Mechanik 1).
+relation jahresende_gesucht(a: Anspruch, tag: Date) kind institutional {
+    label de official "für diesen Tag wird der Schluss des Jahres gesucht (§ 199 Abs. 1)";
+    label en unofficial "the close of the year is sought for this day (§ 199 (1))";
+}
+relation jahresende_kandidat(a: Anspruch, tag: Date, monatsende: Date) kind institutional {
+    label de official "Monatsende eines der zwölf Monate vom Monat des Tages an";
+    label en unofficial "month end of one of the twelve months from the month of the day on";
+}
+relation jahresende(a: Anspruch, tag: Date, ultimo: Date) kind institutional {
+    key(a, tag);
+    label de official "Schluss des Jahres, in dem der Tag liegt (§ 199 Abs. 1): der 31. Dezember desselben Jahres";
+    label en unofficial "close of the year in which the day lies (§ 199 (1)): 31 December of that year";
+}
+
+@source(BGB_P199)
+rule JahresendeKandidat00(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 0 — Ende des 0. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 0 — end of the month 0 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(month_start_of(e)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat01(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 1 — Ende des 1. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 1 — end of the month 1 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 1 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat02(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 2 — Ende des 2. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 2 — end of the month 2 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 2 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat03(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 3 — Ende des 3. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 3 — end of the month 3 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 3 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat04(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 4 — Ende des 4. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 4 — end of the month 4 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 4 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat05(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 5 — Ende des 5. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 5 — end of the month 5 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 5 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat06(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 6 — Ende des 6. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 6 — end of the month 6 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 6 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat07(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 7 — Ende des 7. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 7 — end of the month 7 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 7 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat08(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 8 — Ende des 8. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 8 — end of the month 8 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 8 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat09(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 9 — Ende des 9. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 9 — end of the month 9 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 9 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat10(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 10 — Ende des 10. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 10 — end of the month 10 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 10 calendar_month)));
+}
+@source(BGB_P199)
+rule JahresendeKandidat11(a: Anspruch, e: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): Kandidat 11 — Ende des 11. Monats nach dem Monat des Tages";
+    label en unofficial "Close of the year (§ 199 (1)): candidate 11 — end of the month 11 months after the month of the day";
+    when jahresende_gesucht(a, e);
+    then jahresende_kandidat(a, e, month_end_of(add_calendar_period(month_start_of(e), 11 calendar_month)));
+}
+
+@source(BGB_P199)
+rule JahresendeIstDezember(a: Anspruch, e: Date, m: Date) strict {
+    label de official "Schluss des Jahres (§ 199 Abs. 1): der Kandidat ist der 31. Dezember, wenn sein Monat 31 Tage hat, der folgende Monat 31 Tage und der übernächste höchstens 29 — Dezember, Januar, Februar";
+    label en unofficial "Close of the year (§ 199 (1)): the candidate is 31 December when its month has 31 days, the next month 31 and the one after at most 29 — December, January, February";
+    when jahresende_kandidat(a, e, m)
+        and days_between(month_start_of(m), m) == 30
+        and days_between(month_start_of(add_calendar_period(m, 1 calendar_day)), month_end_of(add_calendar_period(m, 1 calendar_day))) == 30
+        and days_between(month_start_of(add_calendar_period(month_end_of(add_calendar_period(m, 1 calendar_day)), 1 calendar_day)), month_end_of(add_calendar_period(month_end_of(add_calendar_period(m, 1 calendar_day)), 1 calendar_day))) <= 28;
+    then jahresende(a, e, m);
+}
+
+pub relation kenntnis_erlangt_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, an dem der Gläubiger von den den Anspruch begründenden Umständen und der Person des Schuldners Kenntnis erlangt hat (§ 199 Abs. 1 Nr. 2) — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "day on which the creditor obtained knowledge of the circumstances giving rise to the claim and of the identity of the debtor (§ 199 (1) no. 2) — established fact, origin adjudicated";
+}
+pub relation regelmaessige_verjaehrung_beginn(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Schluss des Jahres, mit dem die regelmäßige Verjährungsfrist beginnt (§ 199 Abs. 1)";
+    label en unofficial "close of the year with which the regular limitation period begins (§ 199 (1))";
+}
+pub relation regelmaessige_verjaehrungsfrist_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die regelmäßige Verjährungsfrist von drei Jahren ohne Hemmung endet (§§ 195, 199 Abs. 1, § 188 Abs. 2)";
+    label en unofficial "day at whose end the regular three-year limitation period ends without suspension (§§ 195, 199 (1), § 188 (2))";
+}
+
+@source(BGB_P199)
+rule JahresendeGesuchtFuerEntstehung(a: Anspruch, e: Date) strict {
+    label de official "Für den Tag der Entstehung des Anspruchs wird der Schluss des Jahres gesucht (§ 199 Abs. 1 Nr. 1)";
+    label en unofficial "The close of the year is sought for the day the claim arose (§ 199 (1) no. 1)";
+    when de.bgb.core::anspruch_entstanden_am(a, e);
+    then jahresende_gesucht(a, e);
+}
+
+@source(BGB_P199)
+rule JahresendeGesuchtFuerKenntnis(a: Anspruch, k: Date) strict {
+    label de official "Für den Tag der Kenntniserlangung wird der Schluss des Jahres gesucht (§ 199 Abs. 1 Nr. 2)";
+    label en unofficial "The close of the year is sought for the day of knowledge (§ 199 (1) no. 2)";
+    when kenntnis_erlangt_am(a, k);
+    then jahresende_gesucht(a, k);
+}
+
+@source(BGB_P199)
+rule VerjaehrungsbeginnUltimoDerEntstehung(a: Anspruch, e: Date, k: Date, u: Date) strict {
+    label de official "Die regelmäßige Verjährungsfrist beginnt mit dem Schluss des Jahres, in dem der Anspruch entstanden ist und der Gläubiger Kenntnis erlangt hat (§ 199 Abs. 1 Nr. 1 und 2) — Kenntnis nicht nach der Entstehung: Schluss des Entstehungsjahres";
+    label en unofficial "The regular limitation period begins at the close of the year in which the claim arose and the creditor obtained knowledge (§ 199 (1) nos. 1 and 2) — knowledge not after accrual: close of the year of accrual";
+    when de.bgb.core::anspruch_entstanden_am(a, e) and kenntnis_erlangt_am(a, k) and k <= e and jahresende(a, e, u);
+    then regelmaessige_verjaehrung_beginn(a, u);
+}
+
+@source(BGB_P199)
+rule VerjaehrungsbeginnUltimoDerKenntnis(a: Anspruch, e: Date, k: Date, u: Date) strict {
+    label de official "Die regelmäßige Verjährungsfrist beginnt mit dem Schluss des Jahres, in dem der Anspruch entstanden ist und der Gläubiger Kenntnis erlangt hat (§ 199 Abs. 1 Nr. 1 und 2) — Kenntnis nach der Entstehung: Schluss des Kenntnisjahres";
+    label en unofficial "The regular limitation period begins at the close of the year in which the claim arose and the creditor obtained knowledge (§ 199 (1) nos. 1 and 2) — knowledge after accrual: close of the year of knowledge";
+    when de.bgb.core::anspruch_entstanden_am(a, e) and kenntnis_erlangt_am(a, k) and k > e and jahresende(a, k, u);
+    then regelmaessige_verjaehrung_beginn(a, u);
+}
+
+@source(BGB_P195)
+rule RegelmaessigeVerjaehrungsfrist(a: Anspruch, u: Date) strict {
+    label de official "Die regelmäßige Verjährungsfrist beträgt drei Jahre (§ 195) — Jahresschritt vom Schluss des Jahres (§ 188 Abs. 2, Politik BGB_FRISTEN_KALENDER)";
+    label en unofficial "The regular limitation period is three years (§ 195) — a year step from the close of the year (§ 188 (2), policy BGB_FRISTEN_KALENDER)";
+    when regelmaessige_verjaehrung_beginn(a, u);
+    then regelmaessige_verjaehrungsfrist_ende(a, add_calendar_period(u, 3 calendar_year));
+}
+
+// --- Hemmung (§§ 203–209) -------------------------------------------------------------------------
+
+pub enum Hemmungsgrund {
+    label de official "Grund der Hemmung der Verjährung (§§ 203–208)";
+    label en unofficial "ground of suspension of limitation (§§ 203–208)";
+    Verhandlungen,
+    Rechtsverfolgung,
+    Leistungsverweigerungsrecht,
+    HoehereGewalt,
+    FamiliaereGruende,
+    SexuelleSelbstbestimmung
+}
+
+pub relation hemmung(a: Anspruch, von: Date, bis: Date) kind empirical {
+    key(a);
+    label de official "Zeitraum, während dessen die Verjährung gehemmt ist (§§ 203–208), erster und letzter Tag eingeschlossen — im Pilot ein Zeitraum je Anspruch";
+    label en unofficial "period during which limitation is suspended (§§ 203–208), first and last day included — one period per claim in the pilot";
+}
+pub relation hemmungsgrund(a: Anspruch, grund: Hemmungsgrund) kind empirical {
+    key(a);
+    label de official "Grund der Hemmung (§§ 203–208)";
+    label en unofficial "ground of the suspension (§§ 203–208)";
+}
+pub relation keine_hemmung(a: Anspruch) kind empirical {
+    label de official "Kein Hemmungstatbestand der §§ 203–208 festgestellt — ausdrückliche Angabe des Falls; das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "No ground of suspension under §§ 203–208 established — explicit case input; absence of an input is not a denial";
+}
+relation hemmungstage(a: Anspruch, tage: Integer) kind institutional {
+    key(a);
+    label de official "Zahl der Tage des Hemmungszeitraums, Grenzen eingeschlossen (§ 209)";
+    label en unofficial "number of days of the suspension period, boundaries included (§ 209)";
+}
+pub relation verjaehrungsfrist_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährungsfrist unter Berücksichtigung der Hemmung endet (§ 209)";
+    label en unofficial "day at whose end the limitation period ends taking suspension into account (§ 209)";
+}
+pub relation verjaehrung_fruehestens(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Frühester Tag des Eintritts der Verjährung: drei Monate nach dem Ende der Hemmung durch Verhandlungen (§ 203 Satz 2)";
+    label en unofficial "earliest day on which limitation may occur: three months after the end of suspension by negotiations (§ 203 sentence 2)";
+}
+pub relation verjaehrung_eingetreten_am(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung des Anspruchs eintritt";
+    label en unofficial "day at whose end limitation of the claim occurs";
+}
+
+@source(BGB_P209)
+rule Hemmungstage(a: Anspruch, von: Date, bis: Date) strict {
+    label de official "Der Zeitraum, während dessen die Verjährung gehemmt ist, wird in die Verjährungsfrist nicht eingerechnet (§ 209) — gezählt in Tagen, erster und letzter Tag eingeschlossen";
+    label en unofficial "The period during which limitation is suspended is not counted towards the limitation period (§ 209) — counted in days, first and last day included";
+    when hemmung(a, von, bis);
+    then hemmungstage(a, days_between(von, bis) + 1);
+}
+
+@source(BGB_P209)
+rule VerjaehrungsfristEndeMitHemmung(a: Anspruch, d0: Date, n: Integer) strict {
+    label de official "Das Ende der Verjährungsfrist verschiebt sich um die nicht eingerechneten Tage der Hemmung (§ 209)";
+    label en unofficial "The end of the limitation period moves by the suspended days not counted (§ 209)";
+    when regelmaessige_verjaehrungsfrist_ende(a, d0) and hemmungstage(a, n);
+    then verjaehrungsfrist_ende(a, add_calendar_period(d0, with_unit(n, "calendar_day")));
+}
+
+@source(BGB_P209)
+rule VerjaehrungsfristEndeOhneHemmung(a: Anspruch, d0: Date) strict {
+    label de official "Ohne festgestellte Hemmung endet die Verjährungsfrist mit der regelmäßigen Frist (§§ 195, 199; § 209 greift nicht)";
+    label en unofficial "Without an established suspension the limitation period ends with the regular period (§§ 195, 199; § 209 does not apply)";
+    when regelmaessige_verjaehrungsfrist_ende(a, d0) and keine_hemmung(a);
+    then verjaehrungsfrist_ende(a, d0);
+}
+
+@source(BGB_P203)
+rule MindestfristNachVerhandlungen(a: Anspruch, von: Date, bis: Date) strict {
+    label de official "Die Verjährung tritt frühestens drei Monate nach dem Ende der Hemmung ein (§ 203 Satz 2) — Monatsschritt vom letzten Tag der Hemmung (§ 188 Abs. 2)";
+    label en unofficial "Limitation occurs at the earliest three months after the end of the suspension (§ 203 sentence 2) — month step from the last day of the suspension (§ 188 (2))";
+    when hemmung(a, von, bis) and hemmungsgrund(a, Verhandlungen);
+    then verjaehrung_fruehestens(a, add_calendar_period(bis, 3 calendar_month));
+}
+
+@source(BGB_P203)
+rule VerjaehrungMitMindestfristMassgeblich(a: Anspruch, d: Date, m: Date) strict {
+    label de official "Liegt die Mindestfrist des § 203 Satz 2 nach dem Ende der Verjährungsfrist, tritt die Verjährung mit der Mindestfrist ein";
+    label en unofficial "If the minimum period of § 203 sentence 2 lies after the end of the limitation period, limitation occurs with the minimum period";
+    when verjaehrungsfrist_ende(a, d) and verjaehrung_fruehestens(a, m) and m > d;
+    then verjaehrung_eingetreten_am(a, m);
+}
+
+@source(BGB_P203)
+rule VerjaehrungMitMindestfristNichtMassgeblich(a: Anspruch, d: Date, m: Date) strict {
+    label de official "Liegt die Mindestfrist des § 203 Satz 2 nicht nach dem Ende der Verjährungsfrist, tritt die Verjährung mit dem Ende der Verjährungsfrist ein";
+    label en unofficial "If the minimum period of § 203 sentence 2 does not lie after the end of the limitation period, limitation occurs with the end of the limitation period";
+    when verjaehrungsfrist_ende(a, d) and verjaehrung_fruehestens(a, m) and m <= d;
+    then verjaehrung_eingetreten_am(a, d);
+}
+
+@source(BGB_P209)
+rule VerjaehrungOhneHemmung(a: Anspruch, d: Date) strict {
+    label de official "Ohne Hemmung tritt die Verjährung mit dem Ende der Verjährungsfrist ein";
+    label en unofficial "Without suspension limitation occurs with the end of the limitation period";
+    when verjaehrungsfrist_ende(a, d) and keine_hemmung(a);
+    then verjaehrung_eingetreten_am(a, d);
+}
+
+// Hemmungsgründe ohne Mindestfrist (§§ 204–208): die Verjährung tritt mit dem
+// nach § 209 verschobenen Ende ein. Ein Regelsatz je Grund, weil die
+// Ungleichheit von Aufzählungswerten in einer Wache außerhalb v1 liegt: die
+// Liste ist geschlossen und wird hier ausbuchstabiert.
+@source(BGB_P204)
+rule VerjaehrungNachHemmungDurchRechtsverfolgung(a: Anspruch, d: Date) strict {
+    label de official "Hemmung durch Rechtsverfolgung (§ 204): die Verjährung tritt mit dem nach § 209 verschobenen Ende ein";
+    label en unofficial "Suspension by prosecution of rights (§ 204): limitation occurs with the end moved under § 209";
+    when verjaehrungsfrist_ende(a, d) and hemmungsgrund(a, Rechtsverfolgung);
+    then verjaehrung_eingetreten_am(a, d);
+}
+@source(BGB_P205)
+rule VerjaehrungNachHemmungDurchLeistungsverweigerungsrecht(a: Anspruch, d: Date) strict {
+    label de official "Hemmung bei Leistungsverweigerungsrecht (§ 205): die Verjährung tritt mit dem nach § 209 verschobenen Ende ein";
+    label en unofficial "Suspension by a right to refuse performance (§ 205): limitation occurs with the end moved under § 209";
+    when verjaehrungsfrist_ende(a, d) and hemmungsgrund(a, Leistungsverweigerungsrecht);
+    then verjaehrung_eingetreten_am(a, d);
+}
+@source(BGB_P206)
+rule VerjaehrungNachHemmungDurchHoehereGewalt(a: Anspruch, d: Date) strict {
+    label de official "Hemmung bei höherer Gewalt (§ 206): die Verjährung tritt mit dem nach § 209 verschobenen Ende ein";
+    label en unofficial "Suspension by force majeure (§ 206): limitation occurs with the end moved under § 209";
+    when verjaehrungsfrist_ende(a, d) and hemmungsgrund(a, HoehereGewalt);
+    then verjaehrung_eingetreten_am(a, d);
+}
+@source(BGB_P207)
+rule VerjaehrungNachHemmungAusFamiliaerenGruenden(a: Anspruch, d: Date) strict {
+    label de official "Hemmung aus familiären und ähnlichen Gründen (§ 207): die Verjährung tritt mit dem nach § 209 verschobenen Ende ein";
+    label en unofficial "Suspension for family and similar reasons (§ 207): limitation occurs with the end moved under § 209";
+    when verjaehrungsfrist_ende(a, d) and hemmungsgrund(a, FamiliaereGruende);
+    then verjaehrung_eingetreten_am(a, d);
+}
+@source(BGB_P208)
+rule VerjaehrungNachHemmungSexuelleSelbstbestimmung(a: Anspruch, d: Date) strict {
+    label de official "Hemmung bei Ansprüchen wegen Verletzung der sexuellen Selbstbestimmung (§ 208): die Verjährung tritt mit dem nach § 209 verschobenen Ende ein";
+    label en unofficial "Suspension for claims for violation of sexual self-determination (§ 208): limitation occurs with the end moved under § 209";
+    when verjaehrungsfrist_ende(a, d) and hemmungsgrund(a, SexuelleSelbstbestimmung);
+    then verjaehrung_eingetreten_am(a, d);
+}
+
+// --- Lebensalter (§ 187 Abs. 2 Satz 2, § 188 Abs. 2) ------------------------------------------------
+//
+// Beginnfrist: der Tag der Geburt wird mitgerechnet; die nach Jahren bestimmte
+// Frist endet mit dem Ablauf desjenigen Tages der letzten Woche oder des
+// letzten Monats, welcher dem Tage VORHERGEHT, der durch seine Zahl dem
+// Anfangstag entspricht (§ 188 Abs. 2 Alt. 2). Weder `same_day` noch
+// `next_day` liefert den Vortag direkt (Ledger D-Q1): der Jahresschritt gibt
+// den entsprechenden Tag, und der Vortag wird als Tagesschritt um die Zahl
+// der Tage minus eins vom Geburtstag an gerechnet (`with_unit`). Verbraucher:
+// `de.wohngeld` (Alter der Haushaltsmitglieder), `de.bgb.allgemeiner_teil`
+// (§ 2 Volljährigkeit, § 106). Der 29. Februar als Geburtstag in einem
+// Nicht-Schaltjahr ist nicht belegt (README, Aufgabenkarte).
+
+pub relation geburtstag(p: de.bgb.core::Person, tag: Date) kind empirical {
+    key(p);
+    label de official "Tag der Geburt (§ 187 Abs. 2 Satz 2)";
+    label en unofficial "day of birth (§ 187 (2) sentence 2)";
+}
+pub relation lebensjahr_gefragt(p: de.bgb.core::Person, jahre: Quantity) kind empirical {
+    label de official "Lebensjahr, dessen Vollendung gefragt ist, als Zahl von Jahren";
+    label en unofficial "year of life whose completion is asked, as a number of years";
+}
+pub relation lebensjahr_vollendet_am(p: de.bgb.core::Person, jahre: Quantity, tag: Date) kind institutional {
+    key(p, jahre);
+    label de official "Tag, mit dessen Ablauf das Lebensjahr vollendet ist (§ 187 Abs. 2 Satz 2, § 188 Abs. 2): der Tag vor dem entsprechenden Geburtstag";
+    label en unofficial "day at whose end the year of life is completed (§ 187 (2) sentence 2, § 188 (2)): the day before the corresponding birthday";
+}
+
+@source(BGB_P187)
+rule LebensjahrVollendet(p: de.bgb.core::Person, g: Date, n: Quantity) strict {
+    label de official "Bei der Berechnung des Lebensalters wird der Tag der Geburt mitgerechnet (§ 187 Abs. 2 Satz 2); die Frist endet mit dem Ablauf des Tages, der dem durch seine Zahl entsprechenden Tag vorhergeht (§ 188 Abs. 2) — Politik BGB_FRISTEN_KALENDER";
+    label en unofficial "In computing age the day of birth is counted (§ 187 (2) sentence 2); the period ends with the day preceding the corresponding day (§ 188 (2)) — policy BGB_FRISTEN_KALENDER";
+    when geburtstag(p, g) and lebensjahr_gefragt(p, n);
+    then lebensjahr_vollendet_am(p, n, add_calendar_period(g, with_unit(days_between(g, add_calendar_period(g, n)) - 1, "calendar_day")));
+}
+

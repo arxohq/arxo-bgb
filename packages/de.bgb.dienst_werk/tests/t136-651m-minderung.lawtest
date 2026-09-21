@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 651m Abs. 1, 2: Reisepreis 2 000 EUR, Wert ohne Mangel 100, wirklicher Wert 60 — der geminderte Reisepreis beträgt 1 200,00 EUR; gezahlt wurden 2 000 EUR, zu erstatten sind 800,00 EUR.
+
+test "urn:query:bgb-dw-t136-651m-minderung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": mindestens_zwei_arten_von_reiseleistungen_651a(entity_ref("urn:de:bgb:dw:t136")) { origin case_input; }
+        assert "f2": kein_ausschlussfall_651a_abs4(entity_ref("urn:de:bgb:dw:t136")) { origin case_input; }
+        assert "f3": kein_ausschlussfall_651a_abs5(entity_ref("urn:de:bgb:dw:t136")) { origin case_input; }
+        assert "f4": not vereinbarte_beschaffenheit_der_reise_651i(entity_ref("urn:de:bgb:dw:t136")) { origin case_input; }
+        assert "f5": reisepreis(entity_ref("urn:de:bgb:dw:t136"), 2000 EUR) { origin case_input; }
+        assert "f6": wert_der_reise_ohne_mangel_651m(entity_ref("urn:de:bgb:dw:t136"), 100) { origin case_input; }
+        assert "f7": wirklicher_wert_der_reise_651m(entity_ref("urn:de:bgb:dw:t136"), 60) { origin case_input; }
+        assert "f8": mehr_als_geminderten_reisepreis_gezahlt_651m(entity_ref("urn:de:bgb:dw:t136"), 2000 EUR) { origin case_input; }
+    }
+    evaluate truth(geminderter_reisepreis_651m(entity_ref("urn:de:bgb:dw:t136"), 1200.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(erstattungsanspruch_651m(entity_ref("urn:de:bgb:dw:t136"), 800.00 EUR));
+    expect truth_status == TRUE_ONLY;
+}

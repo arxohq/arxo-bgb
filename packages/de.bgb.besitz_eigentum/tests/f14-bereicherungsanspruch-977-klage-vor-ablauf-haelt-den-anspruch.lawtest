@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 977 Satz 2: der Eigentumsübergang erfolgte am 17. Mai 2023; das kalendarische Ende der Dreijahresfrist ist Sonntag, der 17. Mai 2026, verlegt auf Montag, den 18. Mai 2026 (§ 193). Die Klage vom 15. Mai 2026 liegt vor beiden Enden und hält den Anspruch.
+test "§ 977 Satz 2: Klage vor dem Ablauf der Dreijahresfrist hält den Bereicherungsanspruch" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": rechtsverlust_durch_eigentumsuebergang_erlitten(entity_ref("urn:de:bgb:be:f14:fund"), entity_ref("urn:de:bgb:be:f14:V")) { origin case_input; }
+        assert "f2": erwerber_haftet_aus_bereicherung(entity_ref("urn:de:bgb:be:f14:fund"), entity_ref("urn:de:bgb:be:f14:F")) { origin case_input; }
+        assert "f3": bereicherungswert_977(entity_ref("urn:de:bgb:be:f14:fund"), 900.00 EUR) { origin case_input; }
+        assert "f4": eigentumsuebergang_am_977(entity_ref("urn:de:bgb:be:f14:fund"), @2023-05-17) { origin case_input; }
+        assert "f5": bereicherungsfrist_977(entity_ref("urn:de:bgb:be:f14:fund"), entity_ref("urn:de:bgb:be:f14:frist")) { origin case_input; }
+        assert "f6": klage_auf_bereicherung_erhoben_am(entity_ref("urn:de:bgb:be:f14:fund"), @2026-05-15) { origin case_input; }
+    }
+    evaluate truth(klage_977_vor_ablauf_erhoben(entity_ref("urn:de:bgb:be:f14:fund")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(bereicherungsanspruch_977_erloschen_am(entity_ref("urn:de:bgb:be:f14:fund"), @2026-05-18));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(bereicherungsanspruch_977(entity_ref("urn:de:bgb:be:f14:fund"), entity_ref("urn:de:bgb:be:f14:V"), entity_ref("urn:de:bgb:be:f14:F"), 900.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

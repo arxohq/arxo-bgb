@@ -1,0 +1,53 @@
+// Граф: действующие родительские связи, предки с глубиной, супруги.
+
+language "law.core" version "0.2";
+package calc.kinship version "0.1.0";
+namespace "urn:law:calc:kinship";
+
+// --- Участники ------------------------------------------------------------------------
+
+rule MemberAsParent(f: Family, p: Actor, c: Actor, k: EdgeKind) strict { label ru official "родитель — участник графа"; when parent_edge(f, p, c, k); then member(f, p); }
+rule MemberAsChild(f: Family, p: Actor, c: Actor, k: EdgeKind) strict { label ru official "ребёнок — участник графа"; when parent_edge(f, p, c, k); then member(f, c); }
+rule MemberAsSpouseFirst(f: Family, a: Actor, b: Actor) strict { label ru official "супруг — участник графа"; when spouse_edge(f, a, b); then member(f, a); }
+rule MemberAsSpouseSecond(f: Family, a: Actor, b: Actor) strict { label ru official "супруг — участник графа"; when spouse_edge(f, a, b); then member(f, b); }
+
+// --- Действующие родительские связи ---------------------------------------------------
+
+rule AdoptiveParentAlwaysEffective(f: Family, p: Actor, c: Actor) strict {
+    label ru official "усыновитель — действующий родитель при любой политике";
+    when parent_edge(f, p, c, Adoptive);
+    then effective_parent(f, p, c);
+}
+
+rule BloodParentEffectiveWhenAdded(f: Family, p: Actor, c: Actor) strict {
+    label ru official "при политике «добавляет» кровный родитель действует всегда";
+    when family_adoption_effect(f, AddsBranch) and parent_edge(f, p, c, Blood);
+    then effective_parent(f, p, c);
+}
+
+rule BloodParentEffectiveWhenNotAdopted(f: Family, p: Actor, c: Actor) strict {
+    label ru official "при политике «заменяет» кровный родитель действует, пока у ребёнка нет усыновителя";
+    when family_adoption_effect(f, ReplacesBlood) and parent_edge(f, p, c, Blood)
+        and (count distinct a: Actor where parent_edge(f, a, c, Adoptive)) == 0;
+    then effective_parent(f, p, c);
+}
+
+// --- Предки с глубиной ----------------------------------------------------------------------
+
+rule SelfAtDepthZero(f: Family, p: Actor) strict {
+    label ru official "лицо — само себе предок глубины 0";
+    when member(f, p);
+    then ancestor_or_self(f, p, p, 0);
+}
+
+rule AncestorStep(f: Family, a: Actor, p: Actor, d: Integer, g: Actor, cap: Integer) strict {
+    label ru official "родитель предка глубины d — предок глубины d + 1, в пределах предела глубины";
+    when monotone(ancestor_or_self(f, a, p, d)) and effective_parent(f, g, a)
+        and family_depth_cap(f, cap) and d < cap;
+    then ancestor_or_self(f, g, p, d + 1);
+}
+
+// --- Супруги --------------------------------------------------------------------------------
+
+rule SpousesForward(f: Family, a: Actor, b: Actor) strict { label ru official "супруги, прямое чтение"; when spouse_edge(f, a, b); then spouses(f, a, b); }
+rule SpousesBackward(f: Family, a: Actor, b: Actor) strict { label ru official "супруги, обратное чтение"; when spouse_edge(f, a, b); then spouses(f, b, a); }

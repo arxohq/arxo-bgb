@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Gegenstück zu w05: derselbe Ausschließungsbeschluss, aber der Gläubiger meldet sich am 01.02.2026 — vor dem Ablauf der dreißig Jahre — bei der Hinterlegungsstelle; sein Recht auf den hinterlegten Betrag bleibt bestehen.
+test "§ 1171 Abs. 3: Recht auf den hinterlegten Betrag bleibt bei Meldung vor Ablauf bestehen" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": erloeschensfrist_des_hinterlegten_betrags(entity_ref("urn:de:bgb:dr:w06:hyp"), entity_ref("urn:de:bgb:dr:w06:frist")) { origin case_input; }
+        assert "f2": ausschliessungsbeschluss_rechtskraeftig_am(entity_ref("urn:de:bgb:dr:w06:hyp"), @1996-03-15) { origin adjudicated; }
+        assert "f3": glaeubiger_bei_der_hinterlegungsstelle_gemeldet_am(entity_ref("urn:de:bgb:dr:w06:hyp"), @2026-02-01) { origin adjudicated; }
+    }
+    evaluate truth(recht_auf_den_hinterlegten_betrag_bleibt(entity_ref("urn:de:bgb:dr:w06:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(recht_auf_den_hinterlegten_betrag_erloschen_am(entity_ref("urn:de:bgb:dr:w06:hyp"), @2026-03-15));
+    expect truth_status == NEITHER;
+}

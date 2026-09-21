@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+// § 1878 Absatz 4 Satz 1: Anspruch entstanden im Jahr 2026, Jahresende 31.12.2026 (Donnerstag); die Sechs-Monats-Frist endet kalendarisch am 30.06.2027 (Mittwoch, keine Verlegung). Ohne gerichtliche Geltendmachung erlischt der Anspruch.
+test "§ 1878 Absatz 4: Anspruch auf Aufwandspauschale erlischt nach sechs Monaten" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_BETREUUNG_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": aufwandspauschalenfrist_betrifft_anspruch(entity_ref("urn:de:bgb:bt:k01:F"), entity_ref("urn:de:bgb:bt:k01:A")) { origin case_input; }
+        assert "f2": aufwandspauschalenfrist_1878(entity_ref("urn:de:bgb:bt:k01:F")) { origin case_input; }
+        assert "f3": jahresende_der_entstehung(entity_ref("urn:de:bgb:bt:k01:F"), @2026-12-31) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::frist_ende(entity_ref("urn:de:bgb:bt:k01:F"), @2027-06-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aufwandspauschalenanspruch_erloschen(entity_ref("urn:de:bgb:bt:k01:A"), entity_ref("urn:de:bgb:bt:k01:F")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

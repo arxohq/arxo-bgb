@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1310 Abs. 3 Nr. 1: die Ehegatten haben am 14.04.2012 erklärt, die Ehe eingehen zu wollen, und der Standesbeamte hat sie in das Eheregister eingetragen. Zehn Jahre laufen vom 14.04.2012 an und enden mit Ablauf des 14.04.2022 (§ 188 Abs. 2, same_day). Die Ehegatten haben bis zum 30.06.2023 als Ehegatten miteinander gelebt — die Ehe gilt daher als geschlossen.
+test "§ 1310 Abs. 3 Nr. 1: Heilung nach zehn Jahren gelebter Ehe" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:v08:E"), entity_ref("urn:de:bgb:ehe:v08:A"), entity_ref("urn:de:bgb:ehe:v08:B")) { origin case_input; }
+        assert "f2": eheschliessung_am(entity_ref("urn:de:bgb:ehe:v08:E"), @2012-04-14) { origin case_input; }
+        assert "f3": eintragung_in_das_eheregister(entity_ref("urn:de:bgb:ehe:v08:E")) { origin case_input; }
+        assert "f4": heilungsfrist_1310(entity_ref("urn:de:bgb:ehe:v08:E"), entity_ref("urn:de:bgb:ehe:v08:F")) { origin case_input; }
+        assert "f5": als_ehegatten_miteinander_gelebt_bis(entity_ref("urn:de:bgb:ehe:v08:E"), @2023-06-30) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::frist_ende_kalender(entity_ref("urn:de:bgb:ehe:v08:F"), @2022-04-14));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ehe_geschlossen(entity_ref("urn:de:bgb:ehe:v08:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,16 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 904 Satz 1 (Kanal §47.3): „notwendig“ und „unverhältnismäßig groß“ sind Wertungen des Gerichts. Ohne Antwort steht die Duldungspflicht nicht fest; das Recht antwortet REQUIRES_JUDGMENT und nicht „nein“.
+test "§ 904 Satz 1: Notstand — ohne Wertung des Gerichts kein Ergebnis" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": einwirkung_auf_sache(entity_ref("urn:de:bgb:be:n:einwirkung"), entity_ref("urn:de:bgb:be:n:scheune")) { origin case_input; }
+        assert "f2": einwirkender(entity_ref("urn:de:bgb:be:n:einwirkung"), entity_ref("urn:de:bgb:be:n:N")) { origin case_input; }
+        assert "f3": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:n:scheune"), entity_ref("urn:de:bgb:be:n:H")) { origin case_input; }
+    }
+    evaluate truth(duldungspflicht_notstand(entity_ref("urn:de:bgb:be:n:scheune"), entity_ref("urn:de:bgb:be:n:H"), entity_ref("urn:de:bgb:be:n:N")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == REQUIRES_JUDGMENT;
+    expect judgment_request(einwirkung_zur_gefahrabwendung_notwendig, Court);
+}

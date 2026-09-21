@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2160 (Vorversterben des Bedachten macht das Vermächtnis unwirksam),
+// § 2161 (Wegfall des Beschwerten — Vermächtnis bleibt im Zweifel wirksam,
+// Satz 1 — sowie die Gegenausnahme bei anderem Willen des Erblassers, beide
+// Seiten der Vermutung).
+test "§ 2160: Vorversterben; § 2161: Wegfall des Beschwerten mit und ohne Gegenausnahme" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+        assert "f1": vermaechtnisbedachter_2160(entity_ref("urn:de:bgb:pilot:v02:T1"), entity_ref("urn:de:bgb:pilot:v02:P")) { origin case_input; }
+        assert "f2": bedachter_beim_erbfall_nicht_mehr_lebend_2160(entity_ref("urn:de:bgb:pilot:v02:T1"), entity_ref("urn:de:bgb:pilot:v02:P")) { origin case_input; }
+        assert "f3": zunaechst_beschwerter_wird_nicht_erbe_oder_vermaechtnisnehmer_2161(entity_ref("urn:de:bgb:pilot:v02:T2"), entity_ref("urn:de:bgb:pilot:v02:B1")) { origin case_input; }
+        assert "f4": zunaechst_beschwerter_wird_nicht_erbe_oder_vermaechtnisnehmer_2161(entity_ref("urn:de:bgb:pilot:v02:T3"), entity_ref("urn:de:bgb:pilot:v02:B2")) { origin case_input; }
+        assert "f5": anderer_wille_des_erblassers_anzunehmen_2161(entity_ref("urn:de:bgb:pilot:v02:T3")) { origin case_input; }
+    }
+    evaluate truth(vermaechtnis_unwirksam_wegen_vorversterbens_2160(entity_ref("urn:de:bgb:pilot:v02:T1"), entity_ref("urn:de:bgb:pilot:v02:P")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vermaechtnis_bleibt_wirksam_vermutet_2161(entity_ref("urn:de:bgb:pilot:v02:T2")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vermaechtnis_bleibt_wirksam_vermutet_2161(entity_ref("urn:de:bgb:pilot:v02:T3")));
+    expect truth_status == NEITHER;
+}

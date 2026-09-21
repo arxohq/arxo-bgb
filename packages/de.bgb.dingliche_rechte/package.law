@@ -1,0 +1,164 @@
+// BÜRGERLICHES GESETZBUCH — DINGLICHE RECHTE AN GRUNDSTÜCKEN UND PFANDRECHT (BG-11)
+//
+// Buch 3 Abschnitt 4 (Dienstbarkeiten, §§ 1018–1093), Abschnitt 5 (Vorkaufsrecht,
+// §§ 1094–1104), Abschnitt 6 (Reallasten, §§ 1105–1112), Abschnitt 7 (Hypothek,
+// Grundschuld, Rentenschuld, §§ 1113–1203) und Abschnitt 8 (Pfandrecht an
+// beweglichen Sachen und an Rechten, §§ 1204–1296; §§ 1260–1272 weggefallen).
+// Quellen: sources.law (generiert aus dem Register DOKNR — nicht von Hand
+// ändern). Aufgabenkarte, Grenzen und offene Fragen: README.md.
+//
+// FORM DES PAKETS
+//
+// 1. JEDE BELASTUNG IST EIN `Recht` DER NABE DES SACHENRECHTS. `Grundpfandrecht`,
+//    `Dienstbarkeit`, `Reallast` und `Vorkaufsrecht` sind Untertypen von
+//    `de.bgb.besitz_eigentum::Recht`. Damit gelten Eintragung (§ 873), Rang
+//    (§ 879) und öffentlicher Glaube (§ 892) des Nachbarpakets unmittelbar für
+//    sie; dieses Paket rechnet den Rang NICHT ein zweites Mal aus, es liest
+//    `de.bgb.besitz_eigentum::vorrang` (Ledger D-11-01).
+//
+// 2. HYPOTHEK, GRUNDSCHULD UND RENTENSCHULD SIND EINE ENTITÄT MIT EINER ART.
+//    § 1192 Abs. 1 und § 1200 Abs. 1 ordnen die entsprechende Anwendung der
+//    Hypothekenvorschriften an; eine eigene Entität je Art hätte jede Regel
+//    dreimal geschrieben, und die Verweise wären zu Zwillingsprädikaten
+//    geworden. Der Text unterscheidet die Arten durch
+//    `art_des_grundpfandrechts`; wo eine Norm nur für eine Art gilt
+//    (§ 1184 Sicherungshypothek, § 1190 Höchstbetragshypothek, § 1193
+//    Grundschuld, § 1199 Rentenschuld), nennt die Regel die Art im Rumpf
+//    (Ledger D-11-02).
+//
+// 3. DREI KANÄLE FÜR BEWERTENDE MERKMALE (DECISION-0194, Nabe de.bgb.core):
+//    „tunlichst schonen“ (§ 1020), „gewöhnliche Ausbesserungen“ (§ 1041),
+//    „ordnungsmäßige Wirtschaft“ (§ 1122, § 1135), „angemessene Frist“
+//    (§ 1133), „billiges Ermessen“ (§ 1024, § 1246), „Gefährdung der
+//    Sicherheit“ (§ 1133, § 1134), „drohender Verderb“ (§ 1218, § 1219),
+//    „unverzüglich“ (§ 1160, § 1166, § 1241) sind Wertungen des Gerichts —
+//    `external judgment relation … { authority Court; }`. „Kenntnis“ (§ 1207,
+//    § 1208 über § 932 Abs. 2), Eintragung, Rechtskraft, Übergabe und
+//    Beschlagnahme sind FESTGESTELLTE TATSACHEN — `kind empirical`, im Fall
+//    mit `origin adjudicated`. Ein flacher Fallsatz über das Ergebnis ist
+//    verboten.
+//
+// 4. FRISTEN NUR ÜBER `de.bgb.fristen` (DECISION-0319, Р4). Dieses Paket nennt
+//    Ereignis und Länge; das Ende rechnet dort § 188. Die HANDLUNGSFRISTEN
+//    (§ 1128 Abs. 1 ein Monat für den Widerspruch, § 1139 ein Monat für den
+//    Antrag, § 1234 Abs. 2 ein Monat Wartefrist vor dem Verkauf, § 1220 Abs. 1)
+//    lesen `frist_ende` mit der Verlegung des § 193; die ENTHAFTUNGS- UND
+//    ERLÖSCHENSFRISTEN (§ 1123 Abs. 2, § 1170 Abs. 1, § 1171 Abs. 3, § 1057,
+//    § 1226, § 1193 Abs. 1) lesen `frist_ende_kalender` ohne Verlegung — § 193
+//    setzt einen Adressaten voraus, der innerhalb der Frist zu handeln hat
+//    (Ledger D-11-04, Anschluss an D-10-05). Zeile je Norm:
+//    docs/foundations/de-bgb/DEADLINES.json, Abschnitt BG-11.
+//
+// 5. GELD IST EXAKT, EINE RUNDUNG JE ANSPRUCH. Verhältnisse (§ 1172 Abs. 2
+//    Wert des Grundstücks zum Wert aller Grundstücke) werden als Paar ganzer
+//    Zahlen geführt und erst am Ende einmal mit
+//    `div_round(Betrag × z, n × 1.0, 2, "HALF_UP")` in Geld verwandelt; der
+//    Hundertsatz des § 1119 Abs. 1 („bis zu fünf vom Hundert“) ebenso
+//    (Ledger D-11-05, README „Rundung“).
+//
+// 6. FEHLEN EINES FAKTUMS IST KEINE VERNEINUNG. Wo der Text ein Negativ
+//    verlangt („bevor sie in Beschlag genommen worden sind“, „wenn nicht
+//    vorher die Beschlagnahme erfolgt“, „sofern nicht die Erteilung des
+//    Briefes ausgeschlossen ist“), trägt der Fall die ausdrückliche Eingabe
+//    (`keine_beschlagnahme`, `brieferteilung_ausgeschlossen`, …).
+//
+// 7. AUSSERHALB: Zwangsversteigerung und Zwangsverwaltung (ZVG),
+//    Grundbuchverfahren (GBO), Aufgebotsverfahren (FamFG), Wohnungseigentum
+//    (WEG), Versicherungsvertragsrecht (VVG) und das Pfandleihgewerbe
+//    (§ 1259, PfandlV) sind äußere Verfahren; sie erscheinen als Eingaben und
+//    Grenzen (SOURCES.json, external), nicht als Regeln dieses Pakets.
+
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import de.bgb.besitz_eigentum version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Anspruch = de.bgb.core::Anspruch;
+type Sache = de.bgb.core::Sache;
+type Grundstueck = de.bgb.besitz_eigentum::Grundstueck;
+type Recht = de.bgb.besitz_eigentum::Recht;
+type Frist = de.bgb.fristen::Frist;
+
+// Kalenderschritt der §§ 188 Abs. 2, 3 (Politik wie BGB_FRISTEN_KALENDER der
+// Nabe der Fristen); eine Politik je Fall (§168.2). Die Verlegung des § 193
+// steht als eigene Regel bei der jeweiligen Handlungsfrist.
+deadline policy BGB_DINGLICHE_RECHTE_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind";
+    label en unofficial "Public holidays recognised in every Land";
+}
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070";
+    label en unofficial "Nationwide public holidays 1991–2070";
+}
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Gemeinsame Träger ---------------------------------------------------------------------------
+
+pub entity Belastung : Recht {
+    label de official "Belastung eines Grundstücks, einer Sache oder eines Rechts nach Buch 3 Abschnitte 4 bis 8 (§§ 1018, 1030, 1090, 1094, 1105, 1113, 1191, 1199, 1204, 1273)";
+    label en unofficial "encumbrance of land, of a thing or of a right under Book 3 Divisions 4 to 8 (§§ 1018, 1030, 1090, 1094, 1105, 1113, 1191, 1199, 1204, 1273)";
+}
+
+pub relation belastungsgegenstand_grundstueck(b: Belastung, g: Grundstueck) kind empirical {
+    key(b);
+    label de official "Grundstück, das mit der Belastung beschwert ist (§ 1018, § 1105, § 1113 Abs. 1)";
+    label en unofficial "land encumbered by the charge (§ 1018, § 1105, § 1113 (1))";
+}
+pub relation belastungsgegenstand_sache(b: Belastung, s: Sache) kind empirical {
+    key(b);
+    label de official "bewegliche Sache, die mit der Belastung beschwert ist (§ 1030 Abs. 1, § 1204 Abs. 1)";
+    label en unofficial "movable thing encumbered by the charge (§ 1030 (1), § 1204 (1))";
+}
+pub relation berechtigter(b: Belastung, p: Person) kind empirical {
+    label de official "Person, zu deren Gunsten die Belastung erfolgt (§ 1018, § 1030 Abs. 1, § 1113 Abs. 1, § 1204 Abs. 1)";
+    label en unofficial "person in whose favour the encumbrance is created (§ 1018, § 1030 (1), § 1113 (1), § 1204 (1))";
+}
+pub relation besteller(b: Belastung, p: Person) kind empirical {
+    label de official "Besteller der Belastung: Eigentümer der belasteten Sache oder Inhaber des belasteten Rechts (§ 1032, § 1069, § 1205 Abs. 1)";
+    label en unofficial "grantor of the encumbrance: owner of the encumbered thing or holder of the encumbered right (§ 1032, § 1069, § 1205 (1))";
+}
+pub relation belastung_besteht(b: Belastung) kind derived {
+    label de official "die Belastung ist entstanden und noch nicht erloschen";
+    label en unofficial "the encumbrance has arisen and has not yet been extinguished";
+}
+pub relation belastung_erloschen(b: Belastung) kind derived {
+    label de official "die Belastung ist erloschen (§ 1061, § 1063, § 1072, § 1181, § 1252, § 1253, § 1256)";
+    label en unofficial "the encumbrance is extinguished (§ 1061, § 1063, § 1072, § 1181, § 1252, § 1253, § 1256)";
+}
+
+// --- Geldbeträge und Verhältnisse -----------------------------------------------------------------
+
+// Wertverhältnisse werden als Paar GANZER ZAHLEN (Cent) geführt: § 58 kennt
+// kein Produkt zweier Geldbeträge, und das Gesetz nennt weder Einheit noch
+// Bewertungsverfahren (wie in `de.bgb.besitz_eigentum::wert_in_cent`,
+// Ledger D-10-08). Geld entsteht erst am Ende, einmal je Anspruch.
+pub relation wert_des_grundstuecks_in_cent(g: Grundstueck, wert: Integer) kind empirical {
+    key(g);
+    label de official "Wert des Grundstücks in Cent, unter Abzug der vorgehenden Belastungen berechnet (§ 1172 Abs. 2 Satz 2) — Eingabe des Falls; das Gesetz nennt weder Einheit noch Bewertungsverfahren";
+    label en unofficial "value of the land in cents, computed after deduction of prior encumbrances (§ 1172 (2) sentence 2) — case input; the statute names neither unit nor valuation method";
+}

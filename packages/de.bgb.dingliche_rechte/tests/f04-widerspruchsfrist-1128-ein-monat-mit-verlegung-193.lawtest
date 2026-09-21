@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1128 Abs. 1: Die Schadensanzeige geht dem Hypothekengläubiger am 15.02.2026 zu; die Monatsfrist endet kalendarisch mit dem Ablauf des 15.03.2026, einem Sonntag. Innerhalb der Frist ist dem Versicherer gegenüber der Zahlung zu widersprechen — eine HANDLUNGSFRIST; § 193 verlegt das Ende auf Montag, den 16.03.2026. Zahlt der Versicherer an diesem Tag, so wirkt die Zahlung nicht gegen den Gläubiger. Gegenstück: tests/f01 (§ 1123, derselbe Sonntag ohne Verlegung).
+test "§ 1128 Abs. 1: Monatsfrist mit der Verlegung des § 193 — Zahlung am Montag noch unwirksam" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": gebaeude_versichert(entity_ref("urn:de:bgb:dr:f04:vers")) { origin case_input; }
+        assert "f2": versicherungsforderung(entity_ref("urn:de:bgb:dr:f04:vers")) { origin case_input; }
+        assert "f3": schadensanzeige_empfangen_am(entity_ref("urn:de:bgb:dr:f04:vers"), @2026-02-15) { origin adjudicated; }
+        assert "f4": widerspruchsfrist(entity_ref("urn:de:bgb:dr:f04:vers"), entity_ref("urn:de:bgb:dr:f04:frist")) { origin case_input; }
+        assert "f5": zahlungstag(entity_ref("urn:de:bgb:dr:f04:vers"), @2026-03-16) { origin case_input; }
+    }
+    evaluate truth(zahlung_an_den_versicherten_unwirksam(entity_ref("urn:de:bgb:dr:f04:vers")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

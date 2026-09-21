@@ -1,0 +1,347 @@
+// BUCH 1 ABSCHNITT 7 — SICHERHEITSLEISTUNG (§§ 232–240a)
+//
+// BRÜCHE UND GELD. Drei Vorschriften nennen Bruchteile eines Wertes:
+// § 234 Abs. 3 und § 236 „drei Viertel des Kurswerts“, § 237 Satz 1 „zwei
+// Drittel des Schätzungswerts“. Gerechnet wird EINMAL auf den Cent:
+// `div_round(Wert × z, n × 1.0, 2, "HALF_UP")` (Zähler und Nenner ganze
+// Zahlen, Divisor `Decimal`) — Politik des Pakets, Ledger D-03-02; README,
+// Abschnitt „Rundung“.
+//
+// AUSSERHALB DES PAKETS. Die Gattungen geeigneter Wertpapiere und die
+// Voraussetzungen geeigneter Hypotheken bestimmt die Rechtsverordnung nach
+// § 240a; sie ist ein typisierter EINGANG des Falls (SOURCES.json,
+// external). Die Eintragung im Grundbuch und im Schuldbuch ist ebenfalls
+// Eingang mit Tag.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+pub entity Sicherheit {
+    label de official "geleistete Sicherheit (§§ 232–240)";
+    label en unofficial "security provided (§§ 232–240)";
+}
+
+pub enum Sicherungsart {
+    label de official "Arten der Sicherheitsleistung (§ 232 Abs. 1, 2)";
+    label en unofficial "kinds of provision of security (§ 232 (1), (2))";
+    HinterlegungVonGeld,
+    HinterlegungVonWertpapieren,
+    VerpfaendungVonBuchforderungen,
+    VerpfaendungBeweglicherSachen,
+    Schiffshypothek,
+    HypothekAnInlaendischenGrundstuecken,
+    VerpfaendungVonHypothekenforderungenGrundschuldenRentenschulden,
+    Buerge
+}
+
+pub relation sicherheit_zu_leisten(s: Sicherheit, p: Person) kind empirical {
+    key(s);
+    label de official "die Person hat Sicherheit zu leisten (§ 232 Abs. 1)";
+    label en unofficial "the person must provide security (§ 232 (1))";
+}
+pub relation sicherungsart(s: Sicherheit, art: Sicherungsart) kind empirical {
+    key(s);
+    label de official "gewählte Art der Sicherheitsleistung (§ 232)";
+    label en unofficial "chosen kind of security (§ 232)";
+}
+pub relation sicherheit_in_dieser_weise_nicht_moeglich(s: Sicherheit) kind empirical {
+    label de official "die Sicherheit kann nicht in der Weise des § 232 Abs. 1 geleistet werden (§ 232 Abs. 2)";
+    label en unofficial "security cannot be provided in the manner of § 232 (1) (§ 232 (2))";
+}
+pub relation sicherheitsleistung_zulaessig(s: Sicherheit, art: Sicherungsart) kind institutional {
+    label de official "die Sicherheitsleistung in dieser Art ist zulässig (§ 232)";
+    label en unofficial "providing security in this manner is permitted (§ 232)";
+}
+
+@source(BGB_P232)
+rule SicherheitDurchDieGenanntenArten(s: Sicherheit, p: Person, art: Sicherungsart) strict {
+    label de official "Wer Sicherheit zu leisten hat, kann dies bewirken durch Hinterlegung von Geld oder Wertpapieren, durch Verpfändung von Buchforderungen, durch Verpfändung beweglicher Sachen, durch Bestellung von Schiffshypotheken, durch Bestellung von Hypotheken an inländischen Grundstücken oder durch Verpfändung von Hypothekenforderungen, Grundschulden oder Rentenschulden (§ 232 Abs. 1)";
+    label en unofficial "A person required to provide security may do so by the means listed in § 232 (1)";
+    when sicherheit_zu_leisten(s, p)
+        and sicherungsart(s, art)
+        and not sicherheit_in_dieser_weise_nicht_moeglich(s);
+    then sicherheitsleistung_zulaessig(s, art);
+}
+
+@source(BGB_P232)
+rule BuergeNurWennAndereArtenNichtMoeglich(s: Sicherheit, p: Person) strict {
+    label de official "Kann die Sicherheit nicht in dieser Weise geleistet werden, so ist die Stellung eines tauglichen Bürgen zulässig (§ 232 Abs. 2)";
+    label en unofficial "If security cannot be provided in that manner, providing a suitable surety is permitted (§ 232 (2))";
+    when sicherheit_zu_leisten(s, p)
+        and sicherungsart(s, Buerge)
+        and sicherheit_in_dieser_weise_nicht_moeglich(s);
+    then sicherheitsleistung_zulaessig(s, Buerge);
+}
+
+// § 233 Wirkung der Hinterlegung.
+pub relation hinterlegung_erfolgt(s: Sicherheit) kind empirical {
+    label de official "die Hinterlegung von Geld oder Wertpapieren ist erfolgt (§ 233)";
+    label en unofficial "money or securities have been deposited (§ 233)";
+}
+pub relation eigentum_geht_auf_hinterlegungsstelle_ueber(s: Sicherheit) kind empirical {
+    label de official "das Geld oder die Wertpapiere gehen in das Eigentum des Fiskus oder der als Hinterlegungsstelle bestimmten Anstalt über (§ 233)";
+    label en unofficial "the money or securities pass into the ownership of the treasury or the depositary institution (§ 233)";
+}
+pub relation pfandrecht_am_hinterlegten(s: Sicherheit, berechtigter: Person) kind institutional {
+    label de official "der Berechtigte erwirbt ein Pfandrecht an dem hinterlegten Geld oder an den hinterlegten Wertpapieren (§ 233)";
+    label en unofficial "the person entitled acquires a pledge over the money or securities deposited (§ 233)";
+}
+pub relation pfandrecht_an_der_rueckerstattungsforderung(s: Sicherheit, berechtigter: Person) kind institutional {
+    label de official "Pfandrecht an der Forderung auf Rückerstattung, wenn das Hinterlegte in das Eigentum des Fiskus oder der Anstalt übergeht (§ 233)";
+    label en unofficial "pledge over the claim for restitution where the deposit passes into the ownership of the treasury (§ 233)";
+}
+pub relation berechtigter_der_sicherheit(s: Sicherheit, p: Person) kind empirical {
+    key(s);
+    label de official "der Berechtigte, dem die Sicherheit zu leisten ist (§§ 233, 239, 240)";
+    label en unofficial "the person entitled to the security (§§ 233, 239, 240)";
+}
+
+@source(BGB_P233)
+rule PfandrechtDurchHinterlegung(s: Sicherheit, b: Person) strict {
+    label de official "Mit der Hinterlegung erwirbt der Berechtigte ein Pfandrecht an dem hinterlegten Geld oder an den hinterlegten Wertpapieren (§ 233)";
+    label en unofficial "On deposit the person entitled acquires a pledge over the money or securities deposited (§ 233)";
+    when hinterlegung_erfolgt(s)
+        and berechtigter_der_sicherheit(s, b)
+        and not eigentum_geht_auf_hinterlegungsstelle_ueber(s);
+    then pfandrecht_am_hinterlegten(s, b);
+}
+
+@source(BGB_P233)
+rule PfandrechtAnDerRueckerstattungsforderung(s: Sicherheit, b: Person) strict {
+    label de official "Gehen das Geld oder die Wertpapiere in das Eigentum des Fiskus oder der als Hinterlegungsstelle bestimmten Anstalt über, so erwirbt der Berechtigte ein Pfandrecht an der Forderung auf Rückerstattung (§ 233)";
+    label en unofficial "Where the deposit passes into the ownership of the treasury or depositary, the entitled person acquires a pledge over the claim for restitution (§ 233)";
+    when hinterlegung_erfolgt(s)
+        and berechtigter_der_sicherheit(s, b)
+        and eigentum_geht_auf_hinterlegungsstelle_ueber(s);
+    then pfandrecht_an_der_rueckerstattungsforderung(s, b);
+}
+
+// §§ 234–237 Geeignete Gegenstände und ihr Wert.
+pub relation inhaber_oder_orderpapier_mit_blankoindossament(s: Sicherheit) kind empirical {
+    label de official "Inhaberpapiere und Orderpapiere, die mit Blankoindossament versehen sind (§ 234 Abs. 1)";
+    label en unofficial "bearer instruments and order instruments with a blank endorsement (§ 234 (1))";
+}
+pub relation gattung_der_rechtsverordnung_nach_240a(s: Sicherheit) kind empirical {
+    label de official "das Wertpapier gehört zu einer in der Rechtsverordnung nach § 240a aufgeführten Gattung (§ 234 Abs. 1) — Eingang des Falls";
+    label en unofficial "the instrument belongs to a class listed in the regulation under § 240a (§ 234 (1)) — case input";
+}
+pub relation kurswert(s: Sicherheit, betrag: Money) kind empirical {
+    key(s);
+    label de official "Kurswert des Wertpapiers oder der Wertpapiere, deren Aushändigung der Gläubiger verlangen kann (§ 234 Abs. 1, 3, § 236)";
+    label en unofficial "market value of the securities (§ 234 (1), (3), § 236)";
+}
+pub relation schaetzungswert(s: Sicherheit, betrag: Money) kind empirical {
+    key(s);
+    label de official "Schätzungswert der beweglichen Sache (§ 237 Satz 1)";
+    label en unofficial "estimated value of the movable thing (§ 237 sentence 1)";
+}
+pub relation zins_renten_gewinnanteil_und_erneuerungsscheine_hinterlegt(s: Sicherheit) kind empirical {
+    label de official "mit den Wertpapieren sind die Zins-, Renten-, Gewinnanteil- und Erneuerungsscheine hinterlegt (§ 234 Abs. 2)";
+    label en unofficial "the interest, annuity, dividend and renewal coupons are deposited with the securities (§ 234 (2))";
+}
+pub relation wertpapier_geeignet(s: Sicherheit) kind institutional {
+    label de official "das Wertpapier ist zur Sicherheitsleistung geeignet (§ 234 Abs. 1)";
+    label en unofficial "the security instrument is suitable for providing security (§ 234 (1))";
+}
+pub relation sicherheit_hoechstens_in_hoehe_von(s: Sicherheit, betrag: Money) kind institutional {
+    key(s);
+    label de official "Höhe, bis zu der mit dem Gegenstand Sicherheit geleistet werden kann (§ 234 Abs. 3, § 236, § 237 Satz 1)";
+    label en unofficial "amount up to which security may be provided with the object (§ 234 (3), § 236, § 237)";
+}
+pub relation schuldbuchforderung_gegen_bund_oder_land(s: Sicherheit) kind empirical {
+    label de official "Schuldbuchforderung gegen den Bund oder gegen ein Land (§ 236)";
+    label en unofficial "book claim against the Federation or a Land (§ 236)";
+}
+pub relation bewegliche_sache_als_sicherheit(s: Sicherheit) kind empirical {
+    label de official "mit einer beweglichen Sache soll Sicherheit geleistet werden (§ 237 Satz 1)";
+    label en unofficial "security is to be provided with a movable thing (§ 237 sentence 1)";
+}
+pub relation verderb_zu_besorgen_oder_aufbewahrung_schwierig(s: Sicherheit) kind empirical {
+    label de official "der Verderb der Sache ist zu besorgen oder ihre Aufbewahrung ist mit besonderen Schwierigkeiten verbunden (§ 237 Satz 2)";
+    label en unofficial "the thing is liable to spoil or its custody involves particular difficulty (§ 237 sentence 2)";
+}
+pub relation zurueckweisung_zulaessig(s: Sicherheit) kind institutional {
+    label de official "die Sache kann zurückgewiesen werden (§ 237 Satz 2)";
+    label en unofficial "the thing may be refused (§ 237 sentence 2)";
+}
+
+@source(BGB_P234)
+rule GeeigneteWertpapiere(s: Sicherheit, kurs: Money) strict {
+    label de official "Zur Sicherheitsleistung geeignete Wertpapiere sind Inhaberpapiere und Orderpapiere, die mit Blankoindossament versehen sind, wenn sie einen Kurswert haben und zu einer in der Rechtsverordnung nach § 240a aufgeführten Gattung gehören (§ 234 Abs. 1); mit den Wertpapieren sind die Zins-, Renten-, Gewinnanteil- und Erneuerungsscheine zu hinterlegen (§ 234 Abs. 2)";
+    label en unofficial "Bearer and blank-endorsed order instruments with a market value belonging to a listed class are suitable; the coupons are deposited with them (§ 234 (1), (2))";
+    when inhaber_oder_orderpapier_mit_blankoindossament(s)
+        and gattung_der_rechtsverordnung_nach_240a(s)
+        and kurswert(s, kurs)
+        and zins_renten_gewinnanteil_und_erneuerungsscheine_hinterlegt(s);
+    then wertpapier_geeignet(s);
+}
+
+@source(BGB_P234)
+rule DreiViertelDesKurswerts(s: Sicherheit, kurs: Money) strict {
+    label de official "Mit Wertpapieren kann Sicherheit nur in Höhe von drei Vierteln des Kurswerts geleistet werden (§ 234 Abs. 3) — einmal auf den Cent gerundet (Politik des Pakets)";
+    label en unofficial "Security may be provided with securities only up to three quarters of their market value (§ 234 (3)) — rounded once to the cent";
+    when wertpapier_geeignet(s) and kurswert(s, kurs);
+    then sicherheit_hoechstens_in_hoehe_von(s, div_round(kurs * 3, 4 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P236)
+rule DreiViertelBeiBuchforderungen(s: Sicherheit, kurs: Money) strict {
+    label de official "Mit einer Schuldbuchforderung gegen den Bund oder gegen ein Land kann Sicherheit nur in Höhe von drei Vierteln des Kurswerts der Wertpapiere geleistet werden, deren Aushändigung der Gläubiger gegen Löschung seiner Forderung verlangen kann (§ 236)";
+    label en unofficial "With a book claim against the Federation or a Land, security may be provided only up to three quarters of the market value of the securities the creditor may demand (§ 236)";
+    when schuldbuchforderung_gegen_bund_oder_land(s) and kurswert(s, kurs);
+    then sicherheit_hoechstens_in_hoehe_von(s, div_round(kurs * 3, 4 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P237)
+rule ZweiDrittelDesSchaetzungswerts(s: Sicherheit, wert: Money) strict {
+    label de official "Mit einer beweglichen Sache kann Sicherheit nur in Höhe von zwei Dritteln des Schätzungswerts geleistet werden (§ 237 Satz 1) — einmal auf den Cent gerundet (Politik des Pakets)";
+    label en unofficial "With a movable thing security may be provided only up to two thirds of its estimated value (§ 237 sentence 1) — rounded once to the cent";
+    when bewegliche_sache_als_sicherheit(s) and schaetzungswert(s, wert);
+    then sicherheit_hoechstens_in_hoehe_von(s, div_round(wert * 2, 3 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P237)
+rule ZurueckweisungVerderblicherSachen(s: Sicherheit) strict {
+    label de official "Sachen, deren Verderb zu besorgen oder deren Aufbewahrung mit besonderen Schwierigkeiten verbunden ist, können zurückgewiesen werden (§ 237 Satz 2)";
+    label en unofficial "Things liable to spoil or difficult to keep may be refused (§ 237 sentence 2)";
+    when bewegliche_sache_als_sicherheit(s) and verderb_zu_besorgen_oder_aufbewahrung_schwierig(s);
+    then zurueckweisung_zulaessig(s);
+}
+
+// § 235 Umtauschrecht.
+pub relation umtausch_verlangt(s: Sicherheit) kind empirical {
+    label de official "der Sicherungsgeber verlangt den Umtausch des hinterlegten Geldes gegen geeignete Wertpapiere, der hinterlegten Wertpapiere gegen andere geeignete Wertpapiere oder gegen Geld (§ 235)";
+    label en unofficial "the provider of security demands exchange of the deposited money or securities (§ 235)";
+}
+pub relation umtauschrecht(s: Sicherheit, p: Person) kind institutional {
+    label de official "Recht zum Umtausch des Hinterlegten (§ 235)";
+    label en unofficial "right to exchange the deposit (§ 235)";
+}
+
+@source(BGB_P235)
+rule Umtauschrecht(s: Sicherheit, p: Person) strict {
+    label de official "Wer durch Hinterlegung von Geld oder von Wertpapieren Sicherheit geleistet hat, ist berechtigt, das hinterlegte Geld gegen geeignete Wertpapiere, die hinterlegten Wertpapiere gegen andere geeignete Wertpapiere oder gegen Geld umzutauschen (§ 235)";
+    label en unofficial "A person who has provided security by depositing money or securities may exchange them (§ 235)";
+    when hinterlegung_erfolgt(s) and sicherheit_zu_leisten(s, p) and umtausch_verlangt(s);
+    then umtauschrecht(s, p);
+}
+
+// § 238 Hypotheken, Grund- und Rentenschulden.
+pub relation hypothekenforderung_grundschuld_oder_rentenschuld(s: Sicherheit) kind empirical {
+    label de official "eine Hypothekenforderung, eine Grundschuld oder eine Rentenschuld soll zur Sicherheitsleistung dienen (§ 238 Abs. 1)";
+    label en unofficial "a mortgage claim, land charge or annuity charge is to serve as security (§ 238 (1))";
+}
+pub relation voraussetzungen_der_rechtsverordnung_erfuellt(s: Sicherheit) kind empirical {
+    label de official "die in der Rechtsverordnung nach § 240a festgelegten Voraussetzungen sind erfüllt (§ 238 Abs. 1) — Eingang des Falls";
+    label en unofficial "the requirements laid down in the regulation under § 240a are met (§ 238 (1)) — case input";
+}
+pub relation sicherungshypothek_besteht(s: Sicherheit) kind empirical {
+    label de official "für die Forderung besteht eine Sicherungshypothek (§ 238 Abs. 2)";
+    label en unofficial "the claim is secured by a security mortgage (§ 238 (2))";
+}
+pub relation zur_sicherheitsleistung_geeignet(s: Sicherheit) kind institutional {
+    label de official "der Gegenstand ist zur Sicherheitsleistung geeignet (§ 238)";
+    label en unofficial "the object is suitable for providing security (§ 238)";
+}
+
+@source(BGB_P238)
+rule GeeigneteHypothek(s: Sicherheit) strict {
+    label de official "Eine Hypothekenforderung, eine Grundschuld oder eine Rentenschuld ist zur Sicherheitsleistung nur geeignet, wenn sie den in der Rechtsverordnung nach § 240a festgelegten Voraussetzungen entspricht (§ 238 Abs. 1)";
+    label en unofficial "A mortgage claim, land charge or annuity charge is suitable only if it meets the requirements of the regulation under § 240a (§ 238 (1))";
+    when hypothekenforderung_grundschuld_oder_rentenschuld(s)
+        and voraussetzungen_der_rechtsverordnung_erfuellt(s)
+        and not sicherungshypothek_besteht(s);
+    then zur_sicherheitsleistung_geeignet(s);
+}
+
+@source(BGB_P238)
+rule ForderungMitSicherungshypothekUngeeignet(s: Sicherheit) strict {
+    label de official "Eine Forderung, für die eine Sicherungshypothek besteht, ist zur Sicherheitsleistung nicht geeignet (§ 238 Abs. 2)";
+    label en unofficial "A claim secured by a security mortgage is not suitable for providing security (§ 238 (2))";
+    when hypothekenforderung_grundschuld_oder_rentenschuld(s) and sicherungshypothek_besteht(s);
+    then not zur_sicherheitsleistung_geeignet(s);
+}
+
+// § 239 Bürge.
+pub relation buerge(s: Sicherheit, p: Person) kind empirical {
+    label de official "als Bürge gestellte Person (§ 239 Abs. 1)";
+    label en unofficial "person offered as surety (§ 239 (1))";
+}
+pub relation vermoegen_des_buergen(s: Sicherheit, betrag: Money) kind empirical {
+    key(s);
+    label de official "Vermögen des Bürgen (§ 239 Abs. 1)";
+    label en unofficial "assets of the surety (§ 239 (1))";
+}
+pub relation hoehe_der_zu_leistenden_sicherheit(s: Sicherheit, betrag: Money) kind empirical {
+    key(s);
+    label de official "Höhe der zu leistenden Sicherheit (§ 239 Abs. 1, § 240)";
+    label en unofficial "amount of the security to be provided (§ 239 (1), § 240)";
+}
+pub relation allgemeiner_gerichtsstand_im_inland(s: Sicherheit) kind empirical {
+    label de official "der Bürge hat seinen allgemeinen Gerichtsstand im Inland (§ 239 Abs. 1)";
+    label en unofficial "the surety has their general venue within the country (§ 239 (1))";
+}
+pub relation verzicht_auf_einrede_der_vorausklage(s: Sicherheit) kind empirical {
+    label de official "die Bürgschaftserklärung enthält den Verzicht auf die Einrede der Vorausklage (§ 239 Abs. 2)";
+    label en unofficial "the guarantee declaration contains a waiver of the defence of failure to pursue remedies (§ 239 (2))";
+}
+pub relation buerge_tauglich(s: Sicherheit, p: Person) kind institutional {
+    label de official "der Bürge ist tauglich (§ 239)";
+    label en unofficial "the surety is suitable (§ 239)";
+}
+
+@source(BGB_P239)
+rule TauglicherBuerge(s: Sicherheit, p: Person, vermoegen: Money, hoehe: Money) strict {
+    label de official "Ein Bürge ist tauglich, wenn er ein der Höhe der zu leistenden Sicherheit angemessenes Vermögen besitzt und seinen allgemeinen Gerichtsstand im Inland hat; die Bürgschaftserklärung muss den Verzicht auf die Einrede der Vorausklage enthalten (§ 239)";
+    label en unofficial "A surety is suitable if their assets are adequate to the amount of the security and their general venue is domestic; the declaration must waive the defence of failure to pursue remedies (§ 239)";
+    when buerge(s, p)
+        and vermoegen_des_buergen(s, vermoegen)
+        and hoehe_der_zu_leistenden_sicherheit(s, hoehe)
+        and vermoegen >= hoehe
+        and allgemeiner_gerichtsstand_im_inland(s)
+        and verzicht_auf_einrede_der_vorausklage(s);
+    then buerge_tauglich(s, p);
+}
+
+// § 240 Ergänzungspflicht.
+pub relation sicherheit_unzureichend_geworden(s: Sicherheit) kind empirical {
+    label de official "die geleistete Sicherheit ist unzureichend geworden (§ 240)";
+    label en unofficial "the security provided has become insufficient (§ 240)";
+}
+pub relation verschulden_des_berechtigten(s: Sicherheit) kind empirical {
+    label de official "das Unzureichendwerden beruht auf einem Verschulden des Berechtigten (§ 240) — festgestellte Tatsache";
+    label en unofficial "the insufficiency is due to the fault of the person entitled (§ 240) — established fact";
+}
+pub relation ergaenzungspflicht(s: Sicherheit, p: Person) kind institutional {
+    label de official "die Sicherheit ist zu ergänzen oder anderweitige Sicherheit zu leisten (§ 240)";
+    label en unofficial "the security must be supplemented or other security provided (§ 240)";
+}
+
+@source(BGB_P240)
+rule Ergaenzungspflicht(s: Sicherheit, p: Person) strict {
+    label de official "Wird die geleistete Sicherheit ohne Verschulden des Berechtigten unzureichend, so ist sie zu ergänzen oder anderweitige Sicherheit zu leisten (§ 240)";
+    label en unofficial "If the security provided becomes insufficient without the fault of the person entitled, it must be supplemented or replaced (§ 240)";
+    when sicherheit_zu_leisten(s, p)
+        and sicherheit_unzureichend_geworden(s)
+        and not verschulden_des_berechtigten(s);
+    then ergaenzungspflicht(s, p);
+}
+
+// § 240a Verordnungsermächtigung.
+pub relation rechtsverordnung_nach_240a_erlassen(s: Sicherheit) kind empirical {
+    label de official "die Rechtsverordnung des Bundesministeriums der Justiz nach § 240a Abs. 1 ist erlassen und führt Gattungen und Voraussetzungen auf — Eingang des Falls (kein Inhalt dieses Pakets)";
+    label en unofficial "the regulation of the Federal Ministry of Justice under § 240a (1) has been issued — case input (its content is not part of this package)";
+}
+pub relation gattung_durch_rechtsverordnung_bestimmt(s: Sicherheit) kind institutional {
+    label de official "die Gattungen geeigneter Inhaber- und Orderpapiere und die Voraussetzungen geeigneter Hypotheken, Grundschulden und Rentenschulden bestimmt die Rechtsverordnung (§ 240a Abs. 1 Nr. 1)";
+    label en unofficial "the classes of suitable instruments and the requirements for suitable charges are determined by the regulation (§ 240a (1) no. 1)";
+}
+
+@source(BGB_P240a)
+rule GattungenBestimmtDieRechtsverordnung(s: Sicherheit) strict {
+    label de official "Das Bundesministerium der Justiz wird ermächtigt, durch Rechtsverordnung die Gattungen geeigneter Inhaber- und Orderpapiere sowie die Voraussetzungen geeigneter Hypothekenforderungen, Grundschulden und Rentenschulden festzulegen (§ 240a Abs. 1 Nr. 1); die Festlegungen müssen gewährleisten, dass der Gläubiger die Schuld durch Verwertung begleichen kann (§ 240a Abs. 2)";
+    label en unofficial "The Federal Ministry of Justice is empowered to determine by regulation the classes of suitable instruments and requirements for charges (§ 240a (1) no. 1), ensuring the creditor can satisfy the debt by realisation (§ 240a (2))";
+    when rechtsverordnung_nach_240a_erlassen(s);
+    then gattung_durch_rechtsverordnung_bestimmt(s);
+}

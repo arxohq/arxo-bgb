@@ -1,0 +1,694 @@
+// BÜRGERLICHES GESETZBUCH — ERBFOLGE (BG-15)
+//
+// Buch 5 Abschnitt 1 (§§ 1922–1941) und Abschnitt 2 (§§ 1942–2063). Quellen:
+// sources.law (generiert aus dem Register DOKNR). STAND: PILOT B1 — die
+// gesetzliche Erbfolge der Ordnungen 1 bis 3 (§§ 1924–1926, 1930) mit
+// Erbfolge nach Stämmen, dem gesetzlichen Erbrecht des Ehegatten (§ 1931)
+// und der Erhöhung des § 1371 Abs. 1 (aus `de.bgb.ehe`). Die vollständige
+// Formalisierung beider Abschnitte folgt in Welle B5 (README, Aufgabenkarte).
+//
+// SCHICHTEN (E-0112: kein Zyklus über completion; jede Schicht liest nur
+// die darunter):
+//   A. Brücke zu `calc.kinship`: Kanten des Graphen und Politiken;
+//   B. Verwandtschaft mit dem Erblasser: Abkömmlinge, Eltern, Großeltern
+//      mit ihrer Linie, überlebender Ehegatte;
+//   C. Knoten der Stämme (positive Rekursion `monotone`): Kinder, Eltern,
+//      Großeltern und die Abkömmlinge eines nicht mehr lebenden Knotens;
+//   D. Besetzte Stämme, besetzte und berufene Ordnungen (§ 1930);
+//   E. Erbteil des Ehegatten (§ 1931, § 1371 Abs. 1) und Masse der
+//      Verwandten — als Brüche aus Zähler und Nenner;
+//   F. Stammanteile (Rekursion über Brüche) und Erbteil jedes Erben;
+//   G. Rechenwache: die Summe der Erbteile ist eins.
+//
+// BRÜCHE ALS ZÄHLER UND NENNER. Die Stammanteile entstehen nur durch
+// Multiplikation (Masse mal Eins-durch-Stammzahl), deshalb werden sie als
+// Paar ganzer Zahlen geführt: `(z, n) × 1/k = (z, n·k)`, ohne kleinstes
+// gemeinsames Vielfaches. Der exakte `Rational` (`gesetzlicher_erbteil`)
+// folgt durch Division; die Geldrechnung des Pflichtteils
+// (`de.bgb.verfuegungen`) rundet einmal über `div_round(Wert × z, n)`.
+// Die Kombinationen des § 1931 mit § 1371 Abs. 1 sind endlich und werden
+// ausbuchstabiert (1/4 → 1/2, 1/2 → 3/4).
+//
+// WAS DER PILOT NICHT TUT (Welle B5, keine Grenze): § 1923 Abs. 2
+// (Nasciturus), § 1927 (mehrere Erbteile bei mehrfacher Verwandtschaft),
+// §§ 1928–1929 (vierte und fernere Ordnungen), § 1931 Abs. 1 Satz 2
+// (Ehegatte neben Großeltern UND Abkömmlingen von Großeltern), § 1933
+// (Ausschluss bei Scheidungsvoraussetzungen), § 1934 (Ehegatte als
+// Verwandter), § 1936 (Erbrecht des Staates), Ausschlagung und
+// Erbunwürdigkeit als Wegfall (§§ 1953, 2344). Adoption: Politik
+// „ersetzt“ nach §§ 1754, 1755 (Minderjährigenannahme); die Annahme
+// Volljähriger (§ 1770) fügt hinzu und ist B5.
+
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+import de.bgb.core version "0.1.0";
+import de.bgb.ehe version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import calc.kinship version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Familie = calc.kinship::Family;
+type Ehe = de.bgb.ehe::Ehe;
+
+pub entity Erbfall {
+    label de official "Erbfall (§ 1922 Abs. 1): der Tod einer Person, mit dem ihr Vermögen als Ganzes übergeht";
+    label en unofficial "Devolution (§ 1922 (1)): the death of a person, with which the estate passes as a whole";
+}
+
+// --- Eingaben des Falls ------------------------------------------------------------------------
+
+pub relation erblasser(e: Erbfall, p: Person) kind empirical {
+    key(e);
+    label de official "Erblasser: die Person, mit deren Tod der Erbfall eintritt (§ 1922 Abs. 1)";
+    label en unofficial "decedent: the person with whose death the devolution occurs (§ 1922 (1))";
+}
+pub relation erbfall_am(e: Erbfall, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag des Erbfalls (§ 1922 Abs. 1)";
+    label en unofficial "day of the devolution (§ 1922 (1))";
+}
+pub relation familie(e: Erbfall, f: Familie) kind empirical {
+    key(e);
+    label de official "Graph der Familie des Erblassers, nach dem die Verwandtschaft berechnet wird";
+    label en unofficial "graph of the decedent's family from which kinship is computed";
+}
+pub relation abstammung(f: Familie, elternteil: Person, kind: Person) kind empirical {
+    label de official "Leibliche Abstammung: Elternteil und Kind (§ 1589 Abs. 1, § 1591, § 1592)";
+    label en unofficial "Biological parentage: parent and child (§ 1589 (1), § 1591, § 1592)";
+}
+pub relation annahme_als_kind(f: Familie, annehmender: Person, kind: Person) kind empirical {
+    label de official "Annahme als Kind: das angenommene Kind erlangt die rechtliche Stellung eines Kindes des Annehmenden (§ 1754)";
+    label en unofficial "Adoption: the adopted child acquires the legal status of a child of the adopter (§ 1754)";
+}
+pub relation lebt_beim_erbfall(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Person lebt zur Zeit des Erbfalls (§ 1923 Abs. 1)";
+    label en unofficial "The person is alive at the time of the devolution (§ 1923 (1))";
+}
+pub relation vorverstorben(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Person lebt zur Zeit des Erbfalls nicht mehr (§ 1924 Abs. 3, § 1925 Abs. 3, § 1926 Abs. 3)";
+    label en unofficial "The person is no longer alive at the time of the devolution (§ 1924 (3), § 1925 (3), § 1926 (3))";
+}
+pub relation ehe_beim_erbfall(e: Erbfall, ehe: Ehe) kind empirical {
+    key(e);
+    label de official "Ehe des Erblassers, die beim Erbfall bestand (§ 1931; Ausschluss nach § 1933 — Welle B5)";
+    label en unofficial "marriage of the decedent existing at the devolution (§ 1931; exclusion under § 1933 — wave B5)";
+}
+
+// --- A. Brücke zu calc.kinship ---------------------------------------------------------------------
+
+@source(BGB_P1924) {
+    rule AbstammungIstKante(f: Familie, p: Person, c: Person) strict {
+        label de official "Abkömmlinge sind die durch Abstammung Verbundenen (§ 1924 Abs. 1, § 1589 Abs. 1): leibliche Abstammung ist eine Blutkante des Graphen";
+        label en unofficial "Descendants are those related by parentage (§ 1924 (1), § 1589 (1)): biological parentage is a blood edge of the graph";
+        when abstammung(f, p, c);
+        then calc.kinship::parent_edge(f, p, c, calc.kinship::Blood);
+    }
+    rule AnnahmeIstKante(f: Familie, a: Person, c: Person) strict {
+        label de official "Das angenommene Kind erlangt die rechtliche Stellung eines Kindes des Annehmenden (§ 1754 Abs. 1, 2): Adoptivkante des Graphen";
+        label en unofficial "The adopted child acquires the legal status of a child of the adopter (§ 1754 (1), (2)): adoptive edge of the graph";
+        when annahme_als_kind(f, a, c);
+        then calc.kinship::parent_edge(f, a, c, calc.kinship::Adoptive);
+    }
+    rule AnnahmeErsetztVerwandtschaft(e: Erbfall, f: Familie) strict {
+        label de official "Mit der Annahme erlöschen das Verwandtschaftsverhältnis des Kindes zu den bisherigen Verwandten und die sich aus ihm ergebenden Rechte (§ 1755 Abs. 1): die Adoption ersetzt die Blutlinie — Politik des Rechners; die Annahme Volljähriger (§ 1770) ist Welle B5";
+        label en unofficial "With adoption the child's kinship with its former relatives and the rights arising from it expire (§ 1755 (1)): adoption replaces the blood line — calculator policy; adoption of adults (§ 1770) is wave B5";
+        when familie(e, f);
+        then calc.kinship::family_adoption_effect(f, calc.kinship::ReplacesBlood);
+    }
+    rule GradzaehlungNachGeburten(e: Erbfall, f: Familie) strict {
+        label de official "Der Grad der Verwandtschaft bestimmt sich nach der Zahl der sie vermittelnden Geburten (§ 1589 Abs. 1 Satz 3, Paket de.bgb.verwandtschaft): römische Zählung — technische Politik des Rechners, von den Ordnungen 1–3 nicht gelesen";
+        label en unofficial "The degree of kinship is determined by the number of births mediating it (§ 1589 (1) sentence 3, package de.bgb.verwandtschaft): Roman count — technical policy of the calculator, not read by orders 1–3";
+        when familie(e, f);
+        then calc.kinship::family_degree_count(f, calc.kinship::Roman);
+    }
+    rule Rechentiefe(e: Erbfall, f: Familie) strict {
+        label de official "Technische Rechentiefe des Rechners, keine Norm: § 1929 kennt keine Grenze der Ordnungen; der Pilot rechnet Vorfahren bis zur zwölften Generation";
+        label en unofficial "Technical depth of the calculator, not a norm: § 1929 knows no limit of orders; the pilot computes ancestors up to the twelfth generation";
+        when familie(e, f);
+        then calc.kinship::family_depth_cap(f, 12);
+    }
+}
+
+@source(BGB_P1931)
+rule EheIstKante(e: Erbfall, f: Familie, ehe: Ehe, a: Person, b: Person) strict {
+    label de official "Der überlebende Ehegatte des Erblassers ist gesetzlicher Erbe (§ 1931 Abs. 1): die beim Erbfall bestehende Ehe ist eine Ehekante des Graphen";
+    label en unofficial "The surviving spouse of the decedent is a statutory heir (§ 1931 (1)): the marriage existing at the devolution is a spouse edge of the graph";
+    when familie(e, f) and ehe_beim_erbfall(e, ehe) and de.bgb.ehe::ehegatten(ehe, a, b);
+    then calc.kinship::spouse_edge(f, a, b);
+}
+
+@source(BGB_P1931)
+rule GueterstandDurchTodBeendet(e: Erbfall, ehe: Ehe, d: Person) strict {
+    label de official "Mit dem Tod des Erblassers endet der Güterstand seiner Ehe (§ 1931 Abs. 3, § 1371 Abs. 1): Eingabe für de.bgb.ehe";
+    label en unofficial "With the decedent's death the property regime of the marriage ends (§ 1931 (3), § 1371 (1)): input for de.bgb.ehe";
+    when ehe_beim_erbfall(e, ehe) and erblasser(e, d);
+    then de.bgb.ehe::gueterstand_durch_tod_beendet(ehe, d);
+}
+
+// --- B. Verwandtschaft mit dem Erblasser ----------------------------------------------------------
+
+pub relation abkoemmling(e: Erbfall, p: Person, generation: Integer) kind derived {
+    label de official "Abkömmling des Erblassers in der angegebenen Generation (§ 1924 Abs. 1)";
+    label en unofficial "descendant of the decedent in the given generation (§ 1924 (1))";
+}
+pub relation elternteil(e: Erbfall, p: Person) kind derived {
+    label de official "Elternteil des Erblassers (§ 1925 Abs. 1)";
+    label en unofficial "parent of the decedent (§ 1925 (1))";
+}
+pub relation grosselternteil(e: Erbfall, g: Person, linie: Person) kind derived {
+    label de official "Großelternteil des Erblassers und der Elternteil, durch den er verwandt ist — das Großelternpaar dieser Linie (§ 1926 Abs. 1, 3)";
+    label en unofficial "grandparent of the decedent and the parent through whom related — the grandparent pair of that line (§ 1926 (1), (3))";
+}
+pub relation ueberlebender_ehegatte(e: Erbfall, s: Person) kind derived {
+    key(e);
+    label de official "Überlebender Ehegatte des Erblassers (§ 1931 Abs. 1)";
+    label en unofficial "surviving spouse of the decedent (§ 1931 (1))";
+}
+pub relation ehegatte_vorhanden(e: Erbfall) kind derived {
+    label de official "Ein überlebender Ehegatte ist vorhanden (§ 1931)";
+    label en unofficial "a surviving spouse is present (§ 1931)";
+}
+pub relation erbfaehig(e: Erbfall, p: Person) kind derived {
+    label de official "Erbe kann nur werden, wer zur Zeit des Erbfalls lebt (§ 1923 Abs. 1)";
+    label en unofficial "Only a person alive at the time of the devolution can become an heir (§ 1923 (1))";
+}
+
+@source(BGB_P1923)
+rule Erbfaehig(e: Erbfall, p: Person) strict {
+    label de official "Erbe kann nur werden, wer zur Zeit des Erbfalls lebt (§ 1923 Abs. 1)";
+    label en unofficial "Only a person alive at the time of the devolution can become an heir (§ 1923 (1))";
+    when lebt_beim_erbfall(e, p);
+    then erbfaehig(e, p);
+}
+
+@source(BGB_P1924)
+rule Abkoemmling(e: Erbfall, f: Familie, d: Person, p: Person, n: Integer) strict {
+    label de official "Gesetzliche Erben der ersten Ordnung sind die Abkömmlinge des Erblassers (§ 1924 Abs. 1): Nachfahre in der n-ten Generation";
+    label en unofficial "Statutory heirs of the first order are the descendants of the decedent (§ 1924 (1)): descendant in the n-th generation";
+    when familie(e, f) and erblasser(e, d) and calc.kinship::ancestor_or_self(f, d, p, n) and n >= 1;
+    then abkoemmling(e, p, n);
+}
+
+@source(BGB_P1925)
+rule Elternteil(e: Erbfall, f: Familie, d: Person, p: Person) strict {
+    label de official "Gesetzliche Erben der zweiten Ordnung sind die Eltern des Erblassers und deren Abkömmlinge (§ 1925 Abs. 1): Elternteil";
+    label en unofficial "Statutory heirs of the second order are the decedent's parents and their descendants (§ 1925 (1)): parent";
+    when familie(e, f) and erblasser(e, d) and calc.kinship::effective_parent(f, p, d);
+    then elternteil(e, p);
+}
+
+@source(BGB_P1926)
+rule Grosselternteil(e: Erbfall, f: Familie, d: Person, p: Person, g: Person) strict {
+    label de official "Gesetzliche Erben der dritten Ordnung sind die Großeltern des Erblassers und deren Abkömmlinge (§ 1926 Abs. 1): Großelternteil, geordnet nach dem Elternteil seiner Linie (Großelternpaar, Abs. 3)";
+    label en unofficial "Statutory heirs of the third order are the decedent's grandparents and their descendants (§ 1926 (1)): grandparent, arranged by the parent of its line (grandparent pair, (3))";
+    when familie(e, f) and erblasser(e, d) and calc.kinship::effective_parent(f, p, d) and calc.kinship::effective_parent(f, g, p);
+    then grosselternteil(e, g, p);
+}
+
+@source(BGB_P1931)
+rule UeberlebenderEhegatte(e: Erbfall, f: Familie, d: Person, s: Person) strict {
+    label de official "Der überlebende Ehegatte des Erblassers (§ 1931 Abs. 1): Ehegatte der beim Erbfall bestehenden Ehe, der zur Zeit des Erbfalls lebt";
+    label en unofficial "The surviving spouse of the decedent (§ 1931 (1)): spouse of the marriage existing at the devolution who is alive at that time";
+    when familie(e, f) and erblasser(e, d) and calc.kinship::spouses(f, s, d) and erbfaehig(e, s)
+        and not_known(ehegattenerbrecht_ausgeschlossen(e));
+    then ueberlebender_ehegatte(e, s);
+}
+
+@source(BGB_P1931)
+rule EhegatteVorhanden(e: Erbfall, s: Person) strict {
+    label de official "Ein überlebender Ehegatte ist vorhanden (§ 1931 Abs. 1)";
+    label en unofficial "A surviving spouse is present (§ 1931 (1))";
+    when ueberlebender_ehegatte(e, s);
+    then ehegatte_vorhanden(e);
+}
+
+// --- C. Knoten der Stämme ---------------------------------------------------------------------------
+//
+// Ein Knoten der Ordnung 1 ist ein Kind des Erblassers, der Ordnung 2 ein
+// Elternteil, der Ordnung 3 ein Großelternteil; die Kinder eines nicht mehr
+// lebenden Knotens sind Knoten derselben Ordnung (Erbfolge nach Stämmen,
+// § 1924 Abs. 3; § 1925 Abs. 3 Satz 1 und § 1926 Abs. 5 verweisen auf die
+// Vorschriften der ersten Ordnung). Ein lebender Abkömmling schließt die
+// durch ihn Verwandten aus (§ 1924 Abs. 2): unter einem lebenden Knoten
+// entstehen keine Knoten.
+
+pub relation knoten(e: Erbfall, p: Person, ordnung: Integer) kind derived {
+    label de official "Stellung im Stammbaum der Erbfolge der angegebenen Ordnung (§§ 1924–1926)";
+    label en unofficial "position in the stem tree of succession of the given order (§§ 1924–1926)";
+}
+pub relation stammhaupt(e: Erbfall, p: Person, ordnung: Integer) kind derived {
+    label de official "Haupt eines Stammes der Ordnung: Kind (1), Elternteil (2) oder Großelternteil (3) des Erblassers — nicht ein Abkömmling, der an die Stelle eines Vorverstorbenen tritt";
+    label en unofficial "head of a stem of the order: child (1), parent (2) or grandparent (3) of the decedent — not a descendant taking a predeceased's place";
+}
+pub relation unterknoten(e: Erbfall, q: Person, c: Person, ordnung: Integer) kind derived {
+    label de official "c tritt als Abkömmling an die Stelle des nicht mehr lebenden Knotens q (§ 1924 Abs. 3)";
+    label en unofficial "c takes the place of the deceased node q as its descendant (§ 1924 (3))";
+}
+
+@source(BGB_P1924)
+rule KnotenKind(e: Erbfall, f: Familie, d: Person, c: Person) strict {
+    label de official "Kinder erben zu gleichen Teilen (§ 1924 Abs. 4); jedes Kind des Erblassers ist ein Stamm der ersten Ordnung";
+    label en unofficial "Children inherit in equal shares (§ 1924 (4)); each child of the decedent is a stem of the first order";
+    when familie(e, f) and erblasser(e, d) and calc.kinship::effective_parent(f, d, c);
+    then knoten(e, c, 1);
+}
+
+@source(BGB_P1924)
+rule StammhauptKind(e: Erbfall, f: Familie, d: Person, c: Person) strict {
+    label de official "Jedes Kind des Erblassers ist Haupt eines Stammes der ersten Ordnung (§ 1924 Abs. 3, 4)";
+    label en unofficial "Each child of the decedent heads a stem of the first order (§ 1924 (3), (4))";
+    when familie(e, f) and erblasser(e, d) and calc.kinship::effective_parent(f, d, c);
+    then stammhaupt(e, c, 1);
+}
+
+@source(BGB_P1925)
+rule KnotenElternteil(e: Erbfall, p: Person) strict {
+    label de official "Die Eltern des Erblassers sind die Stämme der zweiten Ordnung (§ 1925 Abs. 1, 2)";
+    label en unofficial "The decedent's parents are the stems of the second order (§ 1925 (1), (2))";
+    when elternteil(e, p);
+    then knoten(e, p, 2);
+}
+
+@source(BGB_P1925)
+rule StammhauptElternteil(e: Erbfall, p: Person) strict {
+    label de official "Jeder Elternteil des Erblassers ist Haupt eines Stammes der zweiten Ordnung (§ 1925 Abs. 2, 3)";
+    label en unofficial "Each parent of the decedent heads a stem of the second order (§ 1925 (2), (3))";
+    when elternteil(e, p);
+    then stammhaupt(e, p, 2);
+}
+
+@source(BGB_P1926)
+rule KnotenGrosselternteil(e: Erbfall, g: Person, l: Person) strict {
+    label de official "Die Großeltern des Erblassers sind die Stämme der dritten Ordnung (§ 1926 Abs. 1, 2)";
+    label en unofficial "The decedent's grandparents are the stems of the third order (§ 1926 (1), (2))";
+    when grosselternteil(e, g, l);
+    then knoten(e, g, 3);
+}
+
+@source(BGB_P1926)
+rule StammhauptGrosselternteil(e: Erbfall, g: Person, l: Person) strict {
+    label de official "Jeder Großelternteil des Erblassers ist Haupt eines Stammes der dritten Ordnung (§ 1926 Abs. 2, 3)";
+    label en unofficial "Each grandparent of the decedent heads a stem of the third order (§ 1926 (2), (3))";
+    when grosselternteil(e, g, l);
+    then stammhaupt(e, g, 3);
+}
+
+@source(BGB_P1924)
+rule KnotenAnDerStelleDesVorverstorbenen(e: Erbfall, f: Familie, q: Person, c: Person, o: Integer) strict {
+    label de official "An die Stelle eines zur Zeit des Erbfalls nicht mehr lebenden Abkömmlings treten die durch ihn mit dem Erblasser verwandten Abkömmlinge (§ 1924 Abs. 3; § 1925 Abs. 3 Satz 1; § 1926 Abs. 3 Satz 1, Abs. 5): die Kinder eines vorverstorbenen Knotens sind Knoten seines Stammes";
+    label en unofficial "The descendants related to the decedent through a descendant no longer alive at the devolution take his place (§ 1924 (3); § 1925 (3) sentence 1; § 1926 (3) sentence 1, (5)): the children of a predeceased node are nodes of its stem";
+    when familie(e, f) and monotone(knoten(e, q, o)) and weggefallen(e, q) and calc.kinship::effective_parent(f, q, c);
+    then knoten(e, c, o);
+}
+
+@source(BGB_P1924)
+rule Unterknoten(e: Erbfall, f: Familie, q: Person, c: Person, o: Integer) strict {
+    label de official "Erbfolge nach Stämmen (§ 1924 Abs. 3): c ist Unterknoten des vorverstorbenen q";
+    label en unofficial "Succession by stems (§ 1924 (3)): c is a sub-node of the predeceased q";
+    when familie(e, f) and knoten(e, q, o) and weggefallen(e, q) and calc.kinship::effective_parent(f, q, c) and knoten(e, c, o);
+    then unterknoten(e, q, c, o);
+}
+
+// --- D. Besetzte Stämme, besetzte und berufene Ordnungen ------------------------------------------
+
+pub relation erbe_von_eigenem_recht(e: Erbfall, p: Person, ordnung: Integer) kind derived {
+    label de official "Knoten, der zur Zeit des Erbfalls lebt: erbt kraft eigenen Rechts (§ 1923 Abs. 1, § 1924 Abs. 2)";
+    label en unofficial "node alive at the devolution: inherits in its own right (§ 1923 (1), § 1924 (2))";
+}
+pub relation stamm_besetzt(e: Erbfall, p: Person, ordnung: Integer) kind derived {
+    label de official "Der Stamm dieses Knotens ist besetzt: der Knoten lebt, oder ein Abkömmling tritt an seine Stelle (§ 1924 Abs. 3)";
+    label en unofficial "The stem of this node is occupied: the node is alive, or a descendant takes its place (§ 1924 (3))";
+}
+pub relation besetzter_unterstamm(e: Erbfall, q: Person, c: Person, ordnung: Integer) kind derived {
+    label de official "Besetzter Stamm des Unterknotens c unter dem vorverstorbenen q";
+    label en unofficial "occupied stem of the sub-node c under the predeceased q";
+}
+pub relation zahl_der_unterstaemme(e: Erbfall, q: Person, ordnung: Integer, k: Integer) kind derived {
+    key(e, q, ordnung);
+    label de official "Zahl der besetzten Stämme, die an die Stelle des vorverstorbenen q treten (§ 1924 Abs. 3, 4)";
+    label en unofficial "number of occupied stems taking the place of the predeceased q (§ 1924 (3), (4))";
+}
+pub relation ordnung_besetzt(e: Erbfall, ordnung: Integer) kind derived {
+    label de official "In dieser Ordnung ist ein Verwandter vorhanden (§ 1930)";
+    label en unofficial "a relative of this order is present (§ 1930)";
+}
+pub relation berufene_ordnung(e: Erbfall, ordnung: Integer) kind derived {
+    key(e);
+    label de official "Ein Verwandter ist nicht zur Erbfolge berufen, solange ein Verwandter einer vorhergehenden Ordnung vorhanden ist (§ 1930): die berufene Ordnung";
+    label en unofficial "A relative is not called to succeed as long as a relative of a preceding order is present (§ 1930): the order called";
+}
+pub relation grosseltern_vorhanden(e: Erbfall) kind derived {
+    label de official "Ein Großelternteil lebt zur Zeit des Erbfalls (§ 1931 Abs. 1, 2)";
+    label en unofficial "a grandparent is alive at the devolution (§ 1931 (1), (2))";
+}
+
+@source(BGB_P1924) {
+    rule ErbeVonEigenemRecht(e: Erbfall, p: Person, o: Integer) strict {
+        label de official "Ein zur Zeit des Erbfalls lebender Knoten erbt kraft eigenen Rechts und schließt die durch ihn Verwandten aus (§ 1923 Abs. 1, § 1924 Abs. 2)";
+        label en unofficial "A node alive at the devolution inherits in its own right and excludes those related through it (§ 1923 (1), § 1924 (2))";
+        when knoten(e, p, o) and erbfaehig(e, p) and not_known(weggefallen(e, p));
+        then erbe_von_eigenem_recht(e, p, o);
+    }
+    rule StammBesetztDurchLebenden(e: Erbfall, p: Person, o: Integer) strict {
+        label de official "Der Stamm eines lebenden Knotens ist besetzt";
+        label en unofficial "The stem of a living node is occupied";
+        when erbe_von_eigenem_recht(e, p, o);
+        then stamm_besetzt(e, p, o);
+    }
+    rule StammBesetztDurchAbkoemmling(e: Erbfall, q: Person, c: Person, o: Integer) strict {
+        label de official "An die Stelle eines nicht mehr lebenden Abkömmlings treten seine Abkömmlinge (§ 1924 Abs. 3): der Stamm des Vorverstorbenen ist besetzt, wenn ein Unterstamm besetzt ist";
+        label en unofficial "A deceased descendant's descendants take his place (§ 1924 (3)): the stem of the predeceased is occupied when a sub-stem is occupied";
+        when unterknoten(e, q, c, o) and monotone(stamm_besetzt(e, c, o));
+        then stamm_besetzt(e, q, o);
+    }
+    rule BesetzterUnterstamm(e: Erbfall, q: Person, c: Person, o: Integer) strict {
+        label de official "Besetzter Unterstamm des Vorverstorbenen (§ 1924 Abs. 3)";
+        label en unofficial "occupied sub-stem of the predeceased (§ 1924 (3))";
+        when unterknoten(e, q, c, o) and stamm_besetzt(e, c, o);
+        then besetzter_unterstamm(e, q, c, o);
+    }
+    rule ZahlDerUnterstaemme(e: Erbfall, q: Person, c: Person, o: Integer) strict {
+        label de official "Die Abkömmlinge, die an die Stelle des Vorverstorbenen treten, erben zu gleichen Teilen (§ 1924 Abs. 3, 4): Zahl der besetzten Unterstämme";
+        label en unofficial "The descendants taking the place of the predeceased inherit in equal shares (§ 1924 (3), (4)): number of occupied sub-stems";
+        when besetzter_unterstamm(e, q, c, o);
+        then zahl_der_unterstaemme(e, q, o, (count distinct x: Person where besetzter_unterstamm(e, q, x, o)));
+    }
+}
+
+@source(BGB_P1930) {
+    rule OrdnungBesetzt(e: Erbfall, p: Person, o: Integer) strict {
+        label de official "Ein Verwandter der Ordnung ist vorhanden, wenn ein Stamm der Ordnung besetzt ist (§ 1930)";
+        label en unofficial "A relative of the order is present when a stem of the order is occupied (§ 1930)";
+        when stamm_besetzt(e, p, o);
+        then ordnung_besetzt(e, o);
+    }
+    rule ErsteOrdnungBerufen(e: Erbfall) strict {
+        label de official "Die erste Ordnung ist berufen, wenn sie besetzt ist (§ 1930)";
+        label en unofficial "The first order is called when occupied (§ 1930)";
+        when ordnung_besetzt(e, 1);
+        then berufene_ordnung(e, 1);
+    }
+    rule ZweiteOrdnungBerufen(e: Erbfall) strict {
+        label de official "Die zweite Ordnung ist berufen, wenn kein Verwandter der ersten Ordnung vorhanden ist (§ 1930)";
+        label en unofficial "The second order is called when no relative of the first order is present (§ 1930)";
+        when ordnung_besetzt(e, 2) and not_known(ordnung_besetzt(e, 1));
+        then berufene_ordnung(e, 2);
+    }
+    rule DritteOrdnungBerufen(e: Erbfall) strict {
+        label de official "Die dritte Ordnung ist berufen, wenn kein Verwandter der ersten oder zweiten Ordnung vorhanden ist (§ 1930)";
+        label en unofficial "The third order is called when no relative of the first or second order is present (§ 1930)";
+        when ordnung_besetzt(e, 3) and not_known(ordnung_besetzt(e, 1)) and not_known(ordnung_besetzt(e, 2));
+        then berufene_ordnung(e, 3);
+    }
+}
+
+@source(BGB_P1931)
+rule GrosselternVorhanden(e: Erbfall, g: Person, l: Person) strict {
+    label de official "Großeltern sind vorhanden, wenn ein Großelternteil zur Zeit des Erbfalls lebt (§ 1931 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "Grandparents are present when a grandparent is alive at the devolution (§ 1931 (1) sentence 1, (2))";
+    when grosselternteil(e, g, l) and erbfaehig(e, g);
+    then grosseltern_vorhanden(e);
+}
+
+// --- E. Erbteil des Ehegatten und Masse der Verwandten (Brüche als Zähler und Nenner) --------------
+
+pub relation ehegattenerbteil_bruch(e: Erbfall, s: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, s);
+    label de official "Gesetzlicher Erbteil des überlebenden Ehegatten als Bruch (§ 1931 Abs. 1, 2, 4; § 1371 Abs. 1)";
+    label en unofficial "statutory share of the surviving spouse as a fraction (§ 1931 (1), (2), (4); § 1371 (1))";
+}
+pub relation masse_der_verwandten_bruch(e: Erbfall, zaehler: Integer, nenner: Integer) kind derived {
+    key(e);
+    label de official "Der den Verwandten der berufenen Ordnung verbleibende Teil der Erbschaft als Bruch";
+    label en unofficial "the part of the estate remaining to the relatives of the order called, as a fraction";
+}
+pub relation zahl_der_kinderstaemme(e: Erbfall, k: Integer) kind derived {
+    key(e);
+    label de official "Zahl der besetzten Stämme der Kinder des Erblassers (§ 1924 Abs. 3, 4; § 1931 Abs. 4)";
+    label en unofficial "number of occupied stems of the decedent's children (§ 1924 (3), (4); § 1931 (4))";
+}
+pub relation guetertrennung_beim_erbfall(e: Erbfall) kind derived {
+    label de official "Beim Erbfall bestand Gütertrennung (§ 1931 Abs. 4)";
+    label en unofficial "separation of property existed at the devolution (§ 1931 (4))";
+}
+pub relation erhoehung_1371_anwendbar(e: Erbfall, s: Person) kind derived {
+    label de official "Die Erhöhung des Erbteils um ein Viertel nach § 1371 Abs. 1 ist anwendbar (§ 1931 Abs. 3)";
+    label en unofficial "the increase of the share by one quarter under § 1371 (1) applies (§ 1931 (3))";
+}
+
+@source(BGB_P1924)
+rule ZahlDerKinderstaemme(e: Erbfall, d: Person, c: Person) strict {
+    label de official "Zahl der besetzten Stämme der Kinder (§ 1924 Abs. 3, 4)";
+    label en unofficial "number of occupied stems of the children (§ 1924 (3), (4))";
+    when erblasser(e, d) and stammhaupt(e, c, 1) and stamm_besetzt(e, c, 1);
+    then zahl_der_kinderstaemme(e, (count distinct x: Person where stammhaupt(e, x, 1) and stamm_besetzt(e, x, 1)));
+}
+
+@source(BGB_P1931) {
+    rule GuetertrennungBeimErbfall(e: Erbfall, ehe: Ehe) strict {
+        label de official "Beim Erbfall bestand Gütertrennung (§ 1931 Abs. 4)";
+        label en unofficial "separation of property existed at the devolution (§ 1931 (4))";
+        when ehe_beim_erbfall(e, ehe) and de.bgb.ehe::gueterstand(ehe, de.bgb.ehe::Guetertrennung);
+        then guetertrennung_beim_erbfall(e);
+    }
+    rule Erhoehung1371Anwendbar(e: Erbfall, ehe: Ehe, s: Person) strict {
+        label de official "Die Vorschrift des § 1371 bleibt unberührt (§ 1931 Abs. 3): die Erhöhung um ein Viertel gilt, wenn de.bgb.ehe sie für den überlebenden Ehegatten ausspricht";
+        label en unofficial "§ 1371 remains unaffected (§ 1931 (3)): the increase by one quarter applies when de.bgb.ehe pronounces it for the surviving spouse";
+        when ehe_beim_erbfall(e, ehe) and ueberlebender_ehegatte(e, s) and de.bgb.ehe::erhoehung_des_erbteils_1371(ehe, s);
+        then erhoehung_1371_anwendbar(e, s);
+    }
+    rule EhegatteNebenErsterOrdnungViertel(e: Erbfall, s: Person) strict {
+        label de official "Der überlebende Ehegatte ist neben Verwandten der ersten Ordnung zu einem Viertel der Erbschaft berufen (§ 1931 Abs. 1 Satz 1) — ohne Erhöhung nach § 1371 Abs. 1 und ohne Gütertrennung";
+        label en unofficial "The surviving spouse is called to one quarter of the estate beside relatives of the first order (§ 1931 (1) sentence 1) — without the § 1371 (1) increase and without separation of property";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 1)
+            and not_known(erhoehung_1371_anwendbar(e, s)) and not_known(guetertrennung_beim_erbfall(e));
+        then ehegattenerbteil_bruch(e, s, 1, 4);
+    }
+    rule EhegatteNebenErsterOrdnungHaelfte(e: Erbfall, s: Person) strict {
+        label de official "Ein Viertel neben Verwandten der ersten Ordnung (§ 1931 Abs. 1 Satz 1), erhöht um ein Viertel der Erbschaft (§ 1371 Abs. 1): die Hälfte";
+        label en unofficial "One quarter beside relatives of the first order (§ 1931 (1) sentence 1), increased by one quarter of the estate (§ 1371 (1)): one half";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 1) and erhoehung_1371_anwendbar(e, s);
+        then ehegattenerbteil_bruch(e, s, 1, 2);
+    }
+    rule EhegatteBeiGuetertrennungGleicheTeile(e: Erbfall, s: Person, k: Integer) strict {
+        label de official "Bestand beim Erbfall Gütertrennung und sind als gesetzliche Erben neben dem überlebenden Ehegatten ein oder zwei Kinder des Erblassers berufen, so erben der überlebende Ehegatte und jedes Kind zu gleichen Teilen; § 1924 Abs. 3 gilt auch in diesem Falle (§ 1931 Abs. 4)";
+        label en unofficial "If separation of property existed and one or two children are called beside the surviving spouse, the spouse and each child inherit in equal shares; § 1924 (3) applies too (§ 1931 (4))";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 1) and guetertrennung_beim_erbfall(e)
+            and zahl_der_kinderstaemme(e, k) and k <= 2;
+        then ehegattenerbteil_bruch(e, s, 1, k + 1);
+    }
+    rule EhegatteBeiGuetertrennungDreiUndMehrKinder(e: Erbfall, s: Person, k: Integer) strict {
+        label de official "Bei Gütertrennung neben drei oder mehr Kindern bleibt es bei einem Viertel (§ 1931 Abs. 1 Satz 1; Abs. 4 greift nur bei einem oder zwei Kindern)";
+        label en unofficial "Under separation of property beside three or more children the quarter remains (§ 1931 (1) sentence 1; (4) applies only with one or two children)";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 1) and guetertrennung_beim_erbfall(e)
+            and zahl_der_kinderstaemme(e, k) and k >= 3;
+        then ehegattenerbteil_bruch(e, s, 1, 4);
+    }
+    rule EhegatteNebenZweiterOrdnungHaelfte(e: Erbfall, s: Person) strict {
+        label de official "Neben Verwandten der zweiten Ordnung zur Hälfte der Erbschaft (§ 1931 Abs. 1 Satz 1) — ohne Erhöhung nach § 1371 Abs. 1";
+        label en unofficial "Beside relatives of the second order to one half of the estate (§ 1931 (1) sentence 1) — without the § 1371 (1) increase";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 2) and not_known(erhoehung_1371_anwendbar(e, s));
+        then ehegattenerbteil_bruch(e, s, 1, 2);
+    }
+    rule EhegatteNebenZweiterOrdnungDreiViertel(e: Erbfall, s: Person) strict {
+        label de official "Die Hälfte neben Verwandten der zweiten Ordnung (§ 1931 Abs. 1 Satz 1), erhöht um ein Viertel der Erbschaft (§ 1371 Abs. 1): drei Viertel";
+        label en unofficial "One half beside relatives of the second order (§ 1931 (1) sentence 1), increased by one quarter of the estate (§ 1371 (1)): three quarters";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 2) and erhoehung_1371_anwendbar(e, s);
+        then ehegattenerbteil_bruch(e, s, 3, 4);
+    }
+    rule EhegatteNebenGrosselternHaelfte(e: Erbfall, s: Person) strict {
+        label de official "Neben Großeltern zur Hälfte der Erbschaft (§ 1931 Abs. 1 Satz 1) — ohne Erhöhung; der Anteil nach Satz 2 (Abkömmlinge von Großeltern) ist Welle B5";
+        label en unofficial "Beside grandparents to one half of the estate (§ 1931 (1) sentence 1) — without increase; the share under sentence 2 (descendants of grandparents) is wave B5";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 3) and grosseltern_vorhanden(e)
+            and not_known(erhoehung_1371_anwendbar(e, s));
+        then ehegattenerbteil_bruch(e, s, 1, 2);
+    }
+    rule EhegatteNebenGrosselternDreiViertel(e: Erbfall, s: Person) strict {
+        label de official "Die Hälfte neben Großeltern (§ 1931 Abs. 1 Satz 1), erhöht um ein Viertel (§ 1371 Abs. 1): drei Viertel";
+        label en unofficial "One half beside grandparents (§ 1931 (1) sentence 1), increased by one quarter (§ 1371 (1)): three quarters";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 3) and grosseltern_vorhanden(e)
+            and erhoehung_1371_anwendbar(e, s);
+        then ehegattenerbteil_bruch(e, s, 3, 4);
+    }
+    rule EhegatteAllein(e: Erbfall, s: Person) strict {
+        label de official "Sind weder Verwandte der ersten oder der zweiten Ordnung noch Großeltern vorhanden, so erhält der überlebende Ehegatte die ganze Erbschaft (§ 1931 Abs. 2)";
+        label en unofficial "If neither relatives of the first or second order nor grandparents are present, the surviving spouse receives the whole estate (§ 1931 (2))";
+        when ueberlebender_ehegatte(e, s) and not_known(ordnung_besetzt(e, 1)) and not_known(ordnung_besetzt(e, 2))
+            and not_known(grosseltern_vorhanden(e));
+        then ehegattenerbteil_bruch(e, s, 1, 1);
+    }
+}
+
+// Masse der Verwandten: die Erbschaft ohne den Erbteil des Ehegatten.
+@source(BGB_P1931) {
+    rule MasseOhneEhegatten(e: Erbfall, o: Integer) strict {
+        label de official "Ohne überlebenden Ehegatten fällt die ganze Erbschaft den Verwandten der berufenen Ordnung zu (§§ 1924–1926, 1930)";
+        label en unofficial "Without a surviving spouse the whole estate falls to the relatives of the order called (§§ 1924–1926, 1930)";
+        when berufene_ordnung(e, o) and not_known(ehegatte_vorhanden(e));
+        then masse_der_verwandten_bruch(e, 1, 1);
+    }
+    rule MasseNebenViertel(e: Erbfall, s: Person) strict {
+        label de official "Erhält der Ehegatte ein Viertel, verbleiben den Verwandten drei Viertel";
+        label en unofficial "If the spouse receives one quarter, three quarters remain to the relatives";
+        when ehegattenerbteil_bruch(e, s, 1, 4);
+        then masse_der_verwandten_bruch(e, 3, 4);
+    }
+    rule MasseNebenHaelfte(e: Erbfall, s: Person) strict {
+        label de official "Erhält der Ehegatte die Hälfte, verbleibt den Verwandten die Hälfte";
+        label en unofficial "If the spouse receives one half, one half remains to the relatives";
+        when ehegattenerbteil_bruch(e, s, 1, 2);
+        then masse_der_verwandten_bruch(e, 1, 2);
+    }
+    rule MasseNebenDreiVierteln(e: Erbfall, s: Person) strict {
+        label de official "Erhält der Ehegatte drei Viertel, verbleibt den Verwandten ein Viertel";
+        label en unofficial "If the spouse receives three quarters, one quarter remains to the relatives";
+        when ehegattenerbteil_bruch(e, s, 3, 4);
+        then masse_der_verwandten_bruch(e, 1, 4);
+    }
+    rule MasseBeiGuetertrennungGleicheTeile(e: Erbfall, s: Person, k: Integer) strict {
+        label de official "Erben Ehegatte und Kinder zu gleichen Teilen (§ 1931 Abs. 4), verbleiben den Kindern k von k + 1 Teilen";
+        label en unofficial "If spouse and children inherit in equal shares (§ 1931 (4)), k of k + 1 parts remain to the children";
+        when ehegattenerbteil_bruch(e, s, 1, k) and k >= 2 and k <= 3;
+        then masse_der_verwandten_bruch(e, k - 1, k);
+    }
+}
+
+// --- F. Stammanteile und Erbteile ------------------------------------------------------------------
+
+pub relation stammanteil_bruch(e: Erbfall, p: Person, ordnung: Integer, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, p, ordnung);
+    label de official "Anteil des Stammes, dessen Haupt dieser Knoten ist, als Bruch (§ 1924 Abs. 3, 4)";
+    label en unofficial "share of the stem headed by this node, as a fraction (§ 1924 (3), (4))";
+}
+pub relation zahl_der_elternstaemme(e: Erbfall, k: Integer) kind derived {
+    key(e);
+    label de official "Zahl der besetzten Stämme der Eltern (§ 1925 Abs. 2, 3)";
+    label en unofficial "number of occupied stems of the parents (§ 1925 (2), (3))";
+}
+pub relation linie_besetzt(e: Erbfall, linie: Person) kind derived {
+    label de official "Das Großelternpaar dieser Linie ist vertreten: ein Großelternteil lebt oder Abkömmlinge treten an seine Stelle (§ 1926 Abs. 3, 4)";
+    label en unofficial "The grandparent pair of this line is represented: a grandparent is alive or descendants take its place (§ 1926 (3), (4))";
+}
+pub relation zahl_der_linien(e: Erbfall, k: Integer) kind derived {
+    key(e);
+    label de official "Zahl der vertretenen Großelternpaare (§ 1926 Abs. 2, 4)";
+    label en unofficial "number of represented grandparent pairs (§ 1926 (2), (4))";
+}
+pub relation zahl_der_staemme_der_linie(e: Erbfall, linie: Person, k: Integer) kind derived {
+    key(e, linie);
+    label de official "Zahl der besetzten Stämme innerhalb des Großelternpaars (§ 1926 Abs. 3)";
+    label en unofficial "number of occupied stems within the grandparent pair (§ 1926 (3))";
+}
+pub relation gesetzlicher_erbteil_bruch(e: Erbfall, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, p);
+    label de official "Gesetzlicher Erbteil des Erben als Bruch aus Zähler und Nenner";
+    label en unofficial "statutory share of the heir as a fraction of numerator and denominator";
+}
+pub relation gesetzlicher_erbteil(e: Erbfall, p: Person, x: Rational) kind derived {
+    key(e, p);
+    label de official "Gesetzlicher Erbteil des Erben (§§ 1924–1931, § 1371 Abs. 1) als exakter Bruch";
+    label en unofficial "statutory share of the heir (§§ 1924–1931, § 1371 (1)) as an exact fraction";
+}
+
+@source(BGB_P1924) {
+    rule StammanteilKind(e: Erbfall, c: Person, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Kinder erben zu gleichen Teilen (§ 1924 Abs. 4); an die Stelle eines vorverstorbenen Kindes tritt sein Stamm (Abs. 3): jeder besetzte Kinderstamm erhält die Masse durch die Zahl der Stämme";
+        label en unofficial "Children inherit in equal shares (§ 1924 (4)); a predeceased child's stem takes its place ((3)): each occupied child stem receives the mass divided by the number of stems";
+        when berufene_ordnung(e, 1) and stammhaupt(e, c, 1) and stamm_besetzt(e, c, 1)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_kinderstaemme(e, k)
+            and not_known(mehrfach_verwandt(e, c));
+        then stammanteil_bruch(e, c, 1, z, n * k);
+    }
+    rule StammanteilDesUnterstamms(e: Erbfall, q: Person, c: Person, o: Integer, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Die an die Stelle des Vorverstorbenen tretenden Abkömmlinge erben seinen Anteil zu gleichen Teilen (§ 1924 Abs. 3, 4; § 1925 Abs. 3; § 1926 Abs. 5): Anteil des Stammes durch die Zahl der Unterstämme";
+        label en unofficial "The descendants taking the predeceased's place inherit his share in equal parts (§ 1924 (3), (4); § 1925 (3); § 1926 (5)): stem share divided by the number of sub-stems";
+        when besetzter_unterstamm(e, q, c, o) and monotone(stammanteil_bruch(e, q, o, z, n)) and zahl_der_unterstaemme(e, q, o, k)
+            and not_known(mehrfach_verwandt(e, c));
+        then stammanteil_bruch(e, c, o, z, n * k);
+    }
+    rule ErbteilVonEigenemRecht(e: Erbfall, p: Person, o: Integer, z: Integer, n: Integer) strict {
+        label de official "Der lebende Knoten erhält den Anteil seines Stammes (§ 1924 Abs. 2, 4)";
+        label en unofficial "The living node receives the share of its stem (§ 1924 (2), (4))";
+        when berufene_ordnung(e, o) and erbe_von_eigenem_recht(e, p, o) and stammanteil_bruch(e, p, o, z, n)
+            and not_known(anteil_faellt_dem_ehegatten_zu_1931(e, p));
+        then gesetzlicher_erbteil_bruch(e, p, z, n);
+    }
+}
+
+@source(BGB_P1925) {
+    rule ZahlDerElternstaemme(e: Erbfall, p: Person) strict {
+        label de official "Leben die Eltern, so erben sie allein und zu gleichen Teilen; an die Stelle des Verstorbenen treten dessen Abkömmlinge; sind Abkömmlinge nicht vorhanden, so erbt der überlebende Teil allein (§ 1925 Abs. 2, 3): Zahl der besetzten Elternstämme";
+        label en unofficial "If the parents are alive they inherit alone and in equal shares; the deceased's descendants take his place; without descendants the survivor inherits alone (§ 1925 (2), (3)): number of occupied parent stems";
+        when stammhaupt(e, p, 2) and stamm_besetzt(e, p, 2);
+        then zahl_der_elternstaemme(e, (count distinct x: Person where stammhaupt(e, x, 2) and stamm_besetzt(e, x, 2)));
+    }
+    rule StammanteilElternteil(e: Erbfall, p: Person, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Jeder besetzte Elternstamm erhält die Masse durch die Zahl der besetzten Elternstämme (§ 1925 Abs. 2, 3)";
+        label en unofficial "Each occupied parent stem receives the mass divided by the number of occupied parent stems (§ 1925 (2), (3))";
+        when berufene_ordnung(e, 2) and stammhaupt(e, p, 2) and stamm_besetzt(e, p, 2)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_elternstaemme(e, k)
+            and not_known(mehrfach_verwandt(e, p));
+        then stammanteil_bruch(e, p, 2, z, n * k);
+    }
+}
+
+@source(BGB_P1926) {
+    rule LinieBesetzt(e: Erbfall, g: Person, l: Person) strict {
+        label de official "Ein Großelternpaar ist vertreten, wenn ein Großelternteil lebt oder seine Abkömmlinge an seine Stelle treten (§ 1926 Abs. 3, 4)";
+        label en unofficial "A grandparent pair is represented when a grandparent is alive or descendants take its place (§ 1926 (3), (4))";
+        when grosselternteil(e, g, l) and stamm_besetzt(e, g, 3);
+        then linie_besetzt(e, l);
+    }
+    rule ZahlDerLinien(e: Erbfall, l: Person) strict {
+        label de official "Lebt ein Großelternpaar nicht mehr und sind Abkömmlinge der Verstorbenen nicht vorhanden, so erben die anderen Großeltern oder ihre Abkömmlinge allein (§ 1926 Abs. 4): Zahl der vertretenen Paare";
+        label en unofficial "If a grandparent pair is deceased without descendants, the other grandparents or their descendants inherit alone (§ 1926 (4)): number of represented pairs";
+        when linie_besetzt(e, l);
+        then zahl_der_linien(e, (count distinct x: Person where linie_besetzt(e, x)));
+    }
+    rule ZahlDerStaemmeDerLinie(e: Erbfall, g: Person, l: Person) strict {
+        label de official "Lebt von einem Großelternpaar der Großvater oder die Großmutter nicht mehr, so treten an die Stelle des Verstorbenen dessen Abkömmlinge; sind Abkömmlinge nicht vorhanden, so fällt der Anteil dem anderen Teil des Paars und, wenn dieser nicht mehr lebt, dessen Abkömmlingen zu (§ 1926 Abs. 3): Zahl der besetzten Stämme im Paar";
+        label en unofficial "If one of a grandparent pair is deceased, his descendants take his place; without descendants the share accrues to the other grandparent or his descendants (§ 1926 (3)): number of occupied stems in the pair";
+        when grosselternteil(e, g, l) and stamm_besetzt(e, g, 3);
+        then zahl_der_staemme_der_linie(e, l, (count distinct x: Person where grosselternteil(e, x, l) and stamm_besetzt(e, x, 3)));
+    }
+    rule StammanteilGrosselternteil(e: Erbfall, g: Person, l: Person, z: Integer, n: Integer, k: Integer, m: Integer) strict {
+        label de official "Leben die Großeltern, so erben sie allein und zu gleichen Teilen (§ 1926 Abs. 2); die Masse teilt sich zwischen den vertretenen Paaren und innerhalb des Paars zwischen den besetzten Stämmen (Abs. 3, 4)";
+        label en unofficial "If the grandparents are alive they inherit alone and in equal shares (§ 1926 (2)); the mass is divided between the represented pairs and within a pair between the occupied stems ((3), (4))";
+        when berufene_ordnung(e, 3) and grosselternteil(e, g, l) and stamm_besetzt(e, g, 3)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_linien(e, k) and zahl_der_staemme_der_linie(e, l, m)
+            and not_known(mehrfach_verwandt(e, g));
+        then stammanteil_bruch(e, g, 3, z, n * k * m);
+    }
+}
+
+@source(BGB_P1931) {
+    rule ErbteilDesEhegatten(e: Erbfall, s: Person, z: Integer, n: Integer) strict {
+        label de official "Gesetzlicher Erbteil des überlebenden Ehegatten (§ 1931, § 1371 Abs. 1)";
+        label en unofficial "statutory share of the surviving spouse (§ 1931, § 1371 (1))";
+        when ehegattenerbteil_bruch(e, s, z, n);
+        then gesetzlicher_erbteil_bruch(e, s, z, n);
+    }
+    rule ErbteilAlsBruch(e: Erbfall, p: Person, z: Integer, n: Integer) strict {
+        label de official "Der Erbteil als exakter Bruch: Zähler durch Nenner";
+        label en unofficial "The share as an exact fraction: numerator over denominator";
+        when gesetzlicher_erbteil_bruch(e, p, z, n);
+        then gesetzlicher_erbteil(e, p, z / n);
+    }
+}
+
+// --- G. Rechenwache -----------------------------------------------------------------------------------
+
+pub relation erbschaft_vollstaendig_verteilt(e: Erbfall) kind derived {
+    label de official "Die Summe der gesetzlichen Erbteile ist eins: die Erbschaft ist als Ganzes übergegangen (§ 1922 Abs. 1) — Rechenwache, keine Norm";
+    label en unofficial "The statutory shares sum to one: the estate has passed as a whole (§ 1922 (1)) — arithmetic guard, not a norm";
+}
+
+@source(BGB_P1922)
+rule ErbschaftVollstaendigVerteilt(e: Erbfall, p: Person, x: Rational) strict {
+    label de official "Mit dem Tode einer Person geht deren Vermögen als Ganzes auf eine oder mehrere andere Personen über (§ 1922 Abs. 1): die Summe der Erbteile ist eins";
+    label en unofficial "With a person's death the estate passes as a whole to one or more persons (§ 1922 (1)): the shares sum to one";
+    when gesetzlicher_erbteil(e, p, x)
+        and (sum all y: Rational for q: Person where gesetzlicher_erbteil(e, q, y)) == 1 / 1;
+    then erbschaft_vollstaendig_verteilt(e);
+}

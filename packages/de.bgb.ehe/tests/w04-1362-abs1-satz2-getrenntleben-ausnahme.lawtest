@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1362 Abs. 1 Satz 2: die Ehegatten leben getrennt, und die Sache befindet sich im Besitz des Ehegatten B, der NICHT Schuldner ist. Die Vermutung des Satzes 1 gilt dann nicht — die Ausnahme ist vom Text selbst benannt und wird als eigener Kopf geführt.
+test "§ 1362 Abs. 1 Satz 2: Getrenntleben und Besitz des Nichtschuldners" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:w04:E"), entity_ref("urn:de:bgb:ehe:w04:A"), entity_ref("urn:de:bgb:ehe:w04:B")) { origin case_input; }
+        assert "f2": getrennt_lebend(entity_ref("urn:de:bgb:ehe:w04:E")) { origin case_input; }
+        assert "f3": schuldner_eines_glaeubigers(entity_ref("urn:de:bgb:ehe:w04:E"), entity_ref("urn:de:bgb:ehe:w04:A")) { origin case_input; }
+        assert "f4": bewegliche_sache_im_besitz_eines_ehegatten(entity_ref("urn:de:bgb:ehe:w04:E"), entity_ref("urn:de:bgb:ehe:w04:B"), entity_ref("urn:de:bgb:ehe:w04:S")) { origin case_input; }
+    }
+    evaluate truth(vermutung_des_1362_ausgeschlossen(entity_ref("urn:de:bgb:ehe:w04:E"), entity_ref("urn:de:bgb:ehe:w04:A"), entity_ref("urn:de:bgb:ehe:w04:S")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_des_schuldners_vermutet(entity_ref("urn:de:bgb:ehe:w04:E"), entity_ref("urn:de:bgb:ehe:w04:A"), entity_ref("urn:de:bgb:ehe:w04:S")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

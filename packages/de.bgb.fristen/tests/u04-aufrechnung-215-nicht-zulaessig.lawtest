@@ -1,0 +1,16 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 215 (Gegenprobe): der Anspruch war erst am 1. Juni 2024 (nach Verjährungseintritt 31. Dezember 2023) erstmals aufrechenbar — § 215 stellt die Zulässigkeit nicht fest.
+test "§ 215: keine Feststellung der Zulässigkeit, wenn der Anspruch beim erstmaligen Aufrechnenkönnen bereits verjährt war" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:u04"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:u04"), @2020-03-15) { origin adjudicated; }
+        assert "h": keine_hemmung(entity_ref("urn:de:bgb:fristen:pilot:u04")) { origin case_input; }
+        assert "a": anspruch_erstmals_aufrechenbar_oder_leistungsverweigerung_moeglich_am(entity_ref("urn:de:bgb:fristen:pilot:u04"), @2024-06-01) { origin case_input; }
+    }
+    evaluate truth(aufrechnung_trotz_verjaehrung_zulaessig(entity_ref("urn:de:bgb:fristen:pilot:u04")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

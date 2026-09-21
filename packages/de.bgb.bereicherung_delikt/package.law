@@ -1,0 +1,152 @@
+// BÜRGERLICHES GESETZBUCH — UNGERECHTFERTIGTE BEREICHERUNG UND UNERLAUBTE
+// HANDLUNGEN (BG-09)
+//
+// Buch 2 Abschnitt 8 Titel 26 (§§ 812–822) und Titel 27 (§§ 823–853; § 835 und
+// § 847 weggefallen). Quellen: sources.law, erzeugt aus dem Register DOKNR
+// (docs/foundations/de-bgb/registry/), Stand 2026-09-17.
+//
+// WAS DIESES PAKET IST. Es senkt die beiden gesetzlichen Schuldverhältnisse
+// des Abschnitts 8 ab: die Kondiktionen des Titels 26 und die Deliktstatbestände
+// des Titels 27 samt den Vermutungshaftungen (§§ 831–834, 836–838), der
+// Amtshaftung (§ 839, § 839a), dem Umfang der Ersatzpflicht (§§ 842–846) und
+// dem Restschadensersatzanspruch nebst seiner Verjährung (§ 852).
+//
+// DREI DINGE, DIE DIESES PAKET NICHT TUT (Grenzen aus dem Text, nicht aus dem
+// Arbeitsumfang):
+//
+// 1. Die Rechtsfolge „Schadensersatz“ selbst (§§ 249–254: Naturalrestitution,
+//    Geldersatz, Mitverschulden) gehört dem Paket de.bgb.schuldrecht_at
+//    (BG-04). Hier steht nur, WER WEM dem Grunde nach haftet; die Quote des
+//    § 254, auf die § 846 verweist, wird bis zur Zusammenführung lokal als
+//    Urteilsanfrage erklärt (Ledger D-09-01).
+// 2. Schutzgesetze (§ 823 Abs. 2), die Amtspflicht des Beamten (§ 839,
+//    Art. 34 GG), StVG, ProdHaftG und die Schadensschätzung des § 287 ZPO sind
+//    FREMDE GESETZE: sie kommen als typisierte Eingabe des Falls herein und
+//    werden nicht formalisiert (SOURCES.json, external).
+// 3. Die Rechte des Besitzers gegenüber dem Eigentümer wegen Verwendungen
+//    (§ 850 → §§ 994 ff.) liegen bei de.bgb.besitz_eigentum (BG-10); § 849
+//    nennt den Zinssatz nicht (§ 246 — BG-04).
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Der Text dieses Abschnitts delegiert
+// besonders viel an das Gericht. Jeder Fall ist nach dem WORTLAUT des
+// Paragraphen einem der drei Kanäle zugeordnet, nie einem Sammelkatalog:
+//
+//   WERTUNG (external judgment relation … { authority Court; }) — „vorsätzlich
+//     oder fahrlässig“ (§ 823 Abs. 1, § 839 Abs. 1), „gegen die guten Sitten“
+//     (§ 817, § 826), „die im Verkehr erforderliche Sorgfalt beobachtet“
+//     (§§ 831–834, 836), „die zur Erkenntnis der Verantwortlichkeit
+//     erforderliche Einsicht“ (§ 828 Abs. 3), „soweit die Billigkeit … eine
+//     Schadloshaltung erfordert“ (§ 829), „ein wichtiger Grund“ (§ 843 Abs. 3),
+//     „eine angemessene Entschädigung in Geld“ (§ 844 Abs. 3), die Quote des
+//     § 254 (§ 846);
+//   FESTGESTELLTE TATSACHE (relation kind empirical, im Fall origin
+//     adjudicated) — „gewusst hat, dass er zur Leistung nicht verpflichtet war“
+//     (§ 814), „kennt der Empfänger den Mangel des rechtlichen Grundes“
+//     (§ 819 Abs. 1), Kausalität, Tag der Handlung;
+//   LESARTEN (interpretation … any_of) — hier nicht gebraucht: der Abschnitt
+//     streitet über Wertungen, nicht über den Wortsinn.
+//
+// Ein flacher Fall-Fakt „X haftet“ ist verboten (Lint
+// evaluative-fact-without-producer): die Haftung ist immer Schluss einer Regel.
+//
+// ABWESENHEIT IST KEINE VERNEINUNG. Wo der Text eine Entlastung, einen
+// Rechtfertigungsgrund oder das Ausbleiben einer Entreicherung voraussetzt,
+// verlangt das Paket eine AUSDRÜCKLICHE Angabe des Falls
+// (`kein_rechtfertigungsgrund`, `keine_entreicherung`, `kein_ersatz_vom_aufsichtspflichtigen`);
+// das Schweigen des Falls schaltet keine Norm frei.
+//
+// FRISTEN. § 852 Satz 2 (zehn Jahre von der Entstehung, dreißig Jahre von der
+// Begehung) und § 836 Abs. 2 (ein Jahr nach Beendigung des Besitzes) rechnen
+// mit den Kalenderschritten des § 188 Abs. 2; die Mechanik liegt bei
+// de.bgb.fristen (DECISION-0319 Р4), die Politik dieses Pakets trägt denselben
+// Feldsatz (BGB_DELIKT_JAHR). Zeilen: docs/foundations/de-bgb/DEADLINES.json,
+// Abschnitt BG-09. Die dreißigjährige Höchstfrist des § 199 Abs. 2 für
+// Verletzungen des Lebens, des Körpers, der Gesundheit und der Freiheit wird
+// hier NICHT wiederholt: sie gehört de.bgb.fristen.
+//
+// GELD. Beträge sind EUR; Quoten sind exakte Brüche als Paare ganzer Zahlen
+// (Zähler, Nenner). Die einzige Division steht bei § 846 i. V. m. § 254: der
+// Ersatz des Dritten wird EINMAL je Anspruch gerundet
+// (`div_round(Betrag × (Nenner − Zähler), Nenner × 1.0, 2, "HALF_UP")`,
+// Ledger D-09-02). Ein Zinssatz, ein Schwellenwert oder eine Rundung, die der
+// Text nicht nennt, ist hier nicht erfunden.
+//
+// SPRACHE. Nur Deutsch und Englisch (DECISION-0319, Р7).
+
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import de.bgb.schuldrecht_at version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Sache = de.bgb.core::Sache;
+type Tier = de.bgb.core::Tier;
+type Anspruch = de.bgb.core::Anspruch;
+// Querschnitt (docs/foundations/de-bgb/MULTISESSION-PROMPT.ru.md §10 Nr. 6):
+// der eigene Ersatzanspruch des § 823 Abs. 1 gemessen nach §§ 249, 254
+// (de.bgb.schuldrecht_at, BG-04) — Ledger D-09-08. SchadenSAT bezeichnet die
+// eigene `Schaden`-Entität des Nachbarpakets; sie ist NICHT dieselbe Entität
+// wie das lokale `Schaden` dieses Pakets (verschiedene nominale Typen).
+type SchadenSAT = de.bgb.schuldrecht_at::Schaden;
+
+// Kalenderschritt des § 188 Abs. 2 für § 852 Satz 2 und § 836 Abs. 2: derselbe
+// Feldsatz wie BGB_FRISTEN_KALENDER (§ 193 wird bei Kalenderschritten nicht
+// gerollt, sondern ausdrücklich gerechnet). Eine Politik je Fall (§168.2).
+deadline policy BGB_DELIKT_JAHR {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// Kalenderschnappschuss für den Querschnitt mit de.bgb.fristen (§§ 195, 199
+// Abs. 1): eigene Kopie, byteidentisch mit de.bgb.fristen/de.bgb.schuldrecht_at
+// (jedes ausführende Paket erklärt seinen eigenen Kalender, D-09-07/§168.2);
+// ohne eigene Erklärung bleibt `calendar KALENDER_BUNDESWEIT;` MISSING_CALENDAR,
+// und die Kalender der Nachbarpakete sind nicht `pub` (§24, Ledger D-09-08).
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Gemeinsame Träger beider Titel ----------------------------------------------------------
+
+pub entity Bereicherung {
+    label de official "Vorgang, durch den jemand etwas ohne rechtlichen Grund erlangt (§ 812 Abs. 1)";
+    label en unofficial "event by which someone obtains something without legal ground (§ 812 (1))";
+}
+
+pub entity Handlung {
+    label de official "Handlung oder Ereignis, aus dem ein Schaden entsteht (Titel 27)";
+    label en unofficial "act or event from which damage arises (Title 27)";
+}
+
+pub entity Schaden {
+    label de official "Schaden, dessen Ersatz nach den §§ 823 ff. verlangt wird";
+    label en unofficial "damage whose compensation is claimed under §§ 823 et seq.";
+}

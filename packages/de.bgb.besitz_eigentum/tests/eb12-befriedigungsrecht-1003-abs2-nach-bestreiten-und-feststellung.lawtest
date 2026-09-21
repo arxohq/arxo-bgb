@@ -1,0 +1,15 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 1003 Abs. 2: bestreitet der Eigentümer den Anspruch vor dem Ablauf der Frist, so kann sich der Besitzer erst nach rechtskräftiger Feststellung des Betrags und einer weiteren, verstrichenen Frist aus der Sache befriedigen. Dieses Szenario isoliert den Abs.-2-Weg (wie eb10/eb11 den Abs.-1-Weg isolieren); das Zusammenspiel beider Regeln in EINEM Fall zeigt eb13 (Ledger D-10-13).
+test "§ 1003 Abs. 2: Befriedigungsrecht nach Bestreiten, Feststellung und zweiter Frist" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f3": anspruch_vor_ablauf_bestritten(entity_ref("urn:de:bgb:be:eb12:sache"), entity_ref("urn:de:bgb:be:eb12:B")) { origin case_input; }
+        assert "f4": rechtskraeftige_feststellung_des_betrags_am(entity_ref("urn:de:bgb:be:eb12:sache"), entity_ref("urn:de:bgb:be:eb12:B"), @2026-06-01) { origin adjudicated; }
+        assert "f5": zweite_aufforderungsfrist_nach_feststellung_abgelaufen_am(entity_ref("urn:de:bgb:be:eb12:sache"), entity_ref("urn:de:bgb:be:eb12:B"), @2026-07-01) { origin case_input; }
+    }
+    evaluate truth(befriedigungsrecht_aus_der_sache(entity_ref("urn:de:bgb:be:eb12:sache"), entity_ref("urn:de:bgb:be:eb12:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

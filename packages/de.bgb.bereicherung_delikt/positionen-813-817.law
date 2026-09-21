@@ -1,0 +1,57 @@
+pub relation leistender_813(b: Bereicherung, p: Person) kind empirical {
+    label de official "Leistender nach § 813";
+    label en unofficial "performing person under § 813";
+}
+pub relation herausgabe_816_beginn_am(b: Bereicherung, tag: Date) kind empirical {
+    label de official "Beginn der Herausgabepflicht nach § 816";
+    label en unofficial "start of the handover duty under § 816";
+}
+pub relation herausgabe_817_beginn_am(b: Bereicherung, tag: Date) kind empirical {
+    label de official "Beginn der Herausgabepflicht nach § 817";
+    label en unofficial "start of the handover duty under § 817";
+}
+pub relation herausgabe_816_beteiligte(b: Bereicherung, schuldner: Person, glaeubiger: Person) kind empirical {
+    label de official "Beteiligte der Herausgabe nach § 816";
+    label en unofficial "parties to the handover under § 816";
+}
+pub relation herausgabe_817_empfaenger(b: Bereicherung, p: Person) kind empirical {
+    label de official "Empfänger der Leistung nach § 817";
+    label en unofficial "recipient of the performance under § 817";
+}
+@source(BGB_P813)
+rule PositionRueckforderung813(b: Bereicherung, p: Person, tag: Date) defeasible {
+    label de official "Der Leistende darf das trotz dauernder Einrede Geleistete zurückfordern (§ 813)";
+    label en unofficial "The performing person has the liberty to recover what was performed despite a permanent defence (§ 813)";
+    when leistender_813(b, p) and rueckforderungsgrund_813(b);
+    when leistungstag(b, tag);
+    then liberty Liberty813Rueckforderung {
+        holder p;
+        action rueckforderung_813(b);
+        window [tag, infinity);
+    };
+}
+
+@source(BGB_P816)
+rule PositionHerausgabe816(b: Bereicherung, n: Person, ber: Person, tag: Date) defeasible {
+    label de official "Der Nichtberechtigte hat dem Berechtigten das Erlangte herauszugeben (§ 816)";
+    label en unofficial "The unauthorised recipient must hand over what was obtained to the entitled person (§ 816)";
+    when herausgabe_816_beteiligte(b, n, ber)
+     and herausgabe_816_beginn_am(b, tag);
+    then liberty Liberty816Herausgabe {
+        holder n;
+        action herausgabe_816_beginn_am(b, tag);
+        window [tag, infinity);
+    };
+}
+
+@source(BGB_P817)
+rule PositionHerausgabe817(b: Bereicherung, n: Person, tag: Date) defeasible {
+    label de official "Der Empfänger hat das wegen Gesetzes- oder Sittenverstoßes Erlangte herauszugeben (§ 817)";
+    label en unofficial "The recipient must hand over what was obtained through a statutory or public-policy breach (§ 817)";
+    when herausgabe_817_empfaenger(b, n) and herausgabe_817_beginn_am(b, tag);
+    then liberty Liberty817Herausgabe {
+        holder n;
+        action herausgabe_817_beginn_am(b, tag);
+        window [tag, infinity);
+    };
+}

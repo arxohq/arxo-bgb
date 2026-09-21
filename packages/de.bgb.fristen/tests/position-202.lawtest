@@ -1,0 +1,30 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+
+test "§ 202: unzulässige Verjährungsvereinbarung ist verboten" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "start": verbotsbeginn_202_am(entity_ref("urn:de:bgb:fristen:position:a202"), entity_ref("urn:de:bgb:fristen:position:party202"), @2026-06-14) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(ProhibitionVerjaehrungsvereinbarung202, ACTIVE);
+}
+
+test "§ 202: ohne Tatbestand entsteht kein Verbot" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+    }
+    evaluate positions();
+    expect not position(ProhibitionVerjaehrungsvereinbarung202, ACTIVE);
+}
+
+test "§ 202: unzulässige Vereinbarung verletzt das Verbot" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "start": verbotsbeginn_202_am(entity_ref("urn:de:bgb:fristen:position:a202-violated"), entity_ref("urn:de:bgb:fristen:position:party202-violated"), @2026-06-14) { origin case_input; }
+        assert "act": abweichung_202_vereinbart_am(entity_ref("urn:de:bgb:fristen:position:a202-violated"), entity_ref("urn:de:bgb:fristen:position:party202-violated"), @2026-06-14) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(ProhibitionVerjaehrungsvereinbarung202, VIOLATED);
+}

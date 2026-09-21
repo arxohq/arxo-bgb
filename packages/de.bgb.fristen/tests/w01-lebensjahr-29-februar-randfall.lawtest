@@ -1,0 +1,14 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 187 Abs. 2 Satz 2, § 188 Abs. 2/3, Randfall: Geburtstag 29. Februar 2000 (Schaltjahr); das 25. Lebensjahr (2025, kein Schaltjahr) fehlt der entsprechende Tag — Ablauf des letzten Tages des Monats (28. Februar), vollendet mit dem Vortag (27. Februar 2025), Ledger D-02-03.
+test "Randfall 29. Februar: das Lebensjahr ist mit Ablauf des 27. Februar 2025 vollendet" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "g": geburtstag(entity_ref("urn:de:bgb:fristen:pilot:w01"), @2000-02-29) { origin case_input; }
+        assert "n": lebensjahr_gefragt(entity_ref("urn:de:bgb:fristen:pilot:w01"), 25 calendar_year) { origin case_input; }
+    }
+    evaluate truth(lebensjahr_vollendet_am(entity_ref("urn:de:bgb:fristen:pilot:w01"), 25 calendar_year, @2025-02-27));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

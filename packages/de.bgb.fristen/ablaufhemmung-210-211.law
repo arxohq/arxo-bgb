@@ -1,0 +1,95 @@
+// §§ 210, 211: Ablaufhemmung bei nicht voll Geschäftsfähigen und in
+// Nachlassfällen. Additiver Kopf je Norm (`verjaehrung_eingetreten_am_mit_*`)
+// statt Änderung des bestehenden `verjaehrung_eingetreten_am` (Hub-Schutz,
+// PARALLEL.md § 3) — „später von beiden" nach demselben Muster wie die
+// Höchstfristen (hoechstfristen-199.law), nur mit `>=`/`<` statt `<=`/`<`,
+// weil eine Ablaufhemmung eine MINDESTFRIST setzt (§ 203 Satz 2 im
+// package.law ist dasselbe Muster). Satz 2 beider Normen („ist die
+// Verjährungsfrist kürzer als sechs Monate, tritt der für die Verjährung
+// bestimmte Zeitraum an die Stelle der sechs Monate") ist NICHT abgebildet:
+// er setzt eine dritte, gerichtete Fallunterscheidung voraus (Länge DER
+// Verjährungsfrist selbst, nicht nur ihr Ende) und bleibt TODO (README).
+
+// --- § 210: Ablaufhemmung bei nicht voll Geschäftsfähigen ohne Vertreter ----------------------------
+
+pub relation vertretungsmangel_behoben_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Zeitpunkt, in dem die geschäftsunfähige oder in der Geschäftsfähigkeit beschränkte Person unbeschränkt geschäftsfähig wird oder der Mangel der gesetzlichen Vertretung behoben wird (§ 210 Abs. 1)";
+    label en unofficial "point in time when the person lacking or limited in capacity to contract becomes fully capable, or the lack of legal representation is remedied (§ 210 (1))";
+}
+pub relation ablaufhemmung_210_frueheste(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "frühester Zeitpunkt des Eintritts der Verjährung nach § 210 Abs. 1: sechs Monate nach Behebung des Vertretungsmangels";
+    label en unofficial "earliest point at which limitation may occur under § 210 (1): six months after the lack of representation is remedied";
+}
+pub relation verjaehrung_eingetreten_am_mit_ablaufhemmung_210(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung eintritt, unter Berücksichtigung der Ablaufhemmung des § 210 Abs. 1";
+    label en unofficial "day at whose end limitation occurs, taking into account the extension of § 210 (1)";
+}
+
+@source(BGB_P210)
+rule Ablaufhemmung210Frueheste(a: Anspruch, tag: Date) strict {
+    label de official "Eine für oder gegen die Person laufende Verjährung tritt nicht vor dem Ablauf von sechs Monaten nach der Behebung des Vertretungsmangels ein (§ 210 Abs. 1 Satz 1) — Monatsschritt (§ 188 Abs. 2)";
+    label en unofficial "Limitation running for or against the person does not occur before six months from the remedy of the lack of representation (§ 210 (1) sentence 1) — month step (§ 188 (2))";
+    when vertretungsmangel_behoben_am(a, tag);
+    then ablaufhemmung_210_frueheste(a, add_calendar_period(tag, 6 calendar_month));
+}
+
+@source(BGB_P210)
+rule Verjaehrung210RegelFrueher(a: Anspruch, regel: Date, frueheste: Date) strict {
+    label de official "Endet die reguläre Verjährung nicht vor dem Ablaufhemmung-Zeitpunkt des § 210, so bleibt sie maßgeblich";
+    label en unofficial "If the regular limitation does not end before the § 210 extension point, it remains decisive";
+    when verjaehrung_eingetreten_am(a, regel) and ablaufhemmung_210_frueheste(a, frueheste) and regel >= frueheste;
+    then verjaehrung_eingetreten_am_mit_ablaufhemmung_210(a, regel);
+}
+
+@source(BGB_P210)
+rule Verjaehrung210AblaufhemmungMassgeblich(a: Anspruch, regel: Date, frueheste: Date) strict {
+    label de official "Endet die reguläre Verjährung vor dem Ablaufhemmung-Zeitpunkt des § 210, ist Letzterer maßgeblich (§ 210 Abs. 1 Satz 1)";
+    label en unofficial "If the regular limitation would end before the § 210 extension point, the latter is decisive (§ 210 (1) sentence 1)";
+    when verjaehrung_eingetreten_am(a, regel) and ablaufhemmung_210_frueheste(a, frueheste) and regel < frueheste;
+    then verjaehrung_eingetreten_am_mit_ablaufhemmung_210(a, frueheste);
+}
+
+// --- § 211: Ablaufhemmung in Nachlassfällen -------------------------------------------------------
+
+pub relation nachlassvertretung_moeglich_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Zeitpunkt, in dem die Erbschaft angenommen, das Insolvenzverfahren über den Nachlass eröffnet wird, oder von dem an der Anspruch von einem oder gegen einen Vertreter geltend gemacht werden kann (§ 211)";
+    label en unofficial "point in time when the inheritance is accepted, insolvency proceedings over the estate are opened, or from which the claim can be asserted by or against a representative (§ 211)";
+}
+pub relation ablaufhemmung_211_frueheste(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "frühester Zeitpunkt des Eintritts der Verjährung nach § 211: sechs Monate nach dem in § 211 genannten Zeitpunkt";
+    label en unofficial "earliest point at which limitation may occur under § 211: six months after the point named in § 211";
+}
+pub relation verjaehrung_eingetreten_am_mit_ablaufhemmung_211(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung eintritt, unter Berücksichtigung der Ablaufhemmung des § 211";
+    label en unofficial "day at whose end limitation occurs, taking into account the extension of § 211";
+}
+
+@source(BGB_P211)
+rule Ablaufhemmung211Frueheste(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung eines zu einem Nachlass gehörenden oder gegen ihn gerichteten Anspruchs tritt nicht vor Ablauf von sechs Monaten nach dem in § 211 genannten Zeitpunkt ein — Monatsschritt (§ 188 Abs. 2)";
+    label en unofficial "Limitation of a claim belonging to or directed against an estate does not occur before six months from the point named in § 211 — month step (§ 188 (2))";
+    when nachlassvertretung_moeglich_am(a, tag);
+    then ablaufhemmung_211_frueheste(a, add_calendar_period(tag, 6 calendar_month));
+}
+
+@source(BGB_P211)
+rule Verjaehrung211RegelFrueher(a: Anspruch, regel: Date, frueheste: Date) strict {
+    label de official "Endet die reguläre Verjährung nicht vor dem Ablaufhemmung-Zeitpunkt des § 211, so bleibt sie maßgeblich";
+    label en unofficial "If the regular limitation does not end before the § 211 extension point, it remains decisive";
+    when verjaehrung_eingetreten_am(a, regel) and ablaufhemmung_211_frueheste(a, frueheste) and regel >= frueheste;
+    then verjaehrung_eingetreten_am_mit_ablaufhemmung_211(a, regel);
+}
+
+@source(BGB_P211)
+rule Verjaehrung211AblaufhemmungMassgeblich(a: Anspruch, regel: Date, frueheste: Date) strict {
+    label de official "Endet die reguläre Verjährung vor dem Ablaufhemmung-Zeitpunkt des § 211, ist Letzterer maßgeblich (§ 211)";
+    label en unofficial "If the regular limitation would end before the § 211 extension point, the latter is decisive (§ 211)";
+    when verjaehrung_eingetreten_am(a, regel) and ablaufhemmung_211_frueheste(a, frueheste) and regel < frueheste;
+    then verjaehrung_eingetreten_am_mit_ablaufhemmung_211(a, frueheste);
+}

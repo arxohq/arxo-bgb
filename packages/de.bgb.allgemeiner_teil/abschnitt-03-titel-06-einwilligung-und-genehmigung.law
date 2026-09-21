@@ -1,0 +1,176 @@
+// BUCH 1 ABSCHNITT 3 TITEL 6 — EINWILLIGUNG UND GENEHMIGUNG (§§ 182–185)
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+pub relation zustimmung_eines_dritten_erforderlich(r: Rechtsgeschaeft, dritter: Person) kind empirical {
+    label de official "die Wirksamkeit eines Vertrags oder eines einseitigen Rechtsgeschäfts hängt von der Zustimmung eines Dritten ab (§ 182 Abs. 1)";
+    label en unofficial "the effectiveness of the transaction depends on the consent of a third party (§ 182 (1))";
+}
+pub relation zustimmung_erklaert_gegenueber(r: Rechtsgeschaeft, dritter: Person, gegenueber: Person) kind empirical {
+    label de official "die Erteilung oder die Verweigerung der Zustimmung ist dem einen oder dem anderen Teil gegenüber erklärt worden (§ 182 Abs. 1)";
+    label en unofficial "the granting or refusal of consent has been declared to either party (§ 182 (1))";
+}
+pub relation zustimmung_wirksam(r: Rechtsgeschaeft, dritter: Person) kind institutional {
+    label de official "die Zustimmung des Dritten ist wirksam erklärt; sie bedarf nicht der für das Rechtsgeschäft bestimmten Form (§ 182 Abs. 1, 2)";
+    label en unofficial "the third party's consent has been effectively declared; it requires no particular form (§ 182 (1), (2))";
+}
+pub relation einwilligung_widerrufen(r: Rechtsgeschaeft, dritter: Person) kind empirical {
+    label de official "die vorherige Zustimmung (Einwilligung) ist bis zur Vornahme des Rechtsgeschäfts widerrufen worden (§ 183 Satz 1)";
+    label en unofficial "the prior consent was revoked before the transaction was effected (§ 183 sentence 1)";
+}
+pub relation widerruf_durch_rechtsverhaeltnis_ausgeschlossen(r: Rechtsgeschaeft) kind empirical {
+    label de official "aus dem der Erteilung zugrunde liegenden Rechtsverhältnis ergibt sich die Unwiderruflichkeit der Einwilligung (§ 183 Satz 1 Halbsatz 2)";
+    label en unofficial "the underlying relationship excludes revocation of the consent (§ 183 sentence 1)";
+}
+pub relation einwilligung_unwirksam(r: Rechtsgeschaeft, dritter: Person) kind institutional {
+    label de official "die Einwilligung ist durch Widerruf unwirksam geworden (§ 183)";
+    label en unofficial "the consent has become ineffective by revocation (§ 183)";
+}
+pub relation genehmigung_wirkt_zurueck_auf(r: Rechtsgeschaeft, tag: Date) kind institutional {
+    key(r);
+    label de official "die nachträgliche Zustimmung (Genehmigung) wirkt auf den Zeitpunkt der Vornahme des Rechtsgeschäfts zurück (§ 184 Abs. 1)";
+    label en unofficial "subsequent approval has retroactive effect to the time the transaction was effected (§ 184 (1))";
+}
+pub relation rueckwirkung_ausgeschlossen(r: Rechtsgeschaeft) kind empirical {
+    label de official "es ist ein anderes bestimmt: die Rückwirkung der Genehmigung ist ausgeschlossen (§ 184 Abs. 1 Halbsatz 2)";
+    label en unofficial "otherwise provided: the retroactive effect of the approval is excluded (§ 184 (1))";
+}
+pub relation zwischenverfuegung(r: Rechtsgeschaeft, zwischen: Rechtsgeschaeft) kind empirical {
+    label de official "vor der Genehmigung über den Gegenstand des Rechtsgeschäfts getroffene Verfügung des Genehmigenden oder Verfügung im Wege der Zwangsvollstreckung, der Arrestvollziehung oder durch den Insolvenzverwalter (§ 184 Abs. 2)";
+    label en unofficial "disposition of the object made before approval by the approving party or by execution, attachment or the insolvency administrator (§ 184 (2))";
+}
+pub relation zwischenverfuegung_bleibt_wirksam(zwischen: Rechtsgeschaeft) kind institutional {
+    label de official "durch die Rückwirkung werden solche Verfügungen nicht unwirksam (§ 184 Abs. 2)";
+    label en unofficial "such dispositions do not become ineffective through the retroactive effect (§ 184 (2))";
+}
+
+@source(BGB_P182)
+rule ZustimmungGegenueberEinemDerTeile(r: Rechtsgeschaeft, d: Person, gegen: Person) strict {
+    label de official "Hängt die Wirksamkeit eines Vertrags oder eines einseitigen Rechtsgeschäfts, das einem anderen gegenüber vorzunehmen ist, von der Zustimmung eines Dritten ab, so kann die Erteilung sowie die Verweigerung der Zustimmung sowohl dem einen als dem anderen Teil gegenüber erklärt werden; die Zustimmung bedarf nicht der für das Rechtsgeschäft bestimmten Form (§ 182 Abs. 1, 2)";
+    label en unofficial "Where effectiveness depends on a third party's consent, it may be granted or refused to either party and requires no particular form (§ 182 (1), (2))";
+    when zustimmung_eines_dritten_erforderlich(r, d) and zustimmung_erklaert_gegenueber(r, d, gegen);
+    then zustimmung_wirksam(r, d);
+}
+
+@source(BGB_P183)
+rule WiderruflichkeitDerEinwilligung(r: Rechtsgeschaeft, d: Person) strict {
+    label de official "Die vorherige Zustimmung (Einwilligung) ist bis zur Vornahme des Rechtsgeschäfts widerruflich, soweit nicht aus dem ihrer Erteilung zugrunde liegenden Rechtsverhältnis sich ein anderes ergibt; der Widerruf kann sowohl dem einen als dem anderen Teil gegenüber erklärt werden (§ 183)";
+    label en unofficial "Prior consent is revocable until the transaction is effected, unless the underlying relationship provides otherwise (§ 183)";
+    when einwilligung_widerrufen(r, d) and not widerruf_durch_rechtsverhaeltnis_ausgeschlossen(r);
+    then einwilligung_unwirksam(r, d);
+}
+
+@source(BGB_P184)
+rule RueckwirkungDerGenehmigung(r: Rechtsgeschaeft, t: Date) strict {
+    label de official "Die nachträgliche Zustimmung (Genehmigung) wirkt auf den Zeitpunkt der Vornahme des Rechtsgeschäfts zurück, soweit nicht ein anderes bestimmt ist (§ 184 Abs. 1)";
+    label en unofficial "Subsequent approval has retroactive effect to the time the transaction was effected, unless otherwise provided (§ 184 (1))";
+    when vornahme_des_rechtsgeschaefts_am(r, t)
+        and genehmigung_des_vertreters(r)
+        and not rueckwirkung_ausgeschlossen(r);
+    then genehmigung_wirkt_zurueck_auf(r, t);
+}
+
+@source(BGB_P184)
+rule RueckwirkungDerGenehmigungDesVertretenen(r: Rechtsgeschaeft, t: Date) strict {
+    label de official "Die Genehmigung des Vertretenen wirkt auf den Zeitpunkt der Vornahme des Rechtsgeschäfts zurück (§ 184 Abs. 1 mit § 177 Abs. 1)";
+    label en unofficial "The principal's approval has retroactive effect to the time the transaction was effected (§ 184 (1) with § 177 (1))";
+    when vornahme_des_rechtsgeschaefts_am(r, t)
+        and genehmigung_des_vertretenen(r)
+        and not rueckwirkung_ausgeschlossen(r);
+    then genehmigung_wirkt_zurueck_auf(r, t);
+}
+
+@source(BGB_P184)
+rule ZwischenverfuegungenBleibenWirksam(r: Rechtsgeschaeft, z: Rechtsgeschaeft, t: Date) strict {
+    label de official "Durch die Rückwirkung werden Verfügungen nicht unwirksam, die vor der Genehmigung über den Gegenstand des Rechtsgeschäfts von dem Genehmigenden getroffen worden oder im Wege der Zwangsvollstreckung oder der Arrestvollziehung oder durch den Insolvenzverwalter erfolgt sind (§ 184 Abs. 2)";
+    label en unofficial "The retroactive effect does not render ineffective dispositions made before approval by the approving party or by execution, attachment or the insolvency administrator (§ 184 (2))";
+    when genehmigung_wirkt_zurueck_auf(r, t) and zwischenverfuegung(r, z);
+    then zwischenverfuegung_bleibt_wirksam(z);
+}
+
+// § 185 Verfügung eines Nichtberechtigten.
+pub relation verfuegung_eines_nichtberechtigten(r: Rechtsgeschaeft, berechtigter: Person) kind empirical {
+    label de official "eine Verfügung, die ein Nichtberechtigter über einen Gegenstand trifft (§ 185 Abs. 1)";
+    label en unofficial "a disposition of an object made by an unauthorised person (§ 185 (1))";
+}
+pub relation einwilligung_des_berechtigten(r: Rechtsgeschaeft, berechtigter: Person) kind empirical {
+    label de official "die Verfügung erfolgt mit Einwilligung des Berechtigten (§ 185 Abs. 1)";
+    label en unofficial "the disposition is made with the consent of the person entitled (§ 185 (1))";
+}
+pub relation genehmigung_des_berechtigten(r: Rechtsgeschaeft, berechtigter: Person) kind empirical {
+    label de official "der Berechtigte genehmigt die Verfügung (§ 185 Abs. 2 Satz 1)";
+    label en unofficial "the person entitled approves the disposition (§ 185 (2))";
+}
+pub relation verfuegender_erwirbt_den_gegenstand(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Verfügende erwirbt den Gegenstand (§ 185 Abs. 2 Satz 1)";
+    label en unofficial "the disposing party acquires the object (§ 185 (2))";
+}
+pub relation verfuegender_beerbt_den_berechtigten_unbeschraenkt(r: Rechtsgeschaeft) kind empirical {
+    label de official "der Verfügende wird von dem Berechtigten beerbt und haftet für die Nachlassverbindlichkeiten unbeschränkt (§ 185 Abs. 2 Satz 1)";
+    label en unofficial "the disposing party inherits from the person entitled and is liable without limitation for the estate's debts (§ 185 (2))";
+}
+pub relation mehrere_unvereinbare_verfuegungen(frueher: Rechtsgeschaeft, spaeter: Rechtsgeschaeft) kind empirical {
+    label de official "über den Gegenstand sind mehrere miteinander nicht in Einklang stehende Verfügungen getroffen worden; die erste ist die frühere (§ 185 Abs. 2 Satz 2)";
+    label en unofficial "several mutually inconsistent dispositions were made; the first is the earlier one (§ 185 (2) sentence 2)";
+}
+
+@source(BGB_P185)
+rule VerfuegungMitEinwilligungWirksam(r: Rechtsgeschaeft, b: Person) strict {
+    label de official "Eine Verfügung, die ein Nichtberechtigter über einen Gegenstand trifft, ist wirksam, wenn sie mit Einwilligung des Berechtigten erfolgt (§ 185 Abs. 1)";
+    label en unofficial "A disposition by an unauthorised person is effective if made with the consent of the person entitled (§ 185 (1))";
+    when verfuegung_eines_nichtberechtigten(r, b) and einwilligung_des_berechtigten(r, b);
+    then wirksam(r);
+}
+
+@source(BGB_P185)
+rule VerfuegungDurchGenehmigungWirksam(r: Rechtsgeschaeft, b: Person) strict {
+    label de official "Die Verfügung wird wirksam, wenn der Berechtigte sie genehmigt (§ 185 Abs. 2 Satz 1)";
+    label en unofficial "The disposition becomes effective if the person entitled approves it (§ 185 (2))";
+    when verfuegung_eines_nichtberechtigten(r, b) and genehmigung_des_berechtigten(r, b);
+    then wirksam(r);
+}
+
+pub relation spaetere_unvereinbare_verfuegung(spaeter: Rechtsgeschaeft) kind institutional {
+    label de official "über den Gegenstand ist eine frühere, mit ihr nicht in Einklang stehende Verfügung getroffen worden (§ 185 Abs. 2 Satz 2)";
+    label en unofficial "an earlier inconsistent disposition of the object was made (§ 185 (2) sentence 2)";
+}
+
+@source(BGB_P185)
+rule SpaetereVerfuegungErkannt(frueher: Rechtsgeschaeft, spaeter: Rechtsgeschaeft) strict {
+    label de official "Sind über den Gegenstand mehrere miteinander nicht in Einklang stehende Verfügungen getroffen worden, so ist die spätere als solche erkannt (§ 185 Abs. 2 Satz 2)";
+    label en unofficial "Where several inconsistent dispositions were made, the later one is identified as such (§ 185 (2) sentence 2)";
+    when mehrere_unvereinbare_verfuegungen(frueher, spaeter);
+    then spaetere_unvereinbare_verfuegung(spaeter);
+}
+
+@source(BGB_P185)
+rule VerfuegungWirksamDurchErwerb(r: Rechtsgeschaeft, b: Person) strict {
+    label de official "Die Verfügung wird wirksam, wenn der Verfügende den Gegenstand erwirbt (§ 185 Abs. 2 Satz 1)";
+    label en unofficial "The disposition becomes effective if the disposing party acquires the object (§ 185 (2))";
+    when verfuegung_eines_nichtberechtigten(r, b)
+        and verfuegender_erwirbt_den_gegenstand(r)
+        and not_known(spaetere_unvereinbare_verfuegung(r));
+    then wirksam(r);
+}
+
+@source(BGB_P185)
+rule VerfuegungWirksamDurchBeerbung(r: Rechtsgeschaeft, b: Person) strict {
+    label de official "Die Verfügung wird wirksam, wenn der Verfügende von dem Berechtigten beerbt wird und dieser für die Nachlassverbindlichkeiten unbeschränkt haftet (§ 185 Abs. 2 Satz 1)";
+    label en unofficial "The disposition becomes effective if the disposing party inherits from the person entitled with unlimited liability (§ 185 (2))";
+    when verfuegung_eines_nichtberechtigten(r, b)
+        and verfuegender_beerbt_den_berechtigten_unbeschraenkt(r)
+        and not_known(spaetere_unvereinbare_verfuegung(r));
+    then wirksam(r);
+}
+
+@source(BGB_P185)
+rule NurDieFruehereVerfuegungWirdWirksam(frueher: Rechtsgeschaeft, spaeter: Rechtsgeschaeft, b: Person) strict {
+    label de official "In den Fällen des Erwerbs und der Beerbung wird, wenn über den Gegenstand mehrere miteinander nicht in Einklang stehende Verfügungen getroffen worden sind, nur die frühere Verfügung wirksam (§ 185 Abs. 2 Satz 2)";
+    label en unofficial "In the cases of acquisition and succession, where several inconsistent dispositions were made, only the earlier one becomes effective (§ 185 (2) sentence 2)";
+    when spaetere_unvereinbare_verfuegung(spaeter)
+        and verfuegung_eines_nichtberechtigten(spaeter, b)
+        and verfuegender_erwirbt_den_gegenstand(spaeter);
+    then not wirksam(spaeter);
+}

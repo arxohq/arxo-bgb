@@ -1,0 +1,67 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+
+pub relation position_trigger_895(r: Recht, betroffener: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls: der Berechtigte verlangt die Voreintragung (§ 895)";
+    label en unofficial "case input: the entitled person demands prior registration (§ 895)";
+}
+pub relation voreintragung_895_geschuldet(r: Recht, betroffener: Person) kind empirical {
+    label de official "Der Betroffene schuldet die Voreintragung seines Rechts (§ 895)";
+    label en unofficial "The affected person owes prior registration of the right (§ 895)";
+}
+
+pub relation position_trigger_896(r: Recht, berechtigter: Person, besitzer: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls: der Berechtigte verlangt die Briefvorlegung (§ 896)";
+    label en unofficial "case input: the entitled person demands production of the certificate (§ 896)";
+}
+pub relation briefvorlegung_896_ausuebbar(r: Recht, berechtigter: Person, besitzer: Person) kind empirical {
+    label de official "Der Berechtigte kann die Vorlegung des Briefes verlangen (§ 896)";
+    label en unofficial "The entitled person may demand production of the certificate (§ 896)";
+}
+
+pub relation position_trigger_897(r: Recht, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls: der Berechtigte verlangt die Berichtigung (§ 897)";
+    label en unofficial "case input: the entitled person demands correction (§ 897)";
+}
+pub relation kostentragung_897_geschuldet(r: Recht, berechtigter: Person) kind empirical {
+    label de official "Der Verlangende schuldet die Kosten der Berichtigung (§ 897)";
+    label en unofficial "The demanding party owes the correction costs (§ 897)";
+}
+
+@source(BGB_P895)
+rule PositionVoreintragung895(r: Recht, betroffener: Person, tag: Date) strict {
+    label de official "Der Verpflichtete hat sein Recht auf Verlangen voreinzutragen (§ 895)";
+    label en unofficial "The obliged person must have their right registered on demand (§ 895)";
+    when position_trigger_895(r, betroffener, tag);
+    then duty Voreintragung895 {
+        bearer betroffener;
+        achieve voreintragung_895_geschuldet(r, betroffener) during [tag, infinity);
+    };
+}
+
+@source(BGB_P896)
+rule PositionBriefvorlegung896(r: Recht, berechtigter: Person, besitzer: Person, tag: Date) strict {
+    label de official "Der Berechtigte hat die Befugnis, die Briefvorlegung zu verlangen (§ 896)";
+    label en unofficial "The entitled person has the power to demand production of the certificate (§ 896)";
+    when position_trigger_896(r, berechtigter, besitzer, tag);
+    then power Briefvorlegung896 {
+        holder berechtigter;
+        over r;
+        exercise briefvorlegung_896_ausuebbar(r, berechtigter, besitzer);
+        valid_when briefvorlegung_896_ausuebbar(r, berechtigter, besitzer);
+        effect create(briefvorlegung_896_ausuebbar(r, berechtigter, besitzer));
+        window [tag, infinity);
+    };
+}
+
+@source(BGB_P897)
+rule PositionKostentragung897(r: Recht, berechtigter: Person, tag: Date) strict {
+    label de official "Der Verlangende hat die Kosten der Berichtigung zu tragen (§ 897)";
+    label en unofficial "The demanding party must bear the costs of correction (§ 897)";
+    when position_trigger_897(r, berechtigter, tag);
+    then duty Kostentragung897 {
+        bearer berechtigter;
+        achieve kostentragung_897_geschuldet(r, berechtigter) during [tag, infinity);
+    };
+}

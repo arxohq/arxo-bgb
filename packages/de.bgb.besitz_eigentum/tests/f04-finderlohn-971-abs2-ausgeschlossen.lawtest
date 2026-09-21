@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 971 Abs. 2: der Anspruch ist ausgeschlossen, wenn der Finder die Anzeigepflicht verletzt — der Betrag wird weiter gerechnet, der Anspruch besteht nicht.
+test "§ 971 Abs. 2: verletzte Anzeigepflicht schließt den Finderlohn aus" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": fundsache(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:mantel")) { origin case_input; }
+        assert "f2": finder(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:F")) { origin case_input; }
+        assert "f3": empfangsberechtigter(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:B")) { origin case_input; }
+        assert "f4": wert_der_fundsache(entity_ref("urn:de:bgb:be:f:fund"), 1000.00 EUR) { origin case_input; }
+        assert "f5": fundsache_ist_kein_tier(entity_ref("urn:de:bgb:be:f:fund")) { origin case_input; }
+        assert "f6": anzeigepflicht_verletzt(entity_ref("urn:de:bgb:be:f:fund")) { origin case_input; }
+    }
+    evaluate truth(finderlohn_grundbetrag(entity_ref("urn:de:bgb:be:f:fund"), 40.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finderlohn_ausgeschlossen(entity_ref("urn:de:bgb:be:f:fund")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finderlohnanspruch(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:F"), 40.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

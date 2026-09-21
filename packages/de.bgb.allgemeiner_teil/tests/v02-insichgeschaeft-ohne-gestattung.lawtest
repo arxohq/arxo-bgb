@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// § 181: der Vertreter nimmt im Namen des Vertretenen mit sich selbst ein Rechtsgeschäft vor; es ist ihm nicht gestattet und besteht nicht ausschließlich in der Erfüllung einer Verbindlichkeit. Die Vertretungsmacht ist für dieses Geschäft verneint, die Erklärung wirkt nicht für und gegen den Vertretenen (§ 164 Abs. 1).
+test "§ 181: ohne Gestattung wirkt das Insichgeschäft nicht für den Vertretenen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "a1": insichgeschaeft(entity_ref("urn:de:bgb:at:v02:geschaeft")) { origin case_input; }
+        assert "a2": vertreter(entity_ref("urn:de:bgb:at:v02:geschaeft"), entity_ref("urn:de:bgb:at:v02:vertreter")) { origin case_input; }
+        assert "a3": vertretener(entity_ref("urn:de:bgb:at:v02:geschaeft"), entity_ref("urn:de:bgb:at:v02:vertretener")) { origin case_input; }
+        assert "a4": im_namen_des_vertretenen(entity_ref("urn:de:bgb:at:v02:geschaeft")) { origin case_input; }
+        assert "a5": not insichgeschaeft_gestattet(entity_ref("urn:de:bgb:at:v02:geschaeft")) { origin case_input; }
+        assert "a6": not erfuellung_einer_verbindlichkeit(entity_ref("urn:de:bgb:at:v02:geschaeft")) { origin case_input; }
+        assert "a7": vollmacht_des_rechtsgeschaefts(entity_ref("urn:de:bgb:at:v02:geschaeft"), entity_ref("urn:de:bgb:at:v02:vollmacht")) { origin case_input; }
+        assert "a8": vollmacht_erteilt(entity_ref("urn:de:bgb:at:v02:vollmacht"), entity_ref("urn:de:bgb:at:v02:vertretener"), entity_ref("urn:de:bgb:at:v02:vertreter")) { origin case_input; }
+        assert "a9": not grundverhaeltnis_beendet(entity_ref("urn:de:bgb:at:v02:vollmacht")) { origin case_input; }
+    }
+    evaluate truth(vertretungsmacht_fuer_insichgeschaeft_ausgeschlossen(entity_ref("urn:de:bgb:at:v02:geschaeft"), entity_ref("urn:de:bgb:at:v02:vertreter")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vertretungsmacht(entity_ref("urn:de:bgb:at:v02:geschaeft"), entity_ref("urn:de:bgb:at:v02:vertreter")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(wirkt_fuer_und_gegen_den_vertretenen(entity_ref("urn:de:bgb:at:v02:geschaeft"), entity_ref("urn:de:bgb:at:v02:vertretener")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

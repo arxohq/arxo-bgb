@@ -1,0 +1,46 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+test "§§ 281–286: Schadensersatz und Verzug sind als Pflichten aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:p281:l"), entity_ref("urn:de:bgb:sr-at:p281:s")) { origin case_input; }
+        assert "f2": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:p281:s"), entity_ref("urn:de:bgb:sr-at:p281:g")) { origin case_input; }
+        assert "f3": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:p281:s"), entity_ref("urn:de:bgb:sr-at:p281:sch")) { origin case_input; }
+        assert "f4": schuldverhaeltnis_begruendet_am(entity_ref("urn:de:bgb:sr-at:p281:s"), @2026-01-01) { origin case_input; }
+        assert "f5": schadensersatz_statt_der_leistung(entity_ref("urn:de:bgb:sr-at:p281:s"), entity_ref("urn:de:bgb:sr-at:p281:sch"), entity_ref("urn:de:bgb:sr-at:p281:sch")) { origin case_input; }
+        assert "f6": verzug_seit(entity_ref("urn:de:bgb:sr-at:p281:l"), @2026-06-10) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(SchadensersatzStatt281, SATISFIED);
+    expect position(Verzug286, SATISFIED);
+}
+
+test "§§ 281–286: Positionen ohne den jeweiligen institutionellen Status fehlen" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:p281b:l"), entity_ref("urn:de:bgb:sr-at:p281b:s")) { origin case_input; }
+        assert "f2": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:p281b:s"), entity_ref("urn:de:bgb:sr-at:p281b:g")) { origin case_input; }
+        assert "f3": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:p281b:s"), entity_ref("urn:de:bgb:sr-at:p281b:sch")) { origin case_input; }
+    }
+    evaluate positions();
+    expect not position(SchadensersatzStatt281, ACTIVE);
+    expect not position(Verzug286, ACTIVE);
+}
+
+test "§§ 282–285: besondere Schadensersatzpositionen werden aktiviert" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "s": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:p282:s"), entity_ref("urn:de:bgb:sr-at:p282:sch")) { origin case_input; }
+        assert "g": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:p282:s"), entity_ref("urn:de:bgb:sr-at:p282:g")) { origin case_input; }
+        assert "d": schuldverhaeltnis_begruendet_am(entity_ref("urn:de:bgb:sr-at:p282:s"), @2026-01-01) { origin case_input; }
+        assert "u": leistung_durch_den_schuldner_nicht_mehr_zumutbar(entity_ref("urn:de:bgb:sr-at:p282:s")) { origin case_input; }
+        assert "x": schadensersatz_statt_der_leistung(entity_ref("urn:de:bgb:sr-at:p282:s"), entity_ref("urn:de:bgb:sr-at:p282:damage"), entity_ref("urn:de:bgb:sr-at:p282:sch")) { origin case_input; }
+        assert "l": leistung_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:p282:l"), entity_ref("urn:de:bgb:sr-at:p282:s")) { origin case_input; }
+        assert "a": leistungsanspruch_ausgeschlossen(entity_ref("urn:de:bgb:sr-at:p282:l")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(SchadensersatzUnzumutbarkeit282, SATISFIED);
+    expect position(SchadensersatzLeistungsausschluss283, SATISFIED);
+}

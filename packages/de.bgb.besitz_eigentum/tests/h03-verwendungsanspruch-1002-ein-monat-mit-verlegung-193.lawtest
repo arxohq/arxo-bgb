@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 1002 Abs. 1: der Verwendungsanspruch erlischt mit dem Ablauf eines Monats nach der Herausgabe. Herausgabe am Freitag, dem 17. April 2026; das kalendarische Ende ist Sonntag, der 17. Mai 2026, und § 193 verlegt es auf Montag, den 18. Mai 2026 — anders als bei der Erwerbsfrist des § 900 (Ledger D-10-05).
+test "§ 1002 Abs. 1: Erlöschen des Verwendungsanspruchs, Ende auf Sonntag verlegt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:h:besitz"), entity_ref("urn:de:bgb:be:h:fahrrad")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:h:besitz"), entity_ref("urn:de:bgb:be:h:B")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:h:besitz"), @2026-01-10) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:h:besitz")) { origin case_input; }
+        assert "f5": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:E")) { origin case_input; }
+        assert "f6": bewegliche_sache(entity_ref("urn:de:bgb:be:h:fahrrad")) { origin case_input; }
+        assert "f7": notwendige_verwendung_gemacht(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:B")) { origin case_input; }
+        assert "f8": herausgabe_an_den_eigentuemer_am(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:B"), @2026-04-17) { origin case_input; }
+        assert "f9": verwendungsfrist(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:frist")) { origin case_input; }
+    }
+    evaluate truth(verwendungsersatzanspruch(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verwendungsanspruch_erloschen_am(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:B"), @2026-05-18));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

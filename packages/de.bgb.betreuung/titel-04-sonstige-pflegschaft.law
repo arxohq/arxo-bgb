@@ -1,0 +1,238 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 4 ABSCHNITT 3 TITEL 4 — SONSTIGE PFLEGSCHAFT
+// (§§ 1882–1888): Pflegschaft für unbekannte Beteiligte, für gesammeltes
+// Vermögen, Abwesenheitspflegschaft, Bestellung und Aufhebung des sonstigen
+// Pflegers, Ende kraft Gesetzes, Anwendung des Betreuungsrechts (D-14-01).
+
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+
+pub relation sonstiger_pfleger_kandidat(p: Person, bezugsobjekt: Text) kind empirical {
+    label de official "Person, die das zuständige Gericht als Pfleger nach diesem Titel bestellen will";
+    label en unofficial "person the competent court intends to appoint as curator under this title";
+}
+
+// § 1882: Pflegschaft für unbekannte Beteiligte.
+
+pub relation beteiligter_unbekannt_oder_ungewiss(angelegenheit: Text) kind empirical {
+    label de official "Unbekannt oder ungewiss, wer bei einer Angelegenheit der Beteiligte ist, und Fürsorge ist erforderlich (§ 1882 Satz 1)";
+    label en unofficial "it is unknown or uncertain who is the party concerned in a matter, and care is required (§ 1882 sentence 1)";
+}
+pub relation nacherbe_noch_nicht_gezeugt_oder_unbestimmt(angelegenheit: Text) kind empirical {
+    label de official "Ein Nacherbe ist noch nicht gezeugt oder seine Persönlichkeit erst durch ein künftiges Ereignis bestimmt (§ 1882 Satz 2)";
+    label en unofficial "a subsequent heir has not yet been conceived, or their identity depends on a future event (§ 1882 sentence 2)";
+}
+pub relation pfleger_fuer_unbekannten_beteiligten_bestellbar(p: Person, angelegenheit: Text) kind institutional {
+    label de official "Ein Pfleger für den unbekannten oder ungewissen Beteiligten kann bestellt werden (§ 1882)";
+    label en unofficial "a curator for the unknown or uncertain party concerned may be appointed (§ 1882)";
+}
+@source(BGB_P1882) {
+    rule PflegerFuerUnbekanntenBeteiligten(p: Person, angelegenheit: Text) strict {
+        label de official "Ist unbekannt oder ungewiss, wer bei einer Angelegenheit der Beteiligte ist, kann dafür, soweit Fürsorge erforderlich ist, ein Pfleger bestellt werden (§ 1882 Satz 1)";
+        label en unofficial "where it is unknown or uncertain who is the party concerned in a matter, a curator may be appointed for it so far as care is required (§ 1882 sentence 1)";
+        when sonstiger_pfleger_kandidat(p, angelegenheit) and beteiligter_unbekannt_oder_ungewiss(angelegenheit);
+        then pfleger_fuer_unbekannten_beteiligten_bestellbar(p, angelegenheit);
+    }
+    rule PflegerFuerNacherbe(p: Person, angelegenheit: Text) strict {
+        label de official "Für einen Nacherben, der noch nicht gezeugt ist oder dessen Persönlichkeit erst durch ein künftiges Ereignis bestimmt wird, kann bis zum Eintritt der Nacherbfolge ein Pfleger bestellt werden (§ 1882 Satz 2)";
+        label en unofficial "for a subsequent heir not yet conceived, or whose identity depends on a future event, a curator may be appointed until the subsequent succession occurs (§ 1882 sentence 2)";
+        when sonstiger_pfleger_kandidat(p, angelegenheit) and nacherbe_noch_nicht_gezeugt_oder_unbestimmt(angelegenheit);
+        then pfleger_fuer_unbekannten_beteiligten_bestellbar(p, angelegenheit);
+    }
+}
+
+// § 1883: Pflegschaft für gesammeltes Vermögen.
+
+pub relation vermoegen_durch_oeffentliche_sammlung_fuer_voruebergehenden_zweck(sammlung: Text) kind empirical {
+    label de official "Durch öffentliche Sammlung ist Vermögen für einen vorübergehenden Zweck zusammengebracht worden (§ 1883)";
+    label en unofficial "assets have been raised through a public collection for a temporary purpose (§ 1883)";
+}
+pub relation zur_verwaltung_berufene_personen_weggefallen(sammlung: Text) kind empirical {
+    label de official "Die zur Verwaltung und Verwendung berufenen Personen sind weggefallen (§ 1883)";
+    label en unofficial "the persons called upon to administer and use the assets have ceased to exist (§ 1883)";
+}
+pub relation pfleger_fuer_gesammeltes_vermoegen_bestellbar(p: Person, sammlung: Text) kind institutional {
+    label de official "Ein Pfleger zur Verwaltung und Verwendung des gesammelten Vermögens kann bestellt werden (§ 1883)";
+    label en unofficial "a curator for administering and using the collected assets may be appointed (§ 1883)";
+}
+@source(BGB_P1883)
+rule PflegerFuerGesammeltesVermoegen(p: Person, sammlung: Text) strict {
+    label de official "Ist durch öffentliche Sammlung Vermögen für einen vorübergehenden Zweck zusammengebracht worden, kann ein Pfleger bestellt werden, wenn die zur Verwaltung berufenen Personen weggefallen sind (§ 1883)";
+    label en unofficial "where assets have been raised by public collection for a temporary purpose, a curator may be appointed once the persons called upon to administer them have ceased to exist (§ 1883)";
+    when sonstiger_pfleger_kandidat(p, sammlung) and vermoegen_durch_oeffentliche_sammlung_fuer_voruebergehenden_zweck(sammlung) and zur_verwaltung_berufene_personen_weggefallen(sammlung);
+    then pfleger_fuer_gesammeltes_vermoegen_bestellbar(p, sammlung);
+}
+
+// § 1884: Abwesenheitspflegschaft.
+
+pub relation abwesender_aufenthalt_unbekannt(abwesender: Person) kind empirical {
+    label de official "Der Aufenthalt des abwesenden Volljährigen ist unbekannt (§ 1884 Absatz 1 Satz 1)";
+    label en unofficial "the whereabouts of the absent adult are unknown (§ 1884 (1) sentence 1)";
+}
+pub relation abwesenheitspfleger_bestellbar(p: Person, abwesender: Person) kind institutional {
+    label de official "Ein Abwesenheitspfleger für die Vermögensangelegenheiten kann bestellt werden (§ 1884)";
+    label en unofficial "an absence curator for the property affairs may be appointed (§ 1884)";
+}
+pub relation abwesenheitspfleger_kandidat(p: Person, abwesender: Person) kind empirical {
+    label de official "Person, die das zuständige Gericht als Abwesenheitspfleger bestellen will (§ 1884)";
+    label en unofficial "person the competent court intends to appoint as absence curator (§ 1884)";
+}
+pub relation abwesenheitspfleger_bestellt(p: Person, abwesender: Person) kind empirical {
+    label de official "Der Abwesenheitspfleger ist bestellt (§ 1884, § 1885)";
+    label en unofficial "the absence curator has been appointed (§ 1884, § 1885)";
+}
+@source(BGB_P1884)
+rule AbwesenheitspflegerBeiUnbekanntemAufenthalt(p: Person, abwesender: Person) strict {
+    label de official "Ein abwesender Volljähriger, dessen Aufenthalt unbekannt ist, erhält für seine Vermögensangelegenheiten, soweit sie der Fürsorge bedürfen, einen Abwesenheitspfleger (§ 1884 Absatz 1 Satz 1)";
+    label en unofficial "an absent adult whose whereabouts are unknown receives an absence curator for their property affairs, so far as these require care (§ 1884 (1) sentence 1)";
+    when abwesenheitspfleger_kandidat(p, abwesender) and abwesender_aufenthalt_unbekannt(abwesender);
+    then abwesenheitspfleger_bestellbar(p, abwesender);
+}
+pub relation abwesender_an_rueckkehr_und_besorgung_verhindert(abwesender: Person) kind empirical {
+    label de official "Der Aufenthalt des Abwesenden ist bekannt, er ist aber an der Rückkehr und der Besorgung seiner Vermögensangelegenheiten verhindert (§ 1884 Absatz 2)";
+    label en unofficial "the absent person's whereabouts are known, but they are prevented from returning and attending to their property affairs (§ 1884 (2))";
+}
+@source(BGB_P1884)
+rule AbwesenheitspflegerBeiVerhinderterRueckkehr(p: Person, abwesender: Person) strict {
+    label de official "Das Gleiche gilt für einen Abwesenden, dessen Aufenthalt bekannt, der aber an der Rückkehr und der Besorgung seiner Vermögensangelegenheiten verhindert ist (§ 1884 Absatz 2)";
+    label en unofficial "the same applies to an absent person whose whereabouts are known but who is prevented from returning and attending to their property affairs (§ 1884 (2))";
+    when abwesenheitspfleger_kandidat(p, abwesender) and abwesender_an_rueckkehr_und_besorgung_verhindert(abwesender);
+    then abwesenheitspfleger_bestellbar(p, abwesender);
+}
+
+// § 1885: Bestellung des sonstigen Pflegers.
+
+pub relation zustaendiges_gericht_fuer_pflegschaft(g: Gericht, angelegenheit: Text) kind empirical {
+    label de official "Das Betreuungsgericht oder, im Falle der Nachlasspflegschaft, das Nachlassgericht ist zuständig (§ 1885)";
+    label en unofficial "the custody court, or in the case of estate curatorship the probate court, has jurisdiction (§ 1885)";
+}
+pub relation pfleger_bereiterklaerung_1885(p: Person, angelegenheit: Text) kind empirical {
+    label de official "Der ausgewählte Pfleger hat sich zur Übernahme des Amtes bereit erklärt (§ 1885)";
+    label en unofficial "the selected curator has declared readiness to assume the office (§ 1885)";
+}
+pub relation sonstiger_pfleger_bestellt(p: Person, angelegenheit: Text) kind institutional {
+    label de official "Der geeignete Pfleger ist bestellt (§ 1885)";
+    label en unofficial "the suitable curator has been appointed (§ 1885)";
+}
+@source(BGB_P1885)
+rule SonstigerPflegerBestellung(p: Person, angelegenheit: Text) strict {
+    label de official "Das zuständige Gericht ordnet die Pflegschaft an, wählt einen geeigneten Pfleger aus und bestellt ihn, nachdem er sich zur Übernahme bereit erklärt hat (§ 1885)";
+    label en unofficial "the competent court orders the curatorship, selects a suitable curator and appoints them once they have declared readiness to assume the office (§ 1885)";
+    when pfleger_bereiterklaerung_1885(p, angelegenheit);
+    then sonstiger_pfleger_bestellt(p, angelegenheit);
+}
+@source(BGB_P1885)
+rule SonstigerPflegerGesetzlicherVertreter(p: Person, angelegenheit: Text, betroffener: Person) strict {
+    label de official "Der bestellte sonstige Pfleger ist gesetzlicher Vertreter des von der Pflegschaft Betroffenen für die betreffende Angelegenheit (§ 1885, § 1888 Absatz 1)";
+    label en unofficial "the appointed curator is the statutory representative of the person affected by the curatorship for the matter concerned (§ 1885, § 1888 (1))";
+    when sonstiger_pfleger_bestellt(p, angelegenheit) and pflegschaft_betrifft_person(angelegenheit, betroffener);
+    then gesetzlicher_vertreter(p, betroffener);
+}
+pub relation pflegschaft_betrifft_person(angelegenheit: Text, betroffener: Person) kind empirical {
+    label de official "Die Angelegenheit der sonstigen Pflegschaft betrifft diese Person (§ 1882, § 1883, § 1884)";
+    label en unofficial "the matter of the other curatorship concerns this person (§ 1882, § 1883, § 1884)";
+}
+
+// § 1886: Aufhebung der Pflegschaft.
+
+pub relation abwesender_nicht_mehr_verhindert(abwesender: Person) kind empirical {
+    label de official "Der Abwesende ist an der Besorgung seiner Vermögensangelegenheiten nicht mehr verhindert (§ 1886 Absatz 1 Nummer 1)";
+    label en unofficial "the absent person is no longer prevented from attending to their property affairs (§ 1886 (1) no. 1)";
+}
+pub relation abwesenheitspflegschaft_aufzuheben(p: Person, abwesender: Person) kind institutional {
+    label de official "Die Pflegschaft für den Abwesenden ist aufzuheben (§ 1886 Absatz 1)";
+    label en unofficial "the curatorship for the absent person must be terminated (§ 1886 (1))";
+}
+@source(BGB_P1886)
+rule AbwesenheitspflegschaftAufzuhebenBeiWegfall(p: Person, abwesender: Person) strict {
+    label de official "Die Pflegschaft für einen Abwesenden ist aufzuheben, wenn er an der Besorgung seiner Vermögensangelegenheiten nicht mehr verhindert ist (§ 1886 Absatz 1 Nummer 1)";
+    label en unofficial "the curatorship for an absent person must be terminated once they are no longer prevented from attending to their property affairs (§ 1886 (1) no. 1)";
+    when abwesenheitspfleger_bestellt(p, abwesender) and abwesender_nicht_mehr_verhindert(abwesender);
+    then abwesenheitspflegschaft_aufzuheben(p, abwesender);
+}
+pub relation abwesender_verstorben(abwesender: Person) kind empirical {
+    label de official "Der Abwesende ist verstorben (§ 1886 Absatz 1 Nummer 2)";
+    label en unofficial "the absent person has died (§ 1886 (1) no. 2)";
+}
+@source(BGB_P1886)
+rule AbwesenheitspflegschaftAufzuhebenBeiTod(p: Person, abwesender: Person) strict {
+    label de official "Die Pflegschaft für einen Abwesenden ist aufzuheben, wenn er stirbt (§ 1886 Absatz 1 Nummer 2)";
+    label en unofficial "the curatorship for an absent person must be terminated on their death (§ 1886 (1) no. 2)";
+    when abwesenheitspfleger_bestellt(p, abwesender) and abwesender_verstorben(abwesender);
+    then abwesenheitspflegschaftaufzuheben_bei_tod(p, abwesender);
+}
+pub relation abwesenheitspflegschaftaufzuheben_bei_tod(p: Person, abwesender: Person) kind institutional {
+    label de official "Die Pflegschaft ist wegen Todes des Abwesenden aufzuheben (§ 1886 Absatz 1 Nummer 2)";
+    label en unofficial "the curatorship must be terminated due to the absent person's death (§ 1886 (1) no. 2)";
+}
+pub relation grund_der_sonstigen_pflegschaft_weggefallen(p: Person, angelegenheit: Text) kind empirical {
+    label de official "Der Grund für die Anordnung der sonstigen Pflegschaft ist weggefallen (§ 1886 Absatz 2)";
+    label en unofficial "the ground for ordering the other curatorship has ceased to exist (§ 1886 (2))";
+}
+pub relation sonstige_pflegschaft_aufzuheben(p: Person, angelegenheit: Text) kind institutional {
+    label de official "Die sonstige Pflegschaft ist aufzuheben (§ 1886 Absatz 2)";
+    label en unofficial "the other curatorship must be terminated (§ 1886 (2))";
+}
+@source(BGB_P1886)
+rule SonstigePflegschaftAufzuhebenBeiWegfall(p: Person, angelegenheit: Text) strict {
+    label de official "Im Übrigen ist eine Pflegschaft aufzuheben, wenn der Grund für ihre Anordnung weggefallen ist (§ 1886 Absatz 2)";
+    label en unofficial "otherwise a curatorship must be terminated once the ground for ordering it has ceased to exist (§ 1886 (2))";
+    when grund_der_sonstigen_pflegschaft_weggefallen(p, angelegenheit);
+    then sonstige_pflegschaft_aufzuheben(p, angelegenheit);
+}
+
+// § 1887: Ende der Pflegschaft kraft Gesetzes.
+
+pub relation todeserklaerung_oder_todeszeitfeststellung_rechtskraeftig(abwesender: Person) kind empirical {
+    label de official "Rechtskraft des Beschlusses über die Todeserklärung des Abwesenden oder die Feststellung seiner Todeszeit nach dem Verschollenheitsgesetz (§ 1887 Absatz 1)";
+    label en unofficial "finality of the decision declaring the absent person dead or determining their time of death under the Missing Persons Act (§ 1887 (1))";
+}
+pub relation abwesenheitspflegschaft_endet_kraft_gesetzes(p: Person, abwesender: Person) kind institutional {
+    label de official "Die Pflegschaft endet mit der Rechtskraft dieses Beschlusses (§ 1887 Absatz 1)";
+    label en unofficial "the curatorship ends when this decision becomes final (§ 1887 (1))";
+}
+@source(BGB_P1887)
+rule AbwesenheitspflegschaftEndetKraftGesetzes(p: Person, abwesender: Person) strict {
+    label de official "Wird der Abwesende für tot erklärt oder seine Todeszeit festgestellt, endet die Pflegschaft mit der Rechtskraft des Beschlusses (§ 1887 Absatz 1)";
+    label en unofficial "where the absent person is declared dead or their time of death is determined, the curatorship ends when the decision becomes final (§ 1887 (1))";
+    when abwesenheitspfleger_bestellt(p, abwesender) and todeserklaerung_oder_todeszeitfeststellung_rechtskraeftig(abwesender);
+    then abwesenheitspflegschaft_endet_kraft_gesetzes(p, abwesender);
+}
+pub relation einzelangelegenheit_der_sonstigen_pflegschaft_erledigt(p: Person, angelegenheit: Text) kind empirical {
+    label de official "Die einzelne Angelegenheit der Pflegschaft ist erledigt (§ 1887 Absatz 2)";
+    label en unofficial "the individual matter of the curatorship has been dealt with (§ 1887 (2))";
+}
+pub relation sonstige_pflegschaft_endet_kraft_gesetzes(p: Person, angelegenheit: Text) kind institutional {
+    label de official "Die Pflegschaft zur Besorgung einer einzelnen Angelegenheit endet mit deren Erledigung (§ 1887 Absatz 2)";
+    label en unofficial "a curatorship for a single matter ends once that matter is dealt with (§ 1887 (2))";
+}
+@source(BGB_P1887)
+rule SonstigePflegschaftEndetMitErledigung(p: Person, angelegenheit: Text) strict {
+    label de official "Im Übrigen endet die Pflegschaft zur Besorgung einer einzelnen Angelegenheit mit deren Erledigung (§ 1887 Absatz 2)";
+    label en unofficial "otherwise a curatorship for a single matter ends once that matter is dealt with (§ 1887 (2))";
+    when einzelangelegenheit_der_sonstigen_pflegschaft_erledigt(p, angelegenheit);
+    then sonstige_pflegschaft_endet_kraft_gesetzes(p, angelegenheit);
+}
+
+// § 1888: Anwendung des Betreuungsrechts — die Brücke, die D-14-01 trägt.
+
+pub relation pfleger_berufsmaessig_taetig(p: Person) kind empirical {
+    label de official "Der Pfleger ist berufsmäßig tätig (§ 1888 Absatz 2 Satz 1)";
+    label en unofficial "the curator acts on a professional basis (§ 1888 (2) sentence 1)";
+}
+pub relation verguetung_nach_1_bis_6_vbvg(p: Person) kind institutional {
+    label de official "Ansprüche des berufsmäßig tätigen Pflegers auf Vergütung und Aufwendungsersatz richten sich nach den §§ 1 bis 6 des Vormünder- und Betreuervergütungsgesetzes (§ 1888 Absatz 2 Satz 1)";
+    label en unofficial "claims of the professionally acting curator to remuneration and reimbursement are governed by §§ 1 to 6 of the Guardians' and Custodians' Remuneration Act (§ 1888 (2) sentence 1)";
+}
+@source(BGB_P1888)
+rule VerguetungDesBerufsmaessigenPflegers(p: Person) strict {
+    label de official "Die Ansprüche des berufsmäßig tätigen Pflegers auf Vergütung und Aufwendungsersatz richten sich nach den §§ 1 bis 6 des Vormünder- und Betreuervergütungsgesetzes (§ 1888 Absatz 2 Satz 1)";
+    label en unofficial "the claims of the professionally acting curator to remuneration and reimbursement are governed by §§ 1 to 6 of the Guardians' and Custodians' Remuneration Act (§ 1888 (2) sentence 1)";
+    when pfleger_berufsmaessig_taetig(p);
+    then verguetung_nach_1_bis_6_vbvg(p);
+}
+// § 1888 Absatz 1 selbst — die entsprechende Anwendung des Betreuungsrechts auf sonstige
+// Pflegschaften — wirkt bereits dadurch, dass der sonstige Pfleger als `gesetzlicher_vertreter`
+// erscheint (D-14-01, Regel `SonstigerPflegerGesetzlicherVertreter`): die Genehmigungs-,
+// Vermögenssorge- und Aufsichtsregeln der Titel-3-Dateien lesen dieses Prädikat unabhängig
+// vom Amt.

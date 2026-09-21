@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// §§ 7 Abs. 1, 11 Satz 1: die Mutter hat sich in Bremen ständig niedergelassen und ist personensorgeberechtigt; das minderjährige Kind teilt ihren Wohnsitz. Der Vater, dem die Personensorge fehlt, teilt seinen Wohnsitz (Hamburg) dem Kind nicht mit.
+test "§ 11 Satz 1: das minderjährige Kind teilt den Wohnsitz des sorgeberechtigten Elternteils, nicht den des anderen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "g": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:at:p02:kind"), @2015-06-01) { origin case_input; }
+        assert "s": stichtag(entity_ref("urn:de:bgb:at:p02:kind"), @2026-09-17) { origin case_input; }
+        assert "f": familie(entity_ref("urn:de:bgb:at:p02:kind"), entity_ref("urn:de:bgb:at:p02:familie")) { origin case_input; }
+        assert "a1": abstammung(entity_ref("urn:de:bgb:at:p02:familie"), entity_ref("urn:de:bgb:at:p02:mutter"), entity_ref("urn:de:bgb:at:p02:kind")) { origin case_input; }
+        assert "a2": abstammung(entity_ref("urn:de:bgb:at:p02:familie"), entity_ref("urn:de:bgb:at:p02:vater"), entity_ref("urn:de:bgb:at:p02:kind")) { origin case_input; }
+        assert "n1": staendige_niederlassung(entity_ref("urn:de:bgb:at:p02:mutter"), entity_ref("urn:de:bgb:at:p02:bremen")) { origin case_input; }
+        assert "n2": staendige_niederlassung(entity_ref("urn:de:bgb:at:p02:vater"), entity_ref("urn:de:bgb:at:p02:hamburg")) { origin case_input; }
+        assert "ps": personensorge(entity_ref("urn:de:bgb:at:p02:mutter"), entity_ref("urn:de:bgb:at:p02:kind")) { origin case_input; }
+    }
+    evaluate truth(wohnsitz(entity_ref("urn:de:bgb:at:p02:kind"), entity_ref("urn:de:bgb:at:p02:bremen")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(wohnsitz(entity_ref("urn:de:bgb:at:p02:kind"), entity_ref("urn:de:bgb:at:p02:hamburg")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

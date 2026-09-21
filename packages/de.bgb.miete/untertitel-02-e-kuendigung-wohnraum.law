@@ -1,0 +1,931 @@
+// --- Untertitel 2 Unterkapitel 5 (§§ 568–577a): Beendigung des Mietverhältnisses über Wohnraum
+//
+// DIE FRIST DES § 573c IST EIN PAAR AUS ZWEI DATEN. Der Text sagt: „Die
+// Kündigung ist spätestens am dritten Werktag eines Kalendermonats zum Ablauf
+// des übernächsten Monats zulässig.“ Das sind ZWEI Größen: der SPÄTESTE TAG
+// DER ERKLÄRUNG (der dritte Werktag des Monats, in dem gekündigt wird) und der
+// BEENDIGUNGSTAG (das Ende des übernächsten Monats). Beide werden gerechnet:
+// der dritte Werktag mit `add_business_days(Monatsanfang, 3 business_day)`
+// über dem Kalender KALENDER_BUNDESWEIT aus de.bgb.fristen, der Beendigungstag
+// mit `month_end_of(add_calendar_period(Monatsanfang, 2 calendar_month))`.
+//
+// DIE STUFEN DES ABSATZES 1 SATZ 2. „Die Kündigungsfrist für den Vermieter
+// verlängert sich nach fünf und acht Jahren seit der Überlassung des Wohnraums
+// um jeweils drei Monate.“ Drei Stufen, je eine Regel, beide Seiten jeder
+// Grenze als Zeuge: bis fünf Jahre der Ablauf des übernächsten Monats, ab fünf
+// Jahren drei Monate mehr, ab acht Jahren sechs Monate mehr. Die Grenze selbst
+// ist ein Jahresschritt des § 188 Abs. 2 von der Überlassung an; der Tag, MIT
+// DESSEN ABLAUF die fünf Jahre verstrichen sind, gehört noch zur ersten Stufe.
+//
+// DER SONNABEND. Der Kalender KALENDER_BUNDESWEIT zählt Sonnabend, Sonntag und
+// die bundesweit anerkannten Feiertage als arbeitsfreie Tage (D-03). Für § 193
+// ist das der Text selbst; für den „dritten Werktag“ der §§ 556b, 573b, 573c,
+// 573d, 575a, 576, 580a, 584 und 594a ist es eine Näherung, die den Sonnabend
+// ausnimmt, obwohl er ein Werktag ist. Offene Frage D-Q06-1 im Ledger; der
+// Kalender gehört dem Koordinator, nicht diesem Paket.
+
+// --- § 568 Form und Inhalt der Kündigung ----------------------------------------------------------
+
+pub relation kuendigung_formwirksam(k: Kuendigung) kind institutional {
+    label de official "die Kündigung des Mietverhältnisses bedarf der schriftlichen Form (§ 568 Abs. 1, § 594f)";
+    label en unofficial "notice terminating the lease requires written form (§ 568 (1), § 594f)";
+}
+pub relation hinweispflicht_auf_widerspruch(k: Kuendigung, v: Person) kind institutional {
+    label de official "der Vermieter soll den Mieter auf die Möglichkeit, die Form und die Frist des Widerspruchs nach den §§ 574 bis 574b rechtzeitig hinweisen (§ 568 Abs. 2)";
+    label en unofficial "the lessor should inform the tenant in good time of the possibility, form and period of objection under §§ 574 to 574b (§ 568 (2))";
+}
+
+@source(BGB_P568)
+rule Schriftform568Abs1(k: Kuendigung) strict {
+    label de official "Die Kündigung des Mietverhältnisses bedarf der schriftlichen Form (§ 568 Abs. 1)";
+    label en unofficial "Notice terminating the lease requires written form (§ 568 (1))";
+    when kuendigung_schriftlich(k);
+    then kuendigung_formwirksam(k);
+}
+
+@source(BGB_P568)
+rule Hinweispflicht568Abs2(k: Kuendigung, m: Mietverhaeltnis, v: Person) strict {
+    label de official "Der Vermieter soll den Mieter auf die Möglichkeit, die Form und die Frist des Widerspruchs nach den §§ 574 bis 574b rechtzeitig hinweisen (§ 568 Abs. 2)";
+    label en unofficial "The lessor should inform the tenant in good time of the possibility, form and period of objection under §§ 574 to 574b (§ 568 (2))";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and vermieter(m, v);
+    then hinweispflicht_auf_widerspruch(k, v);
+}
+
+// --- § 569 Außerordentliche fristlose Kündigung bei Wohnraum --------------------------------------
+
+pub relation erhebliche_gesundheitsgefaehrdung(m: Mietverhaeltnis) kind empirical {
+    label de official "der gemietete Wohnraum ist so beschaffen, dass seine Benutzung mit einer erheblichen Gefährdung der Gesundheit verbunden ist (§ 569 Abs. 1 Satz 1)";
+    label en unofficial "the let residential space is such that its use involves a substantial danger to health (§ 569 (1) sentence 1)";
+}
+pub relation hausfrieden_nachhaltig_gestoert(m: Mietverhaeltnis) kind empirical {
+    label de official "eine Vertragspartei stört den Hausfrieden nachhaltig (§ 569 Abs. 2)";
+    label en unofficial "a party persistently disturbs the domestic peace (§ 569 (2))";
+}
+pub relation kautionsrueckstand(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "Betrag, mit dem der Mieter mit einer Sicherheitsleistung nach § 551 in Verzug ist (§ 569 Abs. 2a Satz 1)";
+    label en unofficial "amount with which the tenant is in default on the security under § 551 (§ 569 (2a) sentence 1)";
+}
+pub relation mietrueckstand_betrag(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "Höhe des rückständigen Teils der Miete (§ 569 Abs. 3 Nr. 1 Satz 1)";
+    label en unofficial "amount of the rent in arrears (§ 569 (3) no. 1 sentence 1)";
+}
+pub relation befriedigung_nach_rechtshaengigkeit_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Vermieter hinsichtlich der fälligen Miete und der Entschädigung nach § 546a Abs. 1 befriedigt wird oder sich eine öffentliche Stelle zur Befriedigung verpflichtet (§ 569 Abs. 3 Nr. 2 Satz 1)";
+    label en unofficial "day on which the lessor is satisfied as to the rent due and the compensation under § 546a (1), or a public body undertakes to satisfy him (§ 569 (3) no. 2 sentence 1)";
+}
+pub relation rechtshaengigkeit_des_raeumungsanspruchs_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag des Eintritts der Rechtshängigkeit des Räumungsanspruchs (§ 569 Abs. 3 Nr. 2 Satz 1)";
+    label en unofficial "day on which the claim for eviction becomes pending (§ 569 (3) no. 2 sentence 1)";
+}
+pub relation fruehere_unwirksam_gewordene_kuendigung_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag einer früheren, nach § 569 Abs. 3 Nr. 2 Satz 1 unwirksam gewordenen Kündigung (§ 569 Abs. 3 Nr. 2 Satz 2)";
+    label en unofficial "day of an earlier notice that became ineffective under § 569 (3) no. 2 sentence 1 (§ 569 (3) no. 2 sentence 2)";
+}
+
+pub relation teil_der_miete_nicht_unerheblich_569(m: Mietverhaeltnis) kind institutional {
+    label de official "im Falle des § 543 Abs. 2 Satz 1 Nr. 3 Buchst. a ist der rückständige Teil der Miete nur dann als nicht unerheblich anzusehen, wenn er die Miete für einen Monat übersteigt (§ 569 Abs. 3 Nr. 1 Satz 1)";
+    label en unofficial "In the case of § 543 (2) sentence 1 no. 3 lit. a the rent in arrears is to be regarded as not insignificant only if it exceeds one month's rent (§ 569 (3) no. 1 sentence 1)";
+}
+pub relation schonfrist_569_ende(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf zwei Monate nach Eintritt der Rechtshängigkeit des Räumungsanspruchs verstrichen sind (§ 569 Abs. 3 Nr. 2 Satz 1)";
+    label en unofficial "day at whose end two months since the eviction claim became pending have elapsed (§ 569 (3) no. 2 sentence 1)";
+}
+pub relation kuendigung_unwirksam_geworden(m: Mietverhaeltnis) kind institutional {
+    label de official "die Kündigung wird unwirksam, wenn der Vermieter spätestens bis zum Ablauf von zwei Monaten nach Eintritt der Rechtshängigkeit befriedigt wird (§ 569 Abs. 3 Nr. 2 Satz 1)";
+    label en unofficial "the notice becomes ineffective if the lessor is satisfied at the latest within two months after the claim became pending (§ 569 (3) no. 2 sentence 1)";
+}
+pub relation sperre_zwei_jahre_569_ende(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf zwei Jahre seit einer früheren unwirksam gewordenen Kündigung verstrichen sind (§ 569 Abs. 3 Nr. 2 Satz 2)";
+    label en unofficial "day at whose end two years since an earlier notice that became ineffective have elapsed (§ 569 (3) no. 2 sentence 2)";
+}
+
+@source(BGB_P569)
+rule WichtigerGrund569Abs1(m: Mietverhaeltnis) strict {
+    label de official "Ein wichtiger Grund im Sinne des § 543 Abs. 1 liegt für den Mieter auch vor, wenn der gemietete Wohnraum so beschaffen ist, dass seine Benutzung mit einer erheblichen Gefährdung der Gesundheit verbunden ist (§ 569 Abs. 1 Satz 1)";
+    label en unofficial "There is also a compelling reason within the meaning of § 543 (1) for the tenant where use of the let space involves a substantial danger to health (§ 569 (1) sentence 1)";
+    when gegenstandsart(m, Wohnraum) and erhebliche_gesundheitsgefaehrdung(m);
+    then wichtiger_grund(m);
+}
+
+@source(BGB_P569)
+rule WichtigerGrund569Abs2(m: Mietverhaeltnis) strict {
+    label de official "Ein wichtiger Grund im Sinne des § 543 Abs. 1 liegt ferner vor, wenn eine Vertragspartei den Hausfrieden nachhaltig stört (§ 569 Abs. 2)";
+    label en unofficial "There is further a compelling reason within the meaning of § 543 (1) where a party persistently disturbs the domestic peace (§ 569 (2))";
+    when gegenstandsart(m, Wohnraum) and hausfrieden_nachhaltig_gestoert(m) and fortsetzung_nicht_zumutbar(m);
+    then wichtiger_grund(m);
+}
+
+@source(BGB_P569)
+rule WichtigerGrund569Abs2a(m: Mietverhaeltnis, rueckstand: Money, netto: Money) strict {
+    label de official "Ein wichtiger Grund im Sinne des § 543 Absatz 1 liegt ferner vor, wenn der Mieter mit einer Sicherheitsleistung nach § 551 in Höhe eines Betrages im Verzug ist, der der zweifachen Monatsmiete entspricht; die Betriebskosten bleiben außer Betracht (§ 569 Abs. 2a Satz 1 und 2)";
+    label en unofficial "There is further a compelling reason within the meaning of § 543 (1) where the tenant is in default on the security under § 551 with an amount equal to twice the monthly rent; operating costs are disregarded (§ 569 (2a) sentences 1 and 2)";
+    when gegenstandsart(m, Wohnraum) and kautionsrueckstand(m, rueckstand)
+     and nettomiete_monatlich(m, netto) and rueckstand >= netto * 2;
+    then wichtiger_grund(m);
+}
+
+@source(BGB_P569)
+rule AbhilfeEntbehrlich569Abs2aSatz3(m: Mietverhaeltnis, rueckstand: Money, netto: Money) strict {
+    label de official "Einer Abhilfefrist oder einer Abmahnung nach § 543 Absatz 3 Satz 1 bedarf es nicht (§ 569 Abs. 2a Satz 3)";
+    label en unofficial "No remedial period or warning under § 543 (3) sentence 1 is required (§ 569 (2a) sentence 3)";
+    when kautionsrueckstand(m, rueckstand) and nettomiete_monatlich(m, netto) and rueckstand >= netto * 2;
+    then abhilfe_entbehrlich(m);
+}
+
+@source(BGB_P569)
+rule Schwelle569Abs3Nr1(m: Mietverhaeltnis, rueckstand: Money, miete: Money) strict {
+    label de official "Im Falle des § 543 Abs. 2 Satz 1 Nr. 3 Buchstabe a ist der rückständige Teil der Miete nur dann als nicht unerheblich anzusehen, wenn er die Miete für einen Monat übersteigt; dies gilt nicht bei Wohnraum, der nur zum vorübergehenden Gebrauch vermietet ist (§ 569 Abs. 3 Nr. 1)";
+    label en unofficial "In the case of § 543 (2) sentence 1 no. 3 lit. a the rent in arrears counts as not insignificant only if it exceeds one month's rent; this does not apply to space let only for temporary use (§ 569 (3) no. 1)";
+    when gegenstandsart(m, Wohnraum) and mietrueckstand_betrag(m, rueckstand) and miete_monatlich(m, miete)
+     and rueckstand > miete and not nur_voruebergehender_gebrauch(m);
+    then teil_der_miete_nicht_unerheblich_569(m);
+}
+
+@source(BGB_P569)
+rule Schonfrist569Abs3Nr2(m: Mietverhaeltnis, r: Date) strict {
+    label de official "Die Kündigung wird auch dann unwirksam, wenn der Vermieter spätestens bis zum Ablauf von zwei Monaten nach Eintritt der Rechtshängigkeit des Räumungsanspruchs befriedigt wird (§ 569 Abs. 3 Nr. 2 Satz 1) — Monatsschritt nach § 188 Abs. 2";
+    label en unofficial "The notice also becomes ineffective if the lessor is satisfied at the latest within two months after the eviction claim became pending (§ 569 (3) no. 2 sentence 1) — monthly step under § 188 (2)";
+    when rechtshaengigkeit_des_raeumungsanspruchs_am(m, r);
+    then schonfrist_569_ende(m, add_calendar_period(r, 2 calendar_month));
+}
+
+@source(BGB_P569)
+rule Sperre569Abs3Nr2Satz2(m: Mietverhaeltnis, f: Date) strict {
+    label de official "Dies gilt nicht, wenn der Kündigung vor nicht länger als zwei Jahren bereits eine nach Satz 1 unwirksam gewordene Kündigung vorausgegangen ist (§ 569 Abs. 3 Nr. 2 Satz 2)";
+    label en unofficial "This does not apply where the notice was preceded, not more than two years earlier, by a notice that had become ineffective under sentence 1 (§ 569 (3) no. 2 sentence 2)";
+    when fruehere_unwirksam_gewordene_kuendigung_am(m, f);
+    then sperre_zwei_jahre_569_ende(m, add_calendar_period(f, 2 calendar_year));
+}
+
+@source(BGB_P569)
+rule KuendigungUnwirksam569Abs3Nr2(m: Mietverhaeltnis, e: Date, b: Date) defeasible {
+    label de official "Die Kündigung wird unwirksam, wenn der Vermieter innerhalb der Schonfrist befriedigt wird (§ 569 Abs. 3 Nr. 2 Satz 1)";
+    label en unofficial "The notice becomes ineffective if the lessor is satisfied within the grace period (§ 569 (3) no. 2 sentence 1)";
+    when schonfrist_569_ende(m, e) and befriedigung_nach_rechtshaengigkeit_am(m, b) and b <= e;
+    unless fruehere_unwirksam_gewordene_kuendigung_am(m, e);
+    then kuendigung_unwirksam_geworden(m);
+}
+
+// --- §§ 570, 571 Zurückbehaltung und weiterer Schadensersatz --------------------------------------
+
+pub relation kein_zurueckbehaltungsrecht(m: Mietverhaeltnis) kind institutional {
+    label de official "dem Mieter steht kein Zurückbehaltungsrecht gegen den Rückgabeanspruch des Vermieters zu (§ 570, § 596 Abs. 2)";
+    label en unofficial "the tenant has no right of retention against the lessor's claim for return (§ 570, § 596 (2))";
+}
+pub relation weiterer_schaden_571_besteht(m: Mietverhaeltnis) kind institutional {
+    label de official "der weitere Schaden des § 546a Abs. 2 ist geltend zu machen — einstellige Kopfregel, weil die Ausnahme des Satzes 3 keine Person benennt (§190, LDC-E4101)";
+    label en unofficial "the further damage of § 546a (2) may be asserted — a unary head, because the exception of sentence 3 names no person (§190, LDC-E4101)";
+}
+pub relation weiterer_schaden_571(m: Mietverhaeltnis, v: Person) kind institutional {
+    label de official "der Vermieter kann einen weiteren Schaden im Sinne des § 546a Abs. 2 geltend machen, wenn die Rückgabe infolge von Umständen unterblieben ist, die der Mieter zu vertreten hat (§ 571 Abs. 1 Satz 1)";
+    label en unofficial "the lessor may assert further damage within the meaning of § 546a (2) where the return was omitted due to circumstances for which the tenant is responsible (§ 571 (1) sentence 1)";
+}
+pub relation mieter_hat_rueckgabe_zu_vertreten(m: Mietverhaeltnis) kind empirical {
+    label de official "die Rückgabe ist infolge von Umständen unterblieben, die der Mieter zu vertreten hat (§ 571 Abs. 1 Satz 1)";
+    label en unofficial "the return was omitted due to circumstances for which the tenant is responsible (§ 571 (1) sentence 1)";
+}
+pub relation mieter_hat_gekuendigt(m: Mietverhaeltnis) kind empirical {
+    label de official "der Mieter hat gekündigt (§ 571 Abs. 1 Satz 3, § 595 Abs. 3 Nr. 1)";
+    label en unofficial "the tenant gave notice (§ 571 (1) sentence 3, § 595 (3) no. 1)";
+}
+
+@source(BGB_P570)
+rule KeinZurueckbehaltungsrecht570(m: Mietverhaeltnis) strict {
+    label de official "Dem Mieter steht kein Zurückbehaltungsrecht gegen den Rückgabeanspruch des Vermieters zu (§ 570)";
+    label en unofficial "The tenant has no right of retention against the lessor's claim for return (§ 570)";
+    when gegenstandsart(m, Wohnraum);
+    then kein_zurueckbehaltungsrecht(m);
+}
+
+@source(BGB_P571)
+rule WeitererSchaden571Abs1(m: Mietverhaeltnis) defeasible {
+    label de official "Gibt der Mieter den gemieteten Wohnraum nach Beendigung des Mietverhältnisses nicht zurück, so kann der Vermieter einen weiteren Schaden nur geltend machen, wenn die Rückgabe infolge von Umständen unterblieben ist, die der Mieter zu vertreten hat; dies gilt nicht, wenn der Mieter gekündigt hat (§ 571 Abs. 1)";
+    label en unofficial "Where the tenant does not return the let residential space after termination, the lessor may assert further damage only where the omission is due to circumstances for which the tenant is responsible; this does not apply where the tenant gave notice (§ 571 (1))";
+    when gegenstandsart(m, Wohnraum) and sache_nicht_zurueckgegeben(m)
+     and mieter_hat_rueckgabe_zu_vertreten(m);
+    unless mieter_hat_gekuendigt(m);
+    then weiterer_schaden_571_besteht(m);
+}
+
+@source(BGB_P571)
+rule WeitererSchaden571Traeger(m: Mietverhaeltnis, v: Person) defeasible {
+    label de official "Den weiteren Schaden macht der Vermieter geltend (§ 571 Abs. 1 Satz 1)";
+    label en unofficial "The further damage is asserted by the lessor (§ 571 (1) sentence 1)";
+    when weiterer_schaden_571_besteht(m) and vermieter(m, v);
+    then weiterer_schaden_571(m, v);
+}
+
+// --- § 573 Ordentliche Kündigung des Vermieters ---------------------------------------------------
+
+pub relation pflichtverletzung_schuldhaft_nicht_unerheblich(m: Mietverhaeltnis) kind empirical {
+    label de official "der Mieter hat seine vertraglichen Pflichten schuldhaft nicht unerheblich verletzt (§ 573 Abs. 2 Nr. 1)";
+    label en unofficial "the tenant culpably breached his contractual duties to a not insignificant degree (§ 573 (2) no. 1)";
+}
+pub relation eigenbedarf(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter benötigt die Räume als Wohnung für sich, seine Familienangehörigen oder Angehörige seines Haushalts (§ 573 Abs. 2 Nr. 2)";
+    label en unofficial "the lessor needs the rooms as a dwelling for himself, members of his family or of his household (§ 573 (2) no. 2)";
+}
+pub relation hinderung_angemessener_verwertung(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter wird durch die Fortsetzung des Mietverhältnisses an einer angemessenen wirtschaftlichen Verwertung des Grundstücks gehindert und würde dadurch erhebliche Nachteile erleiden (§ 573 Abs. 2 Nr. 3)";
+    label en unofficial "continuation of the lease prevents the lessor from an appropriate economic exploitation of the land and would cause him substantial disadvantages (§ 573 (2) no. 3)";
+}
+pub relation gruende_im_kuendigungsschreiben_angegeben(k: Kuendigung) kind empirical {
+    label de official "die Gründe für ein berechtigtes Interesse sind in dem Kündigungsschreiben angegeben (§ 573 Abs. 3 Satz 1, § 569 Abs. 4)";
+    label en unofficial "the grounds for a legitimate interest are stated in the notice (§ 573 (3) sentence 1, § 569 (4))";
+}
+pub relation kuendigung_zum_zwecke_der_mieterhoehung(k: Kuendigung) kind empirical {
+    label de official "die Kündigung erfolgt zum Zwecke der Mieterhöhung (§ 573 Abs. 1 Satz 2)";
+    label en unofficial "the notice is given for the purpose of increasing the rent (§ 573 (1) sentence 2)";
+}
+pub relation selbstbewohntes_gebaeude_mit_zwei_wohnungen(m: Mietverhaeltnis) kind empirical {
+    label de official "die Wohnung liegt in einem vom Vermieter selbst bewohnten Gebäude mit nicht mehr als zwei Wohnungen (§ 573a Abs. 1 Satz 1)";
+    label en unofficial "the dwelling is in a building occupied by the lessor himself with no more than two dwellings (§ 573a (1) sentence 1)";
+}
+pub relation kuendigung_auf_573a_gestuetzt(k: Kuendigung) kind empirical {
+    label de official "in dem Kündigungsschreiben ist angegeben, dass die Kündigung auf die Voraussetzungen des § 573a Abs. 1 oder 2 gestützt wird (§ 573a Abs. 3)";
+    label en unofficial "the notice states that it is based on the conditions of § 573a (1) or (2) (§ 573a (3))";
+}
+
+@source(BGB_P573)
+pub external judgment relation berechtigtes_interesse_an_beendigung(m: Mietverhaeltnis) {
+    authority Court;
+    label de official "§ 573 Abs. 1 Satz 1. Der Vermieter hat ein berechtigtes Interesse an der Beendigung des Mietverhältnisses; Absatz 2 nennt drei Regelbeispiele, keinen geschlossenen Katalog („insbesondere“)";
+    label en unofficial "§ 573 (1) sentence 1. The lessor has a legitimate interest in terminating the lease; subsection (2) names three standard examples, not a closed list (“in particular”)";
+}
+
+pub relation berechtigtes_interesse_liegt_vor(m: Mietverhaeltnis) kind institutional {
+    label de official "ein berechtigtes Interesse des Vermieters an der Beendigung des Mietverhältnisses liegt vor (§ 573 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "the lessor has a legitimate interest in terminating the lease (§ 573 (1) sentence 1, (2))";
+}
+pub relation ordentliche_kuendigung_des_vermieters_zulaessig(k: Kuendigung) kind institutional {
+    label de official "die ordentliche Kündigung des Vermieters ist zulässig (§ 573 Abs. 1 und 3, § 573a)";
+    label en unofficial "the lessor's ordinary notice is admissible (§ 573 (1) and (3), § 573a)";
+}
+
+@source(BGB_P573)
+rule BerechtigtesInteresse573Abs2Nr1(m: Mietverhaeltnis) strict {
+    label de official "Ein berechtigtes Interesse liegt insbesondere vor, wenn der Mieter seine vertraglichen Pflichten schuldhaft nicht unerheblich verletzt hat (§ 573 Abs. 2 Nr. 1)";
+    label en unofficial "There is a legitimate interest in particular where the tenant culpably breached his contractual duties to a not insignificant degree (§ 573 (2) no. 1)";
+    when gegenstandsart(m, Wohnraum) and pflichtverletzung_schuldhaft_nicht_unerheblich(m);
+    then berechtigtes_interesse_liegt_vor(m);
+}
+
+@source(BGB_P573)
+rule BerechtigtesInteresse573Abs2Nr2(m: Mietverhaeltnis) strict {
+    label de official "Ein berechtigtes Interesse liegt insbesondere vor, wenn der Vermieter die Räume als Wohnung für sich, seine Familienangehörigen oder Angehörige seines Haushalts benötigt (§ 573 Abs. 2 Nr. 2)";
+    label en unofficial "There is a legitimate interest in particular where the lessor needs the rooms as a dwelling for himself, his family or his household (§ 573 (2) no. 2)";
+    when gegenstandsart(m, Wohnraum) and eigenbedarf(m);
+    then berechtigtes_interesse_liegt_vor(m);
+}
+
+@source(BGB_P573)
+rule BerechtigtesInteresse573Abs2Nr3(m: Mietverhaeltnis) strict {
+    label de official "Ein berechtigtes Interesse liegt insbesondere vor, wenn der Vermieter durch die Fortsetzung des Mietverhältnisses an einer angemessenen wirtschaftlichen Verwertung des Grundstücks gehindert und dadurch erhebliche Nachteile erleiden würde (§ 573 Abs. 2 Nr. 3)";
+    label en unofficial "There is a legitimate interest in particular where continuation prevents an appropriate economic exploitation of the land and would cause the lessor substantial disadvantages (§ 573 (2) no. 3)";
+    when gegenstandsart(m, Wohnraum) and hinderung_angemessener_verwertung(m);
+    then berechtigtes_interesse_liegt_vor(m);
+}
+
+@source(BGB_P573)
+rule BerechtigtesInteresse573Abs1Satz1(m: Mietverhaeltnis) strict {
+    label de official "Der Vermieter kann nur kündigen, wenn er ein berechtigtes Interesse an der Beendigung des Mietverhältnisses hat; Absatz 2 zählt Regelbeispiele auf, die Wertung im Einzelfall trifft das Gericht (§ 573 Abs. 1 Satz 1)";
+    label en unofficial "The lessor may give notice only where he has a legitimate interest in terminating the lease; subsection (2) lists standard examples, the evaluation in the individual case being for the court (§ 573 (1) sentence 1)";
+    when gegenstandsart(m, Wohnraum) and berechtigtes_interesse_an_beendigung(m);
+    then berechtigtes_interesse_liegt_vor(m);
+}
+
+@source(BGB_P573)
+rule OrdentlicheKuendigung573(k: Kuendigung, m: Mietverhaeltnis) defeasible {
+    label de official "Die ordentliche Kündigung des Vermieters ist zulässig, wenn ein berechtigtes Interesse vorliegt und die Gründe in dem Kündigungsschreiben angegeben sind; die Kündigung zum Zwecke der Mieterhöhung ist ausgeschlossen (§ 573 Abs. 1 und 3)";
+    label en unofficial "The lessor's ordinary notice is admissible where there is a legitimate interest and the grounds are stated in the notice; notice for the purpose of increasing the rent is excluded (§ 573 (1) and (3))";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and berechtigtes_interesse_liegt_vor(m)
+     and gruende_im_kuendigungsschreiben_angegeben(k) and kuendigung_schriftlich(k);
+    unless kuendigung_zum_zwecke_der_mieterhoehung(k);
+    then ordentliche_kuendigung_des_vermieters_zulaessig(k);
+}
+
+@source(BGB_P573a)
+rule ErleichterteKuendigung573aAbs1(k: Kuendigung, m: Mietverhaeltnis) defeasible {
+    label de official "Ein Mietverhältnis über eine Wohnung in einem vom Vermieter selbst bewohnten Gebäude mit nicht mehr als zwei Wohnungen kann der Vermieter auch ohne ein berechtigtes Interesse im Sinne des § 573 kündigen; in dem Kündigungsschreiben ist dies anzugeben (§ 573a Abs. 1 Satz 1, Abs. 3)";
+    label en unofficial "The lessor may also give notice without a legitimate interest under § 573 for a dwelling in a building he occupies himself with no more than two dwellings; the notice must state this (§ 573a (1) sentence 1, (3))";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and selbstbewohntes_gebaeude_mit_zwei_wohnungen(m)
+     and kuendigung_auf_573a_gestuetzt(k) and kuendigung_schriftlich(k);
+    unless kuendigung_zum_zwecke_der_mieterhoehung(k);
+    then ordentliche_kuendigung_des_vermieters_zulaessig(k);
+}
+
+// --- §§ 573b, 573c, 573d Fristen der ordentlichen Kündigung ---------------------------------------
+
+pub relation kuendigungsmonat_beginn(k: Kuendigung, tag: Date) kind empirical {
+    key(k);
+    label de official "Anfang des Kalendermonats, in dem gekündigt wird (§§ 573b Abs. 2, 573c Abs. 1 Satz 1, 573d Abs. 2, 575a Abs. 3, 576 Abs. 1, 580a)";
+    label en unofficial "start of the calendar month in which notice is given (§§ 573b (2), 573c (1) sentence 1, 573d (2), 575a (3), 576 (1), 580a)";
+}
+pub relation teilkuendigung_nebenraeume(k: Kuendigung) kind empirical {
+    label de official "der Vermieter beschränkt die Kündigung auf nicht zum Wohnen bestimmte Nebenräume oder Teile eines Grundstücks, um Wohnraum zu schaffen oder auszustatten (§ 573b Abs. 1)";
+    label en unofficial "the lessor restricts the notice to ancillary rooms not intended for living or to parts of the land in order to create or equip residential space (§ 573b (1))";
+}
+pub relation ausserordentliche_kuendigung_mit_gesetzlicher_frist(k: Kuendigung) kind empirical {
+    label de official "die Kündigung ist eine außerordentliche Kündigung mit der gesetzlichen Frist (§ 573d Abs. 1 und 2, § 575a Abs. 3, § 580a Abs. 4)";
+    label en unofficial "the notice is an extraordinary notice with the statutory period (§ 573d (1) and (2), § 575a (3), § 580a (4))";
+}
+
+pub relation fuenfzehnter_des_kuendigungsmonats(k: Kuendigung, tag: Date) kind institutional {
+    key(k);
+    label de official "der 15. Tag des Kalendermonats, in dem gekündigt wird (§ 573c Abs. 3) — gerechnet als Monatsanfang plus vierzehn Kalendertage; ein gerechneter Term steht nicht im Guard, sondern in einem eigenen Schluss";
+    label en unofficial "the 15th day of the calendar month in which notice is given (§ 573c (3)) — computed as the start of the month plus fourteen calendar days; a computed term does not stand in a guard but in a conclusion of its own";
+}
+pub relation dritter_werktag_des_kuendigungsmonats(k: Kuendigung, tag: Date) kind institutional {
+    key(k);
+    label de official "der dritte Werktag des Kalendermonats, bis zu dem die Kündigung spätestens zulässig ist (§§ 573b Abs. 2, 573c Abs. 1 Satz 1, 573d Abs. 2, 575a Abs. 3, 576 Abs. 1, 580a Abs. 1 Nr. 3) — gezählt mit dem Kalender KALENDER_BUNDESWEIT (D-Q06-1)";
+    label en unofficial "the third working day of the calendar month by which notice is admissible at the latest (§§ 573b (2), 573c (1) sentence 1, 573d (2), 575a (3), 576 (1), 580a (1) no. 3) — counted with the calendar KALENDER_BUNDESWEIT (D-Q06-1)";
+}
+pub relation kuendigungsfrist_stufe(k: Kuendigung, monate: Integer) kind institutional {
+    key(k);
+    label de official "Zahl der Monate, mit deren Ablauf das Mietverhältnis nach der Kündigung endet: drei bis zu fünf Jahren, sechs ab fünf Jahren, neun ab acht Jahren seit der Überlassung (§ 573c Abs. 1) — der Ablauf des „übernächsten Monats“ vom Kündigungsmonat an gerechnet ist der dritte Monat";
+    label en unofficial "number of months at whose end the lease terminates after notice: three up to five years, six from five years, nine from eight years since handover (§ 573c (1)) — the end of the “month after next”, counted from the month of notice, is the third month";
+}
+pub relation beendigung_durch_kuendigung_am(k: Kuendigung, tag: Date) kind institutional {
+    key(k);
+    label de official "Tag, mit dessen Ablauf das Mietverhältnis auf Grund der ordentlichen Kündigung endet (§ 573c Abs. 1, Abs. 3, § 573b Abs. 2, § 573d Abs. 2)";
+    label en unofficial "day at whose end the lease terminates on the basis of the ordinary notice (§ 573c (1), (3), § 573b (2), § 573d (2))";
+}
+pub relation kuendigung_fristgerecht(k: Kuendigung) kind institutional {
+    label de official "die Kündigung ist spätestens am dritten Werktag des Kalendermonats erklärt (§ 573c Abs. 1 Satz 1)";
+    label en unofficial "the notice was given at the latest on the third working day of the calendar month (§ 573c (1) sentence 1)";
+}
+pub relation fuenf_jahre_seit_ueberlassung_am(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf fünf Jahre seit der Überlassung des Wohnraums verstrichen sind (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "day at whose end five years since handover of the residential space have elapsed (§ 573c (1) sentence 2)";
+}
+pub relation acht_jahre_seit_ueberlassung_am(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf acht Jahre seit der Überlassung des Wohnraums verstrichen sind (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "day at whose end eight years since handover of the residential space have elapsed (§ 573c (1) sentence 2)";
+}
+
+@source(BGB_P573c)
+rule DritterWerktag573cAbs1Satz1(k: Kuendigung, b: Date) strict {
+    label de official "Die Kündigung ist spätestens am dritten Werktag eines Kalendermonats zulässig (§ 573c Abs. 1 Satz 1) — der dritte Werktag wird vom Monatsanfang an mit dem Kalender gezählt";
+    label en unofficial "Notice is admissible at the latest on the third working day of a calendar month (§ 573c (1) sentence 1) — the third working day is counted from the start of the month with the calendar";
+    when kuendigungsmonat_beginn(k, b);
+    then dritter_werktag_des_kuendigungsmonats(k, add_business_days(b, 3 business_day));
+}
+
+@source(BGB_P573c)
+rule Fristgerecht573cAbs1Satz1(k: Kuendigung, d: Date, e: Date) strict {
+    label de official "Die Kündigung ist fristgerecht, wenn sie dem anderen Teil bis zum Ablauf des dritten Werktags des Kalendermonats zugeht (§ 573c Abs. 1 Satz 1)";
+    label en unofficial "The notice is in time if it reaches the other party by the end of the third working day of the calendar month (§ 573c (1) sentence 1)";
+    when dritter_werktag_des_kuendigungsmonats(k, d) and kuendigung_erklaert_am(k, e) and e <= d;
+    then kuendigung_fristgerecht(k);
+}
+
+@source(BGB_P573c)
+rule FuenfJahre573cAbs1Satz2(m: Mietverhaeltnis, u: Date) strict {
+    label de official "Die Kündigungsfrist für den Vermieter verlängert sich nach fünf Jahren seit der Überlassung des Wohnraums um drei Monate (§ 573c Abs. 1 Satz 2) — Jahresschritt nach § 188 Abs. 2";
+    label en unofficial "The lessor's notice period is extended by three months after five years since handover of the residential space (§ 573c (1) sentence 2) — yearly step under § 188 (2)";
+    when ueberlassung_am(m, u);
+    then fuenf_jahre_seit_ueberlassung_am(m, add_calendar_period(u, 5 calendar_year));
+}
+
+@source(BGB_P573c)
+rule AchtJahre573cAbs1Satz2(m: Mietverhaeltnis, u: Date) strict {
+    label de official "Die Kündigungsfrist für den Vermieter verlängert sich nach acht Jahren seit der Überlassung des Wohnraums um weitere drei Monate (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "The lessor's notice period is extended by a further three months after eight years since handover (§ 573c (1) sentence 2)";
+    when ueberlassung_am(m, u);
+    then acht_jahre_seit_ueberlassung_am(m, add_calendar_period(u, 8 calendar_year));
+}
+
+@source(BGB_P573c)
+rule Stufe573cGrundfrist(k: Kuendigung, m: Mietverhaeltnis, b: Date, f: Date) strict {
+    label de official "Grundstufe: die Kündigung wirkt zum Ablauf des übernächsten Monats, solange seit der Überlassung noch keine fünf Jahre verstrichen sind (§ 573c Abs. 1 Satz 1)";
+    label en unofficial "Basic step: the notice takes effect at the end of the month after next as long as five years since handover have not yet elapsed (§ 573c (1) sentence 1)";
+    when kuendigung_des(k, m) and kuendigungsmonat_beginn(k, b)
+     and fuenf_jahre_seit_ueberlassung_am(m, f) and b <= f;
+    then kuendigungsfrist_stufe(k, 2);
+}
+
+@source(BGB_P573c)
+rule Stufe573cFuenfJahre(k: Kuendigung, m: Mietverhaeltnis, b: Date, f: Date, a: Date) strict {
+    label de official "Zweite Stufe: sind seit der Überlassung fünf, aber noch nicht acht Jahre verstrichen, verlängert sich die Kündigungsfrist für den Vermieter um drei Monate (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "Second step: where five but not yet eight years since handover have elapsed, the lessor's notice period is extended by three months (§ 573c (1) sentence 2)";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and kuendigungsmonat_beginn(k, b)
+     and fuenf_jahre_seit_ueberlassung_am(m, f) and b > f
+     and acht_jahre_seit_ueberlassung_am(m, a) and b <= a;
+    then kuendigungsfrist_stufe(k, 5);
+}
+
+@source(BGB_P573c)
+rule Stufe573cAchtJahre(k: Kuendigung, m: Mietverhaeltnis, b: Date, a: Date) strict {
+    label de official "Dritte Stufe: sind seit der Überlassung acht Jahre verstrichen, verlängert sich die Kündigungsfrist für den Vermieter um weitere drei Monate (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "Third step: where eight years since handover have elapsed, the lessor's notice period is extended by a further three months (§ 573c (1) sentence 2)";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and kuendigungsmonat_beginn(k, b)
+     and acht_jahre_seit_ueberlassung_am(m, a) and b > a;
+    then kuendigungsfrist_stufe(k, 8);
+}
+
+@source(BGB_P573c)
+rule Beendigungstag573cGrundstufe(k: Kuendigung, b: Date) strict {
+    label de official "Das Mietverhältnis endet mit dem Ablauf des übernächsten Monats: dem Ende des zweiten Monats nach dem Kündigungsmonat (§ 573c Abs. 1 Satz 1)";
+    label en unofficial "The lease ends at the end of the month after next: the end of the second month after the month of notice (§ 573c (1) sentence 1)";
+    when kuendigung_fristgerecht(k) and kuendigungsmonat_beginn(k, b) and kuendigungsfrist_stufe(k, 2);
+    then beendigung_durch_kuendigung_am(k, month_end_of(add_calendar_period(b, 2 calendar_month)));
+}
+
+@source(BGB_P573c)
+rule Beendigungstag573cFuenfJahre(k: Kuendigung, b: Date) strict {
+    label de official "Nach fünf Jahren seit der Überlassung endet das Mietverhältnis drei Monate später: mit dem Ende des fünften Monats nach dem Kündigungsmonat (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "After five years since handover the lease ends three months later: at the end of the fifth month after the month of notice (§ 573c (1) sentence 2)";
+    when kuendigung_fristgerecht(k) and kuendigungsmonat_beginn(k, b) and kuendigungsfrist_stufe(k, 5);
+    then beendigung_durch_kuendigung_am(k, month_end_of(add_calendar_period(b, 5 calendar_month)));
+}
+
+@source(BGB_P573c)
+rule Beendigungstag573cAchtJahre(k: Kuendigung, b: Date) strict {
+    label de official "Nach acht Jahren seit der Überlassung endet das Mietverhältnis weitere drei Monate später: mit dem Ende des achten Monats nach dem Kündigungsmonat (§ 573c Abs. 1 Satz 2)";
+    label en unofficial "After eight years since handover the lease ends a further three months later: at the end of the eighth month after the month of notice (§ 573c (1) sentence 2)";
+    when kuendigung_fristgerecht(k) and kuendigungsmonat_beginn(k, b) and kuendigungsfrist_stufe(k, 8);
+    then beendigung_durch_kuendigung_am(k, month_end_of(add_calendar_period(b, 8 calendar_month)));
+}
+
+@source(BGB_P573c)
+rule FuenfzehnterKuendigungsmonat573cAbs3(k: Kuendigung, b: Date) strict {
+    label de official "Der 15. Tag des Kündigungsmonats wird aus dem Monatsanfang und vierzehn Kalendertagen gebildet (§ 573c Abs. 3)";
+    label en unofficial "The 15th day of the month of notice is formed from the start of the month plus fourteen calendar days (§ 573c (3))";
+    when kuendigungsmonat_beginn(k, b);
+    then fuenfzehnter_des_kuendigungsmonats(k, add_calendar_period(b, 14 calendar_day));
+}
+
+@source(BGB_P573c)
+rule Kuendigung573cAbs3(k: Kuendigung, m: Mietverhaeltnis, b: Date, e: Date, f: Date) strict {
+    label de official "Bei Wohnraum nach § 549 Abs. 2 Nr. 2 ist die Kündigung spätestens am 15. eines Monats zum Ablauf dieses Monats zulässig (§ 573c Abs. 3)";
+    label en unofficial "For residential space under § 549 (2) no. 2 notice is admissible at the latest on the 15th of a month to the end of that month (§ 573c (3))";
+    when kuendigung_des(k, m) and teil_der_vermieterwohnung_moebliert(m) and kuendigungsmonat_beginn(k, b)
+     and kuendigung_erklaert_am(k, e) and fuenfzehnter_des_kuendigungsmonats(k, f) and e <= f;
+    then beendigung_durch_kuendigung_am(k, month_end_of(b));
+}
+
+@source(BGB_P573b)
+rule Teilkuendigung573bAbs2(k: Kuendigung, b: Date) strict {
+    label de official "Die Teilkündigung ist spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats zulässig (§ 573b Abs. 2)";
+    label en unofficial "Partial notice is admissible at the latest on the third working day of a calendar month to the end of the month after next (§ 573b (2))";
+    when teilkuendigung_nebenraeume(k) and kuendigungsmonat_beginn(k, b);
+    then kuendigungsfrist_stufe(k, 2);
+}
+
+@source(BGB_P573d)
+rule GesetzlicheFrist573dAbs2(k: Kuendigung, b: Date) strict {
+    label de official "Die außerordentliche Kündigung mit der gesetzlichen Frist ist spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats zulässig; § 573a Abs. 1 Satz 2 findet keine Anwendung (§ 573d Abs. 2)";
+    label en unofficial "Extraordinary notice with the statutory period is admissible at the latest on the third working day of a calendar month to the end of the month after next; § 573a (1) sentence 2 does not apply (§ 573d (2))";
+    when ausserordentliche_kuendigung_mit_gesetzlicher_frist(k) and kuendigungsmonat_beginn(k, b);
+    then kuendigungsfrist_stufe(k, 2);
+}
+
+// --- §§ 574–574c Widerspruch des Mieters ----------------------------------------------------------
+
+pub relation widerspruch_erklaert_am(k: Kuendigung, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem der Mieter der Kündigung widerspricht (§ 574b Abs. 1 und 2)";
+    label en unofficial "day on which the tenant objects to the notice (§ 574b (1) and (2))";
+}
+pub relation widerspruch_in_textform(k: Kuendigung) kind empirical {
+    label de official "der Widerspruch des Mieters ist in Textform erklärt (§ 574b Abs. 1 Satz 1)";
+    label en unofficial "the tenant's objection is made in text form (§ 574b (1) sentence 1)";
+}
+pub relation hinweis_auf_widerspruch_erteilt(k: Kuendigung) kind empirical {
+    label de official "der Vermieter hat rechtzeitig vor Ablauf der Widerspruchsfrist auf die Möglichkeit des Widerspruchs sowie auf dessen Form und Frist hingewiesen (§ 574b Abs. 2 Satz 2)";
+    label en unofficial "the lessor gave notice in good time before the objection period expired of the possibility, form and period of objection (§ 574b (2) sentence 2)";
+}
+
+@source(BGB_P574)
+pub external judgment relation beendigung_bedeutet_haerte(m: Mietverhaeltnis) {
+    authority Court;
+    label de official "§ 574 Abs. 1 Satz 1. Die Beendigung des Mietverhältnisses würde für den Mieter, seine Familie oder einen anderen Angehörigen seines Haushalts eine Härte bedeuten, die auch unter Würdigung der berechtigten Interessen des Vermieters nicht zu rechtfertigen ist";
+    label en unofficial "§ 574 (1) sentence 1. Termination of the lease would constitute hardship for the tenant, his family or another member of his household that cannot be justified even weighing the lessor's legitimate interests";
+}
+
+@source(BGB_P574)
+pub external judgment relation ersatzwohnraum_nicht_beschaffbar(m: Mietverhaeltnis) {
+    authority Court;
+    label de official "§ 574 Abs. 2. Angemessener Ersatzwohnraum kann zu zumutbaren Bedingungen nicht beschafft werden — auch dies ist eine Härte";
+    label en unofficial "§ 574 (2). Appropriate substitute accommodation cannot be obtained on reasonable terms — this too constitutes hardship";
+}
+
+pub relation widerspruch_plus_zwei_monate(k: Kuendigung, tag: Date) kind institutional {
+    key(k);
+    label de official "Tag, der zwei Monate nach der Erklärung des Widerspruchs liegt (§ 574b Abs. 2 Satz 1) — der Text nennt einen Abstand VOR der Beendigung; gerechnet wird er VORWÄRTS von der Erklärung an, weil ein Monatsschritt rückwärts die Auswertung nicht ausführt (Ledger D-06-07)";
+    label en unofficial "day two months after the objection was declared (§ 574b (2) sentence 1) — the text names a distance BEFORE termination; it is computed FORWARDS from the declaration, because a backward monthly step does not execute (ledger D-06-07)";
+}
+pub relation widerspruch_rechtzeitig(k: Kuendigung) kind institutional {
+    label de official "der Widerspruch ist spätestens zwei Monate vor der Beendigung des Mietverhältnisses erklärt (§ 574b Abs. 2 Satz 1)";
+    label en unofficial "the objection was declared at the latest two months before termination of the lease (§ 574b (2) sentence 1)";
+}
+pub relation fortsetzungsanspruch_574(m: Mietverhaeltnis, mi: Person) kind institutional {
+    label de official "der Mieter kann der Kündigung widersprechen und vom Vermieter die Fortsetzung des Mietverhältnisses verlangen (§ 574 Abs. 1 Satz 1, § 574a Abs. 1 Satz 1)";
+    label en unofficial "the tenant may object to the notice and demand continuation of the lease from the lessor (§ 574 (1) sentence 1, § 574a (1) sentence 1)";
+}
+pub relation fortsetzungsanspruch_besteht(m: Mietverhaeltnis) kind institutional {
+    label de official "die Voraussetzungen des Fortsetzungsverlangens liegen vor; dies gilt nicht, wenn ein Grund zur außerordentlichen fristlosen Kündigung vorliegt (§ 574 Abs. 1 Satz 2)";
+    label en unofficial "the conditions of the demand for continuation are met; this does not apply where there is a ground for extraordinary termination without notice (§ 574 (1) sentence 2)";
+}
+pub relation fortsetzung_ablehnbar(k: Kuendigung) kind institutional {
+    label de official "der Vermieter kann die Fortsetzung des Mietverhältnisses ablehnen, weil der Widerspruch nicht rechtzeitig erklärt ist (§ 574b Abs. 2 Satz 1)";
+    label en unofficial "the lessor may refuse continuation because the objection was not declared in time (§ 574b (2) sentence 1)";
+}
+
+@source(BGB_P574b)
+rule Widerspruchsfrist574bAbs2(k: Kuendigung, w: Date) strict {
+    label de official "Der Vermieter kann die Fortsetzung ablehnen, wenn der Mieter ihm den Widerspruch nicht spätestens zwei Monate vor der Beendigung des Mietverhältnisses erklärt hat (§ 574b Abs. 2 Satz 1) — der Abstand wird vorwärts von der Erklärung an gerechnet";
+    label en unofficial "The lessor may refuse continuation if the tenant did not declare the objection at the latest two months before termination (§ 574b (2) sentence 1) — the distance is computed forwards from the declaration";
+    when widerspruch_erklaert_am(k, w);
+    then widerspruch_plus_zwei_monate(k, add_calendar_period(w, 2 calendar_month));
+}
+
+@source(BGB_P574b)
+rule WiderspruchRechtzeitig574b(k: Kuendigung, f: Date, e: Date) strict {
+    label de official "Der Widerspruch ist rechtzeitig, wenn er dem Vermieter spätestens zwei Monate vor der Beendigung zugeht (§ 574b Abs. 2 Satz 1)";
+    label en unofficial "The objection is in time if it reaches the lessor at the latest two months before termination (§ 574b (2) sentence 1)";
+    when widerspruch_plus_zwei_monate(k, f) and beendigung_durch_kuendigung_am(k, e) and f <= e
+     and widerspruch_in_textform(k);
+    then widerspruch_rechtzeitig(k);
+}
+
+@source(BGB_P574b)
+rule FortsetzungAblehnbar574bAbs2(k: Kuendigung, f: Date, e: Date) defeasible {
+    label de official "Der Vermieter kann die Fortsetzung ablehnen, wenn der Widerspruch verspätet ist; hat er nicht rechtzeitig auf Möglichkeit, Form und Frist hingewiesen, kann der Mieter den Widerspruch noch im ersten Termin des Räumungsrechtsstreits erklären (§ 574b Abs. 2)";
+    label en unofficial "The lessor may refuse continuation where the objection is late; if he did not inform of possibility, form and period in good time, the tenant may still object at the first hearing of the eviction proceedings (§ 574b (2))";
+    when widerspruch_plus_zwei_monate(k, f) and beendigung_durch_kuendigung_am(k, e) and f > e;
+    unless hinweis_auf_widerspruch_erteilt(k);
+    then fortsetzung_ablehnbar(k);
+}
+
+@source(BGB_P574)
+rule Fortsetzungsanspruch574Abs1(m: Mietverhaeltnis) defeasible {
+    label de official "Der Mieter kann der Kündigung widersprechen und die Fortsetzung verlangen, wenn die Beendigung für ihn, seine Familie oder einen anderen Angehörigen seines Haushalts eine nicht zu rechtfertigende Härte bedeuten würde; dies gilt nicht, wenn ein Grund zur außerordentlichen fristlosen Kündigung vorliegt (§ 574 Abs. 1)";
+    label en unofficial "The tenant may object and demand continuation where termination would constitute unjustifiable hardship for him, his family or another member of his household; this does not apply where there is a ground for extraordinary termination without notice (§ 574 (1))";
+    when gegenstandsart(m, Wohnraum) and beendigung_bedeutet_haerte(m);
+    unless wichtiger_grund(m);
+    then fortsetzungsanspruch_besteht(m);
+}
+
+@source(BGB_P574)
+rule Fortsetzungsanspruch574Abs2(m: Mietverhaeltnis) defeasible {
+    label de official "Eine Härte liegt auch vor, wenn angemessener Ersatzwohnraum zu zumutbaren Bedingungen nicht beschafft werden kann (§ 574 Abs. 2)";
+    label en unofficial "There is also hardship where appropriate substitute accommodation cannot be obtained on reasonable terms (§ 574 (2))";
+    when gegenstandsart(m, Wohnraum) and ersatzwohnraum_nicht_beschaffbar(m);
+    unless wichtiger_grund(m);
+    then fortsetzungsanspruch_besteht(m);
+}
+
+@source(BGB_P574)
+rule Fortsetzungsanspruch574Traeger(m: Mietverhaeltnis, mi: Person) defeasible {
+    label de official "Den Fortsetzungsanspruch hat der Mieter (§ 574 Abs. 1 Satz 1)";
+    label en unofficial "The claim to continuation vests in the tenant (§ 574 (1) sentence 1)";
+    when fortsetzungsanspruch_besteht(m) and mieter(m, mi);
+    then fortsetzungsanspruch_574(m, mi);
+}
+
+// --- §§ 575, 575a Zeitmietvertrag -----------------------------------------------------------------
+
+pub relation befristungsgrund_mitgeteilt(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter teilt dem Mieter den Grund der Befristung bei Vertragsschluss schriftlich mit (§ 575 Abs. 1 Satz 1)";
+    label en unofficial "the lessor informs the tenant in writing of the reason for the fixed term when the contract is concluded (§ 575 (1) sentence 1)";
+}
+pub relation befristungsgrund_eigennutzung(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter will die Räume nach Ablauf der Mietzeit als Wohnung für sich, seine Familienangehörigen oder Angehörige seines Haushalts nutzen (§ 575 Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "after expiry of the term the lessor wishes to use the rooms as a dwelling for himself, his family or his household (§ 575 (1) sentence 1 no. 1)";
+}
+pub relation befristungsgrund_baumassnahme(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter will die Räume in zulässiger Weise beseitigen, wesentlich verändern oder instand setzen (§ 575 Abs. 1 Satz 1 Nr. 2)";
+    label en unofficial "the lessor wishes lawfully to remove, substantially alter or repair the rooms (§ 575 (1) sentence 1 no. 2)";
+}
+pub relation befristungsgrund_dienstwohnung(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter will die Räume an einen zur Dienstleistung Verpflichteten vermieten (§ 575 Abs. 1 Satz 1 Nr. 3)";
+    label en unofficial "the lessor wishes to let the rooms to a person obliged to render services (§ 575 (1) sentence 1 no. 3)";
+}
+pub relation zeitmietvertrag_wirksam(m: Mietverhaeltnis) kind institutional {
+    label de official "das Mietverhältnis ist wirksam auf bestimmte Zeit eingegangen (§ 575 Abs. 1 Satz 1)";
+    label en unofficial "the lease was validly entered into for a fixed term (§ 575 (1) sentence 1)";
+}
+pub relation auskunft_verlangt_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Mieter die Mitteilung über den Fortbestand des Befristungsgrundes verlangt (§ 575 Abs. 2 Satz 1)";
+    label en unofficial "day on which the tenant demands information whether the reason for the fixed term still exists (§ 575 (2) sentence 1)";
+}
+pub relation auskunftsverlangen_plus_vier_monate(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, der vier Monate nach dem Auskunftsverlangen liegt (§ 575 Abs. 2 Satz 1) — der Text nennt einen Abstand VOR dem Ablauf der Befristung; gerechnet wird er VORWÄRTS vom Verlangen an (Ledger D-06-07)";
+    label en unofficial "day four months after the demand for information (§ 575 (2) sentence 1) — the text names a distance BEFORE expiry; it is computed FORWARDS from the demand (ledger D-06-07)";
+}
+pub relation auskunftsverlangen_zulaessig(m: Mietverhaeltnis) kind institutional {
+    label de official "das Auskunftsverlangen ist zulässig: es liegt frühestens vier Monate vor dem Ablauf der Befristung (§ 575 Abs. 2 Satz 1)";
+    label en unofficial "the demand for information is admissible: it is made at the earliest four months before expiry of the fixed term (§ 575 (2) sentence 1)";
+}
+
+@source(BGB_P575)
+rule Zeitmietvertrag575Abs1Nr1(m: Mietverhaeltnis) strict {
+    label de official "Ein Mietverhältnis kann auf bestimmte Zeit eingegangen werden, wenn der Vermieter nach Ablauf der Mietzeit die Räume als Wohnung für sich, seine Familienangehörigen oder Angehörige seines Haushalts nutzen will und er dem Mieter den Grund der Befristung bei Vertragsschluss schriftlich mitteilt (§ 575 Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "A lease may be entered into for a fixed term where after expiry the lessor wishes to use the rooms as a dwelling for himself, his family or his household and informs the tenant in writing of the reason when concluding the contract (§ 575 (1) sentence 1 no. 1)";
+    when gegenstandsart(m, Wohnraum) and mietzeit_bestimmt(m) and befristungsgrund_eigennutzung(m)
+     and befristungsgrund_mitgeteilt(m);
+    then zeitmietvertrag_wirksam(m);
+}
+
+@source(BGB_P575)
+rule Zeitmietvertrag575Abs1Nr2(m: Mietverhaeltnis) strict {
+    label de official "Ein Mietverhältnis kann auf bestimmte Zeit eingegangen werden, wenn der Vermieter die Räume in zulässiger Weise beseitigen, wesentlich verändern oder instand setzen will (§ 575 Abs. 1 Satz 1 Nr. 2)";
+    label en unofficial "A lease may be entered into for a fixed term where the lessor wishes lawfully to remove, substantially alter or repair the rooms (§ 575 (1) sentence 1 no. 2)";
+    when gegenstandsart(m, Wohnraum) and mietzeit_bestimmt(m) and befristungsgrund_baumassnahme(m)
+     and befristungsgrund_mitgeteilt(m);
+    then zeitmietvertrag_wirksam(m);
+}
+
+@source(BGB_P575)
+rule Zeitmietvertrag575Abs1Nr3(m: Mietverhaeltnis) strict {
+    label de official "Ein Mietverhältnis kann auf bestimmte Zeit eingegangen werden, wenn der Vermieter die Räume an einen zur Dienstleistung Verpflichteten vermieten will (§ 575 Abs. 1 Satz 1 Nr. 3)";
+    label en unofficial "A lease may be entered into for a fixed term where the lessor wishes to let the rooms to a person obliged to render services (§ 575 (1) sentence 1 no. 3)";
+    when gegenstandsart(m, Wohnraum) and mietzeit_bestimmt(m) and befristungsgrund_dienstwohnung(m)
+     and befristungsgrund_mitgeteilt(m);
+    then zeitmietvertrag_wirksam(m);
+}
+
+@source(BGB_P575)
+rule KeinBefristungsgrund575Abs1Satz2(m: Mietverhaeltnis) strict {
+    label de official "Anderenfalls gilt das Mietverhältnis als auf unbestimmte Zeit abgeschlossen (§ 575 Abs. 1 Satz 2)";
+    label en unofficial "Otherwise the lease is deemed to have been concluded for an indefinite period (§ 575 (1) sentence 2)";
+    when gegenstandsart(m, Wohnraum) and mietzeit_bestimmt(m) and not befristungsgrund_mitgeteilt(m);
+    then gilt_fuer_unbestimmte_zeit(m);
+}
+
+@source(BGB_P575)
+rule Auskunftsfrist575Abs2(m: Mietverhaeltnis, a: Date) strict {
+    label de official "Der Mieter kann vom Vermieter frühestens vier Monate vor Ablauf der Befristung verlangen, dass dieser ihm binnen eines Monats mitteilt, ob der Befristungsgrund noch besteht (§ 575 Abs. 2 Satz 1) — der Abstand wird vorwärts vom Verlangen an gerechnet";
+    label en unofficial "The tenant may demand, at the earliest four months before expiry, that the lessor inform him within one month whether the reason still exists (§ 575 (2) sentence 1) — the distance is computed forwards from the demand";
+    when zeitmietvertrag_wirksam(m) and auskunft_verlangt_am(m, a);
+    then auskunftsverlangen_plus_vier_monate(m, add_calendar_period(a, 4 calendar_month));
+}
+
+@source(BGB_P575)
+rule Auskunftsverlangen575Abs2Zulaessig(m: Mietverhaeltnis, f: Date, e: Date) strict {
+    label de official "Das Verlangen ist zulässig, wenn zwischen ihm und dem Ablauf der Befristung höchstens vier Monate liegen (§ 575 Abs. 2 Satz 1)";
+    label en unofficial "The demand is admissible if at most four months lie between it and expiry of the fixed term (§ 575 (2) sentence 1)";
+    when auskunftsverlangen_plus_vier_monate(m, f) and mietzeit_ende(m, e) and f >= e;
+    then auskunftsverlangen_zulaessig(m);
+}
+
+// --- §§ 577, 577a Vorkaufsrecht und Kündigungssperrfrist ------------------------------------------
+
+pub relation wohnungseigentum_begruendet(m: Mietverhaeltnis) kind empirical {
+    label de official "an den vermieteten Wohnräumen ist nach der Überlassung an den Mieter Wohnungseigentum begründet worden oder soll begründet werden (§ 577 Abs. 1 Satz 1, § 577a Abs. 1)";
+    label en unofficial "after handover to the tenant, apartment ownership has been or is to be created in the let residential space (§ 577 (1) sentence 1, § 577a (1))";
+}
+pub relation verkauf_an_dritten(m: Mietverhaeltnis) kind empirical {
+    label de official "die Wohnräume werden an einen Dritten verkauft (§ 577 Abs. 1 Satz 1)";
+    label en unofficial "the residential space is sold to a third party (§ 577 (1) sentence 1)";
+}
+pub relation verkauf_an_familienangehoerigen(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter verkauft die Wohnräume an einen Familienangehörigen oder an einen Angehörigen seines Haushalts (§ 577 Abs. 1 Satz 2)";
+    label en unofficial "the lessor sells the residential space to a member of his family or of his household (§ 577 (1) sentence 2)";
+}
+pub relation sperrfrist_durch_landesverordnung_jahre(m: Mietverhaeltnis, jahre: Integer) kind empirical {
+    key(m);
+    label de official "Zahl der Jahre, die eine Rechtsverordnung der Landesregierung für das Gebiet bestimmt hat; sie beträgt bis zu zehn Jahre (§ 577a Abs. 2) — Angabe des Falls mit Gebiet und Zeitraum, keine Bundesnorm";
+    label en unofficial "number of years determined by a Land government regulation for the area; it is up to ten years (§ 577a (2)) — a statement of the case naming area and period, not federal law";
+}
+
+pub relation sperrfrist_durch_landesverordnung(m: Mietverhaeltnis, dauer: Quantity) kind empirical {
+    key(m);
+    label de official "dieselbe Frist der Landesverordnung als Jahresschritt des § 188 Abs. 2 (§ 577a Abs. 2) — der Zähler einer Einheit wird von einer Integer-Variablen nicht gelesen";
+    label en unofficial "the same period of the Land regulation as a yearly step under § 188 (2) (§ 577a (2)) — the counter of a unit is not read from an Integer variable";
+}
+pub relation vorkaufsrecht_des_mieters(m: Mietverhaeltnis, mi: Person) kind institutional {
+    label de official "der Mieter ist zum Vorkauf berechtigt (§ 577 Abs. 1 Satz 1)";
+    label en unofficial "the tenant has a right of pre-emption (§ 577 (1) sentence 1)";
+}
+pub relation vorkaufsrecht_besteht(m: Mietverhaeltnis) kind institutional {
+    label de official "das Vorkaufsrecht des § 577 Abs. 1 Satz 1 besteht; es besteht nicht beim Verkauf an einen Familienangehörigen oder Haushaltsangehörigen (Satz 2)";
+    label en unofficial "the right of pre-emption under § 577 (1) sentence 1 exists; it does not exist on a sale to a family or household member (sentence 2)";
+}
+pub relation kuendigungssperrfrist_ende(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf die Sperrfrist des § 577a endet: drei Jahre seit der Veräußerung, in den durch Landesverordnung bestimmten Gebieten bis zu zehn Jahre";
+    label en unofficial "day at whose end the bar of § 577a expires: three years since the sale, or up to ten years in the areas determined by Land regulation";
+}
+pub relation berufung_auf_573_abs2_gesperrt(m: Mietverhaeltnis) kind institutional {
+    label de official "ein Erwerber kann sich auf berechtigte Interessen im Sinne des § 573 Abs. 2 Nr. 2 oder 3 erst nach Ablauf der Sperrfrist berufen (§ 577a Abs. 1)";
+    label en unofficial "an acquirer may rely on legitimate interests within the meaning of § 573 (2) nos. 2 or 3 only after the bar has expired (§ 577a (1))";
+}
+
+@source(BGB_P577)
+rule Vorkaufsrecht577Abs1(m: Mietverhaeltnis) defeasible {
+    label de official "Werden vermietete Wohnräume, an denen nach der Überlassung an den Mieter Wohnungseigentum begründet worden ist oder begründet werden soll, an einen Dritten verkauft, so ist der Mieter zum Vorkauf berechtigt; dies gilt nicht beim Verkauf an einen Familienangehörigen oder an einen Angehörigen seines Haushalts (§ 577 Abs. 1)";
+    label en unofficial "Where let residential space in which apartment ownership has been or is to be created after handover is sold to a third party, the tenant has a right of pre-emption; this does not apply on a sale to a member of his family or household (§ 577 (1))";
+    when gegenstandsart(m, Wohnraum) and wohnungseigentum_begruendet(m) and verkauf_an_dritten(m);
+    unless verkauf_an_familienangehoerigen(m);
+    then vorkaufsrecht_besteht(m);
+}
+
+@source(BGB_P577)
+rule Vorkaufsrecht577Traeger(m: Mietverhaeltnis, mi: Person) defeasible {
+    label de official "Das Vorkaufsrecht steht dem Mieter zu (§ 577 Abs. 1 Satz 1)";
+    label en unofficial "The right of pre-emption vests in the tenant (§ 577 (1) sentence 1)";
+    when vorkaufsrecht_besteht(m) and mieter(m, mi);
+    then vorkaufsrecht_des_mieters(m, mi);
+}
+
+@source(BGB_P577a)
+rule Sperrfrist577aAbs1(m: Mietverhaeltnis, t: Date) strict {
+    label de official "Ist an vermieteten Wohnräumen nach der Überlassung an den Mieter Wohnungseigentum begründet und das Wohnungseigentum veräußert worden, so kann sich ein Erwerber auf berechtigte Interessen im Sinne des § 573 Abs. 2 Nr. 2 oder 3 erst nach Ablauf von drei Jahren seit der Veräußerung berufen (§ 577a Abs. 1) — Jahresschritt nach § 188 Abs. 2";
+    label en unofficial "Where apartment ownership was created in let residential space after handover and was sold, an acquirer may rely on legitimate interests under § 573 (2) nos. 2 or 3 only three years after the sale (§ 577a (1)) — yearly step under § 188 (2)";
+    when wohnungseigentum_begruendet(m) and eigentumsuebergang_am(m, t)
+     and not sperrfrist_durch_landesverordnung_jahre(m, 10);
+    then kuendigungssperrfrist_ende(m, add_calendar_period(t, 3 calendar_year));
+}
+
+@source(BGB_P577a)
+rule Sperrfrist577aAbs2(m: Mietverhaeltnis, t: Date, j: Quantity) strict {
+    label de official "Die Frist nach Absatz 1 beträgt bis zu zehn Jahre, wenn die ausreichende Versorgung der Bevölkerung mit Mietwohnungen besonders gefährdet ist und diese Gebiete durch Rechtsverordnung bestimmt sind (§ 577a Abs. 2)";
+    label en unofficial "The period under subsection (1) is up to ten years where the adequate supply of rented dwellings is particularly endangered and those areas are determined by regulation (§ 577a (2))";
+    when wohnungseigentum_begruendet(m) and eigentumsuebergang_am(m, t)
+     and sperrfrist_durch_landesverordnung(m, j);
+    then kuendigungssperrfrist_ende(m, add_calendar_period(t, j));
+}
+
+@source(BGB_P577a)
+rule Sperre577aAbs1(m: Mietverhaeltnis, kd: Kuendigung, e: Date, k: Date) strict {
+    label de official "Vor dem Ablauf der Sperrfrist kann sich der Erwerber auf § 573 Abs. 2 Nr. 2 oder 3 nicht berufen (§ 577a Abs. 1)";
+    label en unofficial "Before the bar expires the acquirer may not rely on § 573 (2) nos. 2 or 3 (§ 577a (1))";
+    when kuendigungssperrfrist_ende(m, e) and kuendigung_des(kd, m) and kuendigung_durch_vermieter(kd)
+     and kuendigung_erklaert_am(kd, k) and k <= e;
+    then berufung_auf_573_abs2_gesperrt(m);
+}
+
+// --- §§ 572, 574a, 574c, 575a, 576, 576a, 576b ----------------------------------------------------
+
+pub relation ruecktrittsvorbehalt_vereinbart(m: Mietverhaeltnis) kind empirical {
+    label de official "eine Vereinbarung, nach der der Vermieter berechtigt sein soll, nach Überlassung des Wohnraums vom Vertrag zurückzutreten (§ 572 Abs. 1)";
+    label en unofficial "an agreement entitling the lessor to rescind the contract after handover of the residential space (§ 572 (1))";
+}
+pub relation aufloesende_bedingung_vereinbart(m: Mietverhaeltnis) kind empirical {
+    label de official "eine Vereinbarung, nach der das Mietverhältnis zum Nachteil des Mieters auflösend bedingt ist (§ 572 Abs. 2)";
+    label en unofficial "an agreement making the lease subject to a resolutive condition to the tenant's detriment (§ 572 (2))";
+}
+pub relation fortsetzung_auf_bestimmte_zeit_bestimmt(m: Mietverhaeltnis) kind empirical {
+    label de official "durch Einigung oder Urteil ist bestimmt worden, dass das Mietverhältnis auf bestimmte Zeit fortgesetzt wird (§ 574c Abs. 1)";
+    label en unofficial "by agreement or judgment it has been determined that the lease is continued for a fixed period (§ 574c (1))";
+}
+pub relation werkmietwohnung(m: Mietverhaeltnis) kind empirical {
+    label de official "Wohnraum ist mit Rücksicht auf das Bestehen eines Dienstverhältnisses vermietet (§ 576 Abs. 1)";
+    label en unofficial "residential space is let having regard to the existence of a service relationship (§ 576 (1))";
+}
+pub relation dienstverhaeltnis_beendet(m: Mietverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis ist beendet (§ 576 Abs. 1)";
+    label en unofficial "the service relationship has ended (§ 576 (1))";
+}
+pub relation wohnraum_fuer_anderen_dienstverpflichteten_benoetigt(m: Mietverhaeltnis) kind empirical {
+    label de official "der Wohnraum wird für einen anderen zur Dienstleistung Verpflichteten benötigt (§ 576 Abs. 1 Nr. 1 und 2)";
+    label en unofficial "the residential space is needed for another person obliged to render services (§ 576 (1) nos. 1 and 2)";
+}
+pub relation unmittelbare_naehe_zur_arbeitsstaette(m: Mietverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis hat seiner Art nach die Überlassung von Wohnraum erfordert, der in unmittelbarer Beziehung oder Nähe zur Arbeitsstätte steht (§ 576 Abs. 1 Nr. 2)";
+    label en unofficial "the service relationship by its nature required residential space in direct relation or proximity to the workplace (§ 576 (1) no. 2)";
+}
+pub relation mieter_hat_dienstverhaeltnis_geloest(m: Mietverhaeltnis) kind empirical {
+    label de official "der Mieter hat das Dienstverhältnis gelöst, ohne dass ihm von dem Dienstberechtigten gesetzlich begründeter Anlass dazu gegeben war, oder er hat Anlass zur Auflösung gegeben (§ 576a Abs. 2 Nr. 2)";
+    label en unofficial "the tenant terminated the service relationship without legally founded cause given by the employer, or gave cause for its dissolution (§ 576a (2) no. 2)";
+}
+pub relation werkdienstwohnung(m: Mietverhaeltnis) kind empirical {
+    label de official "Wohnraum ist im Rahmen eines Dienstverhältnisses überlassen und der zur Dienstleistung Verpflichtete hat ihn überwiegend mit Einrichtungsgegenständen ausgestattet oder lebt darin mit seiner Familie (§ 576b Abs. 1)";
+    label en unofficial "residential space is provided within a service relationship and the person obliged to render services has furnished it predominantly himself or lives in it with his family (§ 576b (1))";
+}
+
+pub relation berufung_auf_ruecktritt_versagt(m: Mietverhaeltnis) kind institutional {
+    label de official "auf eine Vereinbarung, nach der der Vermieter nach Überlassung des Wohnraums vom Vertrag zurücktreten kann, kann er sich nicht berufen (§ 572 Abs. 1); dasselbe gilt für eine auflösende Bedingung zum Nachteil des Mieters (Abs. 2)";
+    label en unofficial "the lessor may not rely on an agreement entitling him to rescind after handover (§ 572 (1)); the same applies to a resolutive condition to the tenant's detriment (subsection (2))";
+}
+pub relation fortsetzung_so_lange_wie_angemessen(m: Mietverhaeltnis, mi: Person) kind institutional {
+    label de official "im Falle des § 574 kann der Mieter verlangen, dass das Mietverhältnis so lange fortgesetzt wird, wie dies unter Berücksichtigung aller Umstände angemessen ist (§ 574a Abs. 1 Satz 1)";
+    label en unofficial "in the case of § 574 the tenant may demand that the lease be continued for as long as is appropriate having regard to all the circumstances (§ 574a (1) sentence 1)";
+}
+pub relation weitere_fortsetzung_nur_bei_aenderung(m: Mietverhaeltnis) kind institutional {
+    label de official "ist die Fortsetzung auf bestimmte Zeit bestimmt worden, so kann der Mieter die weitere Fortsetzung nur verlangen, wenn dies durch eine wesentliche Änderung der Umstände gerechtfertigt ist (§ 574c Abs. 1)";
+    label en unofficial "where continuation for a fixed period has been determined, the tenant may demand further continuation only where justified by a material change of circumstances (§ 574c (1))";
+}
+pub relation werkmietwohnungsfrist_stufe(k: Kuendigung, monate: Integer) kind institutional {
+    key(k);
+    label de official "Zahl der Monate der besonderen Kündigungsfrist bei Werkmietwohnungen: zwei (Ablauf des übernächsten Monats) nach § 576 Abs. 1 Nr. 1, null (Ablauf dieses Monats) nach Nr. 2";
+    label en unofficial "number of months of the special notice period for service-tied dwellings: two (end of the month after next) under § 576 (1) no. 1, zero (end of that month) under no. 2";
+}
+pub relation widerspruchsrecht_ausgeschlossen_576a(m: Mietverhaeltnis) kind institutional {
+    label de official "die §§ 574 bis 574c gelten nicht, wenn der Vermieter nach § 576 Abs. 1 Nr. 2 gekündigt hat oder der Mieter das Dienstverhältnis gelöst hat (§ 576a Abs. 2)";
+    label en unofficial "§§ 574 to 574c do not apply where the lessor gave notice under § 576 (1) no. 2 or where the tenant terminated the service relationship (§ 576a (2))";
+}
+pub relation mietrecht_entsprechend_anwendbar_576b(m: Mietverhaeltnis) kind institutional {
+    label de official "für die Beendigung des Rechtsverhältnisses hinsichtlich des Wohnraums gelten die Vorschriften über Mietverhältnisse entsprechend (§ 576b Abs. 1)";
+    label en unofficial "the provisions on leases apply accordingly to the termination of the legal relationship as regards the residential space (§ 576b (1))";
+}
+
+@source(BGB_P572)
+rule Ruecktritt572Abs1(m: Mietverhaeltnis, u: Date) strict {
+    label de official "Auf eine Vereinbarung, nach der der Vermieter berechtigt sein soll, nach Überlassung des Wohnraums an den Mieter vom Vertrag zurückzutreten, kann der Vermieter sich nicht berufen (§ 572 Abs. 1)";
+    label en unofficial "The lessor may not rely on an agreement entitling him to rescind the contract after handover of the residential space to the tenant (§ 572 (1))";
+    when gegenstandsart(m, Wohnraum) and ruecktrittsvorbehalt_vereinbart(m) and ueberlassung_am(m, u);
+    then berufung_auf_ruecktritt_versagt(m);
+}
+
+@source(BGB_P572)
+rule AufloesendeBedingung572Abs2(m: Mietverhaeltnis) strict {
+    label de official "Ferner kann der Vermieter sich nicht auf eine Vereinbarung berufen, nach der das Mietverhältnis zum Nachteil des Mieters auflösend bedingt ist (§ 572 Abs. 2)";
+    label en unofficial "Furthermore the lessor may not rely on an agreement making the lease subject to a resolutive condition to the tenant's detriment (§ 572 (2))";
+    when gegenstandsart(m, Wohnraum) and aufloesende_bedingung_vereinbart(m);
+    then berufung_auf_ruecktritt_versagt(m);
+}
+
+@source(BGB_P574a)
+rule Fortsetzung574aAbs1(m: Mietverhaeltnis, mi: Person) defeasible {
+    label de official "Im Falle des § 574 kann der Mieter verlangen, dass das Mietverhältnis so lange fortgesetzt wird, wie dies unter Berücksichtigung aller Umstände angemessen ist (§ 574a Abs. 1 Satz 1)";
+    label en unofficial "In the case of § 574 the tenant may demand that the lease be continued for as long as is appropriate having regard to all circumstances (§ 574a (1) sentence 1)";
+    when fortsetzungsanspruch_besteht(m) and mieter(m, mi);
+    then fortsetzung_so_lange_wie_angemessen(m, mi);
+}
+
+@source(BGB_P574c)
+rule WeitereFortsetzung574cAbs1(m: Mietverhaeltnis) strict {
+    label de official "Ist bestimmt worden, dass das Mietverhältnis auf bestimmte Zeit fortgesetzt wird, so kann der Mieter dessen weitere Fortsetzung nur verlangen, wenn dies durch eine wesentliche Änderung der Umstände gerechtfertigt ist oder wenn Umstände nicht eingetreten sind, deren vorgesehener Eintritt für die Zeitdauer bestimmend gewesen war (§ 574c Abs. 1)";
+    label en unofficial "Where it has been determined that the lease is continued for a fixed period, the tenant may demand further continuation only where justified by a material change of circumstances or where circumstances whose expected occurrence determined the duration did not occur (§ 574c (1))";
+    when fortsetzung_auf_bestimmte_zeit_bestimmt(m);
+    then weitere_fortsetzung_nur_bei_aenderung(m);
+}
+
+@source(BGB_P575a)
+rule GesetzlicheFrist575aAbs3(k: Kuendigung, m: Mietverhaeltnis, b: Date) strict {
+    label de official "Bei einem auf bestimmte Zeit eingegangenen Mietverhältnis ist die außerordentliche Kündigung mit der gesetzlichen Frist spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats zulässig; § 573a Abs. 1 Satz 2 findet keine Anwendung (§ 575a Abs. 3)";
+    label en unofficial "For a lease entered into for a fixed term, extraordinary notice with the statutory period is admissible at the latest on the third working day of a calendar month to the end of the month after next; § 573a (1) sentence 2 does not apply (§ 575a (3))";
+    when kuendigung_des(k, m) and mietzeit_bestimmt(m)
+     and ausserordentliche_kuendigung_mit_gesetzlicher_frist(k) and kuendigungsmonat_beginn(k, b);
+    then kuendigungsfrist_stufe(k, 2);
+}
+
+@source(BGB_P576)
+rule Werkmietwohnung576Abs1Nr1(k: Kuendigung, m: Mietverhaeltnis, b: Date) strict {
+    label de official "Ist Wohnraum mit Rücksicht auf das Bestehen eines Dienstverhältnisses vermietet, so kann der Vermieter nach Beendigung des Dienstverhältnisses bei Wohnraum, der dem Mieter weniger als zehn Jahre überlassen war, spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats kündigen, wenn der Wohnraum für einen anderen zur Dienstleistung Verpflichteten benötigt wird (§ 576 Abs. 1 Nr. 1)";
+    label en unofficial "Where residential space is let having regard to a service relationship, after its end the lessor may, for space provided for less than ten years, give notice at the latest on the third working day of a calendar month to the end of the month after next, where the space is needed for another person obliged to render services (§ 576 (1) no. 1)";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and werkmietwohnung(m)
+     and dienstverhaeltnis_beendet(m) and wohnraum_fuer_anderen_dienstverpflichteten_benoetigt(m)
+     and not unmittelbare_naehe_zur_arbeitsstaette(m) and kuendigungsmonat_beginn(k, b);
+    then werkmietwohnungsfrist_stufe(k, 2);
+}
+
+@source(BGB_P576)
+rule Werkmietwohnung576Abs1Nr2(k: Kuendigung, m: Mietverhaeltnis, b: Date, d: Date, e: Date) strict {
+    label de official "Der Vermieter kann spätestens am dritten Werktag eines Kalendermonats zum Ablauf DIESES Monats kündigen, wenn das Dienstverhältnis seiner Art nach die Überlassung von Wohnraum in unmittelbarer Beziehung oder Nähe zur Arbeitsstätte erfordert hat und der Wohnraum aus dem gleichen Grund für einen anderen zur Dienstleistung Verpflichteten benötigt wird (§ 576 Abs. 1 Nr. 2)";
+    label en unofficial "The lessor may give notice at the latest on the third working day of a calendar month to the end of THAT month where the service relationship by its nature required space in direct relation or proximity to the workplace and the space is needed for another such person (§ 576 (1) no. 2)";
+    when kuendigung_des(k, m) and kuendigung_durch_vermieter(k) and werkmietwohnung(m)
+     and dienstverhaeltnis_beendet(m) and unmittelbare_naehe_zur_arbeitsstaette(m)
+     and wohnraum_fuer_anderen_dienstverpflichteten_benoetigt(m)
+     and kuendigungsmonat_beginn(k, b) and dritter_werktag_des_kuendigungsmonats(k, d)
+     and kuendigung_erklaert_am(k, e) and e <= d;
+    then beendigung_durch_kuendigung_am(k, month_end_of(b));
+}
+
+@source(BGB_P576)
+rule Werkmietwohnung576Abs1Nr1Beendigung(k: Kuendigung, b: Date, d: Date, e: Date) strict {
+    label de official "Im Falle der Nummer 1 endet das Mietverhältnis mit dem Ablauf des übernächsten Monats (§ 576 Abs. 1 Nr. 1)";
+    label en unofficial "In the case of no. 1 the lease ends at the end of the month after next (§ 576 (1) no. 1)";
+    when werkmietwohnungsfrist_stufe(k, 2) and kuendigungsmonat_beginn(k, b)
+     and dritter_werktag_des_kuendigungsmonats(k, d) and kuendigung_erklaert_am(k, e) and e <= d;
+    then beendigung_durch_kuendigung_am(k, month_end_of(add_calendar_period(b, 2 calendar_month)));
+}
+
+@source(BGB_P576a)
+rule Widerspruchsausschluss576aAbs2Nr1(m: Mietverhaeltnis, k: Kuendigung) strict {
+    label de official "Die §§ 574 bis 574c gelten nicht, wenn der Vermieter nach § 576 Abs. 1 Nr. 2 gekündigt hat (§ 576a Abs. 2 Nr. 1)";
+    label en unofficial "§§ 574 to 574c do not apply where the lessor gave notice under § 576 (1) no. 2 (§ 576a (2) no. 1)";
+    when kuendigung_des(k, m) and werkmietwohnung(m) and unmittelbare_naehe_zur_arbeitsstaette(m)
+     and wohnraum_fuer_anderen_dienstverpflichteten_benoetigt(m) and dienstverhaeltnis_beendet(m);
+    then widerspruchsrecht_ausgeschlossen_576a(m);
+}
+
+@source(BGB_P576a)
+rule Widerspruchsausschluss576aAbs2Nr2(m: Mietverhaeltnis) strict {
+    label de official "Die §§ 574 bis 574c gelten nicht, wenn der Mieter das Dienstverhältnis gelöst hat, ohne dass ihm gesetzlich begründeter Anlass gegeben war, oder er Anlass zur Auflösung gegeben hat (§ 576a Abs. 2 Nr. 2)";
+    label en unofficial "§§ 574 to 574c do not apply where the tenant terminated the service relationship without legally founded cause or gave cause for its dissolution (§ 576a (2) no. 2)";
+    when werkmietwohnung(m) and mieter_hat_dienstverhaeltnis_geloest(m);
+    then widerspruchsrecht_ausgeschlossen_576a(m);
+}
+
+@source(BGB_P576b)
+rule Werkdienstwohnung576bAbs1(m: Mietverhaeltnis) strict {
+    label de official "Ist Wohnraum im Rahmen eines Dienstverhältnisses überlassen, so gelten für die Beendigung des Rechtsverhältnisses hinsichtlich des Wohnraums die Vorschriften über Mietverhältnisse entsprechend, wenn der zur Dienstleistung Verpflichtete den Wohnraum überwiegend mit Einrichtungsgegenständen ausgestattet hat oder darin mit seiner Familie lebt (§ 576b Abs. 1)";
+    label en unofficial "Where residential space is provided within a service relationship, the provisions on leases apply accordingly to the termination of the relationship as regards that space, where the person obliged to render services furnished it predominantly himself or lives in it with his family (§ 576b (1))";
+    when werkdienstwohnung(m);
+    then mietrecht_entsprechend_anwendbar_576b(m);
+}

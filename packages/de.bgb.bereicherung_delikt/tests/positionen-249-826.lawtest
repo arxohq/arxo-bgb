@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+
+test "§§ 249, 254 und 826: Schadensersatzpositionen aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "s": schadensersatzpflicht(entity_ref("urn:de:bgb:handlung:h1"), entity_ref("urn:de:bgb:person:s"), entity_ref("urn:de:bgb:person:v")) { origin case_input; }
+        assert "ht": handlungstag(entity_ref("urn:de:bgb:handlung:h1"), @2026-06-02) { origin case_input; }
+        assert "g": geminderter_ersatzanspruch_dritter(entity_ref("urn:de:bgb:handlung:h1"), entity_ref("urn:de:bgb:person:d"), 75.00 EUR) { origin case_input; }
+        assert "d": deliktischer_schadensersatz(entity_ref("urn:de:bgb:handlung:h1"), 100.00 EUR) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Schadensersatz826, SATISFIED);
+    expect position(GeminderterErsatz254, SATISFIED);
+    expect position(DeliktischerSchadensersatz249, SATISFIED);
+}
+
+test "§§ 249, 254 und 826: ohne Schadensersatzanspruch keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Schadensersatz826, ACTIVE);
+    expect not position(GeminderterErsatz254, ACTIVE);
+    expect not position(DeliktischerSchadensersatz249, ACTIVE);
+}

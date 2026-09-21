@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1600b Abs. 1: Kenntnis am 10.01.2024, zwei Jahre enden kalendarisch am 10.01.2026 — einem Sonnabend. Die Anfechtung ist INNERHALB der Frist gerichtlich zu erklären, daher verlegt § 193 das Ende auf Montag, den 12.01.2026. Am 13.01.2026 ist die Anfechtung verfristet.
+test "§ 1600b: zwei Jahre ab Kenntnis, Ende am Sonnabend wird auf Montag verlegt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": kenntnis_der_umstaende_am(entity_ref("urn:de:bgb:vw:a06:K"), entity_ref("urn:de:bgb:vw:a06:A"), @2024-01-10) { origin adjudicated; }
+        assert "f2": anfechtungsfrist(entity_ref("urn:de:bgb:vw:a06:K"), entity_ref("urn:de:bgb:vw:a06:A"), entity_ref("urn:de:bgb:vw:a06:F")) { origin case_input; }
+        assert "f3": bewertungstag(entity_ref("urn:de:bgb:vw:a06:K"), @2026-01-13) { origin case_input; }
+    }
+    evaluate truth(letzter_tag_der_anfechtungsfrist(entity_ref("urn:de:bgb:vw:a06:K"), entity_ref("urn:de:bgb:vw:a06:A"), @2026-01-12));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anfechtung_verfristet(entity_ref("urn:de:bgb:vw:a06:K"), entity_ref("urn:de:bgb:vw:a06:A")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

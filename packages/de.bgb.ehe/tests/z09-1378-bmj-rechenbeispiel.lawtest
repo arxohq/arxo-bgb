@@ -1,0 +1,37 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+// UNABHÄNGIGE ERWARTUNG (sources/bmj-gueterrecht/, sha256 in PINS.sha256): das Rechenbeispiel der amtlichen BMJ-Themenseite „Güterrecht“. Herr Engel hat ein Anfangsvermögen von 10 000 € und ein Endvermögen von 100 000 €, Frau Engel 15 000 € und 25 000 €. Die Seite rechnet: Zugewinn 90 000 € gegen 10 000 €, Überschuss 80 000 €, „der Ehefrau steht als Ausgleichsforderung die Hälfte dieses Betrages zu, also 40.000 Euro“. Das Paket rechnet dieselben Zahlen aus denselben Eingaben — die Erwartung stammt nicht aus dem Modell. Maßgebender Zeitpunkt ist nach § 1384 die Rechtshängigkeit des Scheidungsantrags, wie die Seite („bei Zustellung des Scheidungsantrags“) es beschreibt.
+test "§§ 1373, 1378 Abs. 1: das Rechenbeispiel des BMJ (Ehepaar Engel)" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:HERR"), entity_ref("urn:de:bgb:ehe:z09:FRAU")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:z09:E")) { origin case_input; }
+        assert "f3": gueterstand_beendet_am(entity_ref("urn:de:bgb:ehe:z09:E"), @2025-09-30) { origin case_input; }
+        assert "f4": gueterstand_auf_andere_weise_als_durch_tod_beendet(entity_ref("urn:de:bgb:ehe:z09:E")) { origin case_input; }
+        assert "f5": scheidungsverfahren_rechtshaengig_seit(entity_ref("urn:de:bgb:ehe:z09:E"), @2025-09-30) { origin case_input; }
+        assert "f6": vermoegen_beim_eintritt_des_gueterstands(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:HERR"), 10000.00 EUR) { origin case_input; }
+        assert "f7": vermoegen_beim_eintritt_des_gueterstands(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU"), 15000.00 EUR) { origin case_input; }
+        assert "f8": vermoegen_bei_beendigung_des_gueterstands(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:HERR"), 100000.00 EUR) { origin case_input; }
+        assert "f9": vermoegen_bei_beendigung_des_gueterstands(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU"), 25000.00 EUR) { origin case_input; }
+        assert "f10": keine_hinzurechnung_zum_anfangsvermoegen(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:HERR")) { origin case_input; }
+        assert "f11": keine_hinzurechnung_zum_anfangsvermoegen(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU")) { origin case_input; }
+        assert "f12": keine_illoyale_minderung(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:HERR")) { origin case_input; }
+        assert "f13": keine_illoyale_minderung(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU")) { origin case_input; }
+    }
+    evaluate truth(zugewinn(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:HERR"), 90000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(zugewinn(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU"), 10000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ueberschuss(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU"), entity_ref("urn:de:bgb:ehe:z09:HERR"), 80000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausgleichsforderung(entity_ref("urn:de:bgb:ehe:z09:E"), entity_ref("urn:de:bgb:ehe:z09:FRAU"), entity_ref("urn:de:bgb:ehe:z09:HERR"), 40000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(berechnungszeitpunkt(entity_ref("urn:de:bgb:ehe:z09:E"), @2025-09-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

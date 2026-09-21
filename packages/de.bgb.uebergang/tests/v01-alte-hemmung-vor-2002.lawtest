@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.uebergang version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-uebergang";
+// Art. 229 § 6 Abs. 1 Satz 2: Beginn 1.1.1990, alte Frist 30 Jahre (Ende ohne Hemmung 1.1.2020); Hemmung nach altem Recht 1.1.-30.6.1995 (181 Tage) verschiebt das Ende auf den 30.6.2020.
+test "Art. 229 § 6 Abs. 1 Satz 2: Hemmung nach altem Recht verschiebt das Ende der alten Frist" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_UEBERGANG_KALENDER; }
+        assert "b": alte_verjaehrung_begann_am(entity_ref("urn:de:bgb:uebergang:pilot:v01"), @1990-01-01) { origin case_input; }
+        assert "alt": alte_verjaehrungsfrist(entity_ref("urn:de:bgb:uebergang:pilot:v01"), 30 calendar_year) { origin case_input; }
+        assert "h": alte_hemmung(entity_ref("urn:de:bgb:uebergang:pilot:v01"), @1995-01-01, @1995-06-30) { origin case_input; }
+    }
+    evaluate truth(alte_hemmungstage(entity_ref("urn:de:bgb:uebergang:pilot:v01"), 181));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(alte_frist_ende_mit_hemmung(entity_ref("urn:de:bgb:uebergang:pilot:v01"), @2020-06-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

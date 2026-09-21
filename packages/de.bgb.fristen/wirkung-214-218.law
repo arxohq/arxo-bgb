@@ -1,0 +1,154 @@
+// §§ 214–218: Wirkung der Verjährung. Jede Norm liest den bestehenden Kopf
+// `verjaehrung_eingetreten_am` (package.law) nur als BEDINGUNG (nie als
+// Ziel) und produziert eine eigene, terminale Folgefeststellung — keine
+// Änderung des Hubs, keine Rückkopplung, kein Zyklusrisiko (anders als bei
+// § 190/§ 198, wo dieselbe Datumsermittlung rekursiv gewesen wäre).
+
+// --- § 214: Wirkung der Verjährung ------------------------------------------------------------------
+
+pub relation leistungsverweigerungsrecht_wegen_verjaehrung(a: Anspruch) kind institutional {
+    key(a);
+    label de official "der Schuldner ist berechtigt, die Leistung zu verweigern (§ 214 Abs. 1)";
+    label en unofficial "the debtor is entitled to refuse performance (§ 214 (1))";
+}
+
+@source(BGB_P214)
+rule Leistungsverweigerungsrecht214(a: Anspruch, tag: Date) strict {
+    label de official "Nach Eintritt der Verjährung ist der Schuldner berechtigt, die Leistung zu verweigern (§ 214 Abs. 1)";
+    label en unofficial "After limitation has occurred, the debtor is entitled to refuse performance (§ 214 (1))";
+    when verjaehrung_eingetreten_am(a, tag);
+    then leistungsverweigerungsrecht_wegen_verjaehrung(a);
+}
+
+pub relation leistung_trotz_verjaehrung_erbracht(a: Anspruch) kind empirical {
+    label de official "das zur Befriedigung eines verjährten Anspruchs Geleistete, ein vertragsmäßiges Anerkenntnis oder eine Sicherheitsleistung des Schuldners (§ 214 Abs. 2)";
+    label en unofficial "what was rendered to satisfy a time-barred claim, a contractual acknowledgement, or security given by the debtor (§ 214 (2))";
+}
+pub relation leistung_nicht_rueckforderbar_wegen_verjaehrung(a: Anspruch) kind institutional {
+    key(a);
+    label de official "das zur Befriedigung des verjährten Anspruchs Geleistete kann nicht zurückgefordert werden, auch nicht in Unkenntnis der Verjährung (§ 214 Abs. 2)";
+    label en unofficial "what was rendered to satisfy the time-barred claim cannot be reclaimed, even if rendered in ignorance of the limitation (§ 214 (2))";
+}
+
+@source(BGB_P214)
+rule KeineRueckforderungNachVerjaehrung(a: Anspruch, tag: Date) strict {
+    label de official "Das zur Befriedigung eines verjährten Anspruchs Geleistete kann nicht zurückgefordert werden, auch wenn in Unkenntnis der Verjährung geleistet worden ist; das Gleiche gilt für ein vertragsmäßiges Anerkenntnis sowie eine Sicherheitsleistung des Schuldners (§ 214 Abs. 2)";
+    label en unofficial "What was rendered to satisfy a time-barred claim cannot be reclaimed, even if rendered in ignorance of the limitation; the same applies to a contractual acknowledgement and to security given by the debtor (§ 214 (2))";
+    when verjaehrung_eingetreten_am(a, tag) and leistung_trotz_verjaehrung_erbracht(a);
+    then leistung_nicht_rueckforderbar_wegen_verjaehrung(a);
+}
+
+// --- § 215: Aufrechnung und Zurückbehaltungsrecht nach Eintritt der Verjährung -----------------------
+
+pub relation anspruch_erstmals_aufrechenbar_oder_leistungsverweigerung_moeglich_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Zeitpunkt, in dem erstmals aufgerechnet oder die Leistung verweigert werden konnte (§ 215)";
+    label en unofficial "point in time when set-off could first be declared or performance first refused (§ 215)";
+}
+pub relation aufrechnung_trotz_verjaehrung_zulaessig(a: Anspruch) kind institutional {
+    key(a);
+    label de official "die Verjährung schließt die Aufrechnung und die Geltendmachung eines Zurückbehaltungsrechts nicht aus (§ 215)";
+    label en unofficial "limitation does not exclude set-off or the assertion of a right of retention (§ 215)";
+}
+
+@source(BGB_P215)
+rule AufrechnungTrotzVerjaehrungZulaessig(a: Anspruch, v: Date, tag: Date) strict {
+    label de official "Die Verjährung schließt die Aufrechnung und die Geltendmachung eines Zurückbehaltungsrechts nicht aus, wenn der Anspruch in dem Zeitpunkt noch nicht verjährt war, in dem erstmals aufgerechnet oder die Leistung verweigert werden konnte (§ 215)";
+    label en unofficial "Limitation does not exclude set-off or the assertion of a right of retention if the claim was not yet time-barred at the point in time when set-off could first be declared or performance first refused (§ 215)";
+    when verjaehrung_eingetreten_am(a, v) and anspruch_erstmals_aufrechenbar_oder_leistungsverweigerung_moeglich_am(a, tag) and tag < v;
+    then aufrechnung_trotz_verjaehrung_zulaessig(a);
+}
+
+// --- § 216: Wirkung der Verjährung bei gesicherten Ansprüchen -----------------------------------------
+
+pub relation dinglich_gesicherter_anspruch(a: Anspruch) kind empirical {
+    label de official "Anspruch, für den eine Hypothek, eine Schiffshypothek oder ein Pfandrecht besteht (§ 216 Abs. 1)";
+    label en unofficial "claim for which a mortgage, a ship mortgage or a lien exists (§ 216 (1))";
+}
+pub relation befriedigung_aus_sicherungsgegenstand_trotz_verjaehrung_zulaessig(a: Anspruch) kind institutional {
+    key(a);
+    label de official "die Verjährung hindert den Gläubiger nicht, seine Befriedigung aus dem belasteten Gegenstand zu suchen (§ 216 Abs. 1)";
+    label en unofficial "limitation does not prevent the creditor from seeking satisfaction out of the encumbered object (§ 216 (1))";
+}
+
+@source(BGB_P216)
+rule Befriedigung216Abs1(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung eines Anspruchs, für den eine Hypothek, eine Schiffshypothek oder ein Pfandrecht besteht, hindert den Gläubiger nicht, seine Befriedigung aus dem belasteten Gegenstand zu suchen (§ 216 Abs. 1)";
+    label en unofficial "Limitation of a claim secured by a mortgage, ship mortgage or lien does not prevent the creditor from seeking satisfaction out of the encumbered object (§ 216 (1))";
+    when verjaehrung_eingetreten_am(a, tag) and dinglich_gesicherter_anspruch(a);
+    then befriedigung_aus_sicherungsgegenstand_trotz_verjaehrung_zulaessig(a);
+}
+
+// --- § 217: Verjährung von Nebenleistungen ---------------------------------------------------------
+
+pub relation nebenleistung_von(a_neben: Anspruch, a_haupt: Anspruch) kind empirical {
+    key(a_neben);
+    label de official "Anspruch auf eine Nebenleistung, die vom Hauptanspruch abhängt (§ 217)";
+    label en unofficial "claim to an ancillary performance that depends on the principal claim (§ 217)";
+}
+pub relation verjaehrung_eingetreten_am_nebenleistung(a_neben: Anspruch, tag: Date) kind institutional {
+    key(a_neben);
+    label de official "Tag, mit dessen Ablauf der Anspruch auf die Nebenleistung mit dem Hauptanspruch verjährt (§ 217), auch wenn die für ihn geltende besondere Verjährung noch nicht eingetreten ist";
+    label en unofficial "day at whose end the claim to the ancillary performance becomes time-barred together with the principal claim (§ 217), even if the special limitation applicable to it has not yet occurred";
+}
+
+@source(BGB_P217)
+rule NebenleistungVerjaehrtMitHauptanspruch(a_neben: Anspruch, a_haupt: Anspruch, tag: Date) strict {
+    label de official "Mit dem Hauptanspruch verjährt der Anspruch auf die von ihm abhängenden Nebenleistungen, auch wenn die für diesen Anspruch geltende besondere Verjährung noch nicht eingetreten ist (§ 217)";
+    label en unofficial "The claim to ancillary performances dependent on the principal claim becomes time-barred together with it, even if the special limitation applicable to that claim has not yet occurred (§ 217)";
+    when nebenleistung_von(a_neben, a_haupt) and verjaehrung_eingetreten_am(a_haupt, tag);
+    then verjaehrung_eingetreten_am_nebenleistung(a_neben, tag);
+}
+
+// --- § 218: Unwirksamkeit des Rücktritts -----------------------------------------------------------
+//
+// Abs. 2 (entsprechende Anwendung des § 214 Abs. 2) ist keine eigene
+// Mechanik: der Fall liest dafür `leistung_nicht_rueckforderbar_wegen_verjaehrung`
+// oben, angewandt auf den Nacherfüllungsanspruch.
+
+pub relation ruecktritt_erklaert_wegen(a: Anspruch) kind empirical {
+    label de official "wegen dieses Leistungs- oder Nacherfüllungsanspruchs ist der Rücktritt erklärt worden (§ 218 Abs. 1)";
+    label en unofficial "withdrawal has been declared on account of this claim to performance or cure (§ 218 (1))";
+}
+pub relation schuldner_beruft_sich_auf_verjaehrung(a: Anspruch) kind empirical {
+    label de official "der Schuldner beruft sich auf die Verjährung des Leistungs- oder Nacherfüllungsanspruchs (§ 218 Abs. 1)";
+    label en unofficial "the debtor relies on the limitation of the claim to performance or cure (§ 218 (1))";
+}
+pub relation ruecktritt_unwirksam_wegen_verjaehrung(a: Anspruch) kind institutional {
+    key(a);
+    label de official "der Rücktritt wegen nicht oder nicht vertragsgemäß erbrachter Leistung ist unwirksam (§ 218 Abs. 1)";
+    label en unofficial "withdrawal for non-performance or non-conforming performance is ineffective (§ 218 (1))";
+}
+
+@source(BGB_P218)
+rule Ruecktritt218Unwirksam(a: Anspruch, tag: Date) strict {
+    label de official "Der Rücktritt wegen nicht oder nicht vertragsgemäß erbrachter Leistung ist unwirksam, wenn der Anspruch auf die Leistung oder der Nacherfüllungsanspruch verjährt ist und der Schuldner sich hierauf beruft (§ 218 Abs. 1 Satz 1)";
+    label en unofficial "Withdrawal for non-performance or non-conforming performance is ineffective if the claim to performance or the claim to cure is time-barred and the debtor relies on this (§ 218 (1) sentence 1)";
+    when verjaehrung_eingetreten_am(a, tag) and ruecktritt_erklaert_wegen(a) and schuldner_beruft_sich_auf_verjaehrung(a);
+    then ruecktritt_unwirksam_wegen_verjaehrung(a);
+}
+
+// Der undatierte Eingang `ruecktritt_erklaert_wegen` oben sagt NICHT, WANN der
+// Rücktritt erklärt worden ist: die Regel greift deshalb auch, wenn die
+// Verjährung erst in der Zukunft eintritt (gemessen D-02-05; dieselbe Blindheit
+// gegenüber dem Tag tragen §§ 214–217 und ist dem Koordinator als eigener
+// Befund gemeldet). Additiver, DATIERTER Pfad daneben: er vergleicht den Tag
+// der Erklärung mit dem Tag, mit dessen ABLAUF die Verjährung eintritt. Der am
+// Tag `v` selbst erklärte Rücktritt ist noch rechtzeitig — die Frist endet
+// erst mit dem Ablauf dieses Tages (§ 188 Abs. 1, 2) —, zu spät ist er ab dem
+// Folgetag: `r > v`. Ein Fall belegt ENTWEDER den datierten ODER den
+// undatierten Eingang, nicht beide.
+
+pub relation ruecktritt_erklaert_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, an dem der Rücktritt wegen dieses Leistungs- oder Nacherfüllungsanspruchs erklärt worden ist (§ 218 Abs. 1)";
+    label en unofficial "day on which withdrawal was declared on account of this claim to performance or cure (§ 218 (1))";
+}
+
+@source(BGB_P218)
+rule Ruecktritt218UnwirksamNachFristablauf(a: Anspruch, v: Date, r: Date) strict {
+    label de official "Der Rücktritt ist unwirksam, wenn er nach dem Ablauf des Tages erklärt worden ist, mit dem die Verjährung des Leistungs- oder Nacherfüllungsanspruchs eintritt, und der Schuldner sich auf die Verjährung beruft (§ 218 Abs. 1 Satz 1) — am letzten Tag der Frist ist der Rücktritt noch rechtzeitig";
+    label en unofficial "Withdrawal is ineffective where it was declared after the end of the day with which limitation of the claim to performance or cure occurs, and the debtor relies on the limitation (§ 218 (1) sentence 1) — on the last day of the period withdrawal is still in time";
+    when verjaehrung_eingetreten_am(a, v) and ruecktritt_erklaert_am(a, r) and r > v and schuldner_beruft_sich_auf_verjaehrung(a);
+    then ruecktritt_unwirksam_wegen_verjaehrung(a);
+}

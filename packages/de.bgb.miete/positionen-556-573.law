@@ -1,0 +1,172 @@
+// Normative positions for the remaining P2 marker slice.
+
+@source(BGB_P556)
+rule PositionAbrechnung556(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) strict {
+    label de official "Der Vermieter ist verpflichtet, über Betriebskostenvorauszahlungen jährlich abzurechnen (§ 556 Abs. 3)";
+    label en unofficial "The lessor is obliged to account annually for operating-cost advances (§ 556 (3))";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and abrechnungspflicht(m, v);
+    then duty Abrechnung556 {
+        bearer v;
+        beneficiary mi;
+        goal maintenance {
+            condition abrechnungspflicht(m, v);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P556)
+rule PositionNachforderung556(ab: Betriebskostenabrechnung, m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) defeasible {
+    label de official "Der Vermieter darf nach Ablauf der Abrechnungsfrist keine Nachforderung geltend machen (§ 556 Abs. 3 Satz 3)";
+    label en unofficial "After the accounting period the lessor must not assert an additional claim (§ 556 (3) sentence 3)";
+    when abrechnung_des(ab, m) and vermieter(m, v) and mieter(m, mi)
+     and mietverhaeltnis_beginn_am(m, beginn);
+    then prohibition Nachforderung556 {
+        bearer v;
+        action nachforderung_ausgeschlossen(ab);
+        window [beginn, infinity);
+    };
+}
+
+pub relation violation_nachforderung_556(ab: Betriebskostenabrechnung) kind derived {
+    label de official "Der Vermieter hat entgegen § 556 Abs. 3 Satz 3 eine Nachforderung geltend gemacht";
+    label en unofficial "the lessor asserted an additional claim in violation of § 556 (3) sentence 3";
+}
+@source(BGB_P556)
+rule ViolationNachforderung556(ab: Betriebskostenabrechnung, e: Date, mt: Date) strict {
+    label de official "Der Vermieter hat entgegen § 556 Abs. 3 Satz 3 eine Nachforderung geltend gemacht";
+    label en unofficial "the lessor asserted an additional claim in violation of § 556 (3) sentence 3";
+    when abrechnungsfrist_ende(ab, e) and abrechnung_mitgeteilt_am(ab, mt) and mt > e
+      and not_known(verspaetung_nicht_zu_vertreten_vermieter(ab));
+    then violation_nachforderung_556(ab);
+}
+@source(BGB_P556)
+rule MaintenanceNachforderung556(ab: Betriebskostenabrechnung, m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) strict {
+    label de official "Der Vermieter hat entgegen § 556 Abs. 3 Satz 3 eine Nachforderung geltend gemacht";
+    label en unofficial "the lessor asserted an additional claim in violation of § 556 (3) sentence 3";
+    when abrechnung_des(ab, m) and vermieter(m, v) and mieter(m, mi)
+      and mietverhaeltnis_beginn_am(m, beginn);
+    then duty MaintenanceNachforderung556Duty {
+        bearer v;
+        beneficiary mi;
+        goal maintenance {
+            condition not violation_nachforderung_556(ab);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P558)
+rule PositionKappung558(m: Mietverhaeltnis, e: Mieterhoehung, v: Person, beginn: Date) strict {
+    label de official "Der Vermieter darf die Kappungsgrenze nicht überschreiten (§ 558 Abs. 3)";
+    label en unofficial "The lessor must not exceed the cap on rent increases (§ 558 (3))";
+    when erhoehung_des(e, m) and vermieter(m, v) and mietverhaeltnis_beginn_am(m, beginn);
+    then prohibition Kappung558 {
+        bearer v;
+        action kappungsgrenze_ueberschritten(e);
+        window [beginn, infinity);
+    };
+}
+
+pub relation violation_kappung_558(e: Mieterhoehung) kind derived {
+    label de official "Der Vermieter hat die Kappungsgrenze entgegen § 558 Abs. 3 überschritten";
+    label en unofficial "the lessor exceeded the cap in violation of § 558 (3)";
+}
+@source(BGB_P558)
+rule ViolationKappung558(e: Mieterhoehung) strict {
+    label de official "Der Vermieter hat die Kappungsgrenze entgegen § 558 Abs. 3 überschritten";
+    label en unofficial "the lessor exceeded the cap in violation of § 558 (3)";
+    when kappungsgrenze_ueberschritten(e);
+    then violation_kappung_558(e);
+}
+@source(BGB_P558)
+rule MaintenanceKappung558(m: Mietverhaeltnis, e: Mieterhoehung, v: Person, beginn: Date) strict {
+    label de official "Der Vermieter hat die Kappungsgrenze entgegen § 558 Abs. 3 überschritten";
+    label en unofficial "the lessor exceeded the cap in violation of § 558 (3)";
+    when erhoehung_des(e, m) and vermieter(m, v) and mietverhaeltnis_beginn_am(m, beginn);
+    then duty MaintenanceKappung558Duty {
+        bearer v;
+        goal maintenance {
+            condition not violation_kappung_558(e);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P559)
+rule PositionErhoehung559(m: Mietverhaeltnis, e: Mieterhoehung, v: Person, beginn: Date) strict {
+    label de official "Der Vermieter hat die Befugnis zur Mieterhöhung nach Modernisierung (§ 559)";
+    label en unofficial "The lessor has the power to increase rent after modernisation (§ 559)";
+    when erhoehung_des(e, m) and vermieter(m, v) and mietverhaeltnis_beginn_am(m, beginn)
+     and erhoehungsrecht_559(e, v);
+    then power Erhoehung559 {
+        holder v;
+        over m;
+        exercise erhoehung_zugegangen_am(e, beginn);
+        valid_when erhoehungsrecht_559(e, v);
+        effect create(erhoehte_miete_559_geschuldet_ab(e, beginn));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P560)
+rule PositionUmlage560(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date, tag: Date) strict {
+    label de official "Der Mieter ist verpflichtet, den auf ihn entfallenden Betriebskostenanteil zu zahlen (§ 560)";
+    label en unofficial "The tenant is obliged to pay the operating-cost share allocated to him (§ 560)";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and umlage_geschuldet_ab(m, tag);
+    then duty Umlage560 {
+        bearer mi;
+        beneficiary v;
+        achieve umlage_geschuldet_ab(m, tag) during [tag, infinity);
+    };
+}
+
+@source(BGB_P567)
+rule PositionBelastung567(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) strict {
+    label de official "Der Dritte ist verpflichtet, die Beeinträchtigung des vertragsgemäßen Gebrauchs zu unterlassen (§ 567)";
+    label en unofficial "The third party is obliged to refrain from impairing contractual use (§ 567)";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and belastung_mit_recht_eines_dritten(m);
+    then duty Belastung567 {
+        bearer v;
+        beneficiary mi;
+        goal maintenance {
+            condition belastung_mit_recht_eines_dritten(m);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P573)
+rule PositionKuendigung573(k: Kuendigung, m: Mietverhaeltnis, v: Person, beginn: Date) defeasible {
+    label de official "Der Vermieter hat bei berechtigtem Interesse die Befugnis zur ordentlichen Kündigung (§ 573)";
+    label en unofficial "The lessor has the power to terminate ordinarily where a legitimate interest exists (§ 573)";
+    when kuendigung_des(k, m) and vermieter(m, v) and mietverhaeltnis_beginn_am(m, beginn)
+     and berechtigtes_interesse_liegt_vor(m);
+    then power Kuendigung573 {
+        holder v;
+        over m;
+        exercise kuendigung_des(k, m);
+        valid_when berechtigtes_interesse_liegt_vor(m);
+        effect create(ordentliche_kuendigung_des_vermieters_zulaessig(k));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P573a)
+rule PositionKuendigung573a(k: Kuendigung, m: Mietverhaeltnis, v: Person, beginn: Date) defeasible {
+    label de official "Der Vermieter hat bei einem selbstbewohnten Gebäude mit höchstens zwei Wohnungen die Befugnis zur Kündigung (§ 573a)";
+    label en unofficial "The lessor has the power to terminate for a self-occupied building with at most two dwellings (§ 573a)";
+    when kuendigung_des(k, m) and vermieter(m, v) and mietverhaeltnis_beginn_am(m, beginn)
+     and selbstbewohntes_gebaeude_mit_zwei_wohnungen(m);
+    then power Kuendigung573a {
+        holder v;
+        over m;
+        exercise kuendigung_des(k, m);
+        valid_when selbstbewohntes_gebaeude_mit_zwei_wohnungen(m);
+        effect create(ordentliche_kuendigung_des_vermieters_zulaessig(k));
+        window [beginn, infinity);
+    };
+}
