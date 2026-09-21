@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Kanarienvogel zu t02: dieselben zwei Schulden, aber die Wertung ist
+// VERTAUSCHT — a2 bietet die geringere Sicherheit. Getilgt wird jetzt a2,
+// nicht a1: die Inversion einer einzigen Eingabe muss das Ergebnis kippen.
+test "§ 366 Abs. 2 Stufe 1, Kanarie: vertauschte Sicherheit tilgt die andere Schuld" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": mehrere_gleichartige_schulden(entity_ref("urn:de:bgb:sr-at:t03:schuldner"), entity_ref("urn:de:bgb:sr-at:t03:glaeubiger")) { origin case_input; }
+        assert "a2": keine_tilgungsbestimmung(entity_ref("urn:de:bgb:sr-at:t03:schuldner"), entity_ref("urn:de:bgb:sr-at:t03:glaeubiger")) { origin case_input; }
+        assert "a3": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t03:a1")) { origin case_input; }
+        assert "a4": faellige_schuld(entity_ref("urn:de:bgb:sr-at:t03:a2")) { origin case_input; }
+        assert "a5": geringere_sicherheit_bietet(entity_ref("urn:de:bgb:sr-at:t03:a2"), entity_ref("urn:de:bgb:sr-at:t03:a1")) { origin adjudicated; }
+    }
+    evaluate truth(getilgte_schuld(entity_ref("urn:de:bgb:sr-at:t03:a2")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(getilgte_schuld(entity_ref("urn:de:bgb:sr-at:t03:a1")));
+    expect truth_status == NEITHER;
+}

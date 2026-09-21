@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1750 Abs. 1 Satz 3: die Einwilligung wird mit dem Zugang beim Familiengericht wirksam — hier am 01.03.2022. Abs. 4 Satz 2: sie verliert ihre Kraft, wenn das Kind nicht innerhalb von DREI JAHREN seit dem Wirksamwerden angenommen wird; die drei Jahre laufen bis zum 01.03.2025, der Ausspruch vom 01.06.2025 liegt danach.
+test "§ 1750 Abs. 4: die Einwilligung verliert nach drei Jahren ihre Kraft" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": einwilligung_dem_gericht_zugegangen_am(entity_ref("urn:de:bgb:vw:ar01:K"), entity_ref("urn:de:bgb:vw:ar01:E"), @2022-03-01) { origin case_input; }
+        assert "f2": einwilligung_notariell_beurkundet(entity_ref("urn:de:bgb:vw:ar01:K"), entity_ref("urn:de:bgb:vw:ar01:E")) { origin case_input; }
+        assert "f3": annahme_ausgesprochen_am(entity_ref("urn:de:bgb:vw:ar01:K"), @2025-06-01) { origin case_input; }
+    }
+    evaluate truth(einwilligung_wirksam_geworden_am(entity_ref("urn:de:bgb:vw:ar01:K"), entity_ref("urn:de:bgb:vw:ar01:E"), @2022-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(drei_jahre_seit_dem_wirksamwerden(entity_ref("urn:de:bgb:vw:ar01:K"), entity_ref("urn:de:bgb:vw:ar01:E"), @2025-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einwilligung_verliert_ihre_kraft(entity_ref("urn:de:bgb:vw:ar01:K"), entity_ref("urn:de:bgb:vw:ar01:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

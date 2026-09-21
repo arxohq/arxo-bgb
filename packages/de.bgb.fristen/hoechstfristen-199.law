@@ -1,0 +1,148 @@
+// § 199 Abs. 1 Nr. 2 (Kenntnis-Kanal), Abs. 2–4 (Verjährungshöchstfristen).
+// Eigene, additive Relationen: die Höchstfristen laufen NEBEN der
+// regelmäßigen Verjährung (§§ 195, 199 Abs. 1, package.law) und werden nicht
+// in deren bestehenden Kopf `verjaehrung_eingetreten_am` geschrieben (Hub-
+// Schutz, PARALLEL.md § 3) — ein neuer, additiver Kopf
+// `verjaehrung_eingetreten_am_mit_hoechstfrist` kombiniert beide für Fälle,
+// die eine Höchstfristkategorie angeben.
+
+// --- § 199 Abs. 1 Nr. 2: grob fahrlässige Unkenntnis — Kanal §47.3 -----------------------------------
+
+@source(BGB_P199)
+pub external judgment relation grob_fahrlaessig_unkenntnis(a: Anspruch) {
+    authority Court;
+    label de official "§ 199 Abs. 1 Nr. 2: der Gläubiger hätte von den den Anspruch begründenden Umständen und der Person des Schuldners ohne grobe Fahrlässigkeit Kenntnis erlangen müssen — Wertung, nicht Tatsachenfeststellung (DECISION-0194)";
+    label en unofficial "§ 199 (1) no. 2: the creditor would have obtained knowledge of the circumstances giving rise to the claim and of the debtor's identity but for gross negligence — an evaluative judgment, not a factual finding (DECISION-0194)";
+}
+
+@source(BGB_P199)
+rule JahresendeGesuchtFuerGrobFahrlaessigeUnkenntnis(a: Anspruch, e: Date) strict {
+    label de official "Für den Tag, an dem der Gläubiger ohne grobe Fahrlässigkeit Kenntnis erlangt hätte, wird ebenfalls der Schluss des Jahres gesucht wie für die tatsächliche Kenntnis (§ 199 Abs. 1 Nr. 2)";
+    label en unofficial "For the day on which the creditor would have obtained knowledge but for gross negligence, the close of the year is likewise sought, as for actual knowledge (§ 199 (1) no. 2)";
+    when grob_fahrlaessig_unkenntnis(a) and de.bgb.core::anspruch_entstanden_am(a, e);
+    then jahresende_gesucht(a, e);
+}
+
+// --- § 199 Abs. 2–4: Kategorien und Bezugstag -------------------------------------------------------
+
+pub enum Hoechstfristkategorie {
+    label de official "Kategorie des Anspruchs für die Verjährungshöchstfrist (§ 199 Abs. 2–4)";
+    label en unofficial "category of the claim for the maximum limitation period (§ 199 (2)-(4))";
+    LebenKoerperGesundheitFreiheit,
+    SonstigerSchadensersatz,
+    Erbfall,
+    Andere
+}
+
+pub relation hoechstfrist_kategorie(a: Anspruch, kat: Hoechstfristkategorie) kind empirical {
+    key(a);
+    label de official "Kategorie des Anspruchs für die Verjährungshöchstfrist (§ 199 Abs. 2–4)";
+    label en unofficial "category of the claim for the maximum limitation period (§ 199 (2)-(4))";
+}
+pub relation begehung_pflichtverletzung_oder_ereignis_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag der Begehung der Handlung, der Pflichtverletzung oder des sonstigen, den Schaden auslösenden Ereignisses (§ 199 Abs. 2, 3 Nr. 2)";
+    label en unofficial "day of the commission of the act, the breach of duty, or the other event triggering the damage (§ 199 (2), (3) no. 2)";
+}
+pub relation hoechstfrist_ende(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährungshöchstfrist endet (§ 199 Abs. 2–4)";
+    label en unofficial "day at whose end the maximum limitation period ends (§ 199 (2)-(4))";
+}
+
+@source(BGB_P199)
+rule HoechstfristLebenKoerperGesundheitFreiheit(a: Anspruch, h: Date) strict {
+    label de official "Schadensersatzansprüche aus Verletzung des Lebens, des Körpers, der Gesundheit oder der Freiheit verjähren ohne Rücksicht auf Entstehung und Kenntnis in 30 Jahren von der Begehung an (§ 199 Abs. 2)";
+    label en unofficial "Damages claims for injury to life, body, health or freedom are barred, regardless of accrual and knowledge, after 30 years from commission (§ 199 (2))";
+    when hoechstfrist_kategorie(a, LebenKoerperGesundheitFreiheit) and begehung_pflichtverletzung_oder_ereignis_am(a, h);
+    then hoechstfrist_ende(a, add_calendar_period(h, 30 calendar_year));
+}
+
+@source(BGB_P199)
+rule HoechstfristErbfall(a: Anspruch, e: Date) strict {
+    label de official "Ansprüche, die auf einem Erbfall beruhen oder deren Geltendmachung die Kenntnis einer Verfügung von Todes wegen voraussetzt, verjähren ohne Rücksicht auf Kenntnis oder grob fahrlässige Unkenntnis in 30 Jahren von der Entstehung an (§ 199 Abs. 3a)";
+    label en unofficial "Claims based on a succession or whose assertion presupposes knowledge of a testamentary disposition are barred, regardless of knowledge or grossly negligent lack of it, after 30 years from accrual (§ 199 (3a))";
+    when hoechstfrist_kategorie(a, Erbfall) and de.bgb.core::anspruch_entstanden_am(a, e);
+    then hoechstfrist_ende(a, add_calendar_period(e, 30 calendar_year));
+}
+
+@source(BGB_P199)
+rule HoechstfristAndere(a: Anspruch, e: Date) strict {
+    label de official "Andere Ansprüche als die nach § 199 Abs. 2 bis 3a verjähren ohne Rücksicht auf Kenntnis oder grob fahrlässige Unkenntnis in zehn Jahren von der Entstehung an (§ 199 Abs. 4)";
+    label en unofficial "Claims other than those under § 199 (2) to (3a) are barred, regardless of knowledge or grossly negligent lack of it, after ten years from accrual (§ 199 (4))";
+    when hoechstfrist_kategorie(a, Andere) and de.bgb.core::anspruch_entstanden_am(a, e);
+    then hoechstfrist_ende(a, add_calendar_period(e, 10 calendar_year));
+}
+
+// --- § 199 Abs. 3: sonstige Schadensersatzansprüche — die früher endende Frist -----------------------
+
+pub relation hoechstfrist_kandidat_entstehung(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "§ 199 Abs. 3 Nr. 1: zehn Jahre von der Entstehung an, ohne Rücksicht auf Kenntnis oder grob fahrlässige Unkenntnis";
+    label en unofficial "§ 199 (3) no. 1: ten years from accrual, regardless of knowledge or grossly negligent lack of it";
+}
+pub relation hoechstfrist_kandidat_begehung(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "§ 199 Abs. 3 Nr. 2: 30 Jahre von der Begehung der Handlung, der Pflichtverletzung oder dem sonstigen, den Schaden auslösenden Ereignis an";
+    label en unofficial "§ 199 (3) no. 2: 30 years from the commission of the act, breach of duty, or other triggering event";
+}
+
+@source(BGB_P199)
+rule HoechstfristKandidatEntstehung(a: Anspruch, e: Date) strict {
+    label de official "§ 199 Abs. 3 Nr. 1: zehn Jahre von der Entstehung an";
+    label en unofficial "§ 199 (3) no. 1: ten years from accrual";
+    when hoechstfrist_kategorie(a, SonstigerSchadensersatz) and de.bgb.core::anspruch_entstanden_am(a, e);
+    then hoechstfrist_kandidat_entstehung(a, add_calendar_period(e, 10 calendar_year));
+}
+
+@source(BGB_P199)
+rule HoechstfristKandidatBegehung(a: Anspruch, h: Date) strict {
+    label de official "§ 199 Abs. 3 Nr. 2: 30 Jahre von der Begehung an";
+    label en unofficial "§ 199 (3) no. 2: 30 years from commission";
+    when hoechstfrist_kategorie(a, SonstigerSchadensersatz) and begehung_pflichtverletzung_oder_ereignis_am(a, h);
+    then hoechstfrist_kandidat_begehung(a, add_calendar_period(h, 30 calendar_year));
+}
+
+@source(BGB_P199)
+rule HoechstfristMassgeblichEntstehung(a: Anspruch, d1: Date, d2: Date) strict {
+    label de official "Maßgeblich ist die früher endende Frist (§ 199 Abs. 3 Satz 2): hier die Zehn-Jahres-Frist ab Entstehung";
+    label en unofficial "The period ending earlier is decisive (§ 199 (3) sentence 2): here the ten-year period from accrual";
+    when hoechstfrist_kandidat_entstehung(a, d1) and hoechstfrist_kandidat_begehung(a, d2) and d1 <= d2;
+    then hoechstfrist_ende(a, d1);
+}
+
+@source(BGB_P199)
+rule HoechstfristMassgeblichBegehung(a: Anspruch, d1: Date, d2: Date) strict {
+    label de official "Maßgeblich ist die früher endende Frist (§ 199 Abs. 3 Satz 2): hier die 30-Jahres-Frist ab Begehung";
+    label en unofficial "The period ending earlier is decisive (§ 199 (3) sentence 2): here the 30-year period from commission";
+    when hoechstfrist_kandidat_entstehung(a, d1) and hoechstfrist_kandidat_begehung(a, d2) and d2 < d1;
+    then hoechstfrist_ende(a, d2);
+}
+
+// --- Zusammenspiel mit der regelmäßigen Verjährung ---------------------------------------------------
+//
+// Additiv: ein NEUER Kopf statt einer Änderung von `verjaehrung_eingetreten_am`
+// (Hub-Schutz). Nur Fälle, die zusätzlich eine Höchstfristkategorie angeben,
+// erhalten diese kombinierte Feststellung.
+
+pub relation verjaehrung_eingetreten_am_mit_hoechstfrist(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung eintritt, unter Berücksichtigung der Verjährungshöchstfrist des § 199 Abs. 2–4 — die früher endende Frist ist maßgeblich";
+    label en unofficial "day at whose end limitation occurs, taking into account the maximum limitation period of § 199 (2)-(4) — the period ending earlier is decisive";
+}
+
+@source(BGB_P199)
+rule GesamtfristRegelmaessigMassgeblich(a: Anspruch, regel: Date, hoechst: Date) strict {
+    label de official "Die regelmäßige Verjährung (mit Hemmung) endet nicht später als die Höchstfrist: sie ist maßgeblich";
+    label en unofficial "The regular limitation (with suspension) ends no later than the maximum period: it is decisive";
+    when verjaehrung_eingetreten_am(a, regel) and hoechstfrist_ende(a, hoechst) and regel <= hoechst;
+    then verjaehrung_eingetreten_am_mit_hoechstfrist(a, regel);
+}
+
+@source(BGB_P199)
+rule GesamtfristHoechstfristMassgeblich(a: Anspruch, regel: Date, hoechst: Date) strict {
+    label de official "Die Höchstfrist endet früher als die regelmäßige Verjährung (mit Hemmung): sie ist maßgeblich";
+    label en unofficial "The maximum period ends earlier than the regular limitation (with suspension): it is decisive";
+    when verjaehrung_eingetreten_am(a, regel) and hoechstfrist_ende(a, hoechst) and hoechst < regel;
+    then verjaehrung_eingetreten_am_mit_hoechstfrist(a, hoechst);
+}

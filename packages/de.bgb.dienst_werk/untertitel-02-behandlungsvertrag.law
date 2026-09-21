@@ -1,0 +1,1301 @@
+// --- Untertitel 2 Behandlungsvertrag (§§ 630a–630h) -----------------------------------------------
+//
+// Reihenfolge: Grundpflichten und fachlicher Standard (§ 630a), Verweisung
+// auf das Dienstvertragsrecht (§ 630b), Mitwirkung und Informationspflichten
+// (§ 630c), Einwilligung (§ 630d), Aufklärung (§ 630e), Dokumentation
+// (§ 630f), Einsichtnahme (§ 630g), Beweislast (§ 630h).
+//
+// EIGENER TRÄGER. Der Behandlungsvertrag ist ein Dienstvertrag besonderer
+// Art; § 630b erklärt die Vorschriften über das Dienstverhältnis, das kein
+// Arbeitsverhältnis im Sinne des § 622 ist, für anwendbar. Das Paket führt
+// dafür einen eigenen Träger `Behandlungsverhaeltnis` und senkt § 630b als
+// institutionellen Schluss ab; die Regeln des Untertitels 1 laufen über
+// ihren eigenen Träger und werden hier NICHT dupliziert (Ledger D-07-08).
+//
+// BEWERTENDE MERKMALE (DECISION-0194): allgemein anerkannter fachlicher
+// Standard (§ 630a Abs. 2), hinreichende Anhaltspunkte für die ungesicherte
+// Kostenübernahme (§ 630c Abs. 3 Satz 1), ausnahmsweise Entbehrlichkeit von
+// Information und Aufklärung (§§ 630c Abs. 4, 630e Abs. 3), mutmaßlicher
+// Wille (§ 630d Abs. 1 Satz 4), Rechtzeitigkeit und Verständlichkeit der
+// Aufklärung (§ 630e Abs. 2 Satz 1 Nr. 2, 3), Unverzüglichkeit der
+// Einsichtgewährung (§ 630g Abs. 1 Satz 1), erhebliche therapeutische Gründe
+// (§ 630g Abs. 2 Satz 1), volle Beherrschbarkeit des Risikos (§ 630h
+// Abs. 1), hypothetische Einwilligung (§ 630h Abs. 2 Satz 2), grober
+// Behandlungsfehler und seine grundsätzliche Eignung (§ 630h Abs. 5).
+//
+// BEWEISLAST. § 630h trägt fünf Vermutungen; jede ist eine `presumption` mit
+// ausdrücklichem Gegenbeweis als `unless`-Klausel (§ 146). Der Gegenbeweis
+// ist stets eine AUSDRÜCKLICHE Eingabe des Falls — sein Fehlen verneint
+// nichts.
+//
+// FRISTEN. § 630f Abs. 3 (zehn Jahre Aufbewahrung ab Abschluss der
+// Behandlung) rechnet unter BGB_DIENST_WERK_KALENDER; Zeile in
+// DEADLINES.json, Abschnitt BG-07.
+
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// --- Gemeinsamer Träger des Untertitels ------------------------------------------------------------
+
+pub entity Behandlungsverhaeltnis {
+    label de official "Behandlungsvertrag, durch den die medizinische Behandlung eines Patienten zugesagt wird (§ 630a Abs. 1)";
+    label en unofficial "treatment contract under which the medical treatment of a patient is promised (§ 630a (1))";
+}
+
+// --- § 630a Vertragstypische Pflichten beim Behandlungsvertrag --------------------------------------
+
+pub relation behandelnder(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    key(b);
+    label de official "wer die medizinische Behandlung eines Patienten zusagt (§ 630a Abs. 1)";
+    label en unofficial "the party who promises the medical treatment of a patient (§ 630a (1))";
+}
+pub relation patient(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    key(b);
+    label de official "der andere Teil des Behandlungsvertrags (§ 630a Abs. 1)";
+    label en unofficial "the other party to the treatment contract (§ 630a (1))";
+}
+pub relation behandlungsbeginn_am(b: Behandlungsverhaeltnis, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, ab dem der Behandlungsvertrag Pflichten trägt";
+    label en unofficial "day from which the treatment contract carries duties";
+}
+pub relation behandlungsvertrag_geschlossen_am(b: Behandlungsverhaeltnis, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag des Abschlusses des Behandlungsvertrags — Beginn des Zeitfensters der vorvertraglichen Kosteninformation (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "day the treatment contract was concluded — start of the window for the pre-treatment information on costs (§ 630c (3) sentence 1)";
+}
+pub relation behandlung_erbracht(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die versprochene Behandlung wurde geleistet (§ 630a Abs. 1)";
+    label en unofficial "the promised treatment was rendered (§ 630a (1))";
+}
+pub relation behandlungsverguetung_gewaehrt(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die vereinbarte Vergütung der Behandlung wurde gewährt (§ 630a Abs. 1)";
+    label en unofficial "the agreed compensation for the treatment was granted (§ 630a (1))";
+}
+pub relation kein_dritter_zur_zahlung_verpflichtet_630a(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "kein Dritter ist zur Zahlung der Vergütung verpflichtet (§ 630a Abs. 1 Halbsatz 2) — ausdrückliche Angabe des Falls; das Schweigen des Falls verneint nichts";
+    label en unofficial "no third party is obliged to pay the compensation (§ 630a (1) second half-sentence) — express statement of the case; silence is not a denial";
+}
+pub relation dritter_zur_zahlung_verpflichtet_630a(b: Behandlungsverhaeltnis, dritter: Person) kind empirical {
+    label de official "ein Dritter ist zur Zahlung der Vergütung verpflichtet (§ 630a Abs. 1 Halbsatz 2)";
+    label en unofficial "a third party is obliged to pay the compensation (§ 630a (1) second half-sentence)";
+}
+
+@source(BGB_P630a)
+rule Pflichten630aBehandlungsPflicht(b: Behandlungsverhaeltnis, arzt: Person, pat: Person, beginn: Date) strict {
+    label de official "Durch den Behandlungsvertrag wird derjenige, welcher die medizinische Behandlung eines Patienten zusagt, zur Leistung der versprochenen Behandlung verpflichtet (§ 630a Abs. 1)";
+    label en unofficial "By the treatment contract the party who promises the medical treatment of a patient is obliged to render the promised treatment (§ 630a (1))";
+    when behandelnder(b, arzt);
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    then duty BehandlungsPflicht630a {
+        bearer arzt;
+        achieve behandlung_erbracht(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630a)
+rule PositionPflichten630aBehandlungsPflicht(b: Behandlungsverhaeltnis, arzt: Person, pat: Person, beginn: Date) strict {
+    label de official "Der Behandelnde muss die versprochene Behandlung leisten (§ 630a Abs. 1) — normative Position";
+    label en unofficial "the practitioner must render the promised treatment (§ 630a (1)) — normative position";
+    when behandelnder(b, arzt);
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    then duty BehandlungsPflicht630aPosition {
+        bearer arzt;
+        beneficiary pat;
+        achieve behandlung_erbracht(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630a)
+rule Pflichten630aVerguetungsPflicht(b: Behandlungsverhaeltnis, arzt: Person, pat: Person, beginn: Date) strict {
+    label de official "Der Patient ist zur Gewährung der vereinbarten Vergütung verpflichtet, soweit nicht ein Dritter zur Zahlung verpflichtet ist (§ 630a Abs. 1)";
+    label en unofficial "The patient is obliged to grant the agreed compensation, unless a third party is obliged to pay (§ 630a (1))";
+    when behandelnder(b, arzt);
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    when kein_dritter_zur_zahlung_verpflichtet_630a(b);
+    then duty BehandlungsVerguetungsPflicht630a {
+        bearer pat;
+        achieve behandlungsverguetung_gewaehrt(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630a)
+rule PositionPflichten630aVerguetungsPflicht(b: Behandlungsverhaeltnis, arzt: Person, pat: Person, beginn: Date) strict {
+    label de official "Der Patient muss die vereinbarte Vergütung gewähren (§ 630a Abs. 1) — normative Position";
+    label en unofficial "the patient must grant the agreed compensation (§ 630a (1)) — normative position";
+    when behandelnder(b, arzt);
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    when kein_dritter_zur_zahlung_verpflichtet_630a(b);
+    then duty BehandlungsVerguetungsPflicht630aPosition {
+        bearer pat;
+        achieve behandlungsverguetung_gewaehrt(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630a)
+rule Verguetungspflicht630aDritter(b: Behandlungsverhaeltnis, dritter: Person, beginn: Date) strict {
+    label de official "Soweit ein Dritter zur Zahlung verpflichtet ist, trifft die Gewährung der Vergütung ihn (§ 630a Abs. 1 Halbsatz 2)";
+    label en unofficial "Where a third party is obliged to pay, the granting of the compensation falls on that party (§ 630a (1) second half-sentence)";
+    when dritter_zur_zahlung_verpflichtet_630a(b, dritter);
+    when behandlungsbeginn_am(b, beginn);
+    then duty BehandlungsVerguetungsPflichtDritter630a {
+        bearer dritter;
+        achieve behandlungsverguetung_gewaehrt(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630a)
+pub external judgment relation behandlung_entspricht_anerkanntem_standard(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630a Abs. 2. Die Behandlung ist nach den zum Zeitpunkt der Behandlung bestehenden, allgemein anerkannten fachlichen Standards erfolgt";
+    label en unofficial "§ 630a (2). The treatment was carried out according to the generally recognised professional standards existing at the time of treatment";
+}
+pub relation keine_abweichende_standardvereinbarung_630a(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "über den fachlichen Standard der Behandlung ist nichts anderes vereinbart (§ 630a Abs. 2 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing else is agreed on the professional standard of the treatment (§ 630a (2) second half-sentence) — express statement of the case";
+}
+pub relation behandlungsfehler(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "Fehler des Behandelnden — Abweichung vom geschuldeten fachlichen Standard (§ 630a Abs. 2, § 630h Abs. 1)";
+    label en unofficial "error of the treating party — departure from the professional standard owed (§ 630a (2), § 630h (1))";
+}
+
+@source(BGB_P630a)
+rule Behandlungsfehler630aAbs2(b: Behandlungsverhaeltnis) strict {
+    label de official "Die Behandlung hat nach den zum Zeitpunkt der Behandlung bestehenden, allgemein anerkannten fachlichen Standards zu erfolgen, soweit nicht etwas anderes vereinbart ist; die Abweichung ist ein Fehler des Behandelnden (§ 630a Abs. 2)";
+    label en unofficial "The treatment must be carried out according to the generally recognised professional standards existing at the time of treatment unless otherwise agreed; a departure is an error of the treating party (§ 630a (2))";
+    when keine_abweichende_standardvereinbarung_630a(b);
+    when not behandlung_entspricht_anerkanntem_standard(b);
+    then behandlungsfehler(b);
+}
+
+// --- § 630b Anwendbare Vorschriften ------------------------------------------------------------------
+
+pub relation keine_abweichende_bestimmung_untertitel_2(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "in diesem Untertitel ist nichts anderes bestimmt (§ 630b) — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing else is provided in this sub-title (§ 630b) — express statement of the case";
+}
+pub relation dienstvertragsrecht_anwendbar_630b(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "auf das Behandlungsverhältnis sind die Vorschriften über das Dienstverhältnis, das kein Arbeitsverhältnis im Sinne des § 622 ist, anzuwenden (§ 630b)";
+    label en unofficial "the provisions on the service relationship that is not an employment relationship within § 622 apply to the treatment relationship (§ 630b)";
+}
+
+@source(BGB_P630b)
+rule AnwendbareVorschriften630b(b: Behandlungsverhaeltnis, arzt: Person) strict {
+    label de official "Auf das Behandlungsverhältnis sind die Vorschriften über das Dienstverhältnis, das kein Arbeitsverhältnis im Sinne des § 622 ist, anzuwenden, soweit nicht in diesem Untertitel etwas anderes bestimmt ist (§ 630b)";
+    label en unofficial "The provisions on the service relationship that is not an employment relationship within § 622 apply to the treatment relationship, unless otherwise provided in this sub-title (§ 630b)";
+    when behandelnder(b, arzt);
+    when keine_abweichende_bestimmung_untertitel_2(b);
+    then dienstvertragsrecht_anwendbar_630b(b);
+}
+
+// --- § 630c Mitwirkung der Vertragsparteien; Informationspflichten ------------------------------------
+
+pub relation zusammenwirken_zur_durchfuehrung(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "Behandelnder und Patient wirken zur Durchführung der Behandlung zusammen (§ 630c Abs. 1)";
+    label en unofficial "the treating party and the patient cooperate in carrying out the treatment (§ 630c (1))";
+}
+
+@source(BGB_P630c)
+rule Mitwirkung630cAbs1(b: Behandlungsverhaeltnis, arzt: Person, pat: Person, beginn: Date) strict {
+    label de official "Behandelnder und Patient sollen zur Durchführung der Behandlung zusammenwirken (§ 630c Abs. 1)";
+    label en unofficial "The treating party and the patient should cooperate in carrying out the treatment (§ 630c (1))";
+    when behandelnder(b, arzt);
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    then duty MitwirkungBehandelnder630c {
+        bearer arzt;
+        achieve zusammenwirken_zur_durchfuehrung(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule MitwirkungPatient630cAbs1(b: Behandlungsverhaeltnis, pat: Person, beginn: Date) strict {
+    label de official "Auch den Patienten trifft das Gebot des Zusammenwirkens zur Durchführung der Behandlung (§ 630c Abs. 1)";
+    label en unofficial "The duty to cooperate in carrying out the treatment also applies to the patient (§ 630c (1))";
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    then duty MitwirkungPatient630c {
+        bearer pat;
+        achieve zusammenwirken_zur_durchfuehrung(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule PositionMitwirkungPatient630cAbs1(b: Behandlungsverhaeltnis, pat: Person, beginn: Date) strict {
+    label de official "Der Patient muss zur Durchführung der Behandlung mitwirken (§ 630c Abs. 1) — normative Position";
+    label en unofficial "the patient must cooperate in carrying out the treatment (§ 630c (1)) — normative position";
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    then duty MitwirkungPatient630cPosition {
+        bearer pat;
+        achieve zusammenwirken_zur_durchfuehrung(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630c)
+pub external judgment relation information_ausnahmsweise_entbehrlich_630c(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630c Abs. 4. Die Information ist ausnahmsweise aufgrund besonderer Umstände entbehrlich";
+    label en unofficial "§ 630c (4). The information is exceptionally dispensable owing to particular circumstances";
+}
+pub relation behandlung_unaufschiebbar(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Behandlung ist unaufschiebbar (§ 630c Abs. 4, § 630d Abs. 1 Satz 4, § 630e Abs. 3)";
+    label en unofficial "the treatment cannot be postponed (§ 630c (4), § 630d (1) sentence 4, § 630e (3))";
+}
+pub relation verzicht_auf_information_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient hat auf die Information ausdrücklich verzichtet (§ 630c Abs. 4)";
+    label en unofficial "the patient has expressly waived the information (§ 630c (4))";
+}
+pub relation informationspflicht_entfaellt_630c(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "der Information des Patienten bedarf es nicht (§ 630c Abs. 4)";
+    label en unofficial "the information of the patient is not required (§ 630c (4))";
+}
+pub relation informationspflicht_nicht_entbehrlich_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Information ist nicht nach § 630c Abs. 4 entbehrlich — ausdrückliche Angabe des Falls";
+    label en unofficial "the information is not dispensable under § 630c (4) — express statement of the case";
+}
+
+@source(BGB_P630c)
+rule InformationEntbehrlich630cAbs4Wertung(b: Behandlungsverhaeltnis) strict {
+    label de official "Der Information des Patienten bedarf es nicht, soweit diese ausnahmsweise aufgrund besonderer Umstände entbehrlich ist (§ 630c Abs. 4)";
+    label en unofficial "The information of the patient is not required where it is exceptionally dispensable owing to particular circumstances (§ 630c (4))";
+    when information_ausnahmsweise_entbehrlich_630c(b);
+    then informationspflicht_entfaellt_630c(b);
+}
+
+@source(BGB_P630c)
+rule InformationEntbehrlich630cAbs4Unaufschiebbar(b: Behandlungsverhaeltnis) strict {
+    label de official "Der Information bedarf es insbesondere dann nicht, wenn die Behandlung unaufschiebbar ist (§ 630c Abs. 4)";
+    label en unofficial "In particular, the information is not required where the treatment cannot be postponed (§ 630c (4))";
+    when behandlung_unaufschiebbar(b);
+    then informationspflicht_entfaellt_630c(b);
+}
+
+@source(BGB_P630c)
+rule InformationEntbehrlich630cAbs4Verzicht(b: Behandlungsverhaeltnis) strict {
+    label de official "Der Information bedarf es insbesondere dann nicht, wenn der Patient auf sie ausdrücklich verzichtet hat (§ 630c Abs. 4)";
+    label en unofficial "In particular, the information is not required where the patient has expressly waived it (§ 630c (4))";
+    when verzicht_auf_information_630c(b);
+    then informationspflicht_entfaellt_630c(b);
+}
+
+pub relation wesentliche_umstaende_erlaeutert_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "sämtliche für die Behandlung wesentlichen Umstände wurden in verständlicher Weise erläutert (§ 630c Abs. 2 Satz 1)";
+    label en unofficial "all circumstances material to the treatment have been explained in a comprehensible manner (§ 630c (2) sentence 1)";
+}
+
+@source(BGB_P630c)
+rule Informationspflicht630cAbs2Satz1(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde ist verpflichtet, dem Patienten in verständlicher Weise zu Beginn der Behandlung und, soweit erforderlich, in deren Verlauf sämtliche für die Behandlung wesentlichen Umstände zu erläutern, insbesondere die Diagnose, die voraussichtliche gesundheitliche Entwicklung, die Therapie und die zu und nach der Therapie zu ergreifenden Maßnahmen (§ 630c Abs. 2 Satz 1)";
+    label en unofficial "The treating party must explain to the patient, comprehensibly, at the beginning of the treatment and, where necessary, in its course, all circumstances material to the treatment, in particular the diagnosis, the likely development of health, the therapy and the measures to be taken during and after the therapy (§ 630c (2) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when informationspflicht_nicht_entbehrlich_630c(b);
+    then duty InformationsPflicht630c {
+        bearer arzt;
+        achieve wesentliche_umstaende_erlaeutert_630c(b) during [beginn, infinity);
+    };
+}
+
+pub relation umstaende_fuer_behandlungsfehler_erkennbar_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "für den Behandelnden sind Umstände erkennbar, die die Annahme eines Behandlungsfehlers begründen (§ 630c Abs. 2 Satz 2) — festgestellte Tatsache";
+    label en unofficial "circumstances are recognisable to the treating party that justify the assumption of a treatment error (§ 630c (2) sentence 2) — established fact";
+}
+pub relation nachfrage_des_patienten_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient fragt nach den einen Behandlungsfehler begründenden Umständen (§ 630c Abs. 2 Satz 2)";
+    label en unofficial "the patient asks about the circumstances justifying a treatment error (§ 630c (2) sentence 2)";
+}
+pub relation abwendung_gesundheitlicher_gefahren_erforderlich_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Information ist zur Abwendung gesundheitlicher Gefahren erforderlich (§ 630c Abs. 2 Satz 2)";
+    label en unofficial "the information is necessary to avert dangers to health (§ 630c (2) sentence 2)";
+}
+pub relation ueber_behandlungsfehler_informiert_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient wurde über die einen Behandlungsfehler begründenden Umstände informiert (§ 630c Abs. 2 Satz 2)";
+    label en unofficial "the patient was informed of the circumstances justifying a treatment error (§ 630c (2) sentence 2)";
+}
+
+@source(BGB_P630c)
+rule Fehlerinformation630cAbs2Satz2Nachfrage(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Sind für den Behandelnden Umstände erkennbar, die die Annahme eines Behandlungsfehlers begründen, hat er den Patienten über diese auf Nachfrage zu informieren (§ 630c Abs. 2 Satz 2)";
+    label en unofficial "Where circumstances recognisable to the treating party justify the assumption of a treatment error, the treating party must inform the patient of them upon request (§ 630c (2) sentence 2)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when umstaende_fuer_behandlungsfehler_erkennbar_630c(b);
+    when nachfrage_des_patienten_630c(b);
+    then duty FehlerinformationsPflicht630c {
+        bearer arzt;
+        achieve ueber_behandlungsfehler_informiert_630c(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule PositionFehlerinformation630cAbs2Satz2Nachfrage(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde muss den Patienten auf Nachfrage über den Behandlungsfehler informieren (§ 630c Abs. 2 Satz 2) — normative Position";
+    label en unofficial "the practitioner must inform the patient about the treatment error upon request (§ 630c (2) sentence 2) — normative position";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when umstaende_fuer_behandlungsfehler_erkennbar_630c(b);
+    when nachfrage_des_patienten_630c(b);
+    then duty FehlerinformationsPflicht630cNachfragePosition {
+        bearer arzt;
+        achieve ueber_behandlungsfehler_informiert_630c(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule Fehlerinformation630cAbs2Satz2Gefahrenabwendung(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Sind für den Behandelnden Umstände erkennbar, die die Annahme eines Behandlungsfehlers begründen, hat er den Patienten über diese zur Abwendung gesundheitlicher Gefahren zu informieren (§ 630c Abs. 2 Satz 2)";
+    label en unofficial "Where circumstances recognisable to the treating party justify the assumption of a treatment error, the treating party must inform the patient of them in order to avert dangers to health (§ 630c (2) sentence 2)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when umstaende_fuer_behandlungsfehler_erkennbar_630c(b);
+    when abwendung_gesundheitlicher_gefahren_erforderlich_630c(b);
+    then duty FehlerinformationsPflichtGefahr630c {
+        bearer arzt;
+        achieve ueber_behandlungsfehler_informiert_630c(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule PositionFehlerinformation630cAbs2Satz2Gefahrenabwendung(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde muss zur Abwendung gesundheitlicher Gefahren über den Behandlungsfehler informieren (§ 630c Abs. 2 Satz 2) — normative Position";
+    label en unofficial "the practitioner must inform about the treatment error to avert health dangers (§ 630c (2) sentence 2) — normative position";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when umstaende_fuer_behandlungsfehler_erkennbar_630c(b);
+    when abwendung_gesundheitlicher_gefahren_erforderlich_630c(b);
+    then duty FehlerinformationsPflichtGefahr630cPosition {
+        bearer arzt;
+        achieve ueber_behandlungsfehler_informiert_630c(b) during [beginn, infinity);
+    };
+}
+
+pub relation behandlungsfehler_des_behandelnden_oder_angehoerigen_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "dem Behandelnden oder einem seiner in § 52 Abs. 1 der Strafprozessordnung bezeichneten Angehörigen ist ein Behandlungsfehler unterlaufen (§ 630c Abs. 2 Satz 3)";
+    label en unofficial "a treatment error has been committed by the treating party or by one of their relatives designated in § 52 (1) of the Code of Criminal Procedure (§ 630c (2) sentence 3)";
+}
+pub relation information_630c_nur_mit_zustimmung_verwertbar(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "die Information nach § 630c Abs. 2 Satz 2 darf zu Beweiszwecken in einem Straf- oder Bußgeldverfahren nur mit Zustimmung des Behandelnden verwendet werden (§ 630c Abs. 2 Satz 3)";
+    label en unofficial "the information under § 630c (2) sentence 2 may be used as evidence in criminal or administrative-fine proceedings only with the consent of the treating party (§ 630c (2) sentence 3)";
+}
+
+@source(BGB_P630c)
+rule Verwertungsbeschraenkung630cAbs2Satz3(b: Behandlungsverhaeltnis) strict {
+    label de official "Ist dem Behandelnden oder einem seiner Angehörigen ein Behandlungsfehler unterlaufen, darf die Information nach Satz 2 zu Beweiszwecken in einem gegen ihn geführten Straf- oder Bußgeldverfahren nur mit seiner Zustimmung verwendet werden (§ 630c Abs. 2 Satz 3)";
+    label en unofficial "Where a treatment error was committed by the treating party or a relative, the information under sentence 2 may be used as evidence in criminal or administrative-fine proceedings against them only with their consent (§ 630c (2) sentence 3)";
+    when behandlungsfehler_des_behandelnden_oder_angehoerigen_630c(b);
+    when ueber_behandlungsfehler_informiert_630c(b);
+    then information_630c_nur_mit_zustimmung_verwertbar(b);
+}
+
+pub relation kostenuebernahme_durch_dritten_nicht_gesichert_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde weiß, dass eine vollständige Übernahme der Behandlungskosten durch einen Dritten nicht gesichert ist (§ 630c Abs. 3 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the treating party knows that full assumption of the treatment costs by a third party is not assured (§ 630c (3) sentence 1) — established fact";
+}
+@source(BGB_P630c)
+pub external judgment relation hinreichende_anhaltspunkte_fuer_ungesicherte_kostenuebernahme_630c(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630c Abs. 3 Satz 1. Nach den Umständen ergeben sich hinreichende Anhaltspunkte dafür, dass eine vollständige Übernahme der Behandlungskosten durch einen Dritten nicht gesichert ist";
+    label en unofficial "§ 630c (3) sentence 1. In the circumstances there are sufficient indications that full assumption of the treatment costs by a third party is not assured";
+}
+pub relation ueber_voraussichtliche_kosten_in_textform_informiert_630c(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient wurde über die voraussichtlichen Kosten in Textform informiert (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "the patient was informed in text form of the likely costs (§ 630c (3) sentence 1)";
+}
+pub relation kosteninformation_erfolgt_am_630c(b: Behandlungsverhaeltnis, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem die Information über die voraussichtlichen Kosten in Textform erfolgte (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "day on which the information in text form about the likely costs was given (§ 630c (3) sentence 1)";
+}
+pub relation kosteninformation_rechtzeitig_630c(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "die Kosteninformation erfolgte VOR Beginn der Behandlung (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "the information about the costs was given BEFORE the treatment began (§ 630c (3) sentence 1)";
+}
+
+@source(BGB_P630c)
+rule Kosteninformation630cAbs3Kenntnis(b: Behandlungsverhaeltnis, arzt: Person, schluss: Date, beginn: Date) strict {
+    label de official "Weiß der Behandelnde, dass eine vollständige Übernahme der Behandlungskosten durch einen Dritten nicht gesichert ist, muss er den Patienten vor Beginn der Behandlung über die voraussichtlichen Kosten der Behandlung in Textform informieren (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "Where the treating party knows that full assumption of the treatment costs by a third party is not assured, they must inform the patient in text form of the likely costs of the treatment before the treatment begins (§ 630c (3) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when behandlungsvertrag_geschlossen_am(b, schluss);
+    when kostenuebernahme_durch_dritten_nicht_gesichert_630c(b);
+    then duty KosteninformationsPflicht630c {
+        bearer arzt;
+        achieve ueber_voraussichtliche_kosten_in_textform_informiert_630c(b) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule Kosteninformation630cAbs3Anhaltspunkte(b: Behandlungsverhaeltnis, arzt: Person, schluss: Date, beginn: Date) strict {
+    label de official "Ergeben sich nach den Umständen hinreichende Anhaltspunkte dafür, dass eine vollständige Übernahme der Behandlungskosten durch einen Dritten nicht gesichert ist, muss der Behandelnde den Patienten vor Beginn der Behandlung über die voraussichtlichen Kosten in Textform informieren (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "Where the circumstances give sufficient indications that full assumption of the treatment costs by a third party is not assured, the treating party must inform the patient in text form of the likely costs before the treatment begins (§ 630c (3) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when behandlungsvertrag_geschlossen_am(b, schluss);
+    when hinreichende_anhaltspunkte_fuer_ungesicherte_kostenuebernahme_630c(b);
+    then duty KosteninformationsPflichtAnhaltspunkte630c {
+        bearer arzt;
+        achieve ueber_voraussichtliche_kosten_in_textform_informiert_630c(b) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P630c)
+rule KosteninformationRechtzeitig630c(b: Behandlungsverhaeltnis, tag: Date, beginn: Date) strict {
+    label de official "Die Information über die voraussichtlichen Kosten muss VOR Beginn der Behandlung erfolgen (§ 630c Abs. 3 Satz 1)";
+    label en unofficial "The information about the likely costs must be given BEFORE the treatment begins (§ 630c (3) sentence 1)";
+    when kosteninformation_erfolgt_am_630c(b, tag);
+    when behandlungsbeginn_am(b, beginn);
+    when tag < beginn;
+    then kosteninformation_rechtzeitig_630c(b);
+}
+
+// --- § 630d Einwilligung ------------------------------------------------------------------------------
+
+pub relation medizinische_massnahme_geplant_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "eine medizinische Maßnahme, insbesondere ein Eingriff in den Körper oder die Gesundheit, soll durchgeführt werden (§ 630d Abs. 1 Satz 1)";
+    label en unofficial "a medical measure, in particular an intervention in the body or health, is to be carried out (§ 630d (1) sentence 1)";
+}
+pub relation einwilligung_eingeholt_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Einwilligung in die medizinische Maßnahme wurde eingeholt (§ 630d Abs. 1)";
+    label en unofficial "consent to the medical measure has been obtained (§ 630d (1))";
+}
+pub relation patient_einwilligungsunfaehig_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient ist einwilligungsunfähig (§ 630d Abs. 1 Satz 2) — festgestellte Tatsache";
+    label en unofficial "the patient is incapable of consenting (§ 630d (1) sentence 2) — established fact";
+}
+pub relation patient_einwilligungsfaehig_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient ist einwilligungsfähig (§ 630d Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the patient is capable of consenting (§ 630d (1) sentence 1) — express statement of the case";
+}
+pub relation einwilligungsberechtigter_630d(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    key(b);
+    label de official "der zur Einwilligung Berechtigte bei Einwilligungsunfähigkeit des Patienten (§ 630d Abs. 1 Satz 2)";
+    label en unofficial "the person entitled to consent where the patient is incapable of consenting (§ 630d (1) sentence 2)";
+}
+pub relation patientenverfuegung_gestattet_oder_untersagt_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "eine Patientenverfügung nach § 1827 Abs. 1 Satz 1 gestattet oder untersagt die Maßnahme (§ 630d Abs. 1 Satz 2)";
+    label en unofficial "an advance directive under § 1827 (1) sentence 1 permits or prohibits the measure (§ 630d (1) sentence 2)";
+}
+pub relation keine_patientenverfuegung_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "keine Patientenverfügung gestattet oder untersagt die Maßnahme (§ 630d Abs. 1 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no advance directive permits or prohibits the measure (§ 630d (1) sentence 2) — express statement of the case";
+}
+
+@source(BGB_P630d)
+rule Einwilligungspflicht630dAbs1Satz1(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Vor Durchführung einer medizinischen Maßnahme, insbesondere eines Eingriffs in den Körper oder die Gesundheit, ist der Behandelnde verpflichtet, die Einwilligung des Patienten einzuholen (§ 630d Abs. 1 Satz 1)";
+    label en unofficial "Before carrying out a medical measure, in particular an intervention in the body or health, the treating party must obtain the patient's consent (§ 630d (1) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when medizinische_massnahme_geplant_630d(b);
+    when patient_einwilligungsfaehig_630d(b);
+    then duty EinwilligungEinholen630d {
+        bearer arzt;
+        achieve einwilligung_eingeholt_630d(b) during [beginn, infinity);
+    };
+}
+
+pub relation einwilligung_des_berechtigten_einzuholen_630d(b: Behandlungsverhaeltnis, p: Person) kind institutional {
+    key(b);
+    label de official "bei Einwilligungsunfähigkeit des Patienten ist die Einwilligung eines hierzu Berechtigten einzuholen (§ 630d Abs. 1 Satz 2)";
+    label en unofficial "where the patient is incapable of consenting, the consent of a person entitled to consent must be obtained (§ 630d (1) sentence 2)";
+}
+
+@source(BGB_P630d)
+rule EinwilligungBerechtigter630dAbs1Satz2(b: Behandlungsverhaeltnis, berechtigter: Person) strict {
+    label de official "Ist der Patient einwilligungsunfähig, ist die Einwilligung eines hierzu Berechtigten einzuholen, soweit nicht eine Patientenverfügung nach § 1827 Abs. 1 Satz 1 die Maßnahme gestattet oder untersagt (§ 630d Abs. 1 Satz 2)";
+    label en unofficial "Where the patient is incapable of consenting, the consent of a person entitled to consent must be obtained unless an advance directive under § 1827 (1) sentence 1 permits or prohibits the measure (§ 630d (1) sentence 2)";
+    when medizinische_massnahme_geplant_630d(b);
+    when patient_einwilligungsunfaehig_630d(b);
+    when einwilligungsberechtigter_630d(b, berechtigter);
+    when keine_patientenverfuegung_630d(b);
+    then einwilligung_des_berechtigten_einzuholen_630d(b, berechtigter);
+}
+
+pub relation einwilligung_berechtigter_eingeholt_630d(b: Behandlungsverhaeltnis, berechtigter: Person) kind empirical {
+    label de official "die Einwilligung des Berechtigten wurde eingeholt (§ 630d Abs. 1 Satz 2)";
+    label en unofficial "the entitled person's consent was obtained (§ 630d (1) sentence 2)";
+}
+
+@source(BGB_P630d)
+rule PositionEinwilligungBerechtigter630dAbs1Satz2(b: Behandlungsverhaeltnis, berechtigter: Person, beginn: Date) strict {
+    label de official "Die Einwilligung des Berechtigten muss eingeholt werden (§ 630d Abs. 1 Satz 2) — normative Position";
+    label en unofficial "the entitled person's consent must be obtained (§ 630d (1) sentence 2) — normative position";
+    when medizinische_massnahme_geplant_630d(b);
+    when patient_einwilligungsunfaehig_630d(b);
+    when einwilligungsberechtigter_630d(b, berechtigter);
+    when keine_patientenverfuegung_630d(b);
+    when behandlungsbeginn_am(b, beginn);
+    then duty EinwilligungBerechtigter630dAbs1Satz2Position {
+        bearer berechtigter;
+        achieve einwilligung_berechtigter_eingeholt_630d(b, berechtigter) during [beginn, infinity);
+    };
+}
+
+pub relation einwilligung_nicht_rechtzeitig_einholbar_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "eine Einwilligung für eine unaufschiebbare Maßnahme kann nicht rechtzeitig eingeholt werden (§ 630d Abs. 1 Satz 4)";
+    label en unofficial "consent for a measure that cannot be postponed cannot be obtained in time (§ 630d (1) sentence 4)";
+}
+@source(BGB_P630d)
+pub external judgment relation massnahme_entspricht_mutmasslichem_willen_630d(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630d Abs. 1 Satz 4. Die Maßnahme entspricht dem mutmaßlichen Willen des Patienten";
+    label en unofficial "§ 630d (1) sentence 4. The measure corresponds to the presumed will of the patient";
+}
+pub relation massnahme_ohne_einwilligung_zulaessig_630d(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "die unaufschiebbare Maßnahme darf ohne Einwilligung durchgeführt werden (§ 630d Abs. 1 Satz 4)";
+    label en unofficial "the measure that cannot be postponed may be carried out without consent (§ 630d (1) sentence 4)";
+}
+
+@source(BGB_P630d)
+rule MassnahmeOhneEinwilligung630dAbs1Satz4(b: Behandlungsverhaeltnis) strict {
+    label de official "Kann eine Einwilligung für eine unaufschiebbare Maßnahme nicht rechtzeitig eingeholt werden, darf sie ohne Einwilligung durchgeführt werden, wenn sie dem mutmaßlichen Willen des Patienten entspricht (§ 630d Abs. 1 Satz 4)";
+    label en unofficial "Where consent for a measure that cannot be postponed cannot be obtained in time, the measure may be carried out without consent if it corresponds to the presumed will of the patient (§ 630d (1) sentence 4)";
+    when behandlung_unaufschiebbar(b);
+    when einwilligung_nicht_rechtzeitig_einholbar_630d(b);
+    when massnahme_entspricht_mutmasslichem_willen_630d(b);
+    then massnahme_ohne_einwilligung_zulaessig_630d(b);
+}
+
+pub relation aufklaerung_ordnungsgemaess_630e(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "der Patient ist nach Maßgabe von § 630e Abs. 1 bis 4 aufgeklärt worden (§ 630d Abs. 2, § 630e)";
+    label en unofficial "the patient has been informed in accordance with § 630e (1) to (4) (§ 630d (2), § 630e)";
+}
+pub relation einwilligung_wirksam_630d(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "die Einwilligung ist wirksam (§ 630d Abs. 2)";
+    label en unofficial "the consent is effective (§ 630d (2))";
+}
+
+@source(BGB_P630d)
+rule EinwilligungWirksam630dAbs2(b: Behandlungsverhaeltnis) strict {
+    label de official "Die Wirksamkeit der Einwilligung setzt voraus, dass der Patient oder der zur Einwilligung Berechtigte vor der Einwilligung nach Maßgabe von § 630e Abs. 1 bis 4 aufgeklärt worden ist (§ 630d Abs. 2)";
+    label en unofficial "The effectiveness of the consent requires that the patient or the person entitled to consent was informed before consenting in accordance with § 630e (1) to (4) (§ 630d (2))";
+    when einwilligung_eingeholt_630d(b);
+    when aufklaerung_ordnungsgemaess_630e(b);
+    then einwilligung_wirksam_630d(b);
+}
+
+pub relation widerruf_der_einwilligung_erklaert_630d(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Einwilligung wurde widerrufen (§ 630d Abs. 3)";
+    label en unofficial "the consent has been revoked (§ 630d (3))";
+}
+pub relation einwilligung_widerrufen_630d(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "die Einwilligung ist jederzeit und ohne Angabe von Gründen formlos widerrufen (§ 630d Abs. 3)";
+    label en unofficial "the consent has been revoked at any time, without giving reasons and without any form requirement (§ 630d (3))";
+}
+
+@source(BGB_P630d)
+rule WiderrufDerEinwilligung630dAbs3(b: Behandlungsverhaeltnis) strict {
+    label de official "Die Einwilligung kann jederzeit und ohne Angabe von Gründen formlos widerrufen werden (§ 630d Abs. 3)";
+    label en unofficial "The consent may be revoked at any time, without giving reasons and without any form requirement (§ 630d (3))";
+    when einwilligung_eingeholt_630d(b);
+    when widerruf_der_einwilligung_erklaert_630d(b);
+    then einwilligung_widerrufen_630d(b);
+}
+
+// --- § 630e Aufklärungspflichten ------------------------------------------------------------------------
+
+pub relation ueber_wesentliche_umstaende_aufgeklaert_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient wurde über sämtliche für die Einwilligung wesentlichen Umstände aufgeklärt (§ 630e Abs. 1 Satz 1)";
+    label en unofficial "the patient has been informed of all circumstances material to the consent (§ 630e (1) sentence 1)";
+}
+pub relation aufklaerung_muendlich_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Aufklärung erfolgte mündlich durch den Behandelnden oder durch eine Person mit der notwendigen Ausbildung (§ 630e Abs. 2 Satz 1 Nr. 1)";
+    label en unofficial "the information was given orally by the treating party or by a person with the necessary training (§ 630e (2) sentence 1 no. 1)";
+}
+@source(BGB_P630e)
+pub external judgment relation aufklaerung_rechtzeitig_630e(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630e Abs. 2 Satz 1 Nr. 2. Die Aufklärung erfolgte so rechtzeitig, dass der Patient seine Entscheidung über die Einwilligung wohlüberlegt treffen konnte";
+    label en unofficial "§ 630e (2) sentence 1 no. 2. The information was given in such good time that the patient could take a well-considered decision on the consent";
+}
+@source(BGB_P630e)
+pub external judgment relation aufklaerung_verstaendlich_630e(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630e Abs. 2 Satz 1 Nr. 3. Die Aufklärung war für den Patienten verständlich";
+    label en unofficial "§ 630e (2) sentence 1 no. 3. The information was comprehensible to the patient";
+}
+
+@source(BGB_P630e)
+rule Aufklaerungspflicht630eAbs1(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde ist verpflichtet, den Patienten über sämtliche für die Einwilligung wesentlichen Umstände aufzuklären, insbesondere über Art, Umfang, Durchführung, zu erwartende Folgen und Risiken der Maßnahme sowie ihre Notwendigkeit, Dringlichkeit, Eignung und Erfolgsaussichten (§ 630e Abs. 1 Satz 1, 2)";
+    label en unofficial "The treating party must inform the patient of all circumstances material to the consent, in particular of the nature, extent, performance, expected consequences and risks of the measure as well as its necessity, urgency, suitability and prospects of success (§ 630e (1) sentences 1, 2)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when medizinische_massnahme_geplant_630d(b);
+    when aufklaerung_nicht_entbehrlich_630e(b);
+    then duty AufklaerungsPflicht630e {
+        bearer arzt;
+        achieve ueber_wesentliche_umstaende_aufgeklaert_630e(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630e)
+rule OrdnungsgemaesseAufklaerung630eAbs2(b: Behandlungsverhaeltnis) strict {
+    label de official "Die Aufklärung muss mündlich, so rechtzeitig, dass der Patient seine Entscheidung wohlüberlegt treffen kann, und für den Patienten verständlich erfolgen (§ 630e Abs. 2 Satz 1 Nr. 1 bis 3)";
+    label en unofficial "The information must be given orally, in such good time that the patient can take a well-considered decision, and comprehensibly for the patient (§ 630e (2) sentence 1 nos. 1 to 3)";
+    when ueber_wesentliche_umstaende_aufgeklaert_630e(b);
+    when aufklaerung_muendlich_630e(b);
+    when aufklaerung_rechtzeitig_630e(b);
+    when aufklaerung_verstaendlich_630e(b);
+    then aufklaerung_ordnungsgemaess_630e(b);
+}
+
+pub relation aufklaerung_ordnungsgemaess_geleistet_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Aufklärung wurde ordnungsgemäß geleistet (§ 630e Abs. 2)";
+    label en unofficial "the information was provided properly (§ 630e (2))";
+}
+
+@source(BGB_P630e)
+rule PositionOrdnungsgemaesseAufklaerung630eAbs2(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde muss die Aufklärung ordnungsgemäß leisten (§ 630e Abs. 2) — normative Position";
+    label en unofficial "the practitioner must provide the information properly (§ 630e (2)) — normative position";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when ueber_wesentliche_umstaende_aufgeklaert_630e(b);
+    when aufklaerung_muendlich_630e(b);
+    when aufklaerung_rechtzeitig_630e(b);
+    when aufklaerung_verstaendlich_630e(b);
+    then duty OrdnungsgemaesseAufklaerung630eAbs2Position {
+        bearer arzt;
+        achieve aufklaerung_ordnungsgemaess_geleistet_630e(b) during [beginn, infinity);
+    };
+}
+
+pub relation unterlagen_unterzeichnet_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient hat im Zusammenhang mit der Aufklärung oder Einwilligung Unterlagen unterzeichnet (§ 630e Abs. 2 Satz 2)";
+    label en unofficial "the patient has signed documents in connection with the information or the consent (§ 630e (2) sentence 2)";
+}
+pub relation abschriften_ausgehaendigt_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "dem Patienten wurden Abschriften der unterzeichneten Unterlagen ausgehändigt (§ 630e Abs. 2 Satz 2)";
+    label en unofficial "copies of the signed documents have been handed to the patient (§ 630e (2) sentence 2)";
+}
+
+@source(BGB_P630e)
+rule AbschriftenAushaendigen630eAbs2Satz2(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Dem Patienten sind Abschriften von Unterlagen, die er im Zusammenhang mit der Aufklärung oder Einwilligung unterzeichnet hat, auszuhändigen (§ 630e Abs. 2 Satz 2)";
+    label en unofficial "Copies of documents that the patient has signed in connection with the information or the consent must be handed to the patient (§ 630e (2) sentence 2)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when unterlagen_unterzeichnet_630e(b);
+    then duty AbschriftenAushaendigen630e {
+        bearer arzt;
+        achieve abschriften_ausgehaendigt_630e(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630e)
+pub external judgment relation aufklaerung_ausnahmsweise_entbehrlich_630e(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630e Abs. 3. Die Aufklärung ist ausnahmsweise aufgrund besonderer Umstände entbehrlich";
+    label en unofficial "§ 630e (3). The information is exceptionally dispensable owing to particular circumstances";
+}
+pub relation verzicht_auf_aufklaerung_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient hat auf die Aufklärung ausdrücklich verzichtet (§ 630e Abs. 3)";
+    label en unofficial "the patient has expressly waived the information (§ 630e (3))";
+}
+pub relation aufklaerungspflicht_entfaellt_630e(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "der Aufklärung des Patienten bedarf es nicht (§ 630e Abs. 3)";
+    label en unofficial "the information of the patient is not required (§ 630e (3))";
+}
+pub relation aufklaerung_nicht_entbehrlich_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Aufklärung ist nicht nach § 630e Abs. 3 entbehrlich — ausdrückliche Angabe des Falls";
+    label en unofficial "the information is not dispensable under § 630e (3) — express statement of the case";
+}
+
+@source(BGB_P630e)
+rule AufklaerungEntbehrlich630eAbs3Wertung(b: Behandlungsverhaeltnis) strict {
+    label de official "Der Aufklärung des Patienten bedarf es nicht, soweit diese ausnahmsweise aufgrund besonderer Umstände entbehrlich ist (§ 630e Abs. 3)";
+    label en unofficial "The information of the patient is not required where it is exceptionally dispensable owing to particular circumstances (§ 630e (3))";
+    when aufklaerung_ausnahmsweise_entbehrlich_630e(b);
+    then aufklaerungspflicht_entfaellt_630e(b);
+}
+
+@source(BGB_P630e)
+rule AufklaerungEntbehrlich630eAbs3Unaufschiebbar(b: Behandlungsverhaeltnis) strict {
+    label de official "Der Aufklärung bedarf es insbesondere dann nicht, wenn die Maßnahme unaufschiebbar ist (§ 630e Abs. 3)";
+    label en unofficial "In particular, the information is not required where the measure cannot be postponed (§ 630e (3))";
+    when behandlung_unaufschiebbar(b);
+    then aufklaerungspflicht_entfaellt_630e(b);
+}
+
+@source(BGB_P630e)
+rule AufklaerungEntbehrlich630eAbs3Verzicht(b: Behandlungsverhaeltnis) strict {
+    label de official "Der Aufklärung bedarf es insbesondere dann nicht, wenn der Patient auf sie ausdrücklich verzichtet hat (§ 630e Abs. 3)";
+    label en unofficial "In particular, the information is not required where the patient has expressly waived it (§ 630e (3))";
+    when verzicht_auf_aufklaerung_630e(b);
+    then aufklaerungspflicht_entfaellt_630e(b);
+}
+
+pub relation berechtigter_aufgeklaert_630e(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    key(b);
+    label de official "der zur Einwilligung Berechtigte wurde nach Maßgabe der Absätze 1 bis 3 aufgeklärt (§ 630e Abs. 4)";
+    label en unofficial "the person entitled to consent has been informed in accordance with paragraphs 1 to 3 (§ 630e (4))";
+}
+
+@source(BGB_P630e)
+rule AufklaerungDesBerechtigten630eAbs4(b: Behandlungsverhaeltnis, arzt: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Ist nach § 630d Abs. 1 Satz 2 die Einwilligung eines hierzu Berechtigten einzuholen, ist dieser nach Maßgabe der Absätze 1 bis 3 aufzuklären (§ 630e Abs. 4)";
+    label en unofficial "Where the consent of a person entitled to consent must be obtained under § 630d (1) sentence 2, that person must be informed in accordance with paragraphs 1 to 3 (§ 630e (4))";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when einwilligung_des_berechtigten_einzuholen_630d(b, berechtigter);
+    then duty AufklaerungDesBerechtigten630e {
+        bearer arzt;
+        achieve berechtigter_aufgeklaert_630e(b, berechtigter) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630e)
+rule PositionAufklaerungDesBerechtigten630eAbs4(b: Behandlungsverhaeltnis, arzt: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der Berechtigte muss über die Behandlung aufgeklärt werden (§ 630e Abs. 4) — normative Position";
+    label en unofficial "the entitled person must be informed about the treatment (§ 630e (4)) — normative position";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when einwilligung_des_berechtigten_einzuholen_630d(b, berechtigter);
+    then duty AufklaerungDesBerechtigten630ePosition {
+        bearer arzt;
+        beneficiary berechtigter;
+        achieve berechtigter_aufgeklaert_630e(b, berechtigter) during [beginn, infinity);
+    };
+}
+
+pub relation patient_zur_aufnahme_der_erlaeuterung_in_der_lage_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient ist aufgrund seines Entwicklungsstandes und seiner Verständnismöglichkeiten in der Lage, die Erläuterung aufzunehmen, und die Erläuterung läuft seinem Wohl nicht zuwider (§ 630e Abs. 5)";
+    label en unofficial "the patient is able, given their stage of development and capacity for understanding, to take in the explanation, and the explanation does not run counter to their welfare (§ 630e (5))";
+}
+pub relation wesentliche_umstaende_dem_patienten_erlaeutert_630e(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die wesentlichen Umstände wurden auch dem Patienten entsprechend seinem Verständnis erläutert (§ 630e Abs. 5 Satz 1)";
+    label en unofficial "the material circumstances have also been explained to the patient in accordance with their understanding (§ 630e (5) sentence 1)";
+}
+
+@source(BGB_P630e)
+rule ErlaeuterungGegenueberPatient630eAbs5(b: Behandlungsverhaeltnis, arzt: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Im Fall des § 630d Abs. 1 Satz 2 sind die wesentlichen Umstände nach Absatz 1 auch dem Patienten entsprechend seinem Verständnis zu erläutern, soweit dieser dazu in der Lage ist und dies seinem Wohl nicht zuwiderläuft (§ 630e Abs. 5 Satz 1)";
+    label en unofficial "In the case of § 630d (1) sentence 2, the material circumstances under paragraph 1 must also be explained to the patient in accordance with their understanding, where the patient is able to take it in and this does not run counter to their welfare (§ 630e (5) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when einwilligung_des_berechtigten_einzuholen_630d(b, berechtigter);
+    when patient_zur_aufnahme_der_erlaeuterung_in_der_lage_630e(b);
+    then duty ErlaeuterungGegenueberPatient630e {
+        bearer arzt;
+        achieve wesentliche_umstaende_dem_patienten_erlaeutert_630e(b) during [beginn, infinity);
+    };
+}
+
+// --- § 630f Dokumentation der Behandlung ------------------------------------------------------------------
+
+pub relation behandlungsakte_gefuehrt_630f(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "eine Behandlungsakte in Papierform oder elektronisch wird in unmittelbarem zeitlichen Zusammenhang mit der Behandlung geführt (§ 630f Abs. 1 Satz 1)";
+    label en unofficial "a patient file in paper or electronic form is kept in immediate temporal connection with the treatment (§ 630f (1) sentence 1)";
+}
+pub relation wesentliche_massnahmen_aufgezeichnet_630f(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "sämtliche aus fachlicher Sicht wesentlichen Maßnahmen und deren Ergebnisse sind in der Behandlungsakte aufgezeichnet (§ 630f Abs. 2 Satz 1)";
+    label en unofficial "all measures material from a professional viewpoint and their results are recorded in the patient file (§ 630f (2) sentence 1)";
+}
+pub relation aenderung_der_akte_erkennbar_630f(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "neben dem ursprünglichen Inhalt bleibt erkennbar, wann Berichtigungen und Änderungen vorgenommen worden sind (§ 630f Abs. 1 Satz 2)";
+    label en unofficial "alongside the original content it remains recognisable when corrections and changes were made (§ 630f (1) sentence 2)";
+}
+pub relation berichtigung_der_akte_vorgenommen_630f(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "in der Behandlungsakte wurden Berichtigungen oder Änderungen von Eintragungen vorgenommen (§ 630f Abs. 1 Satz 2)";
+    label en unofficial "corrections or changes to entries were made in the patient file (§ 630f (1) sentence 2)";
+}
+pub relation berichtigung_zulaessig_630f(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "die Berichtigung oder Änderung der Eintragung ist zulässig (§ 630f Abs. 1 Satz 2)";
+    label en unofficial "the correction or change of the entry is permissible (§ 630f (1) sentence 2)";
+}
+
+@source(BGB_P630f)
+rule Dokumentationspflicht630fAbs1(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde ist verpflichtet, zum Zweck der Dokumentation in unmittelbarem zeitlichen Zusammenhang mit der Behandlung eine Behandlungsakte in Papierform oder elektronisch zu führen (§ 630f Abs. 1 Satz 1)";
+    label en unofficial "The treating party must keep a patient file in paper or electronic form for documentation purposes, in immediate temporal connection with the treatment (§ 630f (1) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    then duty BehandlungsakteFuehren630f {
+        bearer arzt;
+        achieve behandlungsakte_gefuehrt_630f(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630f)
+rule BerichtigungZulaessig630fAbs1Satz2(b: Behandlungsverhaeltnis) strict {
+    label de official "Berichtigungen und Änderungen von Eintragungen in der Behandlungsakte sind nur zulässig, wenn neben dem ursprünglichen Inhalt erkennbar bleibt, wann sie vorgenommen worden sind (§ 630f Abs. 1 Satz 2)";
+    label en unofficial "Corrections and changes to entries in the patient file are permissible only if, alongside the original content, it remains recognisable when they were made (§ 630f (1) sentence 2)";
+    when berichtigung_der_akte_vorgenommen_630f(b);
+    when aenderung_der_akte_erkennbar_630f(b);
+    then berichtigung_zulaessig_630f(b);
+}
+
+pub relation berichtigung_zulaessig_ausgefuehrt_630f(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Berichtigung wurde unter Erhalt des ursprünglichen Inhalts und mit erkennbarem Änderungszeitpunkt ausgeführt (§ 630f Abs. 1 Satz 2)";
+    label en unofficial "the correction was made while preserving the original content and recording when it was made (§ 630f (1) sentence 2)";
+}
+
+@source(BGB_P630f)
+rule PositionBerichtigungZulaessig630fAbs1Satz2(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde darf die Behandlungsakte nur mit erkennbarem Änderungszeitpunkt berichtigen (§ 630f Abs. 1 Satz 2) — normative Position";
+    label en unofficial "the practitioner may correct the patient file only with the change time remaining recognisable (§ 630f (1) sentence 2) — normative position";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when berichtigung_der_akte_vorgenommen_630f(b);
+    when aenderung_der_akte_erkennbar_630f(b);
+    then duty BerichtigungZulaessig630fAbs1Satz2Position {
+        bearer arzt;
+        achieve berichtigung_zulaessig_ausgefuehrt_630f(b) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630f)
+rule Aufzeichnungspflicht630fAbs2(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Der Behandelnde ist verpflichtet, in der Behandlungsakte sämtliche aus fachlicher Sicht für die derzeitige und künftige Behandlung wesentlichen Maßnahmen und deren Ergebnisse aufzuzeichnen (§ 630f Abs. 2 Satz 1)";
+    label en unofficial "The treating party must record in the patient file all measures material from a professional viewpoint for the current and future treatment, and their results (§ 630f (2) sentence 1)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    then duty MassnahmenAufzeichnen630f {
+        bearer arzt;
+        achieve wesentliche_massnahmen_aufgezeichnet_630f(b) during [beginn, infinity);
+    };
+}
+
+pub relation behandlung_abgeschlossen_am_630f(b: Behandlungsverhaeltnis, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag des Abschlusses der Behandlung (§ 630f Abs. 3)";
+    label en unofficial "day the treatment was completed (§ 630f (3))";
+}
+pub relation keine_andere_aufbewahrungsfrist_630f(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "nach anderen Vorschriften bestehen keine anderen Aufbewahrungsfristen (§ 630f Abs. 3 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no other retention periods exist under other provisions (§ 630f (3) second half-sentence) — express statement of the case";
+}
+pub relation aufbewahrungsfrist_ende_630f(b: Behandlungsverhaeltnis, tag: Date) kind institutional {
+    key(b);
+    label de official "letzter Tag der zehnjährigen Aufbewahrungsfrist der Behandlungsakte (§ 630f Abs. 3)";
+    label en unofficial "last day of the ten-year retention period for the patient file (§ 630f (3))";
+}
+
+@source(BGB_P630f)
+rule Aufbewahrungsfrist630fAbs3(b: Behandlungsverhaeltnis, abschluss: Date) strict {
+    label de official "Der Behandelnde hat die Behandlungsakte für die Dauer von zehn Jahren nach Abschluss der Behandlung aufzubewahren, soweit nicht nach anderen Vorschriften andere Aufbewahrungsfristen bestehen (§ 630f Abs. 3) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "The treating party must retain the patient file for ten years after completion of the treatment, unless other retention periods exist under other provisions (§ 630f (3)) — policy BGB_DIENST_WERK_KALENDER";
+    when behandlung_abgeschlossen_am_630f(b, abschluss);
+    when keine_andere_aufbewahrungsfrist_630f(b);
+    then aufbewahrungsfrist_ende_630f(b, add_calendar_period(abschluss, 10 calendar_year));
+}
+
+// --- § 630g Einsichtnahme in die Behandlungsakte -------------------------------------------------------------
+
+pub relation einsichtsverlangen_630g(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    label de official "Einsicht in die vollständige Behandlungsakte wird verlangt (§ 630g Abs. 1 Satz 1)";
+    label en unofficial "inspection of the complete patient file is demanded (§ 630g (1) sentence 1)";
+}
+pub relation einsicht_gewaehrt_630g(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    label de official "Einsicht in die vollständige Behandlungsakte wurde gewährt (§ 630g Abs. 1 Satz 1)";
+    label en unofficial "inspection of the complete patient file has been granted (§ 630g (1) sentence 1)";
+}
+@source(BGB_P630g)
+pub external judgment relation einsichtgewaehrung_unverzueglich_630g(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630g Abs. 1 Satz 1. Die Einsicht wurde unverzüglich gewährt";
+    label en unofficial "§ 630g (1) sentence 1. The inspection was granted without undue delay";
+}
+@source(BGB_P630g)
+pub external judgment relation erhebliche_therapeutische_gruende_630g(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630g Abs. 2 Satz 1. Erhebliche therapeutische Gründe oder sonstige erhebliche Rechte Dritter stehen der Einsichtnahme entgegen";
+    label en unofficial "§ 630g (2) sentence 1. Substantial therapeutic reasons or other substantial rights of third parties oppose the inspection";
+}
+pub relation einsichtsrecht_ausgeschlossen_630g(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "das Einsichtsrecht besteht nicht (§ 630g Abs. 2 Satz 1)";
+    label en unofficial "the right of inspection does not exist (§ 630g (2) sentence 1)";
+}
+pub relation kein_ausschlussgrund_630g(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Einsichtnahme stehen keine erheblichen therapeutischen Gründe und keine erheblichen Rechte Dritter entgegen (§ 630g Abs. 2 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "no substantial therapeutic reasons and no substantial rights of third parties oppose the inspection (§ 630g (2) sentence 1) — express statement of the case";
+}
+
+@source(BGB_P630g)
+rule Einsichtspflicht630gAbs1(b: Behandlungsverhaeltnis, arzt: Person, pat: Person, beginn: Date) strict {
+    label de official "Dem Patienten ist auf Verlangen unverzüglich Einsicht in die vollständige, ihn betreffende Behandlungsakte zu gewähren (§ 630g Abs. 1 Satz 1)";
+    label en unofficial "On demand, the patient must be granted inspection of the complete patient file concerning them without undue delay (§ 630g (1) sentence 1)";
+    when behandelnder(b, arzt);
+    when patient(b, pat);
+    when behandlungsbeginn_am(b, beginn);
+    when einsichtsverlangen_630g(b, pat);
+    when kein_ausschlussgrund_630g(b);
+    then duty EinsichtGewaehren630g {
+        bearer arzt;
+        achieve einsicht_gewaehrt_630g(b, pat) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P630g)
+rule EinsichtsrechtAusgeschlossen630gAbs2(b: Behandlungsverhaeltnis) strict {
+    label de official "Das Recht nach Absatz 1 besteht nicht, soweit erhebliche therapeutische Gründe oder sonstige erhebliche Rechte Dritter entgegenstehen (§ 630g Abs. 2 Satz 1)";
+    label en unofficial "The right under paragraph 1 does not exist where substantial therapeutic reasons or other substantial rights of third parties oppose it (§ 630g (2) sentence 1)";
+    when erhebliche_therapeutische_gruende_630g(b);
+    then einsichtsrecht_ausgeschlossen_630g(b);
+}
+
+pub relation ablehnung_der_einsichtnahme_begruendet_630g(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Ablehnung der Einsichtnahme wurde begründet (§ 630g Abs. 2 Satz 2)";
+    label en unofficial "the refusal of inspection has been reasoned (§ 630g (2) sentence 2)";
+}
+
+@source(BGB_P630g)
+rule Begruendungspflicht630gAbs2Satz2(b: Behandlungsverhaeltnis, arzt: Person, beginn: Date) strict {
+    label de official "Die Ablehnung der Einsichtnahme ist zu begründen (§ 630g Abs. 2 Satz 2)";
+    label en unofficial "The refusal of inspection must be reasoned (§ 630g (2) sentence 2)";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when einsichtsrecht_ausgeschlossen_630g(b);
+    then duty AblehnungBegruenden630g {
+        bearer arzt;
+        achieve ablehnung_der_einsichtnahme_begruendet_630g(b) during [beginn, infinity);
+    };
+}
+
+pub relation einsichtsrecht_630g_erfuellt(b: Behandlungsverhaeltnis, p: Person) kind institutional {
+    key(b, p);
+    label de official "dem Verlangen auf Einsicht in die Behandlungsakte ist unverzüglich entsprochen worden (§ 630g Abs. 1 Satz 1)";
+    label en unofficial "the demand for inspection of the patient file has been met without undue delay (§ 630g (1) sentence 1)";
+}
+
+@source(BGB_P630g)
+rule EinsichtUnverzueglich630gAbs1(b: Behandlungsverhaeltnis, p: Person) strict {
+    label de official "Dem Einsichtsverlangen ist genügt, wenn die Einsicht unverzüglich gewährt wird (§ 630g Abs. 1 Satz 1)";
+    label en unofficial "The demand for inspection is satisfied if the inspection is granted without undue delay (§ 630g (1) sentence 1)";
+    when einsichtsverlangen_630g(b, p);
+    when einsicht_gewaehrt_630g(b, p);
+    when einsichtgewaehrung_unverzueglich_630g(b);
+    then einsichtsrecht_630g_erfuellt(b, p);
+}
+
+pub relation einsicht_unverzueglich_gewahrt_630g(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    label de official "dem Einsichtsverlangen wurde unverzüglich entsprochen (§ 630g Abs. 1 Satz 1)";
+    label en unofficial "the inspection request was met without undue delay (§ 630g (1) sentence 1)";
+}
+
+@source(BGB_P630g)
+rule PositionEinsichtUnverzueglich630gAbs1(b: Behandlungsverhaeltnis, arzt: Person, p: Person, beginn: Date) strict {
+    label de official "Der Behandelnde muss dem Einsichtsverlangen unverzüglich entsprechen (§ 630g Abs. 1 Satz 1) — normative Position";
+    label en unofficial "the practitioner must meet the inspection request without undue delay (§ 630g (1) sentence 1) — normative position";
+    when behandelnder(b, arzt);
+    when behandlungsbeginn_am(b, beginn);
+    when einsichtsverlangen_630g(b, p);
+    when einsicht_gewaehrt_630g(b, p);
+    when einsichtgewaehrung_unverzueglich_630g(b);
+    then duty EinsichtUnverzueglich630gAbs1Position {
+        bearer arzt;
+        beneficiary p;
+        achieve einsicht_unverzueglich_gewahrt_630g(b, p) during [beginn, infinity);
+    };
+}
+
+pub relation patient_verstorben_630g(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Patient ist verstorben (§ 630g Abs. 3 Satz 1)";
+    label en unofficial "the patient has died (§ 630g (3) sentence 1)";
+}
+pub relation erbe_des_patienten_630g(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    label de official "Erbe des Patienten, der vermögensrechtliche Interessen wahrnimmt (§ 630g Abs. 3 Satz 1)";
+    label en unofficial "heir of the patient asserting pecuniary interests (§ 630g (3) sentence 1)";
+}
+pub relation naechster_angehoeriger_630g(b: Behandlungsverhaeltnis, p: Person) kind empirical {
+    label de official "nächster Angehöriger des Patienten, der immaterielle Interessen geltend macht (§ 630g Abs. 3 Satz 2)";
+    label en unofficial "next of kin of the patient asserting non-pecuniary interests (§ 630g (3) sentence 2)";
+}
+pub relation wille_des_patienten_steht_einsicht_entgegen_630g(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der ausdrückliche oder mutmaßliche Wille des Patienten steht der Einsichtnahme entgegen (§ 630g Abs. 3 Satz 3)";
+    label en unofficial "the express or presumed will of the patient opposes the inspection (§ 630g (3) sentence 3)";
+}
+pub relation kein_entgegenstehender_wille_630g(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Einsichtnahme steht kein ausdrücklicher oder mutmaßlicher Wille des Patienten entgegen (§ 630g Abs. 3 Satz 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "no express or presumed will of the patient opposes the inspection (§ 630g (3) sentence 3) — express statement of the case";
+}
+pub relation einsichtsrecht_des_dritten_630g(b: Behandlungsverhaeltnis, p: Person) kind institutional {
+    key(b, p);
+    label de official "das Recht auf Einsicht in die Behandlungsakte steht dem Erben oder nächsten Angehörigen zu (§ 630g Abs. 3)";
+    label en unofficial "the right of inspection of the patient file belongs to the heir or the next of kin (§ 630g (3))";
+}
+
+@source(BGB_P630g)
+rule EinsichtsrechtErben630gAbs3Satz1(b: Behandlungsverhaeltnis, erbe: Person) strict {
+    label de official "Im Fall des Todes des Patienten stehen die Rechte nach Absatz 1 zur Wahrnehmung der vermögensrechtlichen Interessen seinen Erben zu, mit der Maßgabe, dass die Erben die entstandenen Kosten zu erstatten haben (§ 630g Abs. 3 Satz 1)";
+    label en unofficial "In the event of the patient's death, the rights under paragraph 1 belong to the heirs for the assertion of pecuniary interests, on condition that the heirs reimburse the costs incurred (§ 630g (3) sentence 1)";
+    when patient_verstorben_630g(b);
+    when erbe_des_patienten_630g(b, erbe);
+    when kein_entgegenstehender_wille_630g(b);
+    then einsichtsrecht_des_dritten_630g(b, erbe);
+}
+
+pub relation einsichtsrecht_des_erben_ausgeuebt_630g(b: Behandlungsverhaeltnis, erbe: Person) kind empirical {
+    label de official "der Erbe hat das Einsichtsrecht ausgeübt (§ 630g Abs. 3 Satz 1)";
+    label en unofficial "the heir exercised the right of inspection (§ 630g (3) sentence 1)";
+}
+
+@source(BGB_P630g)
+rule PositionEinsichtsrechtErben630gAbs3Satz1(b: Behandlungsverhaeltnis, erbe: Person, beginn: Date) strict {
+    label de official "Dem Erben steht das Einsichtsrecht in die Behandlungsakte zu (§ 630g Abs. 3 Satz 1) — normative Position";
+    label en unofficial "the heir has the right to inspect the patient file (§ 630g (3) sentence 1) — normative position";
+    when patient_verstorben_630g(b);
+    when erbe_des_patienten_630g(b, erbe);
+    when kein_entgegenstehender_wille_630g(b);
+    when behandlungsbeginn_am(b, beginn);
+    then liberty EinsichtsrechtErben630gAbs3Satz1Position {
+        holder erbe;
+        action einsichtsrecht_des_erben_ausgeuebt_630g(b, erbe);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P630g)
+rule EinsichtsrechtAngehoerige630gAbs3Satz2(b: Behandlungsverhaeltnis, angehoeriger: Person) strict {
+    label de official "Gleiches gilt für die nächsten Angehörigen des Patienten, soweit sie immaterielle Interessen geltend machen (§ 630g Abs. 3 Satz 2)";
+    label en unofficial "The same applies to the patient's next of kin where they assert non-pecuniary interests (§ 630g (3) sentence 2)";
+    when patient_verstorben_630g(b);
+    when naechster_angehoeriger_630g(b, angehoeriger);
+    when kein_entgegenstehender_wille_630g(b);
+    then einsichtsrecht_des_dritten_630g(b, angehoeriger);
+}
+
+pub relation einsichtsrecht_des_angehoerigen_ausgeuebt_630g(b: Behandlungsverhaeltnis, angehoeriger: Person) kind empirical {
+    label de official "der nächste Angehörige hat das Einsichtsrecht ausgeübt (§ 630g Abs. 3 Satz 2)";
+    label en unofficial "the next of kin exercised the right of inspection (§ 630g (3) sentence 2)";
+}
+
+@source(BGB_P630g)
+rule PositionEinsichtsrechtAngehoerige630gAbs3Satz2(b: Behandlungsverhaeltnis, angehoeriger: Person, beginn: Date) strict {
+    label de official "Dem nächsten Angehörigen steht das Einsichtsrecht in die Behandlungsakte zu (§ 630g Abs. 3 Satz 2) — normative Position";
+    label en unofficial "the next of kin has the right to inspect the patient file (§ 630g (3) sentence 2) — normative position";
+    when patient_verstorben_630g(b);
+    when naechster_angehoeriger_630g(b, angehoeriger);
+    when kein_entgegenstehender_wille_630g(b);
+    when behandlungsbeginn_am(b, beginn);
+    then liberty EinsichtsrechtAngehoerige630gAbs3Satz2Position {
+        holder angehoeriger;
+        action einsichtsrecht_des_angehoerigen_ausgeuebt_630g(b, angehoeriger);
+        window [beginn, infinity);
+    };
+}
+
+// --- § 630h Beweislast bei Haftung für Behandlungs- und Aufklärungsfehler ---------------------------------------
+//
+// Fünf Vermutungen; jede trägt ihren Gegenbeweis als `unless`-Klausel und
+// jede Klausel bindet sämtliche Variablen des Kopfes (§ 190).
+
+pub relation allgemeines_behandlungsrisiko_verwirklicht_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "ein allgemeines Behandlungsrisiko hat sich verwirklicht (§ 630h Abs. 1)";
+    label en unofficial "a general treatment risk has materialised (§ 630h (1))";
+}
+@source(BGB_P630h)
+pub external judgment relation risiko_voll_beherrschbar_630h(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630h Abs. 1. Das verwirklichte allgemeine Behandlungsrisiko war für den Behandelnden voll beherrschbar";
+    label en unofficial "§ 630h (1). The general treatment risk that materialised was fully controllable by the treating party";
+}
+pub relation verletzung_leben_koerper_gesundheit_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "es ist zu einer Verletzung des Lebens, des Körpers oder der Gesundheit des Patienten gekommen (§ 630h Abs. 1, 4, 5)";
+    label en unofficial "an injury to the life, body or health of the patient has occurred (§ 630h (1), (4), (5))";
+}
+pub relation gegenbeweis_kein_behandlungsfehler_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat bewiesen, dass ihm kein Fehler unterlaufen ist (§ 630h Abs. 1) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "the treating party has proved that no error was committed (§ 630h (1)) — express rebutting evidence of the case";
+}
+
+@source(BGB_P630h)
+presumption FehlerVermutung630hAbs1(b: Behandlungsverhaeltnis) {
+    label de official "Ein Fehler des Behandelnden wird vermutet, wenn sich ein allgemeines Behandlungsrisiko verwirklicht hat, das für den Behandelnden voll beherrschbar war und das zur Verletzung des Lebens, des Körpers oder der Gesundheit des Patienten geführt hat (§ 630h Abs. 1)";
+    label en unofficial "An error of the treating party is presumed where a general treatment risk has materialised that was fully controllable by the treating party and that led to an injury to the life, body or health of the patient (§ 630h (1))";
+    when allgemeines_behandlungsrisiko_verwirklicht_630h(b)
+        and risiko_voll_beherrschbar_630h(b)
+        and verletzung_leben_koerper_gesundheit_630h(b);
+    presume behandlungsfehler(b);
+    unless gegenbeweis_kein_behandlungsfehler_630h(b)
+        then not behandlungsfehler(b);
+}
+
+pub relation massnahme_durchgefuehrt_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die medizinische Maßnahme wurde durchgeführt (§ 630h Abs. 2 Satz 1)";
+    label en unofficial "the medical measure was carried out (§ 630h (2) sentence 1)";
+}
+pub relation beweis_der_einwilligung_und_aufklaerung_gefuehrt_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat bewiesen, dass er eine Einwilligung gemäß § 630d eingeholt und entsprechend den Anforderungen des § 630e aufgeklärt hat (§ 630h Abs. 2 Satz 1) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "the treating party has proved that consent under § 630d was obtained and that the information was given as required by § 630e (§ 630h (2) sentence 1) — express rebutting evidence of the case";
+}
+pub relation einwilligung_oder_aufklaerung_nicht_nachgewiesen_630h(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "Einwilligung und ordnungsgemäße Aufklärung sind nicht nachgewiesen — die Beweislast trifft den Behandelnden (§ 630h Abs. 2 Satz 1)";
+    label en unofficial "consent and proper information are not proved — the burden of proof lies on the treating party (§ 630h (2) sentence 1)";
+}
+
+@source(BGB_P630h)
+presumption BeweislastEinwilligung630hAbs2(b: Behandlungsverhaeltnis) {
+    label de official "Der Behandelnde hat zu beweisen, dass er eine Einwilligung gemäß § 630d eingeholt und entsprechend den Anforderungen des § 630e aufgeklärt hat (§ 630h Abs. 2 Satz 1)";
+    label en unofficial "The treating party must prove that consent under § 630d was obtained and that the information was given as required by § 630e (§ 630h (2) sentence 1)";
+    when massnahme_durchgefuehrt_630h(b);
+    presume einwilligung_oder_aufklaerung_nicht_nachgewiesen_630h(b);
+    unless beweis_der_einwilligung_und_aufklaerung_gefuehrt_630h(b)
+        then not einwilligung_oder_aufklaerung_nicht_nachgewiesen_630h(b);
+}
+
+pub relation aufklaerung_genuegt_den_anforderungen_nicht_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "die Aufklärung genügt nicht den Anforderungen des § 630e (§ 630h Abs. 2 Satz 2)";
+    label en unofficial "the information does not satisfy the requirements of § 630e (§ 630h (2) sentence 2)";
+}
+@source(BGB_P630h)
+pub external judgment relation hypothetische_einwilligung_630h(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630h Abs. 2 Satz 2. Der Patient hätte auch im Fall einer ordnungsgemäßen Aufklärung in die Maßnahme eingewilligt";
+    label en unofficial "§ 630h (2) sentence 2. The patient would have consented to the measure even in the case of proper information";
+}
+pub relation berufung_auf_hypothetische_einwilligung_630h(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "der Behandelnde kann sich darauf berufen, dass der Patient auch im Fall einer ordnungsgemäßen Aufklärung eingewilligt hätte (§ 630h Abs. 2 Satz 2)";
+    label en unofficial "the treating party may rely on the fact that the patient would have consented even if properly informed (§ 630h (2) sentence 2)";
+}
+
+@source(BGB_P630h)
+rule HypothetischeEinwilligung630hAbs2Satz2(b: Behandlungsverhaeltnis) strict {
+    label de official "Genügt die Aufklärung nicht den Anforderungen des § 630e, kann der Behandelnde sich darauf berufen, dass der Patient auch im Fall einer ordnungsgemäßen Aufklärung in die Maßnahme eingewilligt hätte (§ 630h Abs. 2 Satz 2)";
+    label en unofficial "Where the information does not satisfy the requirements of § 630e, the treating party may rely on the fact that the patient would have consented to the measure even if properly informed (§ 630h (2) sentence 2)";
+    when aufklaerung_genuegt_den_anforderungen_nicht_630h(b);
+    when hypothetische_einwilligung_630h(b);
+    then berufung_auf_hypothetische_einwilligung_630h(b);
+}
+
+pub relation wesentliche_massnahme_nicht_aufgezeichnet_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat eine medizinisch gebotene wesentliche Maßnahme und ihr Ergebnis entgegen § 630f Abs. 1 oder Abs. 2 nicht in der Behandlungsakte aufgezeichnet (§ 630h Abs. 3)";
+    label en unofficial "the treating party did not record a medically indicated material measure and its result in the patient file, contrary to § 630f (1) or (2) (§ 630h (3))";
+}
+pub relation akte_nicht_aufbewahrt_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat die Behandlungsakte entgegen § 630f Abs. 3 nicht aufbewahrt (§ 630h Abs. 3)";
+    label en unofficial "the treating party did not retain the patient file, contrary to § 630f (3) (§ 630h (3))";
+}
+pub relation massnahme_nicht_getroffen_630h(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "es wird vermutet, dass der Behandelnde die Maßnahme nicht getroffen hat (§ 630h Abs. 3)";
+    label en unofficial "it is presumed that the treating party did not take the measure (§ 630h (3))";
+}
+pub relation gegenbeweis_massnahme_getroffen_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat bewiesen, dass er die Maßnahme getroffen hat (§ 630h Abs. 3) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "the treating party has proved that the measure was taken (§ 630h (3)) — express rebutting evidence of the case";
+}
+
+@source(BGB_P630h)
+presumption DokumentationsVermutung630hAbs3(b: Behandlungsverhaeltnis) {
+    label de official "Hat der Behandelnde eine medizinisch gebotene wesentliche Maßnahme und ihr Ergebnis entgegen § 630f Abs. 1 oder Abs. 2 nicht in der Behandlungsakte aufgezeichnet, wird vermutet, dass er diese Maßnahme nicht getroffen hat (§ 630h Abs. 3)";
+    label en unofficial "Where the treating party did not record a medically indicated material measure and its result in the patient file contrary to § 630f (1) or (2), it is presumed that the measure was not taken (§ 630h (3))";
+    when wesentliche_massnahme_nicht_aufgezeichnet_630h(b);
+    presume massnahme_nicht_getroffen_630h(b);
+    unless gegenbeweis_massnahme_getroffen_630h(b)
+        then not massnahme_nicht_getroffen_630h(b);
+}
+
+@source(BGB_P630h)
+presumption AufbewahrungsVermutung630hAbs3(b: Behandlungsverhaeltnis) {
+    label de official "Hat der Behandelnde die Behandlungsakte entgegen § 630f Abs. 3 nicht aufbewahrt, wird vermutet, dass er die Maßnahme nicht getroffen hat (§ 630h Abs. 3)";
+    label en unofficial "Where the treating party did not retain the patient file contrary to § 630f (3), it is presumed that the measure was not taken (§ 630h (3))";
+    when akte_nicht_aufbewahrt_630h(b);
+    presume massnahme_nicht_getroffen_630h(b);
+    unless gegenbeweis_massnahme_getroffen_630h(b)
+        then not massnahme_nicht_getroffen_630h(b);
+}
+
+pub relation behandelnder_nicht_befaehigt_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde war für die von ihm vorgenommene Behandlung nicht befähigt (§ 630h Abs. 4) — festgestellte Tatsache";
+    label en unofficial "the treating party was not qualified for the treatment carried out (§ 630h (4)) — established fact";
+}
+pub relation mangelnde_befaehigung_ursaechlich_630h(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "es wird vermutet, dass die mangelnde Befähigung für den Eintritt der Verletzung ursächlich war (§ 630h Abs. 4)";
+    label en unofficial "it is presumed that the lack of qualification caused the injury (§ 630h (4))";
+}
+pub relation gegenbeweis_befaehigung_nicht_ursaechlich_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat bewiesen, dass die mangelnde Befähigung für die Verletzung nicht ursächlich war (§ 630h Abs. 4) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "the treating party has proved that the lack of qualification did not cause the injury (§ 630h (4)) — express rebutting evidence of the case";
+}
+
+@source(BGB_P630h)
+presumption BefaehigungsVermutung630hAbs4(b: Behandlungsverhaeltnis) {
+    label de official "War ein Behandelnder für die von ihm vorgenommene Behandlung nicht befähigt, wird vermutet, dass die mangelnde Befähigung für den Eintritt der Verletzung des Lebens, des Körpers oder der Gesundheit ursächlich war (§ 630h Abs. 4)";
+    label en unofficial "Where a treating party was not qualified for the treatment carried out, it is presumed that the lack of qualification caused the injury to life, body or health (§ 630h (4))";
+    when behandelnder_nicht_befaehigt_630h(b)
+        and verletzung_leben_koerper_gesundheit_630h(b);
+    presume mangelnde_befaehigung_ursaechlich_630h(b);
+    unless gegenbeweis_befaehigung_nicht_ursaechlich_630h(b)
+        then not mangelnde_befaehigung_ursaechlich_630h(b);
+}
+
+@source(BGB_P630h)
+pub external judgment relation grober_behandlungsfehler_630h(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630h Abs. 5 Satz 1. Es liegt ein grober Behandlungsfehler vor";
+    label en unofficial "§ 630h (5) sentence 1. A gross treatment error exists";
+}
+@source(BGB_P630h)
+pub external judgment relation fehler_grundsaetzlich_geeignet_630h(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630h Abs. 5 Satz 1. Der Fehler ist grundsätzlich geeignet, eine Verletzung des Lebens, des Körpers oder der Gesundheit der tatsächlich eingetretenen Art herbeizuführen";
+    label en unofficial "§ 630h (5) sentence 1. The error is in principle capable of causing an injury to life, body or health of the kind that actually occurred";
+}
+pub relation behandlungsfehler_ursaechlich_630h(b: Behandlungsverhaeltnis) kind institutional {
+    key(b);
+    label de official "es wird vermutet, dass der Behandlungsfehler für die Verletzung ursächlich war (§ 630h Abs. 5)";
+    label en unofficial "it is presumed that the treatment error caused the injury (§ 630h (5))";
+}
+pub relation gegenbeweis_fehler_nicht_ursaechlich_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat bewiesen, dass der Behandlungsfehler für die Verletzung nicht ursächlich war (§ 630h Abs. 5) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "the treating party has proved that the treatment error did not cause the injury (§ 630h (5)) — express rebutting evidence of the case";
+}
+
+@source(BGB_P630h)
+presumption KausalitaetsVermutung630hAbs5(b: Behandlungsverhaeltnis) {
+    label de official "Liegt ein grober Behandlungsfehler vor und ist dieser grundsätzlich geeignet, eine Verletzung des Lebens, des Körpers oder der Gesundheit der tatsächlich eingetretenen Art herbeizuführen, wird vermutet, dass der Behandlungsfehler für diese Verletzung ursächlich war (§ 630h Abs. 5 Satz 1)";
+    label en unofficial "Where a gross treatment error exists and is in principle capable of causing an injury to life, body or health of the kind that actually occurred, it is presumed that the treatment error caused that injury (§ 630h (5) sentence 1)";
+    when grober_behandlungsfehler_630h(b)
+        and fehler_grundsaetzlich_geeignet_630h(b)
+        and verletzung_leben_koerper_gesundheit_630h(b);
+    presume behandlungsfehler_ursaechlich_630h(b);
+    unless gegenbeweis_fehler_nicht_ursaechlich_630h(b)
+        then not behandlungsfehler_ursaechlich_630h(b);
+}
+
+pub relation gebotener_befund_nicht_erhoben_630h(b: Behandlungsverhaeltnis) kind empirical {
+    label de official "der Behandelnde hat es unterlassen, einen medizinisch gebotenen Befund rechtzeitig zu erheben oder zu sichern (§ 630h Abs. 5 Satz 2)";
+    label en unofficial "the treating party failed to obtain or secure a medically indicated finding in good time (§ 630h (5) sentence 2)";
+}
+@source(BGB_P630h)
+pub external judgment relation befund_haette_weitere_massnahmen_veranlasst_630h(b: Behandlungsverhaeltnis) {
+    authority Court;
+    label de official "§ 630h Abs. 5 Satz 2. Der Befund hätte mit hinreichender Wahrscheinlichkeit ein Ergebnis erbracht, das Anlass zu weiteren Maßnahmen gegeben hätte, und das Unterlassen solcher Maßnahmen wäre grob fehlerhaft gewesen";
+    label en unofficial "§ 630h (5) sentence 2. The finding would with sufficient probability have produced a result giving cause for further measures, and the omission of such measures would have been grossly erroneous";
+}
+
+@source(BGB_P630h)
+presumption BefunderhebungsVermutung630hAbs5Satz2(b: Behandlungsverhaeltnis) {
+    label de official "Dies gilt auch dann, wenn es der Behandelnde unterlassen hat, einen medizinisch gebotenen Befund rechtzeitig zu erheben oder zu sichern, soweit der Befund mit hinreichender Wahrscheinlichkeit ein Ergebnis erbracht hätte, das Anlass zu weiteren Maßnahmen gegeben hätte, und wenn das Unterlassen solcher Maßnahmen grob fehlerhaft gewesen wäre (§ 630h Abs. 5 Satz 2)";
+    label en unofficial "This also applies where the treating party failed to obtain or secure a medically indicated finding in good time, in so far as the finding would with sufficient probability have produced a result giving cause for further measures and the omission of such measures would have been grossly erroneous (§ 630h (5) sentence 2)";
+    when gebotener_befund_nicht_erhoben_630h(b)
+        and befund_haette_weitere_massnahmen_veranlasst_630h(b)
+        and verletzung_leben_koerper_gesundheit_630h(b);
+    presume behandlungsfehler_ursaechlich_630h(b);
+    unless gegenbeweis_fehler_nicht_ursaechlich_630h(b)
+        then not behandlungsfehler_ursaechlich_630h(b);
+}

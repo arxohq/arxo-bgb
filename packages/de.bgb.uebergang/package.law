@@ -1,0 +1,170 @@
+// EINFÜHRUNGSGESETZ ZUM BGB — ÜBERLEITUNGSVORSCHRIFTEN (BG-17)
+//
+// Art. 229 EGBGB: die Korridore der Reformen des BGB. Dieses Paket hält
+// nur Quellen, Anknüpfungsmomente und Übergangsregeln; die Sachnormen
+// bleiben in den Fachpaketen (DECISION-0319). Quellen: sources.law
+// (generiert aus dem Register DOKNR-bgbeg.json, Auswahl `egbgb` in
+// PACKAGES.json). STAND: WELLE B2, erster Schnitt — der Verjährungskorridor
+// 2002 (Art. 229 § 6 Abs. 1 Satz 1, Abs. 3, Abs. 4) als Regeln über Daten.
+//
+// FORM. Die alte Frist (BGB in der bis zum 31.12.2001 geltenden Fassung,
+// z. B. § 195 a.F. dreißig Jahre — Text im Denkmal `de.bgb_1896`,
+// Fragment BGB_P195) und ihr Beginn nach altem Recht (§ 6 Abs. 1 Satz 2)
+// sind Eingaben des Falls; die neue Frist ist die des geltenden BGB
+// (Eingabe im Pilot; Welle B2 liest sie aus `de.bgb.fristen`). Beide
+// Fristen werden als Kalenderschritte vom Beginn an gerechnet (§ 188
+// Abs. 2, Politik BGB_FRISTEN_KALENDER); die kürzere neue Frist läuft
+// „von dem 1. Januar 2002 an“ — der Stichtag wird mitgerechnet (§ 187
+// Abs. 2), also endet sie mit dem Vortag des entsprechenden Tages
+// (`with_unit`, wie das Lebensalter in `de.bgb.fristen`).
+//
+// NICHT IM SCHNITT (Welle B2, keine Grenze): § 6 Abs. 1 Satz 2–3 und
+// Abs. 2 (Hemmung, Unterbrechung vor 2002), die Lesart des BGH zum
+// Beginn der kürzeren Frist mit den subjektiven Voraussetzungen des § 199
+// Abs. 1 (Interpretation §152 in B2), Abs. 5–6 (andere Fristen, HGB,
+// UmwG), § 5 (allgemeine Überleitung) und § 23 (Reform 2010).
+
+language "law.core" version "0.2";
+package de.bgb.uebergang version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-uebergang";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+
+type Anspruch = de.bgb.core::Anspruch;
+
+// Kalenderschritte des Korridors (§ 188 Abs. 2 BGB): derselbe Feldsatz wie
+// BGB_FRISTEN_KALENDER; eine Politik je Fall.
+deadline policy BGB_UEBERGANG_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// --- Eingaben des Falls ------------------------------------------------------------------------
+
+pub relation alte_verjaehrungsfrist(a: Anspruch, dauer: Quantity) kind empirical {
+    key(a);
+    label de official "Verjährungsfrist nach dem BGB in der bis zum 31. Dezember 2001 geltenden Fassung (z. B. § 195 a.F.: dreißig Jahre)";
+    label en unofficial "limitation period under the Civil Code as in force until 31 December 2001 (e.g. § 195 old version: thirty years)";
+}
+pub relation alte_verjaehrung_begann_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Beginn der Verjährung nach dem BGB in der bis zum 31. Dezember 2001 geltenden Fassung (Art. 229 § 6 Abs. 1 Satz 2 EGBGB; § 198 a.F.: Entstehung, § 201 a.F.: Schluss des Jahres)";
+    label en unofficial "beginning of limitation under the Civil Code as in force until 31 December 2001 (Art. 229 § 6 (1) sentence 2 EGBGB)";
+}
+pub relation neue_verjaehrungsfrist(a: Anspruch, dauer: Quantity) kind empirical {
+    key(a);
+    label de official "Verjährungsfrist nach dem BGB in der seit dem 1. Januar 2002 geltenden Fassung (z. B. § 195: drei Jahre) — im Pilot Eingabe, in Welle B2 aus de.bgb.fristen";
+    label en unofficial "limitation period under the Civil Code as in force since 1 January 2002 (e.g. § 195: three years) — case input in the pilot, from de.bgb.fristen in wave B2";
+}
+
+// --- Korridor 2002 (Art. 229 § 6) --------------------------------------------------------------------
+
+pub relation anspruch_am_stichtag_bestehend(a: Anspruch) kind derived {
+    label de official "Der Anspruch bestand am 1. Januar 2002 (vor diesem Tag entstanden)";
+    label en unofficial "the claim existed on 1 January 2002 (arose before that day)";
+}
+pub relation alte_frist_ende(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährungsfrist nach altem Recht endet (Beginn nach altem Recht plus alte Frist, § 188 Abs. 2)";
+    label en unofficial "day at whose end the limitation period under the old law ends";
+}
+pub relation korridor_2002_anwendbar(a: Anspruch) kind derived {
+    label de official "Die Vorschriften über die Verjährung in der seit dem 1. Januar 2002 geltenden Fassung finden Anwendung: am Stichtag bestehender und noch nicht verjährter Anspruch (Art. 229 § 6 Abs. 1 Satz 1 EGBGB)";
+    label en unofficial "the limitation provisions in force since 1 January 2002 apply: claim existing and not yet time-barred on that day (Art. 229 § 6 (1) sentence 1 EGBGB)";
+}
+pub relation neue_frist_laenger(a: Anspruch) kind derived {
+    label de official "Die neue Verjährungsfrist ist länger als die alte (Art. 229 § 6 Abs. 3 EGBGB)";
+    label en unofficial "the new limitation period is longer than the old one (Art. 229 § 6 (3) EGBGB)";
+}
+pub relation neue_frist_kuerzer(a: Anspruch) kind derived {
+    label de official "Die neue Verjährungsfrist ist kürzer als die alte (Art. 229 § 6 Abs. 4 EGBGB)";
+    label en unofficial "the new limitation period is shorter than the old one (Art. 229 § 6 (4) EGBGB)";
+}
+pub relation fristen_gleich_lang(a: Anspruch) kind derived {
+    label de official "Alte und neue Verjährungsfrist sind gleich lang (Art. 229 § 6 Abs. 1 Satz 1 EGBGB: neues Recht mit altem Beginn)";
+    label en unofficial "old and new limitation periods are of equal length (Art. 229 § 6 (1) sentence 1 EGBGB)";
+}
+pub relation neue_frist_ende_ab_stichtag(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Ende der kürzeren neuen Frist, von dem 1. Januar 2002 an berechnet (Art. 229 § 6 Abs. 4 Satz 1 EGBGB; § 187 Abs. 2, § 188 Abs. 2 BGB)";
+    label en unofficial "end of the shorter new period computed from 1 January 2002 (Art. 229 § 6 (4) sentence 1 EGBGB)";
+}
+pub relation verjaehrung_vollendet_am(a: Anspruch, tag: Date) kind derived {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die Verjährung nach dem Korridor des Art. 229 § 6 EGBGB vollendet ist";
+    label en unofficial "day at whose end limitation is completed under the corridor of Art. 229 § 6 EGBGB";
+}
+
+@source(EGBGB_ART229_P6) {
+    rule AnspruchAmStichtagBestehend(a: Anspruch, d: Date) strict {
+        label de official "Am 1. Januar 2002 bestehender Anspruch: vor diesem Tag entstanden (Art. 229 § 6 Abs. 1 Satz 1)";
+        label en unofficial "Claim existing on 1 January 2002: arose before that day (Art. 229 § 6 (1) sentence 1)";
+        when de.bgb.core::anspruch_entstanden_am(a, d) and d < @2002-01-01;
+        then anspruch_am_stichtag_bestehend(a);
+    }
+    rule AlteFristEnde(a: Anspruch, b: Date, alt: Quantity) strict {
+        label de official "Der Beginn der Verjährung bestimmt sich für den Zeitraum vor dem 1. Januar 2002 nach dem bisherigen Recht (Abs. 1 Satz 2); die alte Frist endet mit dem entsprechenden Tag (§ 188 Abs. 2 BGB)";
+        label en unofficial "The beginning of limitation before 1 January 2002 follows the old law ((1) sentence 2); the old period ends on the corresponding day (§ 188 (2) BGB)";
+        when alte_verjaehrung_begann_am(a, b) and alte_verjaehrungsfrist(a, alt);
+        then alte_frist_ende(a, add_calendar_period(b, alt));
+    }
+    rule KorridorAnwendbar(a: Anspruch, e: Date) strict {
+        label de official "Die neuen Verjährungsvorschriften finden auf die am 1. Januar 2002 bestehenden und noch nicht verjährten Ansprüche Anwendung (Abs. 1 Satz 1): die alte Frist war an diesem Tag noch nicht abgelaufen";
+        label en unofficial "The new limitation provisions apply to claims existing and not yet time-barred on 1 January 2002 ((1) sentence 1): the old period had not expired on that day";
+        when anspruch_am_stichtag_bestehend(a) and alte_frist_ende(a, e) and e >= @2002-01-01;
+        then korridor_2002_anwendbar(a);
+    }
+    rule NeueFristLaenger(a: Anspruch, b: Date, alt: Quantity, neu: Quantity) strict {
+        label de official "Ist die neue Verjährungsfrist länger als die alte (Abs. 3): Vergleich der Fristen vom selben Beginn an";
+        label en unofficial "If the new period is longer than the old one ((3)): comparison of the periods from the same beginning";
+        when korridor_2002_anwendbar(a) and alte_verjaehrung_begann_am(a, b) and alte_verjaehrungsfrist(a, alt) and neue_verjaehrungsfrist(a, neu)
+            and add_calendar_period(b, neu) > add_calendar_period(b, alt);
+        then neue_frist_laenger(a);
+    }
+    rule NeueFristKuerzer(a: Anspruch, b: Date, alt: Quantity, neu: Quantity) strict {
+        label de official "Ist die neue Verjährungsfrist kürzer als die alte (Abs. 4 Satz 1): Vergleich der Fristen vom selben Beginn an";
+        label en unofficial "If the new period is shorter than the old one ((4) sentence 1): comparison from the same beginning";
+        when korridor_2002_anwendbar(a) and alte_verjaehrung_begann_am(a, b) and alte_verjaehrungsfrist(a, alt) and neue_verjaehrungsfrist(a, neu)
+            and add_calendar_period(b, neu) < add_calendar_period(b, alt);
+        then neue_frist_kuerzer(a);
+    }
+    rule FristenGleichLang(a: Anspruch, b: Date, alt: Quantity, neu: Quantity) strict {
+        label de official "Sind die Fristen gleich lang, gilt das neue Recht mit dem alten Beginn (Abs. 1 Satz 1 und 2): die Verjährung ist mit dem Ablauf der Frist vollendet";
+        label en unofficial "If the periods are equal, the new law applies with the old beginning ((1) sentences 1 and 2)";
+        when korridor_2002_anwendbar(a) and alte_verjaehrung_begann_am(a, b) and alte_verjaehrungsfrist(a, alt) and neue_verjaehrungsfrist(a, neu)
+            and add_calendar_period(b, neu) == add_calendar_period(b, alt);
+        then fristen_gleich_lang(a);
+    }
+    rule VollendungBeiLaengererNeuerFrist(a: Anspruch, e: Date) strict {
+        label de official "Ist die neue Frist länger, so ist die Verjährung mit dem Ablauf der im bisherigen Recht bestimmten Frist vollendet (Abs. 3)";
+        label en unofficial "If the new period is longer, limitation is completed with the expiry of the old period ((3))";
+        when neue_frist_laenger(a) and alte_frist_ende(a, e);
+        then verjaehrung_vollendet_am(a, e);
+    }
+    rule VollendungBeiGleichLangenFristen(a: Anspruch, e: Date) strict {
+        label de official "Bei gleich langen Fristen ist die Verjährung mit dem Ablauf der vom alten Beginn an gerechneten Frist vollendet (Abs. 1 Satz 1 und 2)";
+        label en unofficial "With equal periods limitation is completed with the expiry of the period counted from the old beginning ((1) sentences 1 and 2)";
+        when fristen_gleich_lang(a) and alte_frist_ende(a, e);
+        then verjaehrung_vollendet_am(a, e);
+    }
+    rule NeueFristAbStichtag(a: Anspruch, neu: Quantity) strict {
+        label de official "Die kürzere Frist wird von dem 1. Januar 2002 an berechnet (Abs. 4 Satz 1): der Stichtag wird mitgerechnet (§ 187 Abs. 2 BGB), die Frist endet mit dem Vortag des entsprechenden Tages (§ 188 Abs. 2 BGB)";
+        label en unofficial "The shorter period is computed from 1 January 2002 ((4) sentence 1): that day counts (§ 187 (2) BGB), the period ends on the day before the corresponding day (§ 188 (2) BGB)";
+        when neue_frist_kuerzer(a) and neue_verjaehrungsfrist(a, neu);
+        then neue_frist_ende_ab_stichtag(a, add_calendar_period(@2002-01-01, with_unit(days_between(@2002-01-01, add_calendar_period(@2002-01-01, neu)) - 1, "calendar_day")));
+    }
+    rule VollendungMitKuerzererNeuerFrist(a: Anspruch, n: Date, e: Date) strict {
+        label de official "Die Verjährung ist mit dem Ablauf der vom 1. Januar 2002 an berechneten kürzeren Frist vollendet (Abs. 4 Satz 1), wenn die längere alte Frist nicht früher abläuft";
+        label en unofficial "Limitation is completed with the shorter period computed from 1 January 2002 ((4) sentence 1) unless the longer old period expires earlier";
+        when neue_frist_kuerzer(a) and neue_frist_ende_ab_stichtag(a, n) and alte_frist_ende(a, e) and e >= n;
+        then verjaehrung_vollendet_am(a, n);
+    }
+    rule VollendungMitFrueherAblaufenderAlterFrist(a: Anspruch, n: Date, e: Date) strict {
+        label de official "Läuft die im bisherigen Recht bestimmte längere Frist früher ab als die neue, so ist die Verjährung mit dem Ablauf der alten Frist vollendet (Abs. 4 Satz 2)";
+        label en unofficial "If the longer old period expires earlier than the new one, limitation is completed with the expiry of the old period ((4) sentence 2)";
+        when neue_frist_kuerzer(a) and neue_frist_ende_ab_stichtag(a, n) and alte_frist_ende(a, e) and e < n;
+        then verjaehrung_vollendet_am(a, e);
+    }
+}

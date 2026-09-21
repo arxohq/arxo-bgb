@@ -1,0 +1,311 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 8 — ERBSCHEIN
+// (§§ 2353, 2361–2370). § 2365 (Vermutung der Richtigkeit) bereits in
+// package.law — nicht angetastet; dieses Modul erweitert dieselbe Entität
+// `Erbschein` samt ihrer bestehenden Prädikate
+// (`im_erbschein_als_erbe_bezeichnet`, `erbrecht_im_erbschein_angegeben`,
+// `erbrecht_nach_erbschein_vermutet`).
+//
+// §§ 2354–2359, 2364, 2360, 2369 SIND WEGGEFALLEN (Verfahrensrecht 2015 in
+// das FamFG übertragen; per Registerabgleich `sync_de_bgb_packages.py`
+// bestätigt: kein Fragment mit Normtext, nur der Platzhaltertitel). Kein
+// eigener Rechtssatz — bewusst nicht formalisiert, wie an den übrigen
+// weggefallenen Stellen des Pakets (§§ 2230, 2260–2262, 2264, 2273, 2277,
+// 2335 u. a.); die Absätze bleiben in `analysis/saetze.json` als TODO mit
+// Grund "weggefallen" stehen, da dieses Paket keine `articles.json` mit
+// `excluded`-Liste führt (§33.1-Kategorie EXCLUDED würde eine solche
+// verlangen — Aufwand/Risiko für neun Platzhalter nicht verhältnismäßig).
+//
+// § 2366 ÖFFENTLICHER GLAUBE: beide Gegenausnahmen (Kenntnis der
+// Unrichtigkeit, Wissen um das Rückgabeverlangen des Nachlassgerichts) sind
+// EIGENE positive Prädikate mit `not_known` — nicht eine verneinte
+// Kopfvariable (Lehre: Abwesenheit einer Tatsache ≠ ihre Verneinung). Die
+// Reichweite der Vermutung (§ 2365) wird über die BEZEICHNUNG im Erbschein
+// (`im_erbschein_als_erbe_bezeichnet`) geprüft, nicht über den defeasible
+// Vermutungs-KOPF selbst (`erbrecht_nach_erbschein_vermutet`): 0.1 verbietet
+// `strict`-Regeln das status-sensitive Lesen eines defeasible-Kopfes vor
+// Abschluss beider Polaritäten (LDC-E4103/L3-Grenze) — Grenze, nicht
+// Umgehung, siehe README.
+//
+// § 2367 „entsprechende Anwendung“ und § 2363 „das in § 2362 Absatz 1
+// bestimmte Recht“ werden durch WIEDERVERWENDUNG derselben Kopfprädikate
+// (`erbscheinsinhalt_gilt_zugunsten_dritten_als_richtig_2366`,
+// `herausgabe_an_nachlassgericht_verlangbar_2362`) mit anderen Prämissen
+// modelliert — kein Duplikat-Prädikat für dieselbe Rechtsfolge.
+
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// ---- § 2353 Zuständigkeit des Nachlassgerichts, Antrag ---------------------
+
+pub relation erbschein_beantragt_2353(e: Erbfall, antragsteller: Person) kind empirical {
+    label de official "Der Antragsteller hat beim Nachlassgericht einen Erbschein beantragt (§ 2353)";
+    label en unofficial "the applicant has applied to the probate court for a certificate of inheritance (§ 2353)";
+}
+pub relation antragsteller_erbe_oder_miterbe_2353(e: Erbfall, antragsteller: Person) kind empirical {
+    label de official "Der Antragsteller ist Erbe oder zu einem Teil der Erbschaft berufener Miterbe (§ 2353)";
+    label en unofficial "the applicant is the heir, or a co-heir called to a share of the estate (§ 2353)";
+}
+pub relation erbschein_zu_erteilen_2353(e: Erbfall, antragsteller: Person) kind derived {
+    label de official "Das Nachlassgericht hat dem Antragsteller ein Zeugnis über sein Erbrecht (Erbschein) zu erteilen (§ 2353)";
+    label en unofficial "the probate court must issue the applicant a certificate of their inheritance right (certificate of inheritance) (§ 2353)";
+}
+
+// ---- § 2361 Einziehung oder Kraftloserklärung des unrichtigen Erbscheins ---
+
+pub relation erbschein_unrichtig_2361(s: Erbschein) kind empirical {
+    label de official "Es ergibt sich, dass der erteilte Erbschein unrichtig ist (§ 2361 Satz 1)";
+    label en unofficial "it emerges that the issued certificate of inheritance is incorrect (§ 2361 sentence 1)";
+}
+pub relation erbschein_einzuziehen_2361(s: Erbschein) kind derived {
+    label de official "Das Nachlassgericht hat den Erbschein einzuziehen (§ 2361 Satz 1)";
+    label en unofficial "the probate court must withdraw the certificate (§ 2361 sentence 1)";
+}
+pub relation erbschein_durch_einziehung_kraftlos_2361(s: Erbschein) kind derived {
+    label de official "Mit der Einziehung wird der Erbschein kraftlos (§ 2361 Satz 2)";
+    label en unofficial "upon withdrawal the certificate becomes void (§ 2361 sentence 2)";
+}
+
+// ---- § 2362 Herausgabe- und Auskunftsanspruch des wirklichen Erben --------
+
+pub relation wirklicher_erbe_2362(e: Erbfall, wirklicher_erbe: Person) kind empirical {
+    label de official "Die Person ist der wirkliche Erbe, verschieden vom im unrichtigen Erbschein Bezeichneten (§ 2362 Abs. 1)";
+    label en unofficial "the person is the true heir, distinct from the person designated in the incorrect certificate (§ 2362 (1))";
+}
+pub relation besitzer_unrichtigen_erbscheins_2362(s: Erbschein, besitzer: Person) kind empirical {
+    label de official "Die Person besitzt den unrichtigen Erbschein (§ 2362 Abs. 1)";
+    label en unofficial "the person possesses the incorrect certificate (§ 2362 (1))";
+}
+pub relation herausgabe_an_nachlassgericht_verlangbar_2362(s: Erbschein, berechtigter: Person, besitzer: Person) kind derived {
+    label de official "Der Berechtigte kann von dem Besitzer die Herausgabe des unrichtigen Erbscheins an das Nachlassgericht verlangen (§ 2362 Abs. 1)";
+    label en unofficial "the entitled person may demand the possessor hand over the incorrect certificate to the probate court (§ 2362 (1))";
+}
+pub relation erbscheinsinhaber_2362(s: Erbschein, inhaber: Person) kind empirical {
+    label de official "Der Person ist ein unrichtiger Erbschein erteilt worden (§ 2362 Abs. 2)";
+    label en unofficial "an incorrect certificate has been issued to the person (§ 2362 (2))";
+}
+pub relation auskunftspflicht_ueber_bestand_und_verbleib_2362(s: Erbschein, inhaber: Person, wirklicher_erbe: Person) kind derived {
+    label de official "Der Erbscheinsinhaber hat dem wirklichen Erben über den Bestand der Erbschaft und den Verbleib der Erbschaftsgegenstände Auskunft zu erteilen (§ 2362 Abs. 2)";
+    label en unofficial "the certificate holder must inform the true heir about the composition of the estate and the whereabouts of estate assets (§ 2362 (2))";
+}
+
+// ---- § 2363 Herausgabeanspruch des Nacherben und des Testamentsvollstreckers
+
+pub relation nacherbe_bei_unrichtigem_erbschein_2363(e: Erbfall, nacherbe: Person) kind empirical {
+    label de official "Die Person ist Nacherbe (§ 2363)";
+    label en unofficial "the person is a subsequent heir (§ 2363)";
+}
+pub relation testamentsvollstrecker_bei_unrichtigem_erbschein_2363(e: Erbfall, tv: Person) kind empirical {
+    label de official "Die Person ist Testamentsvollstrecker (§ 2363)";
+    label en unofficial "the person is the executor (§ 2363)";
+}
+
+// ---- § 2366 Öffentlicher Glaube des Erbscheins -----------------------------
+
+pub relation dritter_erwirbt_durch_rechtsgeschaeft_von_erbscheinserben_2366(s: Erbschein, dritter: Person, erbscheinserbe: Person) kind empirical {
+    label de official "Der Dritte erwirbt von dem im Erbschein als Erbe Bezeichneten durch Rechtsgeschäft einen Erbschaftsgegenstand, ein Recht daran oder die Befreiung von einem zur Erbschaft gehörenden Recht (§ 2366)";
+    label en unofficial "the third party acquires, by transaction with the person designated as heir in the certificate, an estate asset, a right in it, or release from a right belonging to the estate (§ 2366)";
+}
+pub relation dritter_kennt_unrichtigkeit_2366(s: Erbschein, dritter: Person) kind empirical {
+    label de official "Der Dritte kennt die Unrichtigkeit des Erbscheins (§ 2366, Gegenausnahme 1)";
+    label en unofficial "the third party knows the certificate is incorrect (§ 2366, counter-exception 1)";
+}
+pub relation dritter_weiss_von_rueckgabeverlangen_des_nachlassgerichts_2366(s: Erbschein, dritter: Person) kind empirical {
+    label de official "Der Dritte weiß, dass das Nachlassgericht die Rückgabe des Erbscheins wegen Unrichtigkeit verlangt hat (§ 2366, Gegenausnahme 2)";
+    label en unofficial "the third party knows that the probate court has demanded the return of the certificate because of its incorrectness (§ 2366, counter-exception 2)";
+}
+pub relation erbscheinsinhalt_gilt_zugunsten_dritten_als_richtig_2366(s: Erbschein, dritter: Person) kind derived {
+    label de official "Zugunsten des Dritten gilt der Inhalt des Erbscheins, soweit die Vermutung des § 2365 reicht, als richtig (§ 2366)";
+    label en unofficial "for the benefit of the third party the certificate's content, to the extent the § 2365 presumption reaches, is deemed correct (§ 2366)";
+}
+
+// ---- § 2367 Leistung an Erbscheinserben ------------------------------------
+
+pub relation leistung_an_erbscheinserben_bewirkt_2367(s: Erbschein, erbscheinserbe: Person, leistender: Person) kind empirical {
+    label de official "Auf Grund eines zur Erbschaft gehörenden Rechts wird an den im Erbschein als Erbe Bezeichneten eine Leistung bewirkt (§ 2367)";
+    label en unofficial "a performance is rendered, under a right belonging to the estate, to the person designated as heir in the certificate (§ 2367)";
+}
+pub relation rechtsgeschaeft_mit_verfuegung_zwischen_erbscheinserbe_und_anderem_2367(s: Erbschein, erbscheinserbe: Person, anderer: Person) kind empirical {
+    label de official "Zwischen dem im Erbschein als Erbe Bezeichneten und einem anderen wird, nicht unter § 2366 fallend, ein Rechtsgeschäft vorgenommen, das eine Verfügung über ein zur Erbschaft gehörendes Recht enthält (§ 2367)";
+    label en unofficial "between the person designated as heir in the certificate and another, a transaction not covered by § 2366 is entered into that disposes of a right belonging to the estate (§ 2367)";
+}
+
+// ---- § 2368 Testamentsvollstreckerzeugnis ----------------------------------
+
+pub relation tv_beantragt_zeugnis_2368(e: Erbfall, tv: Person) kind empirical {
+    label de official "Der Testamentsvollstrecker hat beim Nachlassgericht ein Zeugnis über seine Ernennung beantragt (§ 2368 Satz 1)";
+    label en unofficial "the executor has applied to the probate court for a certificate of appointment (§ 2368 sentence 1)";
+}
+pub relation zeugnis_ueber_ernennung_zu_erteilen_2368(e: Erbfall, tv: Person) kind derived {
+    label de official "Das Nachlassgericht hat dem Testamentsvollstrecker ein Zeugnis über die Ernennung zu erteilen (§ 2368 Satz 1)";
+    label en unofficial "the probate court must issue the executor a certificate of appointment (§ 2368 sentence 1)";
+}
+pub relation amt_des_tv_beendet_2368(e: Erbfall, tv: Person) kind empirical {
+    label de official "Das Amt des Testamentsvollstreckers ist beendet (§ 2368 Satz 2)";
+    label en unofficial "the executor's office has ended (§ 2368 sentence 2)";
+}
+pub relation zeugnis_mit_amtsbeendigung_kraftlos_2368(e: Erbfall, tv: Person) kind derived {
+    label de official "Mit der Beendigung des Amts des Testamentsvollstreckers wird das Zeugnis kraftlos (§ 2368 Satz 2)";
+    label en unofficial "upon the ending of the executor's office the certificate becomes void (§ 2368 sentence 2)";
+}
+
+// ---- § 2370 Öffentlicher Glaube bei Todeserklärung -------------------------
+
+pub relation person_fuer_tot_erklaert_oder_todeszeit_festgestellt_2370(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Person ist für tot erklärt oder ihre Todeszeit ist nach dem Verschollenheitsgesetz festgestellt (§ 2370 Abs. 1)";
+    label en unofficial "the person has been declared dead, or their time of death has been established under the Missing Persons Act (§ 2370 (1))";
+}
+pub relation person_hat_massgeblichen_zeitpunkt_ueberlebt_oder_ist_vorher_gestorben_2370(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Person hat den als Todeszeitpunkt geltenden Zeitpunkt überlebt oder ist vor diesem Zeitpunkt gestorben (§ 2370 Abs. 1)";
+    label en unofficial "the person survived the point deemed the time of death, or died before that point (§ 2370 (1))";
+}
+pub relation erbe_kraft_todeserklaerung_2370(e: Erbfall, erbe_kraft_erklaerung: Person) kind empirical {
+    label de official "Die Person wäre auf Grund der Todeserklärung oder der Feststellung der Todeszeit Erbe (§ 2370 Abs. 1)";
+    label en unofficial "the person would be the heir by virtue of the declaration of death or the establishment of the time of death (§ 2370 (1))";
+}
+pub relation dritter_bei_todeserklaerung_2370(e: Erbfall, dritter: Person) kind empirical {
+    label de official "Ein Dritter tätigt mit dem kraft Todeserklärung Berufenen ein in §§ 2366, 2367 bezeichnetes Rechtsgeschäft (§ 2370 Abs. 1)";
+    label en unofficial "a third party enters into a transaction described in §§ 2366, 2367 with the person called by virtue of the declaration of death (§ 2370 (1))";
+}
+pub relation dritter_kennt_unrichtigkeit_der_todeserklaerung_2370(e: Erbfall, dritter: Person) kind empirical {
+    label de official "Der Dritte kennt die Unrichtigkeit der Todeserklärung oder der Feststellung der Todeszeit (§ 2370 Abs. 1, Gegenausnahme 1)";
+    label en unofficial "the third party knows the declaration of death or the establishment of the time of death is incorrect (§ 2370 (1), counter-exception 1)";
+}
+pub relation dritter_weiss_von_aufhebung_der_todeserklaerung_2370(e: Erbfall, dritter: Person) kind empirical {
+    label de official "Der Dritte weiß, dass die Todeserklärung oder die Feststellung der Todeszeit aufgehoben worden ist (§ 2370 Abs. 1, Gegenausnahme 2)";
+    label en unofficial "the third party knows that the declaration of death or the establishment of the time of death has been set aside (§ 2370 (1), counter-exception 2)";
+}
+pub relation gilt_ohne_erbschein_als_erbe_zugunsten_dritten_2370(e: Erbfall, erbe_kraft_erklaerung: Person, dritter: Person) kind derived {
+    label de official "In Ansehung der §§ 2366, 2367 bezeichneten Rechtsgeschäfte gilt die Person zugunsten des Dritten auch ohne Erteilung eines Erbscheins als Erbe (§ 2370 Abs. 1)";
+    label en unofficial "for the transactions described in §§ 2366, 2367, the person is deemed the heir for the benefit of the third party even without issuance of a certificate (§ 2370 (1))";
+}
+pub relation erbschein_erteilt_2370(s: Erbschein) kind empirical {
+    label de official "Ein Erbschein ist erteilt worden (§ 2370 Abs. 2 Satz 1)";
+    label en unofficial "a certificate of inheritance has been issued (§ 2370 (2) sentence 1)";
+}
+pub relation fuer_tot_erklaerter_lebt_noch_2370(e: Erbfall, p: Person) kind empirical {
+    label de official "Der für tot Erklärte oder dessen Todeszeit festgestellt ist, lebt noch (§ 2370 Abs. 2 Satz 1)";
+    label en unofficial "the person declared dead, or whose time of death was established, is still alive (§ 2370 (2) sentence 1)";
+}
+pub relation tod_ohne_todeserklaerung_mit_unrecht_angenommen_2370(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Tod der Person ist ohne Todeserklärung oder Feststellung der Todeszeit mit Unrecht angenommen worden (§ 2370 Abs. 2 Satz 2)";
+    label en unofficial "the person's death was wrongly assumed without a declaration of death or establishment of the time of death (§ 2370 (2) sentence 2)";
+}
+pub relation hat_die_rechte_des_2362_2370(e: Erbfall, p: Person) kind derived {
+    label de official "Der Person stehen die in § 2362 bestimmten Rechte zu (§ 2370 Abs. 2)";
+    label en unofficial "the person has the rights specified in § 2362 (§ 2370 (2))";
+}
+
+// ============================================================================
+
+@source(BGB_P2353)
+rule ErbscheinZuErteilenAufAntrag(e: Erbfall, antragsteller: Person) strict {
+    label de official "Auf Antrag des Erben hat das Nachlassgericht ein Zeugnis über sein Erbrecht zu erteilen (§ 2353)";
+    label en unofficial "on the heir's application the probate court must issue a certificate of the inheritance right (§ 2353)";
+    when erbschein_beantragt_2353(e, antragsteller) and antragsteller_erbe_oder_miterbe_2353(e, antragsteller);
+    then erbschein_zu_erteilen_2353(e, antragsteller);
+}
+
+@source(BGB_P2361) {
+    rule EinziehungBeiUnrichtigkeit(s: Erbschein) strict {
+        label de official "Ergibt sich, dass der Erbschein unrichtig ist, hat ihn das Nachlassgericht einzuziehen (§ 2361 Satz 1)";
+        label en unofficial "if it emerges the certificate is incorrect, the probate court must withdraw it (§ 2361 sentence 1)";
+        when erbschein_unrichtig_2361(s);
+        then erbschein_einzuziehen_2361(s);
+    }
+    rule KraftlosMitEinziehung(s: Erbschein) strict {
+        label de official "Mit der Einziehung wird der Erbschein kraftlos (§ 2361 Satz 2)";
+        label en unofficial "on withdrawal the certificate becomes void (§ 2361 sentence 2)";
+        when erbschein_einzuziehen_2361(s);
+        then erbschein_durch_einziehung_kraftlos_2361(s);
+    }
+}
+
+@source(BGB_P2362) {
+    rule HerausgabeVerlangbarDurchWirklichenErben(s: Erbschein, wirklicher_erbe: Person, besitzer: Person, e: Erbfall) strict {
+        label de official "Der wirkliche Erbe kann von dem Besitzer eines unrichtigen Erbscheins die Herausgabe an das Nachlassgericht verlangen (§ 2362 Abs. 1)";
+        label en unofficial "the true heir may demand the possessor of an incorrect certificate hand it over to the probate court (§ 2362 (1))";
+        when wirklicher_erbe_2362(e, wirklicher_erbe) and besitzer_unrichtigen_erbscheins_2362(s, besitzer) and erbschein_unrichtig_2361(s);
+        then herausgabe_an_nachlassgericht_verlangbar_2362(s, wirklicher_erbe, besitzer);
+    }
+    rule AuskunftspflichtDesErbscheinsinhabers(s: Erbschein, inhaber: Person, wirklicher_erbe: Person, e: Erbfall) strict {
+        label de official "Der Erbscheinsinhaber hat dem wirklichen Erben über Bestand und Verbleib Auskunft zu erteilen (§ 2362 Abs. 2)";
+        label en unofficial "the certificate holder must inform the true heir about the estate's composition and whereabouts (§ 2362 (2))";
+        when erbscheinsinhaber_2362(s, inhaber) and erbschein_unrichtig_2361(s) and wirklicher_erbe_2362(e, wirklicher_erbe);
+        then auskunftspflicht_ueber_bestand_und_verbleib_2362(s, inhaber, wirklicher_erbe);
+    }
+}
+
+@source(BGB_P2363) {
+    rule NacherbeHatRechtDesWirklichenErben(s: Erbschein, nacherbe: Person, besitzer: Person, e: Erbfall) strict {
+        label de official "Dem Nacherben steht das in § 2362 Absatz 1 bestimmte Recht zu (§ 2363)";
+        label en unofficial "the subsequent heir has the right specified in § 2362 (1) (§ 2363)";
+        when nacherbe_bei_unrichtigem_erbschein_2363(e, nacherbe) and besitzer_unrichtigen_erbscheins_2362(s, besitzer) and erbschein_unrichtig_2361(s);
+        then herausgabe_an_nachlassgericht_verlangbar_2362(s, nacherbe, besitzer);
+    }
+    rule TestamentsvollstreckerHatRechtDesWirklichenErben(s: Erbschein, tv: Person, besitzer: Person, e: Erbfall) strict {
+        label de official "Dem Testamentsvollstrecker steht das in § 2362 Absatz 1 bestimmte Recht zu (§ 2363)";
+        label en unofficial "the executor has the right specified in § 2362 (1) (§ 2363)";
+        when testamentsvollstrecker_bei_unrichtigem_erbschein_2363(e, tv) and besitzer_unrichtigen_erbscheins_2362(s, besitzer) and erbschein_unrichtig_2361(s);
+        then herausgabe_an_nachlassgericht_verlangbar_2362(s, tv, besitzer);
+    }
+}
+
+@source(BGB_P2366)
+rule OeffentlicherGlaubeDesErbscheins(s: Erbschein, dritter: Person, erbscheinserbe: Person) strict {
+    label de official "Erwirbt jemand von dem im Erbschein Bezeichneten durch Rechtsgeschäft einen Erbschaftsgegenstand, ein Recht daran oder eine Befreiung, gilt der Inhalt des Erbscheins zu seinen Gunsten als richtig, es sei denn er kennt die Unrichtigkeit oder weiß vom Rückgabeverlangen des Nachlassgerichts (§ 2366)";
+    label en unofficial "whoever acquires an estate asset, a right in it, or a release from the person designated in the certificate may rely on the certificate's correctness, unless he knows of its incorrectness or of the probate court's demand for its return (§ 2366)";
+    when dritter_erwirbt_durch_rechtsgeschaeft_von_erbscheinserben_2366(s, dritter, erbscheinserbe) and im_erbschein_als_erbe_bezeichnet(s, erbscheinserbe) and not_known(dritter_kennt_unrichtigkeit_2366(s, dritter)) and not_known(dritter_weiss_von_rueckgabeverlangen_des_nachlassgerichts_2366(s, dritter));
+    then erbscheinsinhalt_gilt_zugunsten_dritten_als_richtig_2366(s, dritter);
+}
+
+@source(BGB_P2367) {
+    rule EntsprechendeAnwendungBeiLeistung(s: Erbschein, erbscheinserbe: Person, leistender: Person) strict {
+        label de official "§ 2366 findet entsprechende Anwendung, wenn auf Grund eines zur Erbschaft gehörenden Rechts an den Erbscheinserben eine Leistung bewirkt wird (§ 2367)";
+        label en unofficial "§ 2366 applies correspondingly where a performance is rendered to the certificate heir under a right belonging to the estate (§ 2367)";
+        when leistung_an_erbscheinserben_bewirkt_2367(s, erbscheinserbe, leistender) and im_erbschein_als_erbe_bezeichnet(s, erbscheinserbe) and not_known(dritter_kennt_unrichtigkeit_2366(s, leistender)) and not_known(dritter_weiss_von_rueckgabeverlangen_des_nachlassgerichts_2366(s, leistender));
+        then erbscheinsinhalt_gilt_zugunsten_dritten_als_richtig_2366(s, leistender);
+    }
+    rule EntsprechendeAnwendungBeiVerfuegungsgeschaeft(s: Erbschein, erbscheinserbe: Person, anderer: Person) strict {
+        label de official "§ 2366 findet entsprechende Anwendung auf ein nicht unter § 2366 fallendes Verfügungsgeschäft zwischen dem Erbscheinserben und einem anderen (§ 2367)";
+        label en unofficial "§ 2366 applies correspondingly to a disposal transaction, not itself covered by § 2366, between the certificate heir and another (§ 2367)";
+        when rechtsgeschaeft_mit_verfuegung_zwischen_erbscheinserbe_und_anderem_2367(s, erbscheinserbe, anderer) and im_erbschein_als_erbe_bezeichnet(s, erbscheinserbe) and not_known(dritter_kennt_unrichtigkeit_2366(s, anderer)) and not_known(dritter_weiss_von_rueckgabeverlangen_des_nachlassgerichts_2366(s, anderer));
+        then erbscheinsinhalt_gilt_zugunsten_dritten_als_richtig_2366(s, anderer);
+    }
+}
+
+@source(BGB_P2368) {
+    rule ZeugnisAufAntragZuErteilen(e: Erbfall, tv: Person) strict {
+        label de official "Einem Testamentsvollstrecker hat das Nachlassgericht auf Antrag ein Zeugnis über die Ernennung zu erteilen (§ 2368 Satz 1)";
+        label en unofficial "on application the probate court must issue an executor a certificate of appointment (§ 2368 sentence 1)";
+        when tv_beantragt_zeugnis_2368(e, tv);
+        then zeugnis_ueber_ernennung_zu_erteilen_2368(e, tv);
+    }
+    rule ZeugnisKraftlosMitAmtsende(e: Erbfall, tv: Person) strict {
+        label de official "Mit der Beendigung des Amts des Testamentsvollstreckers wird das Zeugnis kraftlos (§ 2368 Satz 2)";
+        label en unofficial "the certificate becomes void when the executor's office ends (§ 2368 sentence 2)";
+        when amt_des_tv_beendet_2368(e, tv);
+        then zeugnis_mit_amtsbeendigung_kraftlos_2368(e, tv);
+    }
+}
+
+@source(BGB_P2370) {
+    rule OeffentlicherGlaubeBeiTodeserklaerungOhneErbschein(e: Erbfall, erbe_kraft_erklaerung: Person, dritter: Person) strict {
+        label de official "Hat eine für tot erklärte Person den maßgeblichen Zeitpunkt überlebt oder ist vorher gestorben, gilt der kraft der Todeserklärung Berufene zugunsten Dritter auch ohne Erbschein als Erbe, es sei denn der Dritte kennt die Unrichtigkeit oder weiß von der Aufhebung (§ 2370 Abs. 1)";
+        label en unofficial "where a person declared dead survived the relevant point or died before it, the person who would be heir by the declaration is deemed heir for a third party's benefit even without a certificate, unless the third party knows of the inaccuracy or the setting-aside (§ 2370 (1))";
+        when person_fuer_tot_erklaert_oder_todeszeit_festgestellt_2370(e, erbe_kraft_erklaerung) and person_hat_massgeblichen_zeitpunkt_ueberlebt_oder_ist_vorher_gestorben_2370(e, erbe_kraft_erklaerung) and erbe_kraft_todeserklaerung_2370(e, erbe_kraft_erklaerung) and dritter_bei_todeserklaerung_2370(e, dritter) and not_known(dritter_kennt_unrichtigkeit_der_todeserklaerung_2370(e, dritter)) and not_known(dritter_weiss_von_aufhebung_der_todeserklaerung_2370(e, dritter));
+        then gilt_ohne_erbschein_als_erbe_zugunsten_dritten_2370(e, erbe_kraft_erklaerung, dritter);
+    }
+    rule RechteDesFuerTotErklaertenBeiErteiltemErbschein(e: Erbfall, p: Person, s: Erbschein) strict {
+        label de official "Ist ein Erbschein erteilt, stehen dem noch lebenden für tot Erklärten die in § 2362 bestimmten Rechte zu (§ 2370 Abs. 2 Satz 1)";
+        label en unofficial "if a certificate has been issued, the person declared dead, if still alive, has the rights of § 2362 (§ 2370 (2) sentence 1)";
+        when erbschein_erteilt_2370(s) and fuer_tot_erklaerter_lebt_noch_2370(e, p);
+        then hat_die_rechte_des_2362_2370(e, p);
+    }
+    rule RechteBeiZuUnrechtAngenommenemTod(e: Erbfall, p: Person) strict {
+        label de official "Die gleichen Rechte hat eine Person, deren Tod ohne Todeserklärung oder Feststellung der Todeszeit mit Unrecht angenommen worden ist (§ 2370 Abs. 2 Satz 2)";
+        label en unofficial "the same rights belong to a person whose death was wrongly assumed without a declaration of death or establishment of the time of death (§ 2370 (2) sentence 2)";
+        when tod_ohne_todeserklaerung_mit_unrecht_angenommen_2370(e, p);
+        then hat_die_rechte_des_2362_2370(e, p);
+    }
+}

@@ -1,0 +1,29 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 929 Satz 1 (Ledger D-10-07): Einigung und Übergabe durch den Eigentümer übertragen das Eigentum. Der Fall nennt den Eigentumswechsel ausdrücklich, deshalb fällt der bisherige Eigentümer aus `eigentuemer` heraus (Ledger D-10-03). Der Kanal des § 932 Abs. 2 steht im Defeater und stellt daher keine Urteilsanfrage: wer den guten Glauben bestreitet, trägt die Feststellung (Ledger D-10-04, D-10-07).
+test "§ 929 Satz 1: Übereignung durch Einigung und Übergabe vom Berechtigten" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": veraeusserte_sache(entity_ref("urn:de:bgb:be:e:veraeusserung"), entity_ref("urn:de:bgb:be:e:uhr")) { origin case_input; }
+        assert "f2": veraeusserer(entity_ref("urn:de:bgb:be:e:veraeusserung"), entity_ref("urn:de:bgb:be:e:V")) { origin case_input; }
+        assert "f3": erwerber(entity_ref("urn:de:bgb:be:e:veraeusserung"), entity_ref("urn:de:bgb:be:e:E")) { origin case_input; }
+        assert "f4": bewegliche_sache(entity_ref("urn:de:bgb:be:e:uhr")) { origin case_input; }
+        assert "f5": einigung_ueber_den_eigentumsuebergang(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin case_input; }
+        assert "f6": uebergabe_erfolgt(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin case_input; }
+        assert "f7": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:e:uhr"), entity_ref("urn:de:bgb:be:e:V")) { origin case_input; }
+        assert "f8": eigentumswechsel_im_fall(entity_ref("urn:de:bgb:be:e:uhr")) { origin case_input; }
+    }
+    evaluate truth(uebereignungstatbestand(entity_ref("urn:de:bgb:be:e:veraeusserung")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_durch_uebereignung_erworben(entity_ref("urn:de:bgb:be:e:uhr"), entity_ref("urn:de:bgb:be:e:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == REQUIRES_JUDGMENT;
+    evaluate truth(eigentuemer(entity_ref("urn:de:bgb:be:e:uhr"), entity_ref("urn:de:bgb:be:e:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentuemer(entity_ref("urn:de:bgb:be:e:uhr"), entity_ref("urn:de:bgb:be:e:V")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

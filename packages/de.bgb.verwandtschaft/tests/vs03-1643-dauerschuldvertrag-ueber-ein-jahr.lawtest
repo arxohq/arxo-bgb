@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1643 Abs. 4 Satz 1: die Eltern bedürfen der Genehmigung zum Abschluss eines Vertrags über wiederkehrende Leistungen, wenn das Vertragsverhältnis LÄNGER ALS EIN JAHR nach dem Eintritt der Volljährigkeit fortdauern soll. Geburt am 20.05.2006; die Volljährigkeit tritt mit Ablauf des 19.05.2024 ein (§ 2, § 187 Abs. 2, § 188 Abs. 2), die Jahresgrenze liegt am 19.05.2025. Das Vertragsende am 30.06.2025 liegt danach.
+test "§ 1643 Abs. 4: Vertrag über ein Jahr nach der Volljährigkeit ist genehmigungsbedürftig" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:vs03:K"), @2006-05-20) { origin case_input; }
+        assert "f2": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:vs03:K"), 18 calendar_year) { origin case_input; }
+        assert "f3": dauerschuldvertrag_endet_am(entity_ref("urn:de:bgb:vw:vs03:K"), @2025-06-30) { origin case_input; }
+    }
+    evaluate truth(volljaehrigkeit_eingetreten_am(entity_ref("urn:de:bgb:vw:vs03:K"), @2024-05-19));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ein_jahr_nach_der_volljaehrigkeit(entity_ref("urn:de:bgb:vw:vs03:K"), @2025-05-19));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(genehmigung_des_familiengerichts_erforderlich_1643(entity_ref("urn:de:bgb:vw:vs03:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

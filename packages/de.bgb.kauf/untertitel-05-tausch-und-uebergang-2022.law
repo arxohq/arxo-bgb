@@ -1,0 +1,44 @@
+// --- Untertitel 5 Tausch (§ 480) und der Korridor 2022
+//
+// DER KORRIDOR. Art. 229 § 58 EGBGB stellt die Neufassung des Kaufrechts auf
+// den TAG DES VERTRAGSSCHLUSSES ab: auf Schuldverhältnisse, die vor dem
+// 1. Januar 2022 entstanden sind, bleibt das bis dahin geltende Recht
+// anwendbar. Der Anknüpfungspunkt ist also eine TATSACHE DES FALLS, nicht die
+// legal time der Auswertung. Ein `effective`-Fenster am Regelkopf (§87) prüft
+// aber die legal time; es würde denselben Fall bei jeder Auswertung von 2026
+// gleich beantworten, gleichgültig wann der Vertrag geschlossen wurde. Deshalb
+// ist der Korridor hier ein GARDE über `vertragsschluss_am` (Ledger D-05-06).
+// Die Überleitungsnorm selbst gehört de.bgb.uebergang (BG-17); BG-05 erklärt
+// nur den Anknüpfungspunkt und macht ihn an einem Zeugenpaar sichtbar.
+//
+// Für Verträge VOR dem Stichtag schweigt das Paket: das bis zum 31. Dezember
+// 2021 geltende Kaufrecht ist nicht Teil dieses Schnitts (GOAL: nur der
+// aktuelle Stand und die Korridore).
+
+pub relation neues_kaufrecht_anwendbar(k: Kaufvertrag) kind institutional {
+    label de official "auf den Kaufvertrag ist das seit dem 1. Januar 2022 geltende Kaufrecht anzuwenden (Art. 229 § 58 EGBGB): der Vertrag ist an diesem Tag oder danach geschlossen worden";
+    label en unofficial "the law of sale in force since 1 January 2022 applies to the contract (Art. 229 § 58 EGBGB): the contract was concluded on or after that day";
+}
+
+@source(BGB_P474)
+rule Korridor2022(k: Kaufvertrag, t: Date) strict {
+    label de official "Art. 229 § 58 EGBGB knüpft an den Tag des Vertragsschlusses an: ab dem 1. Januar 2022 geschlossene Kaufverträge unterliegen den §§ 434, 475b bis 475e, 477 in der heutigen Fassung";
+    label en unofficial "Art. 229 § 58 EGBGB attaches to the day the contract was concluded: contracts concluded from 1 January 2022 are governed by §§ 434, 475b to 475e, 477 in their present version";
+    when vertragsschluss_am(k, t) and t >= @2022-01-01;
+    then neues_kaufrecht_anwendbar(k);
+}
+
+// --- § 480 Tausch ---------------------------------------------------------------------------------
+
+pub relation tausch(k: Kaufvertrag) kind empirical {
+    label de official "der Vertrag ist ein Tausch (§ 480)";
+    label en unofficial "the contract is a barter (§ 480)";
+}
+
+@source(BGB_P480)
+rule Tausch480(k: Kaufvertrag) strict {
+    label de official "Auf den Tausch finden die Vorschriften über den Kauf entsprechende Anwendung (§ 480)";
+    label en unofficial "The provisions on sale apply accordingly to barter (§ 480)";
+    when tausch(k);
+    then vorschriften_ueber_sachkauf_entsprechend_anwendbar(k);
+}

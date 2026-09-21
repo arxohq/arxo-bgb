@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 879 Abs. 1: in derselben Abteilung entscheidet die Reihenfolge der Eintragungen; in verschiedenen Abteilungen der frühere Tag, bei demselben Tag besteht gleicher Rang.
+test "§ 879 Abs. 1: Rangverhältnis nach Reihenfolge, Tag und gleichem Rang" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": recht_am_grundstueck(entity_ref("urn:de:bgb:be:g:recht"), entity_ref("urn:de:bgb:be:g:grundstueck")) { origin case_input; }
+        assert "f2": recht_am_grundstueck(entity_ref("urn:de:bgb:be:g:recht2"), entity_ref("urn:de:bgb:be:g:grundstueck")) { origin case_input; }
+        assert "f3": eingetragen_in_abteilung(entity_ref("urn:de:bgb:be:g:recht"), 3) { origin adjudicated; }
+        assert "f4": eingetragen_in_abteilung(entity_ref("urn:de:bgb:be:g:recht2"), 3) { origin adjudicated; }
+        assert "f5": reihenfolge_der_eintragung(entity_ref("urn:de:bgb:be:g:recht"), 1) { origin adjudicated; }
+        assert "f6": reihenfolge_der_eintragung(entity_ref("urn:de:bgb:be:g:recht2"), 2) { origin adjudicated; }
+        assert "f7": eingetragen_am(entity_ref("urn:de:bgb:be:g:recht"), @2024-04-04) { origin adjudicated; }
+        assert "f8": eingetragen_am(entity_ref("urn:de:bgb:be:g:recht2"), @2024-04-04) { origin adjudicated; }
+    }
+    evaluate truth(vorrang(entity_ref("urn:de:bgb:be:g:recht"), entity_ref("urn:de:bgb:be:g:recht2")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vorrang(entity_ref("urn:de:bgb:be:g:recht2"), entity_ref("urn:de:bgb:be:g:recht")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gleicher_rang(entity_ref("urn:de:bgb:be:g:recht"), entity_ref("urn:de:bgb:be:g:recht2")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

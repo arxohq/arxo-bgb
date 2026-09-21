@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Querschnitt Widerruf/Fristen: negative Seite von wq01 — derselbe
+// Sachverhalt, der Widerruf wird erst am 21. März 2026 abgesandt, einen Tag
+// nach dem Ende der Frist (20. März 2026). Der Widerruf ist nicht
+// fristgerecht; das Recht schweigt (NEITHER), es verneint nicht. Verbraucher
+// über die Brücke §§ 13/14.
+test "Querschnitt: Widerruf einen Tag nach Fristende ist nicht fristgerecht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_SCHULDRECHT_AT_TAG; }
+        assert "a1": widerrufsrecht_eingeraeumt(entity_ref("urn:de:bgb:sr-at:wq04:v1"), entity_ref("urn:de:bgb:sr-at:wq04:p1")) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:sr-at:wq04:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a3": de.bgb.allgemeiner_teil::zweck_ueberwiegend_nicht_gewerblich(entity_ref("urn:de:bgb:sr-at:wq04:p1"), entity_ref("urn:de:bgb:sr-at:wq04:r1")) { origin adjudicated; }
+        assert "a4": rechtsgeschaeft_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq04:v1"), entity_ref("urn:de:bgb:sr-at:wq04:r1")) { origin case_input; }
+        assert "a5": widerrufsfrist_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq04:v1"), entity_ref("urn:de:bgb:sr-at:wq04:f1")) { origin case_input; }
+        assert "a6": erhalt_der_ware(entity_ref("urn:de:bgb:sr-at:wq04:v1"), @2026-03-06) { origin case_input; }
+        assert "a7": keine_spaetere_unterrichtung(entity_ref("urn:de:bgb:sr-at:wq04:v1")) { origin case_input; }
+        assert "a8": widerruf_erklaert_am(entity_ref("urn:de:bgb:sr-at:wq04:v1"), @2026-03-21) { origin case_input; }
+    }
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:sr-at:wq04:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(widerruf_fristgerecht(entity_ref("urn:de:bgb:sr-at:wq04:v1")));
+    expect truth_status == NEITHER;
+    evaluate truth(nicht_mehr_an_die_willenserklaerung_gebunden(entity_ref("urn:de:bgb:sr-at:wq04:v1"), entity_ref("urn:de:bgb:sr-at:wq04:p1")));
+    expect truth_status == NEITHER;
+}

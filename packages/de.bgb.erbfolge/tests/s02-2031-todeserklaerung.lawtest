@@ -1,0 +1,29 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 2031 Abs. 1: Ueberlebt die fuer tot erklaerte Person den Zeitpunkt, der als
+// Zeitpunkt ihres Todes gilt, so kann sie die Herausgabe ihres Vermoegens nach
+// den fuer den Erbschaftsanspruch geltenden Vorschriften verlangen; solange sie
+// noch lebt, wird die Verjaehrung ihres Anspruchs nicht vor dem Ablauf EINES
+// JAHRES nach der Kenntniserlangung vollendet. Kenntnis am 10. Maerz 2026, ein
+// Jahr endet nach § 188 Abs. 2 am 10. Maerz 2027.
+test "§ 2031 Abs. 1: die Verjaehrung nicht vor Ablauf eines Jahres nach Kenntnis" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:s02:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:s02:F"), entity_ref("urn:de:bgb:e:s02:D"), entity_ref("urn:de:bgb:e:s02:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:K")) { origin case_input; }
+        assert "f6": fuer_tot_erklaert(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:D")) { origin case_input; }
+        assert "f7": kenntnis_von_der_todeserklaerung_am(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:D"), @2026-03-10) { origin case_input; }
+    }
+    evaluate truth(herausgabeanspruch_des_fuer_tot_erklaerten(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:D")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_nicht_vor_jahresablauf(entity_ref("urn:de:bgb:e:s02:E"), entity_ref("urn:de:bgb:e:s02:D"), @2027-03-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

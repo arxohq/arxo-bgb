@@ -1,0 +1,34 @@
+@source(BGB_P312d)
+rule PositionInformationspflicht312d(v: Vertrag, unternehmerpartei: Person, verbraucherpartei: Person, beginn: Date) defeasible {
+    label de official "Der Unternehmer hat den Verbraucher zu informieren; die Angaben werden Vertragsinhalt (§ 312d)";
+    label en unofficial "The trader must inform the consumer; the information becomes part of the contract (§ 312d)";
+    when untertitel_anwendbar(v);
+    when vertragspartei(v, unternehmerpartei);
+    when vertragspartei(v, verbraucherpartei);
+    when unternehmer(unternehmerpartei);
+    when verbraucher(verbraucherpartei);
+    when vertrag_geschlossen_am(v, beginn);
+    when informationspflicht_nach_246a_erfuellt(v);
+    then duty Informationspflicht312d {
+        bearer unternehmerpartei;
+        beneficiary verbraucherpartei;
+        achieve angaben_werden_vertragsinhalt(v) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P355)
+rule PositionBindungsentfall355(v: Vertrag, verbraucherpartei: Person, unternehmerpartei: Person, beginn: Date) defeasible {
+    label de official "Nach fristgerechtem Widerruf sind die Parteien nicht mehr gebunden (§ 355)";
+    label en unofficial "After a timely withdrawal, the parties are no longer bound (§ 355)";
+    when widerrufsrecht_eingeraeumt(v, verbraucherpartei);
+    when widerruf_fristgerecht(v);
+    when vertragspartei(v, unternehmerpartei);
+    when unternehmer(unternehmerpartei);
+    when verbraucher(verbraucherpartei);
+    when vertrag_geschlossen_am(v, beginn);
+    then duty Bindungsentfall355 {
+        bearer unternehmerpartei;
+        beneficiary verbraucherpartei;
+        achieve nicht_mehr_an_die_willenserklaerung_gebunden(v, verbraucherpartei) during [beginn, infinity);
+    };
+}

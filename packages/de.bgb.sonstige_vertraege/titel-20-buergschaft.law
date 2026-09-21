@@ -1,0 +1,502 @@
+// TITEL 20 — BÜRGSCHAFT (§§ 765–778)
+//
+// Teil des Pakets BG-08 (`package.law`). Vierzehn Paragraphen, nach Absätzen
+// bearbeitet. Die Bürgschaft ist AKZESSORISCH: § 767 Absatz 1 Satz 1 macht den
+// jeweiligen Bestand der Hauptverbindlichkeit maßgebend, § 768 gibt dem Bürgen
+// die Einreden des Hauptschuldners, § 774 lässt die Forderung übergehen. Diese
+// Akzessorietät ist hier EIN Prädikat `buergschaftsschuld` mit dem Betrag der
+// Hauptverbindlichkeit, kein zweiter Schuldbestand (D-08-08).
+//
+// DIE EINREDE DER VORAUSKLAGE (§ 771) ist die tragende Verzweigung des Titels:
+// sie steht dem Bürgen zu, SOLANGE der Gläubiger nicht erfolglos vollstreckt
+// hat (§ 771 Satz 1), und sie ist in den vier Fällen des § 773 Absatz 1
+// ausgeschlossen. Der Ausschluss ist ein POSITIVES Prädikat mit vier
+// Produzenten; die Einrede liest ihn mit `not_known`. Eine negative Kopf-Norm
+// („die Einrede steht nicht zu") gäbe BOTH.
+
+language "law.core" version "0.2";
+package de.bgb.sonstige_vertraege version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-sonstige-vertraege";
+
+pub entity Buergschaft {
+    label de official "Bürgschaft (§ 765 Absatz 1)";
+    label en unofficial "suretyship (§ 765 (1))";
+}
+
+// § 765: Vertragstypische Pflichten bei der Bürgschaft.
+
+pub relation buerge(b: Buergschaft, p: Person) kind empirical {
+    key(b);
+    label de official "Bürge: er verpflichtet sich gegenüber dem Gläubiger eines Dritten, für die Erfüllung der Verbindlichkeit des Dritten einzustehen (§ 765 Absatz 1)";
+    label en unofficial "surety: he undertakes towards the creditor of a third party to answer for the performance of that third party's obligation (§ 765 (1))";
+}
+pub relation buergschaftsglaeubiger(b: Buergschaft, p: Person) kind empirical {
+    key(b);
+    label de official "Gläubiger, gegenüber dem die Bürgschaft übernommen wird (§ 765 Absatz 1)";
+    label en unofficial "creditor towards whom the suretyship is assumed (§ 765 (1))";
+}
+pub relation hauptschuldner(b: Buergschaft, p: Person) kind empirical {
+    key(b);
+    label de official "Hauptschuldner, für dessen Verbindlichkeit der Bürge einsteht (§ 765 Absatz 1)";
+    label en unofficial "principal debtor for whose obligation the surety answers (§ 765 (1))";
+}
+pub relation buergschaftserklaerung_abgegeben(b: Buergschaft) kind empirical {
+    label de official "Die Bürgschaftserklärung ist abgegeben (§ 765 Absatz 1, § 766 Satz 1)";
+    label en unofficial "the declaration of suretyship has been made (§ 765 (1), § 766 sentence 1)";
+}
+pub relation kuenftige_oder_bedingte_hauptverbindlichkeit(b: Buergschaft) kind empirical {
+    label de official "Die Bürgschaft ist für eine künftige oder eine bedingte Verbindlichkeit übernommen (§ 765 Absatz 2)";
+    label en unofficial "the suretyship is assumed for a future or conditional obligation (§ 765 (2))";
+}
+pub relation buergschaft_fuer_kuenftige_verbindlichkeit_zulaessig(b: Buergschaft) kind institutional {
+    label de official "Die Übernahme der Bürgschaft für eine künftige oder bedingte Verbindlichkeit ist zulässig (§ 765 Absatz 2)";
+    label en unofficial "assuming a suretyship for a future or conditional obligation is admissible (§ 765 (2))";
+}
+@source(BGB_P765)
+rule BuergschaftFuerKuenftigeVerbindlichkeit(b: Buergschaft) strict {
+    label de official "Die Bürgschaft kann auch für eine künftige oder eine bedingte Verbindlichkeit übernommen werden (§ 765 Absatz 2)";
+    label en unofficial "a suretyship may also be assumed for a future or a conditional obligation (§ 765 (2))";
+    when buergschaftserklaerung_abgegeben(b) and kuenftige_oder_bedingte_hauptverbindlichkeit(b);
+    then buergschaft_fuer_kuenftige_verbindlichkeit_zulaessig(b);
+}
+
+// § 766: Schriftform der Bürgschaftserklärung; elektronische Form
+// ausgeschlossen; Heilung durch Erfüllung der Hauptverbindlichkeit.
+
+pub relation buergschaftserklaerung_schriftlich_erteilt(b: Buergschaft) kind empirical {
+    label de official "Die Bürgschaftserklärung ist schriftlich erteilt (§ 766 Satz 1)";
+    label en unofficial "the declaration of suretyship has been given in writing (§ 766 sentence 1)";
+}
+pub relation buergschaftserklaerung_in_elektronischer_form(b: Buergschaft) kind empirical {
+    label de official "Die Bürgschaftserklärung ist in elektronischer Form erteilt — nach § 766 Satz 2 ausgeschlossen";
+    label en unofficial "the declaration of suretyship has been given in electronic form — excluded by § 766 sentence 2";
+}
+pub relation hauptverbindlichkeit_vom_buergen_erfuellt(b: Buergschaft) kind empirical {
+    label de official "Der Bürge hat die Hauptverbindlichkeit erfüllt (§ 766 Satz 3, § 774 Absatz 1 Satz 1)";
+    label en unofficial "the surety has performed the principal obligation (§ 766 sentence 3, § 774 (1) sentence 1)";
+}
+pub relation buergschaftsvertrag_gueltig(b: Buergschaft) kind institutional {
+    label de official "Der Bürgschaftsvertrag ist gültig (§ 766)";
+    label en unofficial "the contract of suretyship is valid (§ 766)";
+}
+
+@source(BGB_P766) {
+    rule BuergschaftGueltigBeiSchriftform(b: Buergschaft) strict {
+        label de official "Zur Gültigkeit des Bürgschaftsvertrags ist schriftliche Erteilung der Bürgschaftserklärung erforderlich; die Erteilung in elektronischer Form ist ausgeschlossen (§ 766 Sätze 1, 2)";
+        label en unofficial "the validity of the contract of suretyship requires the declaration of suretyship to be given in writing; electronic form is excluded (§ 766 sentences 1, 2)";
+        when buergschaftserklaerung_abgegeben(b) and buergschaftserklaerung_schriftlich_erteilt(b)
+            and not_known(buergschaftserklaerung_in_elektronischer_form(b));
+        then buergschaftsvertrag_gueltig(b);
+    }
+    rule FormmangelGeheiltDurchErfuellung(b: Buergschaft) strict {
+        label de official "Soweit der Bürge die Hauptverbindlichkeit erfüllt, wird der Mangel der Form geheilt (§ 766 Satz 3)";
+        label en unofficial "in so far as the surety performs the principal obligation, the defect of form is cured (§ 766 sentence 3)";
+        when buergschaftserklaerung_abgegeben(b) and hauptverbindlichkeit_vom_buergen_erfuellt(b);
+        then buergschaftsvertrag_gueltig(b);
+    }
+}
+
+// § 767: Umfang der Bürgschaftsschuld — der jeweilige Bestand der
+// Hauptverbindlichkeit, erweitert um Kosten der Kündigung und Rechtsverfolgung
+// (Absatz 2), NICHT erweitert durch ein Rechtsgeschäft des Hauptschuldners nach
+// Übernahme der Bürgschaft (Absatz 1 Satz 3).
+
+pub relation bestand_der_hauptverbindlichkeit(b: Buergschaft, betrag: Money) kind empirical {
+    key(b);
+    label de official "Jeweiliger Bestand der Hauptverbindlichkeit, auch wenn sie durch Verschulden oder Verzug des Hauptschuldners geändert wird (§ 767 Absatz 1 Sätze 1, 2)";
+    label en unofficial "the current amount of the principal obligation, including where it is changed by the principal debtor's fault or default (§ 767 (1) sentences 1, 2)";
+}
+pub relation zu_ersetzende_kosten(b: Buergschaft, betrag: Money) kind empirical {
+    key(b);
+    label de official "Dem Gläubiger von dem Hauptschuldner zu ersetzende Kosten der Kündigung und der Rechtsverfolgung (§ 767 Absatz 2)";
+    label en unofficial "costs of termination and of legal action which the principal debtor must reimburse to the creditor (§ 767 (2))";
+}
+pub relation keine_zu_ersetzenden_kosten(b: Buergschaft) kind empirical {
+    label de official "Kosten der Kündigung und der Rechtsverfolgung sind nicht angefallen — ausdrückliche Angabe des Falls; das Fehlen eines Fakts ist keine Verneinung (§ 767 Absatz 2)";
+    label en unofficial "no costs of termination or of legal action have arisen — an explicit statement of the case; the absence of a fact is not its denial (§ 767 (2))";
+}
+pub relation buergschaftsschuld(b: Buergschaft, betrag: Money) kind derived {
+    key(b);
+    label de official "Umfang der Bürgschaftsschuld (§ 767)";
+    label en unofficial "extent of the surety's debt (§ 767)";
+}
+pub relation erweiterung_durch_rechtsgeschaeft_nach_uebernahme(b: Buergschaft, betrag: Money) kind empirical {
+    label de official "Erweiterung der Hauptverbindlichkeit durch ein Rechtsgeschäft, das der Hauptschuldner NACH der Übernahme der Bürgschaft vornimmt — erweitert die Verpflichtung des Bürgen nicht (§ 767 Absatz 1 Satz 3)";
+    label en unofficial "extension of the principal obligation by a transaction the principal debtor enters into AFTER the suretyship was assumed — does not extend the surety's obligation (§ 767 (1) sentence 3)";
+}
+
+@source(BGB_P767) {
+    rule BuergschaftsschuldOhneKosten(b: Buergschaft, betrag: Money) strict {
+        label de official "Für die Verpflichtung des Bürgen ist der jeweilige Bestand der Hauptverbindlichkeit maßgebend (§ 767 Absatz 1 Satz 1)";
+        label en unofficial "the surety's obligation is determined by the current amount of the principal obligation (§ 767 (1) sentence 1)";
+        when buergschaftsvertrag_gueltig(b) and bestand_der_hauptverbindlichkeit(b, betrag)
+            and keine_zu_ersetzenden_kosten(b);
+        then buergschaftsschuld(b, betrag);
+    }
+    rule BuergschaftsschuldMitKosten(b: Buergschaft, hauptbetrag: Money, kosten: Money) strict {
+        label de official "Der Bürge haftet für die dem Gläubiger von dem Hauptschuldner zu ersetzenden Kosten der Kündigung und der Rechtsverfolgung (§ 767 Absatz 2)";
+        label en unofficial "the surety is liable for the costs of termination and of legal action which the principal debtor must reimburse to the creditor (§ 767 (2))";
+        when buergschaftsvertrag_gueltig(b) and bestand_der_hauptverbindlichkeit(b, hauptbetrag)
+            and zu_ersetzende_kosten(b, kosten);
+        then buergschaftsschuld(b, hauptbetrag + kosten);
+    }
+}
+
+// § 768: Einreden des Bürgen. § 770: Einreden der Anfechtbarkeit und der
+// Aufrechenbarkeit — beide geben ein Leistungsverweigerungsrecht.
+
+pub relation einrede_des_hauptschuldners(b: Buergschaft, einrede: Text) kind empirical {
+    label de official "Dem Hauptschuldner zustehende Einrede (§ 768 Absatz 1 Satz 1)";
+    label en unofficial "a defence available to the principal debtor (§ 768 (1) sentence 1)";
+}
+pub relation hauptschuldner_hat_auf_einrede_verzichtet(b: Buergschaft, einrede: Text) kind empirical {
+    label de official "Der Hauptschuldner hat auf die Einrede verzichtet — der Bürge verliert sie dadurch nicht (§ 768 Absatz 2)";
+    label en unofficial "the principal debtor has waived the defence — the surety does not thereby lose it (§ 768 (2))";
+}
+pub relation einrede_des_buergen(b: Buergschaft, einrede: Text) kind institutional {
+    label de official "Einrede, die der Bürge geltend machen kann (§ 768 Absatz 1 Satz 1)";
+    label en unofficial "defence which the surety may raise (§ 768 (1) sentence 1)";
+}
+pub relation anfechtungsrecht_des_hauptschuldners(b: Buergschaft) kind empirical {
+    label de official "Dem Hauptschuldner steht das Recht zu, das seiner Verbindlichkeit zugrunde liegende Rechtsgeschäft anzufechten (§ 770 Absatz 1)";
+    label en unofficial "the principal debtor is entitled to avoid the transaction underlying his obligation (§ 770 (1))";
+}
+pub relation glaeubiger_kann_sich_durch_aufrechnung_befriedigen(b: Buergschaft) kind empirical {
+    label de official "Der Gläubiger kann sich durch Aufrechnung gegen eine fällige Forderung des Hauptschuldners befriedigen (§ 770 Absatz 2)";
+    label en unofficial "the creditor can satisfy himself by set-off against a due claim of the principal debtor (§ 770 (2))";
+}
+pub relation leistungsverweigerungsrecht_des_buergen(b: Buergschaft) kind institutional {
+    label de official "Der Bürge kann die Befriedigung des Gläubigers verweigern (§§ 770, 771)";
+    label en unofficial "the surety may refuse to satisfy the creditor (§§ 770, 771)";
+}
+
+@source(BGB_P768) {
+    rule EinredenDesHauptschuldners(b: Buergschaft, einrede: Text) strict {
+        label de official "Der Bürge kann die dem Hauptschuldner zustehenden Einreden geltend machen (§ 768 Absatz 1 Satz 1)";
+        label en unofficial "the surety may raise the defences available to the principal debtor (§ 768 (1) sentence 1)";
+        when buergschaftsvertrag_gueltig(b) and einrede_des_hauptschuldners(b, einrede);
+        then einrede_des_buergen(b, einrede);
+    }
+    rule EinredeTrotzVerzichtDesHauptschuldners(b: Buergschaft, einrede: Text) strict {
+        label de official "Der Bürge verliert eine Einrede nicht dadurch, dass der Hauptschuldner auf sie verzichtet (§ 768 Absatz 2)";
+        label en unofficial "the surety does not lose a defence because the principal debtor waives it (§ 768 (2))";
+        when buergschaftsvertrag_gueltig(b) and hauptschuldner_hat_auf_einrede_verzichtet(b, einrede);
+        then einrede_des_buergen(b, einrede);
+    }
+}
+@source(BGB_P770) {
+    rule EinredeDerAnfechtbarkeit(b: Buergschaft) strict {
+        label de official "Der Bürge kann die Befriedigung des Gläubigers verweigern, solange dem Hauptschuldner das Recht zusteht, das seiner Verbindlichkeit zugrunde liegende Rechtsgeschäft anzufechten (§ 770 Absatz 1)";
+        label en unofficial "the surety may refuse to satisfy the creditor as long as the principal debtor is entitled to avoid the transaction underlying his obligation (§ 770 (1))";
+        when buergschaftsvertrag_gueltig(b) and anfechtungsrecht_des_hauptschuldners(b);
+        then leistungsverweigerungsrecht_des_buergen(b);
+    }
+    rule EinredeDerAufrechenbarkeit(b: Buergschaft) strict {
+        label de official "Die gleiche Befugnis hat der Bürge, solange sich der Gläubiger durch Aufrechnung gegen eine fällige Forderung des Hauptschuldners befriedigen kann (§ 770 Absatz 2)";
+        label en unofficial "the surety has the same power as long as the creditor can satisfy himself by set-off against a due claim of the principal debtor (§ 770 (2))";
+        when buergschaftsvertrag_gueltig(b) and glaeubiger_kann_sich_durch_aufrechnung_befriedigen(b);
+        then leistungsverweigerungsrecht_des_buergen(b);
+    }
+}
+
+// § 769: Mitbürgschaft — Gesamtschuld auch ohne gemeinschaftliche Übernahme.
+
+pub relation mitbuerge_fuer_dieselbe_verbindlichkeit(b: Buergschaft, b2: Buergschaft) kind empirical {
+    label de official "Zwei Bürgen haben sich für dieselbe Verbindlichkeit verbürgt (§ 769)";
+    label en unofficial "two sureties have given security for the same obligation (§ 769)";
+}
+pub relation haften_als_gesamtschuldner(b: Buergschaft, b2: Buergschaft) kind institutional {
+    label de official "Mitbürgen haften als Gesamtschuldner (§ 769)";
+    label en unofficial "co-sureties are liable as joint and several debtors (§ 769)";
+}
+@source(BGB_P769)
+rule MitbuergenHaftenAlsGesamtschuldner(b: Buergschaft, b2: Buergschaft) strict {
+    label de official "Verbürgen sich mehrere für dieselbe Verbindlichkeit, so haften sie als Gesamtschuldner, auch wenn sie die Bürgschaft nicht gemeinschaftlich übernehmen (§ 769)";
+    label en unofficial "where several persons give security for the same obligation they are liable as joint and several debtors, even if they do not assume the suretyship jointly (§ 769)";
+    when mitbuerge_fuer_dieselbe_verbindlichkeit(b, b2);
+    then haften_als_gesamtschuldner(b, b2);
+}
+
+// § 771, § 773: Einrede der Vorausklage und ihr Ausschluss.
+
+pub relation zwangsvollstreckung_gegen_hauptschuldner_ohne_erfolg_versucht(b: Buergschaft) kind empirical {
+    label de official "Der Gläubiger hat eine Zwangsvollstreckung gegen den Hauptschuldner ohne Erfolg versucht (§ 771 Satz 1, § 772)";
+    label en unofficial "the creditor has unsuccessfully attempted execution against the principal debtor (§ 771 sentence 1, § 772)";
+}
+pub relation auf_einrede_der_vorausklage_verzichtet(b: Buergschaft) kind empirical {
+    label de official "Der Bürge hat auf die Einrede der Vorausklage verzichtet, insbesondere indem er sich als Selbstschuldner verbürgt hat (§ 773 Absatz 1 Nummer 1)";
+    label en unofficial "the surety has waived the defence of failure to pursue remedies, in particular by giving security as principal debtor (§ 773 (1) no. 1)";
+}
+pub relation rechtsverfolgung_wesentlich_erschwert(b: Buergschaft) kind empirical {
+    label de official "Die Rechtsverfolgung gegen den Hauptschuldner ist infolge einer nach der Übernahme der Bürgschaft eingetretenen Änderung des Wohnsitzes, der gewerblichen Niederlassung oder des Aufenthaltsorts des Hauptschuldners wesentlich erschwert (§ 773 Absatz 1 Nummer 2)";
+    label en unofficial "pursuit of the claim against the principal debtor has become substantially more difficult owing to a change of his domicile, business establishment or place of residence occurring after the suretyship was assumed (§ 773 (1) no. 2)";
+}
+pub relation insolvenzverfahren_ueber_hauptschuldner_eroeffnet(b: Buergschaft) kind empirical {
+    label de official "Über das Vermögen des Hauptschuldners ist das Insolvenzverfahren eröffnet (§ 773 Absatz 1 Nummer 3)";
+    label en unofficial "insolvency proceedings have been opened over the principal debtor's assets (§ 773 (1) no. 3)";
+}
+@source(BGB_P773)
+pub external judgment relation zwangsvollstreckung_wird_nicht_zur_befriedigung_fuehren(b: Buergschaft) {
+    authority Court;
+    label de official "Es ist anzunehmen, dass die Zwangsvollstreckung in das Vermögen des Hauptschuldners nicht zur Befriedigung des Gläubigers führen wird (§ 773 Absatz 1 Nummer 4)";
+    label en unofficial "it is to be assumed that execution against the principal debtor's assets will not lead to the creditor's satisfaction (§ 773 (1) no. 4)";
+}
+pub relation einrede_der_vorausklage_ausgeschlossen(b: Buergschaft) kind institutional {
+    label de official "Die Einrede der Vorausklage ist ausgeschlossen (§ 773 Absatz 1)";
+    label en unofficial "the defence of failure to pursue remedies is excluded (§ 773 (1))";
+}
+pub relation einrede_der_vorausklage(b: Buergschaft) kind institutional {
+    label de official "Dem Bürgen steht die Einrede der Vorausklage zu (§ 771 Satz 1)";
+    label en unofficial "the surety has the defence of failure to pursue remedies (§ 771 sentence 1)";
+}
+pub relation buergschaft_beginn_am(b: Buergschaft, tag: Date) kind empirical {
+    label de official "Beginn der Einrede aus dem wirksamen Bürgschaftsvertrag (§ 771)";
+    label en unofficial "start of the defence under the valid suretyship (§ 771)";
+}
+pub relation befriedigung_des_glaeubigers_verweigert_am(b: Buergschaft, tag: Date) kind empirical {
+    label de official "Der Bürge hat die Befriedigung des Gläubigers verweigert (§ 771 Satz 1)";
+    label en unofficial "the surety refused to satisfy the creditor (§ 771 sentence 1)";
+}
+@source(BGB_P771)
+rule Position771Einrede(b: Buergschaft, bu: Person, gl: Person, beginn: Date) strict {
+    label de official "Der Bürge ist berechtigt, die Befriedigung des Gläubigers zu verweigern (§ 771 Satz 1)";
+    label en unofficial "The surety has the liberty to refuse satisfaction of the creditor (§ 771 sentence 1)";
+    when buerge(b, bu) and buergschaftsglaeubiger(b, gl)
+     and buergschaftsvertrag_gueltig(b)
+     and not_known(zwangsvollstreckung_gegen_hauptschuldner_ohne_erfolg_versucht(b))
+     and not_known(einrede_der_vorausklage_ausgeschlossen(b))
+     and buergschaft_beginn_am(b, beginn);
+    then liberty Liberty771Einrede {
+        holder bu;
+        against gl;
+        action befriedigung_des_glaeubigers_verweigert_am(b, beginn);
+        window [beginn, infinity];
+    };
+}
+pub relation verjaehrung_gegen_den_buergen_gehemmt(b: Buergschaft) kind institutional {
+    label de official "Erhebt der Bürge die Einrede der Vorausklage, ist die Verjährung des Anspruchs des Gläubigers gegen den Bürgen gehemmt (§ 771 Satz 2)";
+    label en unofficial "where the surety raises the defence of failure to pursue remedies, limitation of the creditor's claim against the surety is suspended (§ 771 sentence 2)";
+}
+pub relation einrede_der_vorausklage_erhoben(b: Buergschaft) kind empirical {
+    label de official "Der Bürge hat die Einrede der Vorausklage erhoben (§ 771 Satz 2)";
+    label en unofficial "the surety has raised the defence of failure to pursue remedies (§ 771 sentence 2)";
+}
+
+@source(BGB_P773) {
+    rule VorausklageAusgeschlossenVerzicht(b: Buergschaft) strict {
+        label de official "Die Einrede der Vorausklage ist ausgeschlossen, wenn der Bürge auf die Einrede verzichtet, insbesondere wenn er sich als Selbstschuldner verbürgt hat (§ 773 Absatz 1 Nummer 1)";
+        label en unofficial "the defence is excluded where the surety waives it, in particular where he gives security as principal debtor (§ 773 (1) no. 1)";
+        when auf_einrede_der_vorausklage_verzichtet(b);
+        then einrede_der_vorausklage_ausgeschlossen(b);
+    }
+    rule VorausklageAusgeschlossenErschwerteRechtsverfolgung(b: Buergschaft) strict {
+        label de official "Die Einrede der Vorausklage ist ausgeschlossen, wenn die Rechtsverfolgung gegen den Hauptschuldner wesentlich erschwert ist (§ 773 Absatz 1 Nummer 2)";
+        label en unofficial "the defence is excluded where pursuit of the claim against the principal debtor has become substantially more difficult (§ 773 (1) no. 2)";
+        when rechtsverfolgung_wesentlich_erschwert(b);
+        then einrede_der_vorausklage_ausgeschlossen(b);
+    }
+    rule VorausklageAusgeschlossenInsolvenz(b: Buergschaft) strict {
+        label de official "Die Einrede der Vorausklage ist ausgeschlossen, wenn über das Vermögen des Hauptschuldners das Insolvenzverfahren eröffnet ist (§ 773 Absatz 1 Nummer 3)";
+        label en unofficial "the defence is excluded where insolvency proceedings have been opened over the principal debtor's assets (§ 773 (1) no. 3)";
+        when insolvenzverfahren_ueber_hauptschuldner_eroeffnet(b);
+        then einrede_der_vorausklage_ausgeschlossen(b);
+    }
+    rule VorausklageAusgeschlossenAussichtslosigkeit(b: Buergschaft) strict {
+        label de official "Die Einrede der Vorausklage ist ausgeschlossen, wenn anzunehmen ist, dass die Zwangsvollstreckung in das Vermögen des Hauptschuldners nicht zur Befriedigung des Gläubigers führen wird (§ 773 Absatz 1 Nummer 4)";
+        label en unofficial "the defence is excluded where it is to be assumed that execution against the principal debtor's assets will not lead to the creditor's satisfaction (§ 773 (1) no. 4)";
+        when zwangsvollstreckung_wird_nicht_zur_befriedigung_fuehren(b);
+        then einrede_der_vorausklage_ausgeschlossen(b);
+    }
+}
+@source(BGB_P771) {
+    rule EinredeDerVorausklage(b: Buergschaft) strict {
+        label de official "Der Bürge kann die Befriedigung des Gläubigers verweigern, solange nicht der Gläubiger eine Zwangsvollstreckung gegen den Hauptschuldner ohne Erfolg versucht hat (§ 771 Satz 1)";
+        label en unofficial "the surety may refuse to satisfy the creditor as long as the creditor has not unsuccessfully attempted execution against the principal debtor (§ 771 sentence 1)";
+        when buergschaftsvertrag_gueltig(b)
+            and not_known(zwangsvollstreckung_gegen_hauptschuldner_ohne_erfolg_versucht(b))
+            and not_known(einrede_der_vorausklage_ausgeschlossen(b));
+        then einrede_der_vorausklage(b);
+    }
+    rule VorausklageGibtLeistungsverweigerungsrecht(b: Buergschaft) strict {
+        label de official "Die Einrede der Vorausklage berechtigt den Bürgen, die Befriedigung des Gläubigers zu verweigern (§ 771 Satz 1)";
+        label en unofficial "the defence of failure to pursue remedies entitles the surety to refuse to satisfy the creditor (§ 771 sentence 1)";
+        when einrede_der_vorausklage(b);
+        then leistungsverweigerungsrecht_des_buergen(b);
+    }
+    rule HemmungBeiErhobenerVorausklage(b: Buergschaft) strict {
+        label de official "Erhebt der Bürge die Einrede der Vorausklage, ist die Verjährung des Anspruchs des Gläubigers gegen den Bürgen gehemmt, bis der Gläubiger eine Zwangsvollstreckung gegen den Hauptschuldner ohne Erfolg versucht hat (§ 771 Satz 2)";
+        label en unofficial "where the surety raises the defence, limitation of the creditor's claim against the surety is suspended until the creditor has unsuccessfully attempted execution against the principal debtor (§ 771 sentence 2)";
+        when einrede_der_vorausklage(b) and einrede_der_vorausklage_erhoben(b);
+        then verjaehrung_gegen_den_buergen_gehemmt(b);
+    }
+}
+
+// § 774: Gesetzlicher Forderungsübergang auf den Bürgen.
+
+pub relation forderung_auf_den_buergen_uebergegangen(b: Buergschaft, buerge: Person, schuldner: Person, betrag: Money) kind institutional {
+    label de official "Soweit der Bürge den Gläubiger befriedigt, geht die Forderung des Gläubigers gegen den Hauptschuldner auf ihn über (§ 774 Absatz 1 Satz 1)";
+    label en unofficial "in so far as the surety satisfies the creditor, the creditor's claim against the principal debtor passes to him (§ 774 (1) sentence 1)";
+}
+@source(BGB_P774)
+rule ForderungsuebergangAufDenBuergen(b: Buergschaft, buerge: Person, schuldner: Person, betrag: Money) strict {
+    label de official "Soweit der Bürge den Gläubiger befriedigt, geht die Forderung des Gläubigers gegen den Hauptschuldner auf ihn über; der Übergang kann nicht zum Nachteil des Gläubigers geltend gemacht werden (§ 774 Absatz 1 Sätze 1, 2)";
+    label en unofficial "in so far as the surety satisfies the creditor, the creditor's claim against the principal debtor passes to him; the transfer may not be asserted to the creditor's disadvantage (§ 774 (1) sentences 1, 2)";
+    when hauptverbindlichkeit_vom_buergen_erfuellt(b) and buerge(b, buerge)
+        and hauptschuldner(b, schuldner) and buergschaftsschuld(b, betrag);
+    then forderung_auf_den_buergen_uebergegangen(b, buerge, schuldner, betrag);
+}
+
+// § 775: Anspruch des Bürgen auf Befreiung — vier Nummern des Absatzes 1,
+// je eine Regel; Absatz 2 gibt dem Hauptschuldner die Sicherheitsleistung.
+
+pub relation buergschaft_im_auftrag_des_hauptschuldners(b: Buergschaft) kind empirical {
+    label de official "Der Bürge hat sich im Auftrag des Hauptschuldners verbürgt oder ihm stehen nach den Vorschriften über die Geschäftsführung ohne Auftrag die Rechte eines Beauftragten zu (§ 775 Absatz 1 Halbsatz 1)";
+    label en unofficial "the surety gave security on the principal debtor's instructions or has the rights of a mandatary under the rules on benevolent intervention (§ 775 (1) first half-sentence)";
+}
+pub relation vermoegensverhaeltnisse_wesentlich_verschlechtert(b: Buergschaft) kind empirical {
+    label de official "Die Vermögensverhältnisse des Hauptschuldners haben sich wesentlich verschlechtert (§ 775 Absatz 1 Nummer 1)";
+    label en unofficial "the principal debtor's financial circumstances have deteriorated substantially (§ 775 (1) no. 1)";
+}
+pub relation hauptschuldner_im_verzug(b: Buergschaft) kind empirical {
+    label de official "Der Hauptschuldner ist mit der Erfüllung seiner Verbindlichkeit im Verzug (§ 775 Absatz 1 Nummer 3)";
+    label en unofficial "the principal debtor is in default with the performance of his obligation (§ 775 (1) no. 3)";
+}
+pub relation vollstreckbares_urteil_gegen_den_buergen(b: Buergschaft) kind empirical {
+    label de official "Der Gläubiger hat gegen den Bürgen ein vollstreckbares Urteil auf Erfüllung erwirkt (§ 775 Absatz 1 Nummer 4)";
+    label en unofficial "the creditor has obtained an enforceable judgment for performance against the surety (§ 775 (1) no. 4)";
+}
+pub relation befreiungsanspruch_des_buergen(b: Buergschaft) kind institutional {
+    label de official "Der Bürge kann vom Hauptschuldner Befreiung von der Bürgschaft verlangen (§ 775 Absatz 1)";
+    label en unofficial "the surety may demand release from the suretyship by the principal debtor (§ 775 (1))";
+}
+pub relation hauptverbindlichkeit_faellig(b: Buergschaft) kind empirical {
+    label de official "Die Hauptverbindlichkeit ist fällig (§ 775 Absatz 2)";
+    label en unofficial "the principal obligation is due (§ 775 (2))";
+}
+pub relation sicherheitsleistung_statt_befreiung(b: Buergschaft) kind institutional {
+    label de official "Ist die Hauptverbindlichkeit noch nicht fällig, kann der Hauptschuldner dem Bürgen, statt ihn zu befreien, Sicherheit leisten (§ 775 Absatz 2)";
+    label en unofficial "where the principal obligation is not yet due, the principal debtor may provide security instead of releasing the surety (§ 775 (2))";
+}
+
+@source(BGB_P775) {
+    rule BefreiungVerschlechterteVermoegensverhaeltnisse(b: Buergschaft) strict {
+        label de official "Der Bürge kann Befreiung verlangen, wenn sich die Vermögensverhältnisse des Hauptschuldners wesentlich verschlechtert haben (§ 775 Absatz 1 Nummer 1)";
+        label en unofficial "the surety may demand release where the principal debtor's financial circumstances have deteriorated substantially (§ 775 (1) no. 1)";
+        when buergschaft_im_auftrag_des_hauptschuldners(b) and vermoegensverhaeltnisse_wesentlich_verschlechtert(b);
+        then befreiungsanspruch_des_buergen(b);
+    }
+    rule BefreiungErschwerteRechtsverfolgung(b: Buergschaft) strict {
+        label de official "Der Bürge kann Befreiung verlangen, wenn die Rechtsverfolgung gegen den Hauptschuldner wesentlich erschwert ist (§ 775 Absatz 1 Nummer 2)";
+        label en unofficial "the surety may demand release where pursuit of the claim against the principal debtor has become substantially more difficult (§ 775 (1) no. 2)";
+        when buergschaft_im_auftrag_des_hauptschuldners(b) and rechtsverfolgung_wesentlich_erschwert(b);
+        then befreiungsanspruch_des_buergen(b);
+    }
+    rule BefreiungVerzugDesHauptschuldners(b: Buergschaft) strict {
+        label de official "Der Bürge kann Befreiung verlangen, wenn der Hauptschuldner mit der Erfüllung seiner Verbindlichkeit im Verzug ist (§ 775 Absatz 1 Nummer 3)";
+        label en unofficial "the surety may demand release where the principal debtor is in default (§ 775 (1) no. 3)";
+        when buergschaft_im_auftrag_des_hauptschuldners(b) and hauptschuldner_im_verzug(b);
+        then befreiungsanspruch_des_buergen(b);
+    }
+    rule BefreiungVollstreckbaresUrteil(b: Buergschaft) strict {
+        label de official "Der Bürge kann Befreiung verlangen, wenn der Gläubiger gegen ihn ein vollstreckbares Urteil auf Erfüllung erwirkt hat (§ 775 Absatz 1 Nummer 4)";
+        label en unofficial "the surety may demand release where the creditor has obtained an enforceable judgment for performance against him (§ 775 (1) no. 4)";
+        when buergschaft_im_auftrag_des_hauptschuldners(b) and vollstreckbares_urteil_gegen_den_buergen(b);
+        then befreiungsanspruch_des_buergen(b);
+    }
+    rule SicherheitStattBefreiung(b: Buergschaft) strict {
+        label de official "Ist die Hauptverbindlichkeit noch nicht fällig, so kann der Hauptschuldner dem Bürgen, statt ihn zu befreien, Sicherheit leisten (§ 775 Absatz 2)";
+        label en unofficial "where the principal obligation is not yet due, the principal debtor may provide security instead of releasing the surety (§ 775 (2))";
+        when befreiungsanspruch_des_buergen(b) and not_known(hauptverbindlichkeit_faellig(b));
+        then sicherheitsleistung_statt_befreiung(b);
+    }
+}
+
+// § 776: Aufgabe einer Sicherheit — der Bürge wird frei, soweit er aus dem
+// aufgegebenen Recht nach § 774 Ersatz hätte erlangen können.
+
+pub relation sicherheit_vom_glaeubiger_aufgegeben(b: Buergschaft, betrag: Money) kind empirical {
+    key(b);
+    label de official "Der Gläubiger hat ein mit der Forderung verbundenes Vorzugsrecht, eine Hypothek, ein Pfandrecht oder das Recht gegen einen Mitbürgen aufgegeben; Betrag, den der Bürge daraus nach § 774 hätte erlangen können (§ 776 Satz 1)";
+    label en unofficial "the creditor has given up a preferential right, mortgage, pledge or right against a co-surety attached to the claim; amount the surety could have obtained from it under § 774 (§ 776 sentence 1)";
+}
+pub relation buerge_frei_geworden(b: Buergschaft, betrag: Money) kind institutional {
+    label de official "Der Bürge wird insoweit frei, als er aus dem aufgegebenen Recht nach § 774 hätte Ersatz erlangen können (§ 776 Satz 1)";
+    label en unofficial "the surety is discharged to the extent that he could have obtained reimbursement from the right given up under § 774 (§ 776 sentence 1)";
+}
+@source(BGB_P776)
+rule BuergeFreiBeiAufgabeDerSicherheit(b: Buergschaft, betrag: Money) strict {
+    label de official "Gibt der Gläubiger ein mit der Forderung verbundenes Vorzugsrecht, eine Hypothek, ein Pfandrecht oder das Recht gegen einen Mitbürgen auf, so wird der Bürge insoweit frei, als er aus dem aufgegebenen Recht nach § 774 hätte Ersatz erlangen können; dies gilt auch, wenn das aufgegebene Recht erst nach der Übernahme der Bürgschaft entstanden ist (§ 776)";
+    label en unofficial "where the creditor gives up a preferential right, mortgage, pledge or right against a co-surety, the surety is discharged to the extent that he could have obtained reimbursement from it under § 774; this applies even where the right arose only after the suretyship was assumed (§ 776)";
+    when buergschaftsvertrag_gueltig(b) and sicherheit_vom_glaeubiger_aufgegeben(b, betrag);
+    then buerge_frei_geworden(b, betrag);
+}
+
+// § 777: Bürgschaft auf Zeit — „unverzüglich" ist ein bewertendes Merkmal
+// (§ 47.3), keine Nullfrist (D-08-04).
+
+pub relation buergschaft_auf_bestimmte_zeit(b: Buergschaft) kind empirical {
+    label de official "Der Bürge hat sich für eine bestehende Verbindlichkeit auf bestimmte Zeit verbürgt (§ 777 Absatz 1 Satz 1)";
+    label en unofficial "the surety gave security for an existing obligation for a fixed period (§ 777 (1) sentence 1)";
+}
+pub relation bestimmte_zeit_abgelaufen(b: Buergschaft) kind empirical {
+    label de official "Die bestimmte Zeit der Bürgschaft ist abgelaufen (§ 777 Absatz 1)";
+    label en unofficial "the fixed period of the suretyship has elapsed (§ 777 (1))";
+}
+@source(BGB_P777)
+pub external judgment relation unverzueglich_angezeigt_777(b: Buergschaft) {
+    authority Court;
+    label de official "Der Gläubiger hat dem Bürgen unverzüglich angezeigt, dass er ihn in Anspruch nehme, und — soweit dem Bürgen die Einrede der Vorausklage zusteht — die Einziehung der Forderung unverzüglich nach Maßgabe des § 772 betrieben und das Verfahren ohne wesentliche Verzögerung fortgesetzt (§ 777 Absatz 1)";
+    label en unofficial "the creditor gave the surety notice without undue delay that he is claiming against him and — where the surety has the defence of failure to pursue remedies — pursued collection without undue delay under § 772 and continued the proceedings without material delay (§ 777 (1))";
+}
+pub relation buerge_nach_zeitablauf_frei(b: Buergschaft) kind institutional {
+    label de official "Der Bürge wird nach dem Ablauf der bestimmten Zeit frei (§ 777 Absatz 1)";
+    label en unofficial "the surety is discharged after the fixed period has elapsed (§ 777 (1))";
+}
+@source(BGB_P777)
+rule BuergeFreiNachAblaufDerBestimmtenZeit(b: Buergschaft) strict {
+    label de official "Hat sich der Bürge für eine bestehende Verbindlichkeit auf bestimmte Zeit verbürgt, so wird er nach dem Ablauf der bestimmten Zeit frei, wenn nicht der Gläubiger die Einziehung unverzüglich betreibt und ihm unverzüglich anzeigt, dass er ihn in Anspruch nehme (§ 777 Absatz 1)";
+    label en unofficial "where the surety gave security for an existing obligation for a fixed period, he is discharged after that period elapses unless the creditor pursues collection without undue delay and gives him notice without undue delay that he is claiming against him (§ 777 (1))";
+    when buergschaft_auf_bestimmte_zeit(b) and bestimmte_zeit_abgelaufen(b)
+        and not_known(unverzueglich_angezeigt_777(b));
+    then buerge_nach_zeitablauf_frei(b);
+}
+
+// § 778: Kreditauftrag — der Auftraggeber haftet dem Beauftragten als Bürge.
+
+pub relation kreditauftrag_erteilt(auftraggeber: Person, beauftragter: Person, dritter: Person) kind empirical {
+    label de official "Jemand beauftragt einen anderen, im eigenen Namen und auf eigene Rechnung einem Dritten ein Darlehen oder eine Finanzierungshilfe zu gewähren (§ 778)";
+    label en unofficial "a person instructs another to grant a third party a loan or financing aid in the other's own name and for the other's own account (§ 778)";
+}
+pub relation haftet_als_buerge_aus_kreditauftrag(auftraggeber: Person, beauftragter: Person, dritter: Person) kind institutional {
+    label de official "Der Auftraggeber haftet dem Beauftragten für die aus dem Darlehen oder der Finanzierungshilfe entstehende Verbindlichkeit des Dritten als Bürge (§ 778)";
+    label en unofficial "the instructing party is liable to the mandatary as surety for the third party's obligation arising from the loan or financing aid (§ 778)";
+}
+@source(BGB_P778)
+rule KreditauftragBegruendetBuergenhaftung(auftraggeber: Person, beauftragter: Person, dritter: Person) strict {
+    label de official "Wer einen anderen beauftragt, im eigenen Namen und auf eigene Rechnung einem Dritten ein Darlehen oder eine Finanzierungshilfe zu gewähren, haftet dem Beauftragten für die aus dem Darlehen oder der Finanzierungshilfe entstehende Verbindlichkeit des Dritten als Bürge (§ 778)";
+    label en unofficial "a person who instructs another to grant a third party a loan or financing aid in the other's own name and for the other's own account is liable to the mandatary as surety for the third party's obligation arising from it (§ 778)";
+    when kreditauftrag_erteilt(auftraggeber, beauftragter, dritter);
+    then haftet_als_buerge_aus_kreditauftrag(auftraggeber, beauftragter, dritter);
+}
+pub relation glaeubiger_772(b: Buergschaft, p: Person) kind empirical {
+    label de official "Gläubiger nach § 772";
+    label en unofficial "creditor under § 772";
+}
+pub relation vollstreckung_772_versucht_am(b: Buergschaft, tag: Date) kind empirical {
+    label de official "Der Gläubiger hat die Zwangsvollstreckung versucht (§ 772)";
+    label en unofficial "the creditor attempted enforcement (§ 772)";
+}
+pub relation vollstreckungspflicht_772_beginn_am(b: Buergschaft, tag: Date) kind empirical {
+    label de official "Beginn der Vollstreckungspflicht nach § 772";
+    label en unofficial "start of the enforcement duty under § 772";
+}
+@source(BGB_P772)
+rule Position772Vollstreckung(b: Buergschaft, p: Person, beginn: Date) strict {
+    label de official "Der Gläubiger ist verpflichtet, zunächst gegen den Hauptschuldner zu vollstrecken (§ 772)";
+    label en unofficial "The creditor is obliged to first pursue enforcement against the principal debtor (§ 772)";
+    when glaeubiger_772(b, p) and vollstreckungspflicht_772_beginn_am(b, beginn);
+    then duty Duty772Vollstreckung {
+        bearer p;
+        achieve vollstreckung_772_versucht_am(b, beginn) during [beginn, infinity);
+    };
+}

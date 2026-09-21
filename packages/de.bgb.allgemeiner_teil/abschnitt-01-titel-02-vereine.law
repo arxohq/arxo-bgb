@@ -1,0 +1,1331 @@
+// BUCH 1 ABSCHNITT 1 TITEL 2 UNTERTITEL 1 — VEREINE (§§ 21–79a; § 23 weggefallen)
+//
+// BESCHLÜSSE UND MEHRHEITEN. Die Stimmen stehen einzeln im Fall
+// (`stimme(b, m, Ja|Nein|Enthaltung)`); gezählt wird mit Aggregaten. Das
+// Stimmverbot des § 34 nimmt eine Stimme aus der Zählung heraus, indem die
+// Zahl der Stimmen der nicht Stimmberechtigten abgezogen wird.
+//
+// ZWEI LESARTEN DES § 32 Abs. 1 Satz 3 (§152). „Die Mehrheit der abgegebenen
+// Stimmen“ — ob die Enthaltung eine ABGEGEBENE Stimme ist, sagt der Text
+// nicht. Beide Lesarten stehen als `interpretation` in einer Gruppe `any_of`:
+// nach der einen zählen nur Ja- und Nein-Stimmen, nach der anderen auch die
+// Enthaltungen. Eine Entscheidung zwischen ihnen trifft dieses Paket nicht.
+//
+// NACHGIEBIGE VORSCHRIFTEN (§ 40). Die Vorschriften des § 26 Abs. 2 Satz 1,
+// des § 27 Abs. 1 und 3, der §§ 28, 31a Abs. 1 Satz 2 sowie der §§ 32, 33 und
+// 38 gelten nur, soweit die Satzung nichts anderes bestimmt. Das Fehlen einer
+// Satzungsregel ist keine Verneinung: der Fall sagt es ausdrücklich
+// (`satzung_ohne_abweichung(v, <Vorschrift>)`).
+//
+// REGISTER. Die Eintragung im Vereinsregister ist ein EINGANG des Falls mit
+// Tag (SOURCES.json, external); dieses Paket führt kein Register.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+pub entity Verein : Person {
+    label de official "Verein (§§ 21 ff.)";
+    label en unofficial "association (§§ 21 et seq.)";
+}
+pub entity Beschluss {
+    label de official "Beschluss eines Vereinsorgans (§§ 28, 32, 33, 41)";
+    label en unofficial "resolution of an organ of the association (§§ 28, 32, 33, 41)";
+}
+
+pub enum Vereinszweck {
+    label de official "Zweck des Vereins (§§ 21, 22)";
+    label en unofficial "purpose of the association (§§ 21, 22)";
+    NichtWirtschaftlich,
+    WirtschaftlicherGeschaeftsbetrieb
+}
+pub enum NachgiebigeVorschrift {
+    label de official "nachgiebige Vorschriften des Vereinsrechts (§ 40)";
+    label en unofficial "provisions of association law that yield to the articles (§ 40)";
+    Vertretung26Abs2Satz1,
+    Bestellung27Abs1,
+    Geschaeftsfuehrung27Abs3,
+    Beschlussfassung28,
+    Haftung31aAbs1Satz2,
+    Mitgliederversammlung32,
+    Satzungsaenderung33,
+    Mitgliedschaft38,
+    Aufloesung41
+}
+pub enum Stimmart {
+    label de official "abgegebene Stimme: Ja, Nein oder Enthaltung (§ 32 Abs. 1 Satz 3)";
+    label en unofficial "vote cast: yes, no or abstention (§ 32 (1) sentence 3)";
+    Ja,
+    Nein,
+    Enthaltung
+}
+pub enum Vereinsregistereintrag {
+    label de official "Gegenstände der Eintragung in das Vereinsregister (§§ 64, 67, 71, 74, 75, 76)";
+    label en unofficial "matters entered in the register of associations (§§ 64, 67, 71, 74, 75, 76)";
+    NameUndSitz,
+    TagDerErrichtungDerSatzung,
+    VorstandUndVertretungsmacht,
+    Satzungsaenderung,
+    Aufloesung,
+    EntziehungDerRechtsfaehigkeit,
+    Insolvenzvermerk,
+    Liquidatoren,
+    BeendigungNachLiquidation,
+    FortsetzungDesVereins
+}
+
+pub relation verein_zweck(v: Verein, zweck: Vereinszweck) kind empirical {
+    key(v);
+    label de official "Zweck des Vereins: nicht wirtschaftlich (§ 21) oder auf einen wirtschaftlichen Geschäftsbetrieb gerichtet (§ 22)";
+    label en unofficial "purpose of the association: non-commercial (§ 21) or commercial (§ 22)";
+}
+pub relation eingetragen_im_vereinsregister_am(v: Verein, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der Eintragung in das Vereinsregister des zuständigen Amtsgerichts (§ 21) — festgestellte Tatsache";
+    label en unofficial "day of entry in the register of associations of the competent local court (§ 21) — established fact";
+}
+pub relation staatliche_verleihung_am(v: Verein, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der staatlichen Verleihung der Rechtsfähigkeit (§ 22)";
+    label en unofficial "day of the state grant of legal capacity (§ 22)";
+}
+pub relation sitz_in_land(v: Verein, land: Ort) kind empirical {
+    key(v);
+    label de official "Land, in dessen Gebiet der Verein seinen Sitz hat (§ 22 Satz 2, § 24)";
+    label en unofficial "Land in whose territory the association has its seat (§ 22 sentence 2, § 24)";
+}
+pub relation satzung_bestimmt_sitz(v: Verein, o: Ort) kind empirical {
+    label de official "die Satzung bestimmt den Sitz des Vereins (§ 24 Halbsatz 1, § 57 Abs. 1)";
+    label en unofficial "the articles determine the seat of the association (§ 24, § 57 (1))";
+}
+pub relation verwaltung_gefuehrt_in(v: Verein, o: Ort) kind empirical {
+    label de official "Ort, an welchem die Verwaltung geführt wird (§ 24)";
+    label en unofficial "place where the administration is conducted (§ 24)";
+}
+pub relation sitz_des_vereins(v: Verein, o: Ort) kind institutional {
+    label de official "Sitz des Vereins (§ 24)";
+    label en unofficial "seat of the association (§ 24)";
+}
+pub relation satzung_errichtet_am(v: Verein, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der Errichtung der Satzung (§ 59 Abs. 3, § 64)";
+    label en unofficial "day on which the articles were established (§ 59 (3), § 64)";
+}
+pub relation satzungsbestimmung(v: Verein, gegenstand: Text) kind empirical {
+    label de official "Bestimmung der Vereinssatzung zu einem Gegenstand (§ 25)";
+    label en unofficial "provision of the articles on a matter (§ 25)";
+}
+pub relation verfassung_des_vereins(v: Verein, gegenstand: Text) kind institutional {
+    label de official "die Verfassung eines rechtsfähigen Vereins wird, soweit sie nicht auf den Vorschriften der §§ 26 ff. beruht, durch die Vereinssatzung bestimmt (§ 25)";
+    label en unofficial "the constitution of an association with legal capacity is determined by its articles in so far as it does not rest on §§ 26 et seq. (§ 25)";
+}
+pub relation satzung_ohne_abweichung(v: Verein, vorschrift: NachgiebigeVorschrift) kind empirical {
+    label de official "die Satzung bestimmt zu dieser nachgiebigen Vorschrift nichts anderes (§ 40) — ausdrückliche Angabe des Falls";
+    label en unofficial "the articles provide nothing different on this yielding provision (§ 40) — explicit case input";
+}
+pub relation rechtsfaehiger_verein(v: Verein) kind institutional {
+    label de official "der Verein ist rechtsfähig (§§ 21, 22)";
+    label en unofficial "the association has legal capacity (§§ 21, 22)";
+}
+
+@source(BGB_P21)
+rule RechtsfaehigkeitDurchEintragung(v: Verein, t: Date) strict {
+    label de official "Ein Verein, dessen Zweck nicht auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist, erlangt Rechtsfähigkeit durch Eintragung in das Vereinsregister des zuständigen Amtsgerichts (§ 21)";
+    label en unofficial "An association whose purpose is not a commercial business obtains legal capacity by entry in the register of associations (§ 21)";
+    when verein_zweck(v, NichtWirtschaftlich) and eingetragen_im_vereinsregister_am(v, t);
+    then rechtsfaehig_seit(v, t);
+}
+
+@source(BGB_P21)
+rule EingetragenerVereinIstRechtsfaehig(v: Verein, t: Date) strict {
+    label de official "Mit der Eintragung ist der Verein rechtsfähig (§ 21)";
+    label en unofficial "With the entry the association has legal capacity (§ 21)";
+    when verein_zweck(v, NichtWirtschaftlich) and eingetragen_im_vereinsregister_am(v, t);
+    then rechtsfaehiger_verein(v);
+}
+
+@source(BGB_P22)
+rule RechtsfaehigkeitDurchVerleihung(v: Verein, t: Date) strict {
+    label de official "Ein Verein, dessen Zweck auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist, erlangt in Ermangelung besonderer bundesgesetzlicher Vorschriften Rechtsfähigkeit durch staatliche Verleihung (§ 22 Satz 1)";
+    label en unofficial "An association with a commercial purpose obtains legal capacity by state grant, absent special federal provisions (§ 22 sentence 1)";
+    when verein_zweck(v, WirtschaftlicherGeschaeftsbetrieb) and staatliche_verleihung_am(v, t);
+    then rechtsfaehig_seit(v, t);
+}
+
+pub relation verleihung_steht_zu(v: Verein, land: Ort) kind institutional {
+    label de official "die Verleihung steht dem Land zu, in dessen Gebiet der Verein seinen Sitz hat (§ 22 Satz 2)";
+    label en unofficial "the grant is a matter for the Land in whose territory the association has its seat (§ 22 sentence 2)";
+}
+
+@source(BGB_P22)
+rule ZustaendigkeitFuerDieVerleihung(v: Verein, land: Ort) strict {
+    label de official "Die Verleihung steht dem Land zu, in dessen Gebiet der Verein seinen Sitz hat (§ 22 Satz 2)";
+    label en unofficial "The grant is a matter for the Land in whose territory the association has its seat (§ 22 sentence 2)";
+    when verein_zweck(v, WirtschaftlicherGeschaeftsbetrieb) and sitz_in_land(v, land);
+    then verleihung_steht_zu(v, land);
+}
+
+@source(BGB_P24)
+rule SitzNachSatzung(v: Verein, o: Ort) strict {
+    label de official "Als Sitz eines Vereins gilt, wenn nicht ein anderes bestimmt ist, der Ort, an welchem die Verwaltung geführt wird (§ 24) — die Satzungsbestimmung geht vor";
+    label en unofficial "The seat of an association is the place of its administration unless otherwise provided (§ 24) — a provision in the articles prevails";
+    when satzung_bestimmt_sitz(v, o);
+    then sitz_des_vereins(v, o);
+}
+
+@source(BGB_P24)
+rule SitzNachVerwaltungsort(v: Verein, o: Ort) strict {
+    label de official "Als Sitz eines Vereins gilt, wenn nicht ein anderes bestimmt ist, der Ort, an welchem die Verwaltung geführt wird (§ 24)";
+    label en unofficial "The seat is the place where the administration is conducted, unless otherwise provided (§ 24)";
+    when verwaltung_gefuehrt_in(v, o) and not_known(satzung_bestimmt_sitz(v, o));
+    then sitz_des_vereins(v, o);
+}
+
+@source(BGB_P25)
+rule VerfassungDurchSatzung(v: Verein, g: Text) strict {
+    label de official "Die Verfassung eines rechtsfähigen Vereins wird, soweit sie nicht auf den nachfolgenden Vorschriften beruht, durch die Vereinssatzung bestimmt (§ 25)";
+    label en unofficial "The constitution of an association with legal capacity is determined by its articles in so far as it does not rest on the following provisions (§ 25)";
+    when rechtsfaehiger_verein(v) and satzungsbestimmung(v, g);
+    then verfassung_des_vereins(v, g);
+}
+
+// --- §§ 26–31b Vorstand, Vertretung, Haftung -------------------------------------------------------------
+
+pub entity Vertretungshandlung {
+    label de official "Handlung, mit der der Vorstand den Verein vertritt (§ 26 Abs. 2)";
+    label en unofficial "act by which the board represents the association (§ 26 (2))";
+}
+
+pub relation vorstandsmitglied(v: Verein, p: Person) kind institutional {
+    label de official "Mitglied des Vorstands (§§ 26, 27)";
+    label en unofficial "member of the board (§§ 26, 27)";
+}
+pub relation bestellungsbeschluss(b: Beschluss, v: Verein, p: Person) kind empirical {
+    label de official "Beschluss der Mitgliederversammlung über die Bestellung des Vorstands (§ 27 Abs. 1)";
+    label en unofficial "resolution of the general meeting appointing the board (§ 27 (1))";
+}
+pub relation bestellung_widerrufen(v: Verein, p: Person) kind empirical {
+    label de official "die Bestellung des Vorstandsmitglieds ist widerrufen worden (§ 27 Abs. 2 Satz 1)";
+    label en unofficial "the appointment of the board member has been revoked (§ 27 (2))";
+}
+pub relation widerruflichkeit_auf_wichtigen_grund_beschraenkt(v: Verein) kind empirical {
+    label de official "die Satzung beschränkt die Widerruflichkeit auf den Fall, dass ein wichtiger Grund vorliegt (§ 27 Abs. 2 Satz 2)";
+    label en unofficial "the articles restrict revocability to the case of good cause (§ 27 (2) sentence 2)";
+}
+pub relation gerichtlich_bestelltes_vorstandsmitglied(v: Verein, p: Person) kind empirical {
+    label de official "das Vorstandsmitglied ist vom Amtsgericht in dringenden Fällen bestellt worden (§ 29)";
+    label en unofficial "the board member was appointed by the local court in urgent cases (§ 29)";
+}
+pub relation erforderliche_vorstandsmitglieder_fehlen(v: Verein) kind empirical {
+    label de official "die erforderlichen Mitglieder des Vorstands fehlen und der Fall ist dringend (§ 29)";
+    label en unofficial "the required members of the board are lacking and the case is urgent (§ 29)";
+}
+pub relation antrag_eines_beteiligten(v: Verein) kind empirical {
+    label de official "ein Beteiligter hat die Bestellung beantragt (§ 29)";
+    label en unofficial "a party concerned has applied for the appointment (§ 29)";
+}
+pub relation notbestellung_durch_amtsgericht(v: Verein) kind institutional {
+    label de official "die fehlenden Vorstandsmitglieder sind in dringenden Fällen auf Antrag eines Beteiligten von dem Amtsgericht zu bestellen, das für den Bezirk des Sitzes das Vereinsregister führt (§ 29)";
+    label en unofficial "the missing board members are to be appointed by the local court keeping the register for the district of the seat (§ 29)";
+}
+pub relation besonderer_vertreter(v: Verein, p: Person, geschaeftskreis: Text) kind empirical {
+    label de official "durch die Satzung bestellter besonderer Vertreter für gewisse Geschäfte (§ 30)";
+    label en unofficial "special representative appointed by the articles for certain business (§ 30)";
+}
+pub relation vertretungsmacht_des_besonderen_vertreters(v: Verein, p: Person, geschaeftskreis: Text) kind institutional {
+    label de official "die Vertretungsmacht eines besonderen Vertreters erstreckt sich im Zweifel auf alle Rechtsgeschäfte, die der ihm zugewiesene Geschäftskreis gewöhnlich mit sich bringt (§ 30 Satz 2)";
+    label en unofficial "the authority of a special representative extends, in case of doubt, to all transactions usually entailed by the assigned field of business (§ 30 sentence 2)";
+}
+pub relation gesetzlicher_vertreter_des_vereins(v: Verein, p: Person) kind institutional {
+    label de official "der Vorstand vertritt den Verein gerichtlich und außergerichtlich; er hat die Stellung eines gesetzlichen Vertreters (§ 26 Abs. 1 Satz 2)";
+    label en unofficial "the board represents the association in and out of court and has the position of a legal representative (§ 26 (1) sentence 2)";
+}
+pub relation vertretungshandlung_des_vereins(h: Vertretungshandlung, v: Verein) kind empirical {
+    key(h);
+    label de official "Handlung, mit der der Vorstand den Verein vertritt (§ 26 Abs. 2 Satz 1)";
+    label en unofficial "act by which the board represents the association (§ 26 (2) sentence 1)";
+}
+pub relation mitwirkendes_vorstandsmitglied(h: Vertretungshandlung, p: Person) kind empirical {
+    label de official "an der Vertretungshandlung mitwirkendes Mitglied des Vorstands (§ 26 Abs. 2 Satz 1)";
+    label en unofficial "member of the board taking part in the act of representation (§ 26 (2) sentence 1)";
+}
+pub relation vertretung_wirksam(h: Vertretungshandlung, v: Verein) kind institutional {
+    label de official "der Verein ist wirksam vertreten (§ 26 Abs. 2 Satz 1: Mehrheit der Vorstandsmitglieder)";
+    label en unofficial "the association is validly represented (§ 26 (2) sentence 1: majority of the board members)";
+}
+pub relation satzung_beschraenkt_vertretungsmacht(v: Verein) kind empirical {
+    label de official "der Umfang der Vertretungsmacht ist durch die Satzung mit Wirkung gegen Dritte beschränkt (§ 26 Abs. 1 Satz 3)";
+    label en unofficial "the scope of the authority is restricted by the articles with effect against third parties (§ 26 (1) sentence 3)";
+}
+pub relation erklaerung_gegenueber_einem_vorstandsmitglied(h: Vertretungshandlung, v: Verein, p: Person) kind empirical {
+    label de official "eine Willenserklärung ist gegenüber einem Mitglied des Vorstands abgegeben worden (§ 26 Abs. 2 Satz 2)";
+    label en unofficial "a declaration of intent has been made to a member of the board (§ 26 (2) sentence 2)";
+}
+pub relation passivvertretung_wirksam(h: Vertretungshandlung, v: Verein) kind institutional {
+    label de official "ist eine Willenserklärung gegenüber einem Verein abzugeben, so genügt die Abgabe gegenüber einem Mitglied des Vorstands (§ 26 Abs. 2 Satz 2)";
+    label en unofficial "where a declaration is to be made to an association, making it to one board member suffices (§ 26 (2) sentence 2)";
+}
+
+@source(BGB_P27)
+rule BestellungDesVorstands(b: Beschluss, v: Verein, p: Person) strict {
+    label de official "Die Bestellung des Vorstands erfolgt durch Beschluss der Mitgliederversammlung (§ 27 Abs. 1); die Vorschrift gilt, soweit die Satzung nichts anderes bestimmt (§ 40)";
+    label en unofficial "The board is appointed by resolution of the general meeting (§ 27 (1)); the provision applies unless the articles provide otherwise (§ 40)";
+    when bestellungsbeschluss(b, v, p)
+        and beschluss_angenommen(b)
+        and satzung_ohne_abweichung(v, Bestellung27Abs1)
+        and not bestellung_widerrufen(v, p);
+    then vorstandsmitglied(v, p);
+}
+
+@source(BGB_P29)
+rule GerichtlichBestelltesVorstandsmitglied(v: Verein, p: Person) strict {
+    label de official "Soweit die erforderlichen Mitglieder des Vorstands fehlen, sind sie in dringenden Fällen auf Antrag eines Beteiligten von dem Amtsgericht zu bestellen (§ 29)";
+    label en unofficial "Where required board members are lacking, they are appointed in urgent cases by the local court on application (§ 29)";
+    when gerichtlich_bestelltes_vorstandsmitglied(v, p);
+    then vorstandsmitglied(v, p);
+}
+
+@source(BGB_P29)
+rule NotbestellungDurchAmtsgericht(v: Verein) strict {
+    label de official "Soweit die erforderlichen Mitglieder des Vorstands fehlen, sind sie in dringenden Fällen für die Zeit bis zur Behebung des Mangels auf Antrag eines Beteiligten von dem Amtsgericht zu bestellen, das für den Bezirk, in dem der Verein seinen Sitz hat, das Vereinsregister führt (§ 29)";
+    label en unofficial "Missing board members are appointed, in urgent cases and on application, by the local court keeping the register for the district of the seat (§ 29)";
+    when erforderliche_vorstandsmitglieder_fehlen(v) and antrag_eines_beteiligten(v);
+    then notbestellung_durch_amtsgericht(v);
+}
+
+@source(BGB_P26)
+rule VorstandIstGesetzlicherVertreter(v: Verein, p: Person) strict {
+    label de official "Der Vorstand vertritt den Verein gerichtlich und außergerichtlich; er hat die Stellung eines gesetzlichen Vertreters (§ 26 Abs. 1 Satz 2)";
+    label en unofficial "The board represents the association in and out of court and has the position of a legal representative (§ 26 (1) sentence 2)";
+    when vorstandsmitglied(v, p);
+    then gesetzlicher_vertreter_des_vereins(v, p);
+}
+
+@source(BGB_P26)
+rule VertretungDurchMehrheitDerVorstandsmitglieder(h: Vertretungshandlung, v: Verein) strict {
+    label de official "Besteht der Vorstand aus mehreren Personen, so wird der Verein durch die Mehrheit der Vorstandsmitglieder vertreten (§ 26 Abs. 2 Satz 1); die Vorschrift gilt, soweit die Satzung nichts anderes bestimmt (§ 40)";
+    label en unofficial "Where the board consists of several persons, the association is represented by the majority of its members (§ 26 (2) sentence 1)";
+    when vertretungshandlung_des_vereins(h, v)
+        and satzung_ohne_abweichung(v, Vertretung26Abs2Satz1)
+        and (count distinct p: Person where mitwirkendes_vorstandsmitglied(h, p)) * 2
+            > (count distinct q: Person where vorstandsmitglied(v, q));
+    then vertretung_wirksam(h, v);
+}
+
+@source(BGB_P26)
+rule PassivvertretungDurchEinVorstandsmitglied(h: Vertretungshandlung, v: Verein, p: Person) strict {
+    label de official "Ist eine Willenserklärung gegenüber einem Verein abzugeben, so genügt die Abgabe gegenüber einem Mitglied des Vorstands (§ 26 Abs. 2 Satz 2)";
+    label en unofficial "Where a declaration is to be made to an association, making it to one board member suffices (§ 26 (2) sentence 2)";
+    when erklaerung_gegenueber_einem_vorstandsmitglied(h, v, p) and vorstandsmitglied(v, p);
+    then passivvertretung_wirksam(h, v);
+}
+
+@source(BGB_P30)
+rule BesondererVertreter(v: Verein, p: Person, kreis: Text) strict {
+    label de official "Durch die Satzung kann bestimmt werden, dass neben dem Vorstand für gewisse Geschäfte besondere Vertreter zu bestellen sind; die Vertretungsmacht eines solchen Vertreters erstreckt sich im Zweifel auf alle Rechtsgeschäfte, die der ihm zugewiesene Geschäftskreis gewöhnlich mit sich bringt (§ 30)";
+    label en unofficial "The articles may provide for special representatives; their authority extends, in case of doubt, to all transactions usually entailed by their field (§ 30)";
+    when besonderer_vertreter(v, p, kreis);
+    then vertretungsmacht_des_besonderen_vertreters(v, p, kreis);
+}
+
+// § 27 Abs. 2, 3.
+@source(BGB_P27)
+pub external judgment relation wichtiger_grund_fuer_widerruf(v: Verein, p: Person) {
+    authority Court;
+    label de official "§ 27 Abs. 2 Satz 2: ein wichtiger Grund für den Widerruf der Bestellung liegt vor; ein solcher Grund ist insbesondere grobe Pflichtverletzung oder Unfähigkeit zur ordnungsmäßigen Geschäftsführung";
+    label en unofficial "§ 27 (2) sentence 2: good cause for revoking the appointment exists, in particular gross breach of duty or inability to manage properly";
+}
+
+pub relation widerruf_der_bestellung_wirksam(v: Verein, p: Person) kind institutional {
+    label de official "der Widerruf der Bestellung ist wirksam (§ 27 Abs. 2)";
+    label en unofficial "the revocation of the appointment is effective (§ 27 (2))";
+}
+pub relation vorstand_unentgeltlich_taetig(v: Verein, p: Person) kind institutional {
+    label de official "die Mitglieder des Vorstands sind unentgeltlich tätig (§ 27 Abs. 3 Satz 2)";
+    label en unofficial "the members of the board serve without remuneration (§ 27 (3) sentence 2)";
+}
+
+@source(BGB_P27)
+rule WiderrufDerBestellungJederzeit(v: Verein, p: Person) strict {
+    label de official "Die Bestellung ist jederzeit widerruflich, unbeschadet des Anspruchs auf die vertragsmäßige Vergütung (§ 27 Abs. 2 Satz 1)";
+    label en unofficial "The appointment is revocable at any time, without prejudice to the claim to contractual remuneration (§ 27 (2) sentence 1)";
+    when bestellung_widerrufen(v, p) and not widerruflichkeit_auf_wichtigen_grund_beschraenkt(v);
+    then widerruf_der_bestellung_wirksam(v, p);
+}
+
+@source(BGB_P27)
+rule WiderrufNurAusWichtigemGrund(v: Verein, p: Person) strict {
+    label de official "Die Widerruflichkeit kann durch die Satzung auf den Fall beschränkt werden, dass ein wichtiger Grund für den Widerruf vorliegt (§ 27 Abs. 2 Satz 2)";
+    label en unofficial "The articles may restrict revocability to the case of good cause (§ 27 (2) sentence 2)";
+    when bestellung_widerrufen(v, p)
+        and widerruflichkeit_auf_wichtigen_grund_beschraenkt(v)
+        and wichtiger_grund_fuer_widerruf(v, p);
+    then widerruf_der_bestellung_wirksam(v, p);
+}
+
+@source(BGB_P27)
+rule VorstandUnentgeltlich(v: Verein, p: Person) strict {
+    label de official "Die Mitglieder des Vorstands sind unentgeltlich tätig (§ 27 Abs. 3 Satz 2); die Vorschrift gilt, soweit die Satzung nichts anderes bestimmt (§ 40)";
+    label en unofficial "The members of the board serve without remuneration (§ 27 (3) sentence 2), unless the articles provide otherwise (§ 40)";
+    when vorstandsmitglied(v, p) and satzung_ohne_abweichung(v, Geschaeftsfuehrung27Abs3);
+    then vorstand_unentgeltlich_taetig(v, p);
+}
+
+// §§ 31–31b Haftung.
+pub relation organ_oder_verfassungsmaessiger_vertreter(v: Verein, p: Person) kind empirical {
+    label de official "Vorstand, Mitglied des Vorstands oder anderer verfassungsmäßig berufener Vertreter (§ 31)";
+    label en unofficial "board, member of the board or other constitutionally appointed representative (§ 31)";
+}
+pub relation schaden_in_ausfuehrung_der_verrichtungen(v: Verein, p: Person, geschaedigter: Person) kind empirical {
+    label de official "der Vertreter hat einem Dritten durch eine in Ausführung der ihm zustehenden Verrichtungen begangene, zum Schadensersatz verpflichtende Handlung Schaden zugefügt (§ 31)";
+    label en unofficial "the representative caused damage to a third party by an act committed in the execution of their duties giving rise to liability (§ 31)";
+}
+pub relation verein_haftet(v: Verein, geschaedigter: Person) kind institutional {
+    label de official "der Verein ist für den Schaden verantwortlich (§ 31)";
+    label en unofficial "the association is liable for the damage (§ 31)";
+}
+pub relation verguetung_jaehrlich(v: Verein, p: Person, betrag: Money) kind empirical {
+    key(v, p);
+    label de official "jährliche Vergütung des Organmitglieds, des besonderen Vertreters oder des Vereinsmitglieds (§ 31a Abs. 1 Satz 1, § 31b Abs. 1 Satz 1)";
+    label en unofficial "annual remuneration of the organ member, special representative or member (§ 31a (1), § 31b (1))";
+}
+pub relation vorsatz_oder_grobe_fahrlaessigkeit(v: Verein, p: Person) kind empirical {
+    label de official "das Organmitglied, der besondere Vertreter oder das Vereinsmitglied hat den Schaden vorsätzlich oder grob fahrlässig verursacht (§ 31a, § 31b) — festgestellte Tatsache";
+    label en unofficial "the organ member or member caused the damage intentionally or by gross negligence (§ 31a, § 31b) — established fact";
+}
+pub relation schaden_bei_wahrnehmung_der_pflichten(v: Verein, p: Person) kind empirical {
+    label de official "der Schaden ist bei der Wahrnehmung der Pflichten bzw. der übertragenen satzungsgemäßen Vereinsaufgaben verursacht worden (§ 31a Abs. 1, § 31b Abs. 1)";
+    label en unofficial "the damage was caused in the performance of duties or assigned tasks (§ 31a (1), § 31b (1))";
+}
+pub relation vereinsmitglied(v: Verein, p: Person) kind empirical {
+    label de official "Mitglied des Vereins (§§ 31b, 32, 33, 37, 38, 45)";
+    label en unofficial "member of the association (§§ 31b, 32, 33, 37, 38, 45)";
+}
+pub relation haftung_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(v: Verein, p: Person) kind institutional {
+    label de official "die Haftung gegenüber dem Verein und den Mitgliedern besteht nur bei Vorsatz oder grober Fahrlässigkeit (§ 31a Abs. 1, § 31b Abs. 1)";
+    label en unofficial "liability towards the association and its members exists only for intent or gross negligence (§ 31a (1), § 31b (1))";
+}
+pub relation befreiung_von_der_verbindlichkeit(v: Verein, p: Person) kind institutional {
+    label de official "Anspruch gegen den Verein auf Befreiung von der Verbindlichkeit (§ 31a Abs. 2, § 31b Abs. 2)";
+    label en unofficial "claim against the association for release from the liability (§ 31a (2), § 31b (2))";
+}
+pub relation beweislast_beim_verein(v: Verein, p: Person) kind institutional {
+    label de official "ist streitig, ob der Schaden vorsätzlich oder grob fahrlässig verursacht wurde, trägt der Verein oder das Vereinsmitglied die Beweislast (§ 31a Abs. 1 Satz 3, § 31b Abs. 1 Satz 2)";
+    label en unofficial "if it is disputed whether the damage was caused intentionally or by gross negligence, the association bears the burden of proof (§ 31a (1), § 31b (1))";
+}
+
+@source(BGB_P31)
+rule HaftungDesVereinsFuerOrgane(v: Verein, p: Person, g: Person) strict {
+    label de official "Der Verein ist für den Schaden verantwortlich, den der Vorstand, ein Mitglied des Vorstands oder ein anderer verfassungsmäßig berufener Vertreter durch eine in Ausführung der ihm zustehenden Verrichtungen begangene, zum Schadensersatz verpflichtende Handlung einem Dritten zufügt (§ 31)";
+    label en unofficial "The association is liable for damage caused to a third party by its board or another constitutionally appointed representative in the execution of their duties (§ 31)";
+    when organ_oder_verfassungsmaessiger_vertreter(v, p) and schaden_in_ausfuehrung_der_verrichtungen(v, p, g);
+    then verein_haftet(v, g);
+}
+
+@source(BGB_P31a)
+rule HaftungsprivilegDerOrganmitglieder(v: Verein, p: Person, verguetung: Money) strict {
+    label de official "Sind Organmitglieder oder besondere Vertreter unentgeltlich tätig oder erhalten sie für ihre Tätigkeit eine Vergütung, die 3 300 Euro jährlich nicht übersteigt, haften sie dem Verein für einen bei der Wahrnehmung ihrer Pflichten verursachten Schaden nur bei Vorliegen von Vorsatz oder grober Fahrlässigkeit; Satz 1 gilt auch für die Haftung gegenüber den Mitgliedern des Vereins (§ 31a Abs. 1 Sätze 1, 2)";
+    label en unofficial "Organ members serving gratuitously or for not more than 3,300 euros a year are liable only for intent or gross negligence (§ 31a (1))";
+    when organ_oder_verfassungsmaessiger_vertreter(v, p)
+        and schaden_bei_wahrnehmung_der_pflichten(v, p)
+        and verguetung_jaehrlich(v, p, verguetung)
+        and verguetung <= 3300.00 EUR;
+    then haftung_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(v, p);
+}
+
+@source(BGB_P31a)
+rule BeweislastDesVereins(v: Verein, p: Person) strict {
+    label de official "Ist streitig, ob ein Organmitglied oder ein besonderer Vertreter einen Schaden vorsätzlich oder grob fahrlässig verursacht hat, trägt der Verein oder das Vereinsmitglied die Beweislast (§ 31a Abs. 1 Satz 3)";
+    label en unofficial "If it is disputed whether an organ member caused damage intentionally or by gross negligence, the association bears the burden of proof (§ 31a (1) sentence 3)";
+    when haftung_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(v, p);
+    then beweislast_beim_verein(v, p);
+}
+
+@source(BGB_P31a)
+rule BefreiungsanspruchDesOrganmitglieds(v: Verein, p: Person, verguetung: Money) strict {
+    label de official "Sind Organmitglieder oder besondere Vertreter nach Absatz 1 Satz 1 einem anderen zum Ersatz eines Schadens verpflichtet, den sie bei der Wahrnehmung ihrer Pflichten verursacht haben, so können sie von dem Verein die Befreiung von der Verbindlichkeit verlangen; das gilt nicht, wenn der Schaden vorsätzlich oder grob fahrlässig verursacht wurde (§ 31a Abs. 2)";
+    label en unofficial "Organ members liable to another for damage caused in performing their duties may demand release from the association, unless intent or gross negligence (§ 31a (2))";
+    when organ_oder_verfassungsmaessiger_vertreter(v, p)
+        and schaden_bei_wahrnehmung_der_pflichten(v, p)
+        and verguetung_jaehrlich(v, p, verguetung)
+        and verguetung <= 3300.00 EUR
+        and not vorsatz_oder_grobe_fahrlaessigkeit(v, p);
+    then befreiung_von_der_verbindlichkeit(v, p);
+}
+
+@source(BGB_P31b)
+rule HaftungsprivilegDerVereinsmitglieder(v: Verein, p: Person, verguetung: Money) strict {
+    label de official "Sind Vereinsmitglieder unentgeltlich für den Verein tätig oder erhalten sie für ihre Tätigkeit eine Vergütung, die 3 300 Euro jährlich nicht übersteigt, haften sie dem Verein für einen Schaden, den sie bei der Wahrnehmung der ihnen übertragenen satzungsgemäßen Vereinsaufgaben verursachen, nur bei Vorliegen von Vorsatz oder grober Fahrlässigkeit (§ 31b Abs. 1 Satz 1)";
+    label en unofficial "Members acting gratuitously or for not more than 3,300 euros a year are liable only for intent or gross negligence (§ 31b (1))";
+    when vereinsmitglied(v, p)
+        and schaden_bei_wahrnehmung_der_pflichten(v, p)
+        and verguetung_jaehrlich(v, p, verguetung)
+        and verguetung <= 3300.00 EUR;
+    then haftung_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(v, p);
+}
+
+@source(BGB_P31b)
+rule BefreiungsanspruchDesVereinsmitglieds(v: Verein, p: Person, verguetung: Money) strict {
+    label de official "Sind Vereinsmitglieder nach Absatz 1 Satz 1 einem anderen zum Ersatz eines Schadens verpflichtet, so können sie von dem Verein die Befreiung von der Verbindlichkeit verlangen; das gilt nicht bei Vorsatz oder grober Fahrlässigkeit (§ 31b Abs. 2)";
+    label en unofficial "Members liable to another may demand release from the association, unless intent or gross negligence (§ 31b (2))";
+    when vereinsmitglied(v, p)
+        and schaden_bei_wahrnehmung_der_pflichten(v, p)
+        and verguetung_jaehrlich(v, p, verguetung)
+        and verguetung <= 3300.00 EUR
+        and not vorsatz_oder_grobe_fahrlaessigkeit(v, p);
+    then befreiung_von_der_verbindlichkeit(v, p);
+}
+
+// --- §§ 32–35 Mitgliederversammlung und Beschlüsse ----------------------------------------------------------
+
+pub relation beschluss_des_vereins(b: Beschluss, v: Verein) kind empirical {
+    key(b);
+    label de official "Beschluss eines Organs dieses Vereins (§§ 28, 32, 33, 41)";
+    label en unofficial "resolution of an organ of this association (§§ 28, 32, 33, 41)";
+}
+pub relation beschlussgegenstand_bei_berufung_bezeichnet(b: Beschluss) kind empirical {
+    label de official "der Gegenstand ist bei der Berufung der Versammlung bezeichnet worden (§ 32 Abs. 1 Satz 2)";
+    label en unofficial "the matter was designated when the meeting was called (§ 32 (1) sentence 2)";
+}
+pub relation stimme(b: Beschluss, m: Person, art: Stimmart) kind empirical {
+    key(b, m);
+    label de official "die von einem Mitglied abgegebene Stimme (§ 32 Abs. 1 Satz 3)";
+    label en unofficial "the vote cast by a member (§ 32 (1) sentence 3)";
+}
+pub relation beschluss_betrifft_rechtsgeschaeft_mit_mitglied(b: Beschluss, m: Person) kind empirical {
+    label de official "die Beschlussfassung betrifft die Vornahme eines Rechtsgeschäfts mit dem Mitglied oder die Einleitung oder Erledigung eines Rechtsstreits zwischen ihm und dem Verein (§ 34)";
+    label en unofficial "the resolution concerns a transaction with the member or litigation between them and the association (§ 34)";
+}
+pub relation nicht_stimmberechtigt(b: Beschluss, m: Person) kind institutional {
+    label de official "das Mitglied ist nicht stimmberechtigt (§ 34)";
+    label en unofficial "the member has no right to vote (§ 34)";
+}
+pub relation beschluss_gueltig(b: Beschluss) kind institutional {
+    label de official "der Beschluss ist gültig (§ 32 Abs. 1 Satz 2, Abs. 3)";
+    label en unofficial "the resolution is valid (§ 32 (1) sentence 2, (3))";
+}
+pub relation beschluss_angenommen(b: Beschluss) kind institutional {
+    label de official "der Beschluss ist mit der erforderlichen Mehrheit angenommen (§§ 32, 33, 41)";
+    label en unofficial "the resolution has been adopted with the required majority (§§ 32, 33, 41)";
+}
+pub relation umlaufbeschluss_zustimmung_in_textform(b: Beschluss, m: Person) kind empirical {
+    label de official "das Mitglied hat seine Zustimmung zu dem Beschluss in Textform erklärt (§ 32 Abs. 3)";
+    label en unofficial "the member declared consent to the resolution in text form (§ 32 (3))";
+}
+pub relation hybride_oder_virtuelle_versammlung_vorgesehen(b: Beschluss) kind empirical {
+    label de official "bei der Berufung der Versammlung ist die elektronische Teilnahme vorgesehen oder die Mitglieder haben sie beschlossen (§ 32 Abs. 2)";
+    label en unofficial "electronic participation was provided for when calling the meeting or resolved by the members (§ 32 (2))";
+}
+pub relation angabe_zur_ausuebung_der_rechte(b: Beschluss) kind empirical {
+    label de official "bei der Berufung ist angegeben, wie die Mitglieder ihre Rechte im Wege der elektronischen Kommunikation ausüben können (§ 32 Abs. 2 Satz 3)";
+    label en unofficial "the call states how members may exercise their rights by electronic communication (§ 32 (2) sentence 3)";
+}
+pub relation elektronische_teilnahme_zulaessig(b: Beschluss) kind institutional {
+    label de official "die Teilnahme im Wege der elektronischen Kommunikation ist zulässig (§ 32 Abs. 2)";
+    label en unofficial "participation by electronic communication is permitted (§ 32 (2))";
+}
+
+@source(BGB_P34)
+rule StimmverbotBeiEigenemGeschaeft(b: Beschluss, m: Person) strict {
+    label de official "Ein Mitglied ist nicht stimmberechtigt, wenn die Beschlussfassung die Vornahme eines Rechtsgeschäfts mit ihm oder die Einleitung oder Erledigung eines Rechtsstreits zwischen ihm und dem Verein betrifft (§ 34)";
+    label en unofficial "A member has no vote where the resolution concerns a transaction with them or litigation between them and the association (§ 34)";
+    when beschluss_betrifft_rechtsgeschaeft_mit_mitglied(b, m);
+    then nicht_stimmberechtigt(b, m);
+}
+
+@source(BGB_P32)
+rule BeschlussGueltigBeiBezeichnetemGegenstand(b: Beschluss, v: Verein) strict {
+    label de official "Zur Gültigkeit des Beschlusses ist erforderlich, dass der Gegenstand bei der Berufung bezeichnet wird (§ 32 Abs. 1 Satz 2)";
+    label en unofficial "For the resolution to be valid the matter must be designated when the meeting is called (§ 32 (1) sentence 2)";
+    when beschluss_des_vereins(b, v) and beschlussgegenstand_bei_berufung_bezeichnet(b);
+    then beschluss_gueltig(b);
+}
+
+@source(BGB_P32)
+rule UmlaufbeschlussOhneVersammlung(b: Beschluss, v: Verein) strict {
+    label de official "Auch ohne Versammlung der Mitglieder ist ein Beschluss gültig, wenn alle Mitglieder ihre Zustimmung zu dem Beschluss in Textform erklären (§ 32 Abs. 3)";
+    label en unofficial "A resolution is valid without a meeting if all members declare their consent in text form (§ 32 (3))";
+    when beschluss_des_vereins(b, v)
+        and (count distinct m: Person where umlaufbeschluss_zustimmung_in_textform(b, m))
+            == (count distinct q: Person where vereinsmitglied(v, q));
+    then beschluss_angenommen(b);
+}
+
+@source(BGB_P32)
+rule ElektronischeTeilnahme(b: Beschluss, v: Verein) strict {
+    label de official "Bei der Berufung der Versammlung kann vorgesehen werden, dass Mitglieder auch ohne Anwesenheit am Versammlungsort im Wege der elektronischen Kommunikation teilnehmen; wird eine hybride oder virtuelle Versammlung einberufen, so muss bei der Berufung angegeben werden, wie die Mitglieder ihre Rechte ausüben können (§ 32 Abs. 2)";
+    label en unofficial "The call may provide for electronic participation; if so, it must state how members may exercise their rights (§ 32 (2))";
+    when beschluss_des_vereins(b, v)
+        and hybride_oder_virtuelle_versammlung_vorgesehen(b)
+        and angabe_zur_ausuebung_der_rechte(b);
+    then elektronische_teilnahme_zulaessig(b);
+}
+
+// Zwei Lesarten des § 32 Abs. 1 Satz 3 (§152).
+interpretation EnthaltungIstKeineAbgegebeneStimme of BGB_P32 {
+    status disputed;
+    label de official "§ 32 Abs. 1 Satz 3: „Mehrheit der abgegebenen Stimmen“ — die Enthaltung ist keine abgegebene Stimme; gezählt werden nur Ja- und Nein-Stimmen";
+    label en unofficial "§ 32 (1) sentence 3: an abstention is not a vote cast; only yes and no votes are counted";
+
+    @source(BGB_P32)
+    rule BeschlussAngenommenOhneEnthaltungen(b: Beschluss, v: Verein) strict {
+        label de official "§ 32 Abs. 1 Satz 3: der Beschluss ist angenommen, wenn die Zahl der Ja-Stimmen der Stimmberechtigten die der Nein-Stimmen übersteigt";
+        label en unofficial "§ 32 (1) sentence 3: the resolution is adopted if the yes votes of those entitled exceed the no votes";
+        when beschluss_des_vereins(b, v)
+            and beschluss_gueltig(b)
+            and satzung_ohne_abweichung(v, Mitgliederversammlung32)
+            and ((count distinct m: Person where stimme(b, m, Ja))
+                 - (count distinct n: Person where stimme(b, n, Ja) and nicht_stimmberechtigt(b, n)))
+                > ((count distinct k: Person where stimme(b, k, Nein))
+                   - (count distinct l: Person where stimme(b, l, Nein) and nicht_stimmberechtigt(b, l)));
+        then beschluss_angenommen(b);
+    }
+}
+
+interpretation EnthaltungIstAbgegebeneStimme of BGB_P32 {
+    status disputed;
+    label de official "§ 32 Abs. 1 Satz 3: „Mehrheit der abgegebenen Stimmen“ — auch die Enthaltung ist abgegeben; die Mehrheit bemisst sich an allen abgegebenen Stimmen";
+    label en unofficial "§ 32 (1) sentence 3: an abstention is also cast; the majority is measured against all votes cast";
+
+    @source(BGB_P32)
+    rule BeschlussAngenommenMitEnthaltungen(b: Beschluss, v: Verein) strict {
+        label de official "§ 32 Abs. 1 Satz 3: der Beschluss ist angenommen, wenn mehr als die Hälfte aller abgegebenen Stimmen — einschließlich der Enthaltungen — Ja-Stimmen sind";
+        label en unofficial "§ 32 (1) sentence 3: the resolution is adopted if more than half of all votes cast, including abstentions, are yes votes";
+        when beschluss_des_vereins(b, v)
+            and beschluss_gueltig(b)
+            and satzung_ohne_abweichung(v, Mitgliederversammlung32)
+            and ((count distinct m: Person where stimme(b, m, Ja))
+                 - (count distinct n: Person where stimme(b, n, Ja) and nicht_stimmberechtigt(b, n))) * 2
+                > ((count distinct k: Person where stimme(b, k, Ja) or stimme(b, k, Nein) or stimme(b, k, Enthaltung))
+                   - (count distinct l: Person where nicht_stimmberechtigt(b, l)));
+        then beschluss_angenommen(b);
+    }
+}
+
+interpretation_group MehrheitDerAbgegebenenStimmen {
+    alternatives EnthaltungIstKeineAbgegebeneStimme, EnthaltungIstAbgegebeneStimme;
+    selection any_of;
+}
+
+// § 33 Satzungsänderung, § 41 Auflösung: qualifizierte Mehrheiten.
+pub relation beschluss_enthaelt_satzungsaenderung(b: Beschluss) kind empirical {
+    label de official "der Beschluss enthält eine Änderung der Satzung (§ 33 Abs. 1 Satz 1)";
+    label en unofficial "the resolution contains an amendment of the articles (§ 33 (1))";
+}
+pub relation beschluss_aendert_den_zweck(b: Beschluss) kind empirical {
+    label de official "der Beschluss ändert den Zweck des Vereins (§ 33 Abs. 1 Satz 2)";
+    label en unofficial "the resolution changes the purpose of the association (§ 33 (1) sentence 2)";
+}
+pub relation zustimmung_des_nicht_erschienenen_in_textform(b: Beschluss, m: Person) kind empirical {
+    label de official "die Zustimmung des nicht erschienenen Mitglieds ist in Textform erfolgt (§ 33 Abs. 1 Satz 2 Halbsatz 2)";
+    label en unofficial "the consent of a member not present was given in text form (§ 33 (1) sentence 2)";
+}
+pub relation beschluss_loest_den_verein_auf(b: Beschluss) kind empirical {
+    label de official "der Beschluss löst den Verein auf (§ 41 Satz 1)";
+    label en unofficial "the resolution dissolves the association (§ 41 sentence 1)";
+}
+pub relation behoerdliche_genehmigung_der_satzungsaenderung(b: Beschluss) kind empirical {
+    label de official "die Genehmigung der zuständigen Behörde zur Satzungsänderung liegt vor (§ 33 Abs. 2)";
+    label en unofficial "the approval of the competent authority for the amendment has been given (§ 33 (2))";
+}
+pub relation satzungsaenderung_wirksam(b: Beschluss) kind institutional {
+    label de official "die Satzungsänderung ist wirksam (§ 33, § 71 Abs. 1)";
+    label en unofficial "the amendment of the articles is effective (§ 33, § 71 (1))";
+}
+
+@source(BGB_P33)
+rule DreiViertelMehrheitFuerSatzungsaenderung(b: Beschluss, v: Verein) strict {
+    label de official "Zu einem Beschluss, der eine Änderung der Satzung enthält, ist eine Mehrheit von drei Vierteln der abgegebenen Stimmen erforderlich (§ 33 Abs. 1 Satz 1)";
+    label en unofficial "A resolution amending the articles requires a majority of three quarters of the votes cast (§ 33 (1) sentence 1)";
+    when beschluss_des_vereins(b, v)
+        and beschluss_gueltig(b)
+        and beschluss_enthaelt_satzungsaenderung(b)
+        and not beschluss_aendert_den_zweck(b)
+        and satzung_ohne_abweichung(v, Satzungsaenderung33)
+        and (count distinct m: Person where stimme(b, m, Ja)) * 4
+            >= ((count distinct k: Person where stimme(b, k, Ja))
+                + (count distinct l: Person where stimme(b, l, Nein))) * 3;
+    then beschluss_angenommen(b);
+}
+
+@source(BGB_P33)
+rule ZweckaenderungBrauchtAlleMitglieder(b: Beschluss, v: Verein) strict {
+    label de official "Zur Änderung des Zweckes des Vereins ist die Zustimmung aller Mitglieder erforderlich; die Zustimmung der nicht erschienenen Mitglieder muss in Textform erfolgen (§ 33 Abs. 1 Satz 2)";
+    label en unofficial "Changing the purpose requires the consent of all members; members not present must consent in text form (§ 33 (1) sentence 2)";
+    when beschluss_des_vereins(b, v)
+        and beschluss_gueltig(b)
+        and beschluss_aendert_den_zweck(b)
+        and ((count distinct m: Person where stimme(b, m, Ja))
+             + (count distinct n: Person where zustimmung_des_nicht_erschienenen_in_textform(b, n)))
+            == (count distinct q: Person where vereinsmitglied(v, q));
+    then beschluss_angenommen(b);
+}
+
+@source(BGB_P33)
+rule SatzungsaenderungBeiVerleihungNurMitGenehmigung(b: Beschluss, v: Verein) strict {
+    label de official "Beruht die Rechtsfähigkeit des Vereins auf Verleihung, so ist zu jeder Änderung der Satzung die Genehmigung der zuständigen Behörde erforderlich (§ 33 Abs. 2)";
+    label en unofficial "Where legal capacity rests on a state grant, every amendment of the articles requires the authority's approval (§ 33 (2))";
+    when beschluss_des_vereins(b, v)
+        and beschluss_enthaelt_satzungsaenderung(b)
+        and beschluss_angenommen(b)
+        and verein_zweck(v, WirtschaftlicherGeschaeftsbetrieb)
+        and behoerdliche_genehmigung_der_satzungsaenderung(b);
+    then satzungsaenderung_wirksam(b);
+}
+
+pub relation sonderrecht_des_mitglieds(v: Verein, m: Person) kind empirical {
+    label de official "Sonderrecht eines Mitglieds (§ 35)";
+    label en unofficial "special right of a member (§ 35)";
+}
+pub relation beschluss_beeintraechtigt_sonderrecht(b: Beschluss, m: Person) kind empirical {
+    label de official "der Beschluss der Mitgliederversammlung beeinträchtigt das Sonderrecht des Mitglieds (§ 35)";
+    label en unofficial "the resolution impairs the member's special right (§ 35)";
+}
+pub relation zustimmung_des_sonderberechtigten(b: Beschluss, m: Person) kind empirical {
+    label de official "das Mitglied hat der Beeinträchtigung seines Sonderrechts zugestimmt (§ 35)";
+    label en unofficial "the member consented to the impairment of their special right (§ 35)";
+}
+pub relation beschluss_unwirksam_gegenueber_mitglied(b: Beschluss, m: Person) kind institutional {
+    label de official "der Beschluss ist gegenüber dem Mitglied unwirksam, dessen Sonderrecht er ohne dessen Zustimmung beeinträchtigt (§ 35)";
+    label en unofficial "the resolution is ineffective against the member whose special right it impairs without consent (§ 35)";
+}
+
+@source(BGB_P35)
+rule SonderrechteOhneZustimmungUnantastbar(b: Beschluss, v: Verein, m: Person) strict {
+    label de official "Sonderrechte eines Mitglieds können nicht ohne dessen Zustimmung durch Beschluss der Mitgliederversammlung beeinträchtigt werden (§ 35)";
+    label en unofficial "Special rights of a member cannot be impaired by resolution without their consent (§ 35)";
+    when sonderrecht_des_mitglieds(v, m)
+        and beschluss_beeintraechtigt_sonderrecht(b, m)
+        and not zustimmung_des_sonderberechtigten(b, m);
+    then beschluss_unwirksam_gegenueber_mitglied(b, m);
+}
+
+// §§ 36, 37 Berufung der Mitgliederversammlung.
+pub relation satzungsfall_der_berufung(v: Verein) kind empirical {
+    label de official "die Satzung bestimmt den Fall, in dem die Mitgliederversammlung zu berufen ist (§ 36)";
+    label en unofficial "the articles determine the case in which the general meeting is to be called (§ 36)";
+}
+
+@source(BGB_P36)
+pub external judgment relation interesse_des_vereins_erfordert_berufung(v: Verein) {
+    authority Court;
+    label de official "§ 36: das Interesse des Vereins erfordert die Berufung der Mitgliederversammlung";
+    label en unofficial "§ 36: the interest of the association requires the general meeting to be called";
+}
+
+pub relation mitgliederversammlung_zu_berufen(v: Verein) kind institutional {
+    label de official "die Mitgliederversammlung ist zu berufen (§§ 36, 37)";
+    label en unofficial "the general meeting is to be called (§§ 36, 37)";
+}
+pub relation berufung_schriftlich_verlangt(v: Verein, m: Person) kind empirical {
+    label de official "das Mitglied verlangt die Berufung schriftlich unter Angabe des Zweckes und der Gründe (§ 37 Abs. 1)";
+    label en unofficial "the member demands the calling in writing, stating the purpose and the reasons (§ 37 (1))";
+}
+pub relation satzungsquote_der_minderheit(v: Verein, zaehler: Integer, nenner: Integer) kind empirical {
+    key(v);
+    label de official "durch die Satzung bestimmter Teil der Mitglieder, der die Berufung verlangen kann (§ 37 Abs. 1)";
+    label en unofficial "the fraction of members determined by the articles which may demand the calling (§ 37 (1))";
+}
+pub relation keine_satzungsquote(v: Verein) kind empirical {
+    label de official "die Satzung bestimmt keinen Teil: es gilt der zehnte Teil der Mitglieder (§ 37 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the articles determine no fraction: one tenth of the members applies (§ 37 (1)) — explicit case input";
+}
+pub relation verlangen_nicht_entsprochen(v: Verein) kind empirical {
+    label de official "dem Verlangen der Minderheit ist nicht entsprochen worden (§ 37 Abs. 2 Satz 1)";
+    label en unofficial "the minority's demand has not been complied with (§ 37 (2))";
+}
+pub relation ermaechtigung_durch_amtsgericht_moeglich(v: Verein) kind institutional {
+    label de official "das Amtsgericht kann die Mitglieder, die das Verlangen gestellt haben, zur Berufung der Versammlung ermächtigen (§ 37 Abs. 2 Satz 1)";
+    label en unofficial "the local court may authorise the demanding members to call the meeting (§ 37 (2))";
+}
+
+@source(BGB_P36)
+rule BerufungImSatzungsfall(v: Verein) strict {
+    label de official "Die Mitgliederversammlung ist in den durch die Satzung bestimmten Fällen zu berufen (§ 36)";
+    label en unofficial "The general meeting is to be called in the cases determined by the articles (§ 36)";
+    when satzungsfall_der_berufung(v);
+    then mitgliederversammlung_zu_berufen(v);
+}
+
+@source(BGB_P36)
+rule BerufungImInteresseDesVereins(v: Verein) strict {
+    label de official "Die Mitgliederversammlung ist auch dann zu berufen, wenn das Interesse des Vereins es erfordert (§ 36)";
+    label en unofficial "The general meeting is also to be called when the interest of the association requires it (§ 36)";
+    when interesse_des_vereins_erfordert_berufung(v);
+    then mitgliederversammlung_zu_berufen(v);
+}
+
+@source(BGB_P37)
+rule BerufungAufVerlangenNachSatzungsquote(v: Verein, z: Integer, n: Integer) strict {
+    label de official "Die Mitgliederversammlung ist zu berufen, wenn der durch die Satzung bestimmte Teil der Mitglieder die Berufung schriftlich unter Angabe des Zweckes und der Gründe verlangt (§ 37 Abs. 1)";
+    label en unofficial "The meeting is to be called if the fraction of members determined by the articles demands it in writing (§ 37 (1))";
+    when satzungsquote_der_minderheit(v, z, n)
+        and (count distinct m: Person where berufung_schriftlich_verlangt(v, m)) * n
+            >= (count distinct q: Person where vereinsmitglied(v, q)) * z;
+    then mitgliederversammlung_zu_berufen(v);
+}
+
+@source(BGB_P37)
+rule BerufungAufVerlangenDesZehntenTeils(v: Verein) strict {
+    label de official "In Ermangelung einer Bestimmung der Satzung genügt das Verlangen des zehnten Teils der Mitglieder (§ 37 Abs. 1)";
+    label en unofficial "Absent a provision in the articles, the demand of one tenth of the members suffices (§ 37 (1))";
+    when keine_satzungsquote(v)
+        and (count distinct m: Person where berufung_schriftlich_verlangt(v, m)) * 10
+            >= (count distinct q: Person where vereinsmitglied(v, q));
+    then mitgliederversammlung_zu_berufen(v);
+}
+
+@source(BGB_P37)
+rule ErmaechtigungDurchAmtsgericht(v: Verein) strict {
+    label de official "Wird dem Verlangen nicht entsprochen, so kann das Amtsgericht die Mitglieder, die das Verlangen gestellt haben, zur Berufung der Versammlung ermächtigen; zuständig ist das Amtsgericht, das für den Bezirk des Sitzes das Vereinsregister führt (§ 37 Abs. 2)";
+    label en unofficial "If the demand is not complied with, the local court may authorise the demanding members to call the meeting (§ 37 (2))";
+    when mitgliederversammlung_zu_berufen(v) and verlangen_nicht_entsprochen(v);
+    then ermaechtigung_durch_amtsgericht_moeglich(v);
+}
+
+// §§ 38, 39 Mitgliedschaft und Austritt.
+pub relation uebertragung_der_mitgliedschaft(v: Verein, m: Person, erwerber: Person) kind empirical {
+    label de official "die Mitgliedschaft soll übertragen werden oder die Ausübung der Mitgliedschaftsrechte einem anderen überlassen werden (§ 38)";
+    label en unofficial "the membership is to be transferred or the exercise of membership rights left to another (§ 38)";
+}
+pub relation uebertragung_unwirksam(v: Verein, m: Person) kind institutional {
+    label de official "die Mitgliedschaft ist nicht übertragbar und nicht vererblich; die Ausübung der Mitgliedschaftsrechte kann nicht einem anderen überlassen werden (§ 38)";
+    label en unofficial "membership is neither transferable nor inheritable and its exercise cannot be left to another (§ 38)";
+}
+pub relation austritt_erklaert(v: Verein, m: Person) kind empirical {
+    label de official "das Mitglied erklärt den Austritt aus dem Verein (§ 39 Abs. 1)";
+    label en unofficial "the member declares withdrawal from the association (§ 39 (1))";
+}
+pub relation satzung_kuendigungsfrist_monate(v: Verein, monate: Integer) kind empirical {
+    key(v);
+    label de official "durch die Satzung bestimmte Kündigungsfrist für den Austritt, in Monaten (§ 39 Abs. 2)";
+    label en unofficial "notice period for withdrawal determined by the articles, in months (§ 39 (2))";
+}
+pub relation austritt_berechtigt(v: Verein, m: Person) kind institutional {
+    label de official "das Mitglied ist zum Austritt berechtigt (§ 39 Abs. 1)";
+    label en unofficial "the member is entitled to withdraw (§ 39 (1))";
+}
+pub relation kuendigungsfrist_unwirksam(v: Verein) kind institutional {
+    label de official "die durch die Satzung bestimmte Kündigungsfrist überschreitet die zulässigen zwei Jahre (§ 39 Abs. 2 Halbsatz 2)";
+    label en unofficial "the notice period determined by the articles exceeds the permitted two years (§ 39 (2))";
+}
+
+@source(BGB_P38)
+rule MitgliedschaftNichtUebertragbar(v: Verein, m: Person, e: Person) strict {
+    label de official "Die Mitgliedschaft ist nicht übertragbar und nicht vererblich; die Ausübung der Mitgliedschaftsrechte kann nicht einem anderen überlassen werden (§ 38); die Vorschrift gilt, soweit die Satzung nichts anderes bestimmt (§ 40)";
+    label en unofficial "Membership is neither transferable nor inheritable (§ 38), unless the articles provide otherwise (§ 40)";
+    when uebertragung_der_mitgliedschaft(v, m, e) and satzung_ohne_abweichung(v, Mitgliedschaft38);
+    then uebertragung_unwirksam(v, m);
+}
+
+@source(BGB_P39)
+rule AustrittsrechtDerMitglieder(v: Verein, m: Person) strict {
+    label de official "Die Mitglieder sind zum Austritt aus dem Verein berechtigt (§ 39 Abs. 1)";
+    label en unofficial "Members are entitled to withdraw from the association (§ 39 (1))";
+    when vereinsmitglied(v, m) and austritt_erklaert(v, m);
+    then austritt_berechtigt(v, m);
+}
+
+@source(BGB_P39)
+rule KuendigungsfristHoechstensZweiJahre(v: Verein, monate: Integer) strict {
+    label de official "Durch die Satzung kann bestimmt werden, dass der Austritt nur am Schluss eines Geschäftsjahrs oder erst nach dem Ablauf einer Kündigungsfrist zulässig ist; die Kündigungsfrist kann höchstens zwei Jahre betragen (§ 39 Abs. 2)";
+    label en unofficial "The articles may require withdrawal at the end of a financial year or after a notice period of at most two years (§ 39 (2))";
+    when satzung_kuendigungsfrist_monate(v, monate) and monate > 24;
+    then kuendigungsfrist_unwirksam(v);
+}
+
+@source(BGB_P40)
+rule NachgiebigeVorschriftenGeltenNurOhneAbweichung(v: Verein) strict {
+    label de official "Die Vorschriften des § 26 Absatz 2 Satz 1, des § 27 Absatz 1 und 3, der §§ 28, 31a Abs. 1 Satz 2 sowie der §§ 32, 33 und 38 finden insoweit keine Anwendung, als die Satzung ein anderes bestimmt; von § 34 kann auch für die Beschlussfassung des Vorstands durch die Satzung nicht abgewichen werden (§ 40)";
+    label en unofficial "§§ 26 (2), 27 (1), (3), 28, 31a (1), 32, 33 and 38 do not apply in so far as the articles provide otherwise; § 34 is mandatory (§ 40)";
+    when satzung_ohne_abweichung(v, Mitgliederversammlung32);
+    then verfassung_des_vereins(v, "nachgiebige Vorschriften gelten");
+}
+
+@source(BGB_P28)
+rule BeschlussfassungDesVorstands(b: Beschluss, v: Verein) strict {
+    label de official "Bei einem Vorstand, der aus mehreren Personen besteht, erfolgt die Beschlussfassung nach den für die Beschlüsse der Mitglieder des Vereins geltenden Vorschriften der §§ 32 und 34 (§ 28)";
+    label en unofficial "Where the board consists of several persons, resolutions are passed under §§ 32 and 34 (§ 28)";
+    when beschluss_des_vereins(b, v)
+        and satzung_ohne_abweichung(v, Beschlussfassung28)
+        and beschlussgegenstand_bei_berufung_bezeichnet(b);
+    then beschluss_gueltig(b);
+}
+
+// --- §§ 41–53 Auflösung, Anfall, Liquidation --------------------------------------------------------------
+
+pub relation verein_aufgeloest(v: Verein) kind institutional {
+    label de official "der Verein ist aufgelöst (§§ 41, 42)";
+    label en unofficial "the association is dissolved (§§ 41, 42)";
+}
+pub relation rechtsfaehigkeit_entzogen(v: Verein) kind institutional {
+    label de official "dem Verein ist die Rechtsfähigkeit entzogen (§§ 43, 73)";
+    label en unofficial "the association has been deprived of legal capacity (§§ 43, 73)";
+}
+pub relation insolvenzverfahren_eroeffnet(v: Verein) kind empirical {
+    label de official "über das Vermögen des Vereins ist das Insolvenzverfahren eröffnet worden (§ 42 Abs. 1 Satz 1)";
+    label en unofficial "insolvency proceedings have been opened over the association's assets (§ 42 (1))";
+}
+pub relation eroeffnung_mangels_masse_abgewiesen(v: Verein) kind empirical {
+    label de official "die Eröffnung des Insolvenzverfahrens ist mangels Masse rechtskräftig abgewiesen worden (§ 42 Abs. 1 Satz 1)";
+    label en unofficial "the opening of insolvency proceedings has been finally refused for lack of assets (§ 42 (1))";
+}
+pub relation fortsetzungsbeschluss(b: Beschluss, v: Verein) kind empirical {
+    label de official "die Mitgliederversammlung beschließt die Fortsetzung des Vereins (§ 42 Abs. 1 Satz 2)";
+    label en unofficial "the general meeting resolves to continue the association (§ 42 (1) sentence 2)";
+}
+pub relation verfahren_eingestellt_oder_aufgehoben(v: Verein) kind empirical {
+    label de official "das Verfahren ist auf Antrag des Schuldners eingestellt oder nach der Bestätigung eines Insolvenzplans, der den Fortbestand vorsieht, aufgehoben worden (§ 42 Abs. 1 Satz 2)";
+    label en unofficial "the proceedings were discontinued on the debtor's application or terminated after confirmation of an insolvency plan (§ 42 (1) sentence 2)";
+}
+pub relation verein_fortgesetzt(v: Verein) kind institutional {
+    label de official "der Verein ist fortgesetzt (§ 42 Abs. 1 Satz 2)";
+    label en unofficial "the association is continued (§ 42 (1) sentence 2)";
+}
+pub relation zahlungsunfaehigkeit_oder_ueberschuldung(v: Verein) kind empirical {
+    label de official "Zahlungsunfähigkeit oder Überschuldung des Vereins (§ 42 Abs. 2 Satz 1)";
+    label en unofficial "illiquidity or over-indebtedness of the association (§ 42 (2))";
+}
+pub relation insolvenzantrag_gestellt(v: Verein) kind empirical {
+    label de official "der Vorstand hat die Eröffnung des Insolvenzverfahrens beantragt (§ 42 Abs. 2 Satz 1)";
+    label en unofficial "the board has applied for the opening of insolvency proceedings (§ 42 (2))";
+}
+pub relation verschulden_des_vorstandsmitglieds(v: Verein, p: Person) kind empirical {
+    label de official "dem Vorstandsmitglied fällt ein Verschulden an der Verzögerung zur Last (§ 42 Abs. 2 Satz 2) — festgestellte Tatsache";
+    label en unofficial "the board member is at fault for the delay (§ 42 (2) sentence 2) — established fact";
+}
+pub relation haftung_als_gesamtschuldner(v: Verein, p: Person) kind institutional {
+    label de official "die Verantwortlichen haften den Gläubigern für den entstehenden Schaden als Gesamtschuldner (§ 42 Abs. 2 Satz 2, § 53, § 54 Abs. 2)";
+    label en unofficial "those responsible are jointly and severally liable to the creditors for the resulting damage (§ 42 (2), § 53, § 54 (2))";
+}
+pub relation anderer_als_satzungszweck_verfolgt(v: Verein) kind empirical {
+    label de official "der Verein verfolgt einen anderen als den in der Satzung bestimmten Zweck (§ 43)";
+    label en unofficial "the association pursues a purpose other than that determined by its articles (§ 43)";
+}
+pub relation entziehung_moeglich(v: Verein) kind institutional {
+    label de official "einem Verein, dessen Rechtsfähigkeit auf Verleihung beruht, kann die Rechtsfähigkeit entzogen werden (§ 43)";
+    label en unofficial "an association whose legal capacity rests on a grant may be deprived of it (§ 43)";
+}
+
+@source(BGB_P41)
+rule AufloesungDurchBeschluss(b: Beschluss, v: Verein) strict {
+    label de official "Der Verein kann durch Beschluss der Mitgliederversammlung aufgelöst werden; zu dem Beschluss ist eine Mehrheit von drei Vierteln der abgegebenen Stimmen erforderlich, wenn nicht die Satzung ein anderes bestimmt (§ 41)";
+    label en unofficial "The association may be dissolved by resolution requiring a three-quarters majority of the votes cast, unless the articles provide otherwise (§ 41)";
+    when beschluss_des_vereins(b, v)
+        and beschluss_gueltig(b)
+        and beschluss_loest_den_verein_auf(b)
+        and satzung_ohne_abweichung(v, Aufloesung41)
+        and (count distinct m: Person where stimme(b, m, Ja)) * 4
+            >= ((count distinct k: Person where stimme(b, k, Ja))
+                + (count distinct l: Person where stimme(b, l, Nein))) * 3;
+    then verein_aufgeloest(v);
+}
+
+@source(BGB_P42)
+rule AufloesungDurchInsolvenz(v: Verein) strict {
+    label de official "Der Verein wird durch die Eröffnung des Insolvenzverfahrens aufgelöst (§ 42 Abs. 1 Satz 1)";
+    label en unofficial "The association is dissolved by the opening of insolvency proceedings (§ 42 (1))";
+    when insolvenzverfahren_eroeffnet(v);
+    then verein_aufgeloest(v);
+}
+
+@source(BGB_P42)
+rule AufloesungDurchAbweisungMangelsMasse(v: Verein) strict {
+    label de official "Der Verein wird mit Rechtskraft des Beschlusses aufgelöst, durch den die Eröffnung des Insolvenzverfahrens mangels Masse abgewiesen worden ist (§ 42 Abs. 1 Satz 1)";
+    label en unofficial "The association is dissolved when the refusal to open proceedings for lack of assets becomes final (§ 42 (1))";
+    when eroeffnung_mangels_masse_abgewiesen(v);
+    then verein_aufgeloest(v);
+}
+
+@source(BGB_P42)
+rule FortsetzungNachEinstellung(b: Beschluss, v: Verein) strict {
+    label de official "Wird das Verfahren auf Antrag des Schuldners eingestellt oder nach der Bestätigung eines Insolvenzplans, der den Fortbestand des Vereins vorsieht, aufgehoben, so kann die Mitgliederversammlung die Fortsetzung des Vereins beschließen (§ 42 Abs. 1 Satz 2)";
+    label en unofficial "Where the proceedings are discontinued or terminated under an insolvency plan, the general meeting may resolve to continue the association (§ 42 (1) sentence 2)";
+    when fortsetzungsbeschluss(b, v) and beschluss_angenommen(b) and verfahren_eingestellt_oder_aufgehoben(v);
+    then verein_fortgesetzt(v);
+}
+
+@source(BGB_P42)
+rule HaftungBeiVerzoegertemInsolvenzantrag(v: Verein, p: Person) strict {
+    label de official "Der Vorstand hat im Falle der Zahlungsunfähigkeit oder der Überschuldung die Eröffnung des Insolvenzverfahrens zu beantragen; wird die Stellung des Antrags verzögert, so sind die Vorstandsmitglieder, denen ein Verschulden zur Last fällt, den Gläubigern für den daraus entstehenden Schaden verantwortlich; sie haften als Gesamtschuldner (§ 42 Abs. 2)";
+    label en unofficial "The board must apply for insolvency proceedings; culpably delaying the application makes the members jointly and severally liable to the creditors (§ 42 (2))";
+    when zahlungsunfaehigkeit_oder_ueberschuldung(v)
+        and vorstandsmitglied(v, p)
+        and not insolvenzantrag_gestellt(v)
+        and verschulden_des_vorstandsmitglieds(v, p);
+    then haftung_als_gesamtschuldner(v, p);
+}
+
+@source(BGB_P43)
+rule EntziehungBeiAnderemZweck(v: Verein, t: Date) strict {
+    label de official "Einem Verein, dessen Rechtsfähigkeit auf Verleihung beruht, kann die Rechtsfähigkeit entzogen werden, wenn er einen anderen als den in der Satzung bestimmten Zweck verfolgt (§ 43)";
+    label en unofficial "An association whose capacity rests on a grant may be deprived of it if it pursues a purpose other than that in its articles (§ 43)";
+    when staatliche_verleihung_am(v, t) and anderer_als_satzungszweck_verfolgt(v);
+    then entziehung_moeglich(v);
+}
+
+pub relation zustaendigkeit_nach_landesrecht(v: Verein, land: Ort) kind institutional {
+    label de official "die Zuständigkeit und das Verfahren für die Entziehung der Rechtsfähigkeit nach § 43 bestimmen sich nach dem Recht des Landes, in dem der Verein seinen Sitz hat (§ 44) — der Inhalt des Landesrechts steht außerhalb dieses Pakets";
+    label en unofficial "competence and procedure for deprivation of legal capacity under § 43 are governed by the law of the Land of the seat (§ 44)";
+}
+
+@source(BGB_P44)
+rule ZustaendigkeitUndVerfahrenNachLandesrecht(v: Verein, land: Ort) strict {
+    label de official "Die Zuständigkeit und das Verfahren für die Entziehung der Rechtsfähigkeit nach § 43 bestimmen sich nach dem Recht des Landes, in dem der Verein seinen Sitz hat (§ 44)";
+    label en unofficial "Competence and procedure for deprivation under § 43 are governed by the law of the Land in which the association has its seat (§ 44)";
+    when entziehung_moeglich(v) and sitz_in_land(v, land);
+    then zustaendigkeit_nach_landesrecht(v, land);
+}
+
+// §§ 45–53 Anfall des Vermögens und Liquidation.
+pub relation anfallberechtigter(v: Verein, p: Person) kind institutional {
+    label de official "Anfallberechtigter des Vereinsvermögens (§ 45)";
+    label en unofficial "person entitled to the assets of the association (§ 45)";
+}
+pub relation satzung_bestimmt_anfallberechtigten(v: Verein, p: Person) kind empirical {
+    label de official "die Satzung bestimmt die Personen, an die das Vermögen fällt (§ 45 Abs. 1)";
+    label en unofficial "the articles determine the persons to whom the assets pass (§ 45 (1))";
+}
+pub relation beschluss_bestimmt_anfallberechtigten(b: Beschluss, v: Verein, p: Person) kind empirical {
+    label de official "die Anfallberechtigten werden durch Beschluss der Mitgliederversammlung oder eines anderen Vereinsorgans bestimmt (§ 45 Abs. 2 Satz 1)";
+    label en unofficial "the persons entitled are determined by resolution of the general meeting or another organ (§ 45 (2))";
+}
+pub relation keine_bestimmung_der_anfallberechtigten(v: Verein) kind empirical {
+    label de official "es fehlt an einer Bestimmung der Anfallberechtigten (§ 45 Abs. 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "there is no determination of the persons entitled (§ 45 (3)) — explicit case input";
+}
+pub relation diente_ausschliesslich_den_interessen_der_mitglieder(v: Verein) kind empirical {
+    label de official "der Verein diente nach der Satzung ausschließlich den Interessen seiner Mitglieder (§ 45 Abs. 3)";
+    label en unofficial "under its articles the association served exclusively the interests of its members (§ 45 (3))";
+}
+pub relation anteil_am_vereinsvermoegen(v: Verein, p: Person, zaehler: Integer, nenner: Integer) kind institutional {
+    key(v, p);
+    label de official "Anteil des Mitglieds am Vereinsvermögen zu gleichen Teilen (§ 45 Abs. 3)";
+    label en unofficial "share of the member in the association's assets in equal parts (§ 45 (3))";
+}
+pub relation anfall_an_den_fiskus(v: Verein, land: Ort) kind institutional {
+    label de official "das Vermögen fällt an den Fiskus des Landes, in dessen Gebiet der Verein seinen Sitz hatte (§ 45 Abs. 3)";
+    label en unofficial "the assets pass to the treasury of the Land in whose territory the association had its seat (§ 45 (3))";
+}
+pub relation vermoegen_faellt_an_den_fiskus(v: Verein) kind institutional {
+    label de official "das Vereinsvermögen fällt an den Fiskus (§ 45 Abs. 3) — ohne Land, für die Prüfung des § 47";
+    label en unofficial "the assets pass to the treasury (§ 45 (3)) — without the Land, for the test of § 47";
+}
+pub relation vorschriften_ueber_fiskalerbschaft_anwendbar(v: Verein) kind institutional {
+    label de official "fällt das Vereinsvermögen an den Fiskus, so finden die Vorschriften über eine dem Fiskus als gesetzlichem Erben anfallende Erbschaft entsprechende Anwendung (§ 46 Satz 1)";
+    label en unofficial "where the assets pass to the treasury, the provisions on an estate devolving on the treasury as statutory heir apply (§ 46 sentence 1)";
+}
+pub relation liquidation_erforderlich(v: Verein) kind institutional {
+    label de official "fällt das Vereinsvermögen nicht an den Fiskus, so muss eine Liquidation stattfinden, sofern nicht das Insolvenzverfahren eröffnet ist (§ 47)";
+    label en unofficial "where the assets do not pass to the treasury, liquidation must take place unless insolvency proceedings are opened (§ 47)";
+}
+pub relation liquidator(v: Verein, p: Person) kind institutional {
+    label de official "Liquidator des Vereins (§ 48)";
+    label en unofficial "liquidator of the association (§ 48)";
+}
+pub relation andere_liquidatoren_bestellt(v: Verein, p: Person) kind empirical {
+    label de official "zu Liquidatoren sind andere Personen bestellt worden (§ 48 Abs. 1 Satz 2)";
+    label en unofficial "other persons have been appointed liquidators (§ 48 (1) sentence 2)";
+}
+pub relation liquidatoren_nur_gemeinschaftlich(v: Verein) kind institutional {
+    label de official "sind mehrere Liquidatoren vorhanden, so sind sie nur gemeinschaftlich zur Vertretung befugt und können Beschlüsse nur einstimmig fassen, sofern nicht ein anderes bestimmt ist (§ 48 Abs. 3)";
+    label en unofficial "where there are several liquidators they may represent only jointly and pass resolutions only unanimously (§ 48 (3))";
+}
+pub relation aufgaben_der_liquidatoren(v: Verein) kind institutional {
+    label de official "die Liquidatoren haben die laufenden Geschäfte zu beendigen, die Forderungen einzuziehen, das übrige Vermögen in Geld umzusetzen, die Gläubiger zu befriedigen und den Überschuss den Anfallberechtigten auszuantworten (§ 49 Abs. 1 Satz 1)";
+    label en unofficial "the liquidators must wind up current business, collect claims, convert the remaining assets into money, satisfy creditors and deliver the surplus (§ 49 (1))";
+}
+pub relation verein_gilt_als_fortbestehend(v: Verein) kind institutional {
+    label de official "der Verein gilt bis zur Beendigung der Liquidation als fortbestehend, soweit der Zweck der Liquidation es erfordert (§ 49 Abs. 2)";
+    label en unofficial "the association is deemed to continue until the liquidation is completed, in so far as its purpose requires (§ 49 (2))";
+}
+
+@source(BGB_P45)
+rule AnfallNachSatzung(v: Verein, p: Person) strict {
+    label de official "Mit der Auflösung des Vereins oder der Entziehung der Rechtsfähigkeit fällt das Vermögen an die in der Satzung bestimmten Personen (§ 45 Abs. 1)";
+    label en unofficial "On dissolution or deprivation of capacity the assets pass to the persons determined by the articles (§ 45 (1))";
+    when verein_aufgeloest(v) and satzung_bestimmt_anfallberechtigten(v, p);
+    then anfallberechtigter(v, p);
+}
+
+@source(BGB_P45)
+rule AnfallNachBeschluss(b: Beschluss, v: Verein, p: Person) strict {
+    label de official "Durch die Satzung kann vorgeschrieben werden, dass die Anfallberechtigten durch Beschluss der Mitgliederversammlung oder eines anderen Vereinsorgans bestimmt werden (§ 45 Abs. 2 Satz 1)";
+    label en unofficial "The articles may provide that the persons entitled are determined by resolution (§ 45 (2))";
+    when verein_aufgeloest(v) and beschluss_bestimmt_anfallberechtigten(b, v, p) and beschluss_angenommen(b);
+    then anfallberechtigter(v, p);
+}
+
+@source(BGB_P45)
+rule AnfallAnDieMitgliederZuGleichenTeilen(v: Verein, p: Person) strict {
+    label de official "Fehlt es an einer Bestimmung der Anfallberechtigten, so fällt das Vermögen, wenn der Verein nach der Satzung ausschließlich den Interessen seiner Mitglieder diente, an die zur Zeit der Auflösung oder der Entziehung der Rechtsfähigkeit vorhandenen Mitglieder zu gleichen Teilen (§ 45 Abs. 3)";
+    label en unofficial "Absent a determination, the assets pass in equal parts to the members existing at the time of dissolution, where the association served only their interests (§ 45 (3))";
+    when verein_aufgeloest(v)
+        and keine_bestimmung_der_anfallberechtigten(v)
+        and diente_ausschliesslich_den_interessen_der_mitglieder(v)
+        and vereinsmitglied(v, p);
+    then anteil_am_vereinsvermoegen(v, p, 1, (count distinct q: Person where vereinsmitglied(v, q)));
+}
+
+@source(BGB_P45)
+rule AnfallAnDenFiskus(v: Verein, land: Ort) strict {
+    label de official "Fehlt es an einer Bestimmung der Anfallberechtigten und diente der Verein nicht ausschließlich den Interessen seiner Mitglieder, so fällt das Vermögen an den Fiskus des Landes, in dessen Gebiet der Verein seinen Sitz hatte (§ 45 Abs. 3)";
+    label en unofficial "Absent a determination and where the association did not serve only its members' interests, the assets pass to the Land's treasury (§ 45 (3))";
+    when verein_aufgeloest(v)
+        and keine_bestimmung_der_anfallberechtigten(v)
+        and not diente_ausschliesslich_den_interessen_der_mitglieder(v)
+        and sitz_in_land(v, land);
+    then anfall_an_den_fiskus(v, land);
+}
+
+@source(BGB_P45)
+rule VermoegenFaelltAnDenFiskus(v: Verein, land: Ort) strict {
+    label de official "Der Anfall an den Fiskus des Landes ist der Anfall an den Fiskus im Sinne des § 47 (§ 45 Abs. 3)";
+    label en unofficial "Passing to the Land's treasury is the passing to the treasury within the meaning of § 47 (§ 45 (3))";
+    when anfall_an_den_fiskus(v, land);
+    then vermoegen_faellt_an_den_fiskus(v);
+}
+
+@source(BGB_P46)
+rule FiskalerbschaftEntsprechend(v: Verein, land: Ort) strict {
+    label de official "Fällt das Vereinsvermögen an den Fiskus, so finden die Vorschriften über eine dem Fiskus als gesetzlichem Erben anfallende Erbschaft entsprechende Anwendung; der Fiskus hat das Vermögen tunlichst in einer den Zwecken des Vereins entsprechenden Weise zu verwenden (§ 46)";
+    label en unofficial "Where the assets pass to the treasury, the provisions on an estate devolving on it as statutory heir apply; it shall use the assets in accordance with the association's purposes (§ 46)";
+    when anfall_an_den_fiskus(v, land);
+    then vorschriften_ueber_fiskalerbschaft_anwendbar(v);
+}
+
+@source(BGB_P47)
+rule LiquidationFindetStatt(v: Verein) strict {
+    label de official "Fällt das Vereinsvermögen nicht an den Fiskus, so muss eine Liquidation stattfinden, sofern nicht über das Vermögen des Vereins das Insolvenzverfahren eröffnet ist (§ 47)";
+    label en unofficial "Where the assets do not pass to the treasury, liquidation must take place unless insolvency proceedings are opened (§ 47)";
+    when verein_aufgeloest(v)
+        and not_known(vermoegen_faellt_an_den_fiskus(v))
+        and not insolvenzverfahren_eroeffnet(v);
+    then liquidation_erforderlich(v);
+}
+
+@source(BGB_P48)
+rule LiquidationDurchDenVorstand(v: Verein, p: Person) strict {
+    label de official "Die Liquidation erfolgt durch den Vorstand; die Liquidatoren haben die rechtliche Stellung des Vorstands, soweit sich nicht aus dem Zwecke der Liquidation ein anderes ergibt (§ 48 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "The liquidation is carried out by the board; liquidators have the legal position of the board (§ 48 (1), (2))";
+    when liquidation_erforderlich(v) and vorstandsmitglied(v, p) and not andere_liquidatoren_bestellt(v, p);
+    then liquidator(v, p);
+}
+
+@source(BGB_P48)
+rule AndereLiquidatoren(v: Verein, p: Person) strict {
+    label de official "Zu Liquidatoren können auch andere Personen bestellt werden; für die Bestellung sind die für die Bestellung des Vorstands geltenden Vorschriften maßgebend (§ 48 Abs. 1 Satz 2, 3)";
+    label en unofficial "Other persons may be appointed liquidators under the rules on appointing the board (§ 48 (1))";
+    when liquidation_erforderlich(v) and andere_liquidatoren_bestellt(v, p);
+    then liquidator(v, p);
+}
+
+@source(BGB_P48)
+rule MehrereLiquidatorenNurGemeinschaftlich(v: Verein) strict {
+    label de official "Sind mehrere Liquidatoren vorhanden, so sind sie nur gemeinschaftlich zur Vertretung befugt und können Beschlüsse nur einstimmig fassen, sofern nicht ein anderes bestimmt ist (§ 48 Abs. 3)";
+    label en unofficial "Several liquidators may represent only jointly and pass resolutions only unanimously (§ 48 (3))";
+    when liquidation_erforderlich(v)
+        and (count distinct p: Person where liquidator(v, p)) > 1;
+    then liquidatoren_nur_gemeinschaftlich(v);
+}
+
+@source(BGB_P49)
+rule AufgabenDerLiquidatoren(v: Verein) strict {
+    label de official "Die Liquidatoren haben die laufenden Geschäfte zu beendigen, die Forderungen einzuziehen, das übrige Vermögen in Geld umzusetzen, die Gläubiger zu befriedigen und den Überschuss den Anfallberechtigten auszuantworten (§ 49 Abs. 1 Satz 1)";
+    label en unofficial "The liquidators wind up current business, collect claims, convert assets into money, satisfy creditors and deliver the surplus (§ 49 (1))";
+    when liquidation_erforderlich(v);
+    then aufgaben_der_liquidatoren(v);
+}
+
+@source(BGB_P49)
+rule VereinGiltAlsFortbestehend(v: Verein) strict {
+    label de official "Der Verein gilt bis zur Beendigung der Liquidation als fortbestehend, soweit der Zweck der Liquidation es erfordert (§ 49 Abs. 2)";
+    label en unofficial "The association is deemed to continue until the liquidation is completed, in so far as its purpose requires (§ 49 (2))";
+    when liquidation_erforderlich(v);
+    then verein_gilt_als_fortbestehend(v);
+}
+
+// §§ 50–52 Bekanntmachung, Sperrjahr, Sicherung.
+pub relation einrueckung_der_bekanntmachung_am(v: Verein, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der (ersten) Einrückung der öffentlichen Bekanntmachung der Auflösung (§ 50 Abs. 1 Satz 4)";
+    label en unofficial "day of the (first) insertion of the public notice of dissolution (§ 50 (1) sentence 4)";
+}
+pub relation bekanntmachungsfrist(v: Verein, f: Frist) kind empirical {
+    key(v);
+    label de official "Frist der zwei Tage, mit deren Ablauf die Bekanntmachung als bewirkt gilt (§ 50 Abs. 1 Satz 4)";
+    label en unofficial "the two-day period on whose expiry the notice is deemed effected (§ 50 (1) sentence 4)";
+}
+pub relation bekanntmachung_bewirkt_am(v: Verein, tag: Date) kind institutional {
+    key(v);
+    label de official "Tag, mit dessen Ablauf die Bekanntmachung als bewirkt gilt (§ 50 Abs. 1 Satz 4: Ablauf des zweiten Tages nach der Einrückung)";
+    label en unofficial "day at whose end the notice is deemed effected (§ 50 (1) sentence 4)";
+}
+// KETTE ZWEIER FRISTEN. Das Ende der Frist des § 50 Abs. 1 Satz 4 ist der
+// Anfang der Frist des § 51. Beide laufen über dieselben Prädikate von
+// `de.bgb.fristen`, und eine Regel, die aus `frist_ende_kalender` wieder
+// `frist_dauer_kalender` speist, macht das Programm unstratifizierbar
+// (§110/§103). Deshalb nimmt § 51 den Tag der bewirkten Bekanntmachung als
+// ANGABE DES FALLS; die Regel des § 50 rechnet ihn unabhängig aus und beide
+// Antworten stehen nebeneinander (Ledger D-03-04).
+pub relation bekanntmachung_als_bewirkt_angegeben(v: Verein, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, mit dem die Bekanntmachung der Auflösung als bewirkt gilt (§ 50 Abs. 1 Satz 4) — Angabe des Falls für den Lauf des Sperrjahres (§ 51)";
+    label en unofficial "day on which the notice of dissolution is deemed effected (§ 50 (1) sentence 4) — case input for the blocking year (§ 51)";
+}
+pub relation sperrjahr(v: Verein, f: Frist) kind empirical {
+    key(v);
+    label de official "Jahresfrist des § 51, vor deren Ablauf das Vermögen den Anfallberechtigten nicht ausgeantwortet werden darf";
+    label en unofficial "the one-year period of § 51 before whose expiry the assets may not be delivered";
+}
+pub relation ausantwortung_zulaessig_ab(v: Verein, tag: Date) kind institutional {
+    key(v);
+    label de official "Tag, von dem an das Vermögen den Anfallberechtigten ausgeantwortet werden darf (§ 51)";
+    label en unofficial "day from which the assets may be delivered to those entitled (§ 51)";
+}
+pub relation bekannter_glaeubiger_meldet_sich_nicht(v: Verein, g: Person) kind empirical {
+    label de official "ein bekannter Gläubiger meldet sich nicht (§ 52 Abs. 1)";
+    label en unofficial "a known creditor does not come forward (§ 52 (1))";
+}
+pub relation berechtigung_zur_hinterlegung(v: Verein, g: Person) kind empirical {
+    label de official "die Berechtigung zur Hinterlegung ist vorhanden (§ 52 Abs. 1)";
+    label en unofficial "the right to deposit exists (§ 52 (1))";
+}
+pub relation hinterlegung_geboten(v: Verein, g: Person) kind institutional {
+    label de official "der geschuldete Betrag ist für den Gläubiger zu hinterlegen (§ 52 Abs. 1)";
+    label en unofficial "the amount owed is to be deposited for the creditor (§ 52 (1))";
+}
+pub relation verbindlichkeit_streitig_oder_nicht_ausfuehrbar(v: Verein, g: Person) kind empirical {
+    label de official "die Berichtigung einer Verbindlichkeit ist zur Zeit nicht ausführbar oder eine Verbindlichkeit ist streitig (§ 52 Abs. 2)";
+    label en unofficial "satisfying a liability is not currently possible or the liability is disputed (§ 52 (2))";
+}
+pub relation ausantwortung_nur_gegen_sicherheit(v: Verein, g: Person) kind institutional {
+    label de official "das Vermögen darf den Anfallberechtigten nur ausgeantwortet werden, wenn dem Gläubiger Sicherheit geleistet ist (§ 52 Abs. 2)";
+    label en unofficial "the assets may be delivered only if security has been provided to the creditor (§ 52 (2))";
+}
+pub relation liquidator_verletzt_pflichten(v: Verein, p: Person) kind empirical {
+    label de official "der Liquidator verletzt die ihm nach § 42 Abs. 2 und den §§ 50, 51, 52 obliegenden Verpflichtungen oder antwortet vor der Befriedigung der Gläubiger Vermögen aus (§ 53)";
+    label en unofficial "the liquidator breaches the duties under § 42 (2) and §§ 50–52 or delivers assets before satisfying creditors (§ 53)";
+}
+pub relation verschulden_des_liquidators(v: Verein, p: Person) kind empirical {
+    label de official "dem Liquidator fällt ein Verschulden zur Last (§ 53) — festgestellte Tatsache";
+    label en unofficial "the liquidator is at fault (§ 53) — established fact";
+}
+
+@source(BGB_P50)
+rule BekanntmachungsfristEreignis(v: Verein, f: Frist, d: Date) strict {
+    label de official "Die Bekanntmachung gilt mit dem Ablauf des zweiten Tages nach der Einrückung oder der ersten Einrückung als bewirkt (§ 50 Abs. 1 Satz 4) — Ereignis ist die Einrückung";
+    label en unofficial "The notice is deemed effected at the end of the second day after the insertion (§ 50 (1) sentence 4)";
+    when bekanntmachungsfrist(v, f) and einrueckung_der_bekanntmachung_am(v, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P50)
+rule BekanntmachungsfristDauer(v: Verein, f: Frist, d: Date) strict {
+    label de official "Die Frist des § 50 Abs. 1 Satz 4 beträgt zwei Tage";
+    label en unofficial "The period of § 50 (1) sentence 4 is two days";
+    when bekanntmachungsfrist(v, f) and einrueckung_der_bekanntmachung_am(v, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 2 calendar_day);
+}
+
+@source(BGB_P50)
+rule BekanntmachungBewirkt(v: Verein, f: Frist, e: Date) strict {
+    label de official "Mit dem Ablauf des zweiten Tages nach der Einrückung gilt die Bekanntmachung als bewirkt (§ 50 Abs. 1 Satz 4) — eine Willenserklärung ist hier nicht abzugeben, § 193 greift nicht";
+    label en unofficial "The notice is deemed effected at the end of the second day after insertion (§ 50 (1) sentence 4); § 193 does not apply";
+    when bekanntmachungsfrist(v, f) and de.bgb.fristen::frist_ende_kalender(f, e);
+    then bekanntmachung_bewirkt_am(v, e);
+}
+
+@source(BGB_P51)
+rule SperrjahrEreignis(v: Verein, f: Frist, d: Date) strict {
+    label de official "Das Vermögen darf den Anfallberechtigten nicht vor dem Ablauf eines Jahres nach der Bekanntmachung der Auflösung ausgeantwortet werden (§ 51) — Ereignis ist die bewirkte Bekanntmachung";
+    label en unofficial "The assets may not be delivered before one year after the notice of dissolution (§ 51)";
+    when sperrjahr(v, f) and bekanntmachung_als_bewirkt_angegeben(v, d);
+    then de.bgb.fristen::frist_ereignis(f, d);
+}
+
+@source(BGB_P51)
+rule SperrjahrDauer(v: Verein, f: Frist, d: Date) strict {
+    label de official "Die Sperrfrist des § 51 beträgt ein Jahr";
+    label en unofficial "The blocking period of § 51 is one year";
+    when sperrjahr(v, f) and bekanntmachung_als_bewirkt_angegeben(v, d);
+    then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+}
+
+@source(BGB_P51)
+rule AusantwortungErstNachDemSperrjahr(v: Verein, f: Frist, e: Date) strict {
+    label de official "Das Vermögen darf erst nach dem Ablauf des Sperrjahres ausgeantwortet werden (§ 51)";
+    label en unofficial "The assets may be delivered only after the blocking year has expired (§ 51)";
+    when sperrjahr(v, f) and de.bgb.fristen::frist_ende_kalender(f, e);
+    then ausantwortung_zulaessig_ab(v, add_calendar_period(e, 1 calendar_day));
+}
+
+@source(BGB_P52)
+rule HinterlegungFuerNichtGemeldetenGlaeubiger(v: Verein, g: Person) strict {
+    label de official "Meldet sich ein bekannter Gläubiger nicht, so ist der geschuldete Betrag, wenn die Berechtigung zur Hinterlegung vorhanden ist, für den Gläubiger zu hinterlegen (§ 52 Abs. 1)";
+    label en unofficial "If a known creditor does not come forward, the amount owed is to be deposited for them where a right to deposit exists (§ 52 (1))";
+    when bekannter_glaeubiger_meldet_sich_nicht(v, g) and berechtigung_zur_hinterlegung(v, g);
+    then hinterlegung_geboten(v, g);
+}
+
+@source(BGB_P52)
+rule SicherheitBeiStreitigerVerbindlichkeit(v: Verein, g: Person) strict {
+    label de official "Ist die Berichtigung einer Verbindlichkeit zur Zeit nicht ausführbar oder ist eine Verbindlichkeit streitig, so darf das Vermögen den Anfallberechtigten nur ausgeantwortet werden, wenn dem Gläubiger Sicherheit geleistet ist (§ 52 Abs. 2)";
+    label en unofficial "Where a liability cannot be satisfied or is disputed, the assets may be delivered only if security has been provided (§ 52 (2))";
+    when verbindlichkeit_streitig_oder_nicht_ausfuehrbar(v, g);
+    then ausantwortung_nur_gegen_sicherheit(v, g);
+}
+
+@source(BGB_P53)
+rule SchadensersatzpflichtDerLiquidatoren(v: Verein, p: Person) strict {
+    label de official "Liquidatoren, welche die ihnen nach dem § 42 Abs. 2 und den §§ 50, 51 und 52 obliegenden Verpflichtungen verletzen oder vor der Befriedigung der Gläubiger Vermögen den Anfallberechtigten ausantworten, sind, wenn ihnen ein Verschulden zur Last fällt, den Gläubigern für den daraus entstehenden Schaden verantwortlich; sie haften als Gesamtschuldner (§ 53)";
+    label en unofficial "Liquidators who breach their duties or deliver assets before satisfying creditors are jointly and severally liable if at fault (§ 53)";
+    when liquidator(v, p) and liquidator_verletzt_pflichten(v, p) and verschulden_des_liquidators(v, p);
+    then haftung_als_gesamtschuldner(v, p);
+}
+
+// § 54 Vereine ohne Rechtspersönlichkeit.
+pub relation ohne_rechtspersoenlichkeit(v: Verein) kind empirical {
+    label de official "der Verein hat keine Rechtspersönlichkeit erlangt (§ 54 Abs. 1)";
+    label en unofficial "the association has not acquired legal personality (§ 54 (1))";
+}
+pub relation handelnder_im_namen_des_vereins(v: Verein, p: Person) kind empirical {
+    label de official "im Namen eines Vereins ohne Rechtspersönlichkeit ist einem Dritten gegenüber ein Rechtsgeschäft vorgenommen worden; die handelnde Person (§ 54 Abs. 2)";
+    label en unofficial "a transaction was effected in the name of an association without legal personality; the person acting (§ 54 (2))";
+}
+pub relation vorschriften_der_paragraphen_24_bis_53_entsprechend(v: Verein) kind institutional {
+    label de official "für nicht wirtschaftliche Vereine ohne Rechtspersönlichkeit sind die Vorschriften der §§ 24 bis 53 entsprechend anzuwenden (§ 54 Abs. 1 Satz 1)";
+    label en unofficial "§§ 24 to 53 apply mutatis mutandis to non-commercial associations without legal personality (§ 54 (1))";
+}
+pub relation vorschriften_ueber_die_gesellschaft_entsprechend(v: Verein) kind institutional {
+    label de official "für wirtschaftliche Vereine ohne Rechtspersönlichkeit sind die Vorschriften über die Gesellschaft entsprechend anzuwenden (§ 54 Abs. 1 Satz 2)";
+    label en unofficial "the provisions on partnership apply mutatis mutandis to commercial associations without legal personality (§ 54 (1) sentence 2)";
+}
+pub relation handelndenhaftung(v: Verein, p: Person) kind institutional {
+    label de official "aus einem Rechtsgeschäft, das im Namen eines Vereins ohne Rechtspersönlichkeit einem Dritten gegenüber vorgenommen wird, haftet der Handelnde persönlich; handeln mehrere, haften sie als Gesamtschuldner (§ 54 Abs. 2)";
+    label en unofficial "the person acting in the name of an association without legal personality is personally liable; several are jointly and severally liable (§ 54 (2))";
+}
+
+@source(BGB_P54)
+rule NichtwirtschaftlicherVereinOhneRechtspersoenlichkeit(v: Verein) strict {
+    label de official "Für Vereine, deren Zweck nicht auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist und die nicht durch Eintragung in das Vereinsregister Rechtspersönlichkeit erlangt haben, sind die Vorschriften der §§ 24 bis 53 entsprechend anzuwenden (§ 54 Abs. 1 Satz 1)";
+    label en unofficial "§§ 24 to 53 apply mutatis mutandis to non-commercial associations without legal personality (§ 54 (1))";
+    when ohne_rechtspersoenlichkeit(v) and verein_zweck(v, NichtWirtschaftlich);
+    then vorschriften_der_paragraphen_24_bis_53_entsprechend(v);
+}
+
+@source(BGB_P54)
+rule WirtschaftlicherVereinOhneRechtspersoenlichkeit(v: Verein) strict {
+    label de official "Für Vereine, deren Zweck auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist und die nicht durch staatliche Verleihung Rechtspersönlichkeit erlangt haben, sind die Vorschriften über die Gesellschaft entsprechend anzuwenden (§ 54 Abs. 1 Satz 2)";
+    label en unofficial "The provisions on partnership apply to commercial associations without legal personality (§ 54 (1) sentence 2)";
+    when ohne_rechtspersoenlichkeit(v) and verein_zweck(v, WirtschaftlicherGeschaeftsbetrieb);
+    then vorschriften_ueber_die_gesellschaft_entsprechend(v);
+}
+
+@source(BGB_P54)
+rule PersoenlicheHaftungDesHandelnden(v: Verein, p: Person) strict {
+    label de official "Aus einem Rechtsgeschäft, das im Namen eines Vereins ohne Rechtspersönlichkeit einem Dritten gegenüber vorgenommen wird, haftet der Handelnde persönlich; handeln mehrere, haften sie als Gesamtschuldner (§ 54 Abs. 2)";
+    label en unofficial "The person acting in the name of an association without legal personality is personally liable (§ 54 (2))";
+    when ohne_rechtspersoenlichkeit(v) and handelnder_im_namen_des_vereins(v, p);
+    then handelndenhaftung(v, p);
+}

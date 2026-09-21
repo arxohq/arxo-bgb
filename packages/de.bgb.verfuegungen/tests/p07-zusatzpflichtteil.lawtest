@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2305: the daughter has a statutory share of one half.  A 10,000 € share
+// left to her falls 15,000 € short of its half (25,000 €).
+test "§ 2305: Zusatzpflichtteil bei zu kleinem hinterlassenen Erbteil" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+        assert "f1": de.bgb.erbfolge::erblasser(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:D")) { origin case_input; }
+        assert "f2": de.bgb.erbfolge::erbfall_am(entity_ref("urn:de:bgb:pilot:v07:E"), @2026-03-01) { origin case_input; }
+        assert "f3": de.bgb.erbfolge::familie(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:F")) { origin case_input; }
+        assert "f4": de.bgb.erbfolge::ehe_beim_erbfall(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:EHE")) { origin case_input; }
+        assert "f5": de.bgb.ehe::ehegatten(entity_ref("urn:de:bgb:pilot:v07:EHE"), entity_ref("urn:de:bgb:pilot:v07:D"), entity_ref("urn:de:bgb:pilot:v07:S")) { origin case_input; }
+        assert "f6": de.bgb.erbfolge::lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:S")) { origin case_input; }
+        assert "f7": de.bgb.ehe::kein_ehevertrag(entity_ref("urn:de:bgb:pilot:v07:EHE")) { origin case_input; }
+        assert "f8": de.bgb.erbfolge::abstammung(entity_ref("urn:de:bgb:pilot:v07:F"), entity_ref("urn:de:bgb:pilot:v07:D"), entity_ref("urn:de:bgb:pilot:v07:T")) { origin case_input; }
+        assert "f9": de.bgb.erbfolge::lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:T")) { origin case_input; }
+        assert "f10": nachlasswert(entity_ref("urn:de:bgb:pilot:v07:E"), 100000.00 EUR) { origin case_input; }
+        assert "f11": als_erbe_hinterlassener_pflichtteilsberechtigter(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:T")) { origin case_input; }
+        assert "f12": hinterlassener_erbteil_wert(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:T"), 10000.00 EUR) { origin case_input; }
+    }
+    evaluate truth(zusatzpflichtteil(entity_ref("urn:de:bgb:pilot:v07:E"), entity_ref("urn:de:bgb:pilot:v07:T"), 15000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 651j: die Ansprüche verjähren in zwei Jahren ab dem vertraglich geschuldeten Reiseende — Reiseende am 30. Juni 2026, Ablauf mit dem 30. Juni 2028.
+
+test "urn:query:bgb-dw-t132-651j-verjaehrung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": mindestens_zwei_arten_von_reiseleistungen_651a(entity_ref("urn:de:bgb:dw:t132")) { origin case_input; }
+        assert "f2": kein_ausschlussfall_651a_abs4(entity_ref("urn:de:bgb:dw:t132")) { origin case_input; }
+        assert "f3": kein_ausschlussfall_651a_abs5(entity_ref("urn:de:bgb:dw:t132")) { origin case_input; }
+        assert "f4": reiseende_geschuldet_am(entity_ref("urn:de:bgb:dw:t132"), @2026-06-30) { origin case_input; }
+    }
+    evaluate truth(verjaehrungsfrist_ende_651j(entity_ref("urn:de:bgb:dw:t132"), @2028-06-30));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verjaehrungsfrist_ende_651j(entity_ref("urn:de:bgb:dw:t132"), @2028-07-01));
+    expect truth_status == NEITHER;
+}

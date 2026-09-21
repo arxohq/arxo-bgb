@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 897 Halbsatz 2: ergibt sich aus einem Rechtsverhältnis, dass ein anderer die Kosten trägt, so trägt dieser sie. Kanarei zu gb16: gleiche Berichtigung, zusätzlich "f4" kippt den Kostenträger.
+test "§ 897: Kosten nach abweichendem Rechtsverhältnis trägt ein anderer" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": wirkliche_rechtslage_weicht_ab(entity_ref("urn:de:bgb:be:gb17:recht")) { origin adjudicated; }
+        assert "f2": recht_nicht_oder_nicht_richtig_eingetragen_fuer(entity_ref("urn:de:bgb:be:gb17:recht"), entity_ref("urn:de:bgb:be:gb17:berechtigter")) { origin case_input; }
+        assert "f3": von_der_berichtigung_betroffen(entity_ref("urn:de:bgb:be:gb17:recht"), entity_ref("urn:de:bgb:be:gb17:betroffener")) { origin case_input; }
+        assert "f4": abweichendes_rechtsverhaeltnis_bestimmt_kostentraeger(entity_ref("urn:de:bgb:be:gb17:recht"), entity_ref("urn:de:bgb:be:gb17:betroffener")) { origin case_input; }
+    }
+    evaluate truth(kostentragung_der_berichtigung(entity_ref("urn:de:bgb:be:gb17:recht"), entity_ref("urn:de:bgb:be:gb17:betroffener")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(kostentragung_der_berichtigung(entity_ref("urn:de:bgb:be:gb17:recht"), entity_ref("urn:de:bgb:be:gb17:berechtigter")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

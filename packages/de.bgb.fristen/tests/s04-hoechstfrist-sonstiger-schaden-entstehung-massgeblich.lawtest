@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 199 Abs. 3: Entstehung 1. Januar 2010 (+10 = 1. Januar 2020), Begehung 1. Januar 2005 (+30 = 1. Januar 2035) — die früher endende Frist (Entstehung) ist maßgeblich.
+test "§ 199 Abs. 3: die Zehn-Jahres-Frist ab Entstehung endet früher und ist maßgeblich" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "k": hoechstfrist_kategorie(entity_ref("urn:de:bgb:fristen:pilot:s04"), SonstigerSchadensersatz) { origin case_input; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:s04"), @2010-01-01) { origin case_input; }
+        assert "h": begehung_pflichtverletzung_oder_ereignis_am(entity_ref("urn:de:bgb:fristen:pilot:s04"), @2005-01-01) { origin case_input; }
+    }
+    evaluate truth(hoechstfrist_kandidat_entstehung(entity_ref("urn:de:bgb:fristen:pilot:s04"), @2020-01-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(hoechstfrist_kandidat_begehung(entity_ref("urn:de:bgb:fristen:pilot:s04"), @2035-01-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(hoechstfrist_ende(entity_ref("urn:de:bgb:fristen:pilot:s04"), @2020-01-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

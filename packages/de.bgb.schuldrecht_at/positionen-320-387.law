@@ -1,0 +1,42 @@
+@source(BGB_P320)
+rule PositionEinredeNichtErfuellterVertrag320(v: Vertrag, teil: Person, beginn: Date) defeasible {
+    label de official "Der Vertragsteil darf die Gegenleistung bis zur Bewirkung der eigenen Leistung verweigern (§ 320)";
+    label en unofficial "A party may withhold counter-performance until the other performance is rendered (§ 320)";
+    when vertragspartei(v, teil);
+    when vertrag_geschlossen_am(v, beginn);
+    when einrede_des_nicht_erfuellten_vertrags(v, teil);
+    then liberty EinredeNichtErfuellterVertrag320 {
+        holder teil;
+        against v;
+        action einrede_des_nicht_erfuellten_vertrags(v, teil);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P323)
+rule PositionRuecktritt323(v: Vertrag, teil: Person, beginn: Date) defeasible {
+    label de official "Der Gläubiger darf bei nicht vertragsgemäßer Leistung zurücktreten (§ 323)";
+    label en unofficial "The creditor may withdraw when performance is not rendered as owed (§ 323)";
+    when ruecktrittsrecht(v, teil);
+    when vertrag_geschlossen_am(v, beginn);
+    then liberty Ruecktritt323 {
+        holder teil;
+        against v;
+        action ruecktritt_erklaert(v, teil, beginn);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P387)
+rule PositionAufrechnung387(a: Anspruch, gegenforderung: Anspruch) defeasible {
+    label de official "Der Anspruchsinhaber darf mit der Gegenforderung aufrechnen (§ 387)";
+    label en unofficial "The claim holder may set off against the counterclaim (§ 387)";
+    when aufrechnungslage(a, gegenforderung);
+    then power Aufrechnung387 {
+        holder a;
+        exercise aufrechnung_erklaert(a, gegenforderung);
+        valid_when aufrechnungslage(a, gegenforderung);
+        effect aufrechnung_erklaert(a, gegenforderung);
+        window [2026-01-01, infinity);
+    };
+}

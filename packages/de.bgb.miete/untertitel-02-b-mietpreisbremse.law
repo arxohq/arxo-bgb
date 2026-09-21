@@ -1,0 +1,256 @@
+// --- Untertitel 2 Unterkapitel 1a (§§ 556d–556g): Miethöhe bei Mietbeginn in Gebieten mit
+// --- angespannten Wohnungsmärkten
+//
+// DAS GEBIET IST KEIN BUNDESRECHT. § 556d Abs. 2 Satz 1 ermächtigt die
+// LANDESREGIERUNGEN, Gebiete mit angespannten Wohnungsmärkten durch
+// Rechtsverordnung zu bestimmen. Das Paket erfindet weder eine Liste von
+// Gemeinden noch eine Geltungsdauer: der Fall gibt an, dass die Wohnung in
+// einem so bestimmten Gebiet liegt und die Verordnung im Zeitpunkt des
+// Vertragsschlusses galt (`gebiet_mit_angespanntem_wohnungsmarkt`,
+// `landesverordnung_gilt_am`). Ledger D-06-02. Ebenso wenig erfindet es die
+// ortsübliche Vergleichsmiete: sie ist das Ergebnis der Ermittlung nach § 558
+// Abs. 2 und kommt als Betrag herein (§ 558a nennt die Begründungsmittel).
+//
+// DIE EINZIGE ZAHL DES UNTERKAPITELS IST DIE ZEHN. § 556d Abs. 1 lässt die
+// Miete die ortsübliche Vergleichsmiete um höchstens 10 Prozent übersteigen.
+// Die zulässige Miete entsteht durch EINE Division je Mietverhältnis:
+// `div_round(Vergleichsmiete × 110, 100 × 1.0, 2, "HALF_UP")` (Ledger D-06-04).
+// Alle weiteren Zahlen des Unterkapitels stehen ebenfalls im Text: der
+// 1. Oktober 2014 (§ 556f Satz 1), die drei Jahre der Modernisierung (§ 556e
+// Abs. 2 Satz 1), das letzte Jahr vor Beendigung (§ 556e Abs. 1 Satz 2), die
+// zwei Jahre nach Nachholung der Auskunft (§ 556g Abs. 1a Satz 3) und die
+// 30 Monate der Rüge (§ 556g Abs. 2 Satz 3).
+//
+// DREI AUSNAHMEN ALS SCHICHT. § 556e Abs. 1 (Vormiete), § 556e Abs. 2
+// (Modernisierung) und § 556f (Neubau, umfassende Modernisierung) heben die
+// Grenze des § 556d Abs. 1 nicht auf, sondern setzen eine ANDERE zulässige
+// Miete. Sie sind deshalb eigene Regeln über derselben Größe
+// (`zulaessige_miete`), und die Grundregel des § 556d Abs. 1 ist poraussierbar.
+
+pub relation gebiet_mit_angespanntem_wohnungsmarkt(m: Mietverhaeltnis) kind empirical {
+    label de official "die Wohnung liegt in einem durch Rechtsverordnung der Landesregierung nach § 556d Abs. 2 bestimmten Gebiet mit einem angespannten Wohnungsmarkt — Angabe des Falls mit Gebiet und Zeitraum, keine Bundesnorm";
+    label en unofficial "the dwelling lies in an area with a strained housing market determined by a Land government regulation under § 556d (2) — a statement of the case naming area and period, not federal law";
+}
+pub relation landesverordnung_gilt_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem die Rechtsverordnung nach § 556d Abs. 2 gilt; eine Verordnung muss spätestens mit Ablauf des 31. Dezember 2029 außer Kraft treten (§ 556d Abs. 2 Satz 4)";
+    label en unofficial "day on which the regulation under § 556d (2) is in force; a regulation must cease to be in force at the latest on 31 December 2029 (§ 556d (2) sentence 4)";
+}
+pub relation ortsuebliche_vergleichsmiete(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "die ortsübliche Vergleichsmiete (§ 558 Abs. 2) als monatlicher Betrag — Ergebnis der Ermittlung aus Mietspiegel, Mietdatenbank, Gutachten oder Vergleichswohnungen (§ 558a Abs. 2)";
+    label en unofficial "the local comparative rent (§ 558 (2)) as a monthly amount — the result of ascertainment from a rent index, rent database, expert opinion or comparable dwellings (§ 558a (2))";
+}
+pub relation vereinbarte_miete_bei_mietbeginn(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "die zu Beginn des Mietverhältnisses vereinbarte Miete (§ 556d Abs. 1)";
+    label en unofficial "the rent agreed at the beginning of the lease (§ 556d (1))";
+}
+pub relation vormiete(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "die Miete, die der vorherige Mieter zuletzt schuldete (§ 556e Abs. 1 Satz 1) — ohne Mietminderungen und ohne Erhöhungen des letzten Jahres vor Beendigung (Satz 2)";
+    label en unofficial "the rent last owed by the previous tenant (§ 556e (1) sentence 1) — excluding reductions and increases agreed within the last year before termination (sentence 2)";
+}
+pub relation keine_vormiete(m: Mietverhaeltnis) kind empirical {
+    label de official "es gibt keine Vormiete im Sinne des § 556e Abs. 1 Satz 1 — ausdrückliche Angabe des Falls; das Schweigen des Falls verneint nichts";
+    label en unofficial "there is no previous rent within the meaning of § 556e (1) sentence 1 — express statement of the case; the silence of the case negates nothing";
+}
+pub relation modernisierung_in_den_letzten_drei_jahren(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter hat in den letzten drei Jahren vor Beginn des Mietverhältnisses Modernisierungsmaßnahmen im Sinne des § 555b durchgeführt (§ 556e Abs. 2 Satz 1)";
+    label en unofficial "within the last three years before the beginning of the lease the lessor carried out modernisation measures within the meaning of § 555b (§ 556e (2) sentence 1)";
+}
+pub relation modernisierungszuschlag(m: Mietverhaeltnis, betrag: Money) kind empirical {
+    key(m);
+    label de official "der Betrag, der sich bei einer Mieterhöhung nach § 559 Abs. 1 bis 3a und § 559a Abs. 1 bis 4 ergäbe (§ 556e Abs. 2 Satz 1)";
+    label en unofficial "the amount that would result from an increase under § 559 (1) to (3a) and § 559a (1) to (4) (§ 556e (2) sentence 1)";
+}
+pub relation erstmals_genutzt_und_vermietet_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem die Wohnung erstmals genutzt und vermietet wurde (§ 556f Satz 1)";
+    label en unofficial "day on which the dwelling was first used and let (§ 556f sentence 1)";
+}
+pub relation erste_vermietung_nach_umfassender_modernisierung(m: Mietverhaeltnis) kind empirical {
+    label de official "es handelt sich um die erste Vermietung nach umfassender Modernisierung (§ 556f Satz 2)";
+    label en unofficial "this is the first letting after comprehensive modernisation (§ 556f sentence 2)";
+}
+pub relation auskunft_nach_556g_erteilt(m: Mietverhaeltnis) kind empirical {
+    label de official "der Vermieter hat dem Mieter vor dessen Vertragserklärung unaufgefordert in Textform Auskunft nach § 556g Abs. 1a Satz 1 erteilt";
+    label en unofficial "before the tenant's contractual declaration the lessor gave unsolicited information in text form under § 556g (1a) sentence 1";
+}
+pub relation auskunft_nachgeholt_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Vermieter die Auskunft in der vorgeschriebenen Form nachgeholt hat (§ 556g Abs. 1a Satz 3 und 4)";
+    label en unofficial "day on which the lessor subsequently gave the information in the prescribed form (§ 556g (1a) sentences 3 and 4)";
+}
+pub relation ruege_zugegangen_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag des Zugangs der Rüge des Mieters (§ 556g Abs. 2)";
+    label en unofficial "day on which the tenant's objection reaches the lessor (§ 556g (2))";
+}
+
+pub relation zulaessige_miete(m: Mietverhaeltnis, betrag: Money) kind institutional {
+    key(m);
+    label de official "die zu Beginn des Mietverhältnisses zulässige Miete (§ 556d Abs. 1, § 556e, § 556f)";
+    label en unofficial "the rent admissible at the beginning of the lease (§ 556d (1), § 556e, § 556f)";
+}
+pub relation mietpreisbremse_anwendbar(m: Mietverhaeltnis) kind institutional {
+    label de official "die §§ 556d bis 556g sind auf dieses Mietverhältnis anzuwenden — Wohnraum in einem bestimmten Gebiet, keine Ausnahme des § 556f";
+    label en unofficial "§§ 556d to 556g apply to this lease — residential space in a determined area, no exception under § 556f";
+}
+pub relation mietpreisbremse_nicht_anwendbar(m: Mietverhaeltnis) kind institutional {
+    label de official "§ 556d ist auf diese Wohnung nicht anzuwenden (§ 556f)";
+    label en unofficial "§ 556d does not apply to this dwelling (§ 556f)";
+}
+pub relation zulaessige_miete_ueberschritten(m: Mietverhaeltnis) kind institutional {
+    label de official "die vereinbarte Miete überschreitet die zulässige Miete; insoweit ist die Vereinbarung unwirksam (§ 556g Abs. 1 Satz 1 und 2)";
+    label en unofficial "the agreed rent exceeds the admissible rent; to that extent the agreement is void (§ 556g (1) sentences 1 and 2)";
+}
+pub relation berufung_auf_556e_oder_556f_versagt(m: Mietverhaeltnis) kind institutional {
+    label de official "der Vermieter kann sich nicht auf eine nach § 556e oder § 556f zulässige Miete berufen, weil er die Auskunft nicht erteilt hat (§ 556g Abs. 1a Satz 2)";
+    label en unofficial "the lessor may not rely on a rent admissible under § 556e or § 556f because he did not give the information (§ 556g (1a) sentence 2)";
+}
+pub relation berufung_auf_556e_oder_556f_erst_ab(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "hat der Vermieter die Auskunft nachgeholt, kann er sich erst zwei Jahre nach der Nachholung auf eine nach § 556e oder § 556f zulässige Miete berufen (§ 556g Abs. 1a Satz 3)";
+    label en unofficial "where the lessor has subsequently given the information, he may rely on a rent admissible under § 556e or § 556f only two years after doing so (§ 556g (1a) sentence 3)";
+}
+pub relation ruegefrist_30_monate_ende(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf 30 Monate seit Beginn des Mietverhältnisses verstrichen sind (§ 556g Abs. 2 Satz 3)";
+    label en unofficial "day at whose end 30 months since the beginning of the lease have elapsed (§ 556g (2) sentence 3)";
+}
+pub relation rueckforderung_nur_ab_zugang_der_ruege(m: Mietverhaeltnis) kind institutional {
+    label de official "rügt der Mieter den Verstoß mehr als 30 Monate nach Beginn des Mietverhältnisses, kann er nur die nach Zugang der Rüge fällig gewordene Miete zurückverlangen (§ 556g Abs. 2 Satz 3)";
+    label en unofficial "if the tenant objects more than 30 months after the beginning of the lease, he may reclaim only rent falling due after receipt of the objection (§ 556g (2) sentence 3)";
+}
+
+@source(BGB_P556f)
+rule Ausnahme556fSatz1(m: Mietverhaeltnis, t: Date) strict {
+    label de official "§ 556d ist nicht anzuwenden auf eine Wohnung, die nach dem 1. Oktober 2014 erstmals genutzt und vermietet wird (§ 556f Satz 1)";
+    label en unofficial "§ 556d does not apply to a dwelling first used and let after 1 October 2014 (§ 556f sentence 1)";
+    when erstmals_genutzt_und_vermietet_am(m, t) and t > @2014-10-01;
+    then mietpreisbremse_nicht_anwendbar(m);
+}
+
+@source(BGB_P556f)
+rule Ausnahme556fSatz2(m: Mietverhaeltnis) strict {
+    label de official "Die §§ 556d und 556e sind nicht anzuwenden auf die erste Vermietung nach umfassender Modernisierung (§ 556f Satz 2)";
+    label en unofficial "§§ 556d and 556e do not apply to the first letting after comprehensive modernisation (§ 556f sentence 2)";
+    when erste_vermietung_nach_umfassender_modernisierung(m);
+    then mietpreisbremse_nicht_anwendbar(m);
+}
+
+@source(BGB_P556d)
+rule Anwendungsbereich556dAbs1(m: Mietverhaeltnis, t: Date) defeasible {
+    label de official "Wird ein Mietvertrag über Wohnraum abgeschlossen, der in einem durch Rechtsverordnung nach Absatz 2 bestimmten Gebiet mit einem angespannten Wohnungsmarkt liegt, so gelten die §§ 556d bis 556g (§ 556d Abs. 1)";
+    label en unofficial "Where a residential lease is concluded for space situated in an area with a strained housing market determined by a regulation under subsection (2), §§ 556d to 556g apply (§ 556d (1))";
+    when gegenstandsart(m, Wohnraum) and gebiet_mit_angespanntem_wohnungsmarkt(m)
+     and vertragsschluss_am(m, t) and landesverordnung_gilt_am(m, t)
+     and not_known(mietpreisbremse_nicht_anwendbar(m));
+    then mietpreisbremse_anwendbar(m);
+}
+
+@source(BGB_P556d)
+rule ZulaessigeMiete556dAbs1(m: Mietverhaeltnis, g: Money) defeasible {
+    label de official "Die Miete darf zu Beginn des Mietverhältnisses die ortsübliche Vergleichsmiete (§ 558 Absatz 2) höchstens um 10 Prozent übersteigen (§ 556d Abs. 1) — eine Division je Mietverhältnis, kaufmännisch auf den Cent gerundet";
+    label en unofficial "At the beginning of the lease the rent may exceed the local comparative rent (§ 558 (2)) by no more than 10 per cent (§ 556d (1)) — one division per lease, rounded commercially to the cent";
+    when grenze_556d_abs1(m, g) and not_known(hoehere_zulaessige_miete_nach_556e(m));
+    then zulaessige_miete(m, g);
+}
+
+pub relation grenze_556d_abs1(m: Mietverhaeltnis, betrag: Money) kind institutional {
+    key(m);
+    label de official "die Grenze des § 556d Abs. 1: die ortsübliche Vergleichsmiete zuzüglich 10 Prozent — ein gerechneter Term steht nicht im Guard, sondern in einem eigenen Schluss";
+    label en unofficial "the limit of § 556d (1): the local comparative rent plus 10 per cent — a computed term does not stand in a guard but in a conclusion of its own";
+}
+pub relation hoehere_zulaessige_miete_nach_556e(m: Mietverhaeltnis) kind institutional {
+    label de official "§ 556e setzt für dieses Mietverhältnis eine höhere zulässige Miete als § 556d Abs. 1 (Vormiete oder durchgeführte Modernisierung)";
+    label en unofficial "§ 556e fixes a higher admissible rent for this lease than § 556d (1) (previous rent or modernisation carried out)";
+}
+
+@source(BGB_P556d)
+rule Grenze556dAbs1(m: Mietverhaeltnis, v: Money) defeasible {
+    label de official "Die Grenze des § 556d Abs. 1 ist die ortsübliche Vergleichsmiete zuzüglich 10 Prozent; § 556e vergleicht mit ihr (§ 556e Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "The limit of § 556d (1) is the local comparative rent plus 10 per cent; § 556e compares with it (§ 556e (1) sentence 1, (2) sentence 1)";
+    when mietpreisbremse_anwendbar(m) and ortsuebliche_vergleichsmiete(m, v);
+    then grenze_556d_abs1(m, div_round(v * 110, 100 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P556e)
+rule Vormiete556eAbs1(m: Mietverhaeltnis, vm: Money, g: Money) defeasible {
+    label de official "Ist die Vormiete höher als die nach § 556d Absatz 1 zulässige Miete, so darf eine Miete bis zur Höhe der Vormiete vereinbart werden (§ 556e Abs. 1 Satz 1)";
+    label en unofficial "If the previous rent is higher than the rent admissible under § 556d (1), a rent up to the level of the previous rent may be agreed (§ 556e (1) sentence 1)";
+    when mietpreisbremse_anwendbar(m) and vormiete(m, vm) and grenze_556d_abs1(m, g)
+     and vm > g and auskunft_nach_556g_erteilt(m);
+    then zulaessige_miete(m, vm);
+}
+
+@source(BGB_P556e)
+rule Vormiete556eAbs1Vorrang(m: Mietverhaeltnis, vm: Money, g: Money) defeasible {
+    label de official "Die Vormiete tritt an die Stelle der Grenze des § 556d Abs. 1 (§ 556e Abs. 1 Satz 1)";
+    label en unofficial "The previous rent takes the place of the limit of § 556d (1) (§ 556e (1) sentence 1)";
+    when mietpreisbremse_anwendbar(m) and vormiete(m, vm) and grenze_556d_abs1(m, g)
+     and vm > g and auskunft_nach_556g_erteilt(m);
+    then hoehere_zulaessige_miete_nach_556e(m);
+}
+
+@source(BGB_P556e)
+rule Modernisierung556eAbs2(m: Mietverhaeltnis, g: Money, z: Money) defeasible {
+    label de official "Hat der Vermieter in den letzten drei Jahren vor Beginn des Mietverhältnisses Modernisierungsmaßnahmen im Sinne des § 555b durchgeführt, so darf die nach § 556d Absatz 1 zulässige Miete um den Betrag überschritten werden, der sich bei einer Mieterhöhung nach § 559 Absatz 1 bis 3a und § 559a Absatz 1 bis 4 ergäbe (§ 556e Abs. 2 Satz 1)";
+    label en unofficial "Where within the last three years before the beginning of the lease the lessor carried out modernisation measures under § 555b, the rent admissible under § 556d (1) may be exceeded by the amount that would result from an increase under § 559 (1) to (3a) and § 559a (1) to (4) (§ 556e (2) sentence 1)";
+    when mietpreisbremse_anwendbar(m) and modernisierung_in_den_letzten_drei_jahren(m)
+     and grenze_556d_abs1(m, g) and modernisierungszuschlag(m, z)
+     and auskunft_nach_556g_erteilt(m) and keine_vormiete(m);
+    then zulaessige_miete(m, g + z);
+}
+
+@source(BGB_P556e)
+rule Modernisierung556eAbs2Vorrang(m: Mietverhaeltnis, g: Money, z: Money) defeasible {
+    label de official "Der Modernisierungszuschlag tritt zur Grenze des § 556d Abs. 1 hinzu (§ 556e Abs. 2 Satz 1)";
+    label en unofficial "The modernisation supplement is added to the limit of § 556d (1) (§ 556e (2) sentence 1)";
+    when mietpreisbremse_anwendbar(m) and modernisierung_in_den_letzten_drei_jahren(m)
+     and grenze_556d_abs1(m, g) and modernisierungszuschlag(m, z)
+     and auskunft_nach_556g_erteilt(m) and keine_vormiete(m);
+    then hoehere_zulaessige_miete_nach_556e(m);
+}
+
+@source(BGB_P556g)
+rule Ueberschreitung556gAbs1(m: Mietverhaeltnis, vereinbart: Money, zulaessig: Money) defeasible {
+    label de official "Eine zum Nachteil des Mieters abweichende Vereinbarung über die Miethöhe bei Mietbeginn ist unwirksam, soweit die zulässige Miete überschritten wird (§ 556g Abs. 1 Satz 1 und 2)";
+    label en unofficial "An agreement on the level of rent at the beginning deviating to the tenant's detriment is void in so far as the admissible rent is exceeded (§ 556g (1) sentences 1 and 2)";
+    when vereinbarte_miete_bei_mietbeginn(m, vereinbart) and zulaessige_miete(m, zulaessig)
+     and vereinbart > zulaessig;
+    then zulaessige_miete_ueberschritten(m);
+}
+
+@source(BGB_P556g)
+rule AuskunftFehlt556gAbs1aSatz2(m: Mietverhaeltnis) defeasible {
+    label de official "Soweit der Vermieter die Auskunft nicht erteilt hat, kann er sich nicht auf eine nach § 556e oder § 556f zulässige Miete berufen (§ 556g Abs. 1a Satz 2)";
+    label en unofficial "In so far as the lessor did not give the information, he may not rely on a rent admissible under § 556e or § 556f (§ 556g (1a) sentence 2)";
+    when mietpreisbremse_anwendbar(m) and not auskunft_nach_556g_erteilt(m);
+    then berufung_auf_556e_oder_556f_versagt(m);
+}
+
+@source(BGB_P556g)
+rule AuskunftNachgeholt556gAbs1aSatz3(m: Mietverhaeltnis, n: Date) defeasible {
+    label de official "Hat der Vermieter die Auskunft nicht erteilt und hat er diese in der vorgeschriebenen Form nachgeholt, kann er sich erst zwei Jahre nach Nachholung der Auskunft auf eine nach § 556e oder § 556f zulässige Miete berufen (§ 556g Abs. 1a Satz 3)";
+    label en unofficial "Where the lessor failed to give the information and subsequently gave it in the prescribed form, he may rely on a rent admissible under § 556e or § 556f only two years after doing so (§ 556g (1a) sentence 3)";
+    when berufung_auf_556e_oder_556f_versagt(m) and auskunft_nachgeholt_am(m, n);
+    then berufung_auf_556e_oder_556f_erst_ab(m, add_calendar_period(n, 2 calendar_year));
+}
+
+@source(BGB_P556g)
+rule Ruegefrist556gAbs2(m: Mietverhaeltnis, b: Date) strict {
+    label de official "Rügt der Mieter den Verstoß mehr als 30 Monate nach Beginn des Mietverhältnisses, kann er nur die nach Zugang der Rüge fällig gewordene Miete zurückverlangen (§ 556g Abs. 2 Satz 3) — Monatsschritt nach § 188 Abs. 2";
+    label en unofficial "If the tenant objects more than 30 months after the beginning of the lease, he may reclaim only rent falling due after receipt of the objection (§ 556g (2) sentence 3) — monthly step under § 188 (2)";
+    when mietverhaeltnis_beginn_am(m, b);
+    then ruegefrist_30_monate_ende(m, add_calendar_period(b, 30 calendar_month));
+}
+
+@source(BGB_P556g)
+rule RuegeVerspaetet556gAbs2(m: Mietverhaeltnis, e: Date, r: Date) strict {
+    label de official "Die Rüge ist verspätet, wenn sie dem Vermieter nach Ablauf der 30 Monate zugeht (§ 556g Abs. 2 Satz 3)";
+    label en unofficial "The objection is late if it reaches the lessor after the 30 months have elapsed (§ 556g (2) sentence 3)";
+    when ruegefrist_30_monate_ende(m, e) and ruege_zugegangen_am(m, r) and r > e;
+    then rueckforderung_nur_ab_zugang_der_ruege(m);
+}

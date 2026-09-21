@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Gegenstück zu ne02: dieselbe Mitteilung am 01.02.2026, aber der Berechtigte übt das Vorkaufsrecht bereits am 15.03.2026 aus — innerhalb der zwei Monate, die am 01.04.2026 enden.
+test "§ 469 Abs. 2 Satz 1: wirksame Ausübung innerhalb der Zweimonatsfrist" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": vk_469_frist(entity_ref("urn:de:bgb:dr:ne03:vk"), entity_ref("urn:de:bgb:dr:ne03:frist")) { origin case_input; }
+        assert "f2": vk_469_mitteilung_empfangen_am(entity_ref("urn:de:bgb:dr:ne03:vk"), @2026-02-01) { origin adjudicated; }
+        assert "f3": vk_469_innerhalb_der_frist_ausgeuebt(entity_ref("urn:de:bgb:dr:ne03:vk"), @2026-03-15) { origin adjudicated; }
+    }
+    evaluate truth(vk_wirksam_ausgeuebt(entity_ref("urn:de:bgb:dr:ne03:vk")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vk_469_ausuebungsfrist_abgelaufen(entity_ref("urn:de:bgb:dr:ne03:vk")));
+    expect truth_status == NEITHER;
+}

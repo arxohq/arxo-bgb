@@ -1,0 +1,453 @@
+// TITEL 7, UNTERTITEL 1 UND 1a — SCHEIDUNGSGRÜNDE (§§ 1564–1568),
+// EHEWOHNUNG UND HAUSHALTSGEGENSTÄNDE (§§ 1568a, 1568b)
+//
+// Das Scheidungsrecht von 1976 kennt nur EINEN Scheidungsgrund: das
+// Scheitern der Ehe (§ 1565 Abs. 1). Alles andere sind Wege, es festzustellen
+// oder trotz seines Vorliegens die Scheidung zu versagen:
+//
+//   § 1565 Abs. 1 Satz 2   Legaldefinition — WERTUNG (§47.3);
+//   § 1565 Abs. 2          Sperre unter einem Jahr Trennung, aufgehoben durch
+//                          die WERTUNG „unzumutbare Härte“;
+//   § 1566                 zwei UNWIDERLEGBARE Vermutungen (ein Jahr mit
+//                          Zustimmung, drei Jahre ohne);
+//   § 1567                 was Getrenntleben heißt und was es nicht
+//                          unterbricht;
+//   § 1568                 Härteklausel — WERTUNG, die die Scheidung sperrt.
+//
+// UNWIDERLEGBAR IST KEINE `presumption`. § 1566 sagt ausdrücklich „wird
+// UNWIDERLEGBAR vermutet“. Eine `presumption` §146 ist gerade das Gegenteil:
+// sie trägt einen Gegenbeweis. Die beiden Absätze stehen deshalb als STRIKTE
+// REGELN (Ledger D-12-11, Muster § 1361b Abs. 4).
+//
+// DIE JAHRESFRISTEN MESSEN VERSTRICHENE ZEIT und lesen daher
+// `frist_ende_kalender` ohne die Verlegung des § 193 (Kopf package.law): an
+// ihrem Ende ist keine Erklärung abzugeben. § 1568a Abs. 6 dagegen verlangt,
+// den Anspruch binnen eines Jahres RECHTSHÄNGIG zu machen — dort gilt § 193.
+//
+// § 1567 ABS. 2 IST EIN EIGENER EINGANG, KEINE AUSNAHME IM SCHWEIGEN. „Ein
+// Zusammenleben über kürzere Zeit, das der Versöhnung dienen soll,
+// unterbricht oder hemmt die in § 1566 bestimmten Fristen nicht“ — der Fall
+// erklärt den Versöhnungsversuch ausdrücklich, und die Regel sagt, dass er
+// die Frist nicht berührt.
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// --- Eingänge des Falls ---------------------------------------------------------------------------
+
+relation scheidungsantrag_gestellt(ehe: Ehe, antragsteller: Person) kind empirical {
+    label de official "Ein Ehegatte hat die Scheidung beantragt (§ 1564 Satz 1)";
+    label en unofficial "a spouse has applied for divorce (§ 1564 sentence 1)";
+}
+relation beide_beantragen_die_scheidung(ehe: Ehe) kind empirical {
+    label de official "Beide Ehegatten beantragen die Scheidung (§ 1566 Abs. 1)";
+    label en unofficial "both spouses apply for divorce (§ 1566 (1))";
+}
+relation antragsgegner_stimmt_zu(ehe: Ehe) kind empirical {
+    label de official "Der Antragsgegner stimmt der Scheidung zu (§ 1566 Abs. 1)";
+    label en unofficial "the respondent consents to the divorce (§ 1566 (1))";
+}
+pub relation scheidungsurteil_rechtskraeftig_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der Rechtskraft der Scheidungsentscheidung (§ 1564 Satz 2) — festgestellte Tatsache";
+    label en unofficial "day on which the divorce decision became final (§ 1564 sentence 2) — established fact";
+}
+relation keine_haeusliche_gemeinschaft(ehe: Ehe) kind empirical {
+    label de official "Zwischen den Ehegatten besteht keine häusliche Gemeinschaft; sie besteht auch dann nicht mehr, wenn die Ehegatten innerhalb der ehelichen Wohnung getrennt leben (§ 1567 Abs. 1)";
+    label en unofficial "there is no domestic community between the spouses; nor is there one where they live apart within the matrimonial dwelling (§ 1567 (1))";
+}
+relation lebensgemeinschaft_erkennbar_abgelehnt(ehe: Ehe, ablehnender: Person) kind empirical {
+    label de official "Ein Ehegatte will die häusliche Gemeinschaft erkennbar nicht herstellen, weil er die eheliche Lebensgemeinschaft ablehnt (§ 1567 Abs. 1 Satz 1)";
+    label en unofficial "a spouse manifestly does not wish to restore the domestic community because he rejects the matrimonial community (§ 1567 (1) sentence 1)";
+}
+relation versoehnungsversuch(ehe: Ehe) kind empirical {
+    label de official "Ein Zusammenleben über kürzere Zeit, das der Versöhnung der Ehegatten dienen soll (§ 1567 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "cohabitation for a short period intended for reconciliation (§ 1567 (2)) — explicit input";
+}
+relation trennungsfrist_ein_jahr(ehe: Ehe, f: Frist) kind empirical {
+    key(ehe);
+    label de official "Frist von einem Jahr Getrenntleben (§ 1565 Abs. 2, § 1566 Abs. 1)";
+    label en unofficial "period of one year of living apart (§ 1565 (2), § 1566 (1))";
+}
+relation minderjaehriges_kind_aus_der_ehe(ehe: Ehe, kind: Person) kind empirical {
+    label de official "Aus der Ehe hervorgegangenes minderjähriges Kind (§ 1568 Abs. 1)";
+    label en unofficial "minor child issuing from the marriage (§ 1568 (1))";
+}
+relation ehewohnung(ehe: Ehe, w: de.bgb.core::Sache) kind empirical {
+    key(ehe);
+    label de official "Ehewohnung (§§ 1361b, 1568a)";
+    label en unofficial "matrimonial home (§§ 1361b, 1568a)";
+}
+relation eigentuemer_oder_dinglich_berechtigter_der_ehewohnung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Ein Ehegatte ist allein oder gemeinsam mit einem Dritten Eigentümer des Grundstücks oder ihm steht ein Nießbrauch, das Erbbaurecht oder ein dingliches Wohnrecht zu (§ 1568a Abs. 2 Satz 1); Entsprechendes gilt für Wohnungseigentum und Dauerwohnrecht (Satz 2)";
+    label en unofficial "a spouse is owner of the land or holds a usufruct, heritable building right or real right of residence (§ 1568a (2))";
+}
+relation mietverhaeltnis_ueber_die_ehewohnung(ehe: Ehe, mieter: Person) kind empirical {
+    label de official "Von einem oder beiden Ehegatten eingegangenes Mietverhältnis über die Ehewohnung (§ 1568a Abs. 3)";
+    label en unofficial "tenancy of the matrimonial home entered into by one or both spouses (§ 1568a (3))";
+}
+relation mitteilung_an_den_vermieter_am(ehe: Ehe, tag: Date) kind empirical {
+    label de official "Tag des Zugangs der Mitteilung der Ehegatten über die Überlassung an den Vermieter (§ 1568a Abs. 3 Satz 1 Nr. 1)";
+    label en unofficial "day on which the spouses' notice of the transfer reached the landlord (§ 1568a (3) sentence 1 no. 1)";
+}
+relation dienstwohnung(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten haben die Wohnung auf Grund eines Dienst- oder Arbeitsverhältnisses inne, das zwischen einem von ihnen und einem Dritten besteht (§ 1568a Abs. 4)";
+    label en unofficial "the spouses occupy the dwelling by virtue of a service or employment relationship with a third party (§ 1568a (4))";
+}
+relation dritter_einverstanden(ehe: Ehe) kind empirical {
+    label de official "Der Dritte ist mit der Begründung eines Mietverhältnisses einverstanden (§ 1568a Abs. 4)";
+    label en unofficial "the third party consents to the creation of a tenancy (§ 1568a (4))";
+}
+relation kein_mietverhaeltnis_ueber_die_ehewohnung(ehe: Ehe) kind empirical {
+    label de official "Über die Ehewohnung besteht kein Mietverhältnis (§ 1568a Abs. 5 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "there is no tenancy of the matrimonial home (§ 1568a (5) sentence 1) — explicit input";
+}
+relation zur_vermietung_berechtigte_person(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die zur Vermietung berechtigte Person (§ 1568a Abs. 5 Satz 1)";
+    label en unofficial "the person entitled to let (§ 1568a (5) sentence 1)";
+}
+relation eintrittsfrist_1568a(ehe: Ehe, f: Frist) kind empirical {
+    key(ehe);
+    label de official "Jahresfrist des § 1568a Abs. 6 (Erlöschen des Anspruchs auf Eintritt in ein Mietverhältnis)";
+    label en unofficial "one-year period of § 1568a (6) (expiry of the claim to enter a tenancy)";
+}
+relation anspruch_rechtshaengig_gemacht(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Anspruch auf Eintritt in ein Mietverhältnis oder auf seine Begründung ist rechtshängig gemacht worden (§ 1568a Abs. 6)";
+    label en unofficial "the claim to enter or create a tenancy has been made pending (§ 1568a (6))";
+}
+relation haushaltsgegenstand_waehrend_der_ehe_angeschafft(ehe: Ehe, s: de.bgb.core::Sache) kind empirical {
+    label de official "Haushaltsgegenstand, der während der Ehe für den gemeinsamen Haushalt angeschafft wurde (§ 1568b Abs. 2)";
+    label en unofficial "household object acquired during the marriage for the common household (§ 1568b (2))";
+}
+relation alleineigentum_steht_fest(ehe: Ehe, p: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Gegenbeweis zur Vermutung des § 1568b Abs. 2: das Alleineigentum eines Ehegatten steht fest";
+    label en unofficial "rebuttal of the presumption of § 1568b (2): the sole ownership of one spouse is established";
+}
+relation uebereignung_nach_1568b_verlangt(ehe: Ehe, verlangender: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Ein Ehegatte verlangt anlässlich der Scheidung die Überlassung und Übereignung eines im gemeinsamen Eigentum stehenden Haushaltsgegenstands (§ 1568b Abs. 1)";
+    label en unofficial "a spouse demands on the occasion of the divorce the transfer of a jointly owned household object (§ 1568b (1))";
+}
+
+// --- Kanäle der Wertung (§47.3) --------------------------------------------------------------------
+
+pub external judgment relation ehe_gescheitert(ehe: Ehe) {
+    authority Court;
+    label de official "§ 1565 Abs. 1 Satz 2. Die Lebensgemeinschaft der Ehegatten besteht nicht mehr und es kann nicht erwartet werden, dass die Ehegatten sie wiederherstellen";
+    label en unofficial "§ 1565 (1) sentence 2. The spouses' community of life no longer exists and it cannot be expected that they will restore it";
+}
+pub external judgment relation unzumutbare_haerte_der_fortsetzung(ehe: Ehe, antragsteller: Person) {
+    authority Court;
+    label de official "§ 1565 Abs. 2. Die Fortsetzung der Ehe würde für den Antragsteller aus Gründen, die in der Person des anderen Ehegatten liegen, eine unzumutbare Härte darstellen";
+    label en unofficial "§ 1565 (2). Continuing the marriage would be an unreasonable hardship for the applicant for reasons lying in the other spouse";
+}
+pub external judgment relation aufrechterhaltung_im_interesse_der_kinder_geboten(ehe: Ehe) {
+    authority Court;
+    label de official "§ 1568 Abs. 1 Alt. 1. Die Aufrechterhaltung der Ehe ist im Interesse der aus der Ehe hervorgegangenen minderjährigen Kinder aus besonderen Gründen ausnahmsweise notwendig";
+    label en unofficial "§ 1568 (1). Maintaining the marriage is exceptionally necessary in the interest of the minor children of the marriage";
+}
+pub external judgment relation schwere_haerte_fuer_den_antragsgegner(ehe: Ehe, antragsgegner: Person) {
+    authority Court;
+    label de official "§ 1568 Abs. 1 Alt. 2. Die Scheidung würde für den Antragsgegner, der sie ablehnt, auf Grund außergewöhnlicher Umstände eine so schwere Härte darstellen, dass die Aufrechterhaltung der Ehe auch unter Berücksichtigung der Belange des Antragstellers ausnahmsweise geboten erscheint";
+    label en unofficial "§ 1568 (1). The divorce would be so severe a hardship for the opposing respondent that maintaining the marriage appears exceptionally necessary";
+}
+pub external judgment relation staerker_auf_die_wohnung_angewiesen(ehe: Ehe, verlangender: Person) {
+    authority Court;
+    label de official "§ 1568a Abs. 1. Der Ehegatte ist auf die Nutzung der Ehewohnung unter Berücksichtigung des Wohls der im Haushalt lebenden Kinder und der Lebensverhältnisse der Ehegatten in stärkerem Maße angewiesen als der andere, oder die Überlassung entspricht aus anderen Gründen der Billigkeit";
+    label en unofficial "§ 1568a (1). The spouse depends on the use of the home to a greater degree than the other, or the transfer is equitable on other grounds";
+}
+pub external judgment relation ueberlassung_zur_vermeidung_unbilliger_haerte_noetig(ehe: Ehe, verlangender: Person) {
+    authority Court;
+    label de official "§ 1568a Abs. 2 Satz 1. Steht dem anderen Ehegatten das Eigentum oder ein dingliches Recht an dem Grundstück zu, so kann die Überlassung nur verlangt werden, wenn sie notwendig ist, um eine unbillige Härte zu vermeiden";
+    label en unofficial "§ 1568a (2) sentence 1. Where the other spouse holds ownership or a real right, the transfer may be demanded only to avoid inequitable hardship";
+}
+pub external judgment relation staerker_auf_den_haushaltsgegenstand_angewiesen(ehe: Ehe, verlangender: Person) {
+    authority Court;
+    label de official "§ 1568b Abs. 1. Der Ehegatte ist auf die Nutzung des Haushaltsgegenstands in stärkerem Maße angewiesen als der andere, oder die Überlassung entspricht aus anderen Gründen der Billigkeit";
+    label en unofficial "§ 1568b (1). The spouse depends on the use of the object to a greater degree, or the transfer is equitable on other grounds";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation ehe_geschieden_am(ehe: Ehe, tag: Date) kind institutional {
+    key(ehe);
+    label de official "Eine Ehe kann nur durch richterliche Entscheidung auf Antrag eines oder beider Ehegatten geschieden werden; die Ehe ist mit der Rechtskraft der Entscheidung aufgelöst (§ 1564 Sätze 1, 2)";
+    label en unofficial "A marriage may be dissolved only by judicial decision on the application of one or both spouses; it is dissolved when the decision becomes final (§ 1564)";
+}
+pub relation ehe_kann_geschieden_werden(ehe: Ehe) kind institutional {
+    label de official "Eine Ehe kann geschieden werden, wenn sie gescheitert ist (§ 1565 Abs. 1 Satz 1)";
+    label en unofficial "A marriage may be dissolved if it has broken down (§ 1565 (1) sentence 1)";
+}
+pub relation scheitern_unwiderleglich_vermutet(ehe: Ehe, grund: Text) kind institutional {
+    label de official "Es wird UNWIDERLEGBAR vermutet, dass die Ehe gescheitert ist (§ 1566 Abs. 1, 2) — unwiderleglich, daher eine Regel und keine `presumption` §146";
+    label en unofficial "It is IRREBUTTABLY presumed that the marriage has broken down (§ 1566 (1), (2)) — irrebuttable, therefore a rule and not a `presumption`";
+}
+pub relation getrenntleben(ehe: Ehe) kind institutional {
+    label de official "Die Ehegatten leben getrennt, wenn zwischen ihnen keine häusliche Gemeinschaft besteht und ein Ehegatte sie erkennbar nicht herstellen will, weil er die eheliche Lebensgemeinschaft ablehnt (§ 1567 Abs. 1)";
+    label en unofficial "The spouses live apart where there is no domestic community and one of them manifestly does not wish to restore it (§ 1567 (1))";
+}
+relation versoehnungsversuch_unterbricht_die_frist_nicht(ehe: Ehe) kind institutional {
+    label de official "Ein Zusammenleben über kürzere Zeit, das der Versöhnung dienen soll, unterbricht oder hemmt die in § 1566 bestimmten Fristen NICHT (§ 1567 Abs. 2)";
+    label en unofficial "Cohabitation for a short period intended for reconciliation does NOT interrupt or suspend the periods of § 1566 (§ 1567 (2))";
+}
+relation letzter_tag_der_trennungsfrist(ehe: Ehe, dauer: Text, tag: Date) kind institutional {
+    label de official "Letzter Tag der Trennungsfrist (ein Jahr: §§ 1565 Abs. 2, 1566 Abs. 1; drei Jahre: § 1566 Abs. 2) — die Frist misst VERSTRICHENE ZEIT und wird nicht nach § 193 verlegt";
+    label en unofficial "Last day of the separation period (one year: §§ 1565 (2), 1566 (1); three years: § 1566 (2)) — the period measures ELAPSED TIME";
+}
+relation scheidung_vor_ablauf_eines_jahres_gesperrt(ehe: Ehe, antragsteller: Person) kind institutional {
+    label de official "Leben die Ehegatten noch nicht ein Jahr getrennt, so kann die Ehe nur geschieden werden, wenn die Fortsetzung für den Antragsteller eine unzumutbare Härte darstellen würde (§ 1565 Abs. 2): die Sperre greift";
+    label en unofficial "Where the spouses have not yet lived apart for a year, the divorce is barred unless continuing would be an unreasonable hardship (§ 1565 (2))";
+}
+relation scheidung_soll_nicht_erfolgen(ehe: Ehe) kind institutional {
+    label de official "Die Ehe SOLL nicht geschieden werden, obwohl sie gescheitert ist (Härteklausel, § 1568 Abs. 1)";
+    label en unofficial "The marriage SHOULD not be dissolved although it has broken down (hardship clause, § 1568 (1))";
+}
+pub relation ehewohnung_zu_ueberlassen(ehe: Ehe, verpflichteter: Person, beguenstigter: Person) kind institutional {
+    label de official "Ein Ehegatte kann verlangen, dass ihm der andere anlässlich der Scheidung die Ehewohnung überlässt (§ 1568a Abs. 1, 2)";
+    label en unofficial "A spouse may demand that the other leave him the matrimonial home on the occasion of the divorce (§ 1568a (1), (2))";
+}
+relation eintritt_in_das_mietverhaeltnis(ehe: Ehe, eintretender: Person, tag: Date) kind institutional {
+    label de official "Der Ehegatte, dem die Wohnung überlassen wird, tritt zum Zeitpunkt des Zugangs der Mitteilung an den Vermieter oder mit Rechtskraft der Endentscheidung an die Stelle des zur Überlassung verpflichteten Ehegatten in das Mietverhältnis ein oder setzt es allein fort; § 563 Abs. 4 gilt entsprechend (§ 1568a Abs. 3)";
+    label en unofficial "The spouse to whom the home is transferred enters the tenancy in place of the other or continues it alone (§ 1568a (3))";
+}
+relation begruendung_eines_mietverhaeltnisses_verlangbar(ehe: Ehe, verlangender: Person) kind institutional {
+    label de official "Der Ehegatte kann die Begründung eines Mietverhältnisses verlangen (§ 1568a Abs. 4 bei Dienstwohnungen, Abs. 5 bei fehlendem Mietverhältnis: zu ortsüblichen Bedingungen)";
+    label en unofficial "The spouse may demand the creation of a tenancy (§ 1568a (4), (5))";
+}
+relation anspruch_auf_eintritt_erloschen(ehe: Ehe, p: Person) kind institutional {
+    label de official "Der Anspruch auf Eintritt in ein Mietverhältnis oder auf seine Begründung erlischt EIN JAHR nach Rechtskraft der Endentscheidung in der Scheidungssache, wenn er nicht vorher rechtshängig gemacht worden ist (§ 1568a Abs. 6)";
+    label en unofficial "The claim to enter or create a tenancy expires ONE YEAR after the divorce decision becomes final unless made pending before (§ 1568a (6))";
+}
+pub relation gemeinsames_eigentum_vermutet(ehe: Ehe, s: de.bgb.core::Sache) kind institutional {
+    label de official "Haushaltsgegenstände, die während der Ehe für den gemeinsamen Haushalt angeschafft wurden, gelten für die Verteilung als gemeinsames Eigentum der Ehegatten, es sei denn, das Alleineigentum eines Ehegatten steht fest (§ 1568b Abs. 2)";
+    label en unofficial "Household objects acquired during the marriage for the common household count as joint property unless sole ownership is established (§ 1568b (2))";
+}
+pub relation haushaltsgegenstand_zu_uebereignen(ehe: Ehe, verpflichteter: Person, beguenstigter: Person, s: de.bgb.core::Sache) kind institutional {
+    label de official "Jeder Ehegatte kann verlangen, dass ihm der andere anlässlich der Scheidung die im gemeinsamen Eigentum stehenden Haushaltsgegenstände überlässt und übereignet (§ 1568b Abs. 1)";
+    label en unofficial "Each spouse may demand that the other transfer to him the jointly owned household objects on the occasion of the divorce (§ 1568b (1))";
+}
+relation ausgleichszahlung_verlangbar(ehe: Ehe, uebertragender: Person) kind institutional {
+    label de official "Der Ehegatte, der sein Eigentum nach Absatz 1 überträgt, kann eine angemessene Ausgleichszahlung verlangen (§ 1568b Abs. 3)";
+    label en unofficial "The spouse who transfers his property may demand an appropriate compensatory payment (§ 1568b (3))";
+}
+
+// --- Regeln -------------------------------------------------------------------------------------------
+
+@source(BGB_P1564)
+rule ScheidungDurchRichterlicheEntscheidung(ehe: Ehe, t: Date) strict {
+    label de official "Eine Ehe kann nur durch richterliche Entscheidung auf Antrag eines oder beider Ehegatten geschieden werden; die Ehe ist mit der Rechtskraft der Entscheidung aufgelöst (§ 1564 Sätze 1, 2)";
+    label en unofficial "A marriage may be dissolved only by judicial decision on application; it is dissolved when the decision becomes final (§ 1564)";
+    when scheidungsurteil_rechtskraeftig_am(ehe, t);
+    then ehe_geschieden_am(ehe, t);
+}
+
+@source(BGB_P1565) {
+    rule ScheidungBeiScheitern(ehe: Ehe, antragsteller: Person, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Eine Ehe kann geschieden werden, wenn sie gescheitert ist (§ 1565 Abs. 1 Satz 1); leben die Ehegatten mindestens ein Jahr getrennt, so greift die Sperre des Absatzes 2 nicht";
+        label en unofficial "A marriage may be dissolved if it has broken down ((1) sentence 1); the bar of (2) does not apply after a year of living apart";
+        when ehe_gescheitert(ehe) and scheidungsantrag_gestellt(ehe, antragsteller)
+         and trennungsfrist_ein_jahr(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and bewertungstag(ehe, bewertung) and bewertung > e
+         and not_known(scheidung_soll_nicht_erfolgen(ehe));
+        then ehe_kann_geschieden_werden(ehe);
+    }
+    rule ScheidungVorAblaufEinesJahresGesperrt(ehe: Ehe, antragsteller: Person, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Leben die Ehegatten noch nicht ein Jahr getrennt, so kann die Ehe nur geschieden werden, wenn die Fortsetzung der Ehe für den Antragsteller aus Gründen, die in der Person des anderen Ehegatten liegen, eine unzumutbare Härte darstellen würde (§ 1565 Abs. 2)";
+        label en unofficial "Where the spouses have not yet lived apart for a year, divorce is possible only in case of unreasonable hardship ((2))";
+        when scheidungsantrag_gestellt(ehe, antragsteller) and trennungsfrist_ein_jahr(ehe, f)
+         and de.bgb.fristen::frist_ende_kalender(f, e) and bewertungstag(ehe, bewertung) and bewertung <= e
+         and not_known(unzumutbare_haerte_der_fortsetzung(ehe, antragsteller));
+        then scheidung_vor_ablauf_eines_jahres_gesperrt(ehe, antragsteller);
+    }
+    rule ScheidungTrotzKurzerTrennungBeiUnzumutbarerHaerte(ehe: Ehe, antragsteller: Person, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Vor Ablauf des Trennungsjahres kann die Ehe geschieden werden, wenn die Fortsetzung für den Antragsteller eine unzumutbare Härte darstellen würde und die Ehe gescheitert ist (§ 1565 Abs. 1, 2)";
+        label en unofficial "Before the year has elapsed the marriage may be dissolved where continuing would be an unreasonable hardship and it has broken down ((1), (2))";
+        when ehe_gescheitert(ehe) and scheidungsantrag_gestellt(ehe, antragsteller)
+         and unzumutbare_haerte_der_fortsetzung(ehe, antragsteller)
+         and trennungsfrist_ein_jahr(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and bewertungstag(ehe, bewertung) and bewertung <= e
+         and not_known(scheidung_soll_nicht_erfolgen(ehe));
+        then ehe_kann_geschieden_werden(ehe);
+    }
+    rule TrennungsfristEinJahrEreignis(ehe: Ehe, f: Frist, t: Date) strict {
+        label de official "Die Jahresfrist des Getrenntlebens läuft vom Tag der Trennung an (§§ 1565 Abs. 2, 1566 Abs. 1 in Verbindung mit § 187)";
+        label en unofficial "The one-year period of living apart runs from the day of separation (§§ 1565 (2), 1566 (1))";
+        when trennungsfrist_ein_jahr(ehe, f) and trennung_am(ehe, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule TrennungsfristEinJahrDauer(ehe: Ehe, f: Frist) strict {
+        label de official "Die Frist beträgt EIN JAHR Getrenntleben (§ 1565 Abs. 2, § 1566 Abs. 1)";
+        label en unofficial "The period is ONE YEAR of living apart (§ 1565 (2), § 1566 (1))";
+        when trennungsfrist_ein_jahr(ehe, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule LetzterTagDerJahresfrist(ehe: Ehe, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Jahresfrist des Getrenntlebens: die Frist misst verstrichene Zeit, an ihrem Ende ist keine Erklärung abzugeben, daher gilt § 193 nicht (Kopf package.law)";
+        label en unofficial "Last day of the one-year period of living apart: the period measures elapsed time, so § 193 does not apply";
+        when trennungsfrist_ein_jahr(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e);
+        then letzter_tag_der_trennungsfrist(ehe, "ein Jahr (§ 1565 Abs. 2, § 1566 Abs. 1)", e);
+    }
+}
+
+@source(BGB_P1566) {
+    rule VermutungNachEinemJahrUndZustimmung(ehe: Ehe, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Es wird unwiderlegbar vermutet, dass die Ehe gescheitert ist, wenn die Ehegatten seit EINEM JAHR getrennt leben und beide Ehegatten die Scheidung beantragen oder der Antragsgegner der Scheidung zustimmt (§ 1566 Abs. 1)";
+        label en unofficial "It is irrebuttably presumed that the marriage has broken down where the spouses have lived apart for ONE YEAR and both apply or the respondent consents ((1))";
+        when trennungsfrist_ein_jahr(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and bewertungstag(ehe, bewertung) and bewertung > e and beide_beantragen_die_scheidung(ehe);
+        then scheitern_unwiderleglich_vermutet(ehe, "§ 1566 Abs. 1: ein Jahr Getrenntleben und Antrag beider Ehegatten");
+    }
+    rule VermutungNachEinemJahrUndEinverstaendnis(ehe: Ehe, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Dasselbe gilt, wenn der Antragsgegner der Scheidung zustimmt (§ 1566 Abs. 1 Alt. 2)";
+        label en unofficial "The same applies where the respondent consents to the divorce ((1))";
+        when trennungsfrist_ein_jahr(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and bewertungstag(ehe, bewertung) and bewertung > e and antragsgegner_stimmt_zu(ehe);
+        then scheitern_unwiderleglich_vermutet(ehe, "§ 1566 Abs. 1: ein Jahr Getrenntleben und Zustimmung des Antragsgegners");
+    }
+    rule VermutungNachDreiJahren(ehe: Ehe, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Es wird unwiderlegbar vermutet, dass die Ehe gescheitert ist, wenn die Ehegatten seit DREI JAHREN getrennt leben (§ 1566 Abs. 2) — ohne Antrag oder Zustimmung des anderen Ehegatten";
+        label en unofficial "It is irrebuttably presumed that the marriage has broken down where the spouses have lived apart for THREE YEARS ((2))";
+        when trennungsfrist_drei_jahre(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e)
+         and bewertungstag(ehe, bewertung) and bewertung > e;
+        then scheitern_unwiderleglich_vermutet(ehe, "§ 1566 Abs. 2: drei Jahre Getrenntleben");
+    }
+    rule TrennungsfristDreiJahreEreignis(ehe: Ehe, f: Frist, t: Date) strict {
+        label de official "Die Dreijahresfrist des Getrenntlebens läuft vom Tag der Trennung an (§ 1566 Abs. 2, § 1385 Nr. 1, § 1305 Abs. 1 Satz 1 Nr. 2, 3)";
+        label en unofficial "The three-year period of living apart runs from the day of separation (§ 1566 (2), § 1385 no. 1)";
+        when trennungsfrist_drei_jahre(ehe, f) and trennung_am(ehe, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule TrennungsfristDreiJahreDauer(ehe: Ehe, f: Frist) strict {
+        label de official "Die Frist beträgt DREI JAHRE Getrenntleben (§ 1566 Abs. 2)";
+        label en unofficial "The period is THREE YEARS of living apart (§ 1566 (2))";
+        when trennungsfrist_drei_jahre(ehe, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 3 calendar_year);
+    }
+    rule LetzterTagDerDreijahresfrist(ehe: Ehe, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Dreijahresfrist des Getrenntlebens (§ 1566 Abs. 2): verstrichene Zeit, keine Verlegung nach § 193";
+        label en unofficial "Last day of the three-year period of living apart ((2)): elapsed time, no § 193 roll";
+        when trennungsfrist_drei_jahre(ehe, f) and de.bgb.fristen::frist_ende_kalender(f, e);
+        then letzter_tag_der_trennungsfrist(ehe, "drei Jahre (§ 1566 Abs. 2)", e);
+    }
+}
+
+@source(BGB_P1567) {
+    rule Getrenntleben(ehe: Ehe, ablehnender: Person) strict {
+        label de official "Die Ehegatten leben getrennt, wenn zwischen ihnen keine häusliche Gemeinschaft besteht und ein Ehegatte sie erkennbar nicht herstellen will, weil er die eheliche Lebensgemeinschaft ablehnt; die häusliche Gemeinschaft besteht auch dann nicht mehr, wenn die Ehegatten innerhalb der ehelichen Wohnung getrennt leben (§ 1567 Abs. 1)";
+        label en unofficial "The spouses live apart where there is no domestic community and one manifestly does not wish to restore it ((1))";
+        when keine_haeusliche_gemeinschaft(ehe) and lebensgemeinschaft_erkennbar_abgelehnt(ehe, ablehnender);
+        then getrenntleben(ehe);
+    }
+    rule VersoehnungsversuchUnterbrichtNicht(ehe: Ehe) strict {
+        label de official "Ein Zusammenleben über kürzere Zeit, das der Versöhnung der Ehegatten dienen soll, unterbricht oder hemmt die in § 1566 bestimmten Fristen nicht (§ 1567 Abs. 2)";
+        label en unofficial "Cohabitation for a short period intended for reconciliation does not interrupt or suspend the periods of § 1566 ((2))";
+        when versoehnungsversuch(ehe);
+        then versoehnungsversuch_unterbricht_die_frist_nicht(ehe);
+    }
+}
+
+@source(BGB_P1568) {
+    rule HaerteklauselWegenDerKinder(ehe: Ehe, kind: Person) strict {
+        label de official "Die Ehe soll nicht geschieden werden, obwohl sie gescheitert ist, wenn und solange die Aufrechterhaltung der Ehe im Interesse der aus der Ehe hervorgegangenen minderjährigen Kinder aus besonderen Gründen ausnahmsweise notwendig ist (§ 1568 Abs. 1 Alt. 1)";
+        label en unofficial "The marriage should not be dissolved where maintaining it is exceptionally necessary in the interest of the minor children ((1))";
+        when minderjaehriges_kind_aus_der_ehe(ehe, kind) and aufrechterhaltung_im_interesse_der_kinder_geboten(ehe);
+        then scheidung_soll_nicht_erfolgen(ehe);
+    }
+    rule HaerteklauselWegenDesAntragsgegners(ehe: Ehe, antragsgegner: Person) strict {
+        label de official "Die Ehe soll nicht geschieden werden, wenn und solange die Scheidung für den Antragsgegner, der sie ablehnt, auf Grund außergewöhnlicher Umstände eine so schwere Härte darstellen würde, dass die Aufrechterhaltung der Ehe auch unter Berücksichtigung der Belange des Antragstellers ausnahmsweise geboten erscheint (§ 1568 Abs. 1 Alt. 2)";
+        label en unofficial "The marriage should not be dissolved where it would be so severe a hardship for the opposing respondent ((1))";
+        when schwere_haerte_fuer_den_antragsgegner(ehe, antragsgegner);
+        then scheidung_soll_nicht_erfolgen(ehe);
+    }
+}
+
+@source(BGB_P1568a) {
+    rule UeberlassungDerEhewohnungBeiScheidung(ehe: Ehe, verlangender: Person, verpflichteter: Person, w: de.bgb.core::Sache) strict {
+        label de official "Ein Ehegatte kann verlangen, dass ihm der andere Ehegatte anlässlich der Scheidung die Ehewohnung überlässt, wenn er auf deren Nutzung unter Berücksichtigung des Wohls der im Haushalt lebenden Kinder und der Lebensverhältnisse der Ehegatten in stärkerem Maße angewiesen ist als der andere oder die Überlassung aus anderen Gründen der Billigkeit entspricht (§ 1568a Abs. 1)";
+        label en unofficial "A spouse may demand that the other leave him the matrimonial home on the occasion of the divorce ((1))";
+        when ehewohnung(ehe, w) and staerker_auf_die_wohnung_angewiesen(ehe, verlangender)
+         and anderer_ehegatte(ehe, verlangender, verpflichteter)
+         and not_known(eigentuemer_oder_dinglich_berechtigter_der_ehewohnung(ehe, verpflichteter));
+        then ehewohnung_zu_ueberlassen(ehe, verpflichteter, verlangender);
+    }
+    rule UeberlassungGegenDenDinglichBerechtigten(ehe: Ehe, verlangender: Person, verpflichteter: Person, w: de.bgb.core::Sache) strict {
+        label de official "Ist einer der Ehegatten Eigentümer des Grundstücks oder steht ihm ein Nießbrauch, das Erbbaurecht oder ein dingliches Wohnrecht zu, so kann der andere Ehegatte die Überlassung nur verlangen, wenn dies notwendig ist, um eine unbillige Härte zu vermeiden (§ 1568a Abs. 2)";
+        label en unofficial "Where a spouse holds ownership or a real right, the other may demand the transfer only to avoid inequitable hardship ((2))";
+        when ehewohnung(ehe, w) and anderer_ehegatte(ehe, verlangender, verpflichteter)
+         and eigentuemer_oder_dinglich_berechtigter_der_ehewohnung(ehe, verpflichteter)
+         and ueberlassung_zur_vermeidung_unbilliger_haerte_noetig(ehe, verlangender);
+        then ehewohnung_zu_ueberlassen(ehe, verpflichteter, verlangender);
+    }
+    rule EintrittInDasMietverhaeltnis(ehe: Ehe, eintretender: Person, verpflichteter: Person, mieter: Person, t: Date) strict {
+        label de official "Der Ehegatte, dem die Wohnung überlassen wird, tritt zum Zeitpunkt des Zugangs der Mitteilung der Ehegatten über die Überlassung an den Vermieter an die Stelle des zur Überlassung verpflichteten Ehegatten in das Mietverhältnis ein oder setzt ein von beiden eingegangenes Mietverhältnis allein fort (§ 1568a Abs. 3 Satz 1 Nr. 1)";
+        label en unofficial "The spouse to whom the home is transferred enters the tenancy upon the landlord receiving the notice ((3) sentence 1 no. 1)";
+        when ehewohnung_zu_ueberlassen(ehe, verpflichteter, eintretender)
+         and mietverhaeltnis_ueber_die_ehewohnung(ehe, mieter) and mitteilung_an_den_vermieter_am(ehe, t);
+        then eintritt_in_das_mietverhaeltnis(ehe, eintretender, t);
+    }
+    rule EintrittMitRechtskraft(ehe: Ehe, eintretender: Person, verpflichteter: Person, mieter: Person, t: Date) strict {
+        label de official "Der Eintritt erfolgt auch mit Rechtskraft der Endentscheidung im Wohnungszuweisungsverfahren (§ 1568a Abs. 3 Satz 1 Nr. 2); § 563 Abs. 4 gilt entsprechend (Satz 2)";
+        label en unofficial "Entry also occurs upon the final decision in the housing allocation proceedings becoming final ((3) sentence 1 no. 2)";
+        when ehewohnung_zu_ueberlassen(ehe, verpflichteter, eintretender)
+         and mietverhaeltnis_ueber_die_ehewohnung(ehe, mieter) and scheidungsurteil_rechtskraeftig_am(ehe, t);
+        then eintritt_in_das_mietverhaeltnis(ehe, eintretender, t);
+    }
+    rule MietverhaeltnisUeberDieDienstwohnung(ehe: Ehe, verlangender: Person) strict {
+        label de official "Ein Ehegatte kann die Begründung eines Mietverhältnisses über eine Dienst- oder Werkwohnung nur verlangen, wenn der Dritte einverstanden oder dies notwendig ist, um eine schwere Härte zu vermeiden (§ 1568a Abs. 4)";
+        label en unofficial "A spouse may demand the creation of a tenancy of a service dwelling only with the third party's consent or to avoid severe hardship ((4))";
+        when dienstwohnung(ehe) and staerker_auf_die_wohnung_angewiesen(ehe, verlangender)
+         and dritter_einverstanden(ehe);
+        then begruendung_eines_mietverhaeltnisses_verlangbar(ehe, verlangender);
+    }
+    rule BegruendungEinesMietverhaeltnissesOhneBestehendesMietverhaeltnis(ehe: Ehe, verlangender: Person, verpflichteter: Person) strict {
+        label de official "Besteht kein Mietverhältnis über die Ehewohnung, so kann sowohl der Ehegatte, der Anspruch auf deren Überlassung hat, als auch die zur Vermietung berechtigte Person die Begründung eines Mietverhältnisses zu ortsüblichen Bedingungen verlangen (§ 1568a Abs. 5 Satz 1)";
+        label en unofficial "Where there is no tenancy, both the entitled spouse and the person entitled to let may demand the creation of a tenancy on customary local terms ((5) sentence 1)";
+        when ehewohnung_zu_ueberlassen(ehe, verpflichteter, verlangender) and kein_mietverhaeltnis_ueber_die_ehewohnung(ehe);
+        then begruendung_eines_mietverhaeltnisses_verlangbar(ehe, verlangender);
+    }
+    rule EintrittsfristEreignis(ehe: Ehe, f: Frist, t: Date) strict {
+        label de official "Die Jahresfrist des § 1568a Abs. 6 läuft von der Rechtskraft der Endentscheidung in der Scheidungssache an";
+        label en unofficial "The one-year period of § 1568a (6) runs from the divorce decision becoming final";
+        when eintrittsfrist_1568a(ehe, f) and scheidungsurteil_rechtskraeftig_am(ehe, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule EintrittsfristDauer(ehe: Ehe, f: Frist) strict {
+        label de official "Der Anspruch erlischt EIN JAHR nach Rechtskraft der Endentscheidung in der Scheidungssache (§ 1568a Abs. 6)";
+        label en unofficial "The claim expires ONE YEAR after the divorce decision becomes final ((6))";
+        when eintrittsfrist_1568a(ehe, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule AnspruchAufEintrittErloschen(ehe: Ehe, p: Person, f: Frist, e: Date, bewertung: Date) strict {
+        label de official "Der Anspruch auf Eintritt in ein Mietverhältnis oder auf seine Begründung erlischt ein Jahr nach Rechtskraft der Endentscheidung, wenn er nicht vorher rechtshängig gemacht worden ist (§ 1568a Abs. 6); der Anspruch ist innerhalb der Frist rechtshängig zu MACHEN, daher gilt die Verlegung des § 193";
+        label en unofficial "The claim expires one year after the decision becomes final unless made pending before ((6)); § 193 applies";
+        when eintrittsfrist_1568a(ehe, f) and de.bgb.fristen::frist_ende(f, e)
+         and bewertungstag(ehe, bewertung) and bewertung > e and ehegatte(ehe, p)
+         and not_known(anspruch_rechtshaengig_gemacht(ehe, p));
+        then anspruch_auf_eintritt_erloschen(ehe, p);
+    }
+}
+
+@source(BGB_P1568b) {
+    presumption GemeinsamesEigentumAnHaushaltsgegenstaenden(ehe: Ehe, s: de.bgb.core::Sache, p: Person) {
+        label de official "Haushaltsgegenstände, die während der Ehe für den gemeinsamen Haushalt angeschafft wurden, gelten für die Verteilung als gemeinsames Eigentum der Ehegatten, es sei denn, das Alleineigentum eines Ehegatten steht fest (§ 1568b Abs. 2)";
+        label en unofficial "Household objects acquired during the marriage for the common household count as joint property unless sole ownership is established ((2))";
+        when haushaltsgegenstand_waehrend_der_ehe_angeschafft(ehe, s) and ehegatte(ehe, p);
+        presume gemeinsames_eigentum_vermutet(ehe, s);
+        unless alleineigentum_steht_fest(ehe, p, s);
+    }
+    rule UeberlassungUndUebereignung(ehe: Ehe, verlangender: Person, verpflichteter: Person, s: de.bgb.core::Sache) strict {
+        label de official "Jeder Ehegatte kann verlangen, dass ihm der andere Ehegatte anlässlich der Scheidung die im gemeinsamen Eigentum stehenden Haushaltsgegenstände überlässt und übereignet, wenn er auf deren Nutzung in stärkerem Maße angewiesen ist oder dies aus anderen Gründen der Billigkeit entspricht (§ 1568b Abs. 1)";
+        label en unofficial "Each spouse may demand that the other transfer to him the jointly owned household objects ((1))";
+        when uebereignung_nach_1568b_verlangt(ehe, verlangender, s)
+         and staerker_auf_den_haushaltsgegenstand_angewiesen(ehe, verlangender)
+         and anderer_ehegatte(ehe, verlangender, verpflichteter)
+         and haushaltsgegenstand_im_gemeinsamen_eigentum(ehe, s);
+        then haushaltsgegenstand_zu_uebereignen(ehe, verpflichteter, verlangender, s);
+    }
+    rule AusgleichszahlungVerlangbar(ehe: Ehe, uebertragender: Person, beguenstigter: Person, s: de.bgb.core::Sache) strict {
+        label de official "Der Ehegatte, der sein Eigentum nach Absatz 1 überträgt, kann eine angemessene Ausgleichszahlung verlangen (§ 1568b Abs. 3)";
+        label en unofficial "The spouse who transfers his property may demand an appropriate compensatory payment ((3))";
+        when haushaltsgegenstand_zu_uebereignen(ehe, uebertragender, beguenstigter, s);
+        then ausgleichszahlung_verlangbar(ehe, uebertragender);
+    }
+}

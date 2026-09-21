@@ -1,0 +1,573 @@
+// ABSCHNITT 3 TITEL 1: BEGRÜNDUNG (§§ 311–311c), ANPASSUNG UND BEENDIGUNG
+// (§§ 313, 314) UND EINSEITIGE LEISTUNGSBESTIMMUNGSRECHTE (§§ 315–319)
+//
+// WERTUNGEN DES GERICHTS (Kanal §47.3): die Unzumutbarkeit des Festhaltens am
+// unveränderten Vertrag (§ 313 Abs. 1, Abs. 3), der wichtige Grund (§ 314
+// Abs. 1 Satz 2), die angemessene Frist zur Kündigung (§ 314 Abs. 3), die
+// Billigkeit der Bestimmung (§ 315 Abs. 3, § 319 Abs. 1) und die
+// Unverzüglichkeit der Anfechtung (§ 318 Abs. 2 Satz 2 — „unverzüglich“ ist
+// ein bewertendes Merkmal, keine Frist von null Tagen).
+//
+// DIE DREISSIG JAHRE DES § 318 ABS. 2 SATZ 3 sind eine Jahresfrist vom Tag der
+// Bestimmung (§ 188 Abs. 2, Politik `BGB_SCHULDRECHT_AT_KALENDER`; Zeile in
+// DEADLINES.json). Sie ist die einzige Frist dieses Titels.
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- § 311 Begründung durch Vertrag und durch geschäftlichen Kontakt ---------------------------------
+
+pub relation vertrag_zwischen_den_beteiligten_geschlossen(v: Vertrag) kind empirical {
+    label de official "Zur Begründung eines Schuldverhältnisses durch Rechtsgeschäft sowie zur Änderung seines Inhalts ist ein Vertrag zwischen den Beteiligten geschlossen (§ 311 Abs. 1)";
+    label en unofficial "a contract between the parties has been concluded to create or modify an obligation (§ 311 (1))";
+}
+pub relation schuldverhaeltnis_durch_vertrag_begruendet(v: Vertrag) kind institutional {
+    label de official "Das Schuldverhältnis ist durch Vertrag begründet (§ 311 Abs. 1)";
+    label en unofficial "the obligation is created by contract (§ 311 (1))";
+}
+pub enum GeschaeftlicherKontakt {
+    label de official "Tatbestand, durch den ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 entsteht (§ 311 Abs. 2)";
+    label en unofficial "circumstance creating an obligation with duties under § 241 (2) (§ 311 (2))";
+    AufnahmeVonVertragsverhandlungen,
+    AnbahnungEinesVertrags,
+    AehnlicheGeschaeftlicheKontakte
+}
+pub relation geschaeftlicher_kontakt(s: Schuldverhaeltnis, teil: Person, art: GeschaeftlicherKontakt) kind empirical {
+    label de official "Aufnahme von Vertragsverhandlungen, Anbahnung eines Vertrags mit Einwirkungsmöglichkeit auf Rechte und Rechtsgüter oder ähnlicher geschäftlicher Kontakt (§ 311 Abs. 2)";
+    label en unofficial "entering into contract negotiations, initiating a contract, or similar business contacts (§ 311 (2))";
+}
+pub relation dritter_nimmt_vertrauen_in_besonderem_masse_in_anspruch(s: Schuldverhaeltnis, dritter: Person) kind empirical {
+    label de official "Der Dritte nimmt in besonderem Maße Vertrauen für sich in Anspruch und beeinflusst dadurch die Vertragsverhandlungen oder den Vertragsschluss erheblich (§ 311 Abs. 3 Satz 2)";
+    label en unofficial "the third party claims a special degree of trust and thereby substantially influences the negotiations or the conclusion (§ 311 (3) sentence 2)";
+}
+pub relation schuldverhaeltnis_mit_ruecksichtnahmepflichten(s: Schuldverhaeltnis, teil: Person) kind institutional {
+    label de official "Es entsteht ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 (§ 311 Abs. 2, 3)";
+    label en unofficial "an obligation with duties under § 241 (2) arises (§ 311 (2), (3))";
+}
+
+@source(BGB_P311)
+rule SchuldverhaeltnisDurchVertrag(v: Vertrag) strict {
+    label de official "Zur Begründung eines Schuldverhältnisses durch Rechtsgeschäft sowie zur Änderung des Inhalts eines Schuldverhältnisses ist ein Vertrag zwischen den Beteiligten erforderlich, soweit nicht das Gesetz ein anderes vorschreibt (§ 311 Abs. 1)";
+    label en unofficial "A contract between the parties is required to create or modify an obligation by legal transaction unless the law provides otherwise (§ 311 (1))";
+    when vertrag_zwischen_den_beteiligten_geschlossen(v);
+    then schuldverhaeltnis_durch_vertrag_begruendet(v);
+}
+
+@source(BGB_P311)
+rule VorvertraglichesSchuldverhaeltnis(s: Schuldverhaeltnis, teil: Person, art: GeschaeftlicherKontakt) strict {
+    label de official "Ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 entsteht auch durch die Aufnahme von Vertragsverhandlungen, die Anbahnung eines Vertrags oder ähnliche geschäftliche Kontakte (§ 311 Abs. 2)";
+    label en unofficial "An obligation with duties under § 241 (2) also arises through negotiations, the initiation of a contract or similar business contacts (§ 311 (2))";
+    when geschaeftlicher_kontakt(s, teil, art);
+    then schuldverhaeltnis_mit_ruecksichtnahmepflichten(s, teil);
+}
+
+@source(BGB_P311)
+rule SchuldverhaeltnisZuDritten(s: Schuldverhaeltnis, dritter: Person) strict {
+    label de official "Ein Schuldverhältnis mit Pflichten nach § 241 Abs. 2 kann auch zu Personen entstehen, die nicht selbst Vertragspartei werden sollen; es entsteht insbesondere, wenn der Dritte in besonderem Maße Vertrauen für sich in Anspruch nimmt und dadurch die Vertragsverhandlungen oder den Vertragsschluss erheblich beeinflusst (§ 311 Abs. 3)";
+    label en unofficial "Such an obligation may also arise towards persons who are not to become parties, in particular where the third party claims special trust and substantially influences the contract (§ 311 (3))";
+    when dritter_nimmt_vertrauen_in_besonderem_masse_in_anspruch(s, dritter);
+    then schuldverhaeltnis_mit_ruecksichtnahmepflichten(s, dritter);
+}
+
+// --- § 311a Leistungshindernis bei Vertragsschluss -----------------------------------------------------
+
+pub relation leistungshindernis_schon_bei_vertragsschluss(v: Vertrag, l: Leistung) kind empirical {
+    label de official "Der Schuldner braucht nach § 275 Abs. 1 bis 3 nicht zu leisten und das Leistungshindernis liegt schon bei Vertragsschluss vor (§ 311a Abs. 1)";
+    label en unofficial "the debtor need not perform under § 275 (1) to (3) and the impediment already existed at conclusion (§ 311a (1))";
+}
+pub relation vertrag_gleichwohl_wirksam(v: Vertrag) kind institutional {
+    label de official "Der Wirksamkeit des Vertrags steht das anfängliche Leistungshindernis nicht entgegen (§ 311a Abs. 1)";
+    label en unofficial "the initial impediment does not affect the validity of the contract (§ 311a (1))";
+}
+pub relation hindernis_gekannt_oder_unkenntnis_zu_vertreten(v: Vertrag, schuldner: Person) kind empirical {
+    label de official "Der Schuldner kannte das Leistungshindernis bei Vertragsschluss oder hat seine Unkenntnis zu vertreten (§ 311a Abs. 2 Satz 2 im Umkehrschluss)";
+    label en unofficial "the debtor knew of the impediment at conclusion or is responsible for his ignorance (§ 311a (2) sentence 2 a contrario)";
+}
+pub relation anspruch_aus_311a_abs2(v: Vertrag, glaeubiger: Person) kind institutional {
+    label de official "Der Gläubiger kann nach seiner Wahl Schadensersatz statt der Leistung oder Ersatz seiner Aufwendungen in dem in § 284 bestimmten Umfang verlangen (§ 311a Abs. 2 Satz 1)";
+    label en unofficial "the creditor may claim, at his option, damages in lieu of performance or reimbursement of expenses under § 284 (§ 311a (2) sentence 1)";
+}
+
+@source(BGB_P311a)
+rule AnfaenglichesLeistungshindernisMachtDenVertragNichtUnwirksam(v: Vertrag, l: Leistung) strict {
+    label de official "Der Wirksamkeit eines Vertrags steht es nicht entgegen, dass der Schuldner nach § 275 Abs. 1 bis 3 nicht zu leisten braucht und das Leistungshindernis schon bei Vertragsschluss vorliegt (§ 311a Abs. 1)";
+    label en unofficial "It does not affect the validity of a contract that the debtor need not perform under § 275 (1) to (3) and the impediment already existed at conclusion (§ 311a (1))";
+    when leistungshindernis_schon_bei_vertragsschluss(v, l);
+    then vertrag_gleichwohl_wirksam(v);
+}
+
+@source(BGB_P311a)
+rule SchadensersatzBeiAnfaenglichemLeistungshindernis(v: Vertrag, l: Leistung, glaeubiger: Person, schuldner: Person) strict {
+    label de official "Der Gläubiger kann nach seiner Wahl Schadensersatz statt der Leistung oder Ersatz seiner Aufwendungen verlangen; dies gilt nicht, wenn der Schuldner das Leistungshindernis bei Vertragsschluss nicht kannte und seine Unkenntnis auch nicht zu vertreten hat (§ 311a Abs. 2)";
+    label en unofficial "The creditor may claim damages in lieu of performance or reimbursement of expenses; not so where the debtor neither knew of the impediment nor is responsible for his ignorance (§ 311a (2))";
+    when leistungshindernis_schon_bei_vertragsschluss(v, l);
+    when vertragspartei(v, glaeubiger);
+    when vertragspartei(v, schuldner);
+    when hindernis_gekannt_oder_unkenntnis_zu_vertreten(v, schuldner);
+    then anspruch_aus_311a_abs2(v, glaeubiger);
+}
+
+// --- § 311b Form, § 311c Zubehör -------------------------------------------------------------------------
+
+pub relation verpflichtung_zur_uebertragung_von_grundeigentum(v: Vertrag) kind empirical {
+    label de official "Vertrag, durch den sich ein Teil verpflichtet, das Eigentum an einem Grundstück zu übertragen oder zu erwerben (§ 311b Abs. 1 Satz 1)";
+    label en unofficial "contract obliging a party to transfer or acquire ownership of land (§ 311b (1) sentence 1)";
+}
+pub relation notariell_beurkundet(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist notariell beurkundet (§ 311b Abs. 1 Satz 1, Abs. 3, Abs. 5 Satz 2)";
+    label en unofficial "the contract has been notarially recorded (§ 311b (1), (3), (5))";
+}
+pub relation nicht_notariell_beurkundet(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist nicht notariell beurkundet (§ 311b Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the contract has not been notarially recorded (§ 311b (1)) — explicit case input";
+}
+pub relation auflassung_und_eintragung_erfolgt(v: Vertrag) kind empirical {
+    label de official "Die Auflassung und die Eintragung in das Grundbuch sind erfolgt (§ 311b Abs. 1 Satz 2)";
+    label en unofficial "conveyance and registration in the land register have taken place (§ 311b (1) sentence 2)";
+}
+pub relation formmangel(v: Vertrag) kind institutional {
+    label de official "Der Vertrag ist ohne Beachtung der vorgeschriebenen notariellen Form geschlossen (§ 311b Abs. 1 Satz 1, Abs. 3, Abs. 5 Satz 2)";
+    label en unofficial "the contract was concluded without the prescribed notarial form (§ 311b)";
+}
+pub relation formmangel_geheilt(v: Vertrag) kind institutional {
+    label de official "Der ohne Beachtung der Form geschlossene Vertrag wird seinem ganzen Inhalt nach gültig, wenn die Auflassung und die Eintragung erfolgen (§ 311b Abs. 1 Satz 2)";
+    label en unofficial "the contract becomes valid in its entirety upon conveyance and registration (§ 311b (1) sentence 2)";
+}
+pub relation verpflichtung_ueber_kuenftiges_vermoegen(v: Vertrag) kind empirical {
+    label de official "Vertrag, durch den sich ein Teil verpflichtet, sein künftiges Vermögen oder einen Bruchteil davon zu übertragen oder mit einem Nießbrauch zu belasten (§ 311b Abs. 2)";
+    label en unofficial "contract obliging a party to transfer or encumber his future property (§ 311b (2))";
+}
+pub relation verpflichtung_ueber_gegenwaertiges_vermoegen(v: Vertrag) kind empirical {
+    label de official "Vertrag, durch den sich ein Teil verpflichtet, sein gegenwärtiges Vermögen oder einen Bruchteil davon zu übertragen oder mit einem Nießbrauch zu belasten (§ 311b Abs. 3)";
+    label en unofficial "contract obliging a party to transfer or encumber his present property (§ 311b (3))";
+}
+pub relation vertrag_ueber_den_nachlass_eines_lebenden_dritten(v: Vertrag) kind empirical {
+    label de official "Vertrag über den Nachlass, den Pflichtteil oder ein Vermächtnis aus dem Nachlass eines noch lebenden Dritten (§ 311b Abs. 4)";
+    label en unofficial "contract on the estate, compulsory share or a legacy of a third party still living (§ 311b (4))";
+}
+pub relation vertrag_kuenftiger_gesetzlicher_erben(v: Vertrag) kind empirical {
+    label de official "Vertrag, der unter künftigen gesetzlichen Erben über den gesetzlichen Erbteil oder den Pflichtteil eines von ihnen geschlossen wird (§ 311b Abs. 5 Satz 1)";
+    label en unofficial "contract among future intestate heirs on the statutory share or compulsory portion of one of them (§ 311b (5) sentence 1)";
+}
+pub relation vertrag_nichtig(v: Vertrag) kind institutional {
+    label de official "Der Vertrag ist nichtig (§ 311b Abs. 2, Abs. 4)";
+    label en unofficial "the contract is void (§ 311b (2), (4))";
+}
+pub relation verpflichtung_zur_veraeusserung_oder_belastung_einer_sache(v: Vertrag, s: Sache) kind empirical {
+    label de official "Jemand verpflichtet sich zur Veräußerung oder Belastung einer Sache (§ 311c)";
+    label en unofficial "a person undertakes to dispose of or encumber a thing (§ 311c)";
+}
+pub relation verpflichtung_erstreckt_sich_auf_zubehoer(v: Vertrag, s: Sache) kind institutional {
+    label de official "Die Verpflichtung erstreckt sich im Zweifel auch auf das Zubehör der Sache (§ 311c)";
+    label en unofficial "in case of doubt the obligation also extends to the accessories of the thing (§ 311c)";
+}
+
+@source(BGB_P311b)
+rule GrundstuecksvertragBedarfDerNotariellenBeurkundung(v: Vertrag) strict {
+    label de official "Ein Vertrag, durch den sich der eine Teil verpflichtet, das Eigentum an einem Grundstück zu übertragen oder zu erwerben, bedarf der notariellen Beurkundung (§ 311b Abs. 1 Satz 1)";
+    label en unofficial "A contract obliging a party to transfer or acquire ownership of land requires notarial recording (§ 311b (1) sentence 1)";
+    when verpflichtung_zur_uebertragung_von_grundeigentum(v);
+    when nicht_notariell_beurkundet(v);
+    then formmangel(v);
+}
+
+@source(BGB_P311b)
+rule HeilungDesFormmangelsDurchAuflassungUndEintragung(v: Vertrag) strict {
+    label de official "Ein ohne Beachtung dieser Form geschlossener Vertrag wird seinem ganzen Inhalt nach gültig, wenn die Auflassung und die Eintragung in das Grundbuch erfolgen (§ 311b Abs. 1 Satz 2)";
+    label en unofficial "A contract concluded without that form becomes valid in its entirety upon conveyance and registration (§ 311b (1) sentence 2)";
+    when formmangel(v);
+    when auflassung_und_eintragung_erfolgt(v);
+    then formmangel_geheilt(v);
+}
+
+@source(BGB_P311b)
+rule VertragUeberKuenftigesVermoegenIstNichtig(v: Vertrag) strict {
+    label de official "Ein Vertrag, durch den sich der eine Teil verpflichtet, sein künftiges Vermögen oder einen Bruchteil seines künftigen Vermögens zu übertragen oder mit einem Nießbrauch zu belasten, ist nichtig (§ 311b Abs. 2)";
+    label en unofficial "A contract obliging a party to transfer or encumber his future property is void (§ 311b (2))";
+    when verpflichtung_ueber_kuenftiges_vermoegen(v);
+    then vertrag_nichtig(v);
+}
+
+@source(BGB_P311b)
+rule VertragUeberGegenwaertigesVermoegenBedarfDerForm(v: Vertrag) strict {
+    label de official "Ein Vertrag, durch den sich der eine Teil verpflichtet, sein gegenwärtiges Vermögen oder einen Bruchteil davon zu übertragen oder mit einem Nießbrauch zu belasten, bedarf der notariellen Beurkundung (§ 311b Abs. 3)";
+    label en unofficial "A contract obliging a party to transfer or encumber his present property requires notarial recording (§ 311b (3))";
+    when verpflichtung_ueber_gegenwaertiges_vermoegen(v);
+    when nicht_notariell_beurkundet(v);
+    then formmangel(v);
+}
+
+@source(BGB_P311b)
+rule VertragUeberDenNachlassEinesLebendenIstNichtig(v: Vertrag) strict {
+    label de official "Ein Vertrag über den Nachlass eines noch lebenden Dritten ist nichtig; das Gleiche gilt von einem Vertrag über den Pflichtteil oder ein Vermächtnis aus dem Nachlass eines noch lebenden Dritten (§ 311b Abs. 4)";
+    label en unofficial "A contract on the estate of a third party still living is void; the same applies to the compulsory share or a legacy (§ 311b (4))";
+    when vertrag_ueber_den_nachlass_eines_lebenden_dritten(v);
+    then vertrag_nichtig(v);
+}
+
+@source(BGB_P311b)
+rule VertragKuenftigerErbenBedarfDerForm(v: Vertrag) strict {
+    label de official "Absatz 4 gilt nicht für einen Vertrag, der unter künftigen gesetzlichen Erben über den gesetzlichen Erbteil oder den Pflichtteil eines von ihnen geschlossen wird; ein solcher Vertrag bedarf der notariellen Beurkundung (§ 311b Abs. 5)";
+    label en unofficial "(4) does not apply to a contract among future intestate heirs on a statutory share or compulsory portion; such a contract requires notarial recording (§ 311b (5))";
+    when vertrag_kuenftiger_gesetzlicher_erben(v);
+    when nicht_notariell_beurkundet(v);
+    then formmangel(v);
+}
+
+@source(BGB_P311c)
+rule VerpflichtungErstrecktSichAufZubehoer(v: Vertrag, s: Sache) strict {
+    label de official "Verpflichtet sich jemand zur Veräußerung oder Belastung einer Sache, so erstreckt sich diese Verpflichtung im Zweifel auch auf das Zubehör der Sache (§ 311c)";
+    label en unofficial "If a person undertakes to dispose of or encumber a thing, the obligation extends in case of doubt to its accessories (§ 311c)";
+    when verpflichtung_zur_veraeusserung_oder_belastung_einer_sache(v, s);
+    then verpflichtung_erstreckt_sich_auf_zubehoer(v, s);
+}
+
+// --- § 313 Störung der Geschäftsgrundlage ------------------------------------------------------------------
+
+pub relation schwerwiegende_veraenderung_der_geschaeftsgrundlage(v: Vertrag) kind empirical {
+    label de official "Umstände, die zur Grundlage des Vertrags geworden sind, haben sich nach Vertragsschluss schwerwiegend verändert, und die Parteien hätten den Vertrag nicht oder mit anderem Inhalt geschlossen, wenn sie die Veränderung vorausgesehen hätten (§ 313 Abs. 1)";
+    label en unofficial "circumstances forming the basis of the contract changed seriously after conclusion and the parties would not have concluded it, or would have done so with different content (§ 313 (1))";
+}
+pub relation wesentliche_vorstellungen_falsch(v: Vertrag) kind empirical {
+    label de official "Wesentliche Vorstellungen, die zur Grundlage des Vertrags geworden sind, stellen sich als falsch heraus (§ 313 Abs. 2)";
+    label en unofficial "material assumptions forming the basis of the contract turn out to be false (§ 313 (2))";
+}
+@source(BGB_P313)
+pub external judgment relation festhalten_am_unveraenderten_vertrag_nicht_zumutbar(v: Vertrag, teil: Person) {
+    authority Court;
+    label de official "§ 313 Abs. 1. Das Gericht hat festgestellt, dass dem Teil unter Berücksichtigung aller Umstände des Einzelfalls, insbesondere der vertraglichen oder gesetzlichen Risikoverteilung, das Festhalten am unveränderten Vertrag nicht zugemutet werden kann";
+    label en unofficial "§ 313 (1). The court found that adherence to the unchanged contract cannot be required of the party, considering all circumstances and the allocation of risk";
+}
+pub relation anpassung_des_vertrags_verlangbar(v: Vertrag, teil: Person) kind institutional {
+    label de official "Anpassung des Vertrags kann verlangt werden (§ 313 Abs. 1)";
+    label en unofficial "adaptation of the contract may be demanded (§ 313 (1))";
+}
+@source(BGB_P313)
+pub external judgment relation anpassung_nicht_moeglich_oder_nicht_zumutbar(v: Vertrag, teil: Person) {
+    authority Court;
+    label de official "§ 313 Abs. 3 Satz 1. Das Gericht hat festgestellt, dass eine Anpassung des Vertrags nicht möglich oder einem Teil nicht zumutbar ist";
+    label en unofficial "§ 313 (3) sentence 1. The court found that adaptation is impossible or cannot be required of a party";
+}
+pub relation dauerschuldverhaeltnis(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein Dauerschuldverhältnis (§ 313 Abs. 3 Satz 2, § 314 Abs. 1)";
+    label en unofficial "the contract is a continuing obligation (§ 313 (3) sentence 2, § 314 (1))";
+}
+pub relation kein_dauerschuldverhaeltnis(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist kein Dauerschuldverhältnis (§ 313 Abs. 3 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the contract is not a continuing obligation (§ 313 (3) sentence 2) — explicit case input";
+}
+pub relation ruecktrittsrecht(v: Vertrag, teil: Person) kind institutional {
+    label de official "Der benachteiligte Teil kann vom Vertrag zurücktreten (§ 313 Abs. 3 Satz 1)";
+    label en unofficial "the disadvantaged party may withdraw from the contract (§ 313 (3) sentence 1)";
+}
+pub relation kuendigungsrecht(v: Vertrag, teil: Person) kind institutional {
+    label de official "An die Stelle des Rücktrittsrechts tritt für Dauerschuldverhältnisse das Recht zur Kündigung (§ 313 Abs. 3 Satz 2); Kündigung aus wichtigem Grund (§ 314 Abs. 1)";
+    label en unofficial "for continuing obligations the right of termination replaces the right of withdrawal (§ 313 (3) sentence 2); termination for cause (§ 314 (1))";
+}
+
+@source(BGB_P313)
+rule AnpassungWegenStoerungDerGeschaeftsgrundlage(v: Vertrag, teil: Person) strict {
+    label de official "Haben sich Umstände, die zur Grundlage des Vertrags geworden sind, nach Vertragsschluss schwerwiegend verändert, so kann Anpassung des Vertrags verlangt werden, soweit einem Teil das Festhalten am unveränderten Vertrag nicht zugemutet werden kann (§ 313 Abs. 1)";
+    label en unofficial "Where circumstances forming the basis of the contract have seriously changed, adaptation may be demanded so far as adherence cannot be required of a party (§ 313 (1))";
+    when schwerwiegende_veraenderung_der_geschaeftsgrundlage(v);
+    when festhalten_am_unveraenderten_vertrag_nicht_zumutbar(v, teil);
+    then anpassung_des_vertrags_verlangbar(v, teil);
+}
+
+@source(BGB_P313)
+rule FalscheVorstellungenStehenDerVeraenderungGleich(v: Vertrag, teil: Person) strict {
+    label de official "Einer Veränderung der Umstände steht es gleich, wenn wesentliche Vorstellungen, die zur Grundlage des Vertrags geworden sind, sich als falsch herausstellen (§ 313 Abs. 2)";
+    label en unofficial "It is equivalent to a change of circumstances if material assumptions turn out to be false (§ 313 (2))";
+    when wesentliche_vorstellungen_falsch(v);
+    when festhalten_am_unveraenderten_vertrag_nicht_zumutbar(v, teil);
+    then anpassung_des_vertrags_verlangbar(v, teil);
+}
+
+@source(BGB_P313)
+rule RuecktrittWennAnpassungAusscheidet(v: Vertrag, teil: Person) strict {
+    label de official "Ist eine Anpassung des Vertrags nicht möglich oder einem Teil nicht zumutbar, so kann der benachteiligte Teil vom Vertrag zurücktreten (§ 313 Abs. 3 Satz 1)";
+    label en unofficial "If adaptation is impossible or cannot be required, the disadvantaged party may withdraw (§ 313 (3) sentence 1)";
+    when anpassung_nicht_moeglich_oder_nicht_zumutbar(v, teil);
+    when kein_dauerschuldverhaeltnis(v);
+    then ruecktrittsrecht(v, teil);
+}
+
+@source(BGB_P313)
+rule KuendigungStattRuecktrittBeiDauerschuldverhaeltnissen(v: Vertrag, teil: Person) strict {
+    label de official "An die Stelle des Rücktrittsrechts tritt für Dauerschuldverhältnisse das Recht zur Kündigung (§ 313 Abs. 3 Satz 2)";
+    label en unofficial "For continuing obligations the right of termination replaces the right of withdrawal (§ 313 (3) sentence 2)";
+    when anpassung_nicht_moeglich_oder_nicht_zumutbar(v, teil);
+    when dauerschuldverhaeltnis(v);
+    then kuendigungsrecht(v, teil);
+}
+
+// --- § 314 Kündigung aus wichtigem Grund ----------------------------------------------------------------
+
+@source(BGB_P314)
+pub external judgment relation wichtiger_grund_zur_kuendigung(v: Vertrag, teil: Person) {
+    authority Court;
+    label de official "§ 314 Abs. 1 Satz 2. Das Gericht hat festgestellt, dass dem kündigenden Teil unter Berücksichtigung aller Umstände des Einzelfalls und unter Abwägung der beiderseitigen Interessen die Fortsetzung des Vertragsverhältnisses bis zur vereinbarten Beendigung oder bis zum Ablauf einer Kündigungsfrist nicht zugemutet werden kann";
+    label en unofficial "§ 314 (1) sentence 2. The court found that continuation of the contract until the agreed end or the expiry of a notice period cannot be required of the terminating party";
+}
+pub relation wichtiger_grund_in_der_verletzung_einer_vertragspflicht(v: Vertrag, teil: Person) kind empirical {
+    label de official "Der wichtige Grund besteht in der Verletzung einer Pflicht aus dem Vertrag (§ 314 Abs. 2 Satz 1)";
+    label en unofficial "the compelling reason consists in the breach of a duty under the contract (§ 314 (2) sentence 1)";
+}
+pub relation abhilfefrist_erfolglos_abgelaufen_oder_abmahnung_erfolglos(v: Vertrag) kind empirical {
+    label de official "Eine zur Abhilfe bestimmte Frist ist erfolglos abgelaufen oder eine Abmahnung ist erfolglos geblieben (§ 314 Abs. 2 Satz 1)";
+    label en unofficial "a period fixed for remedy expired without result or a warning notice remained unsuccessful (§ 314 (2) sentence 1)";
+}
+@source(BGB_P314)
+pub external judgment relation sofortige_kuendigung_gerechtfertigt(v: Vertrag) {
+    authority Court;
+    label de official "§ 314 Abs. 2 Satz 3. Das Gericht hat festgestellt, dass besondere Umstände vorliegen, die unter Abwägung der beiderseitigen Interessen die sofortige Kündigung rechtfertigen; damit sind Abhilfefrist und Abmahnung entbehrlich";
+    label en unofficial "§ 314 (2) sentence 3. The court found special circumstances justifying immediate termination, so that a period for remedy and a warning are dispensable";
+}
+@source(BGB_P314)
+pub external judgment relation kuendigung_innerhalb_angemessener_frist(v: Vertrag, teil: Person) {
+    authority Court;
+    label de official "§ 314 Abs. 3. Das Gericht hat festgestellt, dass der Berechtigte innerhalb einer angemessenen Frist gekündigt hat, nachdem er vom Kündigungsgrund Kenntnis erlangt hat";
+    label en unofficial "§ 314 (3). The court found that the entitled party terminated within a reasonable period after learning of the ground for termination";
+}
+pub relation kuendigung_aus_wichtigem_grund_zulaessig(v: Vertrag, teil: Person) kind institutional {
+    label de official "Die Kündigung des Dauerschuldverhältnisses aus wichtigem Grund ohne Einhaltung einer Kündigungsfrist ist zulässig (§ 314 Abs. 1, 2, 3)";
+    label en unofficial "termination of the continuing obligation for cause without a notice period is admissible (§ 314 (1), (2), (3))";
+}
+pub relation schadensersatz_neben_kuendigung(v: Vertrag, teil: Person) kind institutional {
+    label de official "Die Berechtigung, Schadensersatz zu verlangen, wird durch die Kündigung nicht ausgeschlossen (§ 314 Abs. 4)";
+    label en unofficial "the right to claim damages is not excluded by the termination (§ 314 (4))";
+}
+
+@source(BGB_P314)
+rule KuendigungAusWichtigemGrundOhneVertragspflichtverletzung(v: Vertrag, teil: Person) strict {
+    label de official "Dauerschuldverhältnisse kann jeder Vertragsteil aus wichtigem Grund ohne Einhaltung einer Kündigungsfrist kündigen (§ 314 Abs. 1); der Berechtigte kann nur innerhalb einer angemessenen Frist kündigen, nachdem er vom Kündigungsgrund Kenntnis erlangt hat (Abs. 3)";
+    label en unofficial "Either party may terminate a continuing obligation for cause without a notice period (§ 314 (1)); only within a reasonable period after learning of the ground ((3))";
+    when dauerschuldverhaeltnis(v);
+    when wichtiger_grund_zur_kuendigung(v, teil);
+    when kuendigung_innerhalb_angemessener_frist(v, teil);
+    then kuendigung_aus_wichtigem_grund_zulaessig(v, teil);
+}
+
+@source(BGB_P314)
+rule KuendigungNachErfolgloserAbhilfefrist(v: Vertrag, teil: Person) strict {
+    label de official "Besteht der wichtige Grund in der Verletzung einer Pflicht aus dem Vertrag, ist die Kündigung erst nach erfolglosem Ablauf einer zur Abhilfe bestimmten Frist oder nach erfolgloser Abmahnung zulässig (§ 314 Abs. 2 Satz 1)";
+    label en unofficial "Where the compelling reason is a breach of contractual duty, termination is admissible only after an unsuccessful period for remedy or warning (§ 314 (2) sentence 1)";
+    when dauerschuldverhaeltnis(v);
+    when wichtiger_grund_zur_kuendigung(v, teil);
+    when wichtiger_grund_in_der_verletzung_einer_vertragspflicht(v, teil);
+    when abhilfefrist_erfolglos_abgelaufen_oder_abmahnung_erfolglos(v);
+    when kuendigung_innerhalb_angemessener_frist(v, teil);
+    then kuendigung_aus_wichtigem_grund_zulaessig(v, teil);
+}
+
+@source(BGB_P314)
+rule AbhilfefristEntbehrlichBeiBesonderenUmstaenden(v: Vertrag, teil: Person) strict {
+    label de official "Die Bestimmung einer Frist zur Abhilfe und eine Abmahnung sind entbehrlich, wenn besondere Umstände vorliegen, die unter Abwägung der beiderseitigen Interessen die sofortige Kündigung rechtfertigen (§ 314 Abs. 2 Satz 3)";
+    label en unofficial "A period for remedy and a warning are dispensable where special circumstances justify immediate termination (§ 314 (2) sentence 3)";
+    when dauerschuldverhaeltnis(v);
+    when wichtiger_grund_zur_kuendigung(v, teil);
+    when sofortige_kuendigung_gerechtfertigt(v);
+    when kuendigung_innerhalb_angemessener_frist(v, teil);
+    then kuendigung_aus_wichtigem_grund_zulaessig(v, teil);
+}
+
+@source(BGB_P314)
+rule SchadensersatzTrotzKuendigung(v: Vertrag, teil: Person) strict {
+    label de official "Die Berechtigung, Schadensersatz zu verlangen, wird durch die Kündigung nicht ausgeschlossen (§ 314 Abs. 4)";
+    label en unofficial "The right to claim damages is not excluded by the termination (§ 314 (4))";
+    when kuendigung_aus_wichtigem_grund_zulaessig(v, teil);
+    then schadensersatz_neben_kuendigung(v, teil);
+}
+
+// --- §§ 315–319 Einseitige Leistungsbestimmungsrechte ------------------------------------------------------
+
+pub entity Leistungsbestimmung {
+    label de official "Bestimmung der Leistung durch eine Partei oder einen Dritten (§§ 315, 317)";
+    label en unofficial "determination of performance by a party or a third person (§§ 315, 317)";
+}
+pub relation bestimmung_durch_vertragschliessenden_vorgesehen(v: Vertrag, b: Leistungsbestimmung, teil: Person) kind empirical {
+    label de official "Die Leistung soll durch einen der Vertragschließenden bestimmt werden (§ 315 Abs. 1)";
+    label en unofficial "the performance is to be determined by one of the contracting parties (§ 315 (1))";
+}
+pub relation bestimmung_durch_dritten_vorgesehen(v: Vertrag, b: Leistungsbestimmung, dritter: Person) kind empirical {
+    label de official "Die Bestimmung der Leistung ist einem Dritten überlassen (§ 317 Abs. 1)";
+    label en unofficial "the determination of performance is left to a third party (§ 317 (1))";
+}
+pub relation bestimmung_nach_freiem_belieben_vorgesehen(b: Leistungsbestimmung) kind empirical {
+    label de official "Der Dritte soll die Bestimmung nach freiem Belieben treffen (§ 319 Abs. 2)";
+    label en unofficial "the third party is to make the determination at his free discretion (§ 319 (2))";
+}
+pub relation bestimmung_nach_billigem_ermessen(b: Leistungsbestimmung) kind institutional {
+    label de official "Die Bestimmung ist im Zweifel nach billigem Ermessen zu treffen (§ 315 Abs. 1, § 317 Abs. 1)";
+    label en unofficial "in case of doubt the determination is to be made at reasonable discretion (§ 315 (1), § 317 (1))";
+}
+pub relation bestimmung_erklaert_am(b: Leistungsbestimmung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem die Bestimmung durch Erklärung gegenüber dem anderen Teil beziehungsweise einem der Vertragschließenden getroffen wurde (§ 315 Abs. 2, § 318 Abs. 1)";
+    label en unofficial "day on which the determination was made by declaration (§ 315 (2), § 318 (1))";
+}
+@source(BGB_P315)
+pub external judgment relation bestimmung_entspricht_der_billigkeit(b: Leistungsbestimmung) {
+    authority Court;
+    label de official "§ 315 Abs. 3 Satz 1. Das Gericht hat festgestellt, dass die getroffene Bestimmung der Billigkeit entspricht; entspricht sie ihr nicht, wird die Bestimmung durch Urteil getroffen (Satz 2)";
+    label en unofficial "§ 315 (3) sentence 1. The court found that the determination made is equitable; if it is not, the determination is made by judgment (sentence 2)";
+}
+@source(BGB_P319)
+pub external judgment relation bestimmung_des_dritten_offenbar_unbillig(b: Leistungsbestimmung) {
+    authority Court;
+    label de official "§ 319 Abs. 1 Satz 1. Das Gericht hat festgestellt, dass die vom Dritten nach billigem Ermessen zu treffende Bestimmung offenbar unbillig ist; die Bestimmung erfolgt dann durch Urteil (Satz 2)";
+    label en unofficial "§ 319 (1) sentence 1. The court found the third party's determination manifestly inequitable; it is then made by judgment (sentence 2)";
+}
+pub relation bestimmung_verbindlich(b: Leistungsbestimmung) kind institutional {
+    label de official "Die getroffene Bestimmung ist für den anderen Teil verbindlich (§ 315 Abs. 3 Satz 1, § 319 Abs. 1 Satz 1)";
+    label en unofficial "the determination made is binding on the other party (§ 315 (3), § 319 (1))";
+}
+pub relation bestimmung_erfolgt_durch_urteil(b: Leistungsbestimmung) kind institutional {
+    label de official "Die Bestimmung erfolgt durch Urteil (§ 315 Abs. 3 Satz 2, § 319 Abs. 1 Satz 2)";
+    label en unofficial "the determination is made by judgment (§ 315 (3) sentence 2, § 319 (1) sentence 2)";
+}
+pub relation bestimmung_verzoegert_oder_verweigert(b: Leistungsbestimmung) kind empirical {
+    label de official "Der Dritte kann oder will die Bestimmung nicht treffen oder verzögert sie (§ 319 Abs. 1 Satz 2, Abs. 2)";
+    label en unofficial "the third party cannot or will not make the determination, or delays it (§ 319 (1) sentence 2, (2))";
+}
+pub relation umfang_der_gegenleistung_nicht_bestimmt(v: Vertrag, b: Leistungsbestimmung) kind empirical {
+    label de official "Der Umfang der für eine Leistung versprochenen Gegenleistung ist nicht bestimmt (§ 316)";
+    label en unofficial "the extent of the counter-performance promised is not determined (§ 316)";
+}
+pub relation bestimmungsrecht_steht_zu(v: Vertrag, b: Leistungsbestimmung, teil: Person) kind institutional {
+    label de official "Die Bestimmung steht im Zweifel demjenigen Teil zu, welcher die Gegenleistung zu fordern hat (§ 316)";
+    label en unofficial "in case of doubt the determination is for the party entitled to demand the counter-performance (§ 316)";
+}
+pub relation glaeubiger_der_gegenleistung(v: Vertrag, teil: Person) kind empirical {
+    label de official "Dieser Teil hat die Gegenleistung zu fordern (§ 316)";
+    label en unofficial "this party is entitled to demand the counter-performance (§ 316)";
+}
+pub relation mehrere_dritte_bestimmen(v: Vertrag, b: Leistungsbestimmung) kind empirical {
+    label de official "Die Bestimmung soll durch mehrere Dritte erfolgen (§ 317 Abs. 2)";
+    label en unofficial "the determination is to be made by several third parties (§ 317 (2))";
+}
+pub relation uebereinstimmung_aller_erforderlich(b: Leistungsbestimmung) kind institutional {
+    label de official "Im Zweifel ist Übereinstimmung aller erforderlich; soll eine Summe bestimmt werden und werden verschiedene Summen bestimmt, ist im Zweifel die Durchschnittssumme maßgebend (§ 317 Abs. 2)";
+    label en unofficial "in case of doubt agreement of all is required; if different sums are determined, the average governs (§ 317 (2))";
+}
+@source(BGB_P318)
+pub external judgment relation anfechtung_unverzueglich_erklaert(b: Leistungsbestimmung) {
+    authority Court;
+    label de official "§ 318 Abs. 2 Satz 2. Das Gericht hat festgestellt, dass die Anfechtung unverzüglich erfolgt ist, nachdem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt hat — „unverzüglich“ ist ein bewertendes Merkmal, keine Frist von null Tagen";
+    label en unofficial "§ 318 (2) sentence 2. The court found that the avoidance was declared without undue delay after the entitled person learned of the ground";
+}
+pub enum Anfechtungsgrund318 {
+    label de official "Grund der Anfechtung der getroffenen Bestimmung (§ 318 Abs. 2 Satz 1)";
+    label en unofficial "ground for avoiding the determination made (§ 318 (2) sentence 1)";
+    Irrtum,
+    Drohung,
+    ArglistigeTaeuschung
+}
+pub relation anfechtung_erklaert(b: Leistungsbestimmung, anfechtender: Person, grund: Anfechtungsgrund318) kind empirical {
+    label de official "Die Anfechtung der getroffenen Bestimmung wegen Irrtums, Drohung oder arglistiger Täuschung ist von einem Vertragschließenden gegenüber dem anderen Teil erklärt (§ 318 Abs. 2 Satz 1)";
+    label en unofficial "avoidance of the determination for mistake, duress or deceit was declared by a contracting party to the other (§ 318 (2) sentence 1)";
+}
+pub relation anfechtung_wirksam(b: Leistungsbestimmung, anfechtender: Person) kind institutional {
+    label de official "Die Anfechtung der Bestimmung ist wirksam (§ 318 Abs. 2)";
+    label en unofficial "the avoidance of the determination is effective (§ 318 (2))";
+}
+pub relation anfechtung_ausgeschlossen(b: Leistungsbestimmung) kind institutional {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn 30 Jahre verstrichen sind, nachdem die Bestimmung getroffen worden ist (§ 318 Abs. 2 Satz 3)";
+    label en unofficial "avoidance is excluded once 30 years have elapsed since the determination was made (§ 318 (2) sentence 3)";
+}
+pub relation anfechtung_erklaert_am(b: Leistungsbestimmung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem die Anfechtung erklärt wurde (§ 318 Abs. 2)";
+    label en unofficial "day on which avoidance was declared (§ 318 (2))";
+}
+
+@source(BGB_P315)
+rule BestimmungDurchParteiNachBilligemErmessen(v: Vertrag, b: Leistungsbestimmung, teil: Person) strict {
+    label de official "Soll die Leistung durch einen der Vertragschließenden bestimmt werden, so ist im Zweifel anzunehmen, dass die Bestimmung nach billigem Ermessen zu treffen ist (§ 315 Abs. 1); die Bestimmung erfolgt durch Erklärung gegenüber dem anderen Teil (Abs. 2)";
+    label en unofficial "Where performance is to be determined by a contracting party, in case of doubt it is to be determined at reasonable discretion (§ 315 (1)); by declaration to the other party ((2))";
+    when bestimmung_durch_vertragschliessenden_vorgesehen(v, b, teil);
+    then bestimmung_nach_billigem_ermessen(b);
+}
+
+@source(BGB_P315)
+rule BilligeBestimmungIstVerbindlich(b: Leistungsbestimmung, tag: Date) strict {
+    label de official "Soll die Bestimmung nach billigem Ermessen erfolgen, so ist die getroffene Bestimmung für den anderen Teil nur verbindlich, wenn sie der Billigkeit entspricht (§ 315 Abs. 3 Satz 1)";
+    label en unofficial "Where the determination is at reasonable discretion, it binds the other party only if it is equitable (§ 315 (3) sentence 1)";
+    when bestimmung_nach_billigem_ermessen(b);
+    when bestimmung_erklaert_am(b, tag);
+    when bestimmung_entspricht_der_billigkeit(b);
+    then bestimmung_verbindlich(b);
+}
+
+@source(BGB_P316)
+rule BestimmungsrechtDesGlaeubigersDerGegenleistung(v: Vertrag, b: Leistungsbestimmung, teil: Person) strict {
+    label de official "Ist der Umfang der für eine Leistung versprochenen Gegenleistung nicht bestimmt, so steht die Bestimmung im Zweifel demjenigen Teil zu, welcher die Gegenleistung zu fordern hat (§ 316)";
+    label en unofficial "Where the extent of the counter-performance is not determined, in case of doubt the party entitled to demand it determines it (§ 316)";
+    when umfang_der_gegenleistung_nicht_bestimmt(v, b);
+    when glaeubiger_der_gegenleistung(v, teil);
+    then bestimmungsrecht_steht_zu(v, b, teil);
+}
+
+@source(BGB_P317)
+rule BestimmungDurchDrittenNachBilligemErmessen(v: Vertrag, b: Leistungsbestimmung, dritter: Person) strict {
+    label de official "Ist die Bestimmung der Leistung einem Dritten überlassen, so ist im Zweifel anzunehmen, dass sie nach billigem Ermessen zu treffen ist (§ 317 Abs. 1)";
+    label en unofficial "Where the determination is left to a third party, in case of doubt it is to be made at reasonable discretion (§ 317 (1))";
+    when bestimmung_durch_dritten_vorgesehen(v, b, dritter);
+    then bestimmung_nach_billigem_ermessen(b);
+}
+
+@source(BGB_P317)
+rule UebereinstimmungMehrererDritter(v: Vertrag, b: Leistungsbestimmung) strict {
+    label de official "Soll die Bestimmung durch mehrere Dritte erfolgen, so ist im Zweifel Übereinstimmung aller erforderlich; soll eine Summe bestimmt werden, so ist bei verschiedenen Summen im Zweifel die Durchschnittssumme maßgebend (§ 317 Abs. 2)";
+    label en unofficial "Where several third parties are to determine, in case of doubt agreement of all is required; for sums, the average governs (§ 317 (2))";
+    when mehrere_dritte_bestimmen(v, b);
+    then uebereinstimmung_aller_erforderlich(b);
+}
+
+@source(BGB_P318)
+rule AnfechtungDerBestimmungDurchVertragschliessenden(b: Leistungsbestimmung, anfechtender: Person, grund: Anfechtungsgrund318) strict {
+    label de official "Die Anfechtung der getroffenen Bestimmung wegen Irrtums, Drohung oder arglistiger Täuschung steht nur den Vertragschließenden zu; sie muss unverzüglich erfolgen, nachdem der Anfechtungsberechtigte von dem Anfechtungsgrund Kenntnis erlangt hat (§ 318 Abs. 2 Sätze 1, 2)";
+    label en unofficial "Avoidance of the determination for mistake, duress or deceit is available only to the contracting parties and must be declared without undue delay (§ 318 (2))";
+    when anfechtung_erklaert(b, anfechtender, grund);
+    when anfechtung_unverzueglich_erklaert(b);
+    then anfechtung_wirksam(b, anfechtender);
+}
+
+@source(BGB_P318)
+rule AnfechtungNachDreissigJahrenAusgeschlossen(b: Leistungsbestimmung, getroffen: Date, erklaert: Date) strict {
+    label de official "Die Anfechtung ist ausgeschlossen, wenn 30 Jahre verstrichen sind, nachdem die Bestimmung getroffen worden ist (§ 318 Abs. 2 Satz 3) — Jahresfrist nach § 188 Abs. 2 vom Tag der Bestimmung, Politik BGB_SCHULDRECHT_AT_KALENDER";
+    label en unofficial "Avoidance is excluded once 30 years have elapsed since the determination was made (§ 318 (2) sentence 3) — year period under § 188 (2) from the day of the determination";
+    when bestimmung_erklaert_am(b, getroffen);
+    when anfechtung_erklaert_am(b, erklaert);
+    when erklaert > add_calendar_period(getroffen, 30 calendar_year);
+    then anfechtung_ausgeschlossen(b);
+}
+
+@source(BGB_P319)
+rule OffenbarUnbilligeBestimmungDesDrittenWirdDurchUrteilErsetzt(b: Leistungsbestimmung) strict {
+    label de official "Soll der Dritte die Leistung nach billigem Ermessen bestimmen, so ist die getroffene Bestimmung für die Vertragschließenden nicht verbindlich, wenn sie offenbar unbillig ist; die Bestimmung erfolgt in diesem Falle durch Urteil (§ 319 Abs. 1)";
+    label en unofficial "Where the third party determines at reasonable discretion, a manifestly inequitable determination does not bind the parties; it is then made by judgment (§ 319 (1))";
+    when bestimmung_nach_billigem_ermessen(b);
+    when bestimmung_des_dritten_offenbar_unbillig(b);
+    then bestimmung_erfolgt_durch_urteil(b);
+}
+
+@source(BGB_P319)
+rule UrteilErsetztDieVerzoegerteBestimmung(b: Leistungsbestimmung) strict {
+    label de official "Die Bestimmung erfolgt durch Urteil, wenn der Dritte die Bestimmung nicht treffen kann oder will oder wenn er sie verzögert (§ 319 Abs. 1 Satz 2)";
+    label en unofficial "The determination is made by judgment where the third party cannot or will not determine, or delays it (§ 319 (1) sentence 2)";
+    when bestimmung_nach_billigem_ermessen(b);
+    when bestimmung_verzoegert_oder_verweigert(b);
+    then bestimmung_erfolgt_durch_urteil(b);
+}
+
+@source(BGB_P319)
+rule VertragUnwirksamBeiFreiemBeliebenOhneBestimmung(v: Vertrag, b: Leistungsbestimmung) strict {
+    label de official "Soll der Dritte die Bestimmung nach freiem Belieben treffen, so ist der Vertrag unwirksam, wenn der Dritte die Bestimmung nicht treffen kann oder will oder wenn er sie verzögert (§ 319 Abs. 2)";
+    label en unofficial "Where the third party determines at free discretion, the contract is ineffective if he cannot or will not determine, or delays it (§ 319 (2))";
+    when bestimmung_nach_freiem_belieben_vorgesehen(b);
+    when umfang_der_gegenleistung_nicht_bestimmt(v, b);
+    when bestimmung_verzoegert_oder_verweigert(b);
+    then vertrag_unwirksam(v);
+}

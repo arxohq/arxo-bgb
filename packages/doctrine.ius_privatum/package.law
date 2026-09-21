@@ -1,0 +1,152 @@
+// МОСТОВОЙ СЛОВАРЬ «ПРАВО И ИСК» — одна форма для римского права, Меджелле,
+// Code civil, BGB и ГК РК.
+//
+// ЗАЧЕМ (сравнительная цепь частного права, 02.09.2026). Вопрос «есть ли у
+// притязания средство защиты» в каждом кодексе задаётся своими словами:
+// actio у Гая, دعوى у Меджелле, action у Code civil, Anspruch у BGB, иск
+// у ГК РК. Сравнить их можно только через общие головы: `impact` сравнивает
+// акты по ИМЕНАМ предикатов ([[impact-compares-acts-not-cases]]), а пять
+// кодексов с пятью словарями сравнить нечем. Здесь структура записана ОДИН
+// РАЗ; предметные пакеты её НАПОЛНЯЮТ — пишут в pub-головы словаря (ось
+// импорта §23 двусторонняя: [[foreign-predicate-can-be-a-rule-head]], образец
+// — doctrine.acts_for ↔ kz.corpus.civil_code гл. 5), а выводит уже словарь
+// на слитом мире (link_deps). Инвариант 5 соблюдён: словарь — те же
+// правила ядра, никакой семантики вне CLIR.
+//
+// ГЛАВНОЕ УТВЕРЖДЕНИЕ СЛОВАРЯ — римское: ius есть actio. Право названо
+// ДЕЙСТВЕННЫМ (`ius_efficax`) не потому, что кодекс признаёт материальное
+// положение, а потому, что правопорядок ДАЁТ средство защиты и НЕ ОТНИМАЕТ
+// его: эксцепцией, погашением тяжбой, давностью, иммунитетом. Две другие
+// головы называют расхождения, ради которых сравнение затевается:
+// `ius_nudum` — материальное положение без средства защиты (obligatio
+// naturalis, долг с истёкшей давностью), `remedium_sine_iure` — средство
+// защиты без материального права (actio Publiciana у бонитарного
+// собственника, преторская bonorum possessio).
+//
+// ЧТО ИЗМЕРЕНО ГРАНИЦЕЙ ЯДРА, ПРЕЖДЕ ЧЕМ ПИСАТЬ. Наследование
+// `entity X : чужой::Y` по-прежнему отвергается парсером. Алиас типа
+// через границу пакета (`type P = чужой::T`) разрешён с errata E-0098
+// (02.09.2026); образец — `corpus/laws/kz/codes/civil-code/60-ius-privatum.law`.
+// Импорт `as` по-прежнему даёт LDC-E0206. Предметный пакет типизирует
+// лица, вещи и притязания типами словаря (`doctrine.ius_privatum::Persona`).
+//
+// ГРАНИЦЫ СЛОВАРЯ (названы). Словарь не знает ни процесса, ни сумм, ни
+// сроков: ЧЕМ средство защиты отнято (exceptio doli, res iudicata, давность)
+// — дело кодекса, словарь видит только итог `remedium_exclusum`. Ось
+// времени у словаря нет вовсе: «на какую дату» спрашивает legal_time дела,
+// а окна действия сообщает кодекс. Наследственный переход выражен двумя
+// головами (к наследнику / против наследника), но КТО наследник — тоже
+// материальное положение кодекса.
+
+language "law.core" version "0.2";
+package doctrine.ius_privatum version "0.1.0";
+namespace "urn:doctrine:clir:ius-privatum";
+
+source IUS_PRIVATUM_MODEL {
+    kind doctrine;
+    jurisdiction "none";
+    number "IUS-PRIVATUM-MODEL-1";
+    label ru-KZ unofficial "Мостовой словарь права и иска (ius privatum), формализованная доктрина сравнительного частного права";
+}
+
+edition IUS_PRIVATUM_MODEL_ABSTRACT of IUS_PRIVATUM_MODEL {
+    language ru-KZ;
+    officiality unofficial;
+    materialization_status ABSTRACT_ONLY;
+    applicability timeless;
+}
+
+// ---- типы: три вещи, которые есть у каждого кодекса ---------------------------
+pub entity Persona { label ru-KZ unofficial "лицо частного права: истец, ответчик, собственник, должник, кредитор, наследник"; }
+pub entity Res { label ru-KZ unofficial "вещь: предмет владения, собственности или притязания"; }
+pub entity Causa { label ru-KZ unofficial "притязание как основание тяжбы: договор, деликт, собственность, наследство — одно спорное отношение между двумя лицами"; }
+
+// ---- материальный слой: что кодекс сообщает о положении сторон ---------------
+pub relation dominium(dominus: Persona, res: Res) kind institutional { label ru-KZ unofficial "лицо является собственником вещи по праву этого кодекса"; }
+pub relation possessio(possessor: Persona, res: Res) kind institutional { label ru-KZ unofficial "лицо владеет вещью по праву этого кодекса"; }
+pub relation obligatio(debitor: Persona, creditor: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "должник обязан перед кредитором по этому притязанию"; }
+pub relation causa_ex_contractu(causa: Causa) kind institutional { label ru-KZ unofficial "притязание возникло из договора"; }
+pub relation causa_ex_delicto(causa: Causa) kind institutional { label ru-KZ unofficial "притязание возникло из правонарушения"; }
+pub relation causa_de_re(causa: Causa, res: Res) kind institutional { label ru-KZ unofficial "притязание направлено на эту вещь"; }
+pub relation heres_est(heres: Persona, defunctus: Persona) kind institutional { label ru-KZ unofficial "лицо является наследником умершего по праву этого кодекса"; }
+
+// ---- слой средств защиты: что кодекс даёт и что отнимает ---------------------
+pub relation remedium_datur(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "правопорядок даёт истцу средство защиты против ответчика по этому притязанию"; }
+pub relation remedium_in_rem(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты вещное: истец требует вещь как свою"; }
+pub relation remedium_in_personam(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты личное: истец требует от ответчика дать, сделать, предоставить"; }
+pub relation remedium_poenale(causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты преследует наказание, а не только возмещение"; }
+pub relation remedium_exclusum(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты отнято: возражением, погашением тяжбой, давностью, иммунитетом ответчика"; }
+pub relation remedium_consumptum(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты погашено прежней тяжбой о том же"; }
+pub relation remedium_transit_ad_heredem(causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты переходит к наследнику истца"; }
+pub relation remedium_transit_contra_heredem(causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты переходит против наследника ответчика"; }
+pub relation remedium_perpetuum(causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты не ограничено сроком"; }
+pub relation remedium_temporale(causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты ограничено сроком"; }
+
+// ---- выводы словаря ----------------------------------------------------------
+//
+// `remedium_datur` пишет КОДЕКС; `remedium_competit` выводит СЛОВАРЬ — то же
+// плюс переход к наследникам. Две головы вместо одной рекурсивной: рекурсия
+// живёт только в строгом слое под supported(…), а кодекс пишет
+// `remedium_datur` поражаемыми правилами (иск дан, «если не отнят»), и
+// строгий читатель поражаемой головы отвергается (LDC-E4103), а поражаемый
+// рекурсивный — NON_EXECUTABLE_UNSTRATIFIED. Измерено 02.09.2026 на Гае IV.
+pub relation remedium_competit(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты принадлежит истцу против ответчика: дано ему самому либо перешло к нему или против него по наследству"; }
+pub relation ius_efficax(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "право действенно: средство защиты дано и не отнято"; }
+pub relation ius_nudum(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "право голое: должник обязан, а средства защиты у кредитора нет"; }
+pub relation remedium_sine_iure(actor: Persona, reus: Persona, causa: Causa) kind institutional { label ru-KZ unofficial "средство защиты без материального права: истец не собственник и не кредитор по этому кодексу, но защиту получает"; }
+
+rule RemediumCompetitDatum(actor: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Данное правопорядком средство защиты принадлежит истцу";
+    when remedium_datur(actor, reus, causa);
+    then remedium_competit(actor, reus, causa);
+}
+rule TransitAdHeredem(actor: Persona, heres: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Переходящее к наследнику средство защиты принадлежит наследнику истца";
+    when remedium_datur(actor, reus, causa) and heres_est(heres, actor) and remedium_transit_ad_heredem(causa);
+    then remedium_competit(heres, reus, causa);
+}
+rule TransitContraHeredem(actor: Persona, heres: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Переходящее против наследника средство защиты принадлежит истцу против наследника ответчика";
+    when remedium_datur(actor, reus, causa) and heres_est(heres, reus) and remedium_transit_contra_heredem(causa);
+    then remedium_competit(actor, heres, causa);
+}
+rule IusEfficax(actor: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Право действенно, когда истцу принадлежит средство защиты";
+    when remedium_competit(actor, reus, causa);
+    then ius_efficax(actor, reus, causa);
+}
+rule RemediumExclusumTollitIus(actor: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Отнятое средство защиты лишает право действенности";
+    when remedium_competit(actor, reus, causa) and remedium_exclusum(actor, reus, causa);
+    then not ius_efficax(actor, reus, causa);
+}
+priority ExclusioSuperDationem {
+    label ru-KZ unofficial "Отнятие средства защиты сильнее его дачи: exceptio против intentio";
+    prefer RemediumExclusumTollitIus over IusEfficax;
+    reason explicit_exception;
+}
+rule ConsumptumExclusum(actor: Persona, reus: Persona, causa: Causa) strict {
+    label ru-KZ unofficial "Погашенное прежней тяжбой средство защиты отнято";
+    when remedium_consumptum(actor, reus, causa);
+    then remedium_exclusum(actor, reus, causa);
+}
+rule IusNudum(actor: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Обязательство без средства защиты — голое право";
+    when obligatio(reus, actor, causa) and not_known(remedium_competit(actor, reus, causa));
+    then ius_nudum(actor, reus, causa);
+}
+rule IusNudumExclusione(actor: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Обязательство, средство защиты по которому отнято, — голое право";
+    when obligatio(reus, actor, causa) and remedium_competit(actor, reus, causa) and remedium_exclusum(actor, reus, causa);
+    then ius_nudum(actor, reus, causa);
+}
+rule RemediumSineIurePersonale(actor: Persona, reus: Persona, causa: Causa) defeasible {
+    label ru-KZ unofficial "Личное средство защиты без обязательства ответчика — защита без права";
+    when remedium_competit(actor, reus, causa) and remedium_in_personam(actor, reus, causa) and not_known(obligatio(reus, actor, causa));
+    then remedium_sine_iure(actor, reus, causa);
+}
+rule RemediumSineIureReale(actor: Persona, reus: Persona, causa: Causa, res: Res) defeasible {
+    label ru-KZ unofficial "Вещное средство защиты без собственности истца — защита без права";
+    when remedium_competit(actor, reus, causa) and remedium_in_rem(actor, reus, causa) and causa_de_re(causa, res) and not_known(dominium(actor, res));
+    then remedium_sine_iure(actor, reus, causa);
+}

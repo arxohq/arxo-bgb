@@ -1,0 +1,29 @@
+// ERSTES BUCH, ABSCHNITT 1 UND 3 — persons and capacity: legal capacity from
+// birth (§ 1), majority at twenty-one (§ 2), incapacity (§ 104), limited
+// capacity of a minor from seven years (§ 106). The Code has no paternal power
+// over an adult son: a contract between father and adult son is an ordinary
+// contract (casus 11).
+//
+// READING OF THE CASE FACT: `in_potestate(s, p)` — a son in the house-father’s
+// power — is read as a minor under parental supervision (§ 106; § 832).
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+relation rechtsfaehig(persona: Persona) kind institutional { label de official "rechtsfähig"; label en unofficial "the person has legal capacity (§ 1)"; }
+relation geboren(persona: Persona) kind empirical { label de official "geboren"; label en unofficial "the person has been born (§ 1)"; }
+relation volljaehrig(persona: Persona) kind empirical { label de official "volljährig"; label en unofficial "the person has completed the twenty-first year of age (§ 2)"; }
+relation minderjaehrig_unter_sieben(persona: Persona) kind empirical { label de official "hat das siebente Lebensjahr nicht vollendet"; label en unofficial "the child has not completed the seventh year of age (§ 104)"; }
+relation geschaeftsunfaehig(persona: Persona) kind institutional { label de official "geschäftsunfähig"; label en unofficial "the person lacks capacity to contract (§ 104)"; }
+relation beschraenkt_geschaeftsfaehig(persona: Persona) kind institutional { label de official "in der Geschäftsfähigkeit beschränkt"; label en unofficial "a minor who has completed seven years has limited capacity to contract (§ 106)"; }
+relation minderjaehrig_unter_aufsicht(kind: Persona, aufsichtspflichtiger: Persona) kind institutional { label de official "Minderjähriger unter Aufsicht"; label en unofficial "a minor under parental supervision (§ 106; § 832)"; }
+
+@source(BGB_P1)
+rule Rechtsfaehigkeit(p: Persona) strict { label de official "Die Rechtsfähigkeit des Menschen beginnt mit der Vollendung der Geburt"; label en unofficial "Legal capacity begins at completed birth (§ 1)"; when geboren(p); then rechtsfaehig(p); }
+@source(BGB_P104)
+rule Geschaeftsunfaehig(p: Persona) strict { label de official "Geschäftsunfähig ist, wer nicht das siebente Lebensjahr vollendet hat"; label en unofficial "A child under seven lacks capacity to contract (§ 104)"; when minderjaehrig_unter_sieben(p); then geschaeftsunfaehig(p); }
+@source(BGB_P106, BGB_P2)
+rule BeschraenktGeschaeftsfaehig(s: Persona, p: Persona) strict { label de official "Ein Minderjähriger, der das siebente Lebensjahr vollendet hat, ist in der Geschäftsfähigkeit beschränkt"; label en unofficial "A minor who has completed seven years has limited capacity to contract until twenty-one (§ 106; § 2)"; when minderjaehrig_unter_aufsicht(s, p) and not_known(minderjaehrig_unter_sieben(s)); then beschraenkt_geschaeftsfaehig(s); }
+@source(BGB_P106)
+rule MinderjaehrigUnterAufsicht(s: Persona, p: Persona) strict { label de official "Minderjähriger"; label en unofficial "A son in potestate is a minor under parental supervision (§ 106) unless of full age (§ 2)"; when doctrine.ius_privatum::in_potestate(s, p) and not_known(volljaehrig(s)); then minderjaehrig_unter_aufsicht(s, p); }

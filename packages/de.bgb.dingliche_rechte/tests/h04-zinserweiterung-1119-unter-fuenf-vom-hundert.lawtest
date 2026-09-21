@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1119 Abs. 1: Der Zinssatz von 3,5 v. H. ist niedriger als fünf vom Hundert; die Hypothek kann ohne Zustimmung der gleich- oder nachstehenden Berechtigten auf Zinsen bis zu fünf vom Hundert erweitert werden. Fünf vom Hundert von 200 000,00 € sind 10 000,00 € (eine Rundung auf den Cent).
+test "§ 1119 Abs. 1: Zinssatz unter fünf vom Hundert — Erweiterung ohne Zustimmung, Höchstbetrag 10 000,00 €" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": geldsumme(entity_ref("urn:de:bgb:dr:h04:hyp"), 200000.00 EUR) { origin adjudicated; }
+        assert "f2": forderung_verzinslich_mit(entity_ref("urn:de:bgb:dr:h04:hyp"), 3.5) { origin adjudicated; }
+    }
+    evaluate truth(erweiterung_der_zinshaftung_ohne_zustimmung_zulaessig(entity_ref("urn:de:bgb:dr:h04:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(hoechstbetrag_der_zinshaftung(entity_ref("urn:de:bgb:dr:h04:hyp"), 10000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

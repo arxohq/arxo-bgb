@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1586b Abs. 1 Satz 3: der Unterhaltsverpflichtete A ist gestorben, die Pflicht geht auf den Erben über. Der volle Unterhalt beträgt 2 400,00 €, der fiktive Pflichtteil — der Betrag, der dem Berechtigten zustände, wenn die Ehe nicht geschieden worden wäre — 1 800,00 €. Er ist ein ausdrücklicher EINGANG des Falls, weil `de.bgb.verfuegungen` nicht importiert werden darf (Ledger D-12-13). Die Haftung des Erben ist auf 1 800,00 € begrenzt.
+test "§ 1586b Abs. 1: die Haftung des Erben endet beim fiktiven Pflichtteil" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:A"), entity_ref("urn:de:bgb:ehe:u04:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:u04:E")) { origin case_input; }
+        assert "f3": geschiedener_ehegatte(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:B")) { origin case_input; }
+        assert "f4": ehelicher_bedarf(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:B"), 2400.00 EUR) { origin case_input; }
+        assert "f5": einkuenfte_aus_angemessener_erwerbstaetigkeit(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:B"), 900.00 EUR) { origin case_input; }
+        assert "f6": tod_des_verpflichteten(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:A")) { origin case_input; }
+        assert "f7": erbe_des_verpflichteten(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:A"), entity_ref("urn:de:bgb:ehe:u04:ERBE")) { origin case_input; }
+        assert "f8": fiktiver_pflichtteil(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:B"), 1800.00 EUR) { origin case_input; }
+    }
+    evaluate truth(haftung_des_erben(entity_ref("urn:de:bgb:ehe:u04:E"), entity_ref("urn:de:bgb:ehe:u04:ERBE"), entity_ref("urn:de:bgb:ehe:u04:B"), 1800.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

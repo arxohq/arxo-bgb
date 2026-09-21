@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 209: zwei getrennte Fenster (1.-31. März, 1.-31. Mai 2022, je 31 Tage) — Vereinigung 62 Tage; Ende verschiebt sich von 31. Dezember 2023 auf den 2. März 2024.
+test "§ 209: zwei getrennte Hemmungsfenster ergeben 62 Tage Vereinigung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:z01"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:z01"), @2020-03-15) { origin adjudicated; }
+        assert "f": hemmung_zwei_fenster(entity_ref("urn:de:bgb:fristen:pilot:z01"), @2022-03-01, @2022-03-31, @2022-05-01, @2022-05-31) { origin case_input; }
+        assert "g": hemmungsgrund(entity_ref("urn:de:bgb:fristen:pilot:z01"), Rechtsverfolgung) { origin case_input; }
+    }
+    evaluate truth(fenstertage_gesamt(entity_ref("urn:de:bgb:fristen:pilot:z01"), 62));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:z01"), @2024-03-02));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

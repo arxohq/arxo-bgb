@@ -1,0 +1,64 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+
+pub relation position_trigger_861(t: Tat, glaeubiger: Person, gegner: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls auf Wiedereinräumung des Besitzes (§ 861)";
+    label en unofficial "case input for restoration of possession (§ 861)";
+}
+pub relation wiedereinraeumung_861_geschuldet(t: Tat, glaeubiger: Person, gegner: Person) kind empirical {
+    label de official "Die Wiedereinräumung des Besitzes ist geschuldet (§ 861)";
+    label en unofficial "Restoration of possession is owed (§ 861)";
+}
+pub relation position_trigger_862(t: Tat, glaeubiger: Person, gegner: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls auf Beseitigung der Besitzstörung (§ 862)";
+    label en unofficial "case input for removal of possession disturbance (§ 862)";
+}
+pub relation beseitigung_862_geschuldet(t: Tat, glaeubiger: Person, gegner: Person) kind empirical {
+    label de official "Die Beseitigung der Besitzstörung ist geschuldet (§ 862)";
+    label en unofficial "Removal of the possession disturbance is owed (§ 862)";
+}
+pub relation position_trigger_867(s: Sache, g: Grundstueck, verpflichteter: Person, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls auf Gestattung der Aufsuchung (§ 867)";
+    label en unofficial "case input for allowing search and removal (§ 867)";
+}
+pub relation gestattung_867_geschuldet(s: Sache, g: Grundstueck, verpflichteter: Person, berechtigter: Person) kind empirical {
+    label de official "Die Gestattung der Aufsuchung und Wegschaffung ist geschuldet (§ 867)";
+    label en unofficial "Permission to search for and remove the thing is owed (§ 867)";
+}
+
+@source(BGB_P861)
+rule PositionWiedereinraeumung861(t: Tat, glaeubiger: Person, gegner: Person, tag: Date) strict {
+    label de official "Der fehlerhaft besitzende Gegner hat den Besitz wiedereinzuräumen (§ 861)";
+    label en unofficial "The party with defective possession must restore possession (§ 861)";
+    when position_trigger_861(t, glaeubiger, gegner, tag);
+    then duty Wiedereinraeumung861 {
+        bearer gegner;
+        beneficiary glaeubiger;
+        achieve wiedereinraeumung_861_geschuldet(t, glaeubiger, gegner) during [tag, infinity);
+    };
+}
+
+@source(BGB_P862)
+rule PositionBeseitigung862(t: Tat, glaeubiger: Person, gegner: Person, tag: Date) strict {
+    label de official "Der Störer hat die Besitzstörung zu beseitigen (§ 862)";
+    label en unofficial "The disturber must remove the possession disturbance (§ 862)";
+    when position_trigger_862(t, glaeubiger, gegner, tag);
+    then duty Beseitigung862 {
+        bearer gegner;
+        beneficiary glaeubiger;
+        achieve beseitigung_862_geschuldet(t, glaeubiger, gegner) during [tag, infinity);
+    };
+}
+
+@source(BGB_P867)
+rule PositionGestattung867(s: Sache, g: Grundstueck, verpflichteter: Person, berechtigter: Person, tag: Date) strict {
+    label de official "Der Grundstücksbesitzer hat die Aufsuchung und Wegschaffung zu gestatten (§ 867)";
+    label en unofficial "The land possessor must allow search for and removal of the thing (§ 867)";
+    when position_trigger_867(s, g, verpflichteter, berechtigter, tag);
+    then duty Gestattung867 {
+        bearer verpflichteter;
+        beneficiary berechtigter;
+        achieve gestattung_867_geschuldet(s, g, verpflichteter, berechtigter) during [tag, infinity);
+    };
+}

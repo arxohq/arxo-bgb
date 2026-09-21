@@ -1,0 +1,33 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// Andere Seite der Zweijahresgrenze von kq07: derselbe Sachverhalt, der
+// Rücktritt wird aber AM 10. April 2025 erklärt — dem Tag, mit dessen Ablauf
+// die Verjährung erst eintritt (§ 188 Abs. 2). Der Rücktritt ist rechtzeitig,
+// § 218 Abs. 1 greift nicht, und der Käufer braucht das Zahlungsverweigerungs-
+// recht des § 438 Abs. 4 Satz 2 nicht. NEITHER, nicht FALSE.
+test "§§ 438 Abs. 1 Nr. 3, 218 Abs. 1: Rücktritt am letzten Tag der Zweijahresfrist bleibt wirksam" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:kq08"), entity_ref("urn:de:bgb:kauf:kq08:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:kq08"), entity_ref("urn:de:bgb:kauf:kq08:K")) { origin case_input; }
+        assert "f3": maengelanspruch(entity_ref("urn:de:bgb:kauf:kq08:A"), entity_ref("urn:de:bgb:kauf:kq08")) { origin case_input; }
+        assert "f4": ablieferung_am(entity_ref("urn:de:bgb:kauf:kq08"), @2023-04-10) { origin adjudicated; }
+        assert "f5": not grundstueckskauf(entity_ref("urn:de:bgb:kauf:kq08")) { origin case_input; }
+        assert "f6": not mangel_in_dinglichem_herausgaberecht(entity_ref("urn:de:bgb:kauf:kq08")) { origin case_input; }
+        assert "f7": not mangel_in_eingetragenem_recht(entity_ref("urn:de:bgb:kauf:kq08")) { origin case_input; }
+        assert "f8": not bauwerk(entity_ref("urn:de:bgb:kauf:kq08")) { origin case_input; }
+        assert "f9": not baustoff_mit_verursachter_mangelhaftigkeit(entity_ref("urn:de:bgb:kauf:kq08")) { origin case_input; }
+        assert "f10": not mangel_arglistig_verschwiegen(entity_ref("urn:de:bgb:kauf:kq08")) { origin adjudicated; }
+        assert "f11": de.bgb.fristen::keine_hemmung(entity_ref("urn:de:bgb:kauf:kq08:A")) { origin case_input; }
+        assert "f12": de.bgb.fristen::ruecktritt_erklaert_am(entity_ref("urn:de:bgb:kauf:kq08:A"), @2025-04-10) { origin case_input; }
+        assert "f13": de.bgb.fristen::schuldner_beruft_sich_auf_verjaehrung(entity_ref("urn:de:bgb:kauf:kq08:A")) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:kauf:kq08:A"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::ruecktritt_unwirksam_wegen_verjaehrung(entity_ref("urn:de:bgb:kauf:kq08:A")));
+    expect truth_status == NEITHER;
+    evaluate truth(ruecktritt_nach_218_unwirksam(entity_ref("urn:de:bgb:kauf:kq08")));
+    expect truth_status == NEITHER;
+}

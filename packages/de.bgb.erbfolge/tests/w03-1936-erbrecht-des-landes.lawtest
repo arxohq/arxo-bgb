@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1936 Satz 1: Zur Zeit des Erbfalls ist kein Verwandter, Ehegatte oder
+// Lebenspartner vorhanden. Erwartung aus dem Text: es erbt das Land, in dem der
+// Erblasser seinen letzten Wohnsitz hatte; der Fiskus kann die ihm als
+// gesetzlichem Erben angefallene Erbschaft nicht ausschlagen (§ 1942 Abs. 2).
+test "§ 1936 Satz 1: das Land des letzten Wohnsitzes erbt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:w03:E"), entity_ref("urn:de:bgb:e:w03:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:w03:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:w03:E"), entity_ref("urn:de:bgb:e:w03:F")) { origin case_input; }
+        assert "f4": letzter_wohnsitz_im_land(entity_ref("urn:de:bgb:e:w03:E"), entity_ref("urn:de:bgb:e:w03:LAND")) { origin case_input; }
+    }
+    evaluate truth(erbrecht_des_landes(entity_ref("urn:de:bgb:e:w03:E"), entity_ref("urn:de:bgb:e:w03:LAND")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(fiskus_als_gesetzlicher_erbe(entity_ref("urn:de:bgb:e:w03:E"), entity_ref("urn:de:bgb:e:w03:LAND")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(keine_inventarfrist_moeglich(entity_ref("urn:de:bgb:e:w03:E"), entity_ref("urn:de:bgb:e:w03:LAND")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

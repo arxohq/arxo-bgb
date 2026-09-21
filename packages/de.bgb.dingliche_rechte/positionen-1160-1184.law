@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1160(h: Grundpfandrecht, eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Zurückweisung ohne Hypothekenbrief (§ 1160)"; label en unofficial "case input for rejection without the mortgage certificate (§ 1160)"; }
+pub relation geltendmachung_1160_unwirksam(h: Grundpfandrecht) kind empirical { label de official "Die Geltendmachung der Hypothek ist ohne Urkundenvorlage unwirksam (§ 1160)"; label en unofficial "Assertion of the mortgage is ineffective without presentation of documents (§ 1160)"; }
+pub relation position_trigger_1179(h: Grundpfandrecht, beguenstigter: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Löschungsvormerkung (§ 1179)"; label en unofficial "case input for a cancellation priority notice (§ 1179)"; }
+pub relation loeschung_1179_ausuebbar(h: Grundpfandrecht, beguenstigter: Person) kind empirical { label de official "Der Begünstigte darf die Löschungsvormerkung eintragen lassen (§ 1179)"; label en unofficial "The beneficiary may have the cancellation priority notice registered (§ 1179)"; }
+pub relation position_trigger_1184(h: Grundpfandrecht, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Bezeichnung als Sicherungshypothek (§ 1184)"; label en unofficial "case input for designation as a security mortgage (§ 1184)"; }
+pub relation sicherungshypothek_1184_geschuldet(h: Grundpfandrecht) kind empirical { label de official "Die Hypothek ist als Sicherungshypothek zu bezeichnen (§ 1184)"; label en unofficial "The mortgage must be designated as a security mortgage (§ 1184)"; }
+
+@source(BGB_P1160)
+rule PositionZurueckweisung1160(h: Grundpfandrecht, eigentuemer: Person, tag: Date) strict { label de official "Der Eigentümer kann die Geltendmachung ohne Hypothekenbrief zurückweisen (§ 1160)"; label en unofficial "The owner may reject assertion without the mortgage certificate (§ 1160)"; when position_trigger_1160(h, eigentuemer, tag); then immunity Zurueckweisung1160 { holder eigentuemer; against h; protected_effect geltendmachung_1160_unwirksam(h); window [tag, infinity); }; }
+@source(BGB_P1179)
+rule PositionLoeschung1179(h: Grundpfandrecht, beguenstigter: Person, tag: Date) strict { label de official "Der Begünstigte darf die Eintragung der Löschungsvormerkung verlangen (§ 1179)"; label en unofficial "The beneficiary may seek registration of the cancellation priority notice (§ 1179)"; when position_trigger_1179(h, beguenstigter, tag); then power Loeschung1179 { holder beguenstigter; over h; exercise loeschung_1179_ausuebbar(h, beguenstigter); valid_when loeschung_1179_ausuebbar(h, beguenstigter); effect create(loeschung_1179_ausuebbar(h, beguenstigter)); window [tag, infinity); }; }
+@source(BGB_P1184)
+rule PositionSicherungshypothek1184(h: Grundpfandrecht, glaeubiger: Person, tag: Date) strict { label de official "Die Hypothek ist als Sicherungshypothek zu bezeichnen (§ 1184)"; label en unofficial "The mortgage must be designated as a security mortgage (§ 1184)"; when position_trigger_1184(h, glaeubiger, tag); then duty Sicherungshypothek1184 { bearer glaeubiger; achieve sicherungshypothek_1184_geschuldet(h) during [tag, infinity); }; }

@@ -1,0 +1,65 @@
+// DRITTES BUCH, ABSCHNITTE 1 UND 3 — possession and ownership: possession is
+// acquired by actual control (§ 854); ownership of land is transferred by
+// agreement and entry in the land register (§ 873, § 925); thirty years of
+// registration with Eigenbesitz give ownership (§ 900); the owner of land in
+// another’s Eigenbesitz for thirty years may be excluded by public notice
+// (§ 927); the owner may deal with the thing at pleasure and exclude others
+// (§ 903); a movable is transferred by delivery and agreement (§ 929), and
+// from a non-owner if the acquirer is in good faith (§ 932), but not if stolen,
+// lost or otherwise taken involuntarily (§ 935); ten years of Eigenbesitz give
+// ownership (§ 937); the owner may require the possessor to surrender the
+// thing (§ 985). The Code has no res mancipi: a movable is everything that is
+// not land, and the slave of casus 2 passes by delivery (§ 929).
+//
+// The possessor may refuse surrender if entitled to possess (§ 986).
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+relation besitzer(persona: Persona, sache: Res) kind institutional { label de official "Besitzer"; label en unofficial "the person has actual control of the thing (§ 854)"; }
+relation eigenthuemer(persona: Persona, sache: Res) kind institutional { label de official "Eigenthümer"; label en unofficial "the person is owner of the thing under the Code"; }
+relation eigenthum_uebertragen(veraeusserer: Persona, erwerber: Persona, sache: Res) kind institutional { label de official "Eigenthum übertragen"; label en unofficial "ownership has passed: delivery and agreement (§ 929) or agreement and registration (§ 873)"; }
+relation veraeussert(veraeusserer: Persona, sache: Res) kind institutional { label de official "veräußert"; label en unofficial "the former owner alienated the thing with transfer of the right (§ 929, § 873)"; }
+relation eintragung_im_grundbuch(erwerber: Persona, sache: Res) kind empirical { label de official "Eintragung in das Grundbuch"; label en unofficial "the transfer of the right in land is entered in the land register (§ 873, § 925)"; }
+relation gutglaeubiger_erwerb(erwerber: Persona, sache: Res) kind institutional { label de official "gutgläubiger Erwerb vom Nichtberechtigten"; label en unofficial "a good-faith acquirer of a movable from a non-owner has become owner (§ 932)"; }
+relation abhanden_gekommen(eigenthuemer: Persona, sache: Res) kind institutional { label de official "gestohlen, verloren gegangen oder sonst abhanden gekommen"; label en unofficial "the thing left the owner involuntarily: stolen or lost (§ 935)"; }
+relation ersitzung(erwerber: Persona, sache: Res) kind institutional { label de official "Ersitzung"; label en unofficial "ten years of good-faith Eigenbesitz of a movable — ownership (§ 937)"; }
+relation buchersitzung(erwerber: Persona, sache: Res) kind institutional { label de official "Buchersitzung"; label en unofficial "a person registered without title acquired the land by thirty years of registration and Eigenbesitz (§ 900)"; }
+relation ausschluss_im_aufgebot_moeglich(eigenthuemer: Persona, sache: Res) kind institutional { label de official "im Wege des Aufgebotsverfahrens mit seinem Rechte ausgeschlossen werden"; label en unofficial "the owner of land in another’s Eigenbesitz for thirty years may be excluded by public notice (§ 927)"; }
+relation herausgabeanspruch(eigenthuemer: Persona, besitzer: Persona, sache: Res) kind institutional { label de official "Herausgabeanspruch"; label en unofficial "the owner may require the possessor to surrender the thing (§ 985)"; }
+relation recht_zum_besitz(besitzer: Persona, eigenthuemer: Persona, sache: Res) kind empirical { label de official "dem Eigenthümer gegenüber zum Besitze berechtigt"; label en unofficial "the possessor is entitled to possess as against the owner — under a contract with the owner (§ 986)"; }
+relation herausgabe_verweigern_berechtigt(besitzer: Persona, eigenthuemer: Persona, sache: Res) kind institutional { label de official "kann die Herausgabe verweigern"; label en unofficial "the possessor may refuse surrender: entitled to possess (§ 986)"; }
+
+@source(BGB_P854)
+rule Besitzer(y: Persona, r: Res) strict { label de official "Der Besitz einer Sache wird durch die Erlangung der tatsächlichen Gewalt über die Sache erworben"; label en unofficial "The actual possessor in the case is the possessor (§ 854)"; when doctrine.ius_privatum::possessor(y, r); then besitzer(y, r); }
+@source(BGB_P929)
+rule UebertragungBeweglich(v: Persona, e: Persona, r: Res) strict { label de official "Zur Uebertragung des Eigenthums an einer beweglichen Sache ist erforderlich, daß der Eigenthümer die Sache dem Erwerber übergiebt und beide darüber einig sind"; label en unofficial "A movable delivered by the owner with agreement on the transfer (sale) has passed to the acquirer (§ 929)"; when not_known(doctrine.ius_privatum::res_immobilis(r)) and doctrine.ius_privatum::venditio(v, e, r) and doctrine.ius_privatum::traditio(v, e, r) and doctrine.ius_privatum::dominus_originarius(v, r); then eigenthum_uebertragen(v, e, r); }
+@source(BGB_P873, BGB_P925)
+rule UebertragungGrundstueck(v: Persona, e: Persona, r: Res) strict { label de official "Zur Uebertragung des Eigenthums an einem Grundstücke ist die Einigung und die Eintragung in das Grundbuch erforderlich"; label en unofficial "Land passes by agreement (Auflassung) and entry in the land register (§ 873, § 925)"; when doctrine.ius_privatum::res_immobilis(r) and doctrine.ius_privatum::venditio(v, e, r) and doctrine.ius_privatum::dominus_originarius(v, r) and eintragung_im_grundbuch(e, r); then eigenthum_uebertragen(v, e, r); }
+@source(BGB_P929)
+rule Veraeussert(v: Persona, e: Persona, r: Res) strict { label de official "veräußert"; label en unofficial "The owner who transferred the thing has alienated it (§ 929, § 873)"; when eigenthum_uebertragen(v, e, r); then veraeussert(v, r); }
+@source(BGB_P929)
+rule ErwerberEigenthuemer(v: Persona, e: Persona, r: Res) strict { label de official "Eigenthümer"; label en unofficial "The acquirer is owner (§ 929, § 873)"; when eigenthum_uebertragen(v, e, r); then eigenthuemer(e, r); }
+@source(BGB_P935)
+rule AbhandenGekommen(x: Persona, r: Res) strict { label de official "wenn die Sache dem Eigenthümer gestohlen worden, verloren gegangen oder sonst abhanden gekommen war"; label en unofficial "A stolen thing or one that left involuntarily is abhanden gekommen (§ 935)"; when doctrine.ius_privatum::res_domino_ablata(x, r); then abhanden_gekommen(x, r); }
+@source(BGB_P932, BGB_P935)
+rule GutglaeubigerErwerb(v: Persona, e: Persona, x: Persona, r: Res) strict { label de official "Durch eine nach §. 929 erfolgte Veräußerung wird der Erwerber auch dann Eigenthümer, wenn die Sache nicht dem Veräußerer gehört, es sei denn, daß er nicht in gutem Glauben ist"; label en unofficial "A good-faith acquirer of a movable from a non-owner is owner unless the thing left the owner involuntarily (§ 932; § 935)"; when doctrine.ius_privatum::res_mobilis(r) and doctrine.ius_privatum::venditio(v, e, r) and doctrine.ius_privatum::traditio(v, e, r) and doctrine.ius_privatum::bona_fides(e, r) and doctrine.ius_privatum::dominus_originarius(x, r) and not_known(doctrine.ius_privatum::dominus_originarius(v, r)) and not_known(abhanden_gekommen(x, r)); then gutglaeubiger_erwerb(e, r); }
+@source(BGB_P932)
+rule GutglaeubigerErwerberEigenthuemer(e: Persona, r: Res) strict { label de official "wird der Erwerber auch dann Eigenthümer"; label en unofficial "The good-faith acquirer is owner (§ 932)"; when gutglaeubiger_erwerb(e, r); then eigenthuemer(e, r); }
+@source(BGB_P937)
+rule Ersitzung(y: Persona, r: Res, n: Integer) strict { label de official "Wer eine bewegliche Sache zehn Jahre im Eigenbesitze hat, erwirbt das Eigenthum"; label en unofficial "Ten years of good-faith possession of a movable as one’s own is ownership (§ 937)"; when doctrine.ius_privatum::res_mobilis(r) and doctrine.ius_privatum::possessio_continua_annos(y, r, n) and n >= 10 and doctrine.ius_privatum::bona_fides(y, r) and doctrine.ius_privatum::iusta_causa_possessionis(y, r); then ersitzung(y, r); }
+@source(BGB_P937)
+rule ErsitzungEigenthuemer(y: Persona, r: Res) strict { label de official "erwirbt das Eigenthum"; label en unofficial "The acquirer by Ersitzung is owner (§ 937)"; when ersitzung(y, r); then eigenthuemer(y, r); }
+@source(BGB_P900)
+rule Buchersitzung(y: Persona, r: Res, n: Integer) strict { label de official "Wer als Eigenthümer eines Grundstücks im Grundbuch eingetragen ist, ohne daß er das Eigenthum erlangt hat, erwirbt das Eigenthum, wenn die Eintragung dreißig Jahre bestanden und er das Grundstück im Eigenbesitze gehabt hat"; label en unofficial "A person registered without title acquires the land by thirty years of registration and possession as owner (§ 900)"; when doctrine.ius_privatum::res_immobilis(r) and eintragung_im_grundbuch(y, r) and doctrine.ius_privatum::possessio_continua_annos(y, r, n) and n >= 30 and doctrine.ius_privatum::iusta_causa_possessionis(y, r); then buchersitzung(y, r); }
+@source(BGB_P900)
+rule BuchersitzungEigenthuemer(y: Persona, r: Res) strict { label de official "erwirbt das Eigenthum"; label en unofficial "The acquirer by Buchersitzung is owner (§ 900)"; when buchersitzung(y, r); then eigenthuemer(y, r); }
+@source(BGB_P927)
+rule AusschlussImAufgebot(x: Persona, y: Persona, r: Res, n: Integer) strict { label de official "Der Eigenthümer eines Grundstücks kann, wenn das Grundstück seit dreißig Jahren im Eigenbesitz eines Anderen ist, im Wege des Aufgebotsverfahrens mit seinem Rechte ausgeschlossen werden"; label en unofficial "The owner of land in another’s Eigenbesitz for thirty years may be excluded by public notice (§ 927)"; when doctrine.ius_privatum::res_immobilis(r) and doctrine.ius_privatum::dominus_originarius(x, r) and doctrine.ius_privatum::possessio_continua_annos(y, r, n) and n >= 30 and doctrine.ius_privatum::iusta_causa_possessionis(y, r); then ausschluss_im_aufgebot_moeglich(x, r); }
+@source(BGB_P903)
+rule EigenthuemerOriginaer(x: Persona, r: Res, y: Persona) strict { label de official "Der Eigenthümer einer Sache kann mit der Sache nach Belieben verfahren und Andere von jeder Einwirkung ausschließen"; label en unofficial "The original owner in the case is owner under the Code until he alienated the thing or another acquired it in good faith (§ 932) or by prescription (§ 937, § 900)"; when doctrine.ius_privatum::dominus_originarius(x, r) and doctrine.ius_privatum::possessor(y, r) and not_known(veraeussert(x, r)) and not_known(gutglaeubiger_erwerb(y, r)) and not_known(ersitzung(y, r)) and not_known(buchersitzung(y, r)); then eigenthuemer(x, r); }
+@source(BGB_P985)
+rule Herausgabeanspruch(x: Persona, y: Persona, r: Res) strict { label de official "Der Eigenthümer kann von dem Besitzer die Herausgabe der Sache verlangen"; label en unofficial "The owner may require the possessor to surrender the thing (§ 985)"; when eigenthuemer(x, r) and besitzer(y, r) and not_known(eigenthuemer(y, r)); then herausgabeanspruch(x, y, r); }
+@source(BGB_P986)
+rule HerausgabeVerweigern(x: Persona, y: Persona, r: Res) strict { label de official "Der Besitzer kann die Herausgabe der Sache verweigern, wenn er dem Eigenthümer gegenüber zum Besitze berechtigt ist"; label en unofficial "Entitled to possess as against the owner — entitled to refuse surrender (§ 986)"; when herausgabeanspruch(x, y, r) and recht_zum_besitz(y, x, r); then herausgabe_verweigern_berechtigt(y, x, r); }

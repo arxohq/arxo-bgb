@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 618 Abs. 1: Schutzpflicht; Abs. 3: Schadensersatzpflicht bei
+// Nichterfüllung nach §§ 842 bis 846.
+
+test "urn:query:bgb-dw-t20-618-schutz" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": dienstverpflichteter(entity_ref("urn:de:bgb:dw:t20"), entity_ref("urn:de:bgb:dw:t20:V")) { origin case_input; }
+        assert "f2": dienstberechtigter(entity_ref("urn:de:bgb:dw:t20"), entity_ref("urn:de:bgb:dw:t20:B")) { origin case_input; }
+        assert "f3": dienstbeginn_am(entity_ref("urn:de:bgb:dw:t20"), @2026-01-01) { origin case_input; }
+        assert "f4": schutzpflicht_618_nicht_erfuellt(entity_ref("urn:de:bgb:dw:t20")) { origin adjudicated; }
+    }
+    evaluate positions();
+    expect position(SchutzmassnahmenGewaehren618, ACTIVE);
+    evaluate truth(schadensersatzpflicht_618(entity_ref("urn:de:bgb:dw:t20")));
+    expect truth_status == TRUE_ONLY;
+}

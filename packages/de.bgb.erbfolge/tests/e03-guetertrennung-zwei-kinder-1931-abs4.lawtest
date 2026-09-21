@@ -1,0 +1,33 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// § 1931 Abs. 4: Gütertrennung, zwei Kinder — Ehegatte und jedes Kind erben zu gleichen Teilen, je 1/3; keine Erhöhung nach § 1371 Abs. 1.
+test "§ 1931 Abs. 4: Gütertrennung neben zwei Kindern — gleiche Teile" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:pilot:e03:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:F")) { origin case_input; }
+        assert "f4": ehe_beim_erbfall(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:EHE")) { origin case_input; }
+        assert "f5": de.bgb.ehe::ehegatten(entity_ref("urn:de:bgb:pilot:e03:EHE"), entity_ref("urn:de:bgb:pilot:e03:D"), entity_ref("urn:de:bgb:pilot:e03:S")) { origin case_input; }
+        assert "f6": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:S")) { origin case_input; }
+        assert "f7": de.bgb.ehe::ehevertrag_gueterstand(entity_ref("urn:de:bgb:pilot:e03:EHE"), de.bgb.ehe::Guetertrennung) { origin case_input; }
+        assert "f10": abstammung(entity_ref("urn:de:bgb:pilot:e03:F"), entity_ref("urn:de:bgb:pilot:e03:D"), entity_ref("urn:de:bgb:pilot:e03:C1")) { origin case_input; }
+        assert "f11": abstammung(entity_ref("urn:de:bgb:pilot:e03:F"), entity_ref("urn:de:bgb:pilot:e03:D"), entity_ref("urn:de:bgb:pilot:e03:C2")) { origin case_input; }
+        assert "f12": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:C1")) { origin case_input; }
+        assert "f13": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:C2")) { origin case_input; }
+    }
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:S"), 1 / 3));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:C1"), 1 / 3));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e03:E"), entity_ref("urn:de:bgb:pilot:e03:C2"), 1 / 3));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erbschaft_vollstaendig_verteilt(entity_ref("urn:de:bgb:pilot:e03:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

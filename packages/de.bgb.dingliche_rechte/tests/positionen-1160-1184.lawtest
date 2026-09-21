@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+test "§§ 1160, 1179, 1184: Hypothekenpositionen aktiv" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1160(entity_ref("urn:dr:h1160"), entity_ref("urn:dr:p1160"), @2026-01-01) { origin case_input; }
+ assert "b": position_trigger_1179(entity_ref("urn:dr:h1179"), entity_ref("urn:dr:p1179"), @2026-01-01) { origin case_input; }
+ assert "c": position_trigger_1184(entity_ref("urn:dr:h1184"), entity_ref("urn:dr:p1184"), @2026-01-01) { origin case_input; } }
+ evaluate positions();
+ expect position(Zurueckweisung1160, ACTIVE); expect position(Loeschung1179, ACTIVE); expect position(Sicherungshypothek1184, ACTIVE);
+}
+
+test "§§ 1160, 1179, 1184: Hypothekenpositionen erfüllt" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1160(entity_ref("urn:dr:h1160"), entity_ref("urn:dr:p1160"), @2026-01-01) { origin case_input; }
+ assert "ag": geltendmachung_1160_unwirksam(entity_ref("urn:dr:h1160")) { origin case_input; }
+ assert "b": position_trigger_1179(entity_ref("urn:dr:h1179"), entity_ref("urn:dr:p1179"), @2026-01-01) { origin case_input; }
+ assert "bg": loeschung_1179_ausuebbar(entity_ref("urn:dr:h1179"), entity_ref("urn:dr:p1179")) { origin case_input; }
+ assert "c": position_trigger_1184(entity_ref("urn:dr:h1184"), entity_ref("urn:dr:p1184"), @2026-01-01) { origin case_input; }
+ assert "cg": sicherungshypothek_1184_geschuldet(entity_ref("urn:dr:h1184")) { origin case_input; } }
+ evaluate positions();
+ expect position(Zurueckweisung1160, ACTIVE); expect position(Loeschung1179, ACTIVE); expect position(Sicherungshypothek1184, SATISFIED);
+}

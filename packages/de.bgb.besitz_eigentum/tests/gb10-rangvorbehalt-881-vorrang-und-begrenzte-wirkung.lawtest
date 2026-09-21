@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 881 Abs. 1, 2: das mit Rangvorbehalt eingetragene neue Recht hat Vorrang. Abs. 3: die Befugnis geht bei Veräußerung auf den Erwerber über. Abs. 4: gegenüber einer Zwischenbelastung ohne entsprechenden Vorbehalt wirkt der Vorrang nur begrenzt.
+test "§ 881: Vorrang aus Rangvorbehalt, Übergang bei Veräußerung, begrenzte Wirkung bei Zwischenbelastung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": rangvorbehalt_eingetragen(entity_ref("urn:de:bgb:be:gb10:zuruecktretend")) { origin adjudicated; }
+        assert "f2": neues_recht_mit_vorbehaltenem_rang_eingetragen(entity_ref("urn:de:bgb:be:gb10:neu"), entity_ref("urn:de:bgb:be:gb10:zuruecktretend")) { origin adjudicated; }
+        assert "f3": grundstueck_mit_rangvorbehalt_veraeussert(entity_ref("urn:de:bgb:be:gb10:zuruecktretend"), entity_ref("urn:de:bgb:be:gb10:erwerber")) { origin case_input; }
+        assert "f4": vor_eintragung_ohne_entsprechenden_vorbehalt_belastet(entity_ref("urn:de:bgb:be:gb10:zuruecktretend"), entity_ref("urn:de:bgb:be:gb10:zwischenbelastung")) { origin adjudicated; }
+        assert "f5": zwischenbelastung_ueber_vorbehalt_hinaus_beeintraechtigt(entity_ref("urn:de:bgb:be:gb10:zwischenbelastung")) { origin case_input; }
+    }
+    evaluate truth(vorrang_aus_rangvorbehalt(entity_ref("urn:de:bgb:be:gb10:neu"), entity_ref("urn:de:bgb:be:gb10:zuruecktretend")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(befugnis_aus_rangvorbehalt_geht_auf_erwerber_ueber(entity_ref("urn:de:bgb:be:gb10:zuruecktretend"), entity_ref("urn:de:bgb:be:gb10:erwerber")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vorrang_aus_881_insoweit_ohne_wirkung(entity_ref("urn:de:bgb:be:gb10:neu"), entity_ref("urn:de:bgb:be:gb10:zwischenbelastung")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

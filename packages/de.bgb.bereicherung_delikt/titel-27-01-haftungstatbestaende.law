@@ -1,0 +1,636 @@
+// --- Buch 2 Abschnitt 8 Titel 27: Unerlaubte Handlungen, erster Teil
+// --- Haftungstatbestände und Verantwortlichkeit (§§ 823–830)
+//
+// BAU. Jeder Tatbestand des Titels führt auf einen eigenen HAFTUNGSGRUND;
+// die Verantwortlichkeit der §§ 827–829 sitzt eine Ebene darüber und nimmt
+// den Ersatzanspruch wieder weg. Deshalb steht die Ersatzpflicht in GENAU
+// EINER defeasible Regel, deren `unless` die Verantwortlichkeit prüft: zwei
+// defeasible Regeln mit demselben Kopfliteral würden einander löschen.
+//
+// DER ZEITPUNKT. Alle Altersgrenzen des § 828 werden auf den TAG DER
+// HANDLUNG bezogen und mit `de.bgb.fristen::lebensjahr_vollendet_am`
+// gerechnet (§ 187 Abs. 2 Satz 2, § 188 Abs. 2: der Tag der Geburt wird
+// mitgerechnet, das Lebensjahr ist mit Ablauf des VORTAGS des Geburtstags
+// vollendet). „Vollendet“ heißt „mit Ablauf des Tages“: an dem Tag selbst ist
+// es noch nicht vollendet, also ist die Grenze `Handlungstag <= Vollendungstag`
+// (Ledger D-09-06).
+
+// --- Gemeinsame Eingaben des Titels 27 -----------------------------------------------------------
+
+pub relation handelnder(h: Handlung, p: Person) kind empirical {
+    key(h);
+    label de official "wer die Handlung vorgenommen hat";
+    label en unofficial "the person who performed the act";
+}
+pub relation verletzter(h: Handlung, p: Person) kind empirical {
+    key(h);
+    label de official "der andere, dessen Rechtsgut verletzt wird (§ 823 Abs. 1)";
+    label en unofficial "the other person whose protected interest is injured (§ 823 (1))";
+}
+pub relation handlungstag(h: Handlung, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag der Begehung der Handlung (§ 828, § 852 Satz 2)";
+    label en unofficial "day on which the act was committed (§ 828, § 852 sentence 2)";
+}
+pub relation schaden_aus_handlung(s: Schaden, h: Handlung) kind empirical {
+    key(s);
+    label de official "Schaden, der aus der Handlung entsteht";
+    label en unofficial "damage arising from the act";
+}
+pub relation schadensbetrag(s: Schaden, betrag: Money) kind empirical {
+    key(s);
+    label de official "Betrag des Schadens";
+    label en unofficial "amount of the damage";
+}
+pub relation kausal_verursacht(h: Handlung) kind empirical {
+    label de official "der Schaden ist aus der Handlung entstanden (Kausalität) — festgestellte Tatsache";
+    label en unofficial "the damage arose from the act (causation) — established fact";
+}
+pub relation kein_rechtfertigungsgrund(h: Handlung) kind empirical {
+    label de official "ein Rechtfertigungsgrund (§§ 227–231, Einwilligung) liegt nicht vor: die Verletzung ist widerrechtlich (§ 823 Abs. 1) — ausdrückliche Angabe des Falls; das Schweigen des Falls verneint nichts";
+    label en unofficial "no ground of justification (§§ 227–231, consent) is present: the injury is unlawful (§ 823 (1)) — express statement of the case; silence is not a denial";
+}
+
+// --- Verschulden: Wertung des Gerichts (§47.3) ---------------------------------------------------
+
+@source(BGB_P823)
+pub external judgment relation vorsatz(h: Handlung) {
+    authority Court;
+    label de official "§ 823 Abs. 1. Der Handelnde hat das Rechtsgut vorsätzlich verletzt";
+    label en unofficial "§ 823 (1). The actor injured the protected interest intentionally";
+}
+@source(BGB_P823)
+pub external judgment relation fahrlaessigkeit(h: Handlung) {
+    authority Court;
+    label de official "§ 823 Abs. 1. Der Handelnde hat das Rechtsgut fahrlässig verletzt";
+    label en unofficial "§ 823 (1). The actor injured the protected interest negligently";
+}
+pub relation verschulden(h: Handlung) kind institutional {
+    label de official "Verschulden: Vorsatz oder Fahrlässigkeit (§ 823 Abs. 1, Abs. 2 Satz 2, § 839 Abs. 1)";
+    label en unofficial "fault: intention or negligence (§ 823 (1), (2) sentence 2, § 839 (1))";
+}
+
+@source(BGB_P823)
+rule VerschuldenDurchVorsatz(h: Handlung) strict {
+    label de official "Vorsätzliches Handeln ist Verschulden (§ 823 Abs. 1)";
+    label en unofficial "Acting intentionally is fault (§ 823 (1))";
+    when vorsatz(h);
+    then verschulden(h);
+}
+@source(BGB_P823)
+rule VerschuldenDurchFahrlaessigkeit(h: Handlung) strict {
+    label de official "Fahrlässiges Handeln ist Verschulden (§ 823 Abs. 1)";
+    label en unofficial "Acting negligently is fault (§ 823 (1))";
+    when fahrlaessigkeit(h);
+    then verschulden(h);
+}
+
+// --- § 823 Abs. 1: der geschlossene Katalog der Rechtsgüter --------------------------------------
+//
+// Leben, Körper, Gesundheit, Freiheit, Eigentum, sonstiges Recht — sechs
+// Positionen, sechs Regeln. Eine Disjunktion im Regelkörper würde zu Regeln
+// `Name/alt/N` absinken, auf die kein `applied(Name)` je passt.
+
+pub relation verletzung_leben(h: Handlung) kind empirical {
+    label de official "das Leben eines anderen ist verletzt (§ 823 Abs. 1)";
+    label en unofficial "another person's life is injured (§ 823 (1))";
+}
+pub relation verletzung_koerper(h: Handlung) kind empirical {
+    label de official "der Körper eines anderen ist verletzt (§ 823 Abs. 1)";
+    label en unofficial "another person's body is injured (§ 823 (1))";
+}
+pub relation verletzung_gesundheit(h: Handlung) kind empirical {
+    label de official "die Gesundheit eines anderen ist verletzt (§ 823 Abs. 1)";
+    label en unofficial "another person's health is injured (§ 823 (1))";
+}
+pub relation verletzung_freiheit(h: Handlung) kind empirical {
+    label de official "die Freiheit eines anderen ist verletzt (§ 823 Abs. 1)";
+    label en unofficial "another person's freedom is injured (§ 823 (1))";
+}
+pub relation verletzung_eigentum(h: Handlung) kind empirical {
+    label de official "das Eigentum eines anderen ist verletzt (§ 823 Abs. 1)";
+    label en unofficial "another person's property is injured (§ 823 (1))";
+}
+pub relation verletzung_sonstiges_recht(h: Handlung) kind empirical {
+    label de official "ein sonstiges Recht eines anderen ist verletzt (§ 823 Abs. 1)";
+    label en unofficial "another right of another person is injured (§ 823 (1))";
+}
+pub relation rechtsgutverletzung(h: Handlung) kind institutional {
+    label de official "eines der in § 823 Abs. 1 genannten Rechtsgüter ist verletzt";
+    label en unofficial "one of the interests protected by § 823 (1) is injured";
+}
+
+@source(BGB_P823)
+rule RechtsgutLeben(h: Handlung) strict {
+    label de official "Wer das Leben eines anderen widerrechtlich verletzt (§ 823 Abs. 1, Rechtsgut Leben)";
+    label en unofficial "A person who unlawfully injures another's life (§ 823 (1), interest: life)";
+    when verletzung_leben(h);
+    then rechtsgutverletzung(h);
+}
+@source(BGB_P823)
+rule RechtsgutKoerper(h: Handlung) strict {
+    label de official "Wer den Körper eines anderen widerrechtlich verletzt (§ 823 Abs. 1, Rechtsgut Körper)";
+    label en unofficial "A person who unlawfully injures another's body (§ 823 (1), interest: body)";
+    when verletzung_koerper(h);
+    then rechtsgutverletzung(h);
+}
+@source(BGB_P823)
+rule RechtsgutGesundheit(h: Handlung) strict {
+    label de official "Wer die Gesundheit eines anderen widerrechtlich verletzt (§ 823 Abs. 1, Rechtsgut Gesundheit)";
+    label en unofficial "A person who unlawfully injures another's health (§ 823 (1), interest: health)";
+    when verletzung_gesundheit(h);
+    then rechtsgutverletzung(h);
+}
+@source(BGB_P823)
+rule RechtsgutFreiheit(h: Handlung) strict {
+    label de official "Wer die Freiheit eines anderen widerrechtlich verletzt (§ 823 Abs. 1, Rechtsgut Freiheit)";
+    label en unofficial "A person who unlawfully injures another's freedom (§ 823 (1), interest: freedom)";
+    when verletzung_freiheit(h);
+    then rechtsgutverletzung(h);
+}
+@source(BGB_P823)
+rule RechtsgutEigentum(h: Handlung) strict {
+    label de official "Wer das Eigentum eines anderen widerrechtlich verletzt (§ 823 Abs. 1, Rechtsgut Eigentum)";
+    label en unofficial "A person who unlawfully injures another's property (§ 823 (1), interest: property)";
+    when verletzung_eigentum(h);
+    then rechtsgutverletzung(h);
+}
+@source(BGB_P823)
+rule RechtsgutSonstigesRecht(h: Handlung) strict {
+    label de official "Wer ein sonstiges Recht eines anderen widerrechtlich verletzt (§ 823 Abs. 1, sonstiges Recht)";
+    label en unofficial "A person who unlawfully injures another right of another person (§ 823 (1), other right)";
+    when verletzung_sonstiges_recht(h);
+    then rechtsgutverletzung(h);
+}
+
+// --- Haftungsgründe der §§ 823–826 ---------------------------------------------------------------
+
+pub entity Schutzgesetz {
+    label de official "den Schutz eines anderen bezweckendes Gesetz (§ 823 Abs. 2) — fremdes Gesetz, typisierte Eingabe des Falls";
+    label en unofficial "statute intended to protect another person (§ 823 (2)) — foreign statute, typed input of the case";
+}
+pub relation schutzgesetzverstoss(h: Handlung, g: Schutzgesetz) kind empirical {
+    label de official "Verstoß gegen ein den Schutz eines anderen bezweckendes Gesetz (§ 823 Abs. 2 Satz 1)";
+    label en unofficial "breach of a statute intended to protect another person (§ 823 (2) sentence 1)";
+}
+pub relation verstoss_auch_ohne_verschulden_moeglich(g: Schutzgesetz) kind empirical {
+    label de official "nach dem Inhalt des Gesetzes ist ein Verstoß gegen dieses auch ohne Verschulden möglich (§ 823 Abs. 2 Satz 2)";
+    label en unofficial "under the content of the statute a breach is possible even without fault (§ 823 (2) sentence 2)";
+}
+pub relation verstoss_nur_mit_verschulden_moeglich(g: Schutzgesetz) kind empirical {
+    label de official "nach dem Inhalt des Gesetzes setzt der Verstoß Verschulden voraus (§ 823 Abs. 2 Satz 2 im Umkehrschluss) — ausdrückliche Angabe des Falls";
+    label en unofficial "under the content of the statute the breach requires fault (§ 823 (2) sentence 2, converse) — express statement of the case";
+}
+
+pub relation haftungsgrund_823_abs1(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: vorsätzliche oder fahrlässige widerrechtliche Verletzung eines Rechtsguts (§ 823 Abs. 1)";
+    label en unofficial "ground of liability: intentional or negligent unlawful injury of a protected interest (§ 823 (1))";
+}
+pub relation haftungsgrund_823_abs2(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: Verstoß gegen ein Schutzgesetz (§ 823 Abs. 2)";
+    label en unofficial "ground of liability: breach of a protective statute (§ 823 (2))";
+}
+
+@source(BGB_P823)
+rule Haftung823Abs1(h: Handlung) strict {
+    label de official "Wer vorsätzlich oder fahrlässig das Leben, den Körper, die Gesundheit, die Freiheit, das Eigentum oder ein sonstiges Recht eines anderen widerrechtlich verletzt, ist dem anderen zum Ersatz des daraus entstehenden Schadens verpflichtet (§ 823 Abs. 1)";
+    label en unofficial "A person who intentionally or negligently unlawfully injures the life, body, health, freedom, property or another right of another person is liable to compensate the resulting damage (§ 823 (1))";
+    when rechtsgutverletzung(h) and kein_rechtfertigungsgrund(h) and verschulden(h) and kausal_verursacht(h);
+    then haftungsgrund_823_abs1(h);
+}
+
+@source(BGB_P823)
+rule Haftung823Abs2VerschuldensabhaengigesSchutzgesetz(h: Handlung, g: Schutzgesetz) strict {
+    label de official "Die gleiche Verpflichtung trifft denjenigen, welcher gegen ein den Schutz eines anderen bezweckendes Gesetz verstößt (§ 823 Abs. 2 Satz 1), wenn der Verstoß nach dem Inhalt des Gesetzes Verschulden voraussetzt";
+    label en unofficial "The same duty falls on a person who breaches a statute intended to protect another (§ 823 (2) sentence 1) where the statute requires fault for the breach";
+    when schutzgesetzverstoss(h, g) and verstoss_nur_mit_verschulden_moeglich(g) and kausal_verursacht(h);
+    then haftungsgrund_823_abs2(h);
+}
+@source(BGB_P823)
+rule Haftung823Abs2OhneVerschuldenMoeglich(h: Handlung, g: Schutzgesetz) strict {
+    label de official "Ist nach dem Inhalt des Gesetzes ein Verstoß gegen dieses auch ohne Verschulden möglich, so tritt die Ersatzpflicht nur im Falle des Verschuldens ein (§ 823 Abs. 2 Satz 2)";
+    label en unofficial "If under the content of the statute a breach is possible without fault, the duty to compensate arises only where there is fault (§ 823 (2) sentence 2)";
+    when schutzgesetzverstoss(h, g) and verstoss_auch_ohne_verschulden_moeglich(g) and verschulden(h) and kausal_verursacht(h);
+    then haftungsgrund_823_abs2(h);
+}
+
+// --- § 824 Kreditgefährdung ----------------------------------------------------------------------
+
+pub relation unwahre_tatsache_behauptet_oder_verbreitet(h: Handlung) kind empirical {
+    label de official "der Wahrheit zuwider wurde eine Tatsache behauptet oder verbreitet (§ 824 Abs. 1)";
+    label en unofficial "a fact was asserted or disseminated contrary to the truth (§ 824 (1))";
+}
+@source(BGB_P824)
+pub external judgment relation geeignet_kredit_zu_gefaehrden(h: Handlung) {
+    authority Court;
+    label de official "§ 824 Abs. 1. Die Tatsache ist geeignet, den Kredit eines anderen zu gefährden oder sonstige Nachteile für dessen Erwerb oder Fortkommen herbeizuführen";
+    label en unofficial "§ 824 (1). The fact is apt to endanger another's credit or to cause other detriments to his livelihood or advancement";
+}
+pub relation unwahrheit_gekannt(h: Handlung) kind empirical {
+    label de official "der Behauptende kennt die Unwahrheit (§ 824 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "the asserting party knows of the untruth (§ 824 (1)) — established fact";
+}
+@source(BGB_P824)
+pub external judgment relation unwahrheit_kennen_muessen(h: Handlung) {
+    authority Court;
+    label de official "§ 824 Abs. 1. Der Behauptende kennt die Unwahrheit zwar nicht, muss sie aber kennen";
+    label en unofficial "§ 824 (1). The asserting party does not know of the untruth but ought to know it";
+}
+pub relation unwahrheit_dem_mitteilenden_unbekannt(h: Handlung) kind empirical {
+    label de official "die Unwahrheit der Mitteilung ist dem Mitteilenden unbekannt (§ 824 Abs. 2)";
+    label en unofficial "the untruth of the communication is unknown to the communicating party (§ 824 (2))";
+}
+@source(BGB_P824)
+pub external judgment relation berechtigtes_interesse_an_der_mitteilung(h: Handlung) {
+    authority Court;
+    label de official "§ 824 Abs. 2. Der Mitteilende oder der Empfänger der Mitteilung hat an ihr ein berechtigtes Interesse";
+    label en unofficial "§ 824 (2). The communicating party or the recipient of the communication has a legitimate interest in it";
+}
+pub relation ausschluss_824_abs2(h: Handlung) kind institutional {
+    label de official "Ausschluss der Schadensersatzpflicht nach § 824 Abs. 2 (unbekannte Unwahrheit und berechtigtes Interesse)";
+    label en unofficial "exclusion of liability under § 824 (2) (untruth unknown and legitimate interest)";
+}
+pub relation haftungsgrund_824(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: Kreditgefährdung durch unwahre Tatsachenbehauptung (§ 824)";
+    label en unofficial "ground of liability: endangering credit by an untrue assertion of fact (§ 824)";
+}
+
+@source(BGB_P824)
+rule Ausschluss824Abs2(h: Handlung) strict {
+    label de official "Durch eine Mitteilung, deren Unwahrheit dem Mitteilenden unbekannt ist, wird dieser nicht zum Schadensersatz verpflichtet, wenn er oder der Empfänger der Mitteilung an ihr ein berechtigtes Interesse hat (§ 824 Abs. 2)";
+    label en unofficial "A communication whose untruth is unknown to the communicating party does not make him liable if he or the recipient has a legitimate interest in it (§ 824 (2))";
+    when unwahrheit_dem_mitteilenden_unbekannt(h) and berechtigtes_interesse_an_der_mitteilung(h);
+    then ausschluss_824_abs2(h);
+}
+@source(BGB_P824)
+rule Haftung824Kenntnis(h: Handlung) defeasible {
+    label de official "Wer der Wahrheit zuwider eine Tatsache behauptet oder verbreitet, die geeignet ist, den Kredit eines anderen zu gefährden, hat den daraus entstehenden Schaden zu ersetzen (§ 824 Abs. 1) — Kenntnis der Unwahrheit; Ausnahme des Absatzes 2 vorbehalten";
+    label en unofficial "A person who contrary to the truth asserts or disseminates a fact apt to endanger another's credit must compensate the resulting damage (§ 824 (1)) — knowledge of the untruth; subject to the exception of subsection (2)";
+    when unwahre_tatsache_behauptet_oder_verbreitet(h) and geeignet_kredit_zu_gefaehrden(h)
+     and unwahrheit_gekannt(h) and kausal_verursacht(h);
+    unless ausschluss_824_abs2(h);
+    then haftungsgrund_824(h);
+}
+@source(BGB_P824)
+rule Haftung824KennenMuessen(h: Handlung) defeasible {
+    label de official "Die Ersatzpflicht besteht auch dann, wenn der Behauptende die Unwahrheit zwar nicht kennt, aber kennen muss (§ 824 Abs. 1) — Ausnahme des Absatzes 2 vorbehalten";
+    label en unofficial "The duty to compensate also exists where the asserting party does not know of the untruth but ought to know it (§ 824 (1)) — subject to the exception of subsection (2)";
+    when unwahre_tatsache_behauptet_oder_verbreitet(h) and geeignet_kredit_zu_gefaehrden(h)
+     and unwahrheit_kennen_muessen(h) and kausal_verursacht(h);
+    unless ausschluss_824_abs2(h);
+    then haftungsgrund_824(h);
+}
+
+// --- § 825 Bestimmung zu sexuellen Handlungen ----------------------------------------------------
+
+pub relation bestimmung_durch_hinterlist(h: Handlung) kind empirical {
+    label de official "Bestimmung eines anderen durch Hinterlist (§ 825)";
+    label en unofficial "inducing another by cunning (§ 825)";
+}
+pub relation bestimmung_durch_drohung(h: Handlung) kind empirical {
+    label de official "Bestimmung eines anderen durch Drohung (§ 825)";
+    label en unofficial "inducing another by threat (§ 825)";
+}
+pub relation bestimmung_durch_missbrauch_eines_abhaengigkeitsverhaeltnisses(h: Handlung) kind empirical {
+    label de official "Bestimmung eines anderen durch Missbrauch eines Abhängigkeitsverhältnisses (§ 825)";
+    label en unofficial "inducing another by abuse of a relationship of dependence (§ 825)";
+}
+pub relation sexuelle_handlung_vorgenommen_oder_geduldet(h: Handlung) kind empirical {
+    label de official "der andere hat sexuelle Handlungen vorgenommen oder geduldet (§ 825)";
+    label en unofficial "the other person performed or tolerated sexual acts (§ 825)";
+}
+pub relation bestimmungsmittel_825(h: Handlung) kind institutional {
+    label de official "eines der in § 825 genannten Bestimmungsmittel liegt vor";
+    label en unofficial "one of the means of inducement named in § 825 is present";
+}
+pub relation haftungsgrund_825(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: Bestimmung zu sexuellen Handlungen (§ 825)";
+    label en unofficial "ground of liability: inducement to sexual acts (§ 825)";
+}
+
+@source(BGB_P825)
+rule Bestimmungsmittel825Hinterlist(h: Handlung) strict {
+    label de official "Hinterlist ist Bestimmungsmittel des § 825";
+    label en unofficial "Cunning is a means of inducement under § 825";
+    when bestimmung_durch_hinterlist(h);
+    then bestimmungsmittel_825(h);
+}
+@source(BGB_P825)
+rule Bestimmungsmittel825Drohung(h: Handlung) strict {
+    label de official "Drohung ist Bestimmungsmittel des § 825";
+    label en unofficial "Threat is a means of inducement under § 825";
+    when bestimmung_durch_drohung(h);
+    then bestimmungsmittel_825(h);
+}
+@source(BGB_P825)
+rule Bestimmungsmittel825Abhaengigkeit(h: Handlung) strict {
+    label de official "Missbrauch eines Abhängigkeitsverhältnisses ist Bestimmungsmittel des § 825";
+    label en unofficial "Abuse of a relationship of dependence is a means of inducement under § 825";
+    when bestimmung_durch_missbrauch_eines_abhaengigkeitsverhaeltnisses(h);
+    then bestimmungsmittel_825(h);
+}
+@source(BGB_P825)
+rule Haftung825(h: Handlung) strict {
+    label de official "Wer einen anderen durch Hinterlist, Drohung oder Missbrauch eines Abhängigkeitsverhältnisses zur Vornahme oder Duldung sexueller Handlungen bestimmt, ist ihm zum Ersatz des daraus entstehenden Schadens verpflichtet (§ 825)";
+    label en unofficial "A person who by cunning, threat or abuse of a relationship of dependence induces another to perform or tolerate sexual acts must compensate the resulting damage (§ 825)";
+    when bestimmungsmittel_825(h) and sexuelle_handlung_vorgenommen_oder_geduldet(h) and kausal_verursacht(h);
+    then haftungsgrund_825(h);
+}
+
+// --- § 826 Sittenwidrige vorsätzliche Schädigung -------------------------------------------------
+
+@source(BGB_P826)
+pub external judgment relation gegen_die_guten_sitten_verstossend(h: Handlung) {
+    authority Court;
+    label de official "§ 826. Der Schaden wurde in einer gegen die guten Sitten verstoßenden Weise zugefügt";
+    label en unofficial "§ 826. The damage was inflicted in a manner contrary to public policy";
+}
+pub relation schaden_zugefuegt(h: Handlung) kind empirical {
+    label de official "einem anderen wurde Schaden zugefügt (§ 826)";
+    label en unofficial "damage was inflicted on another person (§ 826)";
+}
+pub relation haftungsgrund_826(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: sittenwidrige vorsätzliche Schädigung (§ 826)";
+    label en unofficial "ground of liability: intentional damage contrary to public policy (§ 826)";
+}
+
+@source(BGB_P826)
+rule Haftung826(h: Handlung) strict {
+    label de official "Wer in einer gegen die guten Sitten verstoßenden Weise einem anderen vorsätzlich Schaden zufügt, ist dem anderen zum Ersatz des Schadens verpflichtet (§ 826)";
+    label en unofficial "A person who intentionally inflicts damage on another in a manner contrary to public policy must compensate that damage (§ 826)";
+    when gegen_die_guten_sitten_verstossend(h) and vorsatz(h) and schaden_zugefuegt(h);
+    then haftungsgrund_826(h);
+}
+
+// --- Sammlung der Haftungsgründe ------------------------------------------------------------------
+
+pub relation haftungsgrund(h: Handlung) kind institutional {
+    label de official "ein Haftungsgrund des Titels 27 liegt vor";
+    label en unofficial "a ground of liability of Title 27 is present";
+}
+
+@source(BGB_P823)
+rule HaftungsgrundAus823Abs1(h: Handlung) strict {
+    label de official "Die Rechtsgutverletzung des § 823 Abs. 1 ist Haftungsgrund";
+    label en unofficial "The injury of a protected interest under § 823 (1) is a ground of liability";
+    when haftungsgrund_823_abs1(h);
+    then haftungsgrund(h);
+}
+@source(BGB_P823)
+rule HaftungsgrundAus823Abs2(h: Handlung) strict {
+    label de official "Der Schutzgesetzverstoß des § 823 Abs. 2 ist Haftungsgrund";
+    label en unofficial "The breach of a protective statute under § 823 (2) is a ground of liability";
+    when haftungsgrund_823_abs2(h);
+    then haftungsgrund(h);
+}
+@source(BGB_P824)
+rule HaftungsgrundAus824(h: Handlung) defeasible {
+    label de official "Die Kreditgefährdung des § 824 ist Haftungsgrund";
+    label en unofficial "Endangering credit under § 824 is a ground of liability";
+    when haftungsgrund_824(h);
+    then haftungsgrund(h);
+}
+@source(BGB_P825)
+rule HaftungsgrundAus825(h: Handlung) strict {
+    label de official "Die Bestimmung zu sexuellen Handlungen des § 825 ist Haftungsgrund";
+    label en unofficial "Inducement to sexual acts under § 825 is a ground of liability";
+    when haftungsgrund_825(h);
+    then haftungsgrund(h);
+}
+@source(BGB_P826)
+rule HaftungsgrundAus826(h: Handlung) strict {
+    label de official "Die sittenwidrige vorsätzliche Schädigung des § 826 ist Haftungsgrund";
+    label en unofficial "Intentional damage contrary to public policy under § 826 is a ground of liability";
+    when haftungsgrund_826(h);
+    then haftungsgrund(h);
+}
+
+// --- §§ 827, 828 Verantwortlichkeit ---------------------------------------------------------------
+
+pub relation zustand_der_bewusstlosigkeit_oder_stoerung(h: Handlung) kind empirical {
+    label de official "der Schaden wurde im Zustand der Bewusstlosigkeit oder in einem die freie Willensbestimmung ausschließenden Zustand krankhafter Störung der Geistestätigkeit zugefügt (§ 827 Satz 1)";
+    label en unofficial "the damage was inflicted in a state of unconsciousness or of pathological disturbance of mental activity excluding free determination of will (§ 827 sentence 1)";
+}
+pub relation zustand_durch_geistige_getraenke_herbeigefuehrt(h: Handlung) kind empirical {
+    label de official "der Handelnde hat sich durch geistige Getränke oder ähnliche Mittel in einen vorübergehenden Zustand dieser Art versetzt (§ 827 Satz 2)";
+    label en unofficial "the actor put himself into a temporary state of that kind by spirituous drinks or similar means (§ 827 sentence 2)";
+}
+pub relation ohne_verschulden_in_den_zustand_geraten(h: Handlung) kind empirical {
+    label de official "der Handelnde ist ohne Verschulden in den Zustand geraten (§ 827 Satz 2 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the actor fell into that state without fault (§ 827 sentence 2 half-sentence 2) — express statement of the case";
+}
+pub relation verantwortlichkeit_827_satz2(h: Handlung) kind institutional {
+    label de official "Verantwortlichkeit wie bei Fahrlässigkeit trotz vorübergehenden Zustands (§ 827 Satz 2)";
+    label en unofficial "responsibility as for negligence despite the temporary state (§ 827 sentence 2)";
+}
+pub relation nicht_verantwortlich_827(h: Handlung) kind institutional {
+    label de official "für den Schaden nicht verantwortlich wegen Bewusstlosigkeit oder krankhafter Störung der Geistestätigkeit (§ 827 Satz 1)";
+    label en unofficial "not responsible for the damage because of unconsciousness or pathological mental disturbance (§ 827 sentence 1)";
+}
+
+@source(BGB_P827)
+rule Verantwortlichkeit827Satz2(h: Handlung) defeasible {
+    label de official "Hat er sich durch geistige Getränke oder ähnliche Mittel in einen vorübergehenden Zustand dieser Art versetzt, so ist er für einen Schaden, den er in diesem Zustand widerrechtlich verursacht, in gleicher Weise verantwortlich, wie wenn ihm Fahrlässigkeit zur Last fiele; die Verantwortlichkeit tritt nicht ein, wenn er ohne Verschulden in den Zustand geraten ist (§ 827 Satz 2)";
+    label en unofficial "If he put himself into such a temporary state by spirituous drinks or similar means, he is responsible for damage unlawfully caused in that state as if negligence were attributable to him; responsibility does not arise if he fell into that state without fault (§ 827 sentence 2)";
+    when zustand_durch_geistige_getraenke_herbeigefuehrt(h);
+    unless ohne_verschulden_in_den_zustand_geraten(h);
+    then verantwortlichkeit_827_satz2(h);
+}
+
+@source(BGB_P827)
+rule NichtVerantwortlich827Satz1(h: Handlung) defeasible {
+    label de official "Wer im Zustand der Bewusstlosigkeit oder in einem die freie Willensbestimmung ausschließenden Zustand krankhafter Störung der Geistestätigkeit einem anderen Schaden zufügt, ist für den Schaden nicht verantwortlich (§ 827 Satz 1)";
+    label en unofficial "A person who inflicts damage on another in a state of unconsciousness or of pathological mental disturbance excluding free determination of will is not responsible for the damage (§ 827 sentence 1)";
+    when zustand_der_bewusstlosigkeit_oder_stoerung(h);
+    unless verantwortlichkeit_827_satz2(h);
+    then nicht_verantwortlich_827(h);
+}
+
+pub relation unfall_mit_kraftfahrzeug_schienenbahn_oder_schwebebahn(h: Handlung) kind empirical {
+    label de official "der Schaden wurde bei einem Unfall mit einem Kraftfahrzeug, einer Schienenbahn oder einer Schwebebahn zugefügt (§ 828 Abs. 2 Satz 1)";
+    label en unofficial "the damage was inflicted in an accident involving a motor vehicle, a railway or a suspension railway (§ 828 (2) sentence 1)";
+}
+@source(BGB_P828)
+pub external judgment relation einsicht_fehlt(h: Handlung) {
+    authority Court;
+    label de official "§ 828 Abs. 3. Der Handelnde hatte bei der Begehung der schädigenden Handlung nicht die zur Erkenntnis der Verantwortlichkeit erforderliche Einsicht";
+    label en unofficial "§ 828 (3). When committing the damaging act the actor lacked the understanding necessary to recognise responsibility";
+}
+pub relation nicht_verantwortlich_828_abs1(h: Handlung) kind institutional {
+    label de official "nicht verantwortlich: das siebente Lebensjahr ist am Tag der Handlung nicht vollendet (§ 828 Abs. 1)";
+    label en unofficial "not responsible: the seventh year of life was not completed on the day of the act (§ 828 (1))";
+}
+pub relation nicht_verantwortlich_828_abs2(h: Handlung) kind institutional {
+    label de official "nicht verantwortlich: das siebente, aber nicht das zehnte Lebensjahr vollendet, Unfall mit einem Kraftfahrzeug, einer Schienenbahn oder einer Schwebebahn (§ 828 Abs. 2)";
+    label en unofficial "not responsible: seventh but not tenth year of life completed, accident with a motor vehicle, railway or suspension railway (§ 828 (2))";
+}
+pub relation nicht_verantwortlich_828_abs3(h: Handlung) kind institutional {
+    label de official "nicht verantwortlich: das 18. Lebensjahr nicht vollendet und die erforderliche Einsicht fehlte (§ 828 Abs. 3)";
+    label en unofficial "not responsible: eighteenth year of life not completed and the necessary understanding was lacking (§ 828 (3))";
+}
+
+@source(BGB_P828)
+rule NichtVerantwortlich828Abs1(h: Handlung, p: Person, d: Date, t7: Date) strict {
+    label de official "Wer nicht das siebente Lebensjahr vollendet hat, ist für einen Schaden, den er einem anderen zufügt, nicht verantwortlich (§ 828 Abs. 1) — Vollendung mit Ablauf des Tages, also am Vollendungstag selbst noch nicht vollendet";
+    label en unofficial "A person who has not completed his seventh year of life is not responsible for damage he inflicts on another (§ 828 (1)) — completion occurs at the end of that day";
+    when handelnder(h, p) and handlungstag(h, d)
+     and de.bgb.fristen::lebensjahr_vollendet_am(p, 7 calendar_year, t7) and d <= t7;
+    then nicht_verantwortlich_828_abs1(h);
+}
+@source(BGB_P828)
+rule NichtVerantwortlich828Abs2(h: Handlung, p: Person, d: Date, t7: Date, t10: Date) defeasible {
+    label de official "Wer das siebente, aber nicht das zehnte Lebensjahr vollendet hat, ist für den Schaden, den er bei einem Unfall mit einem Kraftfahrzeug, einer Schienenbahn oder einer Schwebebahn einem anderen zufügt, nicht verantwortlich; dies gilt nicht, wenn er die Verletzung vorsätzlich herbeigeführt hat (§ 828 Abs. 2)";
+    label en unofficial "A person who has completed his seventh but not his tenth year of life is not responsible for damage inflicted in an accident with a motor vehicle, a railway or a suspension railway; this does not apply if he caused the injury intentionally (§ 828 (2))";
+    when handelnder(h, p) and handlungstag(h, d)
+     and de.bgb.fristen::lebensjahr_vollendet_am(p, 7 calendar_year, t7) and d > t7
+     and de.bgb.fristen::lebensjahr_vollendet_am(p, 10 calendar_year, t10) and d <= t10
+     and unfall_mit_kraftfahrzeug_schienenbahn_oder_schwebebahn(h);
+    unless vorsatz(h);
+    then nicht_verantwortlich_828_abs2(h);
+}
+@source(BGB_P828)
+rule NichtVerantwortlich828Abs3(h: Handlung, p: Person, d: Date, t18: Date) strict {
+    label de official "Wer das 18. Lebensjahr noch nicht vollendet hat, ist für den Schaden, den er einem anderen zufügt, nicht verantwortlich, wenn er bei der Begehung der schädigenden Handlung nicht die zur Erkenntnis der Verantwortlichkeit erforderliche Einsicht hat (§ 828 Abs. 3)";
+    label en unofficial "A person who has not yet completed his eighteenth year of life is not responsible for damage he inflicts if, when committing the act, he lacked the understanding necessary to recognise responsibility (§ 828 (3))";
+    when handelnder(h, p) and handlungstag(h, d)
+     and de.bgb.fristen::lebensjahr_vollendet_am(p, 18 calendar_year, t18) and d <= t18
+     and einsicht_fehlt(h);
+    then nicht_verantwortlich_828_abs3(h);
+}
+
+pub relation nicht_verantwortlich(h: Handlung) kind institutional {
+    label de official "der Handelnde ist für den Schaden nach §§ 827, 828 nicht verantwortlich";
+    label en unofficial "the actor is not responsible for the damage under §§ 827, 828";
+}
+
+@source(BGB_P827)
+rule NichtVerantwortlichAus827(h: Handlung) defeasible {
+    label de official "Die Unverantwortlichkeit des § 827 Satz 1 nimmt die Verantwortlichkeit weg";
+    label en unofficial "The lack of responsibility under § 827 sentence 1 removes responsibility";
+    when nicht_verantwortlich_827(h);
+    then nicht_verantwortlich(h);
+}
+@source(BGB_P828)
+rule NichtVerantwortlichAus828Abs1(h: Handlung) defeasible {
+    label de official "Die Altersgrenze des § 828 Abs. 1 nimmt die Verantwortlichkeit weg";
+    label en unofficial "The age limit of § 828 (1) removes responsibility";
+    when nicht_verantwortlich_828_abs1(h);
+    then nicht_verantwortlich(h);
+}
+@source(BGB_P828)
+rule NichtVerantwortlichAus828Abs2(h: Handlung) defeasible {
+    label de official "Die Altersgrenze des § 828 Abs. 2 nimmt die Verantwortlichkeit weg";
+    label en unofficial "The age limit of § 828 (2) removes responsibility";
+    when nicht_verantwortlich_828_abs2(h);
+    then nicht_verantwortlich(h);
+}
+@source(BGB_P828)
+rule NichtVerantwortlichAus828Abs3(h: Handlung) defeasible {
+    label de official "Die fehlende Einsicht des § 828 Abs. 3 nimmt die Verantwortlichkeit weg";
+    label en unofficial "The lack of understanding under § 828 (3) removes responsibility";
+    when nicht_verantwortlich_828_abs3(h);
+    then nicht_verantwortlich(h);
+}
+
+// --- Die Ersatzpflicht: genau eine defeasible Regel ------------------------------------------------
+
+pub relation ersatzpflicht_dem_grunde_nach(h: Handlung) kind institutional {
+    label de official "die Ersatzpflicht besteht dem Grunde nach: Haftungsgrund des Titels 27 und Verantwortlichkeit nach den §§ 827, 828";
+    label en unofficial "liability exists in principle: a ground of liability of Title 27 and responsibility under §§ 827, 828";
+}
+pub relation schadensersatzpflicht(h: Handlung, ersatzpflichtiger: Person, verletzter: Person) kind institutional {
+    label de official "Verpflichtung zum Ersatz des aus der unerlaubten Handlung entstehenden Schadens (Titel 27)";
+    label en unofficial "obligation to compensate the damage arising from the tort (Title 27)";
+}
+
+// Die Verantwortlichkeit der §§ 827, 828 hängt nur an der HANDLUNG; der
+// Ausnahmesatz muss aber jede Variable des Kopfes binden (§190). Deshalb trägt
+// die defeasible Regel den einstelligen Kopf, und die Parteien kommen in einer
+// zweiten Regel dazu — nicht umgekehrt.
+@source(BGB_P823)
+rule ErsatzpflichtDemGrundeNach(h: Handlung) defeasible {
+    label de official "Liegt ein Haftungsgrund des Titels 27 vor, so besteht die Ersatzpflicht dem Grunde nach, sofern der Handelnde nicht nach den §§ 827, 828 unverantwortlich ist";
+    label en unofficial "Where a ground of liability of Title 27 is present, liability exists in principle unless the actor is not responsible under §§ 827, 828";
+    when haftungsgrund(h);
+    unless nicht_verantwortlich(h);
+    then ersatzpflicht_dem_grunde_nach(h);
+}
+
+@source(BGB_P823)
+rule Schadensersatzpflicht(h: Handlung, s: Person, v: Person) defeasible {
+    label de official "Der Handelnde ist dem anderen zum Ersatz des daraus entstehenden Schadens verpflichtet (§ 823 Abs. 1, § 824, § 825, § 826)";
+    label en unofficial "The actor must compensate the other person for the resulting damage (§ 823 (1), § 824, § 825, § 826)";
+    when ersatzpflicht_dem_grunde_nach(h) and handelnder(h, s) and verletzter(h, v);
+    then schadensersatzpflicht(h, s, v);
+}
+
+// --- § 829 Ersatzpflicht aus Billigkeitsgründen ---------------------------------------------------
+
+pub relation kein_ersatz_vom_aufsichtspflichtigen(h: Handlung) kind empirical {
+    label de official "der Ersatz des Schadens kann nicht von einem aufsichtspflichtigen Dritten erlangt werden (§ 829) — ausdrückliche Angabe des Falls";
+    label en unofficial "compensation cannot be obtained from a third party under a duty of supervision (§ 829) — express statement of the case";
+}
+@source(BGB_P829)
+pub external judgment relation billigkeit_erfordert_schadloshaltung(h: Handlung) {
+    authority Court;
+    label de official "§ 829. Die Billigkeit erfordert nach den Umständen, insbesondere nach den Verhältnissen der Beteiligten, eine Schadloshaltung, ohne dass dem Ersatzpflichtigen die Mittel entzogen werden, deren er zum angemessenen Unterhalt sowie zur Erfüllung seiner gesetzlichen Unterhaltspflichten bedarf";
+    label en unofficial "§ 829. Equity requires, in the circumstances and in particular in view of the parties' situations, that the damage be made good without depriving the liable person of the means he needs for reasonable maintenance and for his statutory maintenance duties";
+}
+pub relation ersatzpflicht_aus_billigkeit(h: Handlung, ersatzpflichtiger: Person, verletzter: Person) kind institutional {
+    label de official "Ersatzpflicht aus Billigkeitsgründen trotz fehlender Verantwortlichkeit (§ 829)";
+    label en unofficial "duty to compensate on grounds of equity despite lack of responsibility (§ 829)";
+}
+
+@source(BGB_P829)
+rule Billigkeitshaftung829(h: Handlung, s: Person, v: Person) defeasible {
+    label de official "Wer in einem der in den §§ 823 bis 826 bezeichneten Fälle für einen von ihm verursachten Schaden auf Grund der §§ 827, 828 nicht verantwortlich ist, hat gleichwohl, sofern der Ersatz nicht von einem aufsichtspflichtigen Dritten erlangt werden kann, den Schaden insoweit zu ersetzen, als die Billigkeit nach den Umständen eine Schadloshaltung erfordert (§ 829)";
+    label en unofficial "A person not responsible under §§ 827, 828 in one of the cases of §§ 823 to 826 must nevertheless compensate the damage, so far as compensation cannot be obtained from a third party under a duty of supervision and equity requires it (§ 829)";
+    when haftungsgrund(h) and nicht_verantwortlich(h) and kein_ersatz_vom_aufsichtspflichtigen(h)
+     and billigkeit_erfordert_schadloshaltung(h) and handelnder(h, s) and verletzter(h, v);
+    then ersatzpflicht_aus_billigkeit(h, s, v);
+}
+
+// --- § 830 Mittäter und Beteiligte ----------------------------------------------------------------
+
+pub relation beteiligter(h: Handlung, p: Person) kind empirical {
+    label de official "Beteiligter der unerlaubten Handlung (§ 830 Abs. 1)";
+    label en unofficial "participant in the tort (§ 830 (1))";
+}
+pub relation gemeinschaftlich_begangen(h: Handlung) kind empirical {
+    label de official "mehrere haben den Schaden durch eine gemeinschaftlich begangene unerlaubte Handlung verursacht (§ 830 Abs. 1 Satz 1)";
+    label en unofficial "several persons caused the damage by a jointly committed tort (§ 830 (1) sentence 1)";
+}
+pub relation urheber_nicht_ermittelbar(h: Handlung) kind empirical {
+    label de official "es lässt sich nicht ermitteln, wer von mehreren Beteiligten den Schaden durch seine Handlung verursacht hat (§ 830 Abs. 1 Satz 2)";
+    label en unofficial "it cannot be established which of several participants caused the damage by his act (§ 830 (1) sentence 2)";
+}
+pub relation anstifter_oder_gehilfe(h: Handlung, p: Person) kind empirical {
+    label de official "Anstifter oder Gehilfe (§ 830 Abs. 2)";
+    label en unofficial "instigator or accessory (§ 830 (2))";
+}
+pub relation mitverantwortlich(h: Handlung, p: Person) kind institutional {
+    label de official "für den Schaden verantwortlich als Mittäter oder Beteiligter (§ 830)";
+    label en unofficial "responsible for the damage as joint tortfeasor or participant (§ 830)";
+}
+
+@source(BGB_P830)
+rule Mittaeter830Abs1Satz1(h: Handlung, p: Person) strict {
+    label de official "Haben mehrere durch eine gemeinschaftlich begangene unerlaubte Handlung einen Schaden verursacht, so ist jeder für den Schaden verantwortlich (§ 830 Abs. 1 Satz 1)";
+    label en unofficial "If several persons caused damage by a jointly committed tort, each is responsible for the damage (§ 830 (1) sentence 1)";
+    when gemeinschaftlich_begangen(h) and beteiligter(h, p);
+    then mitverantwortlich(h, p);
+}
+@source(BGB_P830)
+rule Urheberzweifel830Abs1Satz2(h: Handlung, p: Person) strict {
+    label de official "Das Gleiche gilt, wenn sich nicht ermitteln lässt, wer von mehreren Beteiligten den Schaden durch seine Handlung verursacht hat (§ 830 Abs. 1 Satz 2)";
+    label en unofficial "The same applies if it cannot be established which of several participants caused the damage (§ 830 (1) sentence 2)";
+    when urheber_nicht_ermittelbar(h) and beteiligter(h, p);
+    then mitverantwortlich(h, p);
+}
+@source(BGB_P830)
+rule AnstifterUndGehilfen830Abs2(h: Handlung, p: Person) strict {
+    label de official "Anstifter und Gehilfen stehen Mittätern gleich (§ 830 Abs. 2)";
+    label en unofficial "Instigators and accessories rank as joint tortfeasors (§ 830 (2))";
+    when anstifter_oder_gehilfe(h, p);
+    then mitverantwortlich(h, p);
+}

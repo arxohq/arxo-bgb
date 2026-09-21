@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+test "§§ 1942–1944: Ausschlagungspositionen aktiv" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1942(entity_ref("urn:erb:e1942"), entity_ref("urn:erb:p1942"), @2026-01-01) { origin case_input; }
+ assert "b": position_trigger_1943(entity_ref("urn:erb:e1943"), entity_ref("urn:erb:p1943"), @2026-01-01) { origin case_input; }
+ assert "c": position_trigger_1944(entity_ref("urn:erb:e1944"), entity_ref("urn:erb:p1944"), @2026-01-01) { origin case_input; } }
+ evaluate positions();
+ expect position(Ausschlagungsrecht1942, ACTIVE); expect position(AusschlagungAusgeschlossen1943, ACTIVE); expect position(Ausschlagungsfrist1944, ACTIVE);
+}
+
+test "§§ 1942–1944: Ausschlagungspositionen mit Rechtsgrund" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1942(entity_ref("urn:erb:e1942"), entity_ref("urn:erb:p1942"), @2026-01-01) { origin case_input; }
+ assert "ag": ausschlagungsrecht(entity_ref("urn:erb:e1942"), entity_ref("urn:erb:p1942")) { origin case_input; }
+ assert "b": position_trigger_1943(entity_ref("urn:erb:e1943"), entity_ref("urn:erb:p1943"), @2026-01-01) { origin case_input; }
+ assert "bg": ausschlagung_nicht_mehr_moeglich(entity_ref("urn:erb:e1943"), entity_ref("urn:erb:p1943")) { origin case_input; }
+ assert "c": position_trigger_1944(entity_ref("urn:erb:e1944"), entity_ref("urn:erb:p1944"), @2026-01-01) { origin case_input; }
+ assert "cg": ausschlagungsrecht(entity_ref("urn:erb:e1944"), entity_ref("urn:erb:p1944")) { origin case_input; } }
+ evaluate positions();
+ expect position(Ausschlagungsrecht1942, ACTIVE); expect position(AusschlagungAusgeschlossen1943, ACTIVE); expect position(Ausschlagungsfrist1944, ACTIVE);
+}

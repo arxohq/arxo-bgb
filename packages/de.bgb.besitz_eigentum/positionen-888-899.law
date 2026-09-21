@@ -1,0 +1,13 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+
+pub relation position_trigger_888(v: Vormerkung, glaeubiger: Person, erwerber: Person, tag: Date) kind empirical { label de official "Eingang des Falls auf Zustimmung des Erwerbers (§ 888)"; label en unofficial "case input for demanding the acquirer's consent (§ 888)"; }
+pub relation zustimmung_888_ausuebbar(v: Vormerkung, glaeubiger: Person, erwerber: Person) kind empirical { label de official "Der Vormerkungsberechtigte kann Zustimmung verlangen (§ 888)"; label en unofficial "The priority-notice beneficiary may demand consent (§ 888)"; }
+pub relation position_trigger_899(r: Recht, berechtigter: Person, betroffener: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Eintragung eines Widerspruchs (§ 899)"; label en unofficial "case input for registering an objection (§ 899)"; }
+pub relation widerspruch_899_ausuebbar(r: Recht, berechtigter: Person, betroffener: Person) kind empirical { label de official "Der Berechtigte kann einen Widerspruch eintragen lassen (§ 899)"; label en unofficial "The entitled party may register an objection (§ 899)"; }
+
+@source(BGB_P888)
+rule PositionZustimmung888(v: Vormerkung, glaeubiger: Person, erwerber: Person, tag: Date) strict { label de official "Der Vormerkungsberechtigte hat die Befugnis, Zustimmung zu verlangen (§ 888)"; label en unofficial "The priority-notice beneficiary has the power to demand consent (§ 888)"; when position_trigger_888(v, glaeubiger, erwerber, tag); then power Zustimmung888 { holder glaeubiger; over v; exercise zustimmung_888_ausuebbar(v, glaeubiger, erwerber); valid_when zustimmung_888_ausuebbar(v, glaeubiger, erwerber); effect create(zustimmung_888_ausuebbar(v, glaeubiger, erwerber)); window [tag, infinity); }; }
+@source(BGB_P899)
+rule PositionWiderspruch899(r: Recht, berechtigter: Person, betroffener: Person, tag: Date) strict { label de official "Der Berechtigte hat die Befugnis, einen Widerspruch eintragen zu lassen (§ 899)"; label en unofficial "The entitled party has the power to register an objection (§ 899)"; when position_trigger_899(r, berechtigter, betroffener, tag); then power Widerspruch899 { holder berechtigter; over r; exercise widerspruch_899_ausuebbar(r, berechtigter, betroffener); valid_when widerspruch_899_ausuebbar(r, berechtigter, betroffener); effect create(widerspruch_899_ausuebbar(r, berechtigter, betroffener)); window [tag, infinity); }; }

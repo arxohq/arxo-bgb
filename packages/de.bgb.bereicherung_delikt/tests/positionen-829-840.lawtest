@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+
+test "§§ 829, 830 und 840: Haftung aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "s829": handelnder(entity_ref("urn:de:bgb:handlung:h829"), entity_ref("urn:de:bgb:person:s829")) { origin case_input; }
+        assert "v829": verletzter(entity_ref("urn:de:bgb:handlung:h829"), entity_ref("urn:de:bgb:person:v829")) { origin case_input; }
+        assert "b829": billigkeitshaftung_829_beginn_am(entity_ref("urn:de:bgb:handlung:h829"), @2026-06-01) { origin case_input; }
+        assert "p830": beteiligter(entity_ref("urn:de:bgb:handlung:h830"), entity_ref("urn:de:bgb:person:p830")) { origin case_input; }
+        assert "v830": verletzter(entity_ref("urn:de:bgb:handlung:h830"), entity_ref("urn:de:bgb:person:v830")) { origin case_input; }
+        assert "b830": mitverantwortlich_830_beginn_am(entity_ref("urn:de:bgb:handlung:h830"), @2026-06-02) { origin case_input; }
+        assert "p840": nebeneinander_verantwortlich(entity_ref("urn:de:bgb:handlung:h840"), entity_ref("urn:de:bgb:person:p840")) { origin case_input; }
+        assert "b840": gesamtschuld_840_beginn_am(entity_ref("urn:de:bgb:handlung:h840"), @2026-06-03) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Liberty829Billigkeitshaftung, ACTIVE);
+    expect position(Liberty830Mithaftung, ACTIVE);
+    expect position(Liberty840Gesamtschuld, ACTIVE);
+}
+
+test "§§ 829, 830 und 840: ohne Haftungsgrund keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Liberty829Billigkeitshaftung, ACTIVE);
+    expect not position(Liberty830Mithaftung, ACTIVE);
+    expect not position(Liberty840Gesamtschuld, ACTIVE);
+}

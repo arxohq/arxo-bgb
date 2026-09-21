@@ -1,0 +1,183 @@
+// --- Buch 3 Abschnitt 4 Titel 3: Beschränkte persönliche Dienstbarkeit (§§ 1090–1093) ------------------
+//
+// § 1090 Abs. 2 verweist auf §§ 1020–1024, 1026–1029, 1061 (Grunddienstbarkeit,
+// Titel 1) „entsprechend“; dieses Paket rechnet den Verweis nicht ein zweites
+// Mal für einen zweiten Belastungstyp (README „Was das Paket nicht tut“),
+// sondern stellt ihn als terminale Rechtsfolge fest — dieselbe Lesart wie
+// § 1068 Abs. 2 (Titel 2). § 1093 verweist ebenso auf Nießbrauchvorschriften.
+
+pub entity BeschraenktePersoenlicheDienstbarkeit : Belastung {
+    label de official "beschränkte persönliche Dienstbarkeit: Belastung eines Grundstücks zugunsten einer bestimmten Person mit einem Nutzungsrecht oder einer sonstigen, grunddienstbarkeitsfähigen Befugnis (§ 1090 Abs. 1)";
+    label en unofficial "restricted personal easement: encumbrance of land for the benefit of a specific person with a right of use or another power capable of forming the content of an easement (§ 1090 (1))";
+}
+
+pub relation bpd_befugnis_grunddienstbarkeitsfaehig(d: BeschraenktePersoenlicheDienstbarkeit) kind empirical {
+    label de official "die dem Berechtigten zustehende Befugnis kann den Inhalt einer Grunddienstbarkeit bilden (§ 1090 Abs. 1)";
+    label en unofficial "the power vested in the entitled person could form the content of an easement (§ 1090 (1))";
+}
+pub relation bpd_wirksam_bestellt(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "die beschränkte persönliche Dienstbarkeit ist nach § 1090 Abs. 1 wirksam bestellt";
+    label en unofficial "the restricted personal easement has been validly created under § 1090 (1)";
+}
+pub relation bpd_sachvorschriften_der_grunddienstbarkeit_gelten(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "auf die beschränkte persönliche Dienstbarkeit finden die Vorschriften der §§ 1020 bis 1024, 1026 bis 1029, 1061 entsprechende Anwendung (§ 1090 Abs. 2)";
+    label en unofficial "§§ 1020 to 1024, 1026 to 1029 and 1061 apply correspondingly to the restricted personal easement (§ 1090 (2))";
+}
+@source(BGB_P1090) {
+    rule BpdWirksamBestellt(d: BeschraenktePersoenlicheDienstbarkeit, g: Grundstueck, p: Person) strict {
+        label de official "Ein Grundstück kann in der Weise belastet werden, dass der Berechtigte es in einzelnen Beziehungen benutzen darf oder ihm eine sonstige, grunddienstbarkeitsfähige Befugnis zusteht (§ 1090 Abs. 1)";
+        label en unofficial "Land may be encumbered so that the entitled person may use it in individual respects, or another power capable of forming the content of an easement vests in them (§ 1090 (1))";
+        when belastungsgegenstand_grundstueck(d, g) and berechtigter(d, p) and bpd_befugnis_grunddienstbarkeitsfaehig(d);
+        then bpd_wirksam_bestellt(d);
+    }
+    rule BpdSachvorschriftenDerGrunddienstbarkeitGelten(d: BeschraenktePersoenlicheDienstbarkeit) strict {
+        label de official "Die Vorschriften der §§ 1020 bis 1024, 1026 bis 1029, 1061 finden entsprechende Anwendung (§ 1090 Abs. 2)";
+        label en unofficial "§§ 1020 to 1024, 1026 to 1029 and 1061 apply correspondingly (§ 1090 (2))";
+        when bpd_wirksam_bestellt(d);
+        then bpd_sachvorschriften_der_grunddienstbarkeit_gelten(d);
+    }
+}
+
+// --- § 1091: Umfang -----------------------------------------------------------------------------------
+
+pub relation zweifel_ueber_den_umfang_der_bpd(d: BeschraenktePersoenlicheDienstbarkeit) kind empirical {
+    label de official "es besteht Zweifel über den Umfang der beschränkten persönlichen Dienstbarkeit (§ 1091)";
+    label en unofficial "doubt exists as to the extent of the restricted personal easement (§ 1091)";
+}
+pub relation umfang_nach_persoenlichem_beduerfnis_bestimmt(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) kind derived {
+    label de official "der Umfang bestimmt sich im Zweifel nach dem persönlichen Bedürfnis des Berechtigten (§ 1091)";
+    label en unofficial "in case of doubt the extent is determined by the entitled person's personal need (§ 1091)";
+}
+@source(BGB_P1091)
+rule UmfangNachPersoenlichemBeduerfnisBestimmt(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) strict {
+    label de official "Der Umfang einer beschränkten persönlichen Dienstbarkeit bestimmt sich im Zweifel nach dem persönlichen Bedürfnis des Berechtigten (§ 1091)";
+    label en unofficial "The extent of a restricted personal easement is determined, in case of doubt, by the entitled person's personal need (§ 1091)";
+    when zweifel_ueber_den_umfang_der_bpd(d) and berechtigter(d, berechtigter);
+    then umfang_nach_persoenlichem_beduerfnis_bestimmt(d, berechtigter);
+}
+
+// --- § 1092: Unübertragbarkeit; Überlassung der Ausübung ------------------------------------------------
+
+pub relation bpd_nicht_uebertragbar(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "die beschränkte persönliche Dienstbarkeit ist nicht übertragbar (§ 1092 Abs. 1 Satz 1)";
+    label en unofficial "the restricted personal easement is not transferable (§ 1092 (1) sentence 1)";
+}
+pub relation ueberlassung_der_ausuebung_gestattet(d: BeschraenktePersoenlicheDienstbarkeit) kind empirical {
+    label de official "die Überlassung der Ausübung an einen anderen ist gestattet (§ 1092 Abs. 1 Satz 2)";
+    label en unofficial "leaving the exercise to another has been permitted (§ 1092 (1) sentence 2)";
+}
+pub relation ausuebung_darf_ueberlassen_werden(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "die Ausübung der Dienstbarkeit darf einem anderen überlassen werden (§ 1092 Abs. 1 Satz 2)";
+    label en unofficial "the exercise of the easement may be left to another (§ 1092 (1) sentence 2)";
+}
+@source(BGB_P1092) {
+    rule BpdNichtUebertragbar(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) strict {
+        label de official "Eine beschränkte persönliche Dienstbarkeit ist nicht übertragbar (§ 1092 Abs. 1 Satz 1)";
+        label en unofficial "A restricted personal easement is not transferable (§ 1092 (1) sentence 1)";
+        when berechtigter(d, berechtigter);
+        then bpd_nicht_uebertragbar(d);
+    }
+    rule AusuebungDarfUeberlassenWerdenWennGestattet(d: BeschraenktePersoenlicheDienstbarkeit) strict {
+        label de official "Die Ausübung der Dienstbarkeit kann einem anderen nur überlassen werden, wenn die Überlassung gestattet ist (§ 1092 Abs. 1 Satz 2)";
+        label en unofficial "Exercise of the easement may be left to another only where this has been permitted (§ 1092 (1) sentence 2)";
+        when ueberlassung_der_ausuebung_gestattet(d);
+        then ausuebung_darf_ueberlassen_werden(d);
+    }
+}
+
+pub relation bpd_juristischer_person_zustehend(d: BeschraenktePersoenlicheDienstbarkeit) kind empirical {
+    label de official "die beschränkte persönliche Dienstbarkeit steht einer juristischen Person oder rechtsfähigen Personengesellschaft zu (§ 1092 Abs. 2)";
+    label en unofficial "the restricted personal easement belongs to a legal person or legally capable partnership (§ 1092 (2))";
+}
+pub relation bpd_1059a_bis_d_gelten_entsprechend(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "es gelten die Vorschriften der §§ 1059a bis 1059d entsprechend (§ 1092 Abs. 2) — Verfahren der Landesbehörde, GRENZE";
+    label en unofficial "§§ 1059a to 1059d apply correspondingly (§ 1092 (2)) — procedure of the competent authority, GRENZE";
+}
+@source(BGB_P1092)
+rule Bpd1059aBisDGeltenEntsprechend(d: BeschraenktePersoenlicheDienstbarkeit) strict {
+    label de official "Steht eine beschränkte persönliche Dienstbarkeit oder der Anspruch auf ihre Einräumung einer juristischen Person oder einer rechtsfähigen Personengesellschaft zu, so gelten §§ 1059a bis 1059d entsprechend (§ 1092 Abs. 2)";
+    label en unofficial "If a restricted personal easement, or the claim to its grant, belongs to a legal person or legally capable partnership, §§ 1059a to 1059d apply correspondingly (§ 1092 (2))";
+    when bpd_juristischer_person_zustehend(d);
+    then bpd_1059a_bis_d_gelten_entsprechend(d);
+}
+
+pub enum BpdInfrastrukturzweck {
+    label de official "Zweck des § 1092 Abs. 3 Satz 1, der die Übertragbarkeit einer bei juristischer Person stehenden beschränkten persönlichen Dienstbarkeit begründet";
+    label en unofficial "purpose under § 1092 (3) sentence 1 that grounds transferability of a restricted personal easement held by a legal person";
+    ErneuerbareEnergieanlage,
+    WasserstoffanlageOderStromerzeugung,
+    LeitungsanlageFuerVersorgung,
+    Telekommunikationsanlage,
+    BetriebsstaettenTransportanlage,
+    StrassenbahnOderEisenbahnanlage
+}
+pub relation bpd_dient_infrastrukturzweck(d: BeschraenktePersoenlicheDienstbarkeit, zweck: BpdInfrastrukturzweck) kind empirical {
+    key(d);
+    label de official "die Dienstbarkeit berechtigt zur Nutzung des Grundstücks für einen der in § 1092 Abs. 3 Satz 1 genannten Zwecke";
+    label en unofficial "the easement entitles the holder to use the land for one of the purposes named in § 1092 (3) sentence 1";
+}
+pub relation bpd_bei_juristischer_person_uebertragbar(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "die Dienstbarkeit ist übertragbar (§ 1092 Abs. 3 Satz 1)";
+    label en unofficial "the easement is transferable (§ 1092 (3) sentence 1)";
+}
+pub relation bpd_keine_teilungsbefugnis_bei_uebertragung(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "die Übertragbarkeit umfasst nicht das Recht, die Dienstbarkeit nach ihren Befugnissen zu teilen (§ 1092 Abs. 3 Satz 2)";
+    label en unofficial "transferability does not include the right to split the easement according to its powers (§ 1092 (3) sentence 2)";
+}
+@source(BGB_P1092) {
+    rule BpdBeiJuristischerPersonUebertragbarWegenInfrastrukturzweck(d: BeschraenktePersoenlicheDienstbarkeit, zweck: BpdInfrastrukturzweck) strict {
+        label de official "Steht einer juristischen Person eine beschränkte persönliche Dienstbarkeit zu, so ist sie übertragbar, wenn sie zur Nutzung des Grundstücks für einen der in § 1092 Abs. 3 Satz 1 genannten Infrastrukturzwecke berechtigt (§ 1092 Abs. 3 Satz 1)";
+        label en unofficial "If a restricted personal easement belongs to a legal person, it is transferable where it entitles use of the land for one of the infrastructure purposes named in § 1092 (3) sentence 1 (§ 1092 (3) sentence 1)";
+        when bpd_juristischer_person_zustehend(d) and bpd_dient_infrastrukturzweck(d, zweck);
+        then bpd_bei_juristischer_person_uebertragbar(d);
+    }
+    rule BpdKeineTeilungsbefugnisBeiUebertragung(d: BeschraenktePersoenlicheDienstbarkeit, zweck: BpdInfrastrukturzweck) strict {
+        label de official "Die Übertragbarkeit umfasst nicht das Recht, die Dienstbarkeit nach ihren Befugnissen zu teilen (§ 1092 Abs. 3 Satz 2)";
+        label en unofficial "Transferability does not include the right to split the easement according to its powers (§ 1092 (3) sentence 2)";
+        when bpd_juristischer_person_zustehend(d) and bpd_dient_infrastrukturzweck(d, zweck);
+        then bpd_keine_teilungsbefugnis_bei_uebertragung(d);
+    }
+}
+
+// --- § 1093: Wohnungsrecht ------------------------------------------------------------------------------
+
+pub relation ist_wohnungsrecht(d: BeschraenktePersoenlicheDienstbarkeit) kind empirical {
+    label de official "als beschränkte persönliche Dienstbarkeit ist das Recht bestellt, ein Gebäude oder einen Gebäudeteil unter Ausschluss des Eigentümers als Wohnung zu benutzen (§ 1093 Abs. 1 Satz 1)";
+    label en unofficial "the restricted personal easement created is a right to use a building or part of it as a dwelling, to the exclusion of the owner (§ 1093 (1) sentence 1)";
+}
+pub relation wohnungsrecht_niessbrauchvorschriften_gelten(d: BeschraenktePersoenlicheDienstbarkeit) kind derived {
+    label de official "auf das Wohnungsrecht finden die für den Nießbrauch geltenden Vorschriften der §§ 1031, 1034, 1036, § 1037 Abs. 1 und §§ 1041, 1042, 1044, 1049, 1050, 1057, 1062 entsprechende Anwendung (§ 1093 Abs. 1 Satz 2)";
+    label en unofficial "the usufruct provisions of §§ 1031, 1034, 1036, § 1037 (1) and §§ 1041, 1042, 1044, 1049, 1050, 1057, 1062 apply correspondingly to the right of habitation (§ 1093 (1) sentence 2)";
+}
+pub relation berechtigter_darf_familie_und_pflegepersonal_aufnehmen(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) kind derived {
+    label de official "der Berechtigte ist befugt, seine Familie sowie die zur standesmäßigen Bedienung und Pflege erforderlichen Personen in die Wohnung aufzunehmen (§ 1093 Abs. 2)";
+    label en unofficial "the entitled person may take into the dwelling their family and the persons required for befitting service and care (§ 1093 (2))";
+}
+pub relation wohnungsrecht_auf_gebaeudeteil_beschraenkt(d: BeschraenktePersoenlicheDienstbarkeit) kind empirical {
+    label de official "das Recht ist auf einen Teil des Gebäudes beschränkt (§ 1093 Abs. 3)";
+    label en unofficial "the right is confined to a part of the building (§ 1093 (3))";
+}
+pub relation berechtigter_darf_gemeinschaftliche_anlagen_mitbenutzen(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) kind derived {
+    label de official "der Berechtigte kann die zum gemeinschaftlichen Gebrauch der Bewohner bestimmten Anlagen und Einrichtungen mitbenutzen (§ 1093 Abs. 3)";
+    label en unofficial "the entitled person may co-use the installations and facilities intended for the common use of the occupants (§ 1093 (3))";
+}
+@source(BGB_P1093) {
+    rule WohnungsrechtNiessbrauchvorschriftenGelten(d: BeschraenktePersoenlicheDienstbarkeit) strict {
+        label de official "Auf dieses Recht finden die für den Nießbrauch geltenden Vorschriften der §§ 1031, 1034, 1036, des § 1037 Abs. 1 und der §§ 1041, 1042, 1044, 1049, 1050, 1057, 1062 entsprechende Anwendung (§ 1093 Abs. 1 Satz 2)";
+        label en unofficial "The usufruct provisions of §§ 1031, 1034, 1036, § 1037 (1) and §§ 1041, 1042, 1044, 1049, 1050, 1057, 1062 apply correspondingly to this right (§ 1093 (1) sentence 2)";
+        when ist_wohnungsrecht(d);
+        then wohnungsrecht_niessbrauchvorschriften_gelten(d);
+    }
+    rule BerechtigterDarfFamilieUndPflegepersonalAufnehmen(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) strict {
+        label de official "Der Berechtigte ist befugt, seine Familie sowie die zur standesmäßigen Bedienung und zur Pflege erforderlichen Personen in die Wohnung aufzunehmen (§ 1093 Abs. 2)";
+        label en unofficial "The entitled person may take into the dwelling their family and the persons required for befitting service and care (§ 1093 (2))";
+        when ist_wohnungsrecht(d) and berechtigter(d, berechtigter);
+        then berechtigter_darf_familie_und_pflegepersonal_aufnehmen(d, berechtigter);
+    }
+    rule BerechtigterDarfGemeinschaftlicheAnlagenMitbenutzen(d: BeschraenktePersoenlicheDienstbarkeit, berechtigter: Person) strict {
+        label de official "Ist das Recht auf einen Teil des Gebäudes beschränkt, so kann der Berechtigte die zum gemeinschaftlichen Gebrauch der Bewohner bestimmten Anlagen und Einrichtungen mitbenutzen (§ 1093 Abs. 3)";
+        label en unofficial "Where the right is confined to a part of the building, the entitled person may co-use the installations and facilities intended for the common use of the occupants (§ 1093 (3))";
+        when ist_wohnungsrecht(d) and wohnungsrecht_auf_gebaeudeteil_beschraenkt(d) and berechtigter(d, berechtigter);
+        then berechtigter_darf_gemeinschaftliche_anlagen_mitbenutzen(d, berechtigter);
+    }
+}

@@ -1,0 +1,204 @@
+// Weitere normative Positionen der §§ 536–548. Bestehende Relationen
+// bleiben; diese Regeln fügen nur §122-Köpfe hinzu.
+
+pub relation kuendigung_540_erklaert(m: Mietverhaeltnis) kind empirical {
+    label de official "der Mieter erklärt die außerordentliche Kündigung nach § 540 Abs. 1 Satz 2";
+    label en unofficial "the tenant declares extraordinary termination under § 540 (1) sentence 2";
+}
+pub relation kuendigung_542_erklaert(m: Mietverhaeltnis) kind empirical {
+    label de official "eine Vertragspartei erklärt die Kündigung nach § 542 Abs. 1";
+    label en unofficial "a party declares termination under § 542 (1)";
+}
+pub relation kuendigung_543_erklaert(m: Mietverhaeltnis) kind empirical {
+    label de official "eine Vertragspartei erklärt die fristlose Kündigung nach § 543 Abs. 1";
+    label en unofficial "a party declares immediate termination under § 543 (1)";
+}
+pub relation kuendigung_544_unwirksam(m: Mietverhaeltnis) kind institutional {
+    label de official "die Kündigung ist nach § 544 unwirksam";
+    label en unofficial "termination is ineffective under § 544";
+}
+
+@source(BGB_P536)
+rule PositionHerabgesetzteMiete536(m: Mietverhaeltnis, g: Mangel, mi: Person, betrag: Money, beginn: Date) defeasible {
+    label de official "Der Mieter hat bei geminderter Tauglichkeit nur eine angemessen herabgesetzte Miete zu entrichten (§ 536 Abs. 1 Satz 2)";
+    label en unofficial "Where suitability is reduced, the tenant must pay only an appropriately reduced rent (§ 536 (1) sentence 2)";
+    when mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and mangel_der_mietsache(g, m) and tauglichkeit_gemindert(g)
+     and herabgesetzte_miete(m, g, betrag);
+    then duty HerabgesetzteMiete536 {
+        bearer mi;
+        goal achievement {
+            condition herabgesetzte_miete(m, g, betrag);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P537)
+rule PositionKeineMiete537(m: Mietverhaeltnis, mi: Person, beginn: Date) strict {
+    label de official "Der Mieter ist während der persönlichen Verhinderung nicht zur Entrichtung der Miete verpflichtet (§ 537 Abs. 1 Satz 1)";
+    label en unofficial "The tenant is not obliged to pay rent during personal prevention (§ 537 (1) sentence 1)";
+    when mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn);
+    then duty KeineMiete537 {
+        bearer mi;
+        goal maintenance {
+            condition miete_nicht_geschuldet(m);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P539)
+rule PositionWegnahme539(m: Mietverhaeltnis, mi: Person, beginn: Date) strict {
+    label de official "Der Mieter ist berechtigt, eine von ihm eingebrachte Einrichtung wegzunehmen (§ 539 Abs. 2)";
+    label en unofficial "The tenant has the liberty to remove a fixture he installed (§ 539 (2))";
+    when mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn) and wegnahmerecht(m, mi);
+    then liberty Wegnahme539 {
+        holder mi;
+        against m;
+        action wegnahmerecht(m, mi);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P540)
+rule PositionUnterlassung540(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) strict {
+    label de official "Der Mieter darf den Gebrauch ohne Erlaubnis nicht einem Dritten überlassen (§ 540 Abs. 1 Satz 1)";
+    label en unofficial "The tenant must not let a third party use the property without permission (§ 540 (1) sentence 1)";
+    // action = Überlassung (§ 540 Abs. 1 Satz 1), nicht die institutionelle
+    // Folge gebrauchsueberlassung_ohne_erlaubnis_unzulaessig: die folgt schon
+    // aus vermieter, sonst wäre ACTIVE unerreichbar.
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn);
+    then prohibition Unterlassung540 {
+        bearer mi;
+        beneficiary v;
+        action gebrauch_einem_dritten_ueberlassen(m);
+        window [beginn, infinity);
+    };
+}
+
+pub relation violation_unterlassung_540(m: Mietverhaeltnis) kind derived {
+    label de official "Der Mieter hat den Gebrauch der Mietsache entgegen § 540 Abs. 1 Satz 1 einem Dritten überlassen";
+    label en unofficial "the tenant let a third party use the property in violation of § 540 (1) sentence 1";
+}
+@source(BGB_P540)
+rule ViolationUnterlassung540(m: Mietverhaeltnis) strict {
+    label de official "Der Mieter hat den Gebrauch der Mietsache entgegen § 540 Abs. 1 Satz 1 einem Dritten überlassen";
+    label en unofficial "the tenant let a third party use the property in violation of § 540 (1) sentence 1";
+    when gebrauch_einem_dritten_ueberlassen(m);
+    then violation_unterlassung_540(m);
+}
+@source(BGB_P540)
+rule MaintenanceUnterlassung540(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) strict {
+    label de official "Der Mieter hat den Gebrauch der Mietsache entgegen § 540 Abs. 1 Satz 1 einem Dritten überlassen";
+    label en unofficial "the tenant let a third party use the property in violation of § 540 (1) sentence 1";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn);
+    then duty MaintenanceUnterlassung540Duty {
+        bearer mi;
+        beneficiary v;
+        goal maintenance {
+            condition not violation_unterlassung_540(m);
+            window [beginn, infinity);
+        }
+    };
+}
+
+@source(BGB_P540)
+rule PositionKuendigung540(m: Mietverhaeltnis, mi: Person, beginn: Date) strict {
+    label de official "Der Mieter hat bei verweigerter Erlaubnis die Befugnis zur außerordentlichen Kündigung (§ 540 Abs. 1 Satz 2)";
+    label en unofficial "The tenant has the power to terminate extraordinarily when permission is refused (§ 540 (1) sentence 2)";
+    when mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and ausserordentliches_kuendigungsrecht_gesetzliche_frist(m, mi);
+    then power Kuendigung540 {
+        holder mi;
+        over m;
+        exercise kuendigung_540_erklaert(m);
+        valid_when ausserordentliches_kuendigungsrecht_gesetzliche_frist(m, mi);
+        effect create(kuendigung_unwirksam_geworden(m));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P542)
+rule PositionKuendigung542(m: Mietverhaeltnis, p: Person, beginn: Date) strict {
+    label de official "Jede Vertragspartei hat bei unbestimmter Mietzeit die Befugnis zur Kündigung (§ 542 Abs. 1)";
+    label en unofficial "Each party has the power to terminate an indefinite lease (§ 542 (1))";
+    when mietverhaeltnis_beginn_am(m, beginn) and not mietzeit_bestimmt(m)
+     and vermieter(m, p);
+    then power Kuendigung542 {
+        holder p;
+        over m;
+        exercise kuendigung_542_erklaert(m);
+        valid_when ordentliche_kuendigung_zulaessig(m);
+        effect create(ordentliche_kuendigung_zulaessig(m));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P543)
+rule PositionKuendigung543(m: Mietverhaeltnis, p: Person, beginn: Date) strict {
+    label de official "Jede Vertragspartei hat aus wichtigem Grund die Befugnis zur fristlosen Kündigung (§ 543 Abs. 1)";
+    label en unofficial "Each party has the power to terminate without notice for compelling reason (§ 543 (1))";
+    when mietverhaeltnis_beginn_am(m, beginn) and wichtiger_grund(m)
+     and vermieter(m, p);
+    then power Kuendigung543 {
+        holder p;
+        over m;
+        exercise kuendigung_543_erklaert(m);
+        valid_when wichtiger_grund(m);
+        effect create(fristlose_kuendigung_zulaessig(m));
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P544)
+rule PositionImmunitaet544(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date) strict {
+    label de official "Die Kündigung eines lebenszeitlichen Mietvertrags ist unwirksam (§ 544)";
+    label en unofficial "Termination of a lease for the life of a party is ineffective (§ 544)";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn);
+    then immunity Immunitaet544 {
+        holder mi;
+        against v;
+        protected_effect kuendigung_544_unwirksam(m);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P546)
+rule PositionRueckgabe546(m: Mietverhaeltnis, mi: Person, e: Date) strict {
+    label de official "Der Mieter hat die Pflicht, die Mietsache nach Beendigung zurückzugeben (§ 546 Abs. 1)";
+    label en unofficial "The tenant has the duty to return the property after termination (§ 546 (1))";
+    when mieter(m, mi) and beendigung_am(m, e) and rueckgabepflicht(m, mi);
+    then duty Rueckgabe546 {
+        bearer mi;
+        achieve rueckgabepflicht(m, mi) during [e, infinity);
+    };
+}
+
+@source(BGB_P547)
+rule PositionErstattung547(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date, betrag: Money) strict {
+    label de official "Der Vermieter hat im Voraus entrichtete Miete zurückzuerstatten (§ 547 Abs. 1 Satz 1)";
+    label en unofficial "The lessor must refund rent paid in advance (§ 547 (1) sentence 1)";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and miete_im_voraus_entrichtet(m, betrag)
+     and erstattung_vorausgezahlter_miete(m, betrag);
+    then duty Erstattung547 {
+        bearer v;
+        beneficiary mi;
+        achieve erstattung_vorausgezahlter_miete(m, betrag) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P547)
+rule PositionBereicherung547(m: Mietverhaeltnis, v: Person, mi: Person, beginn: Date, betrag: Money) strict {
+    label de official "Der Vermieter hat das Erlangte nach den Vorschriften der ungerechtfertigten Bereicherung herauszugeben (§ 547 Abs. 1 Satz 2)";
+    label en unofficial "The lessor must return what was obtained under unjust enrichment rules (§ 547 (1) sentence 2)";
+    when vermieter(m, v) and mieter(m, mi) and mietverhaeltnis_beginn_am(m, beginn)
+     and miete_im_voraus_entrichtet(m, betrag)
+     and erstattung_vorausgezahlter_miete(m, betrag);
+    then duty Bereicherung547 {
+        bearer v;
+        beneficiary mi;
+        achieve erstattung_vorausgezahlter_miete(m, betrag) during [beginn, infinity);
+    };
+}

@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1061(n: Niessbrauch, niesser: Person, tag: Date) kind empirical { label de official "Eingang des Falls zum Erlöschen des Nießbrauchs (§ 1061)"; label en unofficial "case input for termination of the usufruct (§ 1061)"; }
+pub relation erloeschen_1061_geschuldet(n: Niessbrauch) kind empirical { label de official "Der Nießbrauch erlischt mit dem Tod des Berechtigten (§ 1061)"; label en unofficial "The usufruct terminates on the beneficiary's death (§ 1061)"; }
+pub relation position_trigger_1123(x: Gegenstand, eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Enthaftung der Mietforderung (§ 1123)"; label en unofficial "case input for release of the rent claim (§ 1123)"; }
+pub relation enthaftung_1123_geschuldet(x: Gegenstand) kind empirical { label de official "Die Miet- oder Pachtforderung wird aus der Hypothekenhaftung frei (§ 1123)"; label en unofficial "The rent or lease claim is released from mortgage liability (§ 1123)"; }
+pub relation position_trigger_1170(h: Grundpfandrecht, eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zum Ausschluss des unbekannten Gläubigers (§ 1170)"; label en unofficial "case input for exclusion of the unknown creditor (§ 1170)"; }
+pub relation ausschluss_1170_ausuebbar(h: Grundpfandrecht, eigentuemer: Person) kind empirical { label de official "Der Eigentümer darf den unbekannten Gläubiger ausschließen lassen (§ 1170)"; label en unofficial "The owner may have the unknown creditor excluded (§ 1170)"; }
+pub relation position_trigger_1193(h: Grundpfandrecht, berechtigter: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Kündigung der Grundschuld (§ 1193)"; label en unofficial "case input for notice of the land charge (§ 1193)"; }
+pub relation kuendigung_1193_ausuebbar(h: Grundpfandrecht, berechtigter: Person) kind empirical { label de official "Der Eigentümer oder Gläubiger darf die Grundschuld kündigen (§ 1193)"; label en unofficial "The owner or creditor may give notice of the land charge (§ 1193)"; }
+
+@source(BGB_P1061)
+rule PositionErloeschen1061(n: Niessbrauch, niesser: Person, tag: Date) strict { label de official "Der Nießbrauch erlischt mit dem Tode des Berechtigten (§ 1061)"; label en unofficial "The usufruct terminates on the beneficiary's death (§ 1061)"; when position_trigger_1061(n, niesser, tag); then duty Erloeschen1061 { bearer niesser; achieve erloeschen_1061_geschuldet(n) during [tag, infinity); }; }
+@source(BGB_P1123)
+rule PositionEnthaftung1123(x: Gegenstand, eigentuemer: Person, tag: Date) strict { label de official "Die fällige Miet- oder Pachtforderung wird aus der Hypothekenhaftung frei (§ 1123)"; label en unofficial "The matured rent or lease claim is released from mortgage liability (§ 1123)"; when position_trigger_1123(x, eigentuemer, tag); then duty Enthaftung1123 { bearer eigentuemer; achieve enthaftung_1123_geschuldet(x) during [tag, infinity); }; }
+@source(BGB_P1170)
+rule PositionAusschluss1170(h: Grundpfandrecht, eigentuemer: Person, tag: Date) strict { label de official "Der Eigentümer darf den unbekannten Gläubiger im Aufgebotsverfahren ausschließen lassen (§ 1170)"; label en unofficial "The owner may have the unknown creditor excluded in public notice proceedings (§ 1170)"; when position_trigger_1170(h, eigentuemer, tag); then power Ausschluss1170 { holder eigentuemer; over h; exercise ausschluss_1170_ausuebbar(h, eigentuemer); valid_when ausschluss_1170_ausuebbar(h, eigentuemer); effect create(ausschluss_1170_ausuebbar(h, eigentuemer)); window [tag, infinity); }; }
+@source(BGB_P1193)
+rule PositionKuendigung1193(h: Grundpfandrecht, berechtigter: Person, tag: Date) strict { label de official "Der Eigentümer oder Gläubiger darf die Grundschuld kündigen (§ 1193)"; label en unofficial "The owner or creditor may give notice of the land charge (§ 1193)"; when position_trigger_1193(h, berechtigter, tag); then power Kuendigung1193 { holder berechtigter; over h; exercise kuendigung_1193_ausuebbar(h, berechtigter); valid_when kuendigung_1193_ausuebbar(h, berechtigter); effect create(kuendigung_1193_ausuebbar(h, berechtigter)); window [tag, infinity); }; }

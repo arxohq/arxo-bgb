@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1629a Abs. 4 Satz 1: hat das volljährig gewordene Mitglied einer Erbengemeinschaft nicht binnen DREI MONATEN nach Eintritt der Volljährigkeit die Auseinandersetzung verlangt, so ist im Zweifel anzunehmen, dass die Verbindlichkeit nach dem Eintritt der Volljährigkeit entstanden ist. Geburt am 20.05.2006; die Volljährigkeit tritt mit Ablauf des 19.05.2024 ein, die drei Monate laufen bis zum 19.08.2024. Das Verlangen vom 01.09.2024 ist verspätet.
+test "§ 1629a Abs. 4: nach drei Monaten greift die Vermutung" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:sr01:P"), @2006-05-20) { origin case_input; }
+        assert "f2": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:sr01:P"), 18 calendar_year) { origin case_input; }
+        assert "f3": mitglied_einer_erbengemeinschaft_oder_gesellschaft(entity_ref("urn:de:bgb:vw:sr01:P")) { origin case_input; }
+        assert "f4": auseinandersetzung_oder_kuendigung_am(entity_ref("urn:de:bgb:vw:sr01:P"), @2024-09-01) { origin case_input; }
+    }
+    evaluate truth(dreimonatsfrist_der_auseinandersetzung(entity_ref("urn:de:bgb:vw:sr01:P"), @2024-08-19));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verbindlichkeit_nach_der_volljaehrigkeit_entstanden(entity_ref("urn:de:bgb:vw:sr01:P")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1120, § 1121 Abs. 1: Das Zubehörstück gehört zum Haftungsverband; es wird am 10.03.2026 veräußert und am 12.03.2026 entfernt, die Beschlagnahme erfolgt erst am 20.03.2026. Das Stück wird von der Haftung frei.
+test "§ 1121 Abs. 1: Veräußerung und Entfernung vor der Beschlagnahme machen das Zubehör frei" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:h06:hyp"), entity_ref("urn:de:bgb:dr:h06:grundstueck")) { origin case_input; }
+        assert "f2": gegenstand_des_grundstuecks(entity_ref("urn:de:bgb:dr:h06:maschine"), entity_ref("urn:de:bgb:dr:h06:grundstueck")) { origin case_input; }
+        assert "f3": zubehoerstueck(entity_ref("urn:de:bgb:dr:h06:maschine")) { origin case_input; }
+        assert "f4": not zubehoer_nicht_im_eigentum_des_grundstueckseigentuemers(entity_ref("urn:de:bgb:dr:h06:maschine")) { origin adjudicated; }
+        assert "f5": veraeussert_am(entity_ref("urn:de:bgb:dr:h06:maschine"), @2026-03-10) { origin adjudicated; }
+        assert "f6": vom_grundstueck_entfernt_am(entity_ref("urn:de:bgb:dr:h06:maschine"), @2026-03-12) { origin adjudicated; }
+        assert "f7": beschlagnahme_am(entity_ref("urn:de:bgb:dr:h06:maschine"), @2026-03-20) { origin adjudicated; }
+    }
+    evaluate truth(haftet_fuer_die_hypothek(entity_ref("urn:de:bgb:dr:h06:maschine"), entity_ref("urn:de:bgb:dr:h06:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(enthaftung_nach_1121(entity_ref("urn:de:bgb:dr:h06:maschine"), entity_ref("urn:de:bgb:dr:h06:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

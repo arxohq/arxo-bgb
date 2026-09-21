@@ -1,0 +1,30 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1282 Abs. 1: Nach dem Eintritt der Voraussetzungen des § 1228 Abs. 2 zieht der Pfandgläubiger ALLEIN ein, aber nur soweit es zu seiner Befriedigung erforderlich ist — hier 3 000 €. § 1288 Abs. 2: Wird mehr eingezogen (4 000 €), so gilt die Forderung nur in Höhe des Erforderlichen als berichtigt.
+test "§ 1282 Abs. 1, § 1288 Abs. 2: Einziehung nur in Höhe des zur Befriedigung Erforderlichen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": verpfaendetes_recht(entity_ref("urn:de:bgb:dr:q03:pfand"), entity_ref("urn:de:bgb:dr:q03:forderung")) { origin case_input; }
+        assert "f2": recht_ist_eine_forderung(entity_ref("urn:de:bgb:dr:q03:forderung")) { origin case_input; }
+        assert "f3": abtretungsvertrag_genuegt_zur_uebertragung(entity_ref("urn:de:bgb:dr:q03:forderung")) { origin case_input; }
+        assert "f4": bestellung_nach_den_uebertragungsvorschriften(entity_ref("urn:de:bgb:dr:q03:pfand")) { origin adjudicated; }
+        assert "f5": verpfaendung_dem_schuldner_angezeigt(entity_ref("urn:de:bgb:dr:q03:pfand")) { origin adjudicated; }
+        assert "f6": not recht_nicht_uebertragbar(entity_ref("urn:de:bgb:dr:q03:forderung")) { origin adjudicated; }
+        assert "f7": pfandglaeubiger(entity_ref("urn:de:bgb:dr:q03:pfand"), entity_ref("urn:de:bgb:dr:q03:bank")) { origin case_input; }
+        assert "f8": forderung_ganz_oder_zum_teil_faellig(entity_ref("urn:de:bgb:dr:q03:pfand")) { origin adjudicated; }
+        assert "f9": not geschuldeter_gegenstand_nicht_geld(entity_ref("urn:de:bgb:dr:q03:pfand")) { origin adjudicated; }
+        assert "f10": zur_befriedigung_erforderlicher_betrag(entity_ref("urn:de:bgb:dr:q03:pfand"), 3000.00 EUR) { origin adjudicated; }
+        assert "f11": eingezogener_betrag(entity_ref("urn:de:bgb:dr:q03:pfand"), 4000.00 EUR) { origin adjudicated; }
+        assert "f12": not abweichende_vereinbarung_ueber_die_einziehung(entity_ref("urn:de:bgb:dr:q03:pfand")) { origin adjudicated; }
+    }
+    evaluate truth(einziehungsrecht_des_pfandglaeubigers(entity_ref("urn:de:bgb:dr:q03:pfand"), entity_ref("urn:de:bgb:dr:q03:bank"), 3000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(forderung_des_pfandglaeubigers_gilt_als_berichtigt(entity_ref("urn:de:bgb:dr:q03:pfand"), 3000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(abtretung_an_zahlungs_statt_verlangbar(entity_ref("urn:de:bgb:dr:q03:pfand"), entity_ref("urn:de:bgb:dr:q03:bank")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

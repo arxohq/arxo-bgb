@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 209: regelmäßiges Ende 31. Dezember 2023; Hemmung durch Rechtsverfolgung (§ 204) vom 1. März bis 30. April 2022 = 61 Tage, nicht eingerechnet — Ende verschiebt sich auf den 1. März 2024 (Schaltjahr).
+test "§ 209: 61 Hemmungstage verschieben das Ende vom 31. Dezember 2023 auf den 1. März 2024" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:a08"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:a08"), @2020-03-15) { origin adjudicated; }
+        assert "h": hemmung(entity_ref("urn:de:bgb:fristen:pilot:a08"), @2022-03-01, @2022-04-30) { origin case_input; }
+        assert "g": hemmungsgrund(entity_ref("urn:de:bgb:fristen:pilot:a08"), Rechtsverfolgung) { origin case_input; }
+    }
+    evaluate truth(verjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:pilot:a08"), @2024-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:a08"), @2024-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:a08"), @2023-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

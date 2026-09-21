@@ -1,0 +1,32 @@
+// Conclusions of the living Code → heads of doctrine.ius_privatum.
+// The Einrede after limitation (§ 214 (1)) excludes the remedy while the
+// Anspruch remains: that is the bare right the dictionary calls ius_nudum.
+// The debtor must raise it (`schuldner_beruft_sich_auf_verjaehrung`): § 214
+// is a defence, and `leistungsverweigerungsrecht_wegen_verjaehrung` is also
+// true of a future entry day.
+
+language "law.core" version "0.2";
+package de.bgb.ius_privatum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ius-privatum";
+
+@source(BGB_P214)
+rule EinredeExcludit(
+    a: Anspruch,
+    g: Person,
+    s: Person,
+    x: doctrine.ius_privatum::Persona,
+    y: doctrine.ius_privatum::Persona,
+    c: doctrine.ius_privatum::Causa
+) defeasible {
+    label de official "Nach Eintritt der Verjährung ist der Schuldner berechtigt, die Leistung zu verweigern";
+    label en unofficial "After limitation the debtor may refuse performance: the comparative remedy is excluded (§ 214 (1))";
+    when de.bgb.fristen::leistungsverweigerungsrecht_wegen_verjaehrung(a)
+        and de.bgb.fristen::schuldner_beruft_sich_auf_verjaehrung(a)
+        and de.bgb.core::anspruchsinhaber(a, g)
+        and de.bgb.core::anspruchsgegner(a, s)
+        and persona_of(g, x)
+        and persona_of(s, y)
+        and causa_of_anspruch(a, c)
+        and doctrine.ius_privatum::petitio(c, x, y);
+    then doctrine.ius_privatum::remedium_exclusum(x, y, c);
+}

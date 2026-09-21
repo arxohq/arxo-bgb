@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// Korridor 2022, Stichtag: der Kaufvertrag ist am 1. Januar 2022 geschlossen — Art. 229 § 58 EGBGB stellt auf den Tag des Vertragsschlusses ab. Das neue Kaufrecht ist anwendbar, die Vermutung des § 477 greift.
+test "Korridor 2022: Vertragsschluss am 1. Januar 2022 — neues Recht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:u01"), entity_ref("urn:de:bgb:kauf:u01:U")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:u01"), entity_ref("urn:de:bgb:kauf:u01:V")) { origin case_input; }
+        assert "f3": verbraucher(entity_ref("urn:de:bgb:kauf:u01"), entity_ref("urn:de:bgb:kauf:u01:V")) { origin case_input; }
+        assert "f4": unternehmer_im_kauf(entity_ref("urn:de:bgb:kauf:u01"), entity_ref("urn:de:bgb:kauf:u01:U")) { origin case_input; }
+        assert "f5": ware(entity_ref("urn:de:bgb:kauf:u01")) { origin case_input; }
+        assert "f6": vertragsschluss_am(entity_ref("urn:de:bgb:kauf:u01"), @2022-01-01) { origin case_input; }
+        assert "f7": uebergabe_am(entity_ref("urn:de:bgb:kauf:u01"), @2025-04-10) { origin adjudicated; }
+        assert "f8": not gebrauchte_ware_in_oeffentlicher_versteigerung(entity_ref("urn:de:bgb:kauf:u01")) { origin case_input; }
+        assert "f9": not lebendes_tier(entity_ref("urn:de:bgb:kauf:u01")) { origin case_input; }
+        assert "f10": abweichender_zustand_gezeigt_am(entity_ref("urn:de:bgb:kauf:u01"), @2026-04-10) { origin case_input; }
+        assert "f11": not vermutung_mit_art_der_ware_unvereinbar(entity_ref("urn:de:bgb:kauf:u01")) { origin adjudicated; }
+    }
+    evaluate truth(neues_kaufrecht_anwendbar(entity_ref("urn:de:bgb:kauf:u01")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vorschriften_des_untertitels_anwendbar(entity_ref("urn:de:bgb:kauf:u01")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(mangel_bei_gefahruebergang_vorhanden(entity_ref("urn:de:bgb:kauf:u01")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

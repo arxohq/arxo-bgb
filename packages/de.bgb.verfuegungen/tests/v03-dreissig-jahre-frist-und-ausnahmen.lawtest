@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2162 Abs. 1 (30-Jahre-Frist für aufgeschobenes Vermächtnis, kalendarisch
+// über § 188 Abs. 2 gerechnet), § 2163 Abs. 1 Nr. 1 (Ausnahme: Ereignis in
+// der Person eines beim Erbfall Lebenden) und Abs. 2 (keine Ausnahme bei
+// juristischer Person).
+test "§ 2162 Abs. 1: dreißig Jahre kalendarisch; § 2163: Ausnahme und Gegenausnahme" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+        assert "f1": vermaechtnis_aufschiebend_bedingt_oder_befristet_2162(entity_ref("urn:de:bgb:pilot:v03:T1"), entity_ref("urn:de:bgb:pilot:v03:E1")) { origin case_input; }
+        assert "f2": de.bgb.erbfolge::erbfall_am(entity_ref("urn:de:bgb:pilot:v03:E1"), @1990-03-01) { origin case_input; }
+        assert "f3": dreissig_jahre_ohne_bedingungseintritt_2162(entity_ref("urn:de:bgb:pilot:v03:T1")) { origin case_input; }
+        assert "f4": vermaechtnis_fuer_ereignis_in_person_angeordnet_2163(entity_ref("urn:de:bgb:pilot:v03:T2")) { origin case_input; }
+        assert "f5": person_beim_erbfall_lebend_2163(entity_ref("urn:de:bgb:pilot:v03:T2")) { origin case_input; }
+        assert "f6": person_ist_juristische_person_2163(entity_ref("urn:de:bgb:pilot:v03:T3")) { origin case_input; }
+        assert "f7": vermaechtnis_fuer_ereignis_in_person_angeordnet_2163(entity_ref("urn:de:bgb:pilot:v03:T3")) { origin case_input; }
+    }
+    evaluate truth(dreissig_jahre_grenze_2162(entity_ref("urn:de:bgb:pilot:v03:T1"), @2020-03-01));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(aufgeschobenes_vermaechtnis_dreissig_jahre_unwirksam_2162(entity_ref("urn:de:bgb:pilot:v03:T1"), @2020-03-01));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(ausnahme_von_dreissig_jahre_frist_2163(entity_ref("urn:de:bgb:pilot:v03:T2")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(keine_ausnahme_von_dreissig_jahre_frist_2163(entity_ref("urn:de:bgb:pilot:v03:T3")));
+    expect truth_status == TRUE_ONLY;
+}

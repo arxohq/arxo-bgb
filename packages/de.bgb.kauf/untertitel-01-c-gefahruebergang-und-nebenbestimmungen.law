@@ -1,0 +1,345 @@
+// --- Untertitel 1 Allgemeine Vorschriften, dritter Teil
+// --- Gefahr- und Lastenübergang, Kosten, Eigentumsvorbehalt, ausgeschlossene
+// --- Käufer, Schiffskauf und Rechtskauf (§§ 446–453)
+//
+// DER TAG DES GEFAHRÜBERGANGS ist die Achse des ganzen Titels: § 434 Abs. 1
+// prüft die Anforderungen „bei Gefahrübergang“, § 477 rechnet die Vermutung
+// von ihm an, § 445a Abs. 1 fragt nach dem Gefahrübergang auf den Verkäufer.
+// Er wird hier ERRECHNET (§§ 446, 447), nicht vom Fall behauptet; nur die
+// Tatsachen, an die er anknüpft (Übergabe, Auslieferung an den Spediteur,
+// Annahmeverzug), sind Eingaben.
+
+// --- § 446 Gefahr- und Lastenübergang -------------------------------------------------------------
+
+pub relation annahmeverzug_des_kaeufers_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, seit dem der Käufer im Verzug der Annahme ist (§ 446 Satz 3) — die Voraussetzungen des Annahmeverzugs bestimmt de.bgb.schuldrecht_at (§§ 293 ff.)";
+    label en unofficial "day since which the buyer is in default of acceptance (§ 446 sentence 3) — the requirements of default of acceptance are governed by de.bgb.schuldrecht_at (§§ 293 et seq.)";
+}
+pub relation nutzungen_und_lasten_beim_kaeufer_ab(k: Kaufvertrag, tag: Date) kind institutional {
+    label de official "von diesem Tag an gebühren dem Käufer die Nutzungen und trägt er die Lasten der Sache (§ 446 Satz 2)";
+    label en unofficial "from this day on the buyer is entitled to the emoluments and bears the charges of the thing (§ 446 sentence 2)";
+}
+
+@source(BGB_P446)
+rule Gefahruebergang446Satz1(k: Kaufvertrag, t: Date) strict {
+    label de official "Mit der Übergabe der verkauften Sache geht die Gefahr des zufälligen Untergangs und der zufälligen Verschlechterung auf den Käufer über (§ 446 Satz 1)";
+    label en unofficial "On delivery of the thing sold the risk of accidental destruction and deterioration passes to the buyer (§ 446 sentence 1)";
+    when uebergabe_am(k, t);
+    then gefahruebergang_am(k, t);
+}
+
+@source(BGB_P446)
+rule Lastenuebergang446Satz2(k: Kaufvertrag, t: Date) strict {
+    label de official "Von der Übergabe an gebühren dem Käufer die Nutzungen und trägt er die Lasten der Sache (§ 446 Satz 2)";
+    label en unofficial "From delivery on the buyer is entitled to the emoluments and bears the charges of the thing (§ 446 sentence 2)";
+    when uebergabe_am(k, t);
+    then nutzungen_und_lasten_beim_kaeufer_ab(k, t);
+}
+
+@source(BGB_P446)
+rule Gefahruebergang446Satz3(k: Kaufvertrag, t: Date) strict {
+    label de official "Der Übergabe steht es gleich, wenn der Käufer im Verzug der Annahme ist (§ 446 Satz 3)";
+    label en unofficial "It is equivalent to delivery if the buyer is in default of acceptance (§ 446 sentence 3)";
+    when annahmeverzug_des_kaeufers_am(k, t) and not uebergabe_am(k, t);
+    then gefahruebergang_am(k, t);
+}
+
+// --- § 447 Gefahrübergang beim Versendungskauf ----------------------------------------------------
+
+pub relation versendung_auf_verlangen_des_kaeufers(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer versendet die verkaufte Sache auf Verlangen des Käufers nach einem anderen Ort als dem Erfüllungsort (§ 447 Abs. 1)";
+    label en unofficial "the seller dispatches the thing sold at the buyer's request to a place other than the place of performance (§ 447 (1))";
+}
+pub relation auslieferung_an_versendungsperson_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem der Verkäufer die Sache dem Spediteur, dem Frachtführer oder der sonst zur Ausführung der Versendung bestimmten Person oder Anstalt ausgeliefert hat (§ 447 Abs. 1)";
+    label en unofficial "day on which the seller handed the thing to the forwarder, the carrier or the other person or institution designated to carry out the dispatch (§ 447 (1))";
+}
+pub relation abweichung_von_der_versendungsanweisung_ohne_dringenden_grund(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer hat eine besondere Anweisung über die Art der Versendung erteilt und der Verkäufer weicht ohne dringenden Grund von ihr ab (§ 447 Abs. 2)";
+    label en unofficial "the buyer gave a special instruction as to the manner of dispatch and the seller departs from it without urgent reason (§ 447 (2))";
+}
+pub relation verantwortlichkeit_fuer_versendungsschaden(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "der Verkäufer ist dem Käufer für den aus der Abweichung entstehenden Schaden verantwortlich (§ 447 Abs. 2)";
+    label en unofficial "the seller is answerable to the buyer for the damage arising from the departure (§ 447 (2))";
+}
+
+@source(BGB_P447)
+rule Gefahruebergang447Abs1(k: Kaufvertrag, t: Date) strict {
+    label de official "Versendet der Verkäufer auf Verlangen des Käufers die verkaufte Sache nach einem anderen Ort als dem Erfüllungsort, so geht die Gefahr auf den Käufer über, sobald der Verkäufer die Sache der zur Ausführung der Versendung bestimmten Person ausgeliefert hat (§ 447 Abs. 1)";
+    label en unofficial "Where the seller dispatches the thing at the buyer's request to a place other than the place of performance, the risk passes to the buyer as soon as the seller hands the thing to the person designated to carry out the dispatch (§ 447 (1))";
+    when versendung_auf_verlangen_des_kaeufers(k) and auslieferung_an_versendungsperson_am(k, t)
+     and not uebergabe_am(k, t);
+    then gefahruebergang_am(k, t);
+}
+
+@source(BGB_P447)
+rule Versendungsschaden447Abs2(k: Kaufvertrag, v: Person) strict {
+    label de official "Hat der Käufer eine besondere Anweisung über die Art der Versendung erteilt und weicht der Verkäufer ohne dringenden Grund von der Anweisung ab, so ist der Verkäufer dem Käufer für den daraus entstehenden Schaden verantwortlich (§ 447 Abs. 2)";
+    label en unofficial "Where the buyer gave a special instruction as to the manner of dispatch and the seller departs from it without urgent reason, the seller is answerable to the buyer for the resulting damage (§ 447 (2))";
+    when abweichung_von_der_versendungsanweisung_ohne_dringenden_grund(k) and verkaeufer(k, v);
+    then verantwortlichkeit_fuer_versendungsschaden(k, v);
+}
+
+// --- § 448 Kosten der Übergabe und vergleichbare Kosten -------------------------------------------
+
+pub relation kosten_der_uebergabe_beim_verkaeufer(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "der Verkäufer trägt die Kosten der Übergabe der Sache (§ 448 Abs. 1)";
+    label en unofficial "the seller bears the costs of delivery of the thing (§ 448 (1))";
+}
+pub relation kosten_der_abnahme_und_versendung_beim_kaeufer(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "der Käufer trägt die Kosten der Abnahme und der Versendung der Sache nach einem anderen Ort als dem Erfüllungsort (§ 448 Abs. 1)";
+    label en unofficial "the buyer bears the costs of acceptance and of dispatch to a place other than the place of performance (§ 448 (1))";
+}
+pub relation kosten_der_beurkundung_und_eintragung_beim_kaeufer(k: Kaufvertrag, ka: Person) kind institutional {
+    label de official "der Käufer eines Grundstücks trägt die Kosten der Beurkundung des Kaufvertrags und der Auflassung, der Eintragung ins Grundbuch und der zu der Eintragung erforderlichen Erklärungen (§ 448 Abs. 2)";
+    label en unofficial "the buyer of land bears the costs of notarial recording of the contract and of conveyance, of registration in the land register and of the declarations required for it (§ 448 (2))";
+}
+
+pub relation kosten_uebergabe_getragen_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Verkäufer hat die Kosten der Übergabe getragen (§ 448 Abs. 1)";
+    label en unofficial "the seller bore the costs of delivery (§ 448 (1))";
+}
+pub relation kosten_abnahme_und_versendung_getragen_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Käufer hat die Kosten der Abnahme und Versendung getragen (§ 448 Abs. 1)";
+    label en unofficial "the buyer bore the costs of acceptance and dispatch (§ 448 (1))";
+}
+
+@source(BGB_P448)
+rule Kosten448Abs1Verkaeufer(k: Kaufvertrag, v: Person) strict {
+    label de official "Der Verkäufer trägt die Kosten der Übergabe der Sache (§ 448 Abs. 1)";
+    label en unofficial "The seller bears the costs of delivery of the thing (§ 448 (1))";
+    when verkaeufer(k, v);
+    then kosten_der_uebergabe_beim_verkaeufer(k, v);
+}
+
+@source(BGB_P448)
+rule Kosten448Abs1Kaeufer(k: Kaufvertrag, ka: Person) strict {
+    label de official "Der Käufer trägt die Kosten der Abnahme und der Versendung der Sache nach einem anderen Ort als dem Erfüllungsort (§ 448 Abs. 1)";
+    label en unofficial "The buyer bears the costs of acceptance and of dispatch of the thing to a place other than the place of performance (§ 448 (1))";
+    when kaeufer(k, ka);
+    then kosten_der_abnahme_und_versendung_beim_kaeufer(k, ka);
+}
+
+@source(BGB_P448)
+rule Kosten448Abs2(k: Kaufvertrag, ka: Person) strict {
+    label de official "Der Käufer eines Grundstücks trägt die Kosten der Beurkundung des Kaufvertrags und der Auflassung, der Eintragung ins Grundbuch und der zu der Eintragung erforderlichen Erklärungen (§ 448 Abs. 2)";
+    label en unofficial "The buyer of land bears the costs of notarial recording, conveyance, registration and the declarations required for registration (§ 448 (2))";
+    when grundstueckskauf(k) and kaeufer(k, ka);
+    then kosten_der_beurkundung_und_eintragung_beim_kaeufer(k, ka);
+}
+
+@source(BGB_P448)
+rule Position448KostenVerkaeufer(k: Kaufvertrag, v: Person, ka: Person, beginn: Date) strict {
+    label de official "Der Verkäufer ist verpflichtet, die Kosten der Übergabe zu tragen (§ 448 Abs. 1)";
+    label en unofficial "The seller is obliged to bear the costs of delivery (§ 448 (1))";
+    when verkaeufer(k, v) and kaeufer(k, ka) and vertragsschluss_am(k, beginn);
+    then duty Duty448KostenVerkaeufer {
+        bearer v;
+        beneficiary ka;
+        achieve kosten_uebergabe_getragen_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P448)
+rule Position448KostenKaeufer(k: Kaufvertrag, v: Person, ka: Person, beginn: Date) strict {
+    label de official "Der Käufer ist verpflichtet, die Kosten der Abnahme und der Versendung zu tragen (§ 448 Abs. 1)";
+    label en unofficial "The buyer is obliged to bear the costs of acceptance and dispatch (§ 448 (1))";
+    when verkaeufer(k, v) and kaeufer(k, ka) and vertragsschluss_am(k, beginn);
+    then duty Duty448KostenKaeufer {
+        bearer ka;
+        beneficiary v;
+        achieve kosten_abnahme_und_versendung_getragen_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+// --- § 449 Eigentumsvorbehalt ---------------------------------------------------------------------
+
+pub relation eigentum_bis_zur_zahlung_vorbehalten(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer einer beweglichen Sache hat sich das Eigentum bis zur Zahlung des Kaufpreises vorbehalten (§ 449 Abs. 1)";
+    label en unofficial "the seller of a movable thing reserved ownership until payment of the price (§ 449 (1))";
+}
+pub relation bewegliche_sache(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Kaufs ist eine bewegliche Sache (§ 449 Abs. 1)";
+    label en unofficial "the object of the sale is a movable thing (§ 449 (1))";
+}
+pub relation eigentumsuebergang_an_dritte_forderung_geknuepft(k: Kaufvertrag) kind empirical {
+    label de official "der Eigentumsübergang ist davon abhängig gemacht, dass der Käufer Forderungen eines Dritten, insbesondere eines mit dem Verkäufer verbundenen Unternehmens, erfüllt (§ 449 Abs. 3)";
+    label en unofficial "the passing of ownership is made dependent on the buyer satisfying claims of a third party, in particular of an enterprise associated with the seller (§ 449 (3))";
+}
+pub relation ruecktritt_vom_vertrag_erklaert(k: Kaufvertrag) kind empirical {
+    label de official "der Verkäufer ist vom Vertrag zurückgetreten (§ 449 Abs. 2) — die Wirksamkeit des Rücktritts bestimmt de.bgb.schuldrecht_at";
+    label en unofficial "the seller has withdrawn from the contract (§ 449 (2)) — the effectiveness of withdrawal is governed by de.bgb.schuldrecht_at";
+}
+pub relation eigentumsvorbehalt(k: Kaufvertrag) kind institutional {
+    label de official "das Eigentum wird unter der aufschiebenden Bedingung vollständiger Zahlung des Kaufpreises übertragen (Eigentumsvorbehalt, § 449 Abs. 1)";
+    label en unofficial "ownership is transferred subject to the condition precedent of full payment of the price (retention of title, § 449 (1))";
+}
+pub relation herausgabeanspruch_aus_eigentumsvorbehalt(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "der Verkäufer kann die Sache auf Grund des Eigentumsvorbehalts herausverlangen (§ 449 Abs. 2)";
+    label en unofficial "the seller may demand the return of the thing by virtue of the retention of title (§ 449 (2))";
+}
+pub relation eigentumsvorbehalt_nichtig(k: Kaufvertrag) kind institutional {
+    label de official "die Vereinbarung des Eigentumsvorbehalts ist nichtig, soweit der Eigentumsübergang von der Erfüllung von Forderungen Dritter abhängig gemacht wird (§ 449 Abs. 3)";
+    label en unofficial "the agreement on retention of title is void in so far as the passing of ownership is made dependent on satisfying third-party claims (§ 449 (3))";
+}
+
+@source(BGB_P449)
+rule Eigentumsvorbehalt449Abs1(k: Kaufvertrag) defeasible {
+    label de official "Hat sich der Verkäufer einer beweglichen Sache das Eigentum bis zur Zahlung des Kaufpreises vorbehalten, so ist im Zweifel anzunehmen, dass das Eigentum unter der aufschiebenden Bedingung vollständiger Zahlung übertragen wird (§ 449 Abs. 1)";
+    label en unofficial "Where the seller of a movable thing reserved ownership until payment, it is to be presumed in case of doubt that ownership is transferred subject to the condition precedent of full payment (§ 449 (1))";
+    when bewegliche_sache(k) and eigentum_bis_zur_zahlung_vorbehalten(k);
+    then eigentumsvorbehalt(k);
+    unless eigentumsuebergang_an_dritte_forderung_geknuepft(k);
+}
+
+@source(BGB_P449)
+rule Eigentumsvorbehalt449Abs2(k: Kaufvertrag, v: Person) defeasible {
+    label de official "Auf Grund des Eigentumsvorbehalts kann der Verkäufer die Sache nur herausverlangen, wenn er vom Vertrag zurückgetreten ist (§ 449 Abs. 2)";
+    label en unofficial "By virtue of the retention of title the seller may demand the return of the thing only if he has withdrawn from the contract (§ 449 (2))";
+    when eigentumsvorbehalt(k) and ruecktritt_vom_vertrag_erklaert(k) and verkaeufer(k, v);
+    then herausgabeanspruch_aus_eigentumsvorbehalt(k, v);
+}
+
+@source(BGB_P449)
+rule Eigentumsvorbehalt449Abs3(k: Kaufvertrag) strict {
+    label de official "Die Vereinbarung eines Eigentumsvorbehalts ist nichtig, soweit der Eigentumsübergang davon abhängig gemacht wird, dass der Käufer Forderungen eines Dritten erfüllt (§ 449 Abs. 3)";
+    label en unofficial "The agreement on retention of title is void in so far as the passing of ownership is made dependent on the buyer satisfying third-party claims (§ 449 (3))";
+    when eigentum_bis_zur_zahlung_vorbehalten(k) and eigentumsuebergang_an_dritte_forderung_geknuepft(k);
+    then eigentumsvorbehalt_nichtig(k);
+}
+
+// --- §§ 450, 451 Ausgeschlossene Käufer -----------------------------------------------------------
+
+pub relation verkauf_im_wege_der_zwangsvollstreckung(k: Kaufvertrag) kind empirical {
+    label de official "der Verkauf erfolgt im Wege der Zwangsvollstreckung (§ 450 Abs. 1, § 471)";
+    label en unofficial "the sale takes place by way of execution (§ 450 (1), § 471)";
+}
+pub relation verkauf_auf_gesetzlichen_auftrag_oder_aus_insolvenzmasse(k: Kaufvertrag) kind empirical {
+    label de official "der Verkauf erfolgt außerhalb der Zwangsvollstreckung auf Grund eines gesetzlich begründeten Auftrags, insbesondere als Pfandverkauf oder nach den §§ 383, 385, oder aus einer Insolvenzmasse (§ 450 Abs. 2)";
+    label en unofficial "the sale takes place outside execution on the basis of a statutory mandate, in particular as a sale of a pledge or under §§ 383, 385, or from an insolvency estate (§ 450 (2))";
+}
+pub relation mit_dem_verkauf_beauftragt_oder_gehilfe(k: Kaufvertrag, p: Person) kind empirical {
+    label de official "die Person ist der mit der Vornahme oder Leitung des Verkaufs Beauftragte oder ein von ihm zugezogener Gehilfe einschließlich des Protokollführers (§ 450 Abs. 1)";
+    label en unofficial "the person is the one charged with carrying out or directing the sale, or an assistant called in by him including the recording clerk (§ 450 (1))";
+}
+pub relation kaufverbot_450(k: Kaufvertrag, p: Person) kind institutional {
+    label de official "die Person darf den zu verkaufenden Gegenstand weder für sich persönlich oder durch einen anderen noch als Vertreter eines anderen kaufen (§ 450)";
+    label en unofficial "the person may not buy the object to be sold, whether for himself personally or through another or as another's representative (§ 450)";
+}
+pub relation wirksamkeit_haengt_von_zustimmung_ab(k: Kaufvertrag) kind institutional {
+    label de official "die Wirksamkeit des dem § 450 zuwider erfolgten Kaufs und der Übertragung hängt von der Zustimmung der bei dem Verkauf als Schuldner, Eigentümer oder Gläubiger Beteiligten ab (§ 451 Abs. 1 Satz 1)";
+    label en unofficial "the effectiveness of a purchase made contrary to § 450 and of the transfer depends on the consent of those involved in the sale as debtor, owner or creditor (§ 451 (1) sentence 1)";
+}
+pub relation genehmigung_verweigert_und_neuer_verkauf(k: Kaufvertrag) kind empirical {
+    label de official "infolge der Verweigerung der Genehmigung ist ein neuer Verkauf vorgenommen worden (§ 451 Abs. 2)";
+    label en unofficial "a new sale was carried out as a result of the refusal of approval (§ 451 (2))";
+}
+pub relation haftung_des_frueheren_kaeufers(k: Kaufvertrag, p: Person) kind institutional {
+    label de official "der frühere Käufer hat für die Kosten des neuen Verkaufs sowie für einen Mindererlös aufzukommen (§ 451 Abs. 2)";
+    label en unofficial "the earlier buyer must bear the costs of the new sale and any shortfall in proceeds (§ 451 (2))";
+}
+
+@source(BGB_P450)
+rule Kaufverbot450Abs1(k: Kaufvertrag, p: Person) strict {
+    label de official "Bei einem Verkauf im Wege der Zwangsvollstreckung dürfen der mit der Vornahme oder Leitung des Verkaufs Beauftragte und die von ihm zugezogenen Gehilfen einschließlich des Protokollführers den zu verkaufenden Gegenstand nicht kaufen (§ 450 Abs. 1)";
+    label en unofficial "On a sale by way of execution, the person charged with carrying out or directing the sale and the assistants called in by him, including the recording clerk, may not buy the object to be sold (§ 450 (1))";
+    when verkauf_im_wege_der_zwangsvollstreckung(k) and mit_dem_verkauf_beauftragt_oder_gehilfe(k, p);
+    then kaufverbot_450(k, p);
+}
+
+@source(BGB_P450)
+rule Kaufverbot450Abs2(k: Kaufvertrag, p: Person) strict {
+    label de official "Absatz 1 gilt auch bei einem Verkauf außerhalb der Zwangsvollstreckung auf Grund eines gesetzlich begründeten Auftrags sowie bei einem Verkauf aus einer Insolvenzmasse (§ 450 Abs. 2)";
+    label en unofficial "Subsection (1) also applies to a sale outside execution on the basis of a statutory mandate and to a sale from an insolvency estate (§ 450 (2))";
+    when verkauf_auf_gesetzlichen_auftrag_oder_aus_insolvenzmasse(k) and mit_dem_verkauf_beauftragt_oder_gehilfe(k, p);
+    then kaufverbot_450(k, p);
+}
+
+@source(BGB_P451)
+rule Zustimmungsbeduerftigkeit451Abs1(k: Kaufvertrag, ka: Person) strict {
+    label de official "Die Wirksamkeit eines dem § 450 zuwider erfolgten Kaufs und der Übertragung des gekauften Gegenstandes hängt von der Zustimmung der bei dem Verkauf als Schuldner, Eigentümer oder Gläubiger Beteiligten ab (§ 451 Abs. 1 Satz 1)";
+    label en unofficial "The effectiveness of a purchase made contrary to § 450 and of the transfer depends on the consent of those involved as debtor, owner or creditor (§ 451 (1) sentence 1)";
+    when kaeufer(k, ka) and kaufverbot_450(k, ka);
+    then wirksamkeit_haengt_von_zustimmung_ab(k);
+}
+
+@source(BGB_P451)
+rule Haftung451Abs2(k: Kaufvertrag, ka: Person) strict {
+    label de official "Wird infolge der Verweigerung der Genehmigung ein neuer Verkauf vorgenommen, so hat der frühere Käufer für die Kosten des neuen Verkaufs sowie für einen Mindererlös aufzukommen (§ 451 Abs. 2)";
+    label en unofficial "Where a new sale is carried out as a result of the refusal of approval, the earlier buyer must bear the costs of the new sale and any shortfall in proceeds (§ 451 (2))";
+    when wirksamkeit_haengt_von_zustimmung_ab(k) and genehmigung_verweigert_und_neuer_verkauf(k) and kaeufer(k, ka);
+    then haftung_des_frueheren_kaeufers(k, ka);
+}
+
+// --- §§ 452, 453 Schiffskauf und Rechtskauf -------------------------------------------------------
+
+pub relation eingetragenes_schiff_oder_schiffsbauwerk(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Kaufs ist ein eingetragenes Schiff oder Schiffsbauwerk (§ 452)";
+    label en unofficial "the object of the sale is a registered ship or ship under construction (§ 452)";
+}
+pub relation rechtskauf(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Kaufs ist ein Recht oder ein sonstiger Gegenstand (§ 453 Abs. 1 Satz 1)";
+    label en unofficial "the object of the sale is a right or another object (§ 453 (1) sentence 1)";
+}
+pub relation verbrauchervertrag_ueber_digitale_inhalte(k: Kaufvertrag) kind empirical {
+    label de official "Verbrauchervertrag über den Verkauf digitaler Inhalte durch einen Unternehmer (§ 453 Abs. 1 Satz 2)";
+    label en unofficial "consumer contract for the sale of digital content by a trader (§ 453 (1) sentence 2)";
+}
+pub relation recht_berechtigt_zum_besitz_einer_sache(k: Kaufvertrag) kind empirical {
+    label de official "das verkaufte Recht berechtigt zum Besitz einer Sache (§ 453 Abs. 3)";
+    label en unofficial "the right sold entitles to possession of a thing (§ 453 (3))";
+}
+pub relation vorschriften_ueber_sachkauf_entsprechend_anwendbar(k: Kaufvertrag) kind institutional {
+    label de official "die Vorschriften über den Kauf von Sachen finden entsprechende Anwendung (§§ 452, 453 Abs. 1 Satz 1, § 480)";
+    label en unofficial "the provisions on the sale of things apply accordingly (§§ 452, 453 (1) sentence 1, § 480)";
+}
+pub relation maengelvorschriften_nicht_anzuwenden(k: Kaufvertrag) kind institutional {
+    label de official "§ 433 Abs. 1, die §§ 434 bis 442, 475 Abs. 3 Satz 1 und Abs. 4 bis 7 sowie die §§ 476 und 477 sind nicht anzuwenden; an ihre Stelle treten die Vorschriften des Abschnitts 3 Titel 2a Untertitel 1 (§ 453 Abs. 1 Satz 2, 3; § 475a)";
+    label en unofficial "§ 433 (1), §§ 434 to 442, 475 (3) sentence 1 and (4) to (7) and §§ 476 and 477 do not apply; the provisions of Division 3 Title 2a Sub-title 1 take their place (§ 453 (1) sentences 2, 3; § 475a)";
+}
+pub relation kosten_der_rechtsuebertragung_beim_verkaeufer(k: Kaufvertrag, v: Person) kind institutional {
+    label de official "der Verkäufer trägt die Kosten der Begründung und Übertragung des Rechts (§ 453 Abs. 2)";
+    label en unofficial "the seller bears the costs of creating and transferring the right (§ 453 (2))";
+}
+
+@source(BGB_P452)
+rule Schiffskauf452(k: Kaufvertrag) strict {
+    label de official "Die Vorschriften dieses Untertitels über den Kauf von Grundstücken finden auf den Kauf von eingetragenen Schiffen und Schiffsbauwerken entsprechende Anwendung (§ 452)";
+    label en unofficial "The provisions of this sub-title on the sale of land apply accordingly to the sale of registered ships and ships under construction (§ 452)";
+    when eingetragenes_schiff_oder_schiffsbauwerk(k);
+    then vorschriften_ueber_sachkauf_entsprechend_anwendbar(k);
+}
+
+@source(BGB_P453)
+rule Rechtskauf453Abs1Satz1(k: Kaufvertrag) strict {
+    label de official "Die Vorschriften über den Kauf von Sachen finden auf den Kauf von Rechten und sonstigen Gegenständen entsprechende Anwendung (§ 453 Abs. 1 Satz 1)";
+    label en unofficial "The provisions on the sale of things apply accordingly to the sale of rights and other objects (§ 453 (1) sentence 1)";
+    when rechtskauf(k);
+    then vorschriften_ueber_sachkauf_entsprechend_anwendbar(k);
+}
+
+@source(BGB_P453)
+rule Rechtskauf453Abs1Satz2(k: Kaufvertrag) strict {
+    label de official "Auf einen Verbrauchervertrag über den Verkauf digitaler Inhalte durch einen Unternehmer sind § 433 Abs. 1, die §§ 434 bis 442, 475 Abs. 3 Satz 1 und Abs. 4 bis 7 sowie die §§ 476 und 477 nicht anzuwenden (§ 453 Abs. 1 Satz 2)";
+    label en unofficial "§ 433 (1), §§ 434 to 442, 475 (3) sentence 1 and (4) to (7) and §§ 476 and 477 do not apply to a consumer contract for the sale of digital content by a trader (§ 453 (1) sentence 2)";
+    when verbrauchervertrag_ueber_digitale_inhalte(k);
+    then maengelvorschriften_nicht_anzuwenden(k);
+}
+
+@source(BGB_P453)
+rule Rechtskauf453Abs2(k: Kaufvertrag, v: Person) strict {
+    label de official "Der Verkäufer trägt die Kosten der Begründung und Übertragung des Rechts (§ 453 Abs. 2)";
+    label en unofficial "The seller bears the costs of creating and transferring the right (§ 453 (2))";
+    when rechtskauf(k) and verkaeufer(k, v);
+    then kosten_der_rechtsuebertragung_beim_verkaeufer(k, v);
+}
+
+@source(BGB_P453)
+rule Rechtskauf453Abs3(k: Kaufvertrag, v: Person) strict {
+    label de official "Ist ein Recht verkauft, das zum Besitz einer Sache berechtigt, so ist der Verkäufer verpflichtet, dem Käufer die Sache frei von Sach- und Rechtsmängeln zu übergeben (§ 453 Abs. 3)";
+    label en unofficial "Where a right is sold which entitles to possession of a thing, the seller must deliver the thing to the buyer free from material and legal defects (§ 453 (3))";
+    when rechtskauf(k) and recht_berechtigt_zum_besitz_einer_sache(k) and verkaeufer(k, v);
+    then pflicht_mangelfreie_verschaffung(k, v);
+}

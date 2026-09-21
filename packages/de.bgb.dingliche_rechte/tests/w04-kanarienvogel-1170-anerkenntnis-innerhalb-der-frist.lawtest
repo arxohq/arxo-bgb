@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// Gegenstück zu w03: dieselbe Frist, aber der Eigentümer hat das Recht des Gläubigers am 01.02.2026 — innerhalb der zehn Jahre — anerkannt; der Ausschluss ist gesperrt.
+test "§ 1170 Abs. 1 Satz 1 Halbsatz 2: Anerkenntnis innerhalb der Frist sperrt den Ausschluss" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": glaeubiger_unbekannt(entity_ref("urn:de:bgb:dr:w04:hyp")) { origin adjudicated; }
+        assert "f2": ausschlussfrist_des_1170(entity_ref("urn:de:bgb:dr:w04:hyp"), entity_ref("urn:de:bgb:dr:w04:frist")) { origin case_input; }
+        assert "f3": letzte_eintragung_zur_hypothek_am(entity_ref("urn:de:bgb:dr:w04:hyp"), @2016-03-15) { origin adjudicated; }
+        assert "f3b": keine_kalenderbestimmte_zahlungszeit(entity_ref("urn:de:bgb:dr:w04:hyp")) { origin case_input; }
+        assert "f4": recht_des_glaeubigers_anerkannt_am(entity_ref("urn:de:bgb:dr:w04:hyp"), @2026-02-01) { origin adjudicated; }
+    }
+    evaluate truth(ausschluss_wegen_anerkenntnisses_gesperrt(entity_ref("urn:de:bgb:dr:w04:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausschluss_des_unbekannten_glaeubigers_zulaessig(entity_ref("urn:de:bgb:dr:w04:hyp")));
+    expect truth_status == NEITHER;
+}

@@ -1,0 +1,98 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1045(n: Niessbrauch, niesser: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Versicherungslast des Nießbrauchers (§ 1045)"; }
+pub relation versicherungszahlung_1045_geschuldet(n: Niessbrauch, niesser: Person) kind empirical { label de official "Der Nießbraucher trägt die Versicherungszahlungen (§ 1045 Abs. 2)"; }
+pub relation position_trigger_1077(n: Niessbrauch, schuldner: Person, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur gemeinschaftlichen Kapitalleistung (§ 1077)"; }
+pub relation gemeinschaftliche_leistung_1077_geschuldet(n: Niessbrauch, schuldner: Person, glaeubiger: Person) kind empirical { label de official "Kapital ist gemeinschaftlich an Nießbraucher und Gläubiger zu leisten (§ 1077)"; }
+pub relation position_trigger_1099(v: DinglichesVorkaufsrecht, verpflichteter: Person, neuer_eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Benachrichtigung des neuen Eigentümers (§ 1099 Abs. 2)"; }
+pub relation benachrichtigung_1099_geschuldet(v: DinglichesVorkaufsrecht, verpflichteter: Person, neuer_eigentuemer: Person) kind empirical { label de official "Der Verpflichtete muss den neuen Eigentümer benachrichtigen (§ 1099 Abs. 2)"; }
+pub relation position_trigger_1115(h: Grundpfandrecht, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Eintragung der Hypothekenangaben (§ 1115)"; }
+pub relation eintragung_1115_geschuldet(h: Grundpfandrecht, glaeubiger: Person) kind empirical { label de official "Die Angaben zur Hypothek müssen eingetragen werden (§ 1115)"; }
+pub relation position_trigger_1214(pf: Pfandrecht, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Rechenschaft über die Nutzungen (§ 1214)"; }
+pub relation rechnungslegung_1214_geschuldet(pf: Pfandrecht, glaeubiger: Person) kind empirical { label de official "Der Pfandgläubiger muss über die Nutzungen Rechenschaft ablegen (§ 1214)"; }
+pub relation position_trigger_1241(pf: Pfandrecht, eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Benachrichtigung vom Verkauf (§ 1241)"; }
+pub relation benachrichtigung_1241_geschuldet(pf: Pfandrecht, eigentuemer: Person) kind empirical { label de official "Der Pfandgläubiger muss den Eigentümer vom Verkauf benachrichtigen (§ 1241)"; }
+pub relation position_trigger_1285(pf: Pfandrecht, glaeubiger: Person, schuldner: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Mitwirkung bei der Einziehung (§ 1285)"; }
+pub relation mitwirkung_1285_geschuldet(pf: Pfandrecht, glaeubiger: Person, schuldner: Person) kind empirical { label de official "Pfandgläubiger und Gläubiger müssen bei der Einziehung mitwirken (§ 1285)"; }
+
+@source(BGB_P1045)
+rule PositionVersicherung1045(n: Niessbrauch, niesser: Person, tag: Date) strict {
+    label de official "Der Nießbraucher trägt die Versicherungszahlungen (§ 1045 Abs. 2)";
+    label en unofficial "The usufructuary bears the insurance payments (§ 1045 (2))";
+    when position_trigger_1045(n, niesser, tag);
+    then duty Versicherung1045 {
+        bearer niesser;
+        achieve versicherungszahlung_1045_geschuldet(n, niesser) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1077)
+rule PositionGemeinschaftlicheLeistung1077(n: Niessbrauch, schuldner: Person, glaeubiger: Person, tag: Date) strict {
+    label de official "Kapital ist gemeinschaftlich an Nießbraucher und Gläubiger zu leisten (§ 1077)";
+    label en unofficial "Capital must be performed jointly to the usufructuary and creditor (§ 1077)";
+    when position_trigger_1077(n, schuldner, glaeubiger, tag);
+    then duty GemeinschaftlicheLeistung1077 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve gemeinschaftliche_leistung_1077_geschuldet(n, schuldner, glaeubiger) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1099)
+rule PositionBenachrichtigung1099(v: DinglichesVorkaufsrecht, verpflichteter: Person, neuer_eigentuemer: Person, tag: Date) strict {
+    label de official "Der Verpflichtete muss den neuen Eigentümer benachrichtigen (§ 1099 Abs. 2)";
+    label en unofficial "The person bound must notify the new owner (§ 1099 (2))";
+    when position_trigger_1099(v, verpflichteter, neuer_eigentuemer, tag);
+    then duty Benachrichtigung1099 {
+        bearer verpflichteter;
+        beneficiary neuer_eigentuemer;
+        achieve benachrichtigung_1099_geschuldet(v, verpflichteter, neuer_eigentuemer) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1115)
+rule PositionEintragung1115(h: Grundpfandrecht, glaeubiger: Person, tag: Date) strict {
+    label de official "Die Angaben zur Hypothek müssen eingetragen werden (§ 1115)";
+    label en unofficial "The mortgage particulars must be entered (§ 1115)";
+    when position_trigger_1115(h, glaeubiger, tag);
+    then duty Eintragung1115 {
+        bearer glaeubiger;
+        achieve eintragung_1115_geschuldet(h, glaeubiger) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1214)
+rule PositionRechnungslegung1214(pf: Pfandrecht, glaeubiger: Person, tag: Date) strict {
+    label de official "Der Pfandgläubiger muss über die Nutzungen Rechenschaft ablegen (§ 1214)";
+    label en unofficial "The pledgee must account for the fruits (§ 1214)";
+    when position_trigger_1214(pf, glaeubiger, tag);
+    then duty Rechnungslegung1214 {
+        bearer glaeubiger;
+        achieve rechnungslegung_1214_geschuldet(pf, glaeubiger) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1241)
+rule PositionBenachrichtigung1241(pf: Pfandrecht, eigentuemer: Person, tag: Date) strict {
+    label de official "Der Pfandgläubiger muss den Eigentümer vom Verkauf benachrichtigen (§ 1241)";
+    label en unofficial "The pledgee must notify the owner of the sale (§ 1241)";
+    when position_trigger_1241(pf, eigentuemer, tag);
+    then duty Benachrichtigung1241 {
+        bearer eigentuemer;
+        achieve benachrichtigung_1241_geschuldet(pf, eigentuemer) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1285)
+rule PositionMitwirkung1285(pf: Pfandrecht, glaeubiger: Person, schuldner: Person, tag: Date) strict {
+    label de official "Pfandgläubiger und Gläubiger müssen bei der Einziehung mitwirken (§ 1285)";
+    label en unofficial "The pledgee and creditor must cooperate in collection (§ 1285)";
+    when position_trigger_1285(pf, glaeubiger, schuldner, tag);
+    then duty Mitwirkung1285 {
+        bearer glaeubiger;
+        beneficiary schuldner;
+        achieve mitwirkung_1285_geschuldet(pf, glaeubiger, schuldner) during [tag, infinity);
+    };
+}

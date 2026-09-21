@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 445b: der Aufwendungsersatzanspruch des Verkäufers gegen seinen Lieferanten verjährt in zwei Jahren ab Ablieferung (Abs. 1) — hier mit Ablauf des 20. Februar 2026. Weil der Verkäufer die Ansprüche des Käufers erst am 15. Januar 2026 erfüllt hat, tritt die Verjährung frühestens zwei Monate danach, also mit Ablauf des 15. März 2026, ein (Abs. 2).
+test "§ 445b Abs. 2: die Ablaufhemmung schiebt das Ende auf den 15. März 2026" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": ablieferung_am(entity_ref("urn:de:bgb:kauf:v06:L"), @2024-02-20) { origin adjudicated; }
+        assert "f2": rueckgriffsanspruch(entity_ref("urn:de:bgb:kauf:v06:A"), entity_ref("urn:de:bgb:kauf:v06:L")) { origin case_input; }
+        assert "f3": erfuellung_der_kaeuferansprueche_am(entity_ref("urn:de:bgb:kauf:v06:A"), @2026-01-15) { origin case_input; }
+    }
+    evaluate truth(rueckgriffsfrist_ende_445b_abs1(entity_ref("urn:de:bgb:kauf:v06:A"), @2026-02-20));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(ablaufhemmung_ende_445b_abs2(entity_ref("urn:de:bgb:kauf:v06:A"), @2026-03-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(rueckgriffsverjaehrung_ende(entity_ref("urn:de:bgb:kauf:v06:A"), @2026-03-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

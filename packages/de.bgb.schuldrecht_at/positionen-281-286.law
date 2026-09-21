@@ -1,0 +1,96 @@
+// Positionen des Schadensersatzes statt der Leistung und des Verzugs.
+
+@source(BGB_P281)
+rule PositionSchadensersatzStatt281(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, schuldner: Person, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Schuldner hat Schadensersatz statt der Leistung zu bewirken (§ 281)";
+    label en unofficial "The debtor must provide damages in lieu of performance (§ 281)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when schadensersatz_statt_der_leistung(s, sch, schuldner);
+    then duty SchadensersatzStatt281 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve schadensersatz_statt_der_leistung(s, sch, schuldner) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P286)
+rule PositionVerzug286(s: Schuldverhaeltnis, l: Leistung, schuldner: Person, glaeubiger: Person, verzug: Date) defeasible {
+    label de official "Der Schuldner hat die Folgen des Verzugs ab Eintritt des Verzugs zu erfüllen (§ 286)";
+    label en unofficial "The debtor must satisfy the consequences of default from its commencement (§ 286)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when verzug_seit(l, verzug);
+    then duty Verzug286 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve verzug_seit(l, verzug) during [verzug, infinity);
+    };
+}
+
+@source(BGB_P282)
+rule PositionSchadensersatzUnzumutbarkeit282(s: Schuldverhaeltnis, sch: Schaden, schuldner: Person, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Schuldner hat bei Unzumutbarkeit Schadensersatz statt der Leistung zu bewirken (§ 282)";
+    label en unofficial "The debtor must provide damages in lieu of performance where performance is no longer tolerable (§ 282)";
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when leistung_durch_den_schuldner_nicht_mehr_zumutbar(s);
+    when schadensersatz_statt_der_leistung(s, sch, schuldner);
+    then duty SchadensersatzUnzumutbarkeit282 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve schadensersatz_statt_der_leistung(s, sch, schuldner) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P283)
+rule PositionSchadensersatzLeistungsausschluss283(s: Schuldverhaeltnis, l: Leistung, sch: Schaden, schuldner: Person, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Schuldner hat bei Ausschluss der Leistungspflicht Schadensersatz statt der Leistung zu bewirken (§ 283)";
+    label en unofficial "The debtor must provide damages in lieu of performance when the duty to perform is excluded (§ 283)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when leistungsanspruch_ausgeschlossen(l);
+    when schadensersatz_statt_der_leistung(s, sch, schuldner);
+    then duty SchadensersatzLeistungsausschluss283 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve schadensersatz_statt_der_leistung(s, sch, schuldner) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P284)
+rule PositionAufwendungsersatz284(s: Schuldverhaeltnis, betrag: Money, schuldner: Person, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Schuldner hat vergebliche Aufwendungen zu ersetzen (§ 284)";
+    label en unofficial "The debtor must reimburse futile expenses (§ 284)";
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when aufwendungsersatz(s, betrag);
+    then duty Aufwendungsersatz284 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve aufwendungsersatz(s, betrag) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P285)
+rule PositionHerausgabeErsatz285(s: Schuldverhaeltnis, l: Leistung, betrag: Money, schuldner: Person, glaeubiger: Person, beginn: Date) defeasible {
+    label de official "Der Schuldner hat den erlangten Ersatz herauszugeben (§ 285)";
+    label en unofficial "The debtor must surrender the substitute obtained (§ 285)";
+    when leistung_aus_schuldverhaeltnis(l, s);
+    when de.bgb.core::schuldverhaeltnis_schuldner(s, schuldner);
+    when de.bgb.core::schuldverhaeltnis_glaeubiger(s, glaeubiger);
+    when schuldverhaeltnis_begruendet_am(s, beginn);
+    when herausgabe_des_ersatzes_verlangbar(l, betrag);
+    then duty HerausgabeErsatz285 {
+        bearer schuldner;
+        beneficiary glaeubiger;
+        achieve herausgabe_des_ersatzes_verlangbar(l, betrag) during [beginn, infinity);
+    };
+}

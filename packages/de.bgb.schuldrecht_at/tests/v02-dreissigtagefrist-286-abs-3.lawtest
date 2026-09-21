@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 286 Abs. 3 Satz 1 mit §§ 187 Abs. 1, 188 Abs. 1, 193: Fälligkeit
+// 2. März 2026, Zugang der Rechnung Freitag, 6. März 2026 (der spätere Tag);
+// 30 Tage ab dem 7. März enden kalendarisch am Sonntag, 5. April 2026
+// (Ostersonntag); der 6. April ist Ostermontag, also tritt der nächste Werktag,
+// Dienstag der 7. April 2026, an die Stelle des Fristendes. Im Verzug ist der
+// Schuldner, der Unternehmer ist, mit dem Ablauf dieses Tages (§ 188 Abs. 1).
+test "§ 286 Abs. 3: Dreißigtagefrist endet am 7. April 2026, Verzug mit ihrem Ablauf" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_SCHULDRECHT_AT_TAG; }
+        assert "a1": entgeltforderung(entity_ref("urn:de:bgb:sr-at:v02:a1")) { origin case_input; }
+        assert "a2": dreissigtagefrist_der_entgeltforderung(entity_ref("urn:de:bgb:sr-at:v02:a1"), entity_ref("urn:de:bgb:sr-at:v02:f1")) { origin case_input; }
+        assert "a3": faelligkeit_der_entgeltforderung(entity_ref("urn:de:bgb:sr-at:v02:a1"), @2026-03-02) { origin case_input; }
+        assert "a4": zugang_der_rechnung(entity_ref("urn:de:bgb:sr-at:v02:a1"), @2026-03-06) { origin case_input; }
+        assert "a5": de.bgb.core::anspruch_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:v02:a1"), entity_ref("urn:de:bgb:sr-at:v02:s1")) { origin case_input; }
+        assert "a6": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:v02:s1"), entity_ref("urn:de:bgb:sr-at:v02:p1")) { origin case_input; }
+        assert "a7": unternehmer(entity_ref("urn:de:bgb:sr-at:v02:p1")) { origin case_input; }
+        assert "a8": innerhalb_der_dreissig_tage_nicht_geleistet(entity_ref("urn:de:bgb:sr-at:v02:a1")) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::frist_ende(entity_ref("urn:de:bgb:sr-at:v02:f1"), @2026-04-07));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verzug_der_entgeltforderung_mit_ablauf_des_tages(entity_ref("urn:de:bgb:sr-at:v02:a1"), @2026-04-07));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

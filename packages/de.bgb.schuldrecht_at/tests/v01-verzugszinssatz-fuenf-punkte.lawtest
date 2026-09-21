@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 288 Abs. 1 Satz 2 mit § 247: Basiszinssatz am 17. September 2026 ist
+// 1,52 Prozent (Bekanntmachung der Bundesbank, gültig ab 1. Juli 2026);
+// fünf Prozentpunkte darüber sind 6,52 Prozent. Zinsen für ein volles Jahr aus
+// 10 000,00 EUR: 652,00 EUR.
+test "§ 288 Abs. 1: Verzugszinssatz 6,52 Prozent und 652,00 EUR für ein Jahr" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": de.bgb.core::anspruch_geldbetrag(entity_ref("urn:de:bgb:sr-at:v01:a1"), 10000.00 EUR) { origin case_input; }
+        assert "a2": geldschuld_im_verzug(entity_ref("urn:de:bgb:sr-at:v01:a1"), @2026-06-01) { origin case_input; }
+        assert "a3": verbraucher_am_rechtsgeschaeft_beteiligt(entity_ref("urn:de:bgb:sr-at:v01:a1")) { origin case_input; }
+    }
+    evaluate truth(verzugszinssatz(entity_ref("urn:de:bgb:sr-at:v01:a1"), 6.52));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verzugszinsen_fuer_ein_jahr(entity_ref("urn:de:bgb:sr-at:v01:a1"), 652.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

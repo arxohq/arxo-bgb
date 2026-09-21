@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 218 Abs. 1 auf einer SONDERFRIST — genau das, was vor dieser Brücke nicht
+// erreichbar war. Die zweijährige Frist endet mit dem Ablauf des 10. April
+// 2025; der Rücktritt wird am 11. April 2025 erklärt, also einen Tag zu spät,
+// und der Schuldner beruft sich auf die Verjährung: der Rücktritt ist unwirksam.
+test "§§ 200, 218 Abs. 1: Rücktritt am Tag nach dem Ablauf der Sonderfrist ist unwirksam" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "b": sonderverjaehrung_beginn(entity_ref("urn:de:bgb:fristen:so03"), @2023-04-10) { origin case_input; }
+        assert "d": sonderverjaehrung_dauer(entity_ref("urn:de:bgb:fristen:so03"), 2 calendar_year) { origin case_input; }
+        assert "h": keine_hemmung(entity_ref("urn:de:bgb:fristen:so03")) { origin case_input; }
+        assert "r": ruecktritt_erklaert_am(entity_ref("urn:de:bgb:fristen:so03"), @2025-04-11) { origin case_input; }
+        assert "s": schuldner_beruft_sich_auf_verjaehrung(entity_ref("urn:de:bgb:fristen:so03")) { origin case_input; }
+    }
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:so03"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(ruecktritt_unwirksam_wegen_verjaehrung(entity_ref("urn:de:bgb:fristen:so03")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(leistungsverweigerungsrecht_wegen_verjaehrung(entity_ref("urn:de:bgb:fristen:so03")));
+    expect truth_status == TRUE_ONLY;
+}

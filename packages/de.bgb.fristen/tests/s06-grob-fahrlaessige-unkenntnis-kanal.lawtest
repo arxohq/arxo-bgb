@@ -1,0 +1,15 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 199 Abs. 1 Nr. 2, Kanal §47.3: nach der Wertung des Gerichts hätte der Gläubiger ohne grobe Fahrlässigkeit Kenntnis erlangen müssen — auch dafür wird der Schluss des Jahres gesucht.
+test "§ 199 Abs. 1 Nr. 2: grob fahrlässige Unkenntnis nach der Wertung des Gerichts löst die Jahresschluss-Suche aus" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:s06"), @2020-03-15) { origin case_input; }
+        assert "j": grob_fahrlaessig_unkenntnis(entity_ref("urn:de:bgb:fristen:pilot:s06")) { origin adjudicated; }
+    }
+    evaluate truth(jahresende_gesucht(entity_ref("urn:de:bgb:fristen:pilot:s06"), @2020-03-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    expect judgment_requests(0);
+}

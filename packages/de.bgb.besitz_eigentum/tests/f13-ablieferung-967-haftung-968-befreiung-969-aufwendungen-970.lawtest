@@ -1,0 +1,30 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 967: Ablieferungsrecht des Finders (unbedingt) und Ablieferungspflicht auf Anordnung der Behörde. § 968: beschränkter Haftungsmaßstab (nur Vorsatz und grobe Fahrlässigkeit). § 969: Befreiung des Finders durch Herausgabe an den Verlierer. § 970: Ersatz erforderlicher Aufwendungen.
+test "§§ 967–970: Ablieferung, Haftungsmaßstab, Befreiung, Aufwendungsersatz" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": fundsache(entity_ref("urn:de:bgb:be:f13:fund"), entity_ref("urn:de:bgb:be:f13:uhr")) { origin case_input; }
+        assert "f2": finder(entity_ref("urn:de:bgb:be:f13:fund"), entity_ref("urn:de:bgb:be:f13:F")) { origin case_input; }
+        assert "f3": behoerde_ordnet_ablieferung_an(entity_ref("urn:de:bgb:be:f13:fund")) { origin adjudicated; }
+        assert "f4": herausgabe_an_den_verlierer_erfolgt(entity_ref("urn:de:bgb:be:f13:fund")) { origin case_input; }
+        assert "f5": aufwendung_gemacht(entity_ref("urn:de:bgb:be:f13:fund"), 45.00 EUR) { origin case_input; }
+        assert "f6": aufwendung_war_erforderlich(entity_ref("urn:de:bgb:be:f13:fund")) { origin case_input; }
+    }
+    evaluate truth(ablieferungsrecht_des_finders(entity_ref("urn:de:bgb:be:f13:fund"), entity_ref("urn:de:bgb:be:f13:F")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ablieferungspflicht_nach_behoerdlicher_anordnung(entity_ref("urn:de:bgb:be:f13:fund"), entity_ref("urn:de:bgb:be:f13:F")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finder_haftet_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(entity_ref("urn:de:bgb:be:f13:fund")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finder_gegenueber_allen_empfangsberechtigten_befreit(entity_ref("urn:de:bgb:be:f13:fund")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(fundaufwendungsersatzanspruch(entity_ref("urn:de:bgb:be:f13:fund"), entity_ref("urn:de:bgb:be:f13:F"), 45.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

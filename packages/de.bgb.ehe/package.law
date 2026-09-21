@@ -1,0 +1,225 @@
+// BÜRGERLICHES GESETZBUCH — EHE UND EHELICHES GÜTERRECHT (BG-12)
+//
+// Buch 4 Abschnitt 1 (§§ 1297–1588), 214 geltende Paragraphen. Quellen:
+// sources.law (generiert aus dem Register DOKNR).
+//
+// AUFBAU. Diese Datei trägt die Typen des Pakets, den Kalender §85, die
+// Politik der Fristen §86 und den Kern des Güterstands (§§ 1353, 1363, 1371
+// Abs. 1, 1408, 1414), der von `de.bgb.erbfolge` und `de.bgb.verfuegungen`
+// gelesen wird. Die Titel liegen in eigenen Dateien `titel-NN-<thema>.law`:
+//
+//   titel-01-verloebnis.law                §§ 1297–1302
+//   titel-02-eingehung.law                 §§ 1303–1312
+//   titel-03-aufhebung.law                 §§ 1313–1320
+//   titel-04-wirkungen.law                 §§ 1353–1362
+//   titel-06-01-zugewinngemeinschaft.law   §§ 1363–1390
+//   titel-06-02-vertragliches-gueterrecht.law  §§ 1408–1414, 1519
+//   titel-06-03-guetergemeinschaft.law     §§ 1415–1518
+//   titel-07-01-scheidung.law              §§ 1564–1568b
+//   titel-07-02-nachehelicher-unterhalt.law §§ 1569–1586b
+//   titel-07-03-versorgungsausgleich.law   §§ 1587, 1588
+//
+// EINGEFRORENE FLÄCHE. Die zehn `pub`-Namen des Piloten B1 (Ehe, Gueterstand,
+// ehegatten, kein_ehevertrag, ehevertrag_gueterstand,
+// gueterstand_durch_tod_beendet, gueterstand, ehegatte, anderer_ehegatte,
+// erhoehung_des_erbteils_1371) werden von `de.bgb.erbfolge` und
+// `de.bgb.verfuegungen` qualifiziert gelesen; Signatur und Bedeutung bleiben
+// unverändert, Neues kommt nur hinzu.
+//
+// RICHTUNG DER ABHÄNGIGKEIT (DECISION-0319): `erbfolge → ehe`. Dieses Paket
+// veröffentlicht den Güterstand und die Anwendbarkeit des § 1371 Abs. 1;
+// `de.bgb.erbfolge` verbindet sie mit dem Erbteil des § 1931. Ein Rückimport
+// des Erbteils hierher gäbe einen Zyklus und findet nicht statt.
+//
+// KEIN SCHWEIGEN ALS VERNEINUNG. Der gesetzliche Güterstand gilt, „wenn sie
+// nicht durch Ehevertrag etwas anderes vereinbaren“ (§ 1363 Abs. 1). Das
+// Fehlen einer Angabe über einen Ehevertrag ist keine Verneinung: der Fall
+// erklärt ausdrücklich `kein_ehevertrag(ehe)` oder nennt den vereinbarten
+// Güterstand (`ehevertrag_gueterstand`).
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import calc.kinship version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Familie = calc.kinship::Family;
+type Frist = de.bgb.fristen::Frist;
+
+// --- Kalender §85 und Politik der Fristen §86 -----------------------------------------------------
+//
+// Die Mechanik der Fristen gehört `de.bgb.fristen` (DECISION-0319 Р4); die vom
+// Fall genannte Politik muss jedoch in dem Paket erklärt sein, dessen Programm
+// der Fall ausführt (LDC-E1332), und ohne Kalenderknoten in derselben
+// Programmfläche bleibt die Ausführung NON_EXECUTABLE (Ledger D-04-03).
+// Datensatz und Hash sind dieselben wie bei `de.bgb.fristen`
+// (corpus/gen_kz_clir.py, `de_bgb_feiertage_calendar_dataset`).
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// EINE Politik genügt diesem Abschnitt, und das ist keine Sparsamkeit, sondern
+// eine Aussage über den Text: §§ 1297–1588 kennen KEINE nach Tagen bestimmte
+// Frist. Jede Frist des Abschnitts ist nach Wochen, Monaten oder Jahren
+// bestimmt — zwei Wochen (§ 1366 Abs. 3), sechs Wochen (§ 1358 Abs. 1 Nr. 3),
+// sechs Monate (§§ 1309 Abs. 1 Satz 3, 1317 Abs. 2, 1358 Abs. 3 Nr. 4, 1361b
+// Abs. 4), ein Jahr (§§ 1317 Abs. 1, 1320 Abs. 1, 1565 Abs. 2, 1566 Abs. 1,
+// 1568a Abs. 6, 1585b Abs. 3), drei Jahre (§§ 1315 Abs. 2 Nr. 2, 1317 Abs. 1,
+// 1385 Nr. 1, 1566 Abs. 2, 1570 Abs. 1), fünf und zehn Jahre (§§ 1310 Abs. 3,
+// 1315 Abs. 2 Nr. 2, 1375 Abs. 3). Daher trägt das Paket nur
+// BGB_EHE_KALENDER; eine Tagespolitik wäre auf keiner Norm belegbar
+// (Ledger D-12-02). Die Felder sind die von BGB_FRISTEN_KALENDER
+// (PARALLEL.md §4): § 188 Abs. 2 (same_day), § 188 Abs. 3 (month_end),
+// § 193 als ausdrückliche Regel `Verlegung193` in `de.bgb.fristen`.
+//
+// WELCHES ENDE EINE NORM LIEST, sagt die Norm. Fristen, an deren Ende eine
+// Erklärung gegenüber einem Adressaten abzugeben oder ein Antrag zu stellen
+// ist (§§ 1317, 1320, 1366 Abs. 3, 1568a Abs. 6, 1585b Abs. 3), lesen
+// `frist_ende` mit der Verlegung des § 193. Fristen, die VERSTRICHENE ZEIT
+// messen (§§ 1310 Abs. 3, 1315 Abs. 2, 1375 Abs. 3, 1385 Nr. 1, 1565 Abs. 2,
+// 1566, 1570 Abs. 1), lesen `frist_ende_kalender`: § 193 setzt einen
+// Adressaten der Handlung voraus und hat hier keinen (Ledger D-12-03,
+// Muster D-13 § 193).
+deadline policy BGB_EHE_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+pub entity Ehe {
+    label de official "Ehe (§ 1353): auf Lebenszeit geschlossene Verbindung zweier Personen";
+    label en unofficial "Marriage (§ 1353): union of two persons entered into for life";
+}
+
+pub enum Gueterstand {
+    label de official "Güterstand der Ehe (Buch 4 Abschnitt 1 Titel 6)";
+    label en unofficial "matrimonial property regime (Book 4 Division 1 Title 6)";
+    Zugewinngemeinschaft,
+    Guetertrennung,
+    Guetergemeinschaft
+}
+
+// --- Eingaben des Falls ------------------------------------------------------------------------
+
+pub relation ehegatten(ehe: Ehe, erster: Person, zweiter: Person) kind empirical {
+    key(ehe);
+    label de official "Ehegatten der Ehe (Angabe in einer Richtung, gelesen in beiden)";
+    label en unofficial "spouses of the marriage (stated in one direction, read in both)";
+}
+pub relation kein_ehevertrag(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten haben durch Ehevertrag nichts anderes vereinbart (§ 1363 Abs. 1) — ausdrückliche Angabe; das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "The spouses have not agreed otherwise by marriage contract (§ 1363 (1)) — explicit input; absence of an input is not a denial";
+}
+pub relation ehevertrag_gueterstand(ehe: Ehe, g: Gueterstand) kind empirical {
+    key(ehe);
+    label de official "Durch Ehevertrag vereinbarter Güterstand (§ 1408 Abs. 1): Gütertrennung (§ 1414) oder Gütergemeinschaft (§ 1415)";
+    label en unofficial "Property regime agreed by marriage contract (§ 1408 (1)): separation of property (§ 1414) or community of property (§ 1415)";
+}
+pub relation gueterstand_durch_tod_beendet(ehe: Ehe, verstorbener: Person) kind empirical {
+    key(ehe);
+    label de official "Der Güterstand ist durch den Tod dieses Ehegatten beendet (§ 1371 Abs. 1) — geliefert vom Erbfall (de.bgb.erbfolge)";
+    label en unofficial "The property regime ended with the death of this spouse (§ 1371 (1)) — supplied by the succession (de.bgb.erbfolge)";
+}
+
+// --- Güterstand -----------------------------------------------------------------------------------
+
+pub relation gueterstand(ehe: Ehe, g: Gueterstand) kind derived {
+    key(ehe);
+    label de official "Güterstand, in dem die Ehegatten leben";
+    label en unofficial "property regime under which the spouses live";
+}
+pub relation ehegatte(ehe: Ehe, p: Person) kind derived {
+    label de official "Person ist Ehegatte dieser Ehe (beide Richtungen der Angabe)";
+    label en unofficial "person is a spouse of this marriage (both directions of the input)";
+}
+pub relation anderer_ehegatte(ehe: Ehe, p: Person, anderer: Person) kind derived {
+    label de official "der andere Ehegatte";
+    label en unofficial "the other spouse";
+}
+
+@source(BGB_P1353) {
+    rule EhegatteErster(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Die Ehe wird von zwei Personen geschlossen (§ 1353 Abs. 1): erster Ehegatte";
+        label en unofficial "The marriage is entered into by two persons (§ 1353 (1)): first spouse";
+        when ehegatten(ehe, a, b);
+        then ehegatte(ehe, a);
+    }
+    rule EhegatteZweiter(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Die Ehe wird von zwei Personen geschlossen (§ 1353 Abs. 1): zweiter Ehegatte";
+        label en unofficial "The marriage is entered into by two persons (§ 1353 (1)): second spouse";
+        when ehegatten(ehe, a, b);
+        then ehegatte(ehe, b);
+    }
+    rule AndererEhegatteVonErstem(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Der andere Ehegatte des ersten ist der zweite";
+        label en unofficial "The other spouse of the first is the second";
+        when ehegatten(ehe, a, b);
+        then anderer_ehegatte(ehe, a, b);
+    }
+    rule AndererEhegatteVonZweitem(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Der andere Ehegatte des zweiten ist der erste";
+        label en unofficial "The other spouse of the second is the first";
+        when ehegatten(ehe, a, b);
+        then anderer_ehegatte(ehe, b, a);
+    }
+}
+
+@source(BGB_P1363)
+rule GesetzlicherGueterstand(ehe: Ehe) strict {
+    label de official "Die Ehegatten leben im Güterstand der Zugewinngemeinschaft, wenn sie nicht durch Ehevertrag etwas anderes vereinbaren (§ 1363 Abs. 1)";
+    label en unofficial "The spouses live under the regime of community of accrued gains unless they agree otherwise by marriage contract (§ 1363 (1))";
+    when kein_ehevertrag(ehe);
+    then gueterstand(ehe, Zugewinngemeinschaft);
+}
+
+@source(BGB_P1408)
+rule VertraglicherGueterstand(ehe: Ehe, g: Gueterstand) strict {
+    label de official "Die Ehegatten können ihre güterrechtlichen Verhältnisse durch Vertrag (Ehevertrag) regeln, insbesondere den Güterstand aufheben oder ändern (§ 1408 Abs. 1): der vereinbarte Güterstand gilt";
+    label en unofficial "The spouses may regulate their property relations by contract, in particular abolish or change the regime (§ 1408 (1)): the agreed regime applies";
+    when ehevertrag_gueterstand(ehe, g);
+    then gueterstand(ehe, g);
+}
+
+// --- Erhöhung des Erbteils § 1371 Abs. 1 -----------------------------------------------------------
+
+pub relation erhoehung_des_erbteils_1371(ehe: Ehe, ueberlebender: Person) kind derived {
+    key(ehe);
+    label de official "Der gesetzliche Erbteil des überlebenden Ehegatten erhöht sich um ein Viertel der Erbschaft (§ 1371 Abs. 1): Zugewinngemeinschaft, durch den Tod beendet";
+    label en unofficial "The statutory share of the surviving spouse increases by one quarter of the estate (§ 1371 (1)): community of accrued gains ended by death";
+}
+
+@source(BGB_P1371)
+rule ErhoehungDesErbteils(ehe: Ehe, verstorbener: Person, ueberlebender: Person) strict {
+    label de official "Wird der Güterstand durch den Tod eines Ehegatten beendet, so wird der Ausgleich des Zugewinns dadurch verwirklicht, dass sich der gesetzliche Erbteil des überlebenden Ehegatten um ein Viertel der Erbschaft erhöht; hierbei ist unerheblich, ob die Ehegatten im einzelnen Falle einen Zugewinn erzielt haben (§ 1371 Abs. 1)";
+    label en unofficial "If the property regime ends with the death of a spouse, the equalisation of accrued gains is effected by increasing the surviving spouse's statutory share by one quarter of the estate, irrespective of whether any gains were made (§ 1371 (1))";
+    when gueterstand(ehe, Zugewinngemeinschaft) and gueterstand_durch_tod_beendet(ehe, verstorbener)
+        and anderer_ehegatte(ehe, verstorbener, ueberlebender);
+    then erhoehung_des_erbteils_1371(ehe, ueberlebender);
+}

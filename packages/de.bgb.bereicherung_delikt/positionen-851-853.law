@@ -1,0 +1,39 @@
+@source(BGB_P851)
+rule PositionBefreiung851(h: Handlung, p: Person, tag: Date) defeasible {
+    label de official "Der Ersatzpflichtige wird durch Leistung an den früheren Besitzer befreit (§ 851)";
+    label en unofficial "The liable person is discharged by payment to the former possessor (§ 851)";
+    when bewegliche_sache(h) and ersatz_an_besitzer_geleistet(h, p);
+    when handlungstag(h, tag);
+    then liberty Liberty851Befreiung {
+        holder p;
+        action befreiende_leistung(h, p);
+        window [tag, infinity);
+    };
+}
+
+@source(BGB_P852)
+rule PositionRestschadensersatz852(h: Handlung, s: Person, v: Person, tag: Date) defeasible {
+    label de official "Der Ersatzpflichtige hat auch nach Verjährung den Erlangten herauszugeben (§ 852)";
+    label en unofficial "The liable person must make restitution even after limitation of the damages claim (§ 852)";
+    when etwas_auf_kosten_des_verletzten_erlangt(h)
+     and handelnder(h, s) and verletzter(h, v)
+     and restanspruch_entstanden_am(h, tag);
+    then duty Duty852Restschadensersatz {
+        bearer s;
+        beneficiary v;
+        achieve restschadensersatzanspruch(h, s, v) during [tag, infinity);
+    };
+}
+
+@source(BGB_P853)
+rule PositionArglisteinrede853(h: Handlung, v: Person, tag: Date) defeasible {
+    label de official "Der Verletzte darf die Erfüllung der durch unerlaubte Handlung erlangten Forderung verweigern (§ 853)";
+    label en unofficial "The injured person has the liberty to refuse performance of a claim obtained through a tort (§ 853)";
+    when forderung_durch_unerlaubte_handlung_erlangt(h) and verletzter(h, v);
+    when handlungstag(h, tag);
+    then liberty Liberty853Arglisteinrede {
+        holder v;
+        action arglisteinrede(h, v);
+        window [tag, infinity);
+    };
+}

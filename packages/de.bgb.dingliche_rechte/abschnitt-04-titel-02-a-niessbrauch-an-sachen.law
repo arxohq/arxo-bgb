@@ -1,0 +1,1038 @@
+// --- Buch 3 Abschnitt 4 Titel 2: Nießbrauch an Sachen (§§ 1030–1067) --------------------------------
+//
+// EINE ENTITÄT für Nießbrauch an beweglichen Sachen UND an Grundstücken:
+// `Grundstueck : Sache` (Nachbarpaket), also deckt `belastungsgegenstand_sache`
+// (Nabe dieses Pakets) beide Fälle; grundstücksspezifische Normen (§ 1031,
+// § 1037 Abs. 2, § 1043, § 1048, § 1055 Abs. 2, § 1056, § 1062) lesen zusätzlich
+// `belastungsgegenstand_grundstueck`. Drei Kanäle bewertender Merkmale
+// (DECISION-0194): „ordnungsmäßige Wirtschaft“/„gewöhnliche Unterhaltung“
+// (§§ 1036, 1037, 1039, 1041, 1043, 1045, 1046, 1048, 1050) — Wertung des
+// Gerichts; Kenntnis (§ 1058), Rechtskraft (§ 1052) — festgestellte Tatsachen.
+// Verweise auf Miet-/Pachtrecht (§§ 1056, 1059d) und auf Geschäftsführung ohne
+// Auftrag (§ 1049 Abs. 1) liegen außerhalb des Pakets (`de.bgb.miete`,
+// `de.bgb.schuldrecht_at`) und werden hier terminal, nicht transitiv gerechnet
+// (Ledger D-11-08 f.). Übertragbarkeit bei juristischer Person (§§ 1059a–e) —
+// Verwaltungsverfahren der Landesbehörde, GRENZE (README).
+
+pub entity Niessbrauch : Belastung {
+    label de official "Nießbrauch: Belastung einer Sache, kraft deren der Berechtigte die Nutzungen der Sache zu ziehen berechtigt ist (§ 1030 Abs. 1)";
+    label en unofficial "usufruct: encumbrance of a thing under which the entitled person may draw the benefits of the thing (§ 1030 (1))";
+}
+
+// --- § 1030: Inhalt --------------------------------------------------------------------------------
+
+pub relation nutzung_ausgeschlossen(n: Niessbrauch) kind empirical {
+    label de official "der Nießbrauch ist durch Ausschluss einzelner Nutzungen beschränkt (§ 1030 Abs. 2)";
+    label en unofficial "the usufruct is limited by the exclusion of individual benefits (§ 1030 (2))";
+}
+pub relation niessbrauch_berechtigt_zur_nutzung(n: Niessbrauch) kind derived {
+    label de official "der Berechtigte darf die Nutzungen der Sache ziehen (§ 1030 Abs. 1)";
+    label en unofficial "the entitled person may draw the benefits of the thing (§ 1030 (1))";
+}
+@source(BGB_P1030)
+rule NiessbrauchBerechtigtZurNutzung(n: Niessbrauch, s: Sache, p: Person) strict {
+    label de official "Eine Sache kann in der Weise belastet werden, dass derjenige, zu dessen Gunsten die Belastung erfolgt, berechtigt ist, die Nutzungen der Sache zu ziehen (§ 1030 Abs. 1)";
+    label en unofficial "A thing may be encumbered so that the beneficiary is entitled to draw the benefits of the thing (§ 1030 (1))";
+    when belastungsgegenstand_sache(n, s) and berechtigter(n, p);
+    then niessbrauch_berechtigt_zur_nutzung(n);
+}
+
+// --- § 1031: Zubehör --------------------------------------------------------------------------------
+
+pub relation niessbrauch_am_zubehoer(n: Niessbrauch, x: Gegenstand) kind derived {
+    label de official "mit dem Nießbrauch an einem Grundstück erlangt der Nießbraucher den Nießbrauch an dem Zubehör (§ 1031)";
+    label en unofficial "with the usufruct of land the usufructuary obtains the usufruct of the accessories (§ 1031)";
+}
+@source(BGB_P1031)
+rule NiessbrauchAmZubehoer(n: Niessbrauch, g: Grundstueck, x: Gegenstand) strict {
+    label de official "Mit dem Nießbrauch an einem Grundstück erlangt der Nießbraucher den Nießbrauch an dem Zubehör nach der für den Erwerb des Eigentums geltenden Vorschrift des § 926 (§ 1031)";
+    label en unofficial "With the usufruct of land the usufructuary obtains the usufruct of the accessories under § 926 (§ 1031)";
+    when belastungsgegenstand_grundstueck(n, g) and gegenstand_des_grundstuecks(x, g) and zubehoerstueck(x);
+    then niessbrauch_am_zubehoer(n, x);
+}
+
+// --- § 1032: Bestellung an beweglichen Sachen -------------------------------------------------------
+
+pub relation sache_dem_erwerber_uebergeben(n: Niessbrauch) kind empirical {
+    label de official "der Eigentümer hat die bewegliche Sache dem Erwerber übergeben (§ 1032 Satz 1)";
+    label en unofficial "the owner has handed over the movable thing to the acquirer (§ 1032 sentence 1)";
+}
+pub relation einigkeit_ueber_den_niessbrauch(n: Niessbrauch) kind empirical {
+    label de official "Eigentümer und Erwerber sind darüber einig, dass diesem der Nießbrauch zustehen soll (§ 1032 Satz 1)";
+    label en unofficial "owner and acquirer agree that the usufruct is to vest in the acquirer (§ 1032 sentence 1)";
+}
+pub relation niessbrauch_an_beweglicher_sache_bestellt(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch an der beweglichen Sache ist wirksam bestellt (§ 1032 Satz 1)";
+    label en unofficial "the usufruct of the movable thing has been validly created (§ 1032 sentence 1)";
+}
+@source(BGB_P1032)
+rule NiessbrauchAnBeweglicherSacheBestellt(n: Niessbrauch, s: Sache) strict {
+    label de official "Zur Bestellung des Nießbrauchs an einer beweglichen Sache ist erforderlich, dass der Eigentümer die Sache dem Erwerber übergibt und beide darüber einig sind, dass diesem der Nießbrauch zustehen soll (§ 1032 Satz 1)";
+    label en unofficial "Creation of a usufruct of a movable thing requires the owner to hand it over to the acquirer and both to agree the usufruct is to vest in the acquirer (§ 1032 sentence 1)";
+    when belastungsgegenstand_sache(n, s) and sache_dem_erwerber_uebergeben(n) and einigkeit_ueber_den_niessbrauch(n);
+    then niessbrauch_an_beweglicher_sache_bestellt(n);
+}
+
+// --- § 1033: Erwerb durch Ersitzung ------------------------------------------------------------------
+
+pub relation ersitzungsvoraussetzungen_erfuellt(n: Niessbrauch) kind empirical {
+    label de official "die für den Erwerb des Eigentums durch Ersitzung geltenden Voraussetzungen sind erfüllt (§ 1033 Satz 2)";
+    label en unofficial "the requirements for acquisition of ownership by prescription are met (§ 1033 sentence 2)";
+}
+pub relation niessbrauch_durch_ersitzung_erworben(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch an der beweglichen Sache ist durch Ersitzung erworben (§ 1033 Satz 1)";
+    label en unofficial "the usufruct of the movable thing has been acquired by prescription (§ 1033 sentence 1)";
+}
+@source(BGB_P1033)
+rule NiessbrauchDurchErsitzungErworben(n: Niessbrauch) strict {
+    label de official "Der Nießbrauch an einer beweglichen Sache kann durch Ersitzung erworben werden; die für den Erwerb des Eigentums durch Ersitzung geltenden Vorschriften finden entsprechende Anwendung (§ 1033)";
+    label en unofficial "The usufruct of a movable thing may be acquired by prescription under the rules for acquisition of ownership by prescription (§ 1033)";
+    when ersitzungsvoraussetzungen_erfuellt(n);
+    then niessbrauch_durch_ersitzung_erworben(n);
+}
+
+// --- § 1034: Feststellung des Zustands ---------------------------------------------------------------
+
+pub relation anspruch_auf_zustandsfeststellung(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Nießbraucher und der Eigentümer können den Zustand der Sache auf eigene Kosten durch Sachverständige feststellen lassen (§ 1034)";
+    label en unofficial "the usufructuary and the owner may each have the condition of the thing determined by experts at their own cost (§ 1034)";
+}
+@source(BGB_P1034) {
+    rule AnspruchDesNiessbrauchersAufZustandsfeststellung(n: Niessbrauch, p: Person) strict {
+        label de official "Der Nießbraucher kann den Zustand der Sache auf seine Kosten durch Sachverständige feststellen lassen (§ 1034 Satz 1)";
+        label en unofficial "The usufructuary may have the condition of the thing determined by experts at their own cost (§ 1034 sentence 1)";
+        when berechtigter(n, p);
+        then anspruch_auf_zustandsfeststellung(n, p);
+    }
+    rule AnspruchDesEigentuemersAufZustandsfeststellung(n: Niessbrauch, p: Person) strict {
+        label de official "Das gleiche Recht steht dem Eigentümer zu (§ 1034 Satz 2)";
+        label en unofficial "The owner has the same right (§ 1034 sentence 2)";
+        when besteller(n, p);
+        then anspruch_auf_zustandsfeststellung(n, p);
+    }
+}
+
+// --- § 1035: Verzeichnis -----------------------------------------------------------------------------
+
+pub relation gegenstand_ist_inbegriff_von_sachen(n: Niessbrauch) kind empirical {
+    label de official "Gegenstand des Nießbrauchs ist ein Inbegriff von Sachen (§ 1035 Satz 1)";
+    label en unofficial "the usufruct concerns an aggregate of things (§ 1035 sentence 1)";
+}
+pub relation mitwirkungspflicht_am_verzeichnis(n: Niessbrauch) kind derived {
+    label de official "Nießbraucher und Eigentümer sind einander zur Mitwirkung an einem Verzeichnis der Sachen verpflichtet (§ 1035 Satz 1)";
+    label en unofficial "usufructuary and owner are mutually obliged to cooperate in an inventory of the things (§ 1035 sentence 1)";
+}
+pub relation verzeichnis_verlangt_von(n: Niessbrauch, p: Person) kind empirical {
+    label de official "eine Partei verlangt die Aufnahme oder Beglaubigung des Verzeichnisses (§ 1035 Satz 4)";
+    label en unofficial "a party demands the drawing up or certification of the inventory (§ 1035 sentence 4)";
+}
+pub relation kostenlast_des_verzeichnisses(n: Niessbrauch, p: Person) kind derived {
+    label de official "die Kosten der Aufnahme oder Beglaubigung trägt und schießt vor, wer sie verlangt (§ 1035 Satz 4)";
+    label en unofficial "the party demanding the drawing up or certification bears and advances its costs (§ 1035 sentence 4)";
+}
+@source(BGB_P1035) {
+    rule MitwirkungspflichtAmVerzeichnis(n: Niessbrauch) strict {
+        label de official "Bei dem Nießbrauch an einem Inbegriff von Sachen sind Nießbraucher und Eigentümer einander verpflichtet, zur Aufnahme eines Verzeichnisses mitzuwirken (§ 1035 Satz 1)";
+        label en unofficial "In the case of a usufruct of an aggregate of things, usufructuary and owner must cooperate in drawing up an inventory (§ 1035 sentence 1)";
+        when gegenstand_ist_inbegriff_von_sachen(n);
+        then mitwirkungspflicht_am_verzeichnis(n);
+    }
+    rule KostenlastDesVerzeichnisses(n: Niessbrauch, p: Person) strict {
+        label de official "Die Kosten der Aufnahme oder der Beglaubigung hat derjenige zu tragen und vorzuschießen, welcher sie verlangt (§ 1035 Satz 4)";
+        label en unofficial "Whoever demands the drawing up or certification must bear and advance its costs (§ 1035 sentence 4)";
+        when verzeichnis_verlangt_von(n, p);
+        then kostenlast_des_verzeichnisses(n, p);
+    }
+}
+
+// --- § 1036: Besitzrecht; Ausübung des Nießbrauchs ----------------------------------------------------
+
+pub relation niessbrauch_besitzrecht(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher ist zum Besitz der Sache berechtigt (§ 1036 Abs. 1)";
+    label en unofficial "the usufructuary is entitled to possess the thing (§ 1036 (1))";
+}
+pub relation pflicht_ordnungsmaessiger_wirtschaft(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat die bisherige wirtschaftliche Bestimmung der Sache aufrechtzuerhalten und nach den Regeln einer ordnungsmäßigen Wirtschaft zu verfahren (§ 1036 Abs. 2)";
+    label en unofficial "the usufructuary must maintain the thing's previous economic purpose and proceed by the rules of proper management (§ 1036 (2))";
+}
+@source(BGB_P1036) {
+    rule NiessbrauchBesitzrecht(n: Niessbrauch, s: Sache) strict {
+        label de official "Der Nießbraucher ist zum Besitz der Sache berechtigt (§ 1036 Abs. 1)";
+        label en unofficial "The usufructuary is entitled to possess the thing (§ 1036 (1))";
+        when belastungsgegenstand_sache(n, s);
+        then niessbrauch_besitzrecht(n);
+    }
+    rule PflichtOrdnungsmaessigerWirtschaft(n: Niessbrauch, s: Sache) strict {
+        label de official "Er hat bei der Ausübung des Nutzungsrechts die bisherige wirtschaftliche Bestimmung der Sache aufrechtzuerhalten und nach den Regeln einer ordnungsmäßigen Wirtschaft zu verfahren (§ 1036 Abs. 2)";
+        label en unofficial "In exercising the right of use the usufructuary must maintain the thing's economic purpose and proceed by the rules of proper management (§ 1036 (2))";
+        when belastungsgegenstand_sache(n, s);
+        then pflicht_ordnungsmaessiger_wirtschaft(n);
+    }
+}
+
+// --- § 1037: Umgestaltung ------------------------------------------------------------------------------
+
+pub relation keine_befugnis_zur_umgestaltung(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher ist nicht berechtigt, die Sache umzugestalten oder wesentlich zu verändern (§ 1037 Abs. 1)";
+    label en unofficial "the usufructuary is not entitled to remodel the thing or change it substantially (§ 1037 (1))";
+}
+pub relation neue_anlage_zur_bodenbestandteilgewinnung(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher errichtet eine neue Anlage zur Gewinnung von Steinen, Kies, Sand, Lehm, Ton, Mergel, Torf oder sonstigen Bodenbestandteilen (§ 1037 Abs. 2)";
+    label en unofficial "the usufructuary erects a new installation for extracting stone, gravel, sand, clay, loam, marl, peat or other soil components (§ 1037 (2))";
+}
+@source(BGB_P1037)
+pub external judgment relation wirtschaftliche_bestimmung_nicht_wesentlich_veraendert(n: Niessbrauch) {
+    authority Court;
+    label de official "die wirtschaftliche Bestimmung des Grundstücks wird durch die neue Anlage nicht wesentlich verändert (§ 1037 Abs. 2) — Wertung des Gerichts";
+    label en unofficial "the economic purpose of the land is not substantially changed by the new installation (§ 1037 (2)) — evaluation by the court";
+}
+pub relation neue_anlage_zulaessig(n: Niessbrauch) kind derived {
+    label de official "die neue Anlage zur Bodenbestandteilgewinnung ist zulässig (§ 1037 Abs. 2)";
+    label en unofficial "the new installation for extracting soil components is admissible (§ 1037 (2))";
+}
+@source(BGB_P1037) {
+    rule KeineBefugnisZurUmgestaltung(n: Niessbrauch, s: Sache) strict {
+        label de official "Der Nießbraucher ist nicht berechtigt, die Sache umzugestalten oder wesentlich zu verändern (§ 1037 Abs. 1)";
+        label en unofficial "The usufructuary is not entitled to remodel the thing or change it substantially (§ 1037 (1))";
+        when belastungsgegenstand_sache(n, s);
+        then keine_befugnis_zur_umgestaltung(n);
+    }
+    rule NeueAnlageZulaessig(n: Niessbrauch, g: Grundstueck) strict {
+        label de official "Der Nießbraucher eines Grundstücks darf neue Anlagen zur Gewinnung von Bodenbestandteilen errichten, sofern die wirtschaftliche Bestimmung des Grundstücks dadurch nicht wesentlich verändert wird (§ 1037 Abs. 2)";
+        label en unofficial "The usufructuary of land may erect new installations for extracting soil components provided the land's economic purpose is not substantially changed (§ 1037 (2))";
+        when belastungsgegenstand_grundstueck(n, g) and neue_anlage_zur_bodenbestandteilgewinnung(n)
+            and wirtschaftliche_bestimmung_nicht_wesentlich_veraendert(n);
+        then neue_anlage_zulaessig(n);
+    }
+}
+
+// --- § 1038: Wirtschaftsplan für Wald und Bergwerk --------------------------------------------------
+
+pub relation gegenstand_ist_wald_oder_bergwerk(n: Niessbrauch) kind empirical {
+    label de official "Gegenstand des Nießbrauchs ist ein Wald, ein Bergwerk oder eine andere auf Gewinnung von Bodenbestandteilen gerichtete Anlage (§ 1038 Abs. 1, 2)";
+    label en unofficial "the usufruct concerns a forest, a mine or another installation directed at extracting soil components (§ 1038 (1), (2))";
+}
+pub relation anspruch_auf_wirtschaftsplan(n: Niessbrauch, p: Person) kind derived {
+    label de official "Eigentümer und Nießbraucher können verlangen, dass Maß der Nutzung und Art der wirtschaftlichen Behandlung durch einen Wirtschaftsplan festgestellt werden (§ 1038 Abs. 1 Satz 1)";
+    label en unofficial "owner and usufructuary may each demand that the extent of use and manner of management be determined by a management plan (§ 1038 (1) sentence 1)";
+}
+@source(BGB_P1038) {
+    rule AnspruchDesNiessbrauchersAufWirtschaftsplan(n: Niessbrauch, p: Person) strict {
+        label de official "Ist ein Wald Gegenstand des Nießbrauchs, so kann der Nießbraucher verlangen, dass Maß der Nutzung und Art der wirtschaftlichen Behandlung durch einen Wirtschaftsplan festgestellt werden (§ 1038 Abs. 1 Satz 1)";
+        label en unofficial "If a forest is the object of the usufruct, the usufructuary may demand that a management plan determine the extent of use and manner of management (§ 1038 (1) sentence 1)";
+        when gegenstand_ist_wald_oder_bergwerk(n) and berechtigter(n, p);
+        then anspruch_auf_wirtschaftsplan(n, p);
+    }
+    rule AnspruchDesEigentuemersAufWirtschaftsplan(n: Niessbrauch, p: Person) strict {
+        label de official "... so kann auch der Eigentümer verlangen, dass Maß der Nutzung und Art der wirtschaftlichen Behandlung durch einen Wirtschaftsplan festgestellt werden (§ 1038 Abs. 1 Satz 1)";
+        label en unofficial "... the owner may likewise demand that a management plan determine the extent of use and manner of management (§ 1038 (1) sentence 1)";
+        when gegenstand_ist_wald_oder_bergwerk(n) and besteller(n, p);
+        then anspruch_auf_wirtschaftsplan(n, p);
+    }
+}
+
+// --- § 1039: Übermäßige Fruchtziehung -----------------------------------------------------------------
+
+pub relation fruchtziehung_ordnungswidrig_oder_uebermaessig(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher zieht Früchte den Regeln ordnungsmäßiger Wirtschaft zuwider oder infolge eines besonderen Ereignisses im Übermaß (§ 1039 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary draws fruits contrary to the rules of proper management or, owing to a special event, excessively (§ 1039 (1) sentence 1)";
+}
+pub relation wert_der_uebermaessig_gezogenen_fruechte(n: Niessbrauch, betrag: Money) kind empirical {
+    key(n);
+    label de official "Wert der ordnungswidrig oder übermäßig gezogenen Früchte (§ 1039 Abs. 1 Satz 2)";
+    label en unofficial "value of the fruits drawn contrary to proper management or excessively (§ 1039 (1) sentence 2)";
+}
+pub relation niessbraucher_erwirbt_eigentum_an_fruechten(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher erwirbt gleichwohl das Eigentum an den Früchten (§ 1039 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary nonetheless acquires ownership of the fruits (§ 1039 (1) sentence 1)";
+}
+pub relation ersatzpflicht_fuer_uebermaessige_fruchtziehung(n: Niessbrauch, betrag: Money) kind derived {
+    label de official "der Nießbraucher ist verpflichtet, den Wert der Früchte dem Eigentümer bei der Beendigung des Nießbrauchs zu ersetzen und dafür Sicherheit zu leisten (§ 1039 Abs. 1 Satz 2)";
+    label en unofficial "the usufructuary must reimburse the value of the fruits to the owner on termination and provide security for it (§ 1039 (1) sentence 2)";
+}
+@source(BGB_P1039) {
+    rule NiessbraucherErwirbtEigentumTrotzUebermaesigerFruchtziehung(n: Niessbrauch) strict {
+        label de official "Der Nießbraucher erwirbt das Eigentum auch an solchen Früchten, die er den Regeln ordnungsmäßiger Wirtschaft zuwider oder im Übermaß zieht (§ 1039 Abs. 1 Satz 1)";
+        label en unofficial "The usufructuary acquires ownership even of fruits drawn contrary to proper management or excessively (§ 1039 (1) sentence 1)";
+        when fruchtziehung_ordnungswidrig_oder_uebermaessig(n);
+        then niessbraucher_erwirbt_eigentum_an_fruechten(n);
+    }
+    rule ErsatzpflichtFuerUebermaesigeFruchtziehung(n: Niessbrauch, betrag: Money) strict {
+        label de official "Er ist verpflichtet, den Wert der Früchte dem Eigentümer bei der Beendigung des Nießbrauchs zu ersetzen und für die Erfüllung dieser Verpflichtung Sicherheit zu leisten (§ 1039 Abs. 1 Satz 2)";
+        label en unofficial "They must reimburse the value of the fruits to the owner on termination and provide security for that duty (§ 1039 (1) sentence 2)";
+        when fruchtziehung_ordnungswidrig_oder_uebermaessig(n) and wert_der_uebermaessig_gezogenen_fruechte(n, betrag);
+        then ersatzpflicht_fuer_uebermaessige_fruchtziehung(n, betrag);
+    }
+}
+
+// --- § 1040: Schatz --------------------------------------------------------------------------------
+
+pub relation schatz_in_der_sache_gefunden(n: Niessbrauch) kind empirical {
+    label de official "in der Sache wird ein Schatz gefunden (§ 1040)";
+    label en unofficial "a treasure is found in the thing (§ 1040)";
+}
+pub relation niessbrauch_erstreckt_sich_nicht_auf_schatzanteil(n: Niessbrauch) kind derived {
+    label de official "das Recht des Nießbrauchers erstreckt sich nicht auf den Anteil des Eigentümers an einem in der Sache gefundenen Schatz (§ 1040)";
+    label en unofficial "the usufructuary's right does not extend to the owner's share of a treasure found in the thing (§ 1040)";
+}
+@source(BGB_P1040)
+rule NiessbrauchErstrecktSichNichtAufSchatzanteil(n: Niessbrauch) strict {
+    label de official "Das Recht des Nießbrauchers erstreckt sich nicht auf den Anteil des Eigentümers an einem Schatze, der in der Sache gefunden wird (§ 1040)";
+    label en unofficial "The usufructuary's right does not extend to the owner's share of a treasure found in the thing (§ 1040)";
+    when schatz_in_der_sache_gefunden(n);
+    then niessbrauch_erstreckt_sich_nicht_auf_schatzanteil(n);
+}
+
+// --- § 1041: Erhaltung der Sache -------------------------------------------------------------------
+//
+// „gewöhnliche Unterhaltung“ — Wertung des Gerichts (DECISION-0194, Paketkopf).
+
+pub relation ausbesserung_oder_erneuerung_erforderlich(n: Niessbrauch) kind empirical {
+    label de official "eine Ausbesserung oder Erneuerung der Sache ist erforderlich geworden (§ 1041 Satz 2)";
+    label en unofficial "a repair or renewal of the thing has become necessary (§ 1041 sentence 2)";
+}
+@source(BGB_P1041)
+pub external judgment relation gehoert_zur_gewoehnlichen_unterhaltung(n: Niessbrauch) {
+    authority Court;
+    label de official "die erforderliche Ausbesserung oder Erneuerung gehört zur gewöhnlichen Unterhaltung der Sache (§ 1041 Satz 2) — Wertung des Gerichts";
+    label en unofficial "the necessary repair or renewal belongs to the ordinary upkeep of the thing (§ 1041 sentence 2) — evaluation by the court";
+}
+pub relation erhaltungspflicht_des_niessbrauchers(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat für die Erhaltung der Sache in ihrem wirtschaftlichen Bestand zu sorgen (§ 1041 Satz 1)";
+    label en unofficial "the usufructuary must ensure the preservation of the thing's economic substance (§ 1041 sentence 1)";
+}
+pub relation ausbesserungspflicht_des_niessbrauchers(n: Niessbrauch) kind derived {
+    label de official "die Ausbesserung oder Erneuerung obliegt dem Nießbraucher, weil sie zur gewöhnlichen Unterhaltung gehört (§ 1041 Satz 2)";
+    label en unofficial "the repair or renewal falls to the usufructuary because it belongs to ordinary upkeep (§ 1041 sentence 2)";
+}
+@source(BGB_P1041) {
+    rule ErhaltungspflichtDesNiessbrauchers(n: Niessbrauch, s: Sache) strict {
+        label de official "Der Nießbraucher hat für die Erhaltung der Sache in ihrem wirtschaftlichen Bestand zu sorgen (§ 1041 Satz 1)";
+        label en unofficial "The usufructuary must ensure the preservation of the thing's economic substance (§ 1041 sentence 1)";
+        when belastungsgegenstand_sache(n, s);
+        then erhaltungspflicht_des_niessbrauchers(n);
+    }
+    rule AusbesserungspflichtBeiGewoehnlicherUnterhaltung(n: Niessbrauch) strict {
+        label de official "Ausbesserungen und Erneuerungen liegen dem Nießbraucher nur insoweit ob, als sie zu der gewöhnlichen Unterhaltung der Sache gehören (§ 1041 Satz 2)";
+        label en unofficial "Repairs and renewals fall to the usufructuary only in so far as they belong to the ordinary upkeep of the thing (§ 1041 sentence 2)";
+        when ausbesserung_oder_erneuerung_erforderlich(n) and gehoert_zur_gewoehnlichen_unterhaltung(n);
+        then ausbesserungspflicht_des_niessbrauchers(n);
+    }
+}
+
+// --- § 1042: Anzeigepflicht des Nießbrauchers ---------------------------------------------------------
+
+pub relation sache_zerstoert_oder_beschaedigt(n: Niessbrauch) kind empirical {
+    label de official "die Sache wird zerstört oder beschädigt (§ 1042 Satz 1)";
+    label en unofficial "the thing is destroyed or damaged (§ 1042 sentence 1)";
+}
+pub relation aussergewoehnliche_massnahme_erforderlich(n: Niessbrauch) kind empirical {
+    label de official "eine außergewöhnliche Ausbesserung, Erneuerung oder Schutzvorkehrung wird erforderlich (§ 1042 Satz 1)";
+    label en unofficial "an extraordinary repair, renewal or protective measure becomes necessary (§ 1042 sentence 1)";
+}
+pub relation dritter_masst_sich_ein_recht_an(n: Niessbrauch) kind empirical {
+    label de official "ein Dritter maßt sich ein Recht an der Sache an (§ 1042 Satz 2)";
+    label en unofficial "a third party asserts a right in the thing (§ 1042 sentence 2)";
+}
+pub relation anzeigepflicht_des_niessbrauchers(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Nießbraucher hat dem Eigentümer unverzüglich Anzeige zu machen (§ 1042)";
+    label en unofficial "the usufructuary must notify the owner without delay (§ 1042)";
+}
+@source(BGB_P1042) {
+    rule AnzeigepflichtBeiZerstoerungOderBeschaedigung(n: Niessbrauch, p: Person) strict {
+        label de official "Wird die Sache zerstört oder beschädigt, so hat der Nießbraucher dem Eigentümer unverzüglich Anzeige zu machen (§ 1042 Satz 1)";
+        label en unofficial "If the thing is destroyed or damaged, the usufructuary must notify the owner without delay (§ 1042 sentence 1)";
+        when sache_zerstoert_oder_beschaedigt(n) and besteller(n, p);
+        then anzeigepflicht_des_niessbrauchers(n, p);
+    }
+    rule AnzeigepflichtBeiAussergewoehnlicherMassnahme(n: Niessbrauch, p: Person) strict {
+        label de official "Wird eine außergewöhnliche Ausbesserung, Erneuerung oder Schutzvorkehrung erforderlich, so hat der Nießbraucher unverzüglich Anzeige zu machen (§ 1042 Satz 1)";
+        label en unofficial "If an extraordinary repair, renewal or protective measure becomes necessary, the usufructuary must notify without delay (§ 1042 sentence 1)";
+        when aussergewoehnliche_massnahme_erforderlich(n) and besteller(n, p);
+        then anzeigepflicht_des_niessbrauchers(n, p);
+    }
+    rule AnzeigepflichtBeiDritteinmassung(n: Niessbrauch, p: Person) strict {
+        label de official "Das Gleiche gilt, wenn sich ein Dritter ein Recht an der Sache anmaßt (§ 1042 Satz 2)";
+        label en unofficial "The same applies where a third party asserts a right in the thing (§ 1042 sentence 2)";
+        when dritter_masst_sich_ein_recht_an(n) and besteller(n, p);
+        then anzeigepflicht_des_niessbrauchers(n, p);
+    }
+}
+
+// --- §§ 1043, 1044: Außergewöhnliche Ausbesserung ------------------------------------------------------
+
+pub relation niessbraucher_nimmt_ausbesserung_selbst_vor(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher nimmt die erforderlich gewordene außergewöhnliche Ausbesserung oder Erneuerung selbst vor (§ 1043)";
+    label en unofficial "the usufructuary personally carries out the necessary extraordinary repair or renewal (§ 1043)";
+}
+@source(BGB_P1043)
+pub external judgment relation verwendung_innerhalb_der_grenzen_ordnungsmaessiger_wirtschaft(n: Niessbrauch) {
+    authority Court;
+    label de official "die Verwendung von Grundstücksbestandteilen zur Ausbesserung liegt innerhalb der Grenzen ordnungsmäßiger Wirtschaft (§ 1043) — Wertung des Gerichts";
+    label en unofficial "the use of components of the land for the repair lies within the limits of proper management (§ 1043) — evaluation by the court";
+}
+pub relation befugnis_zur_verwendung_von_bestandteilen(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher darf zur Ausbesserung Bestandteile des Grundstücks verwenden, die nicht zu den ihm gebührenden Früchten gehören (§ 1043)";
+    label en unofficial "the usufructuary may use components of the land not among the fruits due to them for the repair (§ 1043)";
+}
+pub relation duldungspflicht_bei_nichtselbstvornahme(n: Niessbrauch, p: Person) kind derived {
+    label de official "nimmt der Nießbraucher die Ausbesserung nicht selbst vor, so hat er dem Eigentümer die Vornahme durch diesen zu gestatten (§ 1044)";
+    label en unofficial "if the usufructuary does not carry out the repair themselves, they must permit the owner to do so (§ 1044)";
+}
+@source(BGB_P1043)
+rule BefugnisZurVerwendungVonBestandteilen(n: Niessbrauch, g: Grundstueck) strict {
+    label de official "Nimmt der Nießbraucher eines Grundstücks eine erforderlich gewordene außergewöhnliche Ausbesserung selbst vor, so darf er innerhalb der Grenzen ordnungsmäßiger Wirtschaft auch Bestandteile des Grundstücks verwenden (§ 1043)";
+    label en unofficial "If the usufructuary of land personally carries out a necessary extraordinary repair, they may also use components of the land within the limits of proper management (§ 1043)";
+    when belastungsgegenstand_grundstueck(n, g) and niessbraucher_nimmt_ausbesserung_selbst_vor(n)
+        and verwendung_innerhalb_der_grenzen_ordnungsmaessiger_wirtschaft(n);
+    then befugnis_zur_verwendung_von_bestandteilen(n);
+}
+@source(BGB_P1044)
+rule DuldungspflichtBeiNichtselbstvornahme(n: Niessbrauch, p: Person) strict {
+    label de official "Nimmt der Nießbraucher eine erforderlich gewordene Ausbesserung nicht selbst vor, so hat er dem Eigentümer die Vornahme zu gestatten (§ 1044)";
+    label en unofficial "If the usufructuary does not personally carry out a necessary repair, they must permit the owner to do so (§ 1044)";
+    when aussergewoehnliche_massnahme_erforderlich(n) and not niessbraucher_nimmt_ausbesserung_selbst_vor(n) and besteller(n, p);
+    then duldungspflicht_bei_nichtselbstvornahme(n, p);
+}
+
+// --- §§ 1045, 1046: Versicherung ---------------------------------------------------------------------
+
+@source(BGB_P1045)
+pub external judgment relation versicherung_entspricht_ordnungsmaessiger_wirtschaft(n: Niessbrauch) {
+    authority Court;
+    label de official "die Versicherung der Sache entspricht einer ordnungsmäßigen Wirtschaft (§ 1045 Abs. 1 Satz 1) — Wertung des Gerichts";
+    label en unofficial "insuring the thing accords with proper management (§ 1045 (1) sentence 1) — evaluation by the court";
+}
+pub relation versicherungspflicht_des_niessbrauchers(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat die Sache für die Dauer des Nießbrauchs auf seine Kosten zu versichern; die Forderung gegen den Versicherer steht dem Eigentümer zu (§ 1045 Abs. 1)";
+    label en unofficial "the usufructuary must insure the thing for the duration of the usufruct at their own cost; the claim against the insurer belongs to the owner (§ 1045 (1))";
+}
+pub relation sache_bereits_versichert(n: Niessbrauch) kind empirical {
+    label de official "die Sache ist bereits versichert (§ 1045 Abs. 2)";
+    label en unofficial "the thing is already insured (§ 1045 (2))";
+}
+pub relation praemienlast_des_niessbrauchers(n: Niessbrauch) kind derived {
+    label de official "die Versicherungszahlungen fallen dem Nießbraucher für die Dauer des Nießbrauchs zur Last, soweit er zur Versicherung verpflichtet sein würde (§ 1045 Abs. 2)";
+    label en unofficial "the insurance payments fall to the usufructuary for the duration of the usufruct, to the extent they would be obliged to insure (§ 1045 (2))";
+}
+@source(BGB_P1045) {
+    rule VersicherungspflichtDesNiessbrauchers(n: Niessbrauch, s: Sache) strict {
+        label de official "Der Nießbraucher hat die Sache für die Dauer des Nießbrauchs gegen Brandschaden und sonstige Unfälle auf seine Kosten zu versichern, wenn die Versicherung einer ordnungsmäßigen Wirtschaft entspricht (§ 1045 Abs. 1 Satz 1)";
+        label en unofficial "The usufructuary must insure the thing against fire and other accidents at their own cost for the duration of the usufruct, where insurance accords with proper management (§ 1045 (1) sentence 1)";
+        when belastungsgegenstand_sache(n, s) and versicherung_entspricht_ordnungsmaessiger_wirtschaft(n);
+        then versicherungspflicht_des_niessbrauchers(n);
+    }
+    rule PraemienlastDesNiessbrauchers(n: Niessbrauch) strict {
+        label de official "Ist die Sache bereits versichert, so fallen die Versicherungszahlungen dem Nießbraucher für die Dauer des Nießbrauchs zur Last, soweit er zur Versicherung verpflichtet sein würde (§ 1045 Abs. 2)";
+        label en unofficial "If the thing is already insured, the insurance payments fall to the usufructuary for the duration of the usufruct, to the extent they would be obliged to insure (§ 1045 (2))";
+        when sache_bereits_versichert(n) and versicherung_entspricht_ordnungsmaessiger_wirtschaft(n);
+        then praemienlast_des_niessbrauchers(n);
+    }
+}
+
+pub relation schaden_unter_die_versicherung_fallend(n: Niessbrauch) kind empirical {
+    label de official "ein unter die Versicherung fallender Schaden tritt ein (§ 1046 Abs. 2 Satz 1)";
+    label en unofficial "damage covered by the insurance occurs (§ 1046 (2) sentence 1)";
+}
+@source(BGB_P1046)
+pub external judgment relation wiederherstellung_entspricht_ordnungsmaessiger_wirtschaft(n: Niessbrauch) {
+    authority Court;
+    label de official "die Verwendung der Versicherungssumme zur Wiederherstellung entspricht einer ordnungsmäßigen Wirtschaft (§ 1046 Abs. 2 Satz 1) — Wertung des Gerichts";
+    label en unofficial "using the insurance sum for restoration accords with proper management (§ 1046 (2) sentence 1) — evaluation by the court";
+}
+pub relation anspruch_auf_verwendung_der_versicherungssumme(n: Niessbrauch, p: Person) kind derived {
+    label de official "Eigentümer und Nießbraucher können verlangen, dass die Versicherungssumme zur Wiederherstellung der Sache verwendet wird (§ 1046 Abs. 2 Satz 1)";
+    label en unofficial "owner and usufructuary may each demand that the insurance sum be used to restore the thing (§ 1046 (2) sentence 1)";
+}
+@source(BGB_P1046) {
+    rule AnspruchDesEigentuemersAufVerwendung(n: Niessbrauch, p: Person) strict {
+        label de official "Tritt ein unter die Versicherung fallender Schaden ein, so kann der Eigentümer verlangen, dass die Versicherungssumme zur Wiederherstellung der Sache verwendet wird, soweit es ordnungsmäßiger Wirtschaft entspricht (§ 1046 Abs. 2 Satz 1)";
+        label en unofficial "If damage covered by the insurance occurs, the owner may demand the insurance sum be used to restore the thing, in so far as this accords with proper management (§ 1046 (2) sentence 1)";
+        when schaden_unter_die_versicherung_fallend(n) and wiederherstellung_entspricht_ordnungsmaessiger_wirtschaft(n) and besteller(n, p);
+        then anspruch_auf_verwendung_der_versicherungssumme(n, p);
+    }
+    rule AnspruchDesNiessbrauchersAufVerwendung(n: Niessbrauch, p: Person) strict {
+        label de official "... so kann auch der Nießbraucher verlangen, dass die Versicherungssumme zur Wiederherstellung der Sache verwendet wird (§ 1046 Abs. 2 Satz 1)";
+        label en unofficial "... the usufructuary may likewise demand that the insurance sum be used to restore the thing (§ 1046 (2) sentence 1)";
+        when schaden_unter_die_versicherung_fallend(n) and wiederherstellung_entspricht_ordnungsmaessiger_wirtschaft(n) and berechtigter(n, p);
+        then anspruch_auf_verwendung_der_versicherungssumme(n, p);
+    }
+}
+
+// --- § 1047: Lastentragung --------------------------------------------------------------------------
+
+pub relation oeffentliche_last_zur_zeit_des_niessbrauchs(n: Niessbrauch) kind empirical {
+    label de official "eine öffentliche Last ruht während der Dauer des Nießbrauchs auf der Sache und ist keine außerordentliche, auf den Stammwert gelegte Last (§ 1047)";
+    label en unofficial "a public charge rests on the thing during the usufruct and is not an extraordinary charge levied on the capital value (§ 1047)";
+}
+pub relation privatrechtliche_last_bei_bestellung(n: Niessbrauch) kind empirical {
+    label de official "eine privatrechtliche Last, insbesondere Hypotheken- oder Grundschuldzinsen oder Rentenschuldleistungen, ruhte schon zur Zeit der Bestellung auf der Sache (§ 1047)";
+    label en unofficial "a private-law charge, in particular mortgage or land-charge interest or annuity-charge payments, already rested on the thing when the usufruct was created (§ 1047)";
+}
+pub relation lastentragungspflicht_des_niessbrauchers(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat dem Eigentümer gegenüber diese Last für die Dauer des Nießbrauchs zu tragen (§ 1047)";
+    label en unofficial "the usufructuary must bear this charge towards the owner for the duration of the usufruct (§ 1047)";
+}
+@source(BGB_P1047) {
+    rule LastentragungspflichtBeiOeffentlicherLast(n: Niessbrauch, s: Sache) strict {
+        label de official "Der Nießbraucher ist dem Eigentümer gegenüber verpflichtet, für die Dauer des Nießbrauchs die auf der Sache ruhenden öffentlichen Lasten mit Ausschluss der außerordentlichen Lasten zu tragen (§ 1047)";
+        label en unofficial "The usufructuary is obliged towards the owner to bear, for the duration of the usufruct, the public charges resting on the thing, excluding extraordinary charges (§ 1047)";
+        when belastungsgegenstand_sache(n, s) and oeffentliche_last_zur_zeit_des_niessbrauchs(n);
+        then lastentragungspflicht_des_niessbrauchers(n);
+    }
+    rule LastentragungspflichtBeiPrivatrechtlicherLast(n: Niessbrauch, s: Sache) strict {
+        label de official "... sowie diejenigen privatrechtlichen Lasten zu tragen, welche schon zur Zeit der Bestellung des Nießbrauchs auf der Sache ruhten, insbesondere die Zinsen der Hypothekenforderungen und Grundschulden (§ 1047)";
+        label en unofficial "... and to bear the private-law charges that already rested on the thing when the usufruct was created, in particular mortgage and land-charge interest (§ 1047)";
+        when belastungsgegenstand_sache(n, s) and privatrechtliche_last_bei_bestellung(n);
+        then lastentragungspflicht_des_niessbrauchers(n);
+    }
+}
+
+// --- § 1048: Nießbrauch an Grundstück mit Inventar ----------------------------------------------------
+
+pub relation grundstueck_samt_inventar(n: Niessbrauch) kind empirical {
+    label de official "Gegenstand des Nießbrauchs ist ein Grundstück samt Inventar (§ 1048 Abs. 1 Satz 1)";
+    label en unofficial "the usufruct concerns land together with an inventory (§ 1048 (1) sentence 1)";
+}
+@source(BGB_P1048)
+pub external judgment relation verfuegung_innerhalb_der_grenzen_ordnungsmaessiger_wirtschaft(n: Niessbrauch) {
+    authority Court;
+    label de official "die Verfügung über Inventarstücke liegt innerhalb der Grenzen ordnungsmäßiger Wirtschaft (§ 1048 Abs. 1 Satz 1) — Wertung des Gerichts";
+    label en unofficial "disposal of inventory items lies within the limits of proper management (§ 1048 (1) sentence 1) — evaluation by the court";
+}
+pub relation befugnis_zur_verfuegung_ueber_inventar(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher kann über die einzelnen Stücke des Inventars verfügen (§ 1048 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary may dispose of individual inventory items (§ 1048 (1) sentence 1)";
+}
+pub relation ersatzbeschaffungspflicht_fuer_inventar(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat für den gewöhnlichen Abgang sowie für nach ordnungsmäßiger Wirtschaft ausscheidende Stücke Ersatz zu beschaffen (§ 1048 Abs. 1 Satz 2)";
+    label en unofficial "the usufructuary must provide replacements for ordinary wastage and for items retired under proper management (§ 1048 (1) sentence 2)";
+}
+@source(BGB_P1048) {
+    rule BefugnisZurVerfuegungUeberInventar(n: Niessbrauch, g: Grundstueck) strict {
+        label de official "Ist ein Grundstück samt Inventar Gegenstand des Nießbrauchs, so kann der Nießbraucher über die einzelnen Stücke des Inventars innerhalb der Grenzen ordnungsmäßiger Wirtschaft verfügen (§ 1048 Abs. 1 Satz 1)";
+        label en unofficial "If land together with an inventory is the object of the usufruct, the usufructuary may dispose of individual inventory items within the limits of proper management (§ 1048 (1) sentence 1)";
+        when belastungsgegenstand_grundstueck(n, g) and grundstueck_samt_inventar(n) and verfuegung_innerhalb_der_grenzen_ordnungsmaessiger_wirtschaft(n);
+        then befugnis_zur_verfuegung_ueber_inventar(n);
+    }
+    rule ErsatzbeschaffungspflichtFuerInventar(n: Niessbrauch) strict {
+        label de official "Er hat für den gewöhnlichen Abgang sowie für die nach den Regeln ordnungsmäßiger Wirtschaft ausscheidenden Stücke Ersatz zu beschaffen (§ 1048 Abs. 1 Satz 2)";
+        label en unofficial "They must provide replacements for ordinary wastage and for items retired under the rules of proper management (§ 1048 (1) sentence 2)";
+        when grundstueck_samt_inventar(n);
+        then ersatzbeschaffungspflicht_fuer_inventar(n);
+    }
+}
+
+// --- § 1049: Ersatz von Verwendungen -------------------------------------------------------------------
+//
+// Abs. 1 verweist auf die Geschäftsführung ohne Auftrag (§§ 677 ff.,
+// `de.bgb.schuldrecht_at`, außerhalb dieses Pakets); die Rechtsfolge wird
+// TERMINAL festgestellt, ihre Höhe hier nicht gerechnet (D-11-08 f.).
+
+pub relation verwendung_ohne_verpflichtung(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher macht Verwendungen auf die Sache, zu denen er nicht verpflichtet ist (§ 1049 Abs. 1)";
+    label en unofficial "the usufructuary makes outlays on the thing to which they are not obliged (§ 1049 (1))";
+}
+pub relation ersatzanspruch_nach_goa(n: Niessbrauch, p: Person) kind derived {
+    label de official "die Ersatzpflicht des Eigentümers bestimmt sich nach den Vorschriften über die Geschäftsführung ohne Auftrag (§ 1049 Abs. 1)";
+    label en unofficial "the owner's duty to compensate follows the rules on management of another's affairs without mandate (§ 1049 (1))";
+}
+pub relation niessbraucher_wegnahmerecht_der_einrichtung(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Nießbraucher darf eine Einrichtung, mit der er die Sache versehen hat, wegnehmen (§ 1049 Abs. 2)";
+    label en unofficial "the usufructuary may remove a fixture with which they provided the thing (§ 1049 (2))";
+}
+@source(BGB_P1049) {
+    rule ErsatzanspruchNachGoa(n: Niessbrauch, p: Person) strict {
+        label de official "Macht der Nießbraucher Verwendungen auf die Sache, zu denen er nicht verpflichtet ist, so bestimmt sich die Ersatzpflicht des Eigentümers nach den Vorschriften über die Geschäftsführung ohne Auftrag (§ 1049 Abs. 1)";
+        label en unofficial "If the usufructuary makes outlays not owed, the owner's duty to compensate follows the rules on management without mandate (§ 1049 (1))";
+        when verwendung_ohne_verpflichtung(n) and besteller(n, p);
+        then ersatzanspruch_nach_goa(n, p);
+    }
+    rule NiessbraucherWegnahmerechtDerEinrichtung(n: Niessbrauch, p: Person) strict {
+        label de official "Der Nießbraucher ist berechtigt, eine Einrichtung, mit der er die Sache versehen hat, wegzunehmen (§ 1049 Abs. 2)";
+        label en unofficial "The usufructuary is entitled to remove a fixture with which they provided the thing (§ 1049 (2))";
+        when berechtigter(n, p);
+        then niessbraucher_wegnahmerecht_der_einrichtung(n, p);
+    }
+}
+
+// --- § 1050: Abnutzung -------------------------------------------------------------------------------
+
+pub relation veraenderung_oder_verschlechterung(n: Niessbrauch) kind empirical {
+    label de official "die Sache erleidet eine Veränderung oder Verschlechterung (§ 1050)";
+    label en unofficial "the thing suffers a change or deterioration (§ 1050)";
+}
+@source(BGB_P1050)
+pub external judgment relation herbeigefuehrt_durch_ordnungsmaessige_ausuebung(n: Niessbrauch) {
+    authority Court;
+    label de official "die Veränderung oder Verschlechterung wurde durch die ordnungsmäßige Ausübung des Nießbrauchs herbeigeführt (§ 1050) — Wertung des Gerichts";
+    label en unofficial "the change or deterioration was brought about by the proper exercise of the usufruct (§ 1050) — evaluation by the court";
+}
+pub relation keine_verantwortlichkeit_des_niessbrauchers(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher hat die Veränderung oder Verschlechterung nicht zu vertreten (§ 1050)";
+    label en unofficial "the usufructuary is not answerable for the change or deterioration (§ 1050)";
+}
+@source(BGB_P1050)
+rule KeineVerantwortlichkeitBeiOrdnungsmaesigerAusuebung(n: Niessbrauch) strict {
+    label de official "Veränderungen oder Verschlechterungen der Sache, die durch die ordnungsmäßige Ausübung des Nießbrauchs herbeigeführt werden, hat der Nießbraucher nicht zu vertreten (§ 1050)";
+    label en unofficial "The usufructuary is not answerable for changes or deterioration brought about by the proper exercise of the usufruct (§ 1050)";
+    when veraenderung_oder_verschlechterung(n) and herbeigefuehrt_durch_ordnungsmaessige_ausuebung(n);
+    then keine_verantwortlichkeit_des_niessbrauchers(n);
+}
+
+// --- §§ 1051, 1052, 1053, 1054: Sicherheitsleistung und gerichtliche Verwaltung -------------------------
+
+pub relation besorgnis_erheblicher_rechtsverletzung(n: Niessbrauch) kind empirical {
+    label de official "durch das Verhalten des Nießbrauchers wird die Besorgnis einer erheblichen Verletzung der Rechte des Eigentümers begründet (§ 1051)";
+    label en unofficial "the usufructuary's conduct gives rise to concern that the owner's rights will be substantially violated (§ 1051)";
+}
+pub relation anspruch_auf_sicherheitsleistung(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Eigentümer kann Sicherheitsleistung verlangen (§ 1051)";
+    label en unofficial "the owner may demand the provision of security (§ 1051)";
+}
+@source(BGB_P1051)
+rule AnspruchAufSicherheitsleistung(n: Niessbrauch, p: Person) strict {
+    label de official "Wird durch das Verhalten des Nießbrauchers die Besorgnis einer erheblichen Verletzung der Rechte des Eigentümers begründet, so kann der Eigentümer Sicherheitsleistung verlangen (§ 1051)";
+    label en unofficial "If the usufructuary's conduct gives rise to concern of substantial violation of the owner's rights, the owner may demand security (§ 1051)";
+    when besorgnis_erheblicher_rechtsverletzung(n) and besteller(n, p);
+    then anspruch_auf_sicherheitsleistung(n, p);
+}
+
+pub relation rechtskraeftig_zur_sicherheitsleistung_verurteilt(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher ist zur Sicherheitsleistung rechtskräftig verurteilt (§ 1052 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the usufructuary has been finally ordered to provide security (§ 1052 (1) sentence 1) — established fact";
+}
+pub relation sicherheitsleistungsfrist(n: Niessbrauch, f: Frist) kind empirical {
+    key(n);
+    label de official "vom Gericht auf Antrag des Eigentümers bestimmte Frist zur Sicherheitsleistung (§ 1052 Abs. 1 Satz 2)";
+    label en unofficial "period for the provision of security fixed by the court on the owner's application (§ 1052 (1) sentence 2)";
+}
+pub relation sicherheit_vor_fristablauf_geleistet(n: Niessbrauch) kind empirical {
+    label de official "die Sicherheit ist vor dem Ablauf der Frist geleistet worden (§ 1052 Abs. 1 Satz 2 Halbsatz 2) — ausdrückliche Eingabe des Falls";
+    label en unofficial "the security was provided before the period expired (§ 1052 (1) sentence 2) — explicit case input";
+}
+pub relation pruefungstag_der_sicherheitsleistung(n: Niessbrauch, tag: Date) kind empirical {
+    key(n);
+    label de official "Tag, an dem geprüft wird, ob die vom Gericht bestimmte Frist zur Sicherheitsleistung verstrichen ist (§ 1052 Abs. 1 Satz 2) — Eingabe des Falls";
+    label en unofficial "day on which it is examined whether the court-fixed period for security has expired (§ 1052 (1) sentence 2) — case input";
+}
+pub relation anordnung_der_verwaltung_zulaessig(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Eigentümer kann statt der Sicherheitsleistung die Übertragung der Ausübung des Nießbrauchs an einen gerichtlich bestellten Verwalter verlangen (§ 1052 Abs. 1 Satz 1)";
+    label en unofficial "the owner may, instead of security, demand that exercise of the usufruct be transferred to a court-appointed administrator (§ 1052 (1) sentence 1)";
+}
+@source(BGB_P1052) {
+    rule AnordnungDerVerwaltungZulaessig(n: Niessbrauch, f: Frist, ende: Date, tag: Date, p: Person) strict {
+        label de official "Ist der Nießbraucher zur Sicherheitsleistung rechtskräftig verurteilt, so kann der Eigentümer statt der Sicherheitsleistung die Verwaltung durch einen gerichtlich bestellten Verwalter verlangen, wenn die vom Gericht bestimmte Frist verstrichen ist (§ 1052 Abs. 1)";
+        label en unofficial "If the usufructuary is finally ordered to provide security, the owner may instead demand a court-appointed administrator once the court-fixed period has expired (§ 1052 (1))";
+        when rechtskraeftig_zur_sicherheitsleistung_verurteilt(n) and sicherheitsleistungsfrist(n, f)
+            and de.bgb.fristen::frist_ende_kalender(f, ende) and pruefungstag_der_sicherheitsleistung(n, tag) and tag > ende and besteller(n, p);
+        then anordnung_der_verwaltung_zulaessig(n, p);
+    }
+}
+pub relation verwaltung_aufzuheben(n: Niessbrauch) kind derived {
+    label de official "die Verwaltung ist aufzuheben, wenn die Sicherheit nachträglich geleistet wird (§ 1052 Abs. 3)";
+    label en unofficial "the administration must be lifted if the security is subsequently provided (§ 1052 (3))";
+}
+@source(BGB_P1052)
+rule VerwaltungAufzuhebenBeiNachtraeglicherSicherheit(n: Niessbrauch, p: Person) strict {
+    label de official "Die Verwaltung ist aufzuheben, wenn die Sicherheit nachträglich geleistet wird (§ 1052 Abs. 3)";
+    label en unofficial "The administration must be lifted if the security is subsequently provided (§ 1052 (3))";
+    when anordnung_der_verwaltung_zulaessig(n, p) and sicherheit_vor_fristablauf_geleistet(n);
+    then verwaltung_aufzuheben(n);
+}
+
+pub relation unbefugter_gebrauch_trotz_abmahnung(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher macht einen unbefugten Gebrauch von der Sache und setzt ihn ungeachtet einer Abmahnung des Eigentümers fort (§ 1053)";
+    label en unofficial "the usufructuary makes unauthorised use of the thing and continues it despite the owner's warning (§ 1053)";
+}
+pub relation anspruch_auf_unterlassung_bei_unbefugtem_gebrauch(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Eigentümer kann auf Unterlassung klagen (§ 1053)";
+    label en unofficial "the owner may sue for an injunction (§ 1053)";
+}
+@source(BGB_P1053)
+rule AnspruchAufUnterlassungBeiUnbefugtemGebrauch(n: Niessbrauch, p: Person) strict {
+    label de official "Macht der Nießbraucher einen unbefugten Gebrauch von der Sache und setzt er ihn ungeachtet einer Abmahnung fort, so kann der Eigentümer auf Unterlassung klagen (§ 1053)";
+    label en unofficial "If the usufructuary makes unauthorised use of the thing and continues it despite a warning, the owner may sue for an injunction (§ 1053)";
+    when unbefugter_gebrauch_trotz_abmahnung(n) and besteller(n, p);
+    then anspruch_auf_unterlassung_bei_unbefugtem_gebrauch(n, p);
+}
+
+pub relation erhebliche_rechtsverletzung_trotz_abmahnung(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher verletzt die Rechte des Eigentümers in erheblichem Maße und setzt das Verhalten ungeachtet einer Abmahnung fort (§ 1054)";
+    label en unofficial "the usufructuary substantially violates the owner's rights and continues despite a warning (§ 1054)";
+}
+pub relation anspruch_auf_verwaltungsanordnung_wegen_pflichtverletzung(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Eigentümer kann die Anordnung einer Verwaltung nach § 1052 verlangen (§ 1054)";
+    label en unofficial "the owner may demand an administration order under § 1052 (§ 1054)";
+}
+@source(BGB_P1054)
+rule AnspruchAufVerwaltungsanordnungWegenPflichtverletzung(n: Niessbrauch, p: Person) strict {
+    label de official "Verletzt der Nießbraucher die Rechte des Eigentümers erheblich und setzt er das Verhalten trotz Abmahnung fort, so kann der Eigentümer die Anordnung einer Verwaltung nach § 1052 verlangen (§ 1054)";
+    label en unofficial "If the usufructuary substantially violates the owner's rights and continues despite a warning, the owner may demand an administration order under § 1052 (§ 1054)";
+    when erhebliche_rechtsverletzung_trotz_abmahnung(n) and besteller(n, p);
+    then anspruch_auf_verwaltungsanordnung_wegen_pflichtverletzung(n, p);
+}
+
+// --- § 1055: Rückgabepflicht -------------------------------------------------------------------------
+//
+// Abs. 2 verweist auf Landwirtschaftsvorschriften des Mietrechts (§ 596 Abs. 1,
+// § 596a, § 596b — `de.bgb.miete`); außerhalb des Pakets, terminal dokumentiert.
+
+pub relation niessbrauch_beendet(n: Niessbrauch) kind empirical {
+    label de official "der Nießbrauch ist beendet (§ 1055 Abs. 1)";
+    label en unofficial "the usufruct has ended (§ 1055 (1))";
+}
+pub relation rueckgabepflicht_des_niessbrauchers(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Nießbraucher ist verpflichtet, die Sache nach der Beendigung des Nießbrauchs dem Eigentümer zurückzugeben (§ 1055 Abs. 1)";
+    label en unofficial "the usufructuary must return the thing to the owner after the usufruct ends (§ 1055 (1))";
+}
+@source(BGB_P1055)
+rule RueckgabepflichtDesNiessbrauchers(n: Niessbrauch, p: Person) strict {
+    label de official "Der Nießbraucher ist verpflichtet, die Sache nach der Beendigung des Nießbrauchs dem Eigentümer zurückzugeben (§ 1055 Abs. 1)";
+    label en unofficial "The usufructuary must return the thing to the owner after the usufruct ends (§ 1055 (1))";
+    when niessbrauch_beendet(n) and besteller(n, p);
+    then rueckgabepflicht_des_niessbrauchers(n, p);
+}
+
+// --- § 1056: Miet- und Pachtverhältnisse bei Beendigung — außerhalb des Pakets (`de.bgb.miete`) ----------
+//
+// Terminal dokumentiert: die entsprechende Anwendung der §§ 566 ff. wird hier
+// nicht nachgebildet (README „Was das Paket nicht tut“).
+
+pub relation grundstueck_ueber_die_dauer_hinaus_vermietet(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher hat das Grundstück über die Dauer des Nießbrauchs hinaus vermietet oder verpachtet (§ 1056 Abs. 1)";
+    label en unofficial "the usufructuary let or leased the land beyond the duration of the usufruct (§ 1056 (1))";
+}
+pub relation kuendigungsrecht_des_eigentuemers(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Eigentümer ist berechtigt, das Miet- oder Pachtverhältnis unter Einhaltung der gesetzlichen Kündigungsfrist zu kündigen (§ 1056 Abs. 2 Satz 1)";
+    label en unofficial "the owner is entitled to terminate the tenancy or lease observing the statutory notice period (§ 1056 (2) sentence 1)";
+}
+@source(BGB_P1056)
+rule KuendigungsrechtDesEigentuemers(n: Niessbrauch, g: Grundstueck, p: Person) strict {
+    label de official "Hat der Nießbraucher ein Grundstück über die Dauer des Nießbrauchs hinaus vermietet, so ist der Eigentümer berechtigt, das Miet- oder Pachtverhältnis unter Einhaltung der gesetzlichen Kündigungsfrist zu kündigen (§ 1056 Abs. 1, 2)";
+    label en unofficial "If the usufructuary let land beyond the duration of the usufruct, the owner may terminate the tenancy or lease observing the statutory notice period (§ 1056 (1), (2))";
+    when belastungsgegenstand_grundstueck(n, g) and grundstueck_ueber_die_dauer_hinaus_vermietet(n) and besteller(n, p);
+    then kuendigungsrecht_des_eigentuemers(n, p);
+}
+
+// --- § 1057: Verjährung der Ersatzansprüche — sechs Monate (DEADLINES.json) -----------------------------
+//
+// Verjährungsfrist wie § 1226 (D-11-04): kein Adressat handelt innerhalb der
+// Frist, daher `frist_ende_kalender` OHNE die Verlegung des § 193.
+
+pub relation ersatzanspruch_wegen_veraenderung_oder_verschlechterung(n: Niessbrauch, a: Anspruch) kind empirical {
+    key(n);
+    label de official "Ersatzanspruch des Eigentümers wegen Veränderungen oder Verschlechterungen der Sache (§ 1057 Satz 1) — Träger der sechsmonatigen Verjährung";
+    label en unofficial "owner's claim to compensation for changes or deterioration of the thing (§ 1057 sentence 1) — carrier of the six-month limitation";
+}
+pub relation ersatzanspruch_wegen_verwendungen_oder_wegnahmegestattung(n: Niessbrauch, a: Anspruch) kind empirical {
+    key(n);
+    label de official "Anspruch des Nießbrauchers auf Ersatz von Verwendungen oder auf Gestattung der Wegnahme einer Einrichtung (§ 1057 Satz 1) — Träger der sechsmonatigen Verjährung";
+    label en unofficial "usufructuary's claim to reimbursement of outlays or permission to remove a fixture (§ 1057 sentence 1) — carrier of the six-month limitation";
+}
+pub relation ruckgabe_der_sache_an_am(n: Niessbrauch, tag: Date) kind empirical {
+    key(n);
+    label de official "Tag der Rückgabe der Sache an den Eigentümer; von ihm läuft die sechsmonatige Frist des § 1057 (über § 548 Abs. 1 Satz 2 entsprechend)";
+    label en unofficial "day of return of the thing to the owner; from it the six-month period of § 1057 runs (via § 548 (1) sentence 2)";
+}
+pub relation ersatzanspruch_1057_frist(n: Niessbrauch, f: Frist) kind empirical {
+    key(n);
+    label de official "sechsmonatige Verjährungsfrist der Ersatzansprüche des § 1057";
+    label en unofficial "six-month limitation period for the claims to reimbursement of § 1057";
+}
+pub relation ersatzanspruch_1057_verjaehrt(n: Niessbrauch) kind derived {
+    label de official "die Ersatzansprüche des § 1057 sind mit dem Ablauf von sechs Monaten seit der Rückgabe verjährt (§ 1057 Satz 1)";
+    label en unofficial "the § 1057 claims to reimbursement are time-barred with the expiry of six months from the return (§ 1057 sentence 1)";
+}
+@source(BGB_P1057) {
+    rule Ersatzanspruch1057FristEreignis(n: Niessbrauch, f: Frist, tag: Date) strict {
+        label de official "Die sechsmonatige Frist des § 1057 läuft von der Rückgabe der Sache an (§ 548 Abs. 1 Satz 2 entsprechend; § 187 Abs. 1)";
+        label en unofficial "The six-month period of § 1057 runs from the return of the thing (§ 548 (1) sentence 2 accordingly; § 187 (1))";
+        when ersatzanspruch_1057_frist(n, f) and ruckgabe_der_sache_an_am(n, tag);
+        then de.bgb.fristen::frist_ereignis(f, tag);
+    }
+    rule Ersatzanspruch1057FristDauer(n: Niessbrauch, f: Frist) strict {
+        label de official "Die Ersatzansprüche verjähren in sechs Monaten (§ 1057 Satz 1) — Monatsschritt nach § 188 Abs. 2, 3";
+        label en unofficial "The claims to reimbursement become time-barred in six months (§ 1057 sentence 1) — month step under § 188 (2), (3)";
+        when ersatzanspruch_1057_frist(n, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+    rule Ersatzanspruch1057Verjaehrt(n: Niessbrauch, f: Frist, ende: Date) strict {
+        label de official "Mit dem Ablauf der sechs Monate sind die Ersatzansprüche verjährt (§ 1057 Satz 1) — VERJÄHRUNGSFRIST ohne die Verlegung des § 193 (Ledger D-11-04)";
+        label en unofficial "With the expiry of the six months the claims to reimbursement are time-barred (§ 1057 sentence 1) — limitation period without the transfer of § 193";
+        when ersatzanspruch_1057_frist(n, f) and de.bgb.fristen::frist_ende_kalender(f, ende);
+        then ersatzanspruch_1057_verjaehrt(n);
+    }
+}
+
+// --- § 1058: Besteller als Eigentümer -----------------------------------------------------------------
+
+pub relation niessbraucher_weiss_besteller_nicht_eigentuemer(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher weiß, dass der Besteller nicht Eigentümer ist (§ 1058) — festgestellte Tatsache";
+    label en unofficial "the usufructuary knows the grantor is not the owner (§ 1058) — established fact";
+}
+pub relation besteller_gilt_als_eigentuemer(n: Niessbrauch) kind derived {
+    label de official "im Verhältnis zwischen Nießbraucher und Eigentümer gilt zugunsten des Nießbrauchers der Besteller als Eigentümer (§ 1058)";
+    label en unofficial "in the relationship between usufructuary and owner, the grantor is deemed the owner in the usufructuary's favour (§ 1058)";
+}
+@source(BGB_P1058)
+presumption BestellerGiltAlsEigentuemer(n: Niessbrauch, p: Person) {
+    label de official "Im Verhältnis zwischen dem Nießbraucher und dem Eigentümer gilt zugunsten des Nießbrauchers der Besteller als Eigentümer, es sei denn, dass der Nießbraucher weiß, dass der Besteller nicht Eigentümer ist (§ 1058)";
+    label en unofficial "In the relationship between usufructuary and owner, the grantor is deemed the owner in the usufructuary's favour, unless the usufructuary knows the grantor is not the owner (§ 1058)";
+    when besteller(n, p);
+    presume besteller_gilt_als_eigentuemer(n);
+    unless besteller(n, p) and niessbraucher_weiss_besteller_nicht_eigentuemer(n) then not besteller_gilt_als_eigentuemer(n);
+}
+
+// --- § 1059: Unübertragbarkeit; Überlassung der Ausübung --------------------------------------------
+
+pub relation niessbrauch_nicht_uebertragbar(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch ist nicht übertragbar (§ 1059 Satz 1)";
+    label en unofficial "the usufruct is not transferable (§ 1059 Satz 1)";
+}
+pub relation ausuebung_kann_ueberlassen_werden(n: Niessbrauch) kind derived {
+    label de official "die Ausübung des Nießbrauchs kann einem anderen überlassen werden (§ 1059 Satz 2)";
+    label en unofficial "the exercise of the usufruct may be left to another (§ 1059 sentence 2)";
+}
+@source(BGB_P1059)
+rule NiessbrauchNichtUebertragbar(n: Niessbrauch, p: Person) strict {
+    label de official "Der Nießbrauch ist nicht übertragbar (§ 1059 Satz 1)";
+    label en unofficial "The usufruct is not transferable (§ 1059 sentence 1)";
+    when berechtigter(n, p);
+    then niessbrauch_nicht_uebertragbar(n);
+}
+@source(BGB_P1059)
+rule AusuebungKannUeberlassenWerden(n: Niessbrauch, p: Person) strict {
+    label de official "Die Ausübung des Nießbrauchs kann einem anderen überlassen werden (§ 1059 Satz 2)";
+    label en unofficial "The exercise of the usufruct may be left to another (§ 1059 sentence 2)";
+    when berechtigter(n, p);
+    then ausuebung_kann_ueberlassen_werden(n);
+}
+
+// --- §§ 1059a–e: Übertragbarkeit bei juristischer Person — GRENZE -----------------------------------
+//
+// Verwaltungsverfahren der zuständigen Landesbehörde (§ 1059a Abs. 1 Nr. 2
+// Satz 2 f.) und dessen Bindungswirkung sind ein äußeres Verfahren, keine
+// Rechenkette dieses Pakets (README „Was das Paket nicht tut“); §§ 1059b–e
+// sind reine Rechtsfolgen- bzw. Verweisnormen auf diese Feststellung und
+// bleiben SOURCE_ONLY dieser Runde.
+
+// --- § 1060: Zusammentreffen mehrerer Nutzungsrechte — Verweis auf § 1024 (dieses Paket) -----------------
+
+pub relation niessbrauch_rechte_koennen_nicht_nebeneinander_ausgeuebt_werden(eins: Niessbrauch, zwei: Belastung) kind empirical {
+    label de official "ein Nießbrauch trifft mit einem anderen Nießbrauch oder einem sonstigen Nutzungsrecht dergestalt zusammen, dass die Rechte nebeneinander nicht oder nicht vollständig ausgeübt werden können (§ 1060)";
+    label en unofficial "a usufruct coincides with another usufruct or another right of use such that the rights cannot be exercised alongside one another, or not fully (§ 1060)";
+}
+pub relation niessbrauch_anspruch_auf_regelung_nach_billigem_ermessen(eins: Niessbrauch, zwei: Belastung, berechtigter: Person) kind derived {
+    label de official "bei gleichem Rang findet § 1024 Anwendung: jeder Berechtigte kann eine Regelung nach billigem Ermessen verlangen (§ 1060)";
+    label en unofficial "at equal rank § 1024 applies: each entitled person may demand an arrangement in fair discretion (§ 1060)";
+}
+@source(BGB_P1060)
+rule NiessbrauchAnspruchAufRegelungNachBilligemErmessen(eins: Niessbrauch, zwei: Belastung, berechtigter: Person) strict {
+    label de official "Trifft ein Nießbrauch mit einem anderen Nießbrauch oder einem sonstigen Nutzungsrecht dergestalt zusammen, dass die Rechte nebeneinander nicht oder nicht vollständig ausgeübt werden können, und haben die Rechte gleichen Rang, so findet § 1024 Anwendung (§ 1060)";
+    label en unofficial "If a usufruct coincides with another usufruct or another right of use such that the rights cannot be exercised alongside one another, or not fully, and the rights are of equal rank, § 1024 applies (§ 1060)";
+    when niessbrauch_rechte_koennen_nicht_nebeneinander_ausgeuebt_werden(eins, zwei)
+        and de.bgb.besitz_eigentum::gleicher_rang(eins, zwei) and berechtigter(eins, berechtigter);
+    then niessbrauch_anspruch_auf_regelung_nach_billigem_ermessen(eins, zwei, berechtigter);
+}
+
+// --- § 1061: Tod des Nießbrauchers ---------------------------------------------------------------------
+
+pub relation niessbraucher_verstorben(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher ist gestorben (§ 1061 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the usufructuary has died (§ 1061 sentence 1) — established fact";
+}
+pub relation juristische_person_erloschen(n: Niessbrauch) kind empirical {
+    label de official "die juristische Person oder rechtsfähige Personengesellschaft, der der Nießbrauch zusteht, ist erloschen (§ 1061 Satz 2) — festgestellte Tatsache";
+    label en unofficial "the legal person or legally capable partnership to which the usufruct belongs has ceased to exist (§ 1061 sentence 2) — established fact";
+}
+pub relation niessbrauch_erloschen_1061(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch erlischt mit dem Tode des Nießbrauchers oder, bei einer juristischen Person, mit dieser (§ 1061)";
+    label en unofficial "the usufruct is extinguished on the death of the usufructuary or, for a legal person, with that person (§ 1061)";
+}
+@source(BGB_P1061) {
+    rule NiessbrauchErlischtMitDemTode(n: Niessbrauch) strict {
+        label de official "Der Nießbrauch erlischt mit dem Tode des Nießbrauchers (§ 1061 Satz 1)";
+        label en unofficial "The usufruct is extinguished on the death of the usufructuary (§ 1061 sentence 1)";
+        when niessbraucher_verstorben(n);
+        then niessbrauch_erloschen_1061(n);
+    }
+    rule NiessbrauchErlischtMitDerJuristischenPerson(n: Niessbrauch) strict {
+        label de official "Steht der Nießbrauch einer juristischen Person oder rechtsfähigen Personengesellschaft zu, so erlischt er mit dieser (§ 1061 Satz 2)";
+        label en unofficial "If the usufruct belongs to a legal person or legally capable partnership, it is extinguished with that person (§ 1061 sentence 2)";
+        when juristische_person_erloschen(n);
+        then niessbrauch_erloschen_1061(n);
+    }
+}
+
+// --- § 1062: Erstreckung der Aufhebung auf das Zubehör ---------------------------------------------------
+
+pub relation niessbrauch_durch_rechtsgeschaeft_aufgehoben(n: Niessbrauch) kind empirical {
+    label de official "der Nießbrauch an einem Grundstück wird durch Rechtsgeschäft aufgehoben (§ 1062)";
+    label en unofficial "the usufruct of land is terminated by a juristic act (§ 1062)";
+}
+pub relation zweifel_ob_zubehoer_erfasst(n: Niessbrauch) kind empirical {
+    label de official "es besteht Zweifel, ob die Aufhebung sich auf das Zubehör erstreckt — Auslegungslage des § 1062, kein anderer Wille festgestellt";
+    label en unofficial "doubt exists whether the termination extends to the accessories — the § 1062 interpretive default applies, no contrary intent established";
+}
+pub relation aufhebung_erstreckt_sich_auf_zubehoer(n: Niessbrauch) kind derived {
+    label de official "die Aufhebung erstreckt sich im Zweifel auf den Nießbrauch an dem Zubehör (§ 1062)";
+    label en unofficial "in case of doubt the termination extends to the usufruct of the accessories (§ 1062)";
+}
+@source(BGB_P1062)
+rule AufhebungErstrecktSichAufZubehoerImZweifel(n: Niessbrauch, g: Grundstueck) strict {
+    label de official "Wird der Nießbrauch an einem Grundstück durch Rechtsgeschäft aufgehoben, so erstreckt sich die Aufhebung im Zweifel auf den Nießbrauch an dem Zubehör (§ 1062)";
+    label en unofficial "If the usufruct of land is terminated by a juristic act, the termination extends in case of doubt to the usufruct of the accessories (§ 1062)";
+    when belastungsgegenstand_grundstueck(n, g) and niessbrauch_durch_rechtsgeschaeft_aufgehoben(n) and zweifel_ob_zubehoer_erfasst(n);
+    then aufhebung_erstreckt_sich_auf_zubehoer(n);
+}
+
+// --- § 1063: Zusammentreffen mit dem Eigentum ------------------------------------------------------------
+
+pub relation niessbrauch_und_eigentum_in_derselben_person(n: Niessbrauch) kind empirical {
+    label de official "der Nießbrauch an der beweglichen Sache trifft mit dem Eigentum in derselben Person zusammen (§ 1063 Abs. 1)";
+    label en unofficial "the usufruct of the movable thing coincides with ownership in the same person (§ 1063 (1))";
+}
+pub relation eigentuemer_hat_rechtliches_interesse_am_fortbestand(n: Niessbrauch) kind empirical {
+    label de official "der Eigentümer hat ein rechtliches Interesse an dem Fortbestehen des Nießbrauchs (§ 1063 Abs. 2)";
+    label en unofficial "the owner has a legal interest in the continuation of the usufruct (§ 1063 (2))";
+}
+pub relation niessbrauch_erloschen_1063(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch an der beweglichen Sache erlischt durch Konsolidation (§ 1063 Abs. 1)";
+    label en unofficial "the usufruct of the movable thing is extinguished by merger (§ 1063 (1))";
+}
+pub relation niessbrauch_gilt_als_nicht_erloschen(n: Niessbrauch) kind derived {
+    label de official "der Nießbrauch gilt als nicht erloschen, soweit der Eigentümer ein rechtliches Interesse an seinem Fortbestehen hat (§ 1063 Abs. 2)";
+    label en unofficial "the usufruct is deemed not extinguished in so far as the owner has a legal interest in its continuation (§ 1063 (2))";
+}
+@source(BGB_P1063) {
+    rule NiessbrauchErlischtDurchKonsolidation(n: Niessbrauch, s: Sache) strict {
+        label de official "Der Nießbrauch an einer beweglichen Sache erlischt, wenn er mit dem Eigentum in derselben Person zusammentrifft (§ 1063 Abs. 1)";
+        label en unofficial "The usufruct of a movable thing is extinguished when it coincides with ownership in the same person (§ 1063 (1))";
+        when belastungsgegenstand_sache(n, s) and niessbrauch_und_eigentum_in_derselben_person(n);
+        then niessbrauch_erloschen_1063(n);
+    }
+    rule NiessbrauchGiltAlsNichtErloschenBeiRechtlichemInteresse(n: Niessbrauch) strict {
+        label de official "Der Nießbrauch gilt als nicht erloschen, soweit der Eigentümer ein rechtliches Interesse an dem Fortbestehen des Nießbrauchs hat (§ 1063 Abs. 2)";
+        label en unofficial "The usufruct is deemed not extinguished in so far as the owner has a legal interest in its continuation (§ 1063 (2))";
+        when niessbrauch_und_eigentum_in_derselben_person(n) and eigentuemer_hat_rechtliches_interesse_am_fortbestand(n);
+        then niessbrauch_gilt_als_nicht_erloschen(n);
+    }
+}
+
+// --- § 1064: Aufhebung des Nießbrauchs an beweglichen Sachen --------------------------------------------
+
+pub relation erklaerung_der_aufgabe_gegenueber_eigentuemer_oder_besteller(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher erklärt gegenüber dem Eigentümer oder dem Besteller, dass er den Nießbrauch aufgebe (§ 1064)";
+    label en unofficial "the usufructuary declares to the owner or the grantor that they surrender the usufruct (§ 1064)";
+}
+pub relation aufhebung_durch_rechtsgeschaeft_genuegend(n: Niessbrauch) kind derived {
+    label de official "zur Aufhebung des Nießbrauchs an einer beweglichen Sache genügt die Erklärung der Aufgabe (§ 1064)";
+    label en unofficial "the declaration of surrender suffices to terminate the usufruct of a movable thing (§ 1064)";
+}
+@source(BGB_P1064)
+rule AufhebungDurchRechtsgeschaeftGenuegend(n: Niessbrauch, s: Sache) strict {
+    label de official "Zur Aufhebung des Nießbrauchs an einer beweglichen Sache durch Rechtsgeschäft genügt die Erklärung des Nießbrauchers gegenüber dem Eigentümer oder dem Besteller, dass er den Nießbrauch aufgebe (§ 1064)";
+    label en unofficial "To terminate the usufruct of a movable thing by juristic act, the usufructuary's declaration to the owner or grantor that they surrender it suffices (§ 1064)";
+    when belastungsgegenstand_sache(n, s) and erklaerung_der_aufgabe_gegenueber_eigentuemer_oder_besteller(n);
+    then aufhebung_durch_rechtsgeschaeft_genuegend(n);
+}
+
+// --- § 1065: Beeinträchtigung des Nießbrauchsrechts — lokale Nachbildung des § 1004 (wie D-11-09) --------
+
+pub relation niessbrauch_beeintraechtigt_durch(n: Niessbrauch, stoerer: Person) kind empirical {
+    label de official "das Recht des Nießbrauchers wird durch den Störer beeinträchtigt (§ 1065 i.V.m. § 1004 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary's right is impaired by the disturber (§ 1065 in conjunction with § 1004 (1) sentence 1)";
+}
+pub relation niessbraucher_nicht_zur_duldung_verpflichtet(n: Niessbrauch) kind empirical {
+    label de official "der Nießbraucher ist nicht zur Duldung der Beeinträchtigung verpflichtet — ausdrückliche Eingabe des Falls (§ 1065 i.V.m. § 1004 Abs. 2)";
+    label en unofficial "the usufructuary is not obliged to tolerate the impairment — explicit case input (§ 1065 in conjunction with § 1004 (2))";
+}
+pub relation niessbrauch_beseitigungsanspruch(n: Niessbrauch, berechtigter: Person, stoerer: Person) kind derived {
+    label de official "der Nießbraucher kann von dem Störer die Beseitigung der Beeinträchtigung verlangen (§ 1065 i.V.m. § 1004 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary may demand removal of the impairment from the disturber (§ 1065 in conjunction with § 1004 (1) sentence 1)";
+}
+@source(BGB_P1065)
+rule NiessbrauchBeseitigungsanspruch(n: Niessbrauch, berechtigter: Person, stoerer: Person) strict {
+    label de official "Wird das Recht des Nießbrauchers beeinträchtigt, so finden auf seine Ansprüche die für die Ansprüche aus dem Eigentum geltenden Vorschriften entsprechende Anwendung (§ 1065)";
+    label en unofficial "If the usufructuary's right is impaired, the provisions on claims arising from ownership apply correspondingly to their claims (§ 1065)";
+    when niessbrauch_beeintraechtigt_durch(n, stoerer) and berechtigter(n, berechtigter) and niessbraucher_nicht_zur_duldung_verpflichtet(n);
+    then niessbrauch_beseitigungsanspruch(n, berechtigter, stoerer);
+}
+
+// --- § 1066: Nießbrauch am Anteil eines Miteigentümers ----------------------------------------------------
+
+pub relation niessbrauch_am_miteigentumsanteil(n: Niessbrauch) kind empirical {
+    label de official "ein Nießbrauch besteht an dem Anteil eines Miteigentümers (§ 1066 Abs. 1)";
+    label en unofficial "a usufruct exists in the share of a co-owner (§ 1066 (1))";
+}
+pub relation niessbraucher_uebt_verwaltungsrechte_aus(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher übt die Rechte aus, die sich aus der Gemeinschaft der Miteigentümer in Ansehung der Verwaltung und Benutzung ergeben (§ 1066 Abs. 1)";
+    label en unofficial "the usufructuary exercises the rights arising from the co-owners' community as to management and use (§ 1066 (1))";
+}
+pub relation aufhebung_nur_gemeinschaftlich_verlangbar(n: Niessbrauch, miteigentuemer: Person, niessbraucher: Person) kind derived {
+    label de official "die Aufhebung der Gemeinschaft kann nur von dem Miteigentümer und dem Nießbraucher gemeinschaftlich verlangt werden (§ 1066 Abs. 2)";
+    label en unofficial "termination of the community may be demanded only jointly by the co-owner and the usufructuary (§ 1066 (2))";
+}
+@source(BGB_P1066) {
+    rule NiessbraucherUebtVerwaltungsrechteAus(n: Niessbrauch) strict {
+        label de official "Besteht ein Nießbrauch an dem Anteil eines Miteigentümers, so übt der Nießbraucher die Rechte aus, die sich aus der Gemeinschaft der Miteigentümer ergeben (§ 1066 Abs. 1)";
+        label en unofficial "If a usufruct exists in a co-owner's share, the usufructuary exercises the rights arising from the co-owners' community (§ 1066 (1))";
+        when niessbrauch_am_miteigentumsanteil(n);
+        then niessbraucher_uebt_verwaltungsrechte_aus(n);
+    }
+    rule AufhebungNurGemeinschaftlichVerlangbar(n: Niessbrauch, miteigentuemer: Person, niessbraucher: Person) strict {
+        label de official "Die Aufhebung der Gemeinschaft kann nur von dem Miteigentümer und dem Nießbraucher gemeinschaftlich verlangt werden (§ 1066 Abs. 2)";
+        label en unofficial "Termination of the community may be demanded only jointly by the co-owner and the usufructuary (§ 1066 (2))";
+        when niessbrauch_am_miteigentumsanteil(n) and besteller(n, miteigentuemer) and berechtigter(n, niessbraucher);
+        then aufhebung_nur_gemeinschaftlich_verlangbar(n, miteigentuemer, niessbraucher);
+    }
+}
+
+// --- § 1067: Nießbrauch an verbrauchbaren Sachen — Wertersatz (Geld) ------------------------------------
+
+pub relation gegenstand_ist_verbrauchbare_sache(n: Niessbrauch) kind empirical {
+    label de official "Gegenstand des Nießbrauchs sind verbrauchbare Sachen (§ 1067 Abs. 1 Satz 1)";
+    label en unofficial "the usufruct concerns consumable things (§ 1067 (1) sentence 1)";
+}
+pub relation wert_der_sachen_zur_zeit_der_bestellung(n: Niessbrauch, betrag: Money) kind empirical {
+    key(n);
+    label de official "Wert, den die verbrauchbaren Sachen zur Zeit der Bestellung des Nießbrauchs hatten (§ 1067 Abs. 1 Satz 1)";
+    label en unofficial "value the consumable things had at the time the usufruct was created (§ 1067 (1) sentence 1)";
+}
+pub relation niessbraucher_wird_eigentuemer_der_verbrauchbaren_sachen(n: Niessbrauch) kind derived {
+    label de official "der Nießbraucher wird Eigentümer der verbrauchbaren Sachen (§ 1067 Abs. 1 Satz 1)";
+    label en unofficial "the usufructuary becomes owner of the consumable things (§ 1067 (1) sentence 1)";
+}
+pub relation wertersatzpflicht_nach_beendigung(n: Niessbrauch, p: Person, betrag: Money) kind derived {
+    label de official "der Nießbraucher hat dem Besteller nach der Beendigung des Nießbrauchs den Wert zur Zeit der Bestellung zu ersetzen (§ 1067 Abs. 1 Satz 1)";
+    label en unofficial "after termination the usufructuary must reimburse the grantor the value as at the time of creation (§ 1067 (1) sentence 1)";
+}
+pub relation ersatzanspruch_gefaehrdet(n: Niessbrauch) kind empirical {
+    label de official "der Anspruch auf Ersatz des Wertes ist gefährdet (§ 1067 Abs. 2)";
+    label en unofficial "the claim to compensation for the value is endangered (§ 1067 (2))";
+}
+pub relation besteller_kann_sicherheitsleistung_verlangen(n: Niessbrauch, p: Person) kind derived {
+    label de official "der Besteller kann Sicherheitsleistung verlangen (§ 1067 Abs. 2)";
+    label en unofficial "the grantor may demand security (§ 1067 (2))";
+}
+@source(BGB_P1067) {
+    rule NiessbraucherWirdEigentuemerDerVerbrauchbarenSachen(n: Niessbrauch, s: Sache) strict {
+        label de official "Sind verbrauchbare Sachen Gegenstand des Nießbrauchs, so wird der Nießbraucher Eigentümer der Sachen (§ 1067 Abs. 1 Satz 1)";
+        label en unofficial "If consumable things are the object of the usufruct, the usufructuary becomes their owner (§ 1067 (1) sentence 1)";
+        when belastungsgegenstand_sache(n, s) and gegenstand_ist_verbrauchbare_sache(n);
+        then niessbraucher_wird_eigentuemer_der_verbrauchbaren_sachen(n);
+    }
+    rule WertersatzpflichtNachBeendigung(n: Niessbrauch, p: Person, betrag: Money) strict {
+        label de official "Nach der Beendigung des Nießbrauchs hat der Nießbraucher dem Besteller den Wert zu ersetzen, den die Sachen zur Zeit der Bestellung hatten (§ 1067 Abs. 1 Satz 1)";
+        label en unofficial "After the usufruct ends, the usufructuary must reimburse the grantor the value the things had when the usufruct was created (§ 1067 (1) sentence 1)";
+        when gegenstand_ist_verbrauchbare_sache(n) and wert_der_sachen_zur_zeit_der_bestellung(n, betrag) and besteller(n, p) and niessbrauch_beendet(n);
+        then wertersatzpflicht_nach_beendigung(n, p, betrag);
+    }
+    rule BestellerKannSicherheitsleistungVerlangen(n: Niessbrauch, p: Person) strict {
+        label de official "Der Besteller kann Sicherheitsleistung verlangen, wenn der Anspruch auf Ersatz des Wertes gefährdet ist (§ 1067 Abs. 2)";
+        label en unofficial "The grantor may demand security if the claim to compensation for the value is endangered (§ 1067 (2))";
+        when gegenstand_ist_verbrauchbare_sache(n) and ersatzanspruch_gefaehrdet(n) and besteller(n, p);
+        then besteller_kann_sicherheitsleistung_verlangen(n, p);
+    }
+}

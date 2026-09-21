@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 932 Abs. 2: dem Erwerber ist bekannt, dass die Sache nicht dem Veräußerer gehört — festgestellte Tatsache (origin adjudicated). Der Erwerb tritt nicht ein. Das Gericht hat die grobe Fahrlässigkeit ausdrücklich verneint (§ 932 Abs. 2, origin adjudicated mit `not`), deshalb bleibt kein Urteilskanal offen.
+test "§ 932 Abs. 2: Kenntnis des Erwerbers schließt den Erwerb aus" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": veraeusserte_sache(entity_ref("urn:de:bgb:be:e:veraeusserung"), entity_ref("urn:de:bgb:be:e:uhr")) { origin case_input; }
+        assert "f2": veraeusserer(entity_ref("urn:de:bgb:be:e:veraeusserung"), entity_ref("urn:de:bgb:be:e:V")) { origin case_input; }
+        assert "f3": erwerber(entity_ref("urn:de:bgb:be:e:veraeusserung"), entity_ref("urn:de:bgb:be:e:E")) { origin case_input; }
+        assert "f4": bewegliche_sache(entity_ref("urn:de:bgb:be:e:uhr")) { origin case_input; }
+        assert "f5": einigung_ueber_den_eigentumsuebergang(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin case_input; }
+        assert "f6": uebergabe_erfolgt(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin case_input; }
+        assert "f7": veraeusserer_ist_nicht_eigentuemer(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin adjudicated; }
+        assert "j1": kenntnis_dass_die_sache_nicht_dem_veraeusserer_gehoert(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin adjudicated; }
+        assert "j9": not grob_fahrlaessige_unkenntnis_des_erwerbers(entity_ref("urn:de:bgb:be:e:veraeusserung")) { origin adjudicated; }
+    }
+    evaluate truth(nicht_in_gutem_glauben(entity_ref("urn:de:bgb:be:e:veraeusserung")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_durch_uebereignung_erworben(entity_ref("urn:de:bgb:be:e:uhr"), entity_ref("urn:de:bgb:be:e:E")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

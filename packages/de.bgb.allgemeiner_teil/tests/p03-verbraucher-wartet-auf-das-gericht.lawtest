@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// § 13: die Zurechnung des Zwecks („überwiegend“) ist eine Wertung des Gerichts (DECISION-0194, Kanal §47.3). Ohne Antwort des Gerichts bleibt die Verbrauchereigenschaft offen und die Frage geht an das Gericht; der Unternehmer der Gegenseite steht dagegen fest (§ 14 Abs. 1: festgestellte Tatsache des Handelns in Ausübung der Tätigkeit).
+test "§ 13: ohne Antwort des Gerichts bleibt die Verbrauchereigenschaft offen (§ 14 antwortet ohne Urteil)" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "k1": rechtssubjektart(entity_ref("urn:de:bgb:at:p03:kaeufer"), Mensch) { origin case_input; }
+        assert "k2": rechtssubjektart(entity_ref("urn:de:bgb:at:p03:haendler"), JuristischePersonDesPrivatrechts) { origin case_input; }
+        assert "h": handelt_in_ausuebung_der_taetigkeit(entity_ref("urn:de:bgb:at:p03:haendler"), entity_ref("urn:de:bgb:at:p03:kauf")) { origin case_input; }
+    }
+    evaluate truth(unternehmer(entity_ref("urn:de:bgb:at:p03:haendler"), entity_ref("urn:de:bgb:at:p03:kauf")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:at:p03:kaeufer"), entity_ref("urn:de:bgb:at:p03:kauf")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == REQUIRES_JUDGMENT;
+    expect judgment_request(zweck_ueberwiegend_nicht_gewerblich, Court);
+}

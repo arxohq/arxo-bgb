@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1139 Satz 1, 2: die Hypothek wird am 15.02.2026 eingetragen; die Monatsfrist endet kalendarisch mit dem 15.03.2026, einem Sonntag — eine HANDLUNGSFRIST, § 193 verlegt das Ende auf Montag, den 16.03.2026 (derselbe Sonntag wie tests/f01/f04, Ledger D-11-04). Der Antrag geht genau an diesem Montag ein.
+test "§ 1139 Satz 1, 2: Antrag am verlegten Fristende genügt, Widerspruch wirkt wie zugleich eingetragen" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": buchhypothek(entity_ref("urn:de:bgb:dr:w01:hyp")) { origin adjudicated; }
+        assert "f2": darlehen_nicht_hingegeben(entity_ref("urn:de:bgb:dr:w01:hyp")) { origin adjudicated; }
+        assert "f3": widerspruchsfrist_des_1139(entity_ref("urn:de:bgb:dr:w01:hyp"), entity_ref("urn:de:bgb:dr:w01:frist")) { origin case_input; }
+        assert "f4": hypothek_eingetragen_am(entity_ref("urn:de:bgb:dr:w01:hyp"), @2026-02-15) { origin adjudicated; }
+        assert "f5": antrag_auf_widerspruch_gestellt_am(entity_ref("urn:de:bgb:dr:w01:hyp"), @2026-03-16) { origin adjudicated; }
+        assert "f6": widerspruch_innerhalb_des_monats_eingetragen(entity_ref("urn:de:bgb:dr:w01:hyp")) { origin adjudicated; }
+    }
+    evaluate truth(antrag_genuegt_fuer_die_eintragung_des_widerspruchs(entity_ref("urn:de:bgb:dr:w01:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(widerspruch_wirkt_wie_gleichzeitig_eingetragen(entity_ref("urn:de:bgb:dr:w01:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

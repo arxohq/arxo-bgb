@@ -1,0 +1,43 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 2055 Abs. 1: Bei der Auseinandersetzung wird jedem Miterben der Wert der
+// auszugleichenden Zuwendung auf seinen Erbteil angerechnet (Satz 1); der Wert
+// saemtlicher auszugleichender Zuwendungen wird dem Nachlass hinzugerechnet
+// (Satz 2). K1 hat eine Ausstattung von 20 000,00 EUR erhalten (§ 2050 Abs. 1),
+// der Ueberschuss betraegt 80 000,00 EUR. Erwartung aus dem Text, vor der
+// Ausfuehrung gerechnet: Ausgleichungsmasse 100 000,00 EUR; jedes Kind 1/2 =
+// 50 000,00 EUR; K1 abzueglich 20 000,00 EUR = 30 000,00 EUR, K2 50 000,00 EUR.
+test "§ 2055: Hinzurechnung, Teilung, Abzug — drei Schritte, eine Rundung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:u01:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:u01:F"), entity_ref("urn:de:bgb:e:u01:D"), entity_ref("urn:de:bgb:e:u01:K1")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K1")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:u01:F"), entity_ref("urn:de:bgb:e:u01:D"), entity_ref("urn:de:bgb:e:u01:K2")) { origin case_input; }
+        assert "f7": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K2")) { origin case_input; }
+        assert "f8": ueberschuss(entity_ref("urn:de:bgb:e:u01:E"), 80000.00 EUR) { origin case_input; }
+        assert "f9": zuwendung_des_erblassers(entity_ref("urn:de:bgb:e:u01:Z"), entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K1")) { origin case_input; }
+        assert "f10": wert_der_zuwendung(entity_ref("urn:de:bgb:e:u01:Z"), 20000.00 EUR) { origin case_input; }
+        assert "f11": ausstattung(entity_ref("urn:de:bgb:e:u01:Z")) { origin case_input; }
+    }
+    evaluate truth(zur_ausgleichung_zu_bringen(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K1"), entity_ref("urn:de:bgb:e:u01:Z")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausgleichungsmasse(entity_ref("urn:de:bgb:e:u01:E"), 100000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(rechnerischer_erbteil_2055(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K1"), 50000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausgleichungsanteil(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K1"), 30000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausgleichungsanteil(entity_ref("urn:de:bgb:e:u01:E"), entity_ref("urn:de:bgb:e:u01:K2"), 50000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

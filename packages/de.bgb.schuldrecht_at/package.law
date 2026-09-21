@@ -1,0 +1,218 @@
+// BÜRGERLICHES GESETZBUCH — RECHT DER SCHULDVERHÄLTNISSE, ALLGEMEINER TEIL (BG-04)
+//
+// Buch 2 Abschnitte 1–7 (§§ 241–432). Quellen: sources.law (generiert aus dem
+// Register DOKNR — nicht von Hand ändern). Dieses Paket erklärt die Typen und
+// die gemeinsamen Eingänge der sieben Abschnitte; die Normen liegen in den
+// Dateien je Abschnitt und Titel (README, „Aufbau“).
+//
+// WER IST VERBRAUCHER, WER UNTERNEHMER. §§ 13 und 14 stehen in Buch 1 und
+// gehören dem Paket `de.bgb.allgemeiner_teil` (BG-03). Solange dieses Paket
+// seine Köpfe nicht veröffentlicht hat, sind `verbraucher` und `unternehmer`
+// EIGENE empirische Eingänge dieses Pakets mit Anker an die Norm, die sie
+// liest (Ledger D-04-01); die Brücke zu BG-03 ersetzt sie ohne Änderung der
+// lesenden Regeln.
+//
+// FRISTEN. Eigentümer der Fristenberechnung ist `de.bgb.fristen`
+// (DECISION-0319 Р4): die besonderen Fristen dieses Pakets (§ 286 Abs. 3,
+// § 355 Abs. 2, § 356 Abs. 2 und Abs. 3) stehen je Zeile in
+// docs/foundations/de-bgb/DEADLINES.json und rechnen über die dortigen
+// Politiken `BGB_FRISTEN_TAG` und `BGB_FRISTEN_KALENDER`. Eine Politik je Fall
+// (§168.2): die Tagesfrist des § 286 Abs. 3 und die kalendarische Höchstfrist
+// des § 356 Abs. 3 werden in getrennten Fällen belegt.
+//
+// GELD UND RUNDUNG — POLITIK DES PAKETS, KEINE NORM (README „Rundung“;
+// Ledger D-04-04). Weder § 288 noch § 426 nennen eine Rundung. Wo aus einem
+// Satz oder einem Bruch ein Geldbetrag wird, rundet das Paket EINMAL je
+// Anspruch auf den Cent, kaufmännisch:
+// `div_round(Betrag × Zähler, Nenner als Decimal, 2, "HALF_UP")`.
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Treu und Glauben (§ 242), das grobe
+// Missverhältnis (§ 275 Abs. 2), die angemessene Frist (§ 281 Abs. 1), die
+// Wahrscheinlichkeit des entgangenen Gewinns (§ 252), die billige
+// Entschädigung (§ 253 Abs. 2), das Mitverschulden und sein Anteil (§ 254),
+// die überraschende Klausel (§ 305c), die unangemessene Benachteiligung
+// (§ 307), die Klauselverbote MIT Wertungsmöglichkeit (§ 308) und die
+// Störung der Geschäftsgrundlage (§ 313) sind Wertungen des Gerichts — Kanal
+// §47.3, je Paragraph erklärt, nie als flache Tatsache des Falls.
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+import de.bgb.allgemeiner_teil version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Anspruch = de.bgb.core::Anspruch;
+type Schuldverhaeltnis = de.bgb.core::Schuldverhaeltnis;
+type Sache = de.bgb.core::Sache;
+type Frist = de.bgb.fristen::Frist;
+type Rechtsgeschaeft = de.bgb.allgemeiner_teil::Rechtsgeschaeft;
+
+// --- Typen des Buches 2 -------------------------------------------------------------------------
+
+pub entity Vertrag : Schuldverhaeltnis {
+    label de official "Vertrag als Schuldverhältnis (§ 311 Abs. 1)";
+    label en unofficial "contract as an obligation (§ 311 (1))";
+}
+pub entity Leistung {
+    label de official "Leistung, die der Gläubiger kraft des Schuldverhältnisses fordern kann (§ 241 Abs. 1)";
+    label en unofficial "performance which the creditor may demand under the obligation (§ 241 (1))";
+}
+pub entity Schaden {
+    label de official "Schaden, der zu ersetzen ist (§§ 249 ff.)";
+    label en unofficial "damage to be compensated (§§ 249 et seq.)";
+}
+pub entity Klausel {
+    label de official "Einzelne Bestimmung Allgemeiner Geschäftsbedingungen (§§ 305 ff.)";
+    label en unofficial "individual provision of standard business terms (§§ 305 et seq.)";
+}
+
+// --- Gemeinsame Eingänge des Falls ----------------------------------------------------------------
+
+@source(BGB_P241a)
+pub relation verbraucher(p: Person) kind empirical {
+    label de official "Verbraucher (§ 13) — Eingang des Falls (Ledger D-04-01), seit der Brücke D-04-09 auch aus de.bgb.allgemeiner_teil abgeleitet";
+    label en unofficial "consumer (§ 13) — case input (ledger D-04-01), since bridge D-04-09 also derived from de.bgb.allgemeiner_teil";
+}
+@source(BGB_P241a)
+pub relation unternehmer(p: Person) kind empirical {
+    label de official "Unternehmer (§ 14) — Eingang des Falls (Ledger D-04-01), seit der Brücke D-04-09 auch aus de.bgb.allgemeiner_teil abgeleitet";
+    label en unofficial "trader (§ 14) — case input (ledger D-04-01), since bridge D-04-09 also derived from de.bgb.allgemeiner_teil";
+}
+
+// --- Brücke §§ 13, 14 zu de.bgb.allgemeiner_teil (D-04-09) ----------------------------------------
+//
+// verbraucher/unternehmer bleiben EIGENE, einstellige Eingänge des Falls
+// (oben, kind empirical, D-04-01) — ADDITIV, nicht ersetzt: die Brücke ist
+// ein ZWEITER Produzent desselben Kopfes (Muster bestätigt für dieses
+// Sprachprofil, z. B. uz.constitution#citizen). Dreizehn bestehende
+// Szenarien, die verbraucher(p)/unternehmer(p) direkt als case_input setzen,
+// bleiben unverändert grün. Neue Fälle können den Status stattdessen ÜBER
+// BG-03 herleiten: das Korrelat `rechtsgeschaeft_des_vertrags` bindet den
+// Vertrag dieses Pakets an ein Rechtsgeschäft von BG-03, dessen Kopf
+// `verbraucher(p, r)`/`unternehmer(p, r)` (zweistellig, am Rechtsgeschäft)
+// die Regeln unten in den hiesigen, einstelligen Kopf übersetzen.
+pub relation rechtsgeschaeft_des_vertrags(v: Vertrag, r: Rechtsgeschaeft) kind empirical {
+    label de official "Das Rechtsgeschäft (§§ 13, 14 — de.bgb.allgemeiner_teil), das mit diesem Vertrag abgeschlossen wurde — Korrelat der Brücke D-04-09";
+    label en unofficial "the transaction (§§ 13, 14 — de.bgb.allgemeiner_teil) concluded as this contract — correlate of bridge D-04-09";
+}
+
+@source(BGB_P241a)
+rule VerbraucherAusAllgemeinemTeil(p: Person, v: Vertrag, r: Rechtsgeschaeft) strict {
+    label de official "Verbraucher im Sinne des § 13, hergeleitet über das Rechtsgeschäft des Vertrags aus dem Kopf von de.bgb.allgemeiner_teil (Brücke D-04-09)";
+    label en unofficial "consumer within the meaning of § 13, derived via the transaction of the contract from de.bgb.allgemeiner_teil's head (bridge D-04-09)";
+    when rechtsgeschaeft_des_vertrags(v, r);
+    when de.bgb.allgemeiner_teil::verbraucher(p, r);
+    then verbraucher(p);
+}
+
+@source(BGB_P241a)
+rule UnternehmerAusAllgemeinemTeil(p: Person, v: Vertrag, r: Rechtsgeschaeft) strict {
+    label de official "Unternehmer im Sinne des § 14, hergeleitet über das Rechtsgeschäft des Vertrags aus dem Kopf von de.bgb.allgemeiner_teil (Brücke D-04-09)";
+    label en unofficial "trader within the meaning of § 14, derived via the transaction of the contract from de.bgb.allgemeiner_teil's head (bridge D-04-09)";
+    when rechtsgeschaeft_des_vertrags(v, r);
+    when de.bgb.allgemeiner_teil::unternehmer(p, r);
+    then unternehmer(p);
+}
+
+@source(BGB_P311)
+pub relation vertragspartei(v: Vertrag, p: Person) kind empirical {
+    label de official "Partei des Vertrags (§ 311 Abs. 1)";
+    label en unofficial "party to the contract (§ 311 (1))";
+}
+@source(BGB_P311)
+pub relation vertrag_geschlossen_am(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag des Vertragsschlusses";
+    label en unofficial "day on which the contract was concluded";
+}
+
+@source(BGB_P241)
+pub relation leistung_aus_schuldverhaeltnis(l: Leistung, s: Schuldverhaeltnis) kind empirical {
+    key(l);
+    label de official "Leistung, die aus dem Schuldverhältnis geschuldet wird (§ 241 Abs. 1)";
+    label en unofficial "performance owed under the obligation (§ 241 (1))";
+}
+@source(BGB_P271)
+pub relation faelligkeit(l: Leistung, tag: Date) kind empirical {
+    key(l);
+    label de official "Tag, an dem die Leistung fällig ist (§ 271)";
+    label en unofficial "day on which performance falls due (§ 271)";
+}
+@source(BGB_P362)
+pub relation leistung_bewirkt(l: Leistung, tag: Date) kind empirical {
+    key(l);
+    label de official "Tag, an dem die geschuldete Leistung an den Gläubiger bewirkt worden ist (§ 362 Abs. 1)";
+    label en unofficial "day on which the performance owed was rendered to the creditor (§ 362 (1))";
+}
+
+// --- Kalender §85: bundesweit anerkannte Feiertage ------------------------------------------------------
+//
+// § 193 verlegt das Fristende auf den nächsten Werktag; welcher Tag Werktag
+// ist, sagt der Kalenderschnappschuss §85. Der DATENSATZ ist einmal definiert
+// (corpus/gen_kz_clir.py, Ledger D-03) und wird hier — wie in `de.bgb.fristen` —
+// durch einen eigenen Knoten gebunden: die Politik des Falls lebt in dem
+// Paket, dessen Programm der Fall ausführt, und mit ihr der Kalender, den sie
+// liest (ohne Knoten: NON_EXECUTABLE, gemessen 17.09.2026).
+// GRENZE: Landesfeiertage (§ 193 stellt auf den Erklärungs- oder Leistungsort
+// ab) sind nicht enthalten — Gebiet „bundesweit“.
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Politiken der Fristenberechnung (§86) ------------------------------------------------------------
+//
+// Die Mechanik der Fristen gehört `de.bgb.fristen` (DECISION-0319 Р4), die
+// POLITIK des Falls muss jedoch in dem Paket erklärt sein, dessen Programm der
+// Fall ausführt (LDC-E1332, gemessen 17.09.2026): eine Politik eines
+// importierten Pakets ist aus dem Fall nicht adressierbar. Die beiden
+// Politiken tragen deshalb dieselben Felder wie `BGB_FRISTEN_TAG` und
+// `BGB_FRISTEN_KALENDER` und den Namen des Pakets (PARALLEL.md §4, Muster
+// `BGB_VERFUEGUNGEN_JAHR`; Ledger D-04-07).
+//
+// Tagesfrist: § 187 Abs. 1 (der Tag des Ereignisses wird nicht mitgerechnet),
+// § 188 Abs. 1 (Ende mit dem Ablauf des letzten Tages), § 193 als Roll.
+// Verbraucht von § 286 Abs. 3 (30 Tage) und § 355 Abs. 2 (14 Tage).
+deadline policy BGB_SCHULDRECHT_AT_TAG {
+    start_count next_day;
+    include_end true;
+    roll next_working_day;
+}
+
+// Kalenderfrist: § 188 Abs. 2 (Tag, der durch seine Zahl dem Ereignistag
+// entspricht), § 188 Abs. 3 (fehlt der Tag, der letzte Tag des Monats);
+// § 193 wird bei dieser Politik ausdrücklich gerechnet (Regel Verlegung193
+// in de.bgb.fristen). Verbraucht von § 356 Abs. 3 Satz 2 (zwölf Monate und
+// 14 Tage). Eine Politik je Fall: die Tagesfrist des § 286 Abs. 3 und die
+// Höchstfrist des § 356 Abs. 3 werden in getrennten Fällen belegt.
+deadline policy BGB_SCHULDRECHT_AT_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}

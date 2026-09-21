@@ -1,0 +1,30 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+test "§§ 312d und 355: Pflichten nach Information und Widerruf" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "u": untertitel_anwendbar(entity_ref("urn:de:bgb:sr-at:312d:v")) { origin case_input; }
+        assert "t": vertragspartei(entity_ref("urn:de:bgb:sr-at:312d:v"), entity_ref("urn:de:bgb:sr-at:312d:unternehmer")) { origin case_input; }
+        assert "c": vertragspartei(entity_ref("urn:de:bgb:sr-at:312d:v"), entity_ref("urn:de:bgb:sr-at:312d:verbraucher")) { origin case_input; }
+        assert "ut": unternehmer(entity_ref("urn:de:bgb:sr-at:312d:unternehmer")) { origin case_input; }
+        assert "vb": verbraucher(entity_ref("urn:de:bgb:sr-at:312d:verbraucher")) { origin case_input; }
+        assert "date": vertrag_geschlossen_am(entity_ref("urn:de:bgb:sr-at:312d:v"), @2026-06-01) { origin case_input; }
+        assert "info": informationspflicht_nach_246a_erfuellt(entity_ref("urn:de:bgb:sr-at:312d:v")) { origin case_input; }
+        assert "right": widerrufsrecht_eingeraeumt(entity_ref("urn:de:bgb:sr-at:312d:v"), entity_ref("urn:de:bgb:sr-at:312d:verbraucher")) { origin case_input; }
+        assert "withdraw": widerruf_fristgerecht(entity_ref("urn:de:bgb:sr-at:312d:v")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Informationspflicht312d, SATISFIED);
+    expect position(Bindungsentfall355, SATISFIED);
+}
+
+test "§§ 312d und 355: ohne auslösende Tatsachen keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Informationspflicht312d, ACTIVE);
+    expect not position(Bindungsentfall355, ACTIVE);
+}

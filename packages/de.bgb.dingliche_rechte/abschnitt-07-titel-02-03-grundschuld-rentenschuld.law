@@ -1,0 +1,698 @@
+// --- Buch 3 Abschnitt 7: Löschung, Erlöschen, Rang und Erlös (§§ 1178–1183),
+//     Titel 2 Grundschuld (§§ 1191–1198), Titel 3 Rentenschuld (§§ 1199–1203) ------------------------
+//
+// RANG UND ERLÖS. Die Reihenfolge der Belastungen rechnet dieses Paket NICHT
+// selbst: sie kommt aus § 879 des Nachbarpakets (`de.bgb.besitz_eigentum::vorrang`),
+// dessen Regeln auf jedes `Recht` und damit auf jedes Grundpfandrecht dieses
+// Pakets passen. Dieses Paket zieht daraus die GELDFOLGE: aus dem Erlös wird
+// jedes Recht der Reihe nach befriedigt, soweit der Erlös reicht (§ 1113 Abs. 1
+// „aus dem Grundstück zu zahlen“, § 1181 Abs. 1 „wird der Gläubiger aus dem
+// Grundstück befriedigt, so erlischt die Hypothek“, § 1176 Kollisionsklausel).
+// GRENZE: das Verteilungsverfahren der Zwangsversteigerung — geringstes Gebot,
+// bar zu zahlender Teil, Bestehenbleiben von Rechten, Teilungsplan (§§ 10, 44,
+// 52, 105 ff. ZVG) — steht nicht im BGB und ist nicht formalisiert
+// (Ledger D-11-03, README „Was das Paket nicht tut und warum“).
+
+pub relation erloes_aus_dem_grundstueck(g: Grundstueck, betrag: Money) kind empirical {
+    key(g);
+    label de official "Erlös, der aus dem Grundstück zur Befriedigung der Gläubiger zur Verfügung steht (§ 1147, § 1181 Abs. 1) — Ergebnis des Zwangsversteigerungsverfahrens, festgestellte Tatsache";
+    label en unofficial "proceeds available from the land for satisfying the creditors (§ 1147, § 1181 (1)) — outcome of the enforcement procedure, established fact";
+}
+pub relation erstrangige_belastung(h: Grundpfandrecht) kind empirical {
+    label de official "dem Grundpfandrecht geht keine Belastung des Grundstücks im Range vor (§ 879 Abs. 1) — ausdrückliche Eingabe des Falls; das Schweigen des Falls ist keine Verneinung";
+    label en unofficial "no encumbrance of the land ranks ahead of this charge (§ 879 (1)) — explicit case input; silence of the case is no denial";
+}
+pub relation vorgehende_belastung(frueher: Grundpfandrecht, spaeter: Grundpfandrecht) kind derived {
+    label de official "das eine Grundpfandrecht geht dem anderen im Range vor (§ 879 über `de.bgb.besitz_eigentum::vorrang`)";
+    label en unofficial "one charge ranks ahead of the other (§ 879 via `de.bgb.besitz_eigentum::vorrang`)";
+}
+pub relation summe_der_vorgehenden_betraege(h: Grundpfandrecht, summe: Money) kind derived {
+    key(h);
+    label de official "Summe der Geldsummen aller im Range vorgehenden Grundpfandrechte (§ 879, § 1113 Abs. 1)";
+    label en unofficial "sum of the amounts of all charges ranking ahead (§ 879, § 1113 (1))";
+}
+pub relation aus_dem_erloes_zugeteilt(h: Grundpfandrecht, betrag: Money) kind derived {
+    key(h);
+    label de official "Betrag, der dem Grundpfandrecht aus dem Erlös zufällt, nachdem die vorgehenden Rechte befriedigt sind (§ 1113 Abs. 1, § 1181 Abs. 1)";
+    label en unofficial "amount accruing to the charge out of the proceeds after the prior-ranking rights have been satisfied (§ 1113 (1), § 1181 (1))";
+}
+pub relation aus_dem_grundstueck_voll_befriedigt(h: Grundpfandrecht) kind derived {
+    label de official "der Gläubiger ist aus dem Grundstück in voller Höhe befriedigt (§ 1181 Abs. 1)";
+    label en unofficial "the creditor has been satisfied in full out of the land (§ 1181 (1))";
+}
+pub relation aus_dem_grundstueck_ausgefallen(h: Grundpfandrecht, ausfall: Money) kind derived {
+    key(h);
+    label de official "Betrag, mit dem der Gläubiger bei der Befriedigung aus dem Grundstück ausgefallen ist (§ 1166 Satz 1)";
+    label en unofficial "amount by which the creditor fell short on satisfaction out of the land (§ 1166 sentence 1)";
+}
+
+@source(BGB_P1181) {
+    rule VorgehendeBelastungAusDemRang(frueher: Grundpfandrecht, spaeter: Grundpfandrecht) strict {
+        label de official "Das Rangverhältnis unter mehreren Rechten, mit denen ein Grundstück belastet ist, bestimmt § 879; das vorgehende Recht wird aus dem Erlös zuerst befriedigt";
+        label en unofficial "The ranking among several rights encumbering a plot follows § 879; the prior-ranking right is satisfied first out of the proceeds";
+        when de.bgb.besitz_eigentum::vorrang(frueher, spaeter);
+        then vorgehende_belastung(frueher, spaeter);
+    }
+    rule SummeDerVorgehendenBetraege(h: Grundpfandrecht, g: Grundstueck, e: Money, y: Grundpfandrecht) strict {
+        label de official "Summe der Geldsummen aller im Range vorgehenden Grundpfandrechte — Grundlage der Zuteilung aus dem Erlös. Die Regel setzt mindestens ein vorgehendes Recht voraus; das erstrangige Recht nennt der Fall ausdrücklich (`erstrangige_belastung`), denn eine leere Summe ist kein Geldbetrag";
+        label en unofficial "Sum of the amounts of all charges ranking ahead — basis of the allocation out of the proceeds. The rule presupposes at least one prior right; the first-ranking right is named by the case explicitly, since an empty sum is not a monetary amount";
+        when belastungsgegenstand_grundstueck(h, g) and erloes_aus_dem_grundstueck(g, e) and vorgehende_belastung(y, h);
+        then summe_der_vorgehenden_betraege(h, (sum all b: Money for x: Grundpfandrecht where vorgehende_belastung(x, h) and geldsumme(x, b)));
+    }
+    rule KeineVorgehendeBelastung(h: Grundpfandrecht, g: Grundstueck, e: Money) strict {
+        label de official "Dem erstrangigen Recht geht keine Belastung vor; ihm steht der ganze Erlös zur Verfügung (§ 879 Abs. 1, § 1113 Abs. 1)";
+        label en unofficial "No encumbrance ranks ahead of the first-ranking right; the whole proceeds are available to it (§ 879 (1), § 1113 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and erloes_aus_dem_grundstueck(g, e) and erstrangige_belastung(h);
+        then summe_der_vorgehenden_betraege(h, 0.00 EUR);
+    }
+    rule VolleBefriedigungAusDemErloes(h: Grundpfandrecht, g: Grundstueck, e: Money, v: Money, s: Money) strict {
+        label de official "Reicht der Erlös nach Abzug der vorgehenden Rechte für die ganze Geldsumme, so wird der Gläubiger aus dem Grundstück voll befriedigt und die Hypothek erlischt (§ 1181 Abs. 1)";
+        label en unofficial "If the proceeds less the prior-ranking rights suffice for the whole sum, the creditor is satisfied in full and the mortgage is extinguished (§ 1181 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and erloes_aus_dem_grundstueck(g, e)
+            and summe_der_vorgehenden_betraege(h, v) and geldsumme(h, s) and e - v >= s;
+        then aus_dem_erloes_zugeteilt(h, s);
+    }
+    rule TeilweiseBefriedigungAusDemErloes(h: Grundpfandrecht, g: Grundstueck, e: Money, v: Money, s: Money) strict {
+        label de official "Reicht der Erlös nach Abzug der vorgehenden Rechte nur zum Teil, so fällt dem Grundpfandrecht nur der Rest zu (§ 1113 Abs. 1, § 1181 Abs. 1)";
+        label en unofficial "If the proceeds less the prior-ranking rights suffice only in part, only the remainder accrues to the charge (§ 1113 (1), § 1181 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and erloes_aus_dem_grundstueck(g, e)
+            and summe_der_vorgehenden_betraege(h, v) and geldsumme(h, s) and e - v < s and e - v > 0.00 EUR;
+        then aus_dem_erloes_zugeteilt(h, e - v);
+    }
+    rule KeineBefriedigungAusDemErloes(h: Grundpfandrecht, g: Grundstueck, e: Money, v: Money, s: Money) strict {
+        label de official "Ist der Erlös durch die vorgehenden Rechte erschöpft, so fällt dem Grundpfandrecht nichts zu (§ 1113 Abs. 1, § 1181 Abs. 1)";
+        label en unofficial "If the proceeds are exhausted by the prior-ranking rights, nothing accrues to the charge (§ 1113 (1), § 1181 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and erloes_aus_dem_grundstueck(g, e)
+            and summe_der_vorgehenden_betraege(h, v) and geldsumme(h, s) and e - v <= 0.00 EUR;
+        then aus_dem_erloes_zugeteilt(h, 0.00 EUR);
+    }
+    rule ErloeschenDurchVolleBefriedigung(h: Grundpfandrecht, s: Money) strict {
+        label de official "Wird der Gläubiger aus dem Grundstück befriedigt, so erlischt die Hypothek (§ 1181 Abs. 1)";
+        label en unofficial "If the creditor is satisfied out of the land, the mortgage is extinguished (§ 1181 (1))";
+        when aus_dem_erloes_zugeteilt(h, s) and geldsumme(h, s);
+        then aus_dem_grundstueck_voll_befriedigt(h);
+    }
+    rule AusfallBeiUnzureichendemErloes(h: Grundpfandrecht, z: Money, s: Money) strict {
+        label de official "Der Betrag, mit dem der Gläubiger bei der Befriedigung aus dem Grundstück ausfällt (§ 1166 Satz 1, § 1181 Abs. 1 im Gegenschluss)";
+        label en unofficial "The amount by which the creditor falls short on satisfaction out of the land (§ 1166 sentence 1, § 1181 (1) a contrario)";
+        when aus_dem_erloes_zugeteilt(h, z) and geldsumme(h, s) and z < s;
+        then aus_dem_grundstueck_ausgefallen(h, s - z);
+    }
+    rule GesamthypothekUebrigeGrundstueckeWerdenFrei(h: Grundpfandrecht, g: Grundstueck, anderes: Grundstueck) strict {
+        label de official "Erfolgt die Befriedigung des Gläubigers aus einem der mit einer Gesamthypothek belasteten Grundstücke, so werden auch die übrigen Grundstücke frei (§ 1181 Abs. 2)";
+        label en unofficial "If the creditor is satisfied out of one of the plots encumbered with an aggregate mortgage, the remaining plots are also released (§ 1181 (2))";
+        when aus_dem_grundstueck_voll_befriedigt(h) and gesamthypothek_an(h, g) and gesamthypothek_an(h, anderes) and anderes != g;
+        then hypothek_an_den_uebrigen_grundstuecken_erloschen(h, anderes);
+    }
+}
+
+// --- §§ 1178–1180, 1182, 1183: Nebenleistungen, Löschung, Auswechslung, Aufhebung -------------------------
+
+pub relation hypothek_fuer_rueckstaende_von_nebenleistungen(h: Grundpfandrecht) kind empirical {
+    label de official "die Hypothek besteht für Rückstände von Zinsen und anderen Nebenleistungen sowie für zu erstattende Kosten (§ 1178 Abs. 1 Satz 1)";
+    label en unofficial "the mortgage exists for arrears of interest and other ancillary payments and for costs to be reimbursed (§ 1178 (1) sentence 1)";
+}
+pub relation recht_eines_dritten_am_anspruch_auf_die_leistung(h: Grundpfandrecht, dritter: Person) kind empirical {
+    label de official "einem Dritten steht ein Recht an dem Anspruch auf eine solche Leistung zu (§ 1178 Abs. 1 Satz 2, Abs. 2 Satz 2)";
+    label en unofficial "a third party has a right in the claim to such a payment (§ 1178 (1) sentence 2, (2) sentence 2)";
+}
+pub relation verzichtserklaerung_gegenueber_dem_eigentuemer(h: Grundpfandrecht) kind empirical {
+    label de official "Erklärung des Gläubigers gegenüber dem Eigentümer, auf die Hypothek für die Nebenleistungen zu verzichten (§ 1178 Abs. 2 Satz 1)";
+    label en unofficial "declaration of the creditor to the owner waiving the mortgage for the ancillary payments (§ 1178 (2) sentence 1)";
+}
+pub relation loeschungsverpflichtung_des_eigentuemers(h: Grundpfandrecht, beguenstigter: Person) kind empirical {
+    label de official "der Eigentümer hat sich einem anderen gegenüber verpflichtet, die Hypothek löschen zu lassen, wenn sie sich mit dem Eigentum in einer Person vereinigt (§ 1179)";
+    label en unofficial "the owner has undertaken vis-à-vis another to have the mortgage cancelled if it merges with ownership (§ 1179)";
+}
+pub relation beguenstigter_hat_gleich_oder_nachrangiges_anderes_recht(h: Grundpfandrecht, beguenstigter: Person) kind empirical {
+    label de official "dem Begünstigten steht ein anderes gleichrangiges oder nachrangiges Recht als eine Hypothek, Grundschuld oder Rentenschuld am Grundstück zu (§ 1179 Nr. 1)";
+    label en unofficial "the beneficiary holds another right of equal or lower rank than a mortgage, land charge or annuity charge in the land (§ 1179 no. 1)";
+}
+pub relation beguenstigter_hat_anspruch_auf_ein_solches_recht(h: Grundpfandrecht, beguenstigter: Person) kind empirical {
+    label de official "dem Begünstigten steht ein Anspruch auf Einräumung eines solchen anderen Rechts oder auf Übertragung des Eigentums zu; der Anspruch kann auch künftig oder bedingt sein (§ 1179 Nr. 2)";
+    label en unofficial "the beneficiary has a claim to the grant of such a right or to transfer of ownership; the claim may be future or conditional (§ 1179 no. 2)";
+}
+pub relation hypothek_mit_dem_eigentum_vereinigt(h: Grundpfandrecht) kind empirical {
+    label de official "die Hypothek ist mit dem Eigentum in einer Person vereinigt (§ 1178 Abs. 1, § 1179, § 1179a Abs. 1, § 1179b Abs. 1)";
+    label en unofficial "the mortgage has merged with ownership in one person (§ 1178 (1), § 1179, § 1179a (1), § 1179b (1))";
+}
+pub relation vorrangige_oder_gleichrangige_hypothek(beguenstigt: Grundpfandrecht, andere: Grundpfandrecht) kind empirical {
+    label de official "die andere Hypothek ist der begünstigten Hypothek vorrangig oder gleichrangig (§ 1179a Abs. 1 Satz 1)";
+    label en unofficial "the other mortgage ranks ahead of or equally with the benefited mortgage (§ 1179a (1) sentence 1)";
+}
+pub relation loeschungsanspruch_ausgeschlossen_vereinbart(h: Grundpfandrecht) kind empirical {
+    label de official "als Inhalt der Hypothek ist der Ausschluss des Löschungsanspruchs vereinbart und im Grundbuch angegeben (§ 1179a Abs. 5)";
+    label en unofficial "exclusion of the cancellation claim has been agreed as content of the mortgage and entered in the register (§ 1179a (5))";
+}
+pub relation zu_sichernde_forderung_wird_nicht_mehr_entstehen(h: Grundpfandrecht) kind empirical {
+    label de official "es hat sich ergeben, dass die zu sichernde Forderung nicht mehr entstehen wird (§ 1179a Abs. 2 Satz 1)";
+    label en unofficial "it has become apparent that the claim to be secured will no longer arise (§ 1179a (2) sentence 1)";
+}
+pub relation neue_forderung_an_die_stelle_gesetzt(h: Grundpfandrecht, neue: Anspruch) kind empirical {
+    label de official "an die Stelle der Forderung, für welche die Hypothek besteht, soll eine andere Forderung gesetzt werden; Einigung des Gläubigers und des Eigentümers und Eintragung liegen vor (§ 1180 Abs. 1)";
+    label en unofficial "another claim is to replace the claim for which the mortgage exists; agreement of creditor and owner and registration are present (§ 1180 (1))";
+}
+pub relation zustimmung_des_bisherigen_hypothekenglaeubigers(h: Grundpfandrecht) kind empirical {
+    label de official "Zustimmung des bisherigen Hypothekengläubigers zur Auswechslung, wenn die neue Forderung ihm nicht zusteht (§ 1180 Abs. 2)";
+    label en unofficial "consent of the previous mortgage creditor to the substitution where the new claim does not belong to them (§ 1180 (2))";
+}
+pub relation neue_forderung_steht_dem_bisherigen_glaeubiger_zu(h: Grundpfandrecht) kind empirical {
+    label de official "die neue Forderung steht dem bisherigen Hypothekengläubiger zu (§ 1180 Abs. 2 im Gegenschluss)";
+    label en unofficial "the new claim belongs to the previous mortgage creditor (§ 1180 (2) a contrario)";
+}
+pub relation zustimmung_des_eigentuemers_zur_aufhebung(h: Grundpfandrecht) kind empirical {
+    label de official "Zustimmung des Eigentümers zur Aufhebung der Hypothek durch Rechtsgeschäft; sie ist dem Grundbuchamt oder dem Gläubiger gegenüber zu erklären und unwiderruflich (§ 1183)";
+    label en unofficial "consent of the owner to cancellation of the mortgage by legal transaction; it is declared to the registry or the creditor and is irrevocable (§ 1183)";
+}
+pub relation aufhebungserklaerung_des_glaeubigers(h: Grundpfandrecht) kind empirical {
+    label de official "Erklärung des Gläubigers, die Hypothek aufzuheben (§ 1183, § 1168 Abs. 2)";
+    label en unofficial "declaration of the creditor cancelling the mortgage (§ 1183, § 1168 (2))";
+}
+
+pub relation hypothek_fuer_nebenleistungen_erloschen(h: Grundpfandrecht) kind derived {
+    label de official "die Hypothek für Rückstände von Zinsen und anderen Nebenleistungen erlischt mit der Vereinigung; sie erlischt nicht, solange einem Dritten ein Recht an dem Anspruch zusteht (§ 1178 Abs. 1)";
+    label en unofficial "the mortgage for arrears of ancillary payments is extinguished on merger; it is not extinguished while a third party holds a right in the claim (§ 1178 (1))";
+}
+pub relation verzicht_auf_die_nebenleistungshypothek_wirksam(h: Grundpfandrecht) kind derived {
+    label de official "zum Verzicht auf die Hypothek für die Nebenleistungen genügt die Erklärung des Gläubigers gegenüber dem Eigentümer (§ 1178 Abs. 2 Satz 1)";
+    label en unofficial "for the waiver of the mortgage for ancillary payments the creditor's declaration to the owner suffices (§ 1178 (2) sentence 1)";
+}
+pub relation loeschungsvormerkung_eintragbar(h: Grundpfandrecht, beguenstigter: Person) kind derived {
+    label de official "zur Sicherung des Anspruchs auf Löschung kann eine Vormerkung in das Grundbuch eingetragen werden (§ 1179)";
+    label en unofficial "a priority notice securing the claim to cancellation may be registered (§ 1179)";
+}
+pub relation loeschungsanspruch(beguenstigt: Grundpfandrecht, andere: Grundpfandrecht, glaeubiger: Person, eigentuemer: Person) kind derived {
+    label de official "der Gläubiger einer Hypothek kann von dem Eigentümer verlangen, dass dieser eine vorrangige oder gleichrangige, mit dem Eigentum vereinigte Hypothek löschen lässt (§ 1179a Abs. 1 Satz 1, § 1179b Abs. 1)";
+    label en unofficial "the creditor of a mortgage may demand that the owner have a prior-ranking or equal-ranking mortgage merged with ownership cancelled (§ 1179a (1) sentence 1, § 1179b (1))";
+}
+pub relation loeschungsanspruch_wie_durch_vormerkung_gesichert(beguenstigt: Grundpfandrecht) kind derived {
+    label de official "der Löschungsanspruch ist in gleicher Weise gesichert, als wenn zu seiner Sicherung gleichzeitig mit der begünstigten Hypothek eine Vormerkung eingetragen worden wäre (§ 1179a Abs. 1 Satz 3)";
+    label en unofficial "the cancellation claim is secured as if a priority notice had been registered together with the benefited mortgage (§ 1179a (1) sentence 3)";
+}
+pub relation forderung_ausgewechselt(h: Grundpfandrecht, neue: Anspruch) kind derived {
+    label de official "an die Stelle der bisherigen Forderung ist die andere Forderung getreten (§ 1180 Abs. 1, Abs. 2)";
+    label en unofficial "the other claim has taken the place of the previous claim (§ 1180 (1), (2))";
+}
+pub relation hypothek_aufgehoben(h: Grundpfandrecht) kind derived {
+    label de official "die Hypothek ist durch Rechtsgeschäft aufgehoben (§ 1183)";
+    label en unofficial "the mortgage has been cancelled by legal transaction (§ 1183)";
+}
+
+@source(BGB_P1178) {
+    rule NebenleistungshypothekErlischtBeiVereinigung(h: Grundpfandrecht) strict {
+        label de official "Die Hypothek für Rückstände von Zinsen und anderen Nebenleistungen sowie für Kosten erlischt, wenn sie sich mit dem Eigentum in einer Person vereinigt; das Erlöschen tritt nicht ein, solange einem Dritten ein Recht an dem Anspruch auf eine solche Leistung zusteht (§ 1178 Abs. 1)";
+        label en unofficial "The mortgage for arrears of ancillary payments and for costs is extinguished on merger with ownership; not, however, while a third party holds a right in the claim to such a payment (§ 1178 (1))";
+        when hypothek_fuer_rueckstaende_von_nebenleistungen(h) and hypothek_mit_dem_eigentum_vereinigt(h)
+            and not recht_des_dritten_besteht(h);
+        then hypothek_fuer_nebenleistungen_erloschen(h);
+    }
+    rule VerzichtDurchErklaerungGegenueberDemEigentuemer(h: Grundpfandrecht) strict {
+        label de official "Zum Verzicht auf die Hypothek für die im Absatz 1 bezeichneten Leistungen genügt die Erklärung des Gläubigers gegenüber dem Eigentümer (§ 1178 Abs. 2 Satz 1)";
+        label en unofficial "For the waiver of the mortgage for the payments named in subsection (1) the creditor's declaration to the owner suffices (§ 1178 (2) sentence 1)";
+        when hypothek_fuer_rueckstaende_von_nebenleistungen(h) and verzichtserklaerung_gegenueber_dem_eigentuemer(h)
+            and not recht_des_dritten_besteht(h);
+        then verzicht_auf_die_nebenleistungshypothek_wirksam(h);
+    }
+    rule VerzichtBrauchtZustimmungDesDritten(h: Grundpfandrecht, dritter: Person) strict {
+        label de official "Solange einem Dritten ein Recht an dem Anspruch auf eine solche Leistung zusteht, ist die Zustimmung des Dritten erforderlich; sie ist unwiderruflich (§ 1178 Abs. 2 Sätze 2, 3)";
+        label en unofficial "While a third party holds a right in the claim to such a payment, that party's consent is required; it is irrevocable (§ 1178 (2) sentences 2, 3)";
+        when hypothek_fuer_rueckstaende_von_nebenleistungen(h) and verzichtserklaerung_gegenueber_dem_eigentuemer(h)
+            and recht_eines_dritten_am_anspruch_auf_die_leistung(h, dritter) and zustimmung_des_dritten_zum_verzicht(h, dritter);
+        then verzicht_auf_die_nebenleistungshypothek_wirksam(h);
+    }
+}
+
+pub relation recht_des_dritten_besteht(h: Grundpfandrecht) kind empirical {
+    label de official "einem Dritten steht ein Recht an dem Anspruch auf die Nebenleistung zu (§ 1178 Abs. 1 Satz 2) — ausdrückliche Eingabe des Falls; ihr Fehlen trägt der Fall als `assert not`";
+    label en unofficial "a third party holds a right in the claim to the ancillary payment (§ 1178 (1) sentence 2) — explicit case input; its absence is carried by an explicit `assert not`";
+}
+pub relation zustimmung_des_dritten_zum_verzicht(h: Grundpfandrecht, dritter: Person) kind empirical {
+    label de official "Zustimmung des Dritten zum Verzicht; sie ist demjenigen gegenüber zu erklären, zu dessen Gunsten sie erfolgt, und unwiderruflich (§ 1178 Abs. 2 Satz 3)";
+    label en unofficial "consent of the third party to the waiver; declared to the beneficiary and irrevocable (§ 1178 (2) sentence 3)";
+}
+
+@source(BGB_P1179) {
+    rule LoeschungsvormerkungBeiAnderemRecht(h: Grundpfandrecht, beguenstigter: Person) strict {
+        label de official "Verpflichtet sich der Eigentümer einem anderen gegenüber, die Hypothek löschen zu lassen, wenn sie sich mit dem Eigentum vereinigt, so kann eine Vormerkung eingetragen werden, wenn dem Begünstigten ein anderes gleichrangiges oder nachrangiges Recht als eine Hypothek, Grundschuld oder Rentenschuld am Grundstück zusteht (§ 1179 Nr. 1)";
+        label en unofficial "Where the owner undertakes to have the mortgage cancelled upon merger, a priority notice may be registered if the beneficiary holds another right of equal or lower rank than a mortgage, land charge or annuity charge (§ 1179 no. 1)";
+        when loeschungsverpflichtung_des_eigentuemers(h, beguenstigter) and beguenstigter_hat_gleich_oder_nachrangiges_anderes_recht(h, beguenstigter);
+        then loeschungsvormerkung_eintragbar(h, beguenstigter);
+    }
+    rule LoeschungsvormerkungBeiAnspruchAufEinSolchesRecht(h: Grundpfandrecht, beguenstigter: Person) strict {
+        label de official "Die Vormerkung kann auch eingetragen werden, wenn dem Begünstigten ein Anspruch auf Einräumung eines solchen anderen Rechts oder auf Übertragung des Eigentums zusteht; der Anspruch kann auch ein künftiger oder bedingter sein (§ 1179 Nr. 2)";
+        label en unofficial "The notice may also be registered if the beneficiary has a claim to the grant of such a right or to transfer of ownership; the claim may be future or conditional (§ 1179 no. 2)";
+        when loeschungsverpflichtung_des_eigentuemers(h, beguenstigter) and beguenstigter_hat_anspruch_auf_ein_solches_recht(h, beguenstigter);
+        then loeschungsvormerkung_eintragbar(h, beguenstigter);
+    }
+}
+
+@source(BGB_P1179a) {
+    rule LoeschungsanspruchBeiVereinigterVorrangigerHypothek(beguenstigt: Grundpfandrecht, andere: Grundpfandrecht, glaeubiger: Person, eigentuemer: Person) strict {
+        label de official "Der Gläubiger einer Hypothek kann von dem Eigentümer verlangen, dass dieser eine vorrangige oder gleichrangige Hypothek löschen lässt, wenn sie im Zeitpunkt der Eintragung seiner Hypothek mit dem Eigentum in einer Person vereinigt ist oder eine solche Vereinigung später eintritt (§ 1179a Abs. 1 Satz 1)";
+        label en unofficial "The creditor of a mortgage may demand that the owner have a prior- or equal-ranking mortgage cancelled if it is merged with ownership at the time of registration of their mortgage or merges later (§ 1179a (1) sentence 1)";
+        when berechtigter(beguenstigt, glaeubiger) and eigentuemer_des_belasteten_grundstuecks(beguenstigt, eigentuemer)
+            and vorrangige_oder_gleichrangige_hypothek(beguenstigt, andere) and hypothek_mit_dem_eigentum_vereinigt(andere)
+            and not loeschungsanspruch_ausgeschlossen_vereinbart(beguenstigt);
+        then loeschungsanspruch(beguenstigt, andere, glaeubiger, eigentuemer);
+    }
+    rule LoeschungsanspruchWieDurchVormerkungGesichert(beguenstigt: Grundpfandrecht, andere: Grundpfandrecht, glaeubiger: Person, eigentuemer: Person) strict {
+        label de official "Der Löschungsanspruch ist in gleicher Weise gesichert, als wenn zu seiner Sicherung gleichzeitig mit der begünstigten Hypothek eine Vormerkung in das Grundbuch eingetragen worden wäre (§ 1179a Abs. 1 Satz 3)";
+        label en unofficial "The cancellation claim is secured as if a priority notice had been registered together with the benefited mortgage (§ 1179a (1) sentence 3)";
+        when loeschungsanspruch(beguenstigt, andere, glaeubiger, eigentuemer);
+        then loeschungsanspruch_wie_durch_vormerkung_gesichert(beguenstigt);
+    }
+    rule LoeschungErstWennDieForderungNichtMehrEntsteht(beguenstigt: Grundpfandrecht, andere: Grundpfandrecht, glaeubiger: Person, eigentuemer: Person) strict {
+        label de official "Die Löschung einer nach § 1163 Abs. 1 Satz 1 mit dem Eigentum vereinigten Hypothek kann erst verlangt werden, wenn sich ergibt, dass die zu sichernde Forderung nicht mehr entstehen wird (§ 1179a Abs. 2 Satz 1)";
+        label en unofficial "Cancellation of a mortgage merged with ownership under § 1163 (1) sentence 1 may be demanded only once it is apparent that the claim to be secured will no longer arise (§ 1179a (2) sentence 1)";
+        when berechtigter(beguenstigt, glaeubiger) and eigentuemer_des_belasteten_grundstuecks(beguenstigt, eigentuemer)
+            and vorrangige_oder_gleichrangige_hypothek(beguenstigt, andere) and forderung_nicht_zur_entstehung_gelangt(andere)
+            and zu_sichernde_forderung_wird_nicht_mehr_entstehen(andere)
+            and not loeschungsanspruch_ausgeschlossen_vereinbart(beguenstigt);
+        then loeschungsanspruch(beguenstigt, andere, glaeubiger, eigentuemer);
+    }
+}
+
+@source(BGB_P1179b)
+rule LoeschungsanspruchBeiEigenemRecht(h: Grundpfandrecht, glaeubiger: Person, eigentuemer: Person) strict {
+    label de official "Wer als Gläubiger einer Hypothek im Grundbuch eingetragen oder nach Maßgabe des § 1155 als Gläubiger ausgewiesen ist, kann von dem Eigentümer die Löschung dieser Hypothek verlangen, wenn sie im Zeitpunkt ihrer Eintragung mit dem Eigentum in einer Person vereinigt ist oder eine solche Vereinigung später eintritt (§ 1179b Abs. 1)";
+    label en unofficial "A person registered as creditor of a mortgage or shown as creditor under § 1155 may demand cancellation of that mortgage from the owner if it is merged with ownership at the time of its registration or merges later (§ 1179b (1))";
+    when glaeubiger_im_grundbuch_angegeben(h, glaeubiger) and eigentuemer_des_belasteten_grundstuecks(h, eigentuemer)
+        and hypothek_mit_dem_eigentum_vereinigt(h) and not loeschungsanspruch_ausgeschlossen_vereinbart(h);
+    then loeschungsanspruch(h, h, glaeubiger, eigentuemer);
+}
+
+@source(BGB_P1180) {
+    rule AuswechslungMitZustimmungDesBisherigenGlaeubigers(h: Grundpfandrecht, neue: Anspruch) strict {
+        label de official "An die Stelle der Forderung, für welche die Hypothek besteht, kann eine andere Forderung gesetzt werden; steht sie nicht dem bisherigen Hypothekengläubiger zu, so ist dessen Zustimmung erforderlich (§ 1180 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+        label en unofficial "Another claim may replace the claim for which the mortgage exists; if it does not belong to the previous creditor, their consent is required (§ 1180 (1) sentence 1, (2) sentence 1)";
+        when neue_forderung_an_die_stelle_gesetzt(h, neue) and zustimmung_des_bisherigen_hypothekenglaeubigers(h);
+        then forderung_ausgewechselt(h, neue);
+    }
+    rule AuswechslungOhneZustimmungWennDieForderungDemGlaeubigerZusteht(h: Grundpfandrecht, neue: Anspruch) strict {
+        label de official "Steht die neue Forderung dem bisherigen Hypothekengläubiger zu, so bedarf es keiner Zustimmung (§ 1180 Abs. 2 Satz 1 im Gegenschluss)";
+        label en unofficial "If the new claim belongs to the previous creditor, no consent is required (§ 1180 (2) sentence 1 a contrario)";
+        when neue_forderung_an_die_stelle_gesetzt(h, neue) and neue_forderung_steht_dem_bisherigen_glaeubiger_zu(h);
+        then forderung_ausgewechselt(h, neue);
+    }
+}
+
+@source(BGB_P1182)
+rule UebergangBeiBefriedigungAusDerGesamthypothek(h: Grundpfandrecht, g: Grundstueck, anderes: Grundstueck, p: Person, betrag: Money) strict {
+    label de official "Soweit im Falle einer Gesamthypothek der Eigentümer des Grundstücks, aus dem der Gläubiger befriedigt wird, von dem Eigentümer eines der anderen Grundstücke Ersatz verlangen kann, geht die Hypothek an dem Grundstück dieses Eigentümers auf ihn über (§ 1182 Satz 1)";
+    label en unofficial "In so far as the owner of the plot out of which the creditor is satisfied may claim reimbursement from the owner of another plot, the mortgage on that plot passes to them (§ 1182 sentence 1)";
+    when aus_dem_grundstueck_voll_befriedigt(h) and gesamthypothek_an(h, g) and eigentuemer_des_gesamtgrundstuecks(h, g, p)
+        and ersatzanspruch_gegen_den_eigentuemer_eines_anderen_grundstuecks(h, anderes, betrag) and anderes != g;
+    then hypothek_am_fremden_grundstueck_uebergegangen(h, anderes, p, betrag);
+}
+
+@source(BGB_P1183)
+rule AufhebungBrauchtDieZustimmungDesEigentuemers(h: Grundpfandrecht) strict {
+    label de official "Zur Aufhebung der Hypothek durch Rechtsgeschäft ist die Zustimmung des Eigentümers erforderlich; sie ist dem Grundbuchamt oder dem Gläubiger gegenüber zu erklären und unwiderruflich (§ 1183)";
+    label en unofficial "Cancellation of the mortgage by legal transaction requires the owner's consent, declared to the registry or the creditor and irrevocable (§ 1183)";
+    when aufhebungserklaerung_des_glaeubigers(h) and zustimmung_des_eigentuemers_zur_aufhebung(h);
+    then hypothek_aufgehoben(h);
+}
+
+// --- Titel 2: Grundschuld (§§ 1191–1198) ---------------------------------------------------------------
+//
+// § 1192 Abs. 1 ordnet die entsprechende Anwendung der Hypothekenvorschriften an,
+// „soweit sich nicht daraus ein anderes ergibt, dass die Grundschuld nicht eine
+// Forderung voraussetzt“. Im Modell heißt das: dieselben Prädikate, ohne die
+// Regeln, die `gesicherte_forderung` lesen. Die Kündigungsfrist des § 1193 Abs. 1
+// Satz 3 ist eine WARTEFRIST — das Kapital wird mit ihrem Ablauf fällig, niemand
+// hat innerhalb ihrer zu leisten; ihr Ende liest `frist_ende_kalender`
+// (Ledger D-11-04, Zeile in DEADLINES.json).
+
+pub relation zinsen_und_nebenleistungen_aus_dem_grundstueck(h: Grundpfandrecht) kind empirical {
+    label de official "die Belastung ist so erfolgt, dass Zinsen von der Geldsumme sowie andere Nebenleistungen aus dem Grundstück zu entrichten sind (§ 1191 Abs. 2)";
+    label en unofficial "the encumbrance provides that interest on the sum and other ancillary payments are to be paid out of the land (§ 1191 (2))";
+}
+pub relation grundschuld_zur_sicherung_eines_anspruchs_verschafft(h: Grundpfandrecht) kind empirical {
+    label de official "die Grundschuld ist zur Sicherung eines Anspruchs verschafft worden (Sicherungsgrundschuld, § 1192 Abs. 1a Satz 1)";
+    label en unofficial "the land charge was provided to secure a claim (security land charge, § 1192 (1a) sentence 1)";
+}
+pub relation erwerber_der_grundschuld(h: Grundpfandrecht, erwerber: Person) kind empirical {
+    label de official "jeder Erwerber der Grundschuld, dem die Einreden aus dem Sicherungsvertrag entgegengesetzt werden können (§ 1192 Abs. 1a Satz 1)";
+    label en unofficial "any acquirer of the land charge against whom the defences from the security agreement may be raised (§ 1192 (1a) sentence 1)";
+}
+pub relation kuendigungsfrist_der_grundschuld(h: Grundpfandrecht, f: Frist) kind empirical {
+    key(h);
+    label de official "sechsmonatige Kündigungsfrist des § 1193 Abs. 1 Satz 3, mit deren Ablauf das Kapital fällig wird";
+    label en unofficial "six-month period of notice under § 1193 (1) sentence 3, at whose end the capital falls due";
+}
+pub relation abweichende_bestimmung_ueber_die_kuendigungsfrist(h: Grundpfandrecht, monate: Quantity) kind empirical {
+    key(h);
+    label de official "von § 1193 Abs. 1 abweichende Bestimmung über die Kündigungsfrist; sie ist unzulässig, wenn die Grundschuld der Sicherung einer Geldforderung dient (§ 1193 Abs. 2)";
+    label en unofficial "provision deviating from § 1193 (1) on the period of notice; it is inadmissible where the land charge secures a monetary claim (§ 1193 (2))";
+}
+pub relation grundschuld_sichert_eine_geldforderung(h: Grundpfandrecht) kind empirical {
+    label de official "die Grundschuld dient der Sicherung einer Geldforderung (§ 1193 Abs. 2 Satz 2)";
+    label en unofficial "the land charge serves to secure a monetary claim (§ 1193 (2) sentence 2)";
+}
+pub entity Ort {
+    label de official "Ort im Sinne des § 1194: Sitz des Grundbuchamts oder ein anderer bestimmter Zahlungsort";
+    label en unofficial "place within § 1194: seat of the land registry or another agreed place of payment";
+}
+pub relation sitz_des_grundbuchamts(h: Grundpfandrecht, ort: Ort) kind empirical {
+    key(h);
+    label de official "Ort, an dem das Grundbuchamt seinen Sitz hat — Zahlungsort, soweit nicht ein anderes bestimmt ist (§ 1194)";
+    label en unofficial "place where the land registry has its seat — place of payment unless otherwise provided (§ 1194)";
+}
+pub relation anderer_zahlungsort_bestimmt(h: Grundpfandrecht) kind empirical {
+    label de official "ein anderer Zahlungsort ist bestimmt (§ 1194)";
+    label en unofficial "a different place of payment has been provided (§ 1194)";
+}
+pub relation grundschuldbrief_auf_den_inhaber(h: Grundpfandrecht) kind empirical {
+    label de official "der Grundschuldbrief ist auf den Inhaber ausgestellt (§ 1195 Satz 1)";
+    label en unofficial "the land charge certificate is made out to bearer (§ 1195 sentence 1)";
+}
+pub relation erklaerung_des_eigentuemers_ueber_die_eigentuemergrundschuld(h: Grundpfandrecht) kind empirical {
+    label de official "Erklärung des Eigentümers gegenüber dem Grundbuchamt, dass die Grundschuld für ihn eingetragen werden soll (§ 1196 Abs. 2)";
+    label en unofficial "declaration of the owner to the registry that the land charge is to be registered for them (§ 1196 (2))";
+}
+pub relation grundstueck_in_zwangsverwaltung_in_beschlag_genommen(h: Grundpfandrecht) kind empirical {
+    label de official "das Grundstück ist auf Antrag eines anderen zum Zwecke der Zwangsverwaltung in Beschlag genommen (§ 1197 Abs. 2)";
+    label en unofficial "the land has been seized on another's application for the purpose of sequestration (§ 1197 (2))";
+}
+
+pub relation geldsumme_aus_dem_grundstueck_zu_zahlen(h: Grundpfandrecht, glaeubiger: Person, betrag: Money) kind derived {
+    label de official "an den Berechtigten ist eine bestimmte Geldsumme aus dem Grundstück zu zahlen, ohne dass eine Forderung vorausgesetzt wird (§ 1191 Abs. 1, § 1192 Abs. 1)";
+    label en unofficial "a certain sum is to be paid out of the land to the beneficiary without a claim being presupposed (§ 1191 (1), § 1192 (1))";
+}
+pub relation zinsen_der_grundschuld_geschuldet(h: Grundpfandrecht) kind derived {
+    label de official "Zinsen von der Geldsumme sowie andere Nebenleistungen sind aus dem Grundstück zu entrichten; für sie gelten die Vorschriften über die Zinsen einer Hypothekenforderung (§ 1191 Abs. 2, § 1192 Abs. 2)";
+    label en unofficial "interest on the sum and other ancillary payments are to be paid out of the land; the rules on interest of a mortgage claim apply (§ 1191 (2), § 1192 (2))";
+}
+pub relation einrede_auch_gegen_jeden_erwerber(e: Einrede, h: Grundpfandrecht, erwerber: Person) kind derived {
+    label de official "Einreden aus dem Sicherungsvertrag können auch jedem Erwerber der Grundschuld entgegengesetzt werden; § 1157 Satz 2 findet insoweit keine Anwendung (§ 1192 Abs. 1a Satz 1)";
+    label en unofficial "Defences from the security agreement may be raised against any acquirer of the land charge; § 1157 sentence 2 does not apply (§ 1192 (1a) sentence 1)";
+}
+pub relation kapital_faellig_am(h: Grundpfandrecht, tag: Date) kind derived {
+    key(h);
+    label de official "Tag, mit dessen Ablauf das Kapital der Grundschuld nach vorgängiger Kündigung fällig wird (§ 1193 Abs. 1)";
+    label en unofficial "day at whose end the capital of the land charge falls due after prior notice (§ 1193 (1))";
+}
+pub relation abweichende_bestimmung_unzulaessig(h: Grundpfandrecht) kind derived {
+    label de official "dient die Grundschuld der Sicherung einer Geldforderung, so ist eine von § 1193 Abs. 1 abweichende Bestimmung nicht zulässig (§ 1193 Abs. 2 Satz 2)";
+    label en unofficial "where the land charge secures a monetary claim, a provision deviating from § 1193 (1) is inadmissible (§ 1193 (2) sentence 2)";
+}
+pub relation zahlungsort(h: Grundpfandrecht, ort: Ort) kind derived {
+    key(h);
+    label de official "Ort, an dem die Zahlung des Kapitals sowie der Zinsen und anderen Nebenleistungen zu erfolgen hat (§ 1194)";
+    label en unofficial "place at which the capital, interest and other ancillary payments are to be paid (§ 1194)";
+}
+pub relation vorschriften_ueber_inhaberschuldverschreibungen_anwendbar(h: Grundpfandrecht) kind derived {
+    label de official "auf einen auf den Inhaber ausgestellten Grundschuldbrief finden die Vorschriften über Schuldverschreibungen auf den Inhaber entsprechende Anwendung (§ 1195 Satz 2)";
+    label en unofficial "the rules on bearer bonds apply to a land charge certificate made out to bearer (§ 1195 sentence 2)";
+}
+pub relation eigentuemergrundschuld_bestellt(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "die Grundschuld ist für den Eigentümer bestellt (§ 1196 Abs. 1, Abs. 2)";
+    label en unofficial "the land charge has been created for the owner (§ 1196 (1), (2))";
+}
+pub relation zwangsvollstreckung_zur_eigenen_befriedigung_ausgeschlossen(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "ist der Eigentümer der Gläubiger, so kann er nicht die Zwangsvollstreckung zum Zwecke seiner Befriedigung betreiben (§ 1197 Abs. 1)";
+    label en unofficial "if the owner is the creditor, they may not pursue enforcement for their own satisfaction (§ 1197 (1))";
+}
+pub relation zinsen_gebuehren_dem_eigentuemer(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "Zinsen gebühren dem Eigentümer nur, wenn das Grundstück auf Antrag eines anderen zum Zwecke der Zwangsverwaltung in Beschlag genommen ist, und nur für die Dauer der Zwangsverwaltung (§ 1197 Abs. 2)";
+    label en unofficial "the owner is entitled to interest only where the land has been seized on another's application for sequestration, and only for its duration (§ 1197 (2))";
+}
+
+@source(BGB_P1191) {
+    rule InhaltDerGrundschuld(h: Grundpfandrecht, g: Grundstueck, glaeubiger: Person, betrag: Money) strict {
+        label de official "Ein Grundstück kann in der Weise belastet werden, dass an denjenigen, zu dessen Gunsten die Belastung erfolgt, eine bestimmte Geldsumme aus dem Grundstück zu zahlen ist (Grundschuld) (§ 1191 Abs. 1)";
+        label en unofficial "Land may be encumbered so that a certain sum of money is to be paid out of the land to the beneficiary (land charge) (§ 1191 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and berechtigter(h, glaeubiger) and geldsumme(h, betrag)
+            and art_des_grundpfandrechts(h, Grundschuld);
+        then geldsumme_aus_dem_grundstueck_zu_zahlen(h, glaeubiger, betrag);
+    }
+    rule InhaltDerSicherungsgrundschuld(h: Grundpfandrecht, g: Grundstueck, glaeubiger: Person, betrag: Money) strict {
+        label de official "Auch die zur Sicherung eines Anspruchs verschaffte Grundschuld hat diesen Inhalt (§ 1191 Abs. 1, § 1192 Abs. 1a)";
+        label en unofficial "The land charge provided to secure a claim has the same content (§ 1191 (1), § 1192 (1a))";
+        when belastungsgegenstand_grundstueck(h, g) and berechtigter(h, glaeubiger) and geldsumme(h, betrag)
+            and art_des_grundpfandrechts(h, Sicherungsgrundschuld);
+        then geldsumme_aus_dem_grundstueck_zu_zahlen(h, glaeubiger, betrag);
+    }
+    rule ZinsenUndNebenleistungenAusDemGrundstueck(h: Grundpfandrecht, glaeubiger: Person, betrag: Money) strict {
+        label de official "Die Belastung kann auch in der Weise erfolgen, dass Zinsen von der Geldsumme sowie andere Nebenleistungen aus dem Grundstück zu entrichten sind (§ 1191 Abs. 2); für sie gelten die Vorschriften über die Zinsen einer Hypothekenforderung (§ 1192 Abs. 2)";
+        label en unofficial "The encumbrance may also provide for interest and other ancillary payments out of the land (§ 1191 (2)); the rules on interest of a mortgage claim apply (§ 1192 (2))";
+        when geldsumme_aus_dem_grundstueck_zu_zahlen(h, glaeubiger, betrag) and zinsen_und_nebenleistungen_aus_dem_grundstueck(h);
+        then zinsen_der_grundschuld_geschuldet(h);
+    }
+}
+
+@source(BGB_P1192)
+rule EinredenAusDemSicherungsvertragGegenJedenErwerber(e: Einrede, h: Grundpfandrecht, erwerber: Person) strict {
+    label de official "Ist die Grundschuld zur Sicherung eines Anspruchs verschafft worden, so können Einreden, die dem Eigentümer auf Grund des Sicherungsvertrags mit dem bisherigen Gläubiger zustehen oder sich aus dem Sicherungsvertrag ergeben, auch jedem Erwerber der Grundschuld entgegengesetzt werden; § 1157 Satz 2 findet insoweit keine Anwendung (§ 1192 Abs. 1a Satz 1)";
+    label en unofficial "Where the land charge was provided to secure a claim, defences of the owner from the security agreement with the previous creditor may be raised against any acquirer; § 1157 sentence 2 does not apply (§ 1192 (1a) sentence 1)";
+    when grundschuld_zur_sicherung_eines_anspruchs_verschafft(h) and einrede_aus_dem_sicherungsvertrag(e, h)
+        and erwerber_der_grundschuld(h, erwerber);
+    then einrede_auch_gegen_jeden_erwerber(e, h, erwerber);
+}
+
+@source(BGB_P1193) {
+    rule KuendigungsfristEreignisGlaeubigerkuendigung(h: Grundpfandrecht, f: Frist, e: Date) strict {
+        label de official "Die Kündigungsfrist des § 1193 Abs. 1 Satz 3 läuft von der Kündigung des Gläubigers an; der Tag der Kündigung wird nicht mitgerechnet (§ 187 Abs. 1)";
+        label en unofficial "The period of notice under § 1193 (1) sentence 3 runs from the creditor's notice; the day of the notice is not counted (§ 187 (1))";
+        when kuendigungsfrist_der_grundschuld(h, f) and kuendigung_des_glaeubigers_dem_eigentuemer_gegenueber_am(h, e);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule KuendigungsfristEreignisEigentuemerkuendigung(h: Grundpfandrecht, f: Frist, e: Date) strict {
+        label de official "Die Kündigung steht sowohl dem Eigentümer als dem Gläubiger zu (§ 1193 Abs. 1 Satz 2); die Frist läuft ebenso von der Kündigung des Eigentümers an";
+        label en unofficial "Notice may be given by either the owner or the creditor (§ 1193 (1) sentence 2); the period likewise runs from the owner's notice";
+        when kuendigungsfrist_der_grundschuld(h, f) and kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(h, e);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule KuendigungsfristSechsMonate(h: Grundpfandrecht, f: Frist) strict {
+        label de official "Die Kündigungsfrist beträgt sechs Monate (§ 1193 Abs. 1 Satz 3) — Monatsschritt nach § 188 Abs. 2, 3";
+        label en unofficial "The period of notice is six months (§ 1193 (1) sentence 3) — month step under § 188 (2), (3)";
+        when kuendigungsfrist_der_grundschuld(h, f) and not abweichende_bestimmung_zulaessig(h);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+    rule KuendigungsfristAbweichendeBestimmung(h: Grundpfandrecht, f: Frist, monate: Quantity) strict {
+        label de official "Abweichende Bestimmungen sind zulässig, wenn die Grundschuld nicht der Sicherung einer Geldforderung dient (§ 1193 Abs. 2)";
+        label en unofficial "Deviating provisions are admissible where the land charge does not secure a monetary claim (§ 1193 (2))";
+        when kuendigungsfrist_der_grundschuld(h, f) and abweichende_bestimmung_ueber_die_kuendigungsfrist(h, monate)
+            and abweichende_bestimmung_zulaessig(h);
+        then de.bgb.fristen::frist_dauer_kalender(f, monate);
+    }
+    rule KapitalWirdMitFristablaufFaellig(h: Grundpfandrecht, f: Frist, k: Date) strict {
+        label de official "Das Kapital der Grundschuld wird erst nach vorgängiger Kündigung fällig (§ 1193 Abs. 1 Satz 1) — Wartefrist, kalendarisches Ende ohne die Verlegung des § 193 (Ledger D-11-04)";
+        label en unofficial "The capital of the land charge falls due only after prior notice (§ 1193 (1) sentence 1) — waiting period, calendar end without the transfer of § 193";
+        when kuendigungsfrist_der_grundschuld(h, f) and de.bgb.fristen::frist_ende_kalender(f, k);
+        then kapital_faellig_am(h, k);
+    }
+    rule AbweichendeBestimmungBeiGeldforderungUnzulaessig(h: Grundpfandrecht, monate: Quantity) strict {
+        label de official "Dient die Grundschuld der Sicherung einer Geldforderung, so ist eine von Absatz 1 abweichende Bestimmung nicht zulässig (§ 1193 Abs. 2 Satz 2)";
+        label en unofficial "Where the land charge secures a monetary claim, a provision deviating from subsection (1) is inadmissible (§ 1193 (2) sentence 2)";
+        when abweichende_bestimmung_ueber_die_kuendigungsfrist(h, monate) and grundschuld_sichert_eine_geldforderung(h);
+        then abweichende_bestimmung_unzulaessig(h);
+    }
+    rule AbweichendeBestimmungZulaessigOhneGeldforderung(h: Grundpfandrecht, monate: Quantity) strict {
+        label de official "Ohne Sicherung einer Geldforderung ist die abweichende Bestimmung zulässig (§ 1193 Abs. 2 Satz 1)";
+        label en unofficial "Without securing a monetary claim the deviating provision is admissible (§ 1193 (2) sentence 1)";
+        when abweichende_bestimmung_ueber_die_kuendigungsfrist(h, monate) and not grundschuld_sichert_eine_geldforderung(h);
+        then abweichende_bestimmung_zulaessig(h);
+    }
+}
+
+pub relation abweichende_bestimmung_zulaessig(h: Grundpfandrecht) kind derived {
+    label de official "die von § 1193 Abs. 1 abweichende Bestimmung über die Kündigungsfrist ist zulässig (§ 1193 Abs. 2 Satz 1)";
+    label en unofficial "the provision deviating from § 1193 (1) on the period of notice is admissible (§ 1193 (2) sentence 1)";
+}
+
+@source(BGB_P1194) {
+    rule ZahlungsortIstDerSitzDesGrundbuchamts(h: Grundpfandrecht, ort: Ort) strict {
+        label de official "Die Zahlung des Kapitals sowie der Zinsen und anderen Nebenleistungen hat, soweit nicht ein anderes bestimmt ist, an dem Orte zu erfolgen, an dem das Grundbuchamt seinen Sitz hat (§ 1194)";
+        label en unofficial "Payment of the capital, interest and other ancillary payments is to be made, unless otherwise provided, at the seat of the land registry (§ 1194)";
+        when sitz_des_grundbuchamts(h, ort) and not anderer_zahlungsort_bestimmt(h);
+        then zahlungsort(h, ort);
+    }
+}
+
+@source(BGB_P1195)
+rule InhabergrundschuldFolgtDenInhaberpapieren(h: Grundpfandrecht) strict {
+    label de official "Eine Grundschuld kann in der Weise bestellt werden, dass der Grundschuldbrief auf den Inhaber ausgestellt wird; auf einen solchen Brief finden die Vorschriften über Schuldverschreibungen auf den Inhaber entsprechende Anwendung (§ 1195)";
+    label en unofficial "A land charge may be created with a certificate made out to bearer; the rules on bearer bonds apply to such a certificate (§ 1195)";
+    when grundschuldbrief_auf_den_inhaber(h);
+    then vorschriften_ueber_inhaberschuldverschreibungen_anwendbar(h);
+}
+
+@source(BGB_P1196)
+rule EigentuemergrundschuldDurchErklaerungUndEintragung(h: Grundpfandrecht, p: Person) strict {
+    label de official "Eine Grundschuld kann auch für den Eigentümer bestellt werden; dazu ist die Erklärung des Eigentümers gegenüber dem Grundbuchamt und die Eintragung erforderlich (§ 1196 Abs. 1, Abs. 2)";
+    label en unofficial "A land charge may also be created for the owner; this requires the owner's declaration to the registry and registration (§ 1196 (1), (2))";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and erklaerung_des_eigentuemers_ueber_die_eigentuemergrundschuld(h)
+        and glaeubiger_im_grundbuch_angegeben(h, p);
+    then eigentuemergrundschuld_bestellt(h, p);
+}
+
+@source(BGB_P1197) {
+    rule KeineZwangsvollstreckungZurEigenenBefriedigung(h: Grundpfandrecht, p: Person) strict {
+        label de official "Ist der Eigentümer der Gläubiger, so kann er nicht die Zwangsvollstreckung zum Zwecke seiner Befriedigung betreiben (§ 1197 Abs. 1)";
+        label en unofficial "If the owner is the creditor, they may not pursue enforcement for their own satisfaction (§ 1197 (1))";
+        when eigentuemergrundschuld_bestellt(h, p);
+        then zwangsvollstreckung_zur_eigenen_befriedigung_ausgeschlossen(h, p);
+    }
+    rule ZinsenNurBeiZwangsverwaltung(h: Grundpfandrecht, p: Person) strict {
+        label de official "Zinsen gebühren dem Eigentümer nur, wenn das Grundstück auf Antrag eines anderen zum Zwecke der Zwangsverwaltung in Beschlag genommen ist, und nur für die Dauer der Zwangsverwaltung (§ 1197 Abs. 2)";
+        label en unofficial "The owner is entitled to interest only where the land has been seized on another's application for sequestration, and only for its duration (§ 1197 (2))";
+        when eigentuemergrundschuld_bestellt(h, p) and grundstueck_in_zwangsverwaltung_in_beschlag_genommen(h);
+        then zinsen_gebuehren_dem_eigentuemer(h, p);
+    }
+}
+
+@source(BGB_P1198)
+rule UmwandlungZwischenHypothekUndGrundschuld(h: Grundpfandrecht, neue_art: Grundpfandrechtsart) strict {
+    label de official "Eine Hypothek kann in eine Grundschuld, eine Grundschuld kann in eine Hypothek umgewandelt werden; die Zustimmung der im Range gleich- oder nachstehenden Berechtigten ist nicht erforderlich (§ 1198)";
+    label en unofficial "A mortgage may be converted into a land charge and vice versa; no consent of equal or subsequent holders is required (§ 1198)";
+    when umwandlung_vereinbart(h, neue_art) and art_des_grundpfandrechts(h, Grundschuld);
+    then umwandlung_ohne_zustimmung_zulaessig(h, neue_art);
+}
+
+// --- Titel 3: Rentenschuld (§§ 1199–1203) ---------------------------------------------------------------
+
+pub relation wiederkehrende_geldsumme(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "bestimmte Geldsumme, die in regelmäßig wiederkehrenden Terminen aus dem Grundstück zu zahlen ist (§ 1199 Abs. 1)";
+    label en unofficial "certain sum of money to be paid out of the land at regularly recurring dates (§ 1199 (1))";
+}
+pub relation abloesungssumme_im_grundbuch_angegeben(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Ablösungssumme, durch deren Zahlung die Rentenschuld abgelöst werden kann; sie muss im Grundbuch angegeben werden (§ 1199 Abs. 2)";
+    label en unofficial "redemption sum by payment of which the annuity charge may be redeemed; it must be entered in the register (§ 1199 (2))";
+}
+pub relation abloesungssumme_gezahlt(h: Grundpfandrecht) kind empirical {
+    label de official "die Ablösungssumme ist an den Gläubiger gezahlt worden (§ 1200 Abs. 2)";
+    label en unofficial "the redemption sum has been paid to the creditor (§ 1200 (2))";
+}
+pub relation abloesungsrecht_dem_glaeubiger_eingeraeumt(h: Grundpfandrecht) kind empirical {
+    label de official "dem Gläubiger ist das Recht eingeräumt, die Ablösung zu verlangen (§ 1201 Abs. 2 Satz 1)";
+    label en unofficial "the creditor has been granted the right to demand redemption (§ 1201 (2) sentence 1)";
+}
+pub relation kuendigungsfrist_der_rentenschuld(h: Grundpfandrecht, f: Frist) kind empirical {
+    key(h);
+    label de official "sechsmonatige Kündigungsfrist des § 1202 Abs. 1 Satz 2, nach deren Ablauf das Ablösungsrecht ausgeübt werden kann";
+    label en unofficial "six-month period of notice under § 1202 (1) sentence 2, after which the right of redemption may be exercised";
+}
+pub relation beschraenkung_des_kuendigungsrechts_jahre(h: Grundpfandrecht, jahre: Integer) kind empirical {
+    key(h);
+    label de official "Zahl der Jahre, um die das Kündigungsrecht beschränkt ist; zulässig nur soweit, dass der Eigentümer nach 30 Jahren kündigen kann (§ 1202 Abs. 2)";
+    label en unofficial "number of years by which the right of notice is restricted; admissible only so far that the owner may give notice after 30 years (§ 1202 (2))";
+}
+
+pub relation rentenschuld_bestellt(h: Grundpfandrecht, glaeubiger: Person, betrag: Money) kind derived {
+    label de official "die Grundschuld ist in der Weise bestellt, dass in regelmäßig wiederkehrenden Terminen eine bestimmte Geldsumme aus dem Grundstück zu zahlen ist (Rentenschuld) (§ 1199 Abs. 1)";
+    label en unofficial "the land charge is created so that a certain sum is payable out of the land at recurring dates (annuity charge) (§ 1199 (1))";
+}
+pub relation abloesungsrecht_des_eigentuemers(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "das Recht zur Ablösung steht dem Eigentümer zu (§ 1201 Abs. 1)";
+    label en unofficial "the right of redemption belongs to the owner (§ 1201 (1))";
+}
+pub relation abloesungsrecht_des_glaeubigers_unwirksam(h: Grundpfandrecht) kind derived {
+    label de official "dem Gläubiger kann das Recht, die Ablösung zu verlangen, nicht eingeräumt werden (§ 1201 Abs. 2 Satz 1)";
+    label en unofficial "the creditor cannot be granted the right to demand redemption (§ 1201 (2) sentence 1)";
+}
+pub relation zahlung_der_abloesungssumme_aus_dem_grundstueck_verlangbar(h: Grundpfandrecht, glaeubiger: Person) kind derived {
+    label de official "im Falle des § 1133 Satz 2 und nach Ablauf der Kündigungsfrist ist der Gläubiger berechtigt, die Zahlung der Ablösungssumme aus dem Grundstück zu verlangen (§ 1201 Abs. 2 Satz 2, § 1202 Abs. 3)";
+    label en unofficial "in the case of § 1133 sentence 2 and after expiry of the period of notice the creditor may demand payment of the redemption sum out of the land (§ 1201 (2) sentence 2, § 1202 (3))";
+}
+pub relation wirkung_wie_zahlung_eines_grundschuldkapitals(h: Grundpfandrecht) kind derived {
+    label de official "die Zahlung der Ablösungssumme an den Gläubiger hat die gleiche Wirkung wie die Zahlung des Kapitals einer Grundschuld (§ 1200 Abs. 2)";
+    label en unofficial "payment of the redemption sum to the creditor has the same effect as payment of the capital of a land charge (§ 1200 (2))";
+}
+pub relation abloesungsrecht_ausuebbar_am(h: Grundpfandrecht, tag: Date) kind derived {
+    key(h);
+    label de official "Tag, mit dessen Ablauf der Eigentümer das Ablösungsrecht ausüben kann (§ 1202 Abs. 1)";
+    label en unofficial "day at whose end the owner may exercise the right of redemption (§ 1202 (1))";
+}
+pub relation beschraenkung_des_kuendigungsrechts_unzulaessig(h: Grundpfandrecht) kind derived {
+    label de official "eine Beschränkung des Kündigungsrechts ist nur soweit zulässig, dass der Eigentümer nach 30 Jahren unter Einhaltung der sechsmonatigen Frist kündigen kann (§ 1202 Abs. 2)";
+    label en unofficial "a restriction of the right of notice is admissible only so far that the owner may give notice after 30 years observing the six-month period (§ 1202 (2))";
+}
+
+@source(BGB_P1199) {
+    rule InhaltDerRentenschuld(h: Grundpfandrecht, g: Grundstueck, glaeubiger: Person, betrag: Money) strict {
+        label de official "Eine Grundschuld kann in der Weise bestellt werden, dass in regelmäßig wiederkehrenden Terminen eine bestimmte Geldsumme aus dem Grundstück zu zahlen ist (Rentenschuld) (§ 1199 Abs. 1)";
+        label en unofficial "A land charge may be created so that a certain sum of money is payable out of the land at regularly recurring dates (annuity charge) (§ 1199 (1))";
+        when belastungsgegenstand_grundstueck(h, g) and berechtigter(h, glaeubiger) and wiederkehrende_geldsumme(h, betrag)
+            and art_des_grundpfandrechts(h, Rentenschuld);
+        then rentenschuld_bestellt(h, glaeubiger, betrag);
+    }
+    rule AbloesungssummeMussAngegebenWerden(h: Grundpfandrecht, glaeubiger: Person, betrag: Money, abloesung: Money) strict {
+        label de official "Bei der Bestellung der Rentenschuld muss der Betrag bestimmt werden, durch dessen Zahlung die Rentenschuld abgelöst werden kann; die Ablösungssumme muss im Grundbuch angegeben werden (§ 1199 Abs. 2)";
+        label en unofficial "On creation of the annuity charge the redemption sum must be fixed and entered in the register (§ 1199 (2))";
+        when rentenschuld_bestellt(h, glaeubiger, betrag) and abloesungssumme_im_grundbuch_angegeben(h, abloesung);
+        then geldsumme_aus_dem_grundstueck_zu_zahlen(h, glaeubiger, abloesung);
+    }
+}
+
+@source(BGB_P1200)
+rule ZahlungDerAbloesungssummeWirktWieKapitalzahlung(h: Grundpfandrecht) strict {
+    label de official "Die Zahlung der Ablösungssumme an den Gläubiger hat die gleiche Wirkung wie die Zahlung des Kapitals einer Grundschuld (§ 1200 Abs. 2)";
+    label en unofficial "Payment of the redemption sum to the creditor has the same effect as payment of the capital of a land charge (§ 1200 (2))";
+    when abloesungssumme_gezahlt(h);
+    then wirkung_wie_zahlung_eines_grundschuldkapitals(h);
+}
+
+@source(BGB_P1201) {
+    rule AbloesungsrechtStehtDemEigentuemerZu(h: Grundpfandrecht, p: Person, glaeubiger: Person, betrag: Money) strict {
+        label de official "Das Recht zur Ablösung steht dem Eigentümer zu (§ 1201 Abs. 1)";
+        label en unofficial "The right of redemption belongs to the owner (§ 1201 (1))";
+        when rentenschuld_bestellt(h, glaeubiger, betrag) and eigentuemer_des_belasteten_grundstuecks(h, p);
+        then abloesungsrecht_des_eigentuemers(h, p);
+    }
+    rule AbloesungsrechtDesGlaeubigersUnwirksam(h: Grundpfandrecht, glaeubiger: Person, betrag: Money) strict {
+        label de official "Dem Gläubiger kann das Recht, die Ablösung zu verlangen, nicht eingeräumt werden (§ 1201 Abs. 2 Satz 1)";
+        label en unofficial "The creditor cannot be granted the right to demand redemption (§ 1201 (2) sentence 1)";
+        when rentenschuld_bestellt(h, glaeubiger, betrag) and abloesungsrecht_dem_glaeubiger_eingeraeumt(h);
+        then abloesungsrecht_des_glaeubigers_unwirksam(h);
+    }
+    rule ZahlungDerAbloesungssummeBeiGefaehrdung(h: Grundpfandrecht, glaeubiger: Person) strict {
+        label de official "Im Falle des § 1133 Satz 2 ist der Gläubiger berechtigt, die Zahlung der Ablösungssumme aus dem Grundstück zu verlangen (§ 1201 Abs. 2 Satz 2)";
+        label en unofficial "In the case of § 1133 sentence 2 the creditor may demand payment of the redemption sum out of the land (§ 1201 (2) sentence 2)";
+        when sofortige_befriedigung_aus_dem_grundstueck_berechtigt(h, glaeubiger) and art_des_grundpfandrechts(h, Rentenschuld);
+        then zahlung_der_abloesungssumme_aus_dem_grundstueck_verlangbar(h, glaeubiger);
+    }
+}
+
+@source(BGB_P1202) {
+    rule KuendigungsfristDerRentenschuldEreignis(h: Grundpfandrecht, f: Frist, e: Date) strict {
+        label de official "Der Eigentümer kann das Ablösungsrecht erst nach vorgängiger Kündigung ausüben (§ 1202 Abs. 1 Satz 1); die Frist läuft von der Kündigung an (§ 187 Abs. 1)";
+        label en unofficial "The owner may exercise the right of redemption only after prior notice (§ 1202 (1) sentence 1); the period runs from the notice (§ 187 (1))";
+        when kuendigungsfrist_der_rentenschuld(h, f) and kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(h, e);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule KuendigungsfristDerRentenschuldSechsMonate(h: Grundpfandrecht, f: Frist) strict {
+        label de official "Die Kündigungsfrist beträgt sechs Monate, wenn nicht ein anderes bestimmt ist (§ 1202 Abs. 1 Satz 2) — Monatsschritt nach § 188 Abs. 2, 3";
+        label en unofficial "The period of notice is six months unless otherwise provided (§ 1202 (1) sentence 2) — month step under § 188 (2), (3)";
+        when kuendigungsfrist_der_rentenschuld(h, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+    rule AbloesungsrechtNachFristablaufAusuebbar(h: Grundpfandrecht, f: Frist, k: Date) strict {
+        label de official "Mit dem Ablauf der Kündigungsfrist kann das Ablösungsrecht ausgeübt werden (§ 1202 Abs. 1) — Wartefrist, kalendarisches Ende (Ledger D-11-04)";
+        label en unofficial "On expiry of the period of notice the right of redemption may be exercised (§ 1202 (1)) — waiting period, calendar end";
+        when kuendigungsfrist_der_rentenschuld(h, f) and de.bgb.fristen::frist_ende_kalender(f, k);
+        then abloesungsrecht_ausuebbar_am(h, k);
+    }
+    rule BeschraenkungUeberDreissigJahreUnzulaessig(h: Grundpfandrecht, jahre: Integer) strict {
+        label de official "Eine Beschränkung des Kündigungsrechts ist nur soweit zulässig, dass der Eigentümer nach 30 Jahren unter Einhaltung der sechsmonatigen Frist kündigen kann (§ 1202 Abs. 2)";
+        label en unofficial "A restriction of the right of notice is admissible only so far that the owner may give notice after 30 years observing the six-month period (§ 1202 (2))";
+        when beschraenkung_des_kuendigungsrechts_jahre(h, jahre) and jahre > 30;
+        then beschraenkung_des_kuendigungsrechts_unzulaessig(h);
+    }
+    rule ZahlungNachKuendigungDesEigentuemers(h: Grundpfandrecht, glaeubiger: Person, f: Frist, k: Date) strict {
+        label de official "Hat der Eigentümer gekündigt, so kann der Gläubiger nach dem Ablauf der Kündigungsfrist die Zahlung der Ablösungssumme aus dem Grundstück verlangen (§ 1202 Abs. 3)";
+        label en unofficial "If the owner has given notice, the creditor may after expiry of the period demand payment of the redemption sum out of the land (§ 1202 (3))";
+        when berechtigter(h, glaeubiger) and kuendigungsfrist_der_rentenschuld(h, f) and abloesungsrecht_ausuebbar_am(h, k);
+        then zahlung_der_abloesungssumme_aus_dem_grundstueck_verlangbar(h, glaeubiger);
+    }
+}
+
+@source(BGB_P1203)
+rule UmwandlungZwischenRentenschuldUndGrundschuld(h: Grundpfandrecht, neue_art: Grundpfandrechtsart) strict {
+    label de official "Eine Rentenschuld kann in eine gewöhnliche Grundschuld, eine gewöhnliche Grundschuld kann in eine Rentenschuld umgewandelt werden; die Zustimmung der im Range gleich- oder nachstehenden Berechtigten ist nicht erforderlich (§ 1203)";
+    label en unofficial "An annuity charge may be converted into an ordinary land charge and vice versa; no consent of equal or subsequent holders is required (§ 1203)";
+    when umwandlung_vereinbart(h, neue_art) and art_des_grundpfandrechts(h, Rentenschuld);
+    then umwandlung_ohne_zustimmung_zulaessig(h, neue_art);
+}

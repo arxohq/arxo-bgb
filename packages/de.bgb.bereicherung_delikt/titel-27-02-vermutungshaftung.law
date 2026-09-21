@@ -1,0 +1,485 @@
+// --- Titel 27, zweiter Teil: Haftung für andere, für Tiere und für Bauwerke
+// --- (§§ 831–834, 836–838; § 835 weggefallen)
+//
+// GEMEINSAME FORM. Alle fünf Tatbestände sind nach demselben Muster gebaut:
+// Satz 1 ordnet die Haftung an, Satz 2 lässt sie bei geführtem
+// ENTLASTUNGSBEWEIS entfallen. Das ist die Vermutung des §146: `presume … unless`.
+// Der Entlastungsbeweis ist eine WERTUNG des Gerichts („die im Verkehr
+// erforderliche Sorgfalt beobachtet“, „auch bei Anwendung dieser Sorgfalt
+// entstanden sein würde“) und damit ein AUSDRÜCKLICHER Eingang: solange das
+// Gericht nicht geantwortet hat, bleibt es bei der Haftung — das Schweigen des
+// Falls entlastet niemanden (Ledger D-09-03).
+//
+// Der Kopf jeder Vermutung ist EINSTELLIG (nur die Handlung): der Ausnahmesatz
+// muss jede Variable des Kopfes binden (§190), und die Parteien kommen erst in
+// der Regel darüber dazu.
+
+// --- § 831 Haftung für den Verrichtungsgehilfen ----------------------------------------------------
+
+pub relation verrichtungsgehilfe(h: Handlung, gehilfe: Person) kind empirical {
+    key(h);
+    label de official "der zu einer Verrichtung Bestellte (§ 831 Abs. 1 Satz 1)";
+    label en unofficial "the person appointed to perform a task (§ 831 (1) sentence 1)";
+}
+pub relation geschaeftsherr(h: Handlung, gh: Person) kind empirical {
+    label de official "wer einen anderen zu einer Verrichtung bestellt hat (§ 831 Abs. 1 Satz 1)";
+    label en unofficial "the person who appointed another to perform a task (§ 831 (1) sentence 1)";
+}
+pub relation uebernahme_der_besorgung_durch_vertrag(h: Handlung, p: Person) kind empirical {
+    label de official "wer für den Geschäftsherrn die Besorgung eines der in § 831 Abs. 1 Satz 2 bezeichneten Geschäfte durch Vertrag übernimmt (§ 831 Abs. 2)";
+    label en unofficial "the person who by contract assumes for the principal one of the tasks named in § 831 (1) sentence 2 (§ 831 (2))";
+}
+pub relation in_ausfuehrung_der_verrichtung(h: Handlung) kind empirical {
+    label de official "der Schaden wurde in Ausführung der Verrichtung zugefügt (§ 831 Abs. 1 Satz 1)";
+    label en unofficial "the damage was inflicted in the performance of the task (§ 831 (1) sentence 1)";
+}
+pub relation geschaedigter_dritter(h: Handlung, dritter: Person) kind empirical {
+    label de official "der Dritte, dem der Schaden widerrechtlich zugefügt wurde (§ 831 Abs. 1 Satz 1, § 832 Abs. 1 Satz 1)";
+    label en unofficial "the third party to whom the damage was unlawfully inflicted (§ 831 (1) sentence 1, § 832 (1) sentence 1)";
+}
+
+@source(BGB_P831)
+pub external judgment relation sorgfalt_bei_auswahl_und_leitung_beobachtet(h: Handlung) {
+    authority Court;
+    label de official "§ 831 Abs. 1 Satz 2. Der Geschäftsherr hat bei der Auswahl der bestellten Person und, sofern er Vorrichtungen oder Gerätschaften zu beschaffen oder die Ausführung der Verrichtung zu leiten hat, bei der Beschaffung oder der Leitung die im Verkehr erforderliche Sorgfalt beobachtet";
+    label en unofficial "§ 831 (1) sentence 2. The principal observed the care required in dealings when selecting the appointed person and, where he had to procure equipment or to direct the performance, in that procurement or direction";
+}
+@source(BGB_P831)
+pub external judgment relation schaden_auch_bei_sorgfalt_entstanden_831(h: Handlung) {
+    authority Court;
+    label de official "§ 831 Abs. 1 Satz 2. Der Schaden würde auch bei Anwendung der im Verkehr erforderlichen Sorgfalt entstanden sein";
+    label en unofficial "§ 831 (1) sentence 2. The damage would have arisen even had the care required in dealings been applied";
+}
+
+pub relation verrichtungshaftungslage(h: Handlung) kind institutional {
+    label de official "Lage des § 831 Abs. 1 Satz 1: ein zu einer Verrichtung Bestellter hat in Ausführung der Verrichtung einem Dritten widerrechtlich Schaden zugefügt";
+    label en unofficial "situation of § 831 (1) sentence 1: a person appointed to a task unlawfully inflicted damage on a third party in performing it";
+}
+pub relation haftung_des_geschaeftsherrn(h: Handlung) kind institutional {
+    label de official "Ersatzpflicht des Geschäftsherrn (§ 831 Abs. 1)";
+    label en unofficial "liability of the principal (§ 831 (1))";
+}
+pub relation haftung_831(h: Handlung, ersatzpflichtiger: Person, dritter: Person) kind institutional {
+    label de official "Verpflichtung zum Ersatz des Schadens nach § 831";
+    label en unofficial "obligation to compensate the damage under § 831";
+}
+
+@source(BGB_P831)
+rule Verrichtungshaftungslage(h: Handlung, g: Person, d: Person) strict {
+    label de official "Wer einen anderen zu einer Verrichtung bestellt, ist zum Ersatz des Schadens verpflichtet, den der andere in Ausführung der Verrichtung einem Dritten widerrechtlich zufügt (§ 831 Abs. 1 Satz 1)";
+    label en unofficial "A person who appoints another to a task must compensate the damage which the other unlawfully inflicts on a third party in performing the task (§ 831 (1) sentence 1)";
+    when verrichtungsgehilfe(h, g) and in_ausfuehrung_der_verrichtung(h)
+     and kein_rechtfertigungsgrund(h) and geschaedigter_dritter(h, d) and kausal_verursacht(h);
+    then verrichtungshaftungslage(h);
+}
+
+@source(BGB_P831)
+presumption HaftungDesGeschaeftsherrn(h: Handlung) {
+    label de official "§ 831 Abs. 1. Die Ersatzpflicht des Geschäftsherrn wird vermutet; sie tritt nicht ein, wenn er bei Auswahl, Beschaffung und Leitung die im Verkehr erforderliche Sorgfalt beobachtet hat oder wenn der Schaden auch bei Anwendung dieser Sorgfalt entstanden sein würde (Satz 2)";
+    label en unofficial "§ 831 (1). The principal's liability is presumed; it does not arise if he observed the care required in dealings in selection, procurement and direction, or if the damage would have arisen even with such care (sentence 2)";
+    when verrichtungshaftungslage(h);
+    presume haftung_des_geschaeftsherrn(h);
+    unless sorgfalt_bei_auswahl_und_leitung_beobachtet(h);
+    unless schaden_auch_bei_sorgfalt_entstanden_831(h);
+}
+
+@source(BGB_P831)
+rule Haftung831Geschaeftsherr(h: Handlung, gh: Person, d: Person) defeasible {
+    label de official "Der Geschäftsherr haftet dem geschädigten Dritten (§ 831 Abs. 1 Satz 1)";
+    label en unofficial "The principal is liable to the injured third party (§ 831 (1) sentence 1)";
+    when haftung_des_geschaeftsherrn(h) and geschaeftsherr(h, gh) and geschaedigter_dritter(h, d);
+    then haftung_831(h, gh, d);
+}
+@source(BGB_P831)
+rule Haftung831Uebernehmer(h: Handlung, u: Person, d: Person) defeasible {
+    label de official "Die gleiche Verantwortlichkeit trifft denjenigen, welcher für den Geschäftsherrn die Besorgung eines der im Absatz 1 Satz 2 bezeichneten Geschäfte durch Vertrag übernimmt (§ 831 Abs. 2)";
+    label en unofficial "The same responsibility falls on the person who by contract assumes for the principal one of the tasks named in subsection (1) sentence 2 (§ 831 (2))";
+    when haftung_des_geschaeftsherrn(h) and uebernahme_der_besorgung_durch_vertrag(h, u) and geschaedigter_dritter(h, d);
+    then haftung_831(h, u, d);
+}
+
+// --- § 832 Haftung des Aufsichtspflichtigen -------------------------------------------------------
+
+pub relation aufsichtspflichtiger_kraft_gesetzes(h: Handlung, p: Person) kind empirical {
+    label de official "wer kraft Gesetzes zur Führung der Aufsicht über eine Person verpflichtet ist (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "the person obliged by law to supervise another person (§ 832 (1) sentence 1)";
+}
+pub relation aufsichtspflichtiger_durch_vertrag(h: Handlung, p: Person) kind empirical {
+    label de official "wer die Führung der Aufsicht durch Vertrag übernimmt (§ 832 Abs. 2)";
+    label en unofficial "the person who assumes the supervision by contract (§ 832 (2))";
+}
+pub relation beaufsichtigung_wegen_minderjaehrigkeit_erforderlich(h: Handlung) kind empirical {
+    label de official "die beaufsichtigte Person bedarf wegen Minderjährigkeit der Beaufsichtigung (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "the supervised person needs supervision because of minority (§ 832 (1) sentence 1)";
+}
+pub relation beaufsichtigung_wegen_zustands_erforderlich(h: Handlung) kind empirical {
+    label de official "die beaufsichtigte Person bedarf wegen ihres geistigen oder körperlichen Zustands der Beaufsichtigung (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "the supervised person needs supervision because of her mental or physical condition (§ 832 (1) sentence 1)";
+}
+@source(BGB_P832)
+pub external judgment relation aufsichtspflicht_genuegt(h: Handlung) {
+    authority Court;
+    label de official "§ 832 Abs. 1 Satz 2. Der Aufsichtspflichtige hat seiner Aufsichtspflicht genügt";
+    label en unofficial "§ 832 (1) sentence 2. The supervisor discharged his duty of supervision";
+}
+@source(BGB_P832)
+pub external judgment relation schaden_auch_bei_gehoeriger_aufsicht_entstanden(h: Handlung) {
+    authority Court;
+    label de official "§ 832 Abs. 1 Satz 2. Der Schaden würde auch bei gehöriger Aufsichtsführung entstanden sein";
+    label en unofficial "§ 832 (1) sentence 2. The damage would have arisen even with proper supervision";
+}
+
+pub relation aufsichtsbeduerftigkeit(h: Handlung) kind institutional {
+    label de official "die Person bedarf der Beaufsichtigung (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "the person needs supervision (§ 832 (1) sentence 1)";
+}
+pub relation aufsichtshaftungslage(h: Handlung) kind institutional {
+    label de official "Lage des § 832 Abs. 1 Satz 1: eine beaufsichtigungsbedürftige Person hat einem Dritten widerrechtlich Schaden zugefügt";
+    label en unofficial "situation of § 832 (1) sentence 1: a person needing supervision unlawfully inflicted damage on a third party";
+}
+pub relation haftung_des_aufsichtspflichtigen(h: Handlung) kind institutional {
+    label de official "Ersatzpflicht des Aufsichtspflichtigen (§ 832 Abs. 1)";
+    label en unofficial "liability of the supervisor (§ 832 (1))";
+}
+pub relation haftung_832(h: Handlung, ersatzpflichtiger: Person, dritter: Person) kind institutional {
+    label de official "Verpflichtung zum Ersatz des Schadens nach § 832";
+    label en unofficial "obligation to compensate the damage under § 832";
+}
+
+@source(BGB_P832)
+rule Aufsichtsbeduerftigkeit832Minderjaehrigkeit(h: Handlung) strict {
+    label de official "Beaufsichtigungsbedürftigkeit wegen Minderjährigkeit (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "Need of supervision because of minority (§ 832 (1) sentence 1)";
+    when beaufsichtigung_wegen_minderjaehrigkeit_erforderlich(h);
+    then aufsichtsbeduerftigkeit(h);
+}
+@source(BGB_P832)
+rule Aufsichtsbeduerftigkeit832Zustand(h: Handlung) strict {
+    label de official "Beaufsichtigungsbedürftigkeit wegen des geistigen oder körperlichen Zustands (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "Need of supervision because of mental or physical condition (§ 832 (1) sentence 1)";
+    when beaufsichtigung_wegen_zustands_erforderlich(h);
+    then aufsichtsbeduerftigkeit(h);
+}
+@source(BGB_P832)
+rule Aufsichtshaftungslage(h: Handlung, d: Person) strict {
+    label de official "Wer kraft Gesetzes zur Führung der Aufsicht über eine beaufsichtigungsbedürftige Person verpflichtet ist, ist zum Ersatz des Schadens verpflichtet, den diese Person einem Dritten widerrechtlich zufügt (§ 832 Abs. 1 Satz 1)";
+    label en unofficial "A person obliged by law to supervise a person needing supervision must compensate the damage which that person unlawfully inflicts on a third party (§ 832 (1) sentence 1)";
+    when aufsichtsbeduerftigkeit(h) and kein_rechtfertigungsgrund(h)
+     and geschaedigter_dritter(h, d) and kausal_verursacht(h);
+    then aufsichtshaftungslage(h);
+}
+
+@source(BGB_P832)
+presumption HaftungDesAufsichtspflichtigen(h: Handlung) {
+    label de official "§ 832 Abs. 1. Die Ersatzpflicht des Aufsichtspflichtigen wird vermutet; sie tritt nicht ein, wenn er seiner Aufsichtspflicht genügt oder wenn der Schaden auch bei gehöriger Aufsichtsführung entstanden sein würde (Satz 2)";
+    label en unofficial "§ 832 (1). The supervisor's liability is presumed; it does not arise if he discharged his duty of supervision or if the damage would have arisen even with proper supervision (sentence 2)";
+    when aufsichtshaftungslage(h);
+    presume haftung_des_aufsichtspflichtigen(h);
+    unless aufsichtspflicht_genuegt(h);
+    unless schaden_auch_bei_gehoeriger_aufsicht_entstanden(h);
+}
+
+@source(BGB_P832)
+rule Haftung832KraftGesetzes(h: Handlung, a: Person, d: Person) defeasible {
+    label de official "Der kraft Gesetzes Aufsichtspflichtige haftet dem geschädigten Dritten (§ 832 Abs. 1)";
+    label en unofficial "The supervisor obliged by law is liable to the injured third party (§ 832 (1))";
+    when haftung_des_aufsichtspflichtigen(h) and aufsichtspflichtiger_kraft_gesetzes(h, a) and geschaedigter_dritter(h, d);
+    then haftung_832(h, a, d);
+}
+@source(BGB_P832)
+rule Haftung832DurchVertrag(h: Handlung, a: Person, d: Person) defeasible {
+    label de official "Die gleiche Verantwortlichkeit trifft denjenigen, welcher die Führung der Aufsicht durch Vertrag übernimmt (§ 832 Abs. 2)";
+    label en unofficial "The same responsibility falls on the person who assumes the supervision by contract (§ 832 (2))";
+    when haftung_des_aufsichtspflichtigen(h) and aufsichtspflichtiger_durch_vertrag(h, a) and geschaedigter_dritter(h, d);
+    then haftung_832(h, a, d);
+}
+
+// --- §§ 833, 834 Haftung des Tierhalters und des Tieraufsehers -------------------------------------
+//
+// § 833 Satz 1 ist Gefährdungshaftung: der Erfolg ist ein GESCHLOSSENER
+// Katalog (Tötung eines Menschen, Verletzung des Körpers, Verletzung der
+// Gesundheit, Beschädigung einer Sache) — vier Positionen, vier Regeln. Satz 2
+// entlastet NUR beim Nutztier, und dort nur bei beobachteter Sorgfalt oder
+// hypothetischer Verursachung.
+
+pub relation tier_der_handlung(h: Handlung, tier: Tier) kind empirical {
+    key(h);
+    label de official "das Tier, durch das der Schaden verursacht wurde (§ 833 Satz 1)";
+    label en unofficial "the animal by which the damage was caused (§ 833 sentence 1)";
+}
+pub relation tierhalter(h: Handlung, p: Person) kind empirical {
+    label de official "derjenige, welcher das Tier hält (§ 833 Satz 1)";
+    label en unofficial "the person who keeps the animal (§ 833 sentence 1)";
+}
+pub relation tieraufseher_durch_vertrag(h: Handlung, p: Person) kind empirical {
+    label de official "wer für den Tierhalter die Führung der Aufsicht über das Tier durch Vertrag übernimmt (§ 834 Satz 1)";
+    label en unofficial "the person who by contract assumes the supervision of the animal for the keeper (§ 834 sentence 1)";
+}
+pub relation mensch_durch_tier_getoetet(h: Handlung) kind empirical {
+    label de official "durch ein Tier wurde ein Mensch getötet (§ 833 Satz 1)";
+    label en unofficial "a human being was killed by an animal (§ 833 sentence 1)";
+}
+pub relation koerper_durch_tier_verletzt(h: Handlung) kind empirical {
+    label de official "durch ein Tier wurde der Körper eines Menschen verletzt (§ 833 Satz 1)";
+    label en unofficial "a human being's body was injured by an animal (§ 833 sentence 1)";
+}
+pub relation gesundheit_durch_tier_verletzt(h: Handlung) kind empirical {
+    label de official "durch ein Tier wurde die Gesundheit eines Menschen verletzt (§ 833 Satz 1)";
+    label en unofficial "a human being's health was injured by an animal (§ 833 sentence 1)";
+}
+pub relation sache_durch_tier_beschaedigt(h: Handlung) kind empirical {
+    label de official "durch ein Tier wurde eine Sache beschädigt (§ 833 Satz 1)";
+    label en unofficial "a thing was damaged by an animal (§ 833 sentence 1)";
+}
+pub relation nutztier(h: Handlung) kind empirical {
+    label de official "der Schaden wurde durch ein Haustier verursacht, das dem Beruf, der Erwerbstätigkeit oder dem Unterhalt des Tierhalters zu dienen bestimmt ist (§ 833 Satz 2)";
+    label en unofficial "the damage was caused by a domestic animal intended to serve the keeper's occupation, economic activity or maintenance (§ 833 sentence 2)";
+}
+@source(BGB_P833)
+pub external judgment relation sorgfalt_bei_beaufsichtigung_des_tieres_beobachtet(h: Handlung) {
+    authority Court;
+    label de official "§ 833 Satz 2, § 834 Satz 2. Bei der Beaufsichtigung des Tieres wurde die im Verkehr erforderliche Sorgfalt beobachtet";
+    label en unofficial "§ 833 sentence 2, § 834 sentence 2. The care required in dealings was observed in supervising the animal";
+}
+@source(BGB_P833)
+pub external judgment relation schaden_auch_bei_sorgfalt_entstanden_833(h: Handlung) {
+    authority Court;
+    label de official "§ 833 Satz 2, § 834 Satz 2. Der Schaden würde auch bei Anwendung dieser Sorgfalt entstanden sein";
+    label en unofficial "§ 833 sentence 2, § 834 sentence 2. The damage would have arisen even had that care been applied";
+}
+
+pub relation tierschaden(h: Handlung) kind institutional {
+    label de official "einer der in § 833 Satz 1 genannten Erfolge ist durch ein Tier eingetreten";
+    label en unofficial "one of the outcomes named in § 833 sentence 1 was caused by an animal";
+}
+pub relation entlastung_nutztier(h: Handlung) kind institutional {
+    label de official "Entlastung des Tierhalters beim Nutztier (§ 833 Satz 2)";
+    label en unofficial "discharge of the animal keeper in the case of a working animal (§ 833 sentence 2)";
+}
+pub relation haftung_des_tierhalters(h: Handlung) kind institutional {
+    label de official "Ersatzpflicht des Tierhalters (§ 833)";
+    label en unofficial "liability of the animal keeper (§ 833)";
+}
+pub relation haftung_833(h: Handlung, ersatzpflichtiger: Person, verletzter: Person) kind institutional {
+    label de official "Verpflichtung des Tierhalters zum Ersatz des Schadens (§ 833 Satz 1)";
+    label en unofficial "obligation of the animal keeper to compensate the damage (§ 833 sentence 1)";
+}
+pub relation haftung_des_tieraufsehers(h: Handlung) kind institutional {
+    label de official "Verantwortlichkeit des Tieraufsehers (§ 834)";
+    label en unofficial "responsibility of the animal supervisor (§ 834)";
+}
+pub relation haftung_834(h: Handlung, ersatzpflichtiger: Person, dritter: Person) kind institutional {
+    label de official "Verantwortlichkeit des Tieraufsehers für den Schaden (§ 834 Satz 1)";
+    label en unofficial "responsibility of the animal supervisor for the damage (§ 834 sentence 1)";
+}
+
+@source(BGB_P833)
+rule Tierschaden833Toetung(h: Handlung, tier: Tier) strict {
+    label de official "Wird durch ein Tier ein Mensch getötet (§ 833 Satz 1)";
+    label en unofficial "Where an animal kills a human being (§ 833 sentence 1)";
+    when tier_der_handlung(h, tier) and mensch_durch_tier_getoetet(h);
+    then tierschaden(h);
+}
+@source(BGB_P833)
+rule Tierschaden833Koerper(h: Handlung, tier: Tier) strict {
+    label de official "Wird durch ein Tier der Körper eines Menschen verletzt (§ 833 Satz 1)";
+    label en unofficial "Where an animal injures a human being's body (§ 833 sentence 1)";
+    when tier_der_handlung(h, tier) and koerper_durch_tier_verletzt(h);
+    then tierschaden(h);
+}
+@source(BGB_P833)
+rule Tierschaden833Gesundheit(h: Handlung, tier: Tier) strict {
+    label de official "Wird durch ein Tier die Gesundheit eines Menschen verletzt (§ 833 Satz 1)";
+    label en unofficial "Where an animal injures a human being's health (§ 833 sentence 1)";
+    when tier_der_handlung(h, tier) and gesundheit_durch_tier_verletzt(h);
+    then tierschaden(h);
+}
+@source(BGB_P833)
+rule Tierschaden833Sache(h: Handlung, tier: Tier) strict {
+    label de official "Wird durch ein Tier eine Sache beschädigt (§ 833 Satz 1)";
+    label en unofficial "Where an animal damages a thing (§ 833 sentence 1)";
+    when tier_der_handlung(h, tier) and sache_durch_tier_beschaedigt(h);
+    then tierschaden(h);
+}
+
+@source(BGB_P833)
+rule EntlastungNutztierSorgfalt(h: Handlung) strict {
+    label de official "Die Ersatzpflicht tritt nicht ein, wenn der Schaden durch ein Nutztier verursacht wird und der Tierhalter bei der Beaufsichtigung des Tieres die im Verkehr erforderliche Sorgfalt beobachtet (§ 833 Satz 2 Alternative 1)";
+    label en unofficial "Liability does not arise if the damage was caused by a working animal and the keeper observed the care required in dealings in supervising it (§ 833 sentence 2 alternative 1)";
+    when nutztier(h) and sorgfalt_bei_beaufsichtigung_des_tieres_beobachtet(h);
+    then entlastung_nutztier(h);
+}
+@source(BGB_P833)
+rule EntlastungNutztierHypothese(h: Handlung) strict {
+    label de official "Die Ersatzpflicht tritt nicht ein, wenn der Schaden durch ein Nutztier verursacht wird und auch bei Anwendung dieser Sorgfalt entstanden sein würde (§ 833 Satz 2 Alternative 2)";
+    label en unofficial "Liability does not arise if the damage was caused by a working animal and would have arisen even with such care (§ 833 sentence 2 alternative 2)";
+    when nutztier(h) and schaden_auch_bei_sorgfalt_entstanden_833(h);
+    then entlastung_nutztier(h);
+}
+
+@source(BGB_P833)
+presumption HaftungDesTierhalters(h: Handlung) {
+    label de official "§ 833. Wird durch ein Tier ein Mensch getötet, der Körper oder die Gesundheit eines Menschen verletzt oder eine Sache beschädigt, so haftet der Tierhalter; die Ersatzpflicht tritt beim Nutztier nicht ein, wenn er die im Verkehr erforderliche Sorgfalt beobachtet hat oder der Schaden auch bei Anwendung dieser Sorgfalt entstanden sein würde (Satz 2)";
+    label en unofficial "§ 833. Where an animal kills a person, injures a person's body or health, or damages a thing, the keeper is liable; in the case of a working animal liability does not arise where the keeper observed the required care or the damage would have arisen even with such care (sentence 2)";
+    when tierschaden(h);
+    presume haftung_des_tierhalters(h);
+    unless entlastung_nutztier(h);
+}
+
+@source(BGB_P833)
+rule Haftung833(h: Handlung, halter: Person, v: Person) defeasible {
+    label de official "Der Tierhalter ist verpflichtet, dem Verletzten den daraus entstehenden Schaden zu ersetzen (§ 833 Satz 1)";
+    label en unofficial "The animal keeper must compensate the injured party for the resulting damage (§ 833 sentence 1)";
+    when haftung_des_tierhalters(h) and tierhalter(h, halter) and verletzter(h, v);
+    then haftung_833(h, halter, v);
+}
+
+@source(BGB_P834)
+presumption HaftungDesTieraufsehers(h: Handlung) {
+    label de official "§ 834. Wer für den Tierhalter die Führung der Aufsicht über das Tier durch Vertrag übernimmt, ist für den Schaden verantwortlich, den das Tier einem Dritten in der im § 833 bezeichneten Weise zufügt; die Verantwortlichkeit tritt nicht ein, wenn er bei der Führung der Aufsicht die im Verkehr erforderliche Sorgfalt beobachtet oder wenn der Schaden auch bei Anwendung dieser Sorgfalt entstanden sein würde (Satz 2)";
+    label en unofficial "§ 834. A person who by contract assumes supervision of the animal for its keeper is responsible for damage which the animal inflicts on a third party in the manner described in § 833; responsibility does not arise if he observed the care required in dealings or if the damage would have arisen even with such care (sentence 2)";
+    when tierschaden(h);
+    presume haftung_des_tieraufsehers(h);
+    unless sorgfalt_bei_beaufsichtigung_des_tieres_beobachtet(h);
+    unless schaden_auch_bei_sorgfalt_entstanden_833(h);
+}
+
+@source(BGB_P834)
+rule Haftung834(h: Handlung, a: Person, d: Person) defeasible {
+    label de official "Der vertragliche Tieraufseher ist für den Schaden verantwortlich, den das Tier einem Dritten in der im § 833 bezeichneten Weise zufügt (§ 834 Satz 1)";
+    label en unofficial "The contractual animal supervisor is responsible for the damage which the animal inflicts on a third party in the manner described in § 833 (§ 834 sentence 1)";
+    when haftung_des_tieraufsehers(h) and tieraufseher_durch_vertrag(h, a) and geschaedigter_dritter(h, d);
+    then haftung_834(h, a, d);
+}
+
+// --- §§ 836–838 Haftung für Gebäude und Werke -----------------------------------------------------
+//
+// § 836 Abs. 2 trägt die einzige Frist dieses Teils: der frühere Besitzer haftet
+// nur, wenn Einsturz oder Ablösung INNERHALB EINES JAHRES nach der Beendigung
+// seines Besitzes eintreten (§ 187 Abs. 1, § 188 Abs. 2 — Politik
+// BGB_DELIKT_JAHR; Zeile in DEADLINES.json, BG-09).
+
+pub relation einsturz_oder_abloesung(h: Handlung) kind empirical {
+    label de official "ein Gebäude oder ein anderes mit einem Grundstück verbundenes Werk ist eingestürzt, oder Teile haben sich abgelöst (§ 836 Abs. 1 Satz 1)";
+    label en unofficial "a building or other structure attached to land collapsed, or parts of it became detached (§ 836 (1) sentence 1)";
+}
+pub relation folge_fehlerhafter_errichtung_oder_mangelhafter_unterhaltung(h: Handlung) kind empirical {
+    label de official "der Einsturz oder die Ablösung ist die Folge fehlerhafter Errichtung oder mangelhafter Unterhaltung (§ 836 Abs. 1 Satz 1)";
+    label en unofficial "the collapse or detachment resulted from defective construction or inadequate maintenance (§ 836 (1) sentence 1)";
+}
+pub relation eigenbesitzer_des_grundstuecks(h: Handlung, p: Person) kind empirical {
+    label de official "Besitzer im Sinne der §§ 836–838 ist der Eigenbesitzer (§ 836 Abs. 3)";
+    label en unofficial "possessor within §§ 836–838 means the proprietary possessor (§ 836 (3))";
+}
+pub relation frueherer_besitzer(h: Handlung, p: Person) kind empirical {
+    label de official "ein früherer Besitzer des Grundstücks (§ 836 Abs. 2)";
+    label en unofficial "a former possessor of the land (§ 836 (2))";
+}
+pub relation besitz_beendet_am(h: Handlung, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag der Beendigung des Besitzes des früheren Besitzers (§ 836 Abs. 2)";
+    label en unofficial "day on which the former possessor's possession ended (§ 836 (2))";
+}
+pub relation gebaeudebesitzer_auf_fremdem_grundstueck(h: Handlung, p: Person) kind empirical {
+    label de official "wer auf einem fremden Grundstück in Ausübung eines Rechts ein Gebäude oder ein anderes Werk besitzt (§ 837)";
+    label en unofficial "a person who, in exercise of a right, possesses a building or other structure on another's land (§ 837)";
+}
+pub relation unterhaltungspflichtiger(h: Handlung, p: Person) kind empirical {
+    label de official "wer die Unterhaltung eines Gebäudes oder Werkes für den Besitzer übernimmt oder es vermöge eines Nutzungsrechts zu unterhalten hat (§ 838)";
+    label en unofficial "a person who assumes the maintenance of a building or structure for the possessor, or must maintain it by virtue of a right of use (§ 838)";
+}
+@source(BGB_P836)
+pub external judgment relation sorgfalt_zur_abwendung_der_gefahr_beobachtet(h: Handlung) {
+    authority Court;
+    label de official "§ 836 Abs. 1 Satz 2. Der Besitzer hat zum Zwecke der Abwendung der Gefahr die im Verkehr erforderliche Sorgfalt beobachtet";
+    label en unofficial "§ 836 (1) sentence 2. The possessor observed the care required in dealings in order to avert the danger";
+}
+@source(BGB_P836)
+pub external judgment relation frueherer_besitzer_hat_sorgfalt_beobachtet(h: Handlung) {
+    authority Court;
+    label de official "§ 836 Abs. 2. Der frühere Besitzer hat während seines Besitzes die im Verkehr erforderliche Sorgfalt beobachtet";
+    label en unofficial "§ 836 (2). The former possessor observed the care required in dealings during his possession";
+}
+@source(BGB_P836)
+pub external judgment relation spaeterer_besitzer_haette_gefahr_abwenden_koennen(h: Handlung) {
+    authority Court;
+    label de official "§ 836 Abs. 2. Ein späterer Besitzer hätte durch Beobachtung dieser Sorgfalt die Gefahr abwenden können";
+    label en unofficial "§ 836 (2). A later possessor could have averted the danger by observing that care";
+}
+
+pub relation gebaeudehaftungslage(h: Handlung) kind institutional {
+    label de official "Lage des § 836 Abs. 1 Satz 1: Einsturz oder Ablösung als Folge fehlerhafter Errichtung oder mangelhafter Unterhaltung hat einen Menschen getötet, verletzt oder eine Sache beschädigt";
+    label en unofficial "situation of § 836 (1) sentence 1: collapse or detachment resulting from defective construction or inadequate maintenance killed or injured a person or damaged a thing";
+}
+pub relation haftung_des_besitzers(h: Handlung) kind institutional {
+    label de official "Ersatzpflicht des Grundstücksbesitzers (§ 836 Abs. 1)";
+    label en unofficial "liability of the possessor of the land (§ 836 (1))";
+}
+pub relation haftung_836(h: Handlung, ersatzpflichtiger: Person, verletzter: Person) kind institutional {
+    label de official "Verpflichtung zum Ersatz des Schadens nach §§ 836–838";
+    label en unofficial "obligation to compensate the damage under §§ 836 to 838";
+}
+pub relation verantwortlichkeit_frueherer_besitzer(h: Handlung) kind institutional {
+    label de official "Verantwortlichkeit des früheren Besitzers (§ 836 Abs. 2)";
+    label en unofficial "responsibility of the former possessor (§ 836 (2))";
+}
+
+@source(BGB_P836)
+rule GebaeudehaftungslageToetungOderVerletzung(h: Handlung) strict {
+    label de official "Wird durch den Einsturz eines Gebäudes oder eines anderen mit einem Grundstück verbundenen Werkes oder durch die Ablösung von Teilen ein Mensch getötet, der Körper oder die Gesundheit eines Menschen verletzt oder eine Sache beschädigt, sofern der Einsturz oder die Ablösung die Folge fehlerhafter Errichtung oder mangelhafter Unterhaltung ist (§ 836 Abs. 1 Satz 1)";
+    label en unofficial "Where the collapse of a building or other structure attached to land, or the detachment of parts, kills a person, injures a person's body or health, or damages a thing, provided the collapse or detachment results from defective construction or inadequate maintenance (§ 836 (1) sentence 1)";
+    when einsturz_oder_abloesung(h) and folge_fehlerhafter_errichtung_oder_mangelhafter_unterhaltung(h) and kausal_verursacht(h);
+    then gebaeudehaftungslage(h);
+}
+
+@source(BGB_P836)
+presumption HaftungDesGrundstuecksbesitzers(h: Handlung) {
+    label de official "§ 836 Abs. 1. Der Besitzer des Grundstücks ist verpflichtet, dem Verletzten den Schaden zu ersetzen; die Ersatzpflicht tritt nicht ein, wenn der Besitzer zum Zwecke der Abwendung der Gefahr die im Verkehr erforderliche Sorgfalt beobachtet hat (Satz 2)";
+    label en unofficial "§ 836 (1). The possessor of the land must compensate the injured party; liability does not arise if the possessor observed the care required in dealings in order to avert the danger (sentence 2)";
+    when gebaeudehaftungslage(h);
+    presume haftung_des_besitzers(h);
+    unless sorgfalt_zur_abwendung_der_gefahr_beobachtet(h);
+}
+
+@source(BGB_P836)
+rule Haftung836Abs1(h: Handlung, b: Person, v: Person) defeasible {
+    label de official "Der Eigenbesitzer des Grundstücks haftet dem Verletzten (§ 836 Abs. 1 Satz 1, Abs. 3)";
+    label en unofficial "The proprietary possessor of the land is liable to the injured party (§ 836 (1) sentence 1, (3))";
+    when haftung_des_besitzers(h) and eigenbesitzer_des_grundstuecks(h, b) and verletzter(h, v);
+    then haftung_836(h, b, v);
+}
+
+@source(BGB_P836)
+rule VerantwortlichkeitFruehererBesitzer(h: Handlung, ende: Date, tag: Date) defeasible {
+    label de official "Ein früherer Besitzer des Grundstücks ist für den Schaden verantwortlich, wenn der Einsturz oder die Ablösung innerhalb eines Jahres nach der Beendigung seines Besitzes eintritt, es sei denn, dass er während seines Besitzes die im Verkehr erforderliche Sorgfalt beobachtet hat oder ein späterer Besitzer durch Beobachtung dieser Sorgfalt die Gefahr hätte abwenden können (§ 836 Abs. 2)";
+    label en unofficial "A former possessor is responsible if the collapse or detachment occurs within one year after the end of his possession, unless he observed the required care during his possession or a later possessor could have averted the danger by observing that care (§ 836 (2))";
+    when gebaeudehaftungslage(h) and besitz_beendet_am(h, ende) and handlungstag(h, tag)
+     and tag > ende and tag <= add_calendar_period(ende, 1 calendar_year);
+    unless frueherer_besitzer_hat_sorgfalt_beobachtet(h);
+    unless spaeterer_besitzer_haette_gefahr_abwenden_koennen(h);
+    then verantwortlichkeit_frueherer_besitzer(h);
+}
+
+@source(BGB_P836)
+rule Haftung836Abs2(h: Handlung, f: Person, v: Person) defeasible {
+    label de official "Der frühere Besitzer haftet dem Verletzten (§ 836 Abs. 2)";
+    label en unofficial "The former possessor is liable to the injured party (§ 836 (2))";
+    when verantwortlichkeit_frueherer_besitzer(h) and frueherer_besitzer(h, f) and verletzter(h, v);
+    then haftung_836(h, f, v);
+}
+
+@source(BGB_P837)
+rule Haftung837Gebaeudebesitzer(h: Handlung, g: Person, v: Person) defeasible {
+    label de official "Besitzt jemand auf einem fremden Grundstück in Ausübung eines Rechts ein Gebäude oder ein anderes Werk, so trifft ihn anstelle des Besitzers des Grundstücks die im § 836 bestimmte Verantwortlichkeit (§ 837)";
+    label en unofficial "If a person, in exercise of a right, possesses a building or other structure on another's land, the responsibility laid down in § 836 falls on him instead of on the possessor of the land (§ 837)";
+    when haftung_des_besitzers(h) and gebaeudebesitzer_auf_fremdem_grundstueck(h, g) and verletzter(h, v);
+    then haftung_836(h, g, v);
+}
+
+@source(BGB_P838)
+rule Haftung838Unterhaltungspflichtiger(h: Handlung, u: Person, v: Person) defeasible {
+    label de official "Wer die Unterhaltung eines Gebäudes oder eines mit einem Grundstück verbundenen Werkes für den Besitzer übernimmt oder das Gebäude oder das Werk vermöge eines ihm zustehenden Nutzungsrechts zu unterhalten hat, ist für den durch den Einsturz oder die Ablösung von Teilen verursachten Schaden in gleicher Weise verantwortlich wie der Besitzer (§ 838)";
+    label en unofficial "A person who assumes the maintenance of a building or structure for the possessor, or must maintain it by virtue of a right of use, is responsible for damage caused by collapse or detachment in the same way as the possessor (§ 838)";
+    when haftung_des_besitzers(h) and unterhaltungspflichtiger(h, u) and verletzter(h, v);
+    then haftung_836(h, u, v);
+}

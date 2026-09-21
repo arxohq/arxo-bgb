@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 828 Abs. 3 und § 829: fünfzehnjähriger Handelnder (geboren 20. April 2010, Handlung 1. Juni 2025) ohne die zur Erkenntnis der Verantwortlichkeit erforderliche Einsicht — nicht verantwortlich. Der Ersatz ist von keinem Aufsichtspflichtigen zu erlangen und die Billigkeit erfordert nach der Feststellung des Gerichts eine Schadloshaltung: § 829 greift ein.
+test "§ 828 Abs. 3 und § 829: fehlende Einsicht, aber Ersatzpflicht aus Billigkeitsgründen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "g1": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:bd:v05:S"), @2010-04-20) { origin case_input; }
+        assert "g2": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v05:S"), 7 calendar_year) { origin case_input; }
+        assert "g3": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v05:S"), 10 calendar_year) { origin case_input; }
+        assert "g4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v05:S"), 18 calendar_year) { origin case_input; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:v05")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:v05")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:v05")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:v05"), entity_ref("urn:de:bgb:bd:v05:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:v05"), entity_ref("urn:de:bgb:bd:v05:V")) { origin case_input; }
+        assert "f6": handlungstag(entity_ref("urn:de:bgb:bd:v05"), @2025-06-01) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:v05")) { origin adjudicated; }
+        assert "f8": kein_ersatz_vom_aufsichtspflichtigen(entity_ref("urn:de:bgb:bd:v05")) { origin case_input; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:v05")) { origin adjudicated; }
+        assert "j3": einsicht_fehlt(entity_ref("urn:de:bgb:bd:v05")) { origin adjudicated; }
+        assert "j4": billigkeit_erfordert_schadloshaltung(entity_ref("urn:de:bgb:bd:v05")) { origin adjudicated; }
+    }
+    evaluate truth(nicht_verantwortlich_828_abs3(entity_ref("urn:de:bgb:bd:v05")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(schadensersatzpflicht(entity_ref("urn:de:bgb:bd:v05"), entity_ref("urn:de:bgb:bd:v05:S"), entity_ref("urn:de:bgb:bd:v05:V")));
+    expect truth_status == NEITHER;
+    evaluate truth(ersatzpflicht_aus_billigkeit(entity_ref("urn:de:bgb:bd:v05"), entity_ref("urn:de:bgb:bd:v05:S"), entity_ref("urn:de:bgb:bd:v05:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

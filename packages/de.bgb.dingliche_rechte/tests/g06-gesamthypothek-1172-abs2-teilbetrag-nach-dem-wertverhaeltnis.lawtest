@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1163 Abs. 1 Satz 2, § 1172: Die Forderung ist erloschen, die Gesamthypothek über 300 000 € steht den Eigentümern gemeinschaftlich zu. Das Grundstück des Eigentümers ist 250 000 € wert, alle Grundstücke zusammen 750 000 € (Werte in Cent, unter Abzug vorgehender Belastungen). Der Teilbetrag beträgt 300 000 × 25 000 000 / 75 000 000 = 100 000,00 € — eine Rundung auf den Cent.
+test "§ 1172 Abs. 2: Teilbetrag der Gesamthypothek nach dem Wertverhältnis der Grundstücke" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": gesamthypothek_an(entity_ref("urn:de:bgb:dr:g06:hyp"), entity_ref("urn:de:bgb:dr:g06:grundstueck")) { origin case_input; }
+        assert "f2": eigentuemer_des_gesamtgrundstuecks(entity_ref("urn:de:bgb:dr:g06:hyp"), entity_ref("urn:de:bgb:dr:g06:grundstueck"), entity_ref("urn:de:bgb:dr:g06:eigentuemer")) { origin case_input; }
+        assert "f3": eigentuemer_des_belasteten_grundstuecks(entity_ref("urn:de:bgb:dr:g06:hyp"), entity_ref("urn:de:bgb:dr:g06:eigentuemer")) { origin case_input; }
+        assert "f4": forderung_erloschen(entity_ref("urn:de:bgb:dr:g06:hyp")) { origin adjudicated; }
+        assert "f5": geldsumme(entity_ref("urn:de:bgb:dr:g06:hyp"), 300000.00 EUR) { origin adjudicated; }
+        assert "f6": wert_des_grundstuecks_in_cent(entity_ref("urn:de:bgb:dr:g06:grundstueck"), 25000000) { origin adjudicated; }
+        assert "f7": summe_der_werte_der_grundstuecke_in_cent(entity_ref("urn:de:bgb:dr:g06:hyp"), 75000000) { origin adjudicated; }
+        assert "f8": not abweichende_vereinbarung_ueber_die_verteilung(entity_ref("urn:de:bgb:dr:g06:hyp")) { origin adjudicated; }
+    }
+    evaluate truth(teilbetrag_nach_dem_wertverhaeltnis(entity_ref("urn:de:bgb:dr:g06:hyp"), entity_ref("urn:de:bgb:dr:g06:grundstueck"), 100000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

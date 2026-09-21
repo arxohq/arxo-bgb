@@ -1,0 +1,630 @@
+// --- Buch 3 Abschnitt 7 Titel 1: Eigentümerhypothek, Gesamthypothek, Löschung, besondere Arten
+//     (§§ 1163–1190) --------------------------------------------------------------------------------
+//
+// AKZESSORIETÄT. §§ 1163, 1177 und 1181 lesen den Zustand der gesicherten
+// Forderung ab: entsteht sie nicht oder erlischt sie, so steht die Hypothek dem
+// Eigentümer zu (§ 1163 Abs. 1) und verwandelt sich bei Vereinigung ohne
+// Forderung in eine Grundschuld (§ 1177 Abs. 1 Satz 1).
+//
+// § 1172 ABS. 2 IST DER EINZIGE BRUCH DIESES TITELS. Der Teilbetrag entspricht
+// „dem Verhältnis des Wertes seines Grundstücks zu dem Werte der sämtlichen
+// Grundstücke“; der Wert wird unter Abzug vorgehender Belastungen berechnet
+// (Satz 2). Das Verhältnis wird als Paar von Geldbeträgen geführt und einmal
+// je Grundstück mit `div_round` auf den Cent gebracht (Ledger D-11-05).
+//
+// §§ 1170, 1171: ZEHN UND DREISSIG JAHRE. Beide sind ERLÖSCHENS- bzw.
+// AUSSCHLUSSFRISTEN — niemand hat innerhalb ihrer zu leisten; ihr Ende liest
+// `frist_ende_kalender` ohne die Verlegung des § 193 (Ledger D-11-04).
+
+// --- Eingaben des Falls -----------------------------------------------------------------------------
+
+pub relation befriedigung_durch_den_persoenlichen_schuldner(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Betrag, mit dem der persönliche Schuldner den Gläubiger befriedigt hat (§ 1164 Abs. 1, § 1174 Abs. 1)";
+    label en unofficial "amount with which the personal debtor satisfied the creditor (§ 1164 (1), § 1174 (1))";
+}
+pub relation ersatzanspruch_des_schuldners_gegen_den_eigentuemer(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Betrag, in dessen Höhe der Schuldner von dem Eigentümer oder einem Rechtsvorgänger Ersatz verlangen kann (§ 1164 Abs. 1 Satz 1, § 1174 Abs. 1)";
+    label en unofficial "amount up to which the debtor may claim reimbursement from the owner or their predecessor (§ 1164 (1) sentence 1, § 1174 (1))";
+}
+pub relation forderung_und_schuld_in_einer_person_vereinigt(h: Grundpfandrecht) kind empirical {
+    label de official "Forderung und Schuld haben sich in einer Person vereinigt (§ 1164 Abs. 2, § 1173 Abs. 1 Satz 2, § 1177 Abs. 1)";
+    label en unofficial "claim and debt have merged in one person (§ 1164 (2), § 1173 (1) sentence 2, § 1177 (1))";
+}
+pub relation verzicht_des_glaeubigers_auf_die_hypothek(h: Grundpfandrecht) kind empirical {
+    label de official "der Gläubiger hat auf die Hypothek verzichtet; der Verzicht ist dem Grundbuchamt oder dem Eigentümer gegenüber erklärt und eingetragen (§ 1168 Abs. 1, Abs. 2)";
+    label en unofficial "the creditor has waived the mortgage; the waiver was declared to the registry or the owner and registered (§ 1168 (1), (2))";
+}
+pub relation vorrang_einem_anderen_recht_eingeraeumt(h: Grundpfandrecht) kind empirical {
+    label de official "der Gläubiger hat einem anderen Recht den Vorrang eingeräumt (§ 1165)";
+    label en unofficial "the creditor has granted priority to another right (§ 1165)";
+}
+pub relation zwangsversteigerung_ohne_unverzuegliche_benachrichtigung(h: Grundpfandrecht) kind empirical {
+    label de official "der Gläubiger betreibt die Zwangsversteigerung des Grundstücks, ohne den persönlichen Schuldner unverzüglich zu benachrichtigen (§ 1166 Satz 1)";
+    label en unofficial "the creditor pursues the forced sale without notifying the personal debtor without undue delay (§ 1166 sentence 1)";
+}
+pub relation schaden_des_schuldners_aus_der_unterlassenen_benachrichtigung(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Schaden, den der persönliche Schuldner infolge der Unterlassung der Benachrichtigung erleidet (§ 1166 Satz 1)";
+    label en unofficial "loss suffered by the personal debtor as a result of the omitted notification (§ 1166 sentence 1)";
+}
+pub relation benachrichtigung_untunlich(h: Grundpfandrecht) kind empirical {
+    label de official "die Benachrichtigung ist untunlich (§ 1166 Satz 2, § 1128 Abs. 1 Satz 3)";
+    label en unofficial "the notification is impracticable (§ 1166 sentence 2, § 1128 (1) sentence 3)";
+}
+pub relation letzte_eintragung_zur_hypothek_am(h: Grundpfandrecht, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag der letzten sich auf die Hypothek beziehenden Eintragung in das Grundbuch (§ 1170 Abs. 1 Satz 1)";
+    label en unofficial "day of the last entry in the register relating to the mortgage (§ 1170 (1) sentence 1)";
+}
+pub relation glaeubiger_unbekannt(h: Grundpfandrecht) kind empirical {
+    label de official "der Gläubiger ist unbekannt (§ 1170 Abs. 1 Satz 1, § 1171 Abs. 1)";
+    label en unofficial "the creditor is unknown (§ 1170 (1) sentence 1, § 1171 (1))";
+}
+pub relation ausschlussfrist_des_1170(h: Grundpfandrecht, f: Frist) kind empirical {
+    key(h);
+    label de official "Zehnjahresfrist des § 1170 Abs. 1 Satz 1, nach deren Ablauf der unbekannte Gläubiger ausgeschlossen werden kann";
+    label en unofficial "ten-year period of § 1170 (1) sentence 1 after whose expiry the unknown creditor may be excluded";
+}
+pub relation recht_des_glaeubigers_anerkannt_am(h: Grundpfandrecht, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag, an dem der Eigentümer das Recht des Gläubigers in einer nach § 212 Abs. 1 Nr. 1 zum Neubeginn der Verjährung geeigneten Weise anerkannt hat (§ 1170 Abs. 1 Satz 1)";
+    label en unofficial "day on which the owner acknowledged the creditor's right in a manner suitable under § 212 (1) no. 1 (§ 1170 (1) sentence 1)";
+}
+pub relation kein_anerkenntnis(h: Grundpfandrecht) kind empirical {
+    label de official "ein Anerkenntnis des Rechts des Gläubigers ist nicht erfolgt (§ 1170 Abs. 1 Satz 1) — ausdrückliche Eingabe des Falls";
+    label en unofficial "no acknowledgment of the creditor's right has occurred (§ 1170 (1) sentence 1) — explicit case input";
+}
+pub relation nach_dem_kalender_bestimmte_zahlungszeit(h: Grundpfandrecht, zahlungstag: Date) kind empirical {
+    key(h);
+    label de official "für die Forderung besteht eine nach dem Kalender bestimmte Zahlungszeit; die Frist beginnt nicht vor dem Ablauf des Zahlungstags (§ 1170 Abs. 1 Satz 2)";
+    label en unofficial "the claim has a calendar-determined time of payment; the period does not begin before the end of that day (§ 1170 (1) sentence 2)";
+}
+pub relation ausschliessungsbeschluss_rechtskraeftig_am(h: Grundpfandrecht, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag der Rechtskraft des Ausschließungsbeschlusses (§ 1170 Abs. 2, § 1171 Abs. 2, Abs. 3) — festgestellte Tatsache des Aufgebotsverfahrens";
+    label en unofficial "day on which the exclusion order became final (§ 1170 (2), § 1171 (2), (3)) — established fact of the public notice proceedings";
+}
+pub relation betrag_unter_verzicht_auf_die_ruecknahme_hinterlegt(h: Grundpfandrecht) kind empirical {
+    label de official "der Eigentümer hat den Betrag der Forderung für den Gläubiger unter Verzicht auf das Recht zur Rücknahme hinterlegt (§ 1171 Abs. 1 Satz 1)";
+    label en unofficial "the owner has deposited the amount of the claim for the creditor, waiving the right of withdrawal (§ 1171 (1) sentence 1)";
+}
+pub relation zinssatz_im_grundbuch_eingetragen(h: Grundpfandrecht) kind empirical {
+    label de official "der Zinssatz ist im Grundbuch eingetragen; nur dann sind Zinsen zu hinterlegen (§ 1171 Abs. 1 Satz 2)";
+    label en unofficial "the interest rate is registered; only then must interest be deposited (§ 1171 (1) sentence 2)";
+}
+pub relation erloeschensfrist_des_hinterlegten_betrags(h: Grundpfandrecht, f: Frist) kind empirical {
+    key(h);
+    label de official "Dreißigjahresfrist des § 1171 Abs. 3, mit deren Ablauf das Recht des Gläubigers auf den hinterlegten Betrag erlischt";
+    label en unofficial "thirty-year period of § 1171 (3) at whose end the creditor's right to the deposited amount lapses";
+}
+pub relation glaeubiger_bei_der_hinterlegungsstelle_gemeldet_am(h: Grundpfandrecht, tag: Date) kind empirical {
+    key(h);
+    label de official "Tag, an dem sich der Gläubiger bei der Hinterlegungsstelle gemeldet hat (§ 1171 Abs. 3)";
+    label en unofficial "day on which the creditor reported to the depositary (§ 1171 (3))";
+}
+pub relation keine_meldung_bei_der_hinterlegungsstelle(h: Grundpfandrecht) kind empirical {
+    label de official "der Gläubiger hat sich bei der Hinterlegungsstelle nicht gemeldet (§ 1171 Abs. 3) — ausdrückliche Eingabe des Falls";
+    label en unofficial "the creditor has not reported to the depositary (§ 1171 (3)) — explicit case input";
+}
+pub relation eigentuemer_des_gesamtgrundstuecks(h: Grundpfandrecht, g: Grundstueck, p: Person) kind empirical {
+    label de official "Eigentümer eines der mit der Gesamthypothek belasteten Grundstücke (§ 1172 Abs. 1, § 1173 Abs. 1)";
+    label en unofficial "owner of one of the plots encumbered with the aggregate mortgage (§ 1172 (1), § 1173 (1))";
+}
+pub relation abweichende_vereinbarung_ueber_die_verteilung(h: Grundpfandrecht) kind empirical {
+    label de official "über die Verteilung der Gesamthypothek ist ein anderes vereinbart (§ 1172 Abs. 2 Satz 1)";
+    label en unofficial "a different allocation of the aggregate mortgage has been agreed (§ 1172 (2) sentence 1)";
+}
+pub relation summe_der_werte_der_grundstuecke_in_cent(h: Grundpfandrecht, summe: Integer) kind empirical {
+    key(h);
+    label de official "Wert der sämtlichen mit der Gesamthypothek belasteten Grundstücke in Cent, unter Abzug der vorgehenden Belastungen berechnet (§ 1172 Abs. 2 Satz 2)";
+    label en unofficial "value in cents of all plots encumbered with the aggregate mortgage, after deduction of prior encumbrances (§ 1172 (2) sentence 2)";
+}
+pub relation befriedigung_durch_den_eigentuemer_eines_grundstuecks(h: Grundpfandrecht, g: Grundstueck) kind empirical {
+    label de official "der Eigentümer eines der mit der Gesamthypothek belasteten Grundstücke hat den Gläubiger befriedigt (§ 1173 Abs. 1 Satz 1)";
+    label en unofficial "the owner of one of the plots encumbered with the aggregate mortgage has satisfied the creditor (§ 1173 (1) sentence 1)";
+}
+pub relation ersatzanspruch_gegen_den_eigentuemer_eines_anderen_grundstuecks(h: Grundpfandrecht, g: Grundstueck, betrag: Money) kind empirical {
+    key(h, g);
+    label de official "Betrag, in dessen Höhe der befriedigende Eigentümer von dem Eigentümer eines anderen Grundstücks Ersatz verlangen kann (§ 1173 Abs. 2)";
+    label en unofficial "amount up to which the satisfying owner may claim reimbursement from the owner of another plot (§ 1173 (2))";
+}
+pub relation als_sicherungshypothek_bezeichnet(h: Grundpfandrecht) kind empirical {
+    label de official "die Hypothek ist im Grundbuch als Sicherungshypothek bezeichnet (§ 1184 Abs. 2)";
+    label en unofficial "the mortgage is designated in the register as a security mortgage (§ 1184 (2))";
+}
+pub relation forderung_aus_inhaber_oder_orderpapier(h: Grundpfandrecht) kind empirical {
+    label de official "die Forderung stammt aus einer Schuldverschreibung auf den Inhaber, aus einem Wechsel oder aus einem anderen durch Indossament übertragbaren Papier (§ 1187 Satz 1)";
+    label en unofficial "the claim arises from a bearer bond, a bill of exchange or another instrument transferable by endorsement (§ 1187 sentence 1)";
+}
+pub relation hoechstbetrag_im_grundbuch_eingetragen(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Höchstbetrag, bis zu dem das Grundstück haften soll; er muss in das Grundbuch eingetragen werden (§ 1190 Abs. 1)";
+    label en unofficial "maximum amount up to which the land is to be liable; it must be registered (§ 1190 (1))";
+}
+pub relation festgestellte_forderung(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Betrag der vorbehaltenen und später festgestellten Forderung (§ 1190 Abs. 1 Satz 1)";
+    label en unofficial "amount of the claim reserved and later established (§ 1190 (1) sentence 1)";
+}
+pub relation zinsen_der_hoechstbetragshypothek(h: Grundpfandrecht, betrag: Money) kind empirical {
+    key(h);
+    label de official "Zinsen, die in den Höchstbetrag einzurechnen sind (§ 1190 Abs. 2)";
+    label en unofficial "interest to be included in the maximum amount (§ 1190 (2))";
+}
+pub relation forderung_nach_allgemeinen_vorschriften_uebertragen(h: Grundpfandrecht) kind empirical {
+    label de official "die Forderung ist nach den für die Übertragung von Forderungen geltenden allgemeinen Vorschriften übertragen worden (§ 1190 Abs. 4 Satz 2)";
+    label en unofficial "the claim has been assigned under the general rules on assignment of claims (§ 1190 (4) sentence 2)";
+}
+pub relation umwandlung_vereinbart(h: Grundpfandrecht, neue_art: Grundpfandrechtsart) kind empirical {
+    key(h);
+    label de official "Umwandlung in eine andere Art des Grundpfandrechts ist vereinbart (§ 1186, § 1198, § 1203)";
+    label en unofficial "conversion into another kind of charge has been agreed (§ 1186, § 1198, § 1203)";
+}
+
+// --- Abgeleitete Köpfe -------------------------------------------------------------------------------
+
+pub relation hypothek_steht_dem_eigentuemer_zu(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "die Hypothek steht dem Eigentümer zu (§ 1163 Abs. 1, Abs. 2, § 1168 Abs. 1, § 1170 Abs. 2)";
+    label en unofficial "the mortgage belongs to the owner (§ 1163 (1), (2), § 1168 (1), § 1170 (2))";
+}
+pub relation hypothek_auf_den_schuldner_uebergegangen(h: Grundpfandrecht, p: Person, betrag: Money) kind derived {
+    key(h, p);
+    label de official "die Hypothek ist insoweit auf den persönlichen Schuldner übergegangen, als er Ersatz verlangen kann (§ 1164 Abs. 1 Satz 1)";
+    label en unofficial "the mortgage has passed to the personal debtor in so far as they may claim reimbursement (§ 1164 (1) sentence 1)";
+}
+pub relation schuldner_frei_geworden(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "der persönliche Schuldner wird insoweit frei, als er ohne die Verfügung des Gläubigers nach § 1164 aus der Hypothek hätte Ersatz erlangen können (§ 1165)";
+    label en unofficial "the personal debtor is discharged in so far as, but for the creditor's disposition, they could have obtained reimbursement under § 1164 (§ 1165)";
+}
+pub relation befriedigung_wegen_des_ausfalls_verweigerbar(h: Grundpfandrecht, p: Person, betrag: Money) kind derived {
+    key(h, p);
+    label de official "der persönliche Schuldner kann die Befriedigung des Gläubigers wegen eines Ausfalls bei der Zwangsversteigerung insoweit verweigern, als er infolge der unterlassenen Benachrichtigung einen Schaden erleidet (§ 1166 Satz 1)";
+    label en unofficial "the personal debtor may refuse satisfaction of the creditor for a shortfall in the forced sale in so far as they suffer loss from the omitted notification (§ 1166 sentence 1)";
+}
+pub relation anspruch_auf_verzicht_des_glaeubigers(h: Grundpfandrecht, p: Person) kind derived {
+    label de official "steht dem Eigentümer eine Einrede zu, durch welche die Geltendmachung der Hypothek dauernd ausgeschlossen wird, so kann er verlangen, dass der Gläubiger auf die Hypothek verzichtet (§ 1169)";
+    label en unofficial "where the owner has a defence permanently excluding assertion of the mortgage, they may demand that the creditor waive it (§ 1169)";
+}
+pub relation ausschluss_des_unbekannten_glaeubigers_zulaessig(h: Grundpfandrecht) kind derived {
+    label de official "der unbekannte Gläubiger kann im Wege des Aufgebotsverfahrens mit seinem Recht ausgeschlossen werden (§ 1170 Abs. 1, § 1171 Abs. 1)";
+    label en unofficial "the unknown creditor may be excluded with their right in public notice proceedings (§ 1170 (1), § 1171 (1))";
+}
+pub relation zehnjahresfrist_abgelaufen_am(h: Grundpfandrecht, tag: Date) kind derived {
+    key(h);
+    label de official "Tag, mit dessen Ablauf die Zehnjahresfrist des § 1170 Abs. 1 Satz 1 verstrichen ist";
+    label en unofficial "day at whose end the ten-year period of § 1170 (1) sentence 1 has run";
+}
+pub relation glaeubiger_gilt_als_befriedigt(h: Grundpfandrecht) kind derived {
+    label de official "mit der Rechtskraft des Ausschließungsbeschlusses gilt der Gläubiger als befriedigt (§ 1171 Abs. 2 Satz 1)";
+    label en unofficial "with the exclusion order becoming final the creditor is deemed satisfied (§ 1171 (2) sentence 1)";
+}
+pub relation recht_auf_den_hinterlegten_betrag_erloschen_am(h: Grundpfandrecht, tag: Date) kind derived {
+    key(h);
+    label de official "Tag, mit dessen Ablauf das Recht des Gläubigers auf den hinterlegten Betrag erlischt (§ 1171 Abs. 3)";
+    label en unofficial "day at whose end the creditor's right to the deposited amount lapses (§ 1171 (3))";
+}
+pub relation gesamthypothek_steht_den_eigentuemern_gemeinschaftlich_zu(h: Grundpfandrecht) kind derived {
+    label de official "eine Gesamthypothek steht in den Fällen des § 1163 den Eigentümern der belasteten Grundstücke gemeinschaftlich zu (§ 1172 Abs. 1, § 1175 Abs. 1 Satz 1)";
+    label en unofficial "in the cases of § 1163 an aggregate mortgage belongs jointly to the owners of the encumbered plots (§ 1172 (1), § 1175 (1) sentence 1)";
+}
+pub relation teilbetrag_nach_dem_wertverhaeltnis(h: Grundpfandrecht, g: Grundstueck, betrag: Money) kind derived {
+    key(h, g);
+    label de official "Teilbetrag, der dem Verhältnis des Wertes des Grundstücks zu dem Werte der sämtlichen Grundstücke entspricht (§ 1172 Abs. 2 Satz 1) — eine Rundung je Grundstück";
+    label en unofficial "partial amount corresponding to the ratio of the plot's value to the value of all plots (§ 1172 (2) sentence 1) — one rounding per plot";
+}
+pub relation hypothek_am_eigenen_grundstueck_erworben(h: Grundpfandrecht, g: Grundstueck, p: Person) kind derived {
+    label de official "der befriedigende Eigentümer erwirbt die Hypothek an seinem Grundstück (§ 1173 Abs. 1 Satz 1)";
+    label en unofficial "the satisfying owner acquires the mortgage on their own plot (§ 1173 (1) sentence 1)";
+}
+pub relation hypothek_an_den_uebrigen_grundstuecken_erloschen(h: Grundpfandrecht, g: Grundstueck) kind derived {
+    label de official "die Hypothek an den übrigen Grundstücken erlischt (§ 1173 Abs. 1 Satz 1, § 1174 Abs. 1)";
+    label en unofficial "the mortgage on the remaining plots is extinguished (§ 1173 (1) sentence 1, § 1174 (1))";
+}
+pub relation hypothek_am_fremden_grundstueck_uebergegangen(h: Grundpfandrecht, g: Grundstueck, p: Person, betrag: Money) kind derived {
+    key(h, g, p);
+    label de official "in Höhe des Ersatzanspruchs geht auch die Hypothek an dem Grundstück des anderen Eigentümers auf ihn über; sie bleibt Gesamthypothek (§ 1173 Abs. 2)";
+    label en unofficial "up to the amount of the reimbursement claim the mortgage on the other owner's plot also passes to them and remains an aggregate mortgage (§ 1173 (2))";
+}
+pub relation hypothek_nicht_zum_nachteil_der_verbleibenden_geltend_zu_machen(h: Grundpfandrecht) kind derived {
+    label de official "die dem Eigentümer oder dem persönlichen Schuldner zufallende Hypothek kann nicht zum Nachteil der dem Gläubiger verbleibenden Hypothek geltend gemacht werden (§ 1176, § 1182 Satz 2)";
+    label en unofficial "the mortgage accruing to the owner or personal debtor may not be asserted to the detriment of the mortgage remaining with the creditor (§ 1176, § 1182 sentence 2)";
+}
+pub relation hypothek_in_grundschuld_verwandelt(h: Grundpfandrecht) kind derived {
+    label de official "vereinigt sich die Hypothek mit dem Eigentum in einer Person, ohne dass dem Eigentümer auch die Forderung zusteht, so verwandelt sich die Hypothek in eine Grundschuld (§ 1177 Abs. 1 Satz 1)";
+    label en unofficial "if the mortgage merges with ownership without the owner also holding the claim, it turns into a land charge (§ 1177 (1) sentence 1)";
+}
+pub relation sicherungshypothek(h: Grundpfandrecht) kind derived {
+    label de official "die Hypothek ist eine Sicherungshypothek: das Recht des Gläubigers bestimmt sich nur nach der Forderung und er kann sich zum Beweis nicht auf die Eintragung berufen (§ 1184 Abs. 1, § 1187 Satz 2, § 1190 Abs. 3)";
+    label en unofficial "the mortgage is a security mortgage: the creditor's right is determined only by the claim and they may not rely on the registration as proof (§ 1184 (1), § 1187 sentence 2, § 1190 (3))";
+}
+pub relation brieferteilung_bei_der_sicherungshypothek_ausgeschlossen(h: Grundpfandrecht) kind derived {
+    label de official "bei der Sicherungshypothek ist die Erteilung des Hypothekenbriefs ausgeschlossen (§ 1185 Abs. 1)";
+    label en unofficial "with a security mortgage issue of the certificate is excluded (§ 1185 (1))";
+}
+pub relation vorschriften_1138_1139_1141_1156_unanwendbar(h: Grundpfandrecht) kind derived {
+    label de official "die Vorschriften der §§ 1138, 1139, 1141, 1156 finden bei der Sicherungshypothek keine Anwendung (§ 1185 Abs. 2)";
+    label en unofficial "§§ 1138, 1139, 1141, 1156 do not apply to the security mortgage (§ 1185 (2))";
+}
+pub relation umwandlung_ohne_zustimmung_zulaessig(h: Grundpfandrecht, neue_art: Grundpfandrechtsart) kind derived {
+    key(h);
+    label de official "die Umwandlung ist ohne Zustimmung der im Range gleich- oder nachstehenden Berechtigten zulässig (§ 1186, § 1198, § 1203)";
+    label en unofficial "the conversion is admissible without the consent of equal or subsequent holders (§ 1186, § 1198, § 1203)";
+}
+pub relation kein_loeschungsanspruch(h: Grundpfandrecht) kind derived {
+    label de official "ein Anspruch auf Löschung der Hypothek nach den §§ 1179a, 1179b besteht nicht (§ 1187 Satz 4)";
+    label en unofficial "no claim to cancellation under §§ 1179a, 1179b exists (§ 1187 sentence 4)";
+}
+pub relation haftung_begrenzt_auf_den_hoechstbetrag(h: Grundpfandrecht, betrag: Money) kind derived {
+    key(h);
+    label de official "das Grundstück haftet nur bis zu dem eingetragenen Höchstbetrag; Zinsen werden eingerechnet (§ 1190 Abs. 1, Abs. 2)";
+    label en unofficial "the land is liable only up to the registered maximum amount; interest is included in it (§ 1190 (1), (2))";
+}
+pub relation uebergang_der_hypothek_ausgeschlossen(h: Grundpfandrecht) kind derived {
+    label de official "wird die Forderung nach den allgemeinen Vorschriften übertragen, so ist der Übergang der Hypothek ausgeschlossen (§ 1190 Abs. 4 Satz 2)";
+    label en unofficial "where the claim is assigned under the general rules, transfer of the mortgage is excluded (§ 1190 (4) sentence 2)";
+}
+
+// --- §§ 1163–1169: Eigentümerhypothek und Schuldner ----------------------------------------------------
+
+@source(BGB_P1163) {
+    rule EigentuemerhypothekBeiNichtentstandenerForderung(h: Grundpfandrecht, p: Person) strict {
+        label de official "Ist die Forderung, für welche die Hypothek bestellt ist, nicht zur Entstehung gelangt, so steht die Hypothek dem Eigentümer zu (§ 1163 Abs. 1 Satz 1)";
+        label en unofficial "If the claim for which the mortgage was created has not come into existence, the mortgage belongs to the owner (§ 1163 (1) sentence 1)";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and forderung_nicht_zur_entstehung_gelangt(h);
+        then hypothek_steht_dem_eigentuemer_zu(h, p);
+    }
+    rule EigentuemerhypothekBeiErloschenerForderung(h: Grundpfandrecht, p: Person) strict {
+        label de official "Erlischt die Forderung, so erwirbt der Eigentümer die Hypothek (§ 1163 Abs. 1 Satz 2)";
+        label en unofficial "If the claim is extinguished, the owner acquires the mortgage (§ 1163 (1) sentence 2)";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and forderung_erloschen(h);
+        then hypothek_steht_dem_eigentuemer_zu(h, p);
+    }
+    rule EigentuemerhypothekBisZurBriefuebergabe(h: Grundpfandrecht, p: Person) strict {
+        label de official "Eine Hypothek, für welche die Erteilung des Hypothekenbriefs nicht ausgeschlossen ist, steht bis zur Übergabe des Briefes an den Gläubiger dem Eigentümer zu (§ 1163 Abs. 2)";
+        label en unofficial "A mortgage for which issue of the certificate is not excluded belongs to the owner until the certificate is handed over to the creditor (§ 1163 (2))";
+        when eigentuemer_des_belasteten_grundstuecks(h, p) and briefhypothek(h) and not brief_dem_glaeubiger_uebergeben(h);
+        then hypothek_steht_dem_eigentuemer_zu(h, p);
+    }
+}
+
+@source(BGB_P1164) {
+    rule UebergangAufDenSchuldnerInHoeheDesErsatzanspruchs(h: Grundpfandrecht, p: Person, gezahlt: Money, ersatz: Money) strict {
+        label de official "Befriedigt der persönliche Schuldner den Gläubiger, so geht die Hypothek insoweit auf ihn über, als er von dem Eigentümer oder einem Rechtsvorgänger Ersatz verlangen kann (§ 1164 Abs. 1 Satz 1)";
+        label en unofficial "If the personal debtor satisfies the creditor, the mortgage passes to them in so far as they may claim reimbursement from the owner or a predecessor (§ 1164 (1) sentence 1)";
+        when persoenlicher_schuldner(h, p) and befriedigung_durch_den_persoenlichen_schuldner(h, gezahlt)
+            and ersatzanspruch_des_schuldners_gegen_den_eigentuemer(h, ersatz);
+        then hypothek_auf_den_schuldner_uebergegangen(h, p, ersatz);
+    }
+    rule VereinigungStehtDerBefriedigungGleich(h: Grundpfandrecht, p: Person, ersatz: Money) strict {
+        label de official "Der Befriedigung des Gläubigers steht es gleich, wenn sich Forderung und Schuld in einer Person vereinigen (§ 1164 Abs. 2)";
+        label en unofficial "Merger of claim and debt in one person is equivalent to satisfaction of the creditor (§ 1164 (2))";
+        when persoenlicher_schuldner(h, p) and forderung_und_schuld_in_einer_person_vereinigt(h)
+            and ersatzanspruch_des_schuldners_gegen_den_eigentuemer(h, ersatz);
+        then hypothek_auf_den_schuldner_uebergegangen(h, p, ersatz);
+    }
+}
+
+@source(BGB_P1165) {
+    rule SchuldnerFreiBeiVerzichtDesGlaeubigers(h: Grundpfandrecht, p: Person) strict {
+        label de official "Verzichtet der Gläubiger auf die Hypothek oder hebt er sie nach § 1183 auf, so wird der persönliche Schuldner insoweit frei, als er ohne diese Verfügung nach § 1164 aus der Hypothek hätte Ersatz erlangen können (§ 1165)";
+        label en unofficial "If the creditor waives or cancels the mortgage, the personal debtor is discharged in so far as they could otherwise have obtained reimbursement under § 1164 (§ 1165)";
+        when persoenlicher_schuldner(h, p) and verzicht_des_glaeubigers_auf_die_hypothek(h);
+        then schuldner_frei_geworden(h, p);
+    }
+    rule SchuldnerFreiBeiVorrangeinraeumung(h: Grundpfandrecht, p: Person) strict {
+        label de official "Das Gleiche gilt, wenn der Gläubiger einem anderen Recht den Vorrang einräumt (§ 1165)";
+        label en unofficial "The same applies if the creditor grants priority to another right (§ 1165)";
+        when persoenlicher_schuldner(h, p) and vorrang_einem_anderen_recht_eingeraeumt(h);
+        then schuldner_frei_geworden(h, p);
+    }
+}
+
+@source(BGB_P1166)
+rule VerweigerungWegenUnterlasseterBenachrichtigung(h: Grundpfandrecht, p: Person, schaden: Money) strict {
+    label de official "Ist der persönliche Schuldner berechtigt, von dem Eigentümer Ersatz zu verlangen, so kann er, wenn der Gläubiger die Zwangsversteigerung betreibt, ohne ihn unverzüglich zu benachrichtigen, die Befriedigung wegen eines Ausfalls insoweit verweigern, als er infolge der Unterlassung einen Schaden erleidet; die Benachrichtigung darf unterbleiben, wenn sie untunlich ist (§ 1166)";
+    label en unofficial "Where the personal debtor may claim reimbursement from the owner, they may refuse satisfaction for a shortfall in so far as they suffer loss from the omitted notification; notification may be omitted if impracticable (§ 1166)";
+    when persoenlicher_schuldner(h, p) and zwangsversteigerung_ohne_unverzuegliche_benachrichtigung(h)
+        and schaden_des_schuldners_aus_der_unterlassenen_benachrichtigung(h, schaden)
+        and not benachrichtigung_untunlich(h);
+    then befriedigung_wegen_des_ausfalls_verweigerbar(h, p, schaden);
+}
+
+@source(BGB_P1167)
+rule SchuldnerHatDieRechteDer1144Und1145(h: Grundpfandrecht, p: Person, ersatz: Money) strict {
+    label de official "Erwirbt der persönliche Schuldner, falls er den Gläubiger befriedigt, die Hypothek, so stehen ihm die in den §§ 1144, 1145 bestimmten Rechte zu (§ 1167)";
+    label en unofficial "If the personal debtor acquires the mortgage upon satisfying the creditor, they have the rights of §§ 1144, 1145 (§ 1167)";
+    when hypothek_auf_den_schuldner_uebergegangen(h, p, ersatz);
+    then anspruch_auf_aushaendigung_der_urkunden(h, p);
+}
+
+@source(BGB_P1168)
+rule EigentuemerErwirbtBeiVerzicht(h: Grundpfandrecht, p: Person) strict {
+    label de official "Verzichtet der Gläubiger auf die Hypothek, so erwirbt sie der Eigentümer; der Verzicht ist dem Grundbuchamt oder dem Eigentümer gegenüber zu erklären und bedarf der Eintragung (§ 1168 Abs. 1, Abs. 2)";
+    label en unofficial "If the creditor waives the mortgage, the owner acquires it; the waiver must be declared to the registry or the owner and registered (§ 1168 (1), (2))";
+    when eigentuemer_des_belasteten_grundstuecks(h, p) and verzicht_des_glaeubigers_auf_die_hypothek(h);
+    then hypothek_steht_dem_eigentuemer_zu(h, p);
+}
+
+@source(BGB_P1169)
+rule AnspruchAufVerzichtBeiDauernderEinrede(e: Einrede, h: Grundpfandrecht, p: Person) strict {
+    label de official "Steht dem Eigentümer eine Einrede zu, durch welche die Geltendmachung der Hypothek dauernd ausgeschlossen wird, so kann er verlangen, dass der Gläubiger auf die Hypothek verzichtet (§ 1169)";
+    label en unofficial "Where the owner has a defence permanently excluding assertion of the mortgage, they may demand that the creditor waive it (§ 1169)";
+    when einrede_gegen_die_hypothek_geltend_zu_machen(e, h, p) and einrede_schliesst_die_geltendmachung_dauernd_aus(e);
+    then anspruch_auf_verzicht_des_glaeubigers(h, p);
+}
+
+// --- §§ 1170, 1171: Ausschluss des unbekannten Gläubigers ------------------------------------------------
+
+@source(BGB_P1170) {
+    rule ZehnjahresfristEreignisLetzteEintragung(h: Grundpfandrecht, f: Frist, e: Date) strict {
+        label de official "Die Zehnjahresfrist läuft von der letzten sich auf die Hypothek beziehenden Eintragung in das Grundbuch an (§ 1170 Abs. 1 Satz 1); der Tag der Eintragung wird nicht mitgerechnet (§ 187 Abs. 1)";
+        label en unofficial "The ten-year period runs from the last entry in the register relating to the mortgage (§ 1170 (1) sentence 1); the day of the entry is not counted (§ 187 (1))";
+        when ausschlussfrist_des_1170(h, f) and letzte_eintragung_zur_hypothek_am(h, e) and keine_kalenderbestimmte_zahlungszeit(h);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule ZehnjahresfristEreignisZahlungstag(h: Grundpfandrecht, f: Frist, z: Date) strict {
+        label de official "Besteht für die Forderung eine nach dem Kalender bestimmte Zahlungszeit, so beginnt die Frist nicht vor dem Ablauf des Zahlungstags (§ 1170 Abs. 1 Satz 2)";
+        label en unofficial "Where the claim has a calendar-determined time of payment, the period does not begin before the end of that day (§ 1170 (1) sentence 2)";
+        when ausschlussfrist_des_1170(h, f) and nach_dem_kalender_bestimmte_zahlungszeit(h, z) and zahlungszeit_verschiebt_den_beginn(h);
+        then de.bgb.fristen::frist_ereignis(f, z);
+    }
+    rule ZehnjahresfristDauer(h: Grundpfandrecht, f: Frist) strict {
+        label de official "Seit der letzten Eintragung müssen zehn Jahre verstrichen sein (§ 1170 Abs. 1 Satz 1) — Jahresschritt nach § 188 Abs. 2";
+        label en unofficial "Ten years must have passed since the last entry (§ 1170 (1) sentence 1) — year step under § 188 (2)";
+        when ausschlussfrist_des_1170(h, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+    }
+    rule ZehnjahresfristAbgelaufen(h: Grundpfandrecht, f: Frist, k: Date) strict {
+        label de official "Mit dem Ablauf des kalendarischen Endes sind zehn Jahre verstrichen (§ 1170 Abs. 1 Satz 1) — Ausschlussfrist ohne die Verlegung des § 193 (Ledger D-11-04)";
+        label en unofficial "With the calendar end the ten years have run (§ 1170 (1) sentence 1) — exclusion period without the transfer of § 193";
+        when ausschlussfrist_des_1170(h, f) and de.bgb.fristen::frist_ende_kalender(f, k);
+        then zehnjahresfrist_abgelaufen_am(h, k);
+    }
+    rule AusschlussDesUnbekanntenGlaeubigersOhneAnerkenntnis(h: Grundpfandrecht, k: Date) strict {
+        label de official "Ist der Gläubiger unbekannt, so kann er im Wege des Aufgebotsverfahrens mit seinem Recht ausgeschlossen werden, wenn zehn Jahre verstrichen sind und das Recht des Gläubigers nicht innerhalb dieser Frist anerkannt worden ist (§ 1170 Abs. 1 Satz 1)";
+        label en unofficial "If the creditor is unknown they may be excluded in public notice proceedings once ten years have passed without acknowledgment of their right within that period (§ 1170 (1) sentence 1)";
+        when glaeubiger_unbekannt(h) and zehnjahresfrist_abgelaufen_am(h, k) and kein_anerkenntnis(h);
+        then ausschluss_des_unbekannten_glaeubigers_zulaessig(h);
+    }
+    rule KeinAusschlussBeiAnerkenntnisInnerhalbDerFrist(h: Grundpfandrecht, k: Date, ta: Date) strict {
+        label de official "Ist das Recht des Gläubigers innerhalb der Frist anerkannt worden, so ist der Ausschluss nicht zulässig (§ 1170 Abs. 1 Satz 1 Halbsatz 2)";
+        label en unofficial "If the creditor's right was acknowledged within the period, exclusion is not admissible (§ 1170 (1) sentence 1)";
+        when glaeubiger_unbekannt(h) and zehnjahresfrist_abgelaufen_am(h, k)
+            and recht_des_glaeubigers_anerkannt_am(h, ta) and ta <= k;
+        then ausschluss_wegen_anerkenntnisses_gesperrt(h);
+    }
+    rule EigentuemerErwirbtMitDerRechtskraft(h: Grundpfandrecht, p: Person, tr: Date) strict {
+        label de official "Mit der Rechtskraft des Ausschließungsbeschlusses erwirbt der Eigentümer die Hypothek; der dem Gläubiger erteilte Hypothekenbrief wird kraftlos (§ 1170 Abs. 2)";
+        label en unofficial "With the exclusion order becoming final the owner acquires the mortgage; the certificate issued to the creditor becomes void (§ 1170 (2))";
+        when ausschluss_des_unbekannten_glaeubigers_zulaessig(h) and eigentuemer_des_belasteten_grundstuecks(h, p)
+            and ausschliessungsbeschluss_rechtskraeftig_am(h, tr);
+        then hypothek_steht_dem_eigentuemer_zu(h, p);
+    }
+}
+
+pub relation zahlungszeit_verschiebt_den_beginn(h: Grundpfandrecht) kind empirical {
+    label de official "für die Forderung besteht eine nach dem Kalender bestimmte Zahlungszeit, die den Fristbeginn verschiebt (§ 1170 Abs. 1 Satz 2) — ausdrückliche Eingabe des Falls";
+    label en unofficial "the claim has a calendar-determined time of payment that postpones the start of the period (§ 1170 (1) sentence 2) — explicit case input";
+}
+pub relation keine_kalenderbestimmte_zahlungszeit(h: Grundpfandrecht) kind empirical {
+    label de official "für die Forderung besteht keine den Fristbeginn verschiebende, nach dem Kalender bestimmte Zahlungszeit — ausdrückliche Eingabe des Falls (§ 1170 Abs. 1 Satz 1, 2 Gegenschluss)";
+    label en unofficial "the claim has no calendar-determined time of payment postponing the start of the period — explicit case input (§ 1170 (1) sentence 1, 2 a contrario)";
+}
+pub relation ausschluss_wegen_anerkenntnisses_gesperrt(h: Grundpfandrecht) kind derived {
+    label de official "der Ausschluss des Gläubigers ist gesperrt, weil sein Recht innerhalb der Frist anerkannt worden ist (§ 1170 Abs. 1 Satz 1)";
+    label en unofficial "exclusion of the creditor is barred because their right was acknowledged within the period (§ 1170 (1) sentence 1)";
+}
+
+@source(BGB_P1171) {
+    rule AusschlussDurchHinterlegung(h: Grundpfandrecht, p: Person) strict {
+        label de official "Der unbekannte Gläubiger kann mit seinem Recht auch dann ausgeschlossen werden, wenn der Eigentümer zur Befriedigung oder zur Kündigung berechtigt ist und den Betrag der Forderung unter Verzicht auf das Recht zur Rücknahme hinterlegt (§ 1171 Abs. 1 Satz 1)";
+        label en unofficial "The unknown creditor may also be excluded if the owner is entitled to satisfy or to give notice and deposits the amount of the claim waiving the right of withdrawal (§ 1171 (1) sentence 1)";
+        when glaeubiger_unbekannt(h) and eigentuemer_zur_befriedigung_berechtigt(h, p)
+            and betrag_unter_verzicht_auf_die_ruecknahme_hinterlegt(h);
+        then ausschluss_des_unbekannten_glaeubigers_zulaessig(h);
+    }
+    rule GlaeubigerGiltMitDerRechtskraftAlsBefriedigt(h: Grundpfandrecht, tr: Date) strict {
+        label de official "Mit der Rechtskraft des Ausschließungsbeschlusses gilt der Gläubiger als befriedigt, sofern nicht die Befriedigung schon vorher eingetreten ist (§ 1171 Abs. 2 Satz 1)";
+        label en unofficial "With the exclusion order becoming final the creditor is deemed satisfied unless satisfaction occurred earlier (§ 1171 (2) sentence 1)";
+        when ausschluss_des_unbekannten_glaeubigers_zulaessig(h) and betrag_unter_verzicht_auf_die_ruecknahme_hinterlegt(h)
+            and ausschliessungsbeschluss_rechtskraeftig_am(h, tr);
+        then glaeubiger_gilt_als_befriedigt(h);
+    }
+    rule ErloeschensfristEreignis(h: Grundpfandrecht, f: Frist, tr: Date) strict {
+        label de official "Die Dreißigjahresfrist des § 1171 Abs. 3 läuft von der Rechtskraft des Ausschließungsbeschlusses an (§ 187 Abs. 1)";
+        label en unofficial "The thirty-year period of § 1171 (3) runs from the day the exclusion order became final (§ 187 (1))";
+        when erloeschensfrist_des_hinterlegten_betrags(h, f) and ausschliessungsbeschluss_rechtskraeftig_am(h, tr);
+        then de.bgb.fristen::frist_ereignis(f, tr);
+    }
+    rule ErloeschensfristDauer(h: Grundpfandrecht, f: Frist) strict {
+        label de official "Das Recht des Gläubigers auf den hinterlegten Betrag erlischt mit dem Ablauf von 30 Jahren nach der Rechtskraft des Ausschließungsbeschlusses (§ 1171 Abs. 3) — Jahresschritt nach § 188 Abs. 2";
+        label en unofficial "The creditor's right to the deposited amount lapses 30 years after the order became final (§ 1171 (3)) — year step under § 188 (2)";
+        when erloeschensfrist_des_hinterlegten_betrags(h, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 30 calendar_year);
+    }
+    rule RechtAufDenHinterlegtenBetragErlischt(h: Grundpfandrecht, f: Frist, k: Date) strict {
+        label de official "Meldet sich der Gläubiger nicht vorher bei der Hinterlegungsstelle, so erlischt sein Recht auf den hinterlegten Betrag mit dem Ablauf der dreißig Jahre (§ 1171 Abs. 3)";
+        label en unofficial "If the creditor does not report to the depositary earlier, their right to the deposited amount lapses at the end of the thirty years (§ 1171 (3))";
+        when erloeschensfrist_des_hinterlegten_betrags(h, f) and de.bgb.fristen::frist_ende_kalender(f, k)
+            and keine_meldung_bei_der_hinterlegungsstelle(h);
+        then recht_auf_den_hinterlegten_betrag_erloschen_am(h, k);
+    }
+    rule MeldungVorAblaufErhaeltDasRecht(h: Grundpfandrecht, f: Frist, k: Date, tm: Date) strict {
+        label de official "Meldet sich der Gläubiger vor dem Ablauf der dreißig Jahre bei der Hinterlegungsstelle, so bleibt sein Recht auf den hinterlegten Betrag bestehen (§ 1171 Abs. 3)";
+        label en unofficial "If the creditor reports to the depositary before the thirty years have run, their right to the deposited amount survives (§ 1171 (3))";
+        when erloeschensfrist_des_hinterlegten_betrags(h, f) and de.bgb.fristen::frist_ende_kalender(f, k)
+            and glaeubiger_bei_der_hinterlegungsstelle_gemeldet_am(h, tm) and tm <= k;
+        then recht_auf_den_hinterlegten_betrag_bleibt(h);
+    }
+}
+
+pub relation recht_auf_den_hinterlegten_betrag_bleibt(h: Grundpfandrecht) kind derived {
+    label de official "das Recht des Gläubigers auf den hinterlegten Betrag bleibt bestehen, weil er sich vor dem Ablauf gemeldet hat (§ 1171 Abs. 3)";
+    label en unofficial "the creditor's right to the deposited amount survives because they reported before the expiry (§ 1171 (3))";
+}
+
+// --- §§ 1172–1176: Gesamthypothek --------------------------------------------------------------------------
+
+@source(BGB_P1172) {
+    rule GesamthypothekFaelltDenEigentuemernGemeinschaftlichZu(h: Grundpfandrecht, g: Grundstueck, p: Person) strict {
+        label de official "Eine Gesamthypothek steht in den Fällen des § 1163 den Eigentümern der belasteten Grundstücke gemeinschaftlich zu (§ 1172 Abs. 1)";
+        label en unofficial "In the cases of § 1163 an aggregate mortgage belongs jointly to the owners of the encumbered plots (§ 1172 (1))";
+        when gesamthypothek_an(h, g) and eigentuemer_des_gesamtgrundstuecks(h, g, p) and hypothek_steht_dem_eigentuemer_zu(h, p);
+        then gesamthypothek_steht_den_eigentuemern_gemeinschaftlich_zu(h);
+    }
+    rule TeilbetragNachDemWertverhaeltnis(h: Grundpfandrecht, g: Grundstueck, wert: Integer, summe: Integer, betrag: Money) strict {
+        label de official "Jeder Eigentümer kann, sofern nicht ein anderes vereinbart ist, verlangen, dass die Hypothek an seinem Grundstück auf den Teilbetrag beschränkt wird, der dem Verhältnis des Wertes seines Grundstücks zu dem Werte der sämtlichen Grundstücke entspricht; der Wert wird unter Abzug der vorgehenden Belastungen berechnet (§ 1172 Abs. 2) — eine Rundung je Grundstück (README „Rundung“)";
+        label en unofficial "Unless otherwise agreed, each owner may demand that the mortgage on their plot be limited to the amount corresponding to the ratio of their plot's value to the value of all plots, computed after deduction of prior encumbrances (§ 1172 (2)) — one rounding per plot";
+        when gesamthypothek_steht_den_eigentuemern_gemeinschaftlich_zu(h) and gesamthypothek_an(h, g)
+            and wert_des_grundstuecks_in_cent(g, wert) and summe_der_werte_der_grundstuecke_in_cent(h, summe)
+            and geldsumme(h, betrag) and not abweichende_vereinbarung_ueber_die_verteilung(h);
+        then teilbetrag_nach_dem_wertverhaeltnis(h, g, div_round(betrag * wert, summe * 1.0, 2, "HALF_UP"));
+    }
+}
+
+@source(BGB_P1173) {
+    rule BefriedigenderEigentuemerErwirbtAmEigenenGrundstueck(h: Grundpfandrecht, g: Grundstueck, p: Person) strict {
+        label de official "Befriedigt der Eigentümer eines der mit einer Gesamthypothek belasteten Grundstücke den Gläubiger, so erwirbt er die Hypothek an seinem Grundstück (§ 1173 Abs. 1 Satz 1)";
+        label en unofficial "If the owner of one of the plots encumbered with an aggregate mortgage satisfies the creditor, they acquire the mortgage on their own plot (§ 1173 (1) sentence 1)";
+        when gesamthypothek_an(h, g) and eigentuemer_des_gesamtgrundstuecks(h, g, p)
+            and befriedigung_durch_den_eigentuemer_eines_grundstuecks(h, g);
+        then hypothek_am_eigenen_grundstueck_erworben(h, g, p);
+    }
+    rule HypothekAnDenUebrigenGrundstueckenErlischt(h: Grundpfandrecht, g: Grundstueck, anderes: Grundstueck, p: Person) strict {
+        label de official "Die Hypothek an den übrigen Grundstücken erlischt (§ 1173 Abs. 1 Satz 1 Halbsatz 2)";
+        label en unofficial "The mortgage on the remaining plots is extinguished (§ 1173 (1) sentence 1)";
+        when hypothek_am_eigenen_grundstueck_erworben(h, g, p) and gesamthypothek_an(h, anderes) and anderes != g
+            and not ersatzanspruch_gegen_den_eigentuemer_eines_anderen_grundstuecks(h, anderes, 0.00 EUR);
+        then hypothek_an_den_uebrigen_grundstuecken_erloschen(h, anderes);
+    }
+    rule UebergangInHoeheDesErsatzanspruchs(h: Grundpfandrecht, g: Grundstueck, anderes: Grundstueck, p: Person, betrag: Money) strict {
+        label de official "Kann der Eigentümer, der den Gläubiger befriedigt, von dem Eigentümer eines der anderen Grundstücke Ersatz verlangen, so geht in Höhe des Ersatzanspruchs auch die Hypothek an dem Grundstück dieses Eigentümers auf ihn über; sie bleibt mit der Hypothek an seinem eigenen Grundstück Gesamthypothek (§ 1173 Abs. 2)";
+        label en unofficial "If the satisfying owner may claim reimbursement from the owner of another plot, the mortgage on that plot also passes to them up to that amount and remains an aggregate mortgage together with the one on their own plot (§ 1173 (2))";
+        when hypothek_am_eigenen_grundstueck_erworben(h, g, p) and gesamthypothek_an(h, anderes) and anderes != g
+            and ersatzanspruch_gegen_den_eigentuemer_eines_anderen_grundstuecks(h, anderes, betrag);
+        then hypothek_am_fremden_grundstueck_uebergegangen(h, anderes, p, betrag);
+    }
+}
+
+@source(BGB_P1174)
+rule BefriedigungDurchDenPersoenlichenSchuldnerBeiGesamthypothek(h: Grundpfandrecht, g: Grundstueck, p: Person, gezahlt: Money, ersatz: Money) strict {
+    label de official "Befriedigt der persönliche Schuldner den Gläubiger, dem eine Gesamthypothek zusteht, so geht, wenn er nur von dem Eigentümer eines der Grundstücke Ersatz verlangen kann, die Hypothek an diesem Grundstück auf ihn über; die Hypothek an den übrigen Grundstücken erlischt (§ 1174 Abs. 1)";
+    label en unofficial "If the personal debtor satisfies the creditor of an aggregate mortgage and may claim reimbursement only from the owner of one plot, the mortgage on that plot passes to them; the mortgage on the remaining plots is extinguished (§ 1174 (1))";
+    when gesamthypothek_an(h, g) and persoenlicher_schuldner(h, p)
+        and befriedigung_durch_den_persoenlichen_schuldner(h, gezahlt)
+        and ersatzanspruch_gegen_den_eigentuemer_eines_anderen_grundstuecks(h, g, ersatz);
+    then hypothek_am_fremden_grundstueck_uebergegangen(h, g, p, ersatz);
+}
+
+@source(BGB_P1175) {
+    rule VerzichtAufDieGesamthypothek(h: Grundpfandrecht, g: Grundstueck, p: Person) strict {
+        label de official "Verzichtet der Gläubiger auf die Gesamthypothek, so fällt sie den Eigentümern der belasteten Grundstücke gemeinschaftlich zu (§ 1175 Abs. 1 Satz 1)";
+        label en unofficial "If the creditor waives the aggregate mortgage, it accrues jointly to the owners of the encumbered plots (§ 1175 (1) sentence 1)";
+        when gesamthypothek_an(h, g) and eigentuemer_des_gesamtgrundstuecks(h, g, p) and verzicht_des_glaeubigers_auf_die_hypothek(h);
+        then hypothek_steht_dem_eigentuemer_zu(h, p);
+    }
+    rule AusschlussNach1170WirktWieDerVerzicht(h: Grundpfandrecht, g: Grundstueck, p: Person) strict {
+        label de official "Das Gleiche gilt, wenn der Gläubiger nach § 1170 mit seinem Recht ausgeschlossen wird (§ 1175 Abs. 2)";
+        label en unofficial "The same applies where the creditor is excluded with their right under § 1170 (§ 1175 (2))";
+        when gesamthypothek_an(h, g) and eigentuemer_des_gesamtgrundstuecks(h, g, p)
+            and ausschluss_des_unbekannten_glaeubigers_zulaessig(h);
+        then hypothek_steht_dem_eigentuemer_zu(h, p);
+    }
+}
+
+@source(BGB_P1176)
+rule KollisionsklauselZugunstenDesGlaeubigers(h: Grundpfandrecht, p: Person, betrag: Money, summe: Money) strict {
+    label de official "Liegen die Voraussetzungen der §§ 1163, 1164, 1168, 1172 bis 1175 nur in Ansehung eines Teilbetrags der Hypothek vor, so kann die dem Eigentümer oder dem persönlichen Schuldner zufallende Hypothek nicht zum Nachteil der dem Gläubiger verbleibenden Hypothek geltend gemacht werden (§ 1176)";
+    label en unofficial "Where the conditions of §§ 1163, 1164, 1168, 1172 to 1175 are met only for a part of the mortgage, the mortgage accruing to the owner or the personal debtor may not be asserted to the detriment of the one remaining with the creditor (§ 1176)";
+    when hypothek_auf_den_schuldner_uebergegangen(h, p, betrag) and geldsumme(h, summe) and betrag < summe;
+    then hypothek_nicht_zum_nachteil_der_verbleibenden_geltend_zu_machen(h);
+}
+
+@source(BGB_P1177)
+rule VereinigungOhneForderungVerwandeltInGrundschuld(h: Grundpfandrecht, p: Person) strict {
+    label de official "Vereinigt sich die Hypothek mit dem Eigentum in einer Person, ohne dass dem Eigentümer auch die Forderung zusteht, so verwandelt sich die Hypothek in eine Grundschuld (§ 1177 Abs. 1 Satz 1)";
+    label en unofficial "If the mortgage merges with ownership in one person without the owner also holding the claim, the mortgage turns into a land charge (§ 1177 (1) sentence 1)";
+    when hypothek_steht_dem_eigentuemer_zu(h, p) and eigentuemer_des_belasteten_grundstuecks(h, p)
+        and eigentuemer_ist_nicht_persoenlicher_schuldner(h);
+    then hypothek_in_grundschuld_verwandelt(h);
+}
+
+// --- §§ 1184–1190: Sicherungshypothek und Höchstbetragshypothek ---------------------------------------------
+
+@source(BGB_P1184) {
+    rule SicherungshypothekDurchBezeichnung(h: Grundpfandrecht) strict {
+        label de official "Eine Hypothek kann in der Weise bestellt werden, dass das Recht des Gläubigers sich nur nach der Forderung bestimmt und er sich zum Beweis der Forderung nicht auf die Eintragung berufen kann; sie muss im Grundbuch als Sicherungshypothek bezeichnet werden (§ 1184 Abs. 1, Abs. 2)";
+        label en unofficial "A mortgage may be created so that the creditor's right is determined only by the claim and they may not rely on the registration as proof; it must be designated in the register as a security mortgage (§ 1184 (1), (2))";
+        when art_des_grundpfandrechts(h, Sicherungshypothek) and als_sicherungshypothek_bezeichnet(h);
+        then sicherungshypothek(h);
+    }
+}
+
+@source(BGB_P1185) {
+    rule SicherungshypothekIstBuchhypothek(h: Grundpfandrecht) strict {
+        label de official "Bei der Sicherungshypothek ist die Erteilung des Hypothekenbriefs ausgeschlossen (§ 1185 Abs. 1)";
+        label en unofficial "With a security mortgage issue of the certificate is excluded (§ 1185 (1))";
+        when sicherungshypothek(h);
+        then brieferteilung_bei_der_sicherungshypothek_ausgeschlossen(h);
+    }
+    rule UnanwendbareVorschriftenBeiDerSicherungshypothek(h: Grundpfandrecht) strict {
+        label de official "Die Vorschriften der §§ 1138, 1139, 1141, 1156 finden keine Anwendung (§ 1185 Abs. 2)";
+        label en unofficial "§§ 1138, 1139, 1141, 1156 do not apply (§ 1185 (2))";
+        when sicherungshypothek(h);
+        then vorschriften_1138_1139_1141_1156_unanwendbar(h);
+    }
+}
+
+@source(BGB_P1186)
+rule UmwandlungZwischenHypothekenartenOhneZustimmung(h: Grundpfandrecht, neue_art: Grundpfandrechtsart) strict {
+    label de official "Eine Sicherungshypothek kann in eine gewöhnliche Hypothek, eine gewöhnliche Hypothek kann in eine Sicherungshypothek umgewandelt werden; die Zustimmung der im Range gleich- oder nachstehenden Berechtigten ist nicht erforderlich (§ 1186)";
+    label en unofficial "A security mortgage may be converted into an ordinary mortgage and vice versa; no consent of equal or subsequent holders is required (§ 1186)";
+    when umwandlung_vereinbart(h, neue_art);
+    then umwandlung_ohne_zustimmung_zulaessig(h, neue_art);
+}
+
+@source(BGB_P1187) {
+    rule NurSicherungshypothekFuerInhaberUndOrderpapiere(h: Grundpfandrecht) strict {
+        label de official "Für die Forderung aus einer Schuldverschreibung auf den Inhaber, aus einem Wechsel oder aus einem anderen durch Indossament übertragbaren Papier kann nur eine Sicherungshypothek bestellt werden; die Hypothek gilt als Sicherungshypothek, auch wenn sie im Grundbuch nicht als solche bezeichnet ist (§ 1187 Sätze 1, 2)";
+        label en unofficial "For a claim under a bearer bond, a bill of exchange or another instrument transferable by endorsement only a security mortgage may be created; it counts as a security mortgage even if not so designated (§ 1187 sentences 1, 2)";
+        when forderung_aus_inhaber_oder_orderpapier(h);
+        then sicherungshypothek(h);
+    }
+    rule KeinLoeschungsanspruchBeiPapierhypothek(h: Grundpfandrecht) strict {
+        label de official "Ein Anspruch auf Löschung der Hypothek nach den §§ 1179a, 1179b besteht nicht (§ 1187 Satz 4)";
+        label en unofficial "No claim to cancellation under §§ 1179a, 1179b exists (§ 1187 sentence 4)";
+        when forderung_aus_inhaber_oder_orderpapier(h);
+        then kein_loeschungsanspruch(h);
+    }
+}
+
+@source(BGB_P1190) {
+    rule HoechstbetragshypothekGiltAlsSicherungshypothek(h: Grundpfandrecht, betrag: Money) strict {
+        label de official "Eine Hypothek kann in der Weise bestellt werden, dass nur der Höchstbetrag bestimmt, im Übrigen die Feststellung der Forderung vorbehalten wird; der Höchstbetrag muss eingetragen werden; die Hypothek gilt als Sicherungshypothek (§ 1190 Abs. 1, Abs. 3)";
+        label en unofficial "A mortgage may be created so that only the maximum amount is fixed and the establishment of the claim is reserved; the maximum amount must be registered; the mortgage counts as a security mortgage (§ 1190 (1), (3))";
+        when art_des_grundpfandrechts(h, Hoechstbetragshypothek) and hoechstbetrag_im_grundbuch_eingetragen(h, betrag);
+        then sicherungshypothek(h);
+    }
+    rule HaftungBisZumHoechstbetrag(h: Grundpfandrecht, hoechst: Money, forderung: Money, zinsen: Money) strict {
+        label de official "Das Grundstück haftet nur bis zu dem Höchstbetrag; ist die Forderung verzinslich, so werden die Zinsen in den Höchstbetrag eingerechnet (§ 1190 Abs. 1 Satz 1, Abs. 2)";
+        label en unofficial "The land is liable only up to the maximum amount; if the claim bears interest, the interest is included in that amount (§ 1190 (1) sentence 1, (2))";
+        when hoechstbetrag_im_grundbuch_eingetragen(h, hoechst) and festgestellte_forderung(h, forderung)
+            and zinsen_der_hoechstbetragshypothek(h, zinsen) and forderung + zinsen > hoechst;
+        then haftung_begrenzt_auf_den_hoechstbetrag(h, hoechst);
+    }
+    rule HaftungInHoeheDerFestgestelltenForderung(h: Grundpfandrecht, hoechst: Money, forderung: Money, zinsen: Money) strict {
+        label de official "Bleiben Forderung und Zinsen unter dem Höchstbetrag, so haftet das Grundstück in Höhe der festgestellten Forderung nebst Zinsen (§ 1190 Abs. 1, Abs. 2)";
+        label en unofficial "If claim and interest remain below the maximum amount, the land is liable in the amount of the established claim plus interest (§ 1190 (1), (2))";
+        when hoechstbetrag_im_grundbuch_eingetragen(h, hoechst) and festgestellte_forderung(h, forderung)
+            and zinsen_der_hoechstbetragshypothek(h, zinsen) and forderung + zinsen <= hoechst;
+        then haftung_begrenzt_auf_den_hoechstbetrag(h, forderung + zinsen);
+    }
+    rule UebergangDerHypothekBeiAllgemeinerUebertragungAusgeschlossen(h: Grundpfandrecht) strict {
+        label de official "Die Forderung kann nach den allgemeinen Vorschriften übertragen werden; wird sie nach diesen Vorschriften übertragen, so ist der Übergang der Hypothek ausgeschlossen (§ 1190 Abs. 4)";
+        label en unofficial "The claim may be assigned under the general rules; where it is so assigned, transfer of the mortgage is excluded (§ 1190 (4))";
+        when art_des_grundpfandrechts(h, Hoechstbetragshypothek) and forderung_nach_allgemeinen_vorschriften_uebertragen(h);
+        then uebergang_der_hypothek_ausgeschlossen(h);
+    }
+}

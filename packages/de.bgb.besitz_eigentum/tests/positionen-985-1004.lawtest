@@ -1,0 +1,30 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+
+test "§§ 985 und 1004: Herausgabe und Unterlassung aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "h": position_trigger_985(entity_ref("urn:de:bgb:besitz:s1"), entity_ref("urn:de:bgb:besitz:e"), entity_ref("urn:de:bgb:besitz:b"), @2026-01-01) { origin case_input; }
+        assert "u": position_trigger_1004(entity_ref("urn:de:bgb:besitz:i1"), entity_ref("urn:de:bgb:besitz:e"), entity_ref("urn:de:bgb:besitz:s"), @2026-01-01) { origin case_input; }
+        assert "bs": besitzlage_sache(entity_ref("urn:de:bgb:besitz:b1"), entity_ref("urn:de:bgb:besitz:s1")) { origin case_input; }
+        assert "bp": besitzlage_person(entity_ref("urn:de:bgb:besitz:b1"), entity_ref("urn:de:bgb:besitz:b")) { origin case_input; }
+        assert "ev": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:besitz:s1"), entity_ref("urn:de:bgb:besitz:e")) { origin case_input; }
+        assert "ei": eigentum_in_anderer_weise_beeintraechtigt(entity_ref("urn:de:bgb:besitz:i1"), entity_ref("urn:de:bgb:besitz:s1"), entity_ref("urn:de:bgb:besitz:s")) { origin case_input; }
+        assert "j1": weitere_beeintraechtigungen_zu_besorgen(entity_ref("urn:de:bgb:besitz:i1")) { origin adjudicated; }
+        assert "hg": herausgabe_985_geschuldet(entity_ref("urn:de:bgb:besitz:s1"), entity_ref("urn:de:bgb:besitz:e"), entity_ref("urn:de:bgb:besitz:b"), @2026-01-01) { origin case_input; }
+        assert "ug": unterlassung_1004_geschuldet(entity_ref("urn:de:bgb:besitz:i1"), entity_ref("urn:de:bgb:besitz:e"), entity_ref("urn:de:bgb:besitz:s"), @2026-01-01) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Herausgabe985, SATISFIED);
+    expect position(Unterlassung1004, SATISFIED);
+}
+
+test "§§ 985 und 1004: ohne Anspruch keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Herausgabe985, ACTIVE);
+    expect not position(Unterlassung1004, ACTIVE);
+}

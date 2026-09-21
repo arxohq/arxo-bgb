@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// §§ 106, 107, 108: der vierzehnjährige Minderjährige schließt ohne Einwilligung einen Vertrag, der ihm nicht lediglich einen rechtlichen Vorteil bringt (Antwort des Gerichts liegt vor). Die Aufforderung geht dem Vertreter am Sonnabend, 28. Februar 2026 zu; zwei Wochen enden kalendarisch am Sonnabend, 14. März 2026, nach § 193 am Montag, 16. März 2026. Die an diesem Montag erklärte Genehmigung ist rechtzeitig: der Vertrag ist wirksam.
+test "§ 108 Abs. 2 mit § 193: die am Montag erklärte Genehmigung ist rechtzeitig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "g": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:at:r01:minderjaehriger"), @2012-01-10) { origin case_input; }
+        assert "e1": erklaerender(entity_ref("urn:de:bgb:at:r01:we"), entity_ref("urn:de:bgb:at:r01:minderjaehriger")) { origin case_input; }
+        assert "e2": erklaerung_abgegeben_am(entity_ref("urn:de:bgb:at:r01:we"), @2026-02-20) { origin case_input; }
+        assert "e3": erklaerung_gehoert_zu(entity_ref("urn:de:bgb:at:r01:we"), entity_ref("urn:de:bgb:at:r01:vertrag")) { origin case_input; }
+        assert "e4": geschaeftsart(entity_ref("urn:de:bgb:at:r01:vertrag"), Vertrag) { origin case_input; }
+        assert "j1": not lediglich_rechtlicher_vorteil(entity_ref("urn:de:bgb:at:r01:we")) { origin adjudicated; }
+        assert "e5": not einwilligung_des_vertreters(entity_ref("urn:de:bgb:at:r01:we")) { origin case_input; }
+        assert "f1": genehmigungsfrist(entity_ref("urn:de:bgb:at:r01:vertrag"), entity_ref("urn:de:bgb:at:r01:frist")) { origin case_input; }
+        assert "f2": aufforderung_zur_genehmigung_empfangen_am(entity_ref("urn:de:bgb:at:r01:vertrag"), @2026-02-28) { origin case_input; }
+        assert "f3": genehmigung_erklaert_am(entity_ref("urn:de:bgb:at:r01:vertrag"), @2026-03-16) { origin case_input; }
+    }
+    evaluate truth(beschraenkt_geschaeftsfaehig_am(entity_ref("urn:de:bgb:at:r01:minderjaehriger"), @2026-02-20));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(genehmigungsfrist_ende(entity_ref("urn:de:bgb:at:r01:vertrag"), @2026-03-16));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(wirksam(entity_ref("urn:de:bgb:at:r01:vertrag")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

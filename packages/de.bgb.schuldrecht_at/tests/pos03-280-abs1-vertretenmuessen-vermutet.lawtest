@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 280 Abs. 1 Satz 2: die Pflichtverletzung steht fest, das Vertretenmüssen
+// wird vermutet — nicht positiv aus Vorsatz oder Fahrlässigkeit hergeleitet.
+// Das Gericht hat ausdrücklich verneint, dass der Schuldner die
+// Pflichtverletzung nicht zu vertreten hat (Muster b01/§477): die Vermutung
+// greift, und der Schadensersatzanspruch besteht.
+test "§ 280 Abs. 1 Satz 2: Vertretenmüssen vermutet, Schadensersatz besteht" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": pflichtverletzung_festgestellt(entity_ref("urn:de:bgb:sr-at:pos03:s1"), entity_ref("urn:de:bgb:sr-at:pos03:p1")) { origin adjudicated; }
+        assert "f2": schaden_aus_pflichtverletzung(entity_ref("urn:de:bgb:sr-at:pos03:s1"), entity_ref("urn:de:bgb:sr-at:pos03:sch1")) { origin case_input; }
+        assert "f3": not schuldner_hat_pflichtverletzung_nicht_zu_vertreten(entity_ref("urn:de:bgb:sr-at:pos03:s1"), entity_ref("urn:de:bgb:sr-at:pos03:p1")) { origin adjudicated; }
+    }
+    evaluate truth(hat_zu_vertreten_vermutet(entity_ref("urn:de:bgb:sr-at:pos03:p1"), entity_ref("urn:de:bgb:sr-at:pos03:s1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(schadensersatz_wegen_pflichtverletzung_vermutet(entity_ref("urn:de:bgb:sr-at:pos03:s1"), entity_ref("urn:de:bgb:sr-at:pos03:sch1"), entity_ref("urn:de:bgb:sr-at:pos03:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

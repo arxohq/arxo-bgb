@@ -1,0 +1,31 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Querschnitt Widerruf/Fristen, Kanarienvogel: derselbe Sachverhalt wie
+// wq01 (Frist rechtzeitig gewahrt, Verbraucher über die Brücke §§ 13/14
+// hergeleitet), aber OHNE die Angabe, dass dem Verbraucher durch Gesetz ein
+// Widerrufsrecht nach § 355 eingeräumt ist (§ 355 Abs. 1 Satz 1) — dieser
+// Fall bildet den Vertragstyp (außerhalb von Geschäftsräumen, Fernabsatz
+// oder ein anderer gesetzlich benannter Fall) nicht nach; er ist ein
+// ausdrücklicher Eingang. Ohne ihn entfällt die Bindung an die
+// Willenserklärung nicht, obwohl die Frist selbst fristgerecht gewahrt wäre:
+// Entfernen einer einzigen Eingabe muss das Ergebnis kippen.
+test "Querschnitt, Kanarie: ohne § 355 Abs. 1 Satz 1 (kein eingeräumtes Widerrufsrecht) bleibt die Bindung bestehen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_SCHULDRECHT_AT_TAG; }
+        assert "a1": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:sr-at:wq09:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::zweck_ueberwiegend_nicht_gewerblich(entity_ref("urn:de:bgb:sr-at:wq09:p1"), entity_ref("urn:de:bgb:sr-at:wq09:r1")) { origin adjudicated; }
+        assert "a3": rechtsgeschaeft_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq09:v1"), entity_ref("urn:de:bgb:sr-at:wq09:r1")) { origin case_input; }
+        assert "a4": widerrufsfrist_des_vertrags(entity_ref("urn:de:bgb:sr-at:wq09:v1"), entity_ref("urn:de:bgb:sr-at:wq09:f1")) { origin case_input; }
+        assert "a5": erhalt_der_ware(entity_ref("urn:de:bgb:sr-at:wq09:v1"), @2026-03-06) { origin case_input; }
+        assert "a6": keine_spaetere_unterrichtung(entity_ref("urn:de:bgb:sr-at:wq09:v1")) { origin case_input; }
+        assert "a7": widerruf_erklaert_am(entity_ref("urn:de:bgb:sr-at:wq09:v1"), @2026-03-20) { origin case_input; }
+    }
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:sr-at:wq09:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(widerruf_fristgerecht(entity_ref("urn:de:bgb:sr-at:wq09:v1")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(nicht_mehr_an_die_willenserklaerung_gebunden(entity_ref("urn:de:bgb:sr-at:wq09:v1"), entity_ref("urn:de:bgb:sr-at:wq09:p1")));
+    expect truth_status == NEITHER;
+}

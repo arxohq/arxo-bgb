@@ -1,0 +1,610 @@
+// BUCH 1 ABSCHNITT 2 — SACHEN UND TIERE (§§ 90–103)
+//
+// TIERE (§ 90a). Das Tier ist KEINE Sache; die Nabe führt `Tier` deshalb
+// nicht als Untertyp von `Sache` (README de.bgb.core). Die entsprechende
+// Anwendung der Vorschriften über Sachen ist eine REGEL dieses Pakets mit
+// Anker an § 90a, keine Typhierarchie: sie greift, soweit nicht etwas
+// anderes bestimmt ist (Angabe des Falls).
+//
+// WERTUNGEN (DECISION-0194). Die Verkehrsanschauung (§ 91 „nach Zahl, Maß
+// oder Gewicht bestimmt zu werden pflegen“, § 97 Abs. 1 Satz 2 „im Verkehr
+// nicht als Zubehör angesehen“) und die Bestimmung zum wirtschaftlichen
+// Zweck der Hauptsache (§ 97 Abs. 1 Satz 1) sind Wertungen des Gerichts.
+// § 98 bestimmt diese Zweckbestimmung für zwei Fälle selbst; deshalb steht
+// neben dem Urteilskanal eine institutionelle Relation, die beide Quellen
+// zusammenführt.
+//
+// TEILUNG DER FRÜCHTE (§ 101 Nr. 2 Halbsatz 2). Der „der Dauer seiner
+// Berechtigung entsprechende Teil“ ist ein exakter Bruch aus Tagen:
+// Zähler sind die Tage der Berechtigung, Nenner die Tage des Zeitraums
+// (beide Grenzen eingeschlossen, § 187 Abs. 2 Satz 1 ist hier nicht
+// einschlägig — gezählt werden Kalendertage). In Geld wird EINMAL gerundet:
+// `div_round(Ertrag × Tage der Berechtigung, Tage des Zeitraums × 1.0, 2,
+// "HALF_UP")` — Politik des Pakets, Ledger D-03-02.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+// --- § 90 Begriff der Sache; § 90a Tiere -------------------------------------------------------------
+
+pub relation koerperlicher_gegenstand(s: Sache) kind empirical {
+    label de official "der Gegenstand ist körperlich (§ 90)";
+    label en unofficial "the object is corporeal (§ 90)";
+}
+pub relation sache_im_sinne_des_gesetzes(s: Sache) kind institutional {
+    label de official "Sache im Sinne des Gesetzes (§ 90)";
+    label en unofficial "thing within the meaning of the Code (§ 90)";
+}
+pub relation beweglich(s: Sache) kind empirical {
+    label de official "die Sache ist beweglich (§§ 91, 92, 97)";
+    label en unofficial "the thing is movable (§§ 91, 92, 97)";
+}
+pub relation tier(t: Tier) kind empirical {
+    label de official "das Tier, um das es geht (§ 90a) — Angabe des Falls";
+    label en unofficial "the animal in question (§ 90a) — case input";
+}
+pub relation anderes_bestimmt_fuer_tiere(t: Tier) kind empirical {
+    label de official "für das Tier ist etwas anderes bestimmt (§ 90a Satz 3 Halbsatz 2) — Angabe des Falls";
+    label en unofficial "something else is provided for the animal (§ 90a sentence 3) — case input";
+}
+pub relation vorschriften_ueber_sachen_entsprechend_anwendbar(t: Tier) kind institutional {
+    label de official "auf das Tier sind die für Sachen geltenden Vorschriften entsprechend anzuwenden (§ 90a Satz 3)";
+    label en unofficial "the provisions on things apply to the animal mutatis mutandis (§ 90a sentence 3)";
+}
+
+@source(BGB_P90)
+rule SacheIstKoerperlicherGegenstand(s: Sache) strict {
+    label de official "Sachen im Sinne des Gesetzes sind nur körperliche Gegenstände (§ 90)";
+    label en unofficial "Only corporeal objects are things within the meaning of the Code (§ 90)";
+    when koerperlicher_gegenstand(s);
+    then sache_im_sinne_des_gesetzes(s);
+}
+
+@source(BGB_P90a)
+rule TiereSindKeineSachen(t: Tier) strict {
+    label de official "Tiere sind keine Sachen. Auf sie sind die für Sachen geltenden Vorschriften entsprechend anzuwenden, soweit nicht etwas anderes bestimmt ist (§ 90a Sätze 1, 3)";
+    label en unofficial "Animals are not things. The provisions on things apply mutatis mutandis unless otherwise provided (§ 90a sentences 1, 3)";
+    when tier(t) and not anderes_bestimmt_fuer_tiere(t);
+    then vorschriften_ueber_sachen_entsprechend_anwendbar(t);
+}
+
+// --- §§ 91, 92 Vertretbare und verbrauchbare Sachen ----------------------------------------------------
+
+@source(BGB_P91)
+pub external judgment relation im_verkehr_nach_zahl_mass_gewicht_bestimmt(s: Sache) {
+    authority Court;
+    label de official "§ 91: die bewegliche Sache pflegt im Verkehr nach Zahl, Maß oder Gewicht bestimmt zu werden";
+    label en unofficial "§ 91: the movable thing is customarily determined in trade by number, measure or weight";
+}
+
+pub relation vertretbare_sache(s: Sache) kind institutional {
+    label de official "vertretbare Sache im Sinne des Gesetzes (§ 91)";
+    label en unofficial "fungible thing within the meaning of the Code (§ 91)";
+}
+
+@source(BGB_P91)
+rule VertretbareSache(s: Sache) strict {
+    label de official "Vertretbare Sachen im Sinne des Gesetzes sind bewegliche Sachen, die im Verkehr nach Zahl, Maß oder Gewicht bestimmt zu werden pflegen (§ 91)";
+    label en unofficial "Fungible things are movable things customarily determined in trade by number, measure or weight (§ 91)";
+    when beweglich(s) and im_verkehr_nach_zahl_mass_gewicht_bestimmt(s);
+    then vertretbare_sache(s);
+}
+
+pub relation gebrauch_besteht_im_verbrauch_oder_in_der_veraeusserung(s: Sache) kind empirical {
+    label de official "der bestimmungsmäßige Gebrauch der beweglichen Sache besteht in dem Verbrauch oder in der Veräußerung (§ 92 Abs. 1)";
+    label en unofficial "the intended use of the movable thing consists in its consumption or disposal (§ 92 (1))";
+}
+pub relation gehoert_zu_warenlager_oder_sachinbegriff(s: Sache) kind empirical {
+    label de official "die bewegliche Sache gehört zu einem Warenlager oder sonstigen Sachinbegriff, dessen bestimmungsmäßiger Gebrauch in der Veräußerung der einzelnen Sachen besteht (§ 92 Abs. 2)";
+    label en unofficial "the movable thing belongs to a stock of goods whose intended use consists in the disposal of the individual things (§ 92 (2))";
+}
+pub relation verbrauchbare_sache(s: Sache) kind institutional {
+    label de official "verbrauchbare Sache im Sinne des Gesetzes (§ 92)";
+    label en unofficial "consumable thing within the meaning of the Code (§ 92)";
+}
+
+@source(BGB_P92)
+rule VerbrauchbareSache(s: Sache) strict {
+    label de official "Verbrauchbare Sachen im Sinne des Gesetzes sind bewegliche Sachen, deren bestimmungsmäßiger Gebrauch in dem Verbrauch oder in der Veräußerung besteht (§ 92 Abs. 1)";
+    label en unofficial "Consumable things are movable things whose intended use consists in consumption or disposal (§ 92 (1))";
+    when beweglich(s) and gebrauch_besteht_im_verbrauch_oder_in_der_veraeusserung(s);
+    then verbrauchbare_sache(s);
+}
+
+@source(BGB_P92)
+rule VerbrauchbarKraftZugehoerigkeitZumWarenlager(s: Sache) strict {
+    label de official "Als verbrauchbar gelten auch bewegliche Sachen, die zu einem Warenlager oder zu einem sonstigen Sachinbegriff gehören, dessen bestimmungsmäßiger Gebrauch in der Veräußerung der einzelnen Sachen besteht (§ 92 Abs. 2)";
+    label en unofficial "Movable things belonging to a stock of goods whose intended use is the disposal of the individual things are also deemed consumable (§ 92 (2))";
+    when beweglich(s) and gehoert_zu_warenlager_oder_sachinbegriff(s);
+    then verbrauchbare_sache(s);
+}
+
+// --- §§ 93–96 Bestandteile ------------------------------------------------------------------------------
+
+pub relation bestandteil(teil: Sache, ganzes: Sache) kind empirical {
+    label de official "die Sache ist Bestandteil einer anderen Sache (§ 93)";
+    label en unofficial "the thing is a component part of another thing (§ 93)";
+}
+pub relation trennung_zerstoert_oder_veraendert_wesentlich(teil: Sache, ganzes: Sache) kind empirical {
+    label de official "die Bestandteile können voneinander nicht getrennt werden, ohne dass der eine oder der andere zerstört oder in seinem Wesen verändert wird (§ 93) — festgestellte Tatsache";
+    label en unofficial "the parts cannot be separated without one of them being destroyed or changed in nature (§ 93) — established fact";
+}
+pub relation wesentlicher_bestandteil(teil: Sache, ganzes: Sache) kind institutional {
+    label de official "wesentlicher Bestandteil einer Sache (§§ 93, 94)";
+    label en unofficial "essential component part of a thing (§§ 93, 94)";
+}
+pub relation kann_nicht_gegenstand_besonderer_rechte_sein(teil: Sache) kind institutional {
+    label de official "der wesentliche Bestandteil kann nicht Gegenstand besonderer Rechte sein (§ 93)";
+    label en unofficial "an essential component part cannot be the subject of separate rights (§ 93)";
+}
+
+@source(BGB_P93)
+rule WesentlicherBestandteilNachTrennbarkeit(teil: Sache, ganzes: Sache) strict {
+    label de official "Bestandteile einer Sache, die voneinander nicht getrennt werden können, ohne dass der eine oder der andere zerstört oder in seinem Wesen verändert wird (wesentliche Bestandteile), können nicht Gegenstand besonderer Rechte sein (§ 93)";
+    label en unofficial "Component parts that cannot be separated without destruction or change in nature are essential component parts (§ 93)";
+    when bestandteil(teil, ganzes) and trennung_zerstoert_oder_veraendert_wesentlich(teil, ganzes);
+    then wesentlicher_bestandteil(teil, ganzes);
+}
+
+@source(BGB_P93)
+rule WesentlicherBestandteilOhneBesondereRechte(teil: Sache, ganzes: Sache) strict {
+    label de official "Wesentliche Bestandteile können nicht Gegenstand besonderer Rechte sein (§ 93)";
+    label en unofficial "Essential component parts cannot be the subject of separate rights (§ 93)";
+    when wesentlicher_bestandteil(teil, ganzes);
+    then kann_nicht_gegenstand_besonderer_rechte_sein(teil);
+}
+
+pub enum Verbindungszweck {
+    label de official "Zweck der Verbindung mit dem Grund und Boden oder dem Gebäude (§§ 94, 95)";
+    label en unofficial "purpose of the connection with the land or the building (§§ 94, 95)";
+    AufDauer,
+    NurVoruebergehend
+}
+pub relation fest_mit_grund_und_boden_verbunden(s: Sache, grundstueck: Sache, zweck: Verbindungszweck) kind empirical {
+    label de official "die Sache ist mit dem Grund und Boden fest verbunden, insbesondere ein Gebäude; mit welchem Zweck (§ 94 Abs. 1 Satz 1, § 95 Abs. 1)";
+    label en unofficial "the thing is firmly attached to the land, in particular a building; with which purpose (§ 94 (1), § 95 (1))";
+}
+pub relation erzeugnis_des_grundstuecks_mit_dem_boden_zusammenhaengend(s: Sache, grundstueck: Sache) kind empirical {
+    label de official "Erzeugnis des Grundstücks, solange es mit dem Boden zusammenhängt (§ 94 Abs. 1 Satz 1)";
+    label en unofficial "produce of the land as long as it is attached to the soil (§ 94 (1))";
+}
+pub relation ausgesaet_oder_eingepflanzt(s: Sache, grundstueck: Sache) kind empirical {
+    label de official "Samen ist ausgesät, eine Pflanze ist eingepflanzt worden (§ 94 Abs. 1 Satz 2)";
+    label en unofficial "seed has been sown, a plant has been planted (§ 94 (1) sentence 2)";
+}
+pub relation zur_herstellung_des_gebaeudes_eingefuegt(s: Sache, gebaeude: Sache, zweck: Verbindungszweck) kind empirical {
+    label de official "die Sache ist zur Herstellung des Gebäudes eingefügt; mit welchem Zweck (§ 94 Abs. 2, § 95 Abs. 2)";
+    label en unofficial "the thing has been inserted for the construction of the building; with which purpose (§ 94 (2), § 95 (2))";
+}
+pub relation in_ausuebung_eines_rechts_verbunden(s: Sache, grundstueck: Sache) kind empirical {
+    label de official "das Gebäude oder Werk ist in Ausübung eines Rechts an einem fremden Grundstück von dem Berechtigten mit dem Grundstück verbunden worden (§ 95 Abs. 1 Satz 2)";
+    label en unofficial "the building or structure was attached to another's land in the exercise of a right over that land (§ 95 (1) sentence 2)";
+}
+pub relation kein_bestandteil(s: Sache, ganzes: Sache) kind institutional {
+    label de official "die Sache gehört nicht zu den Bestandteilen (§ 95)";
+    label en unofficial "the thing is not a component part (§ 95)";
+}
+
+@source(BGB_P94)
+rule WesentlicherBestandteilDesGrundstuecksDurchFesteVerbindung(s: Sache, g: Sache) strict {
+    label de official "Zu den wesentlichen Bestandteilen eines Grundstücks gehören die mit dem Grund und Boden fest verbundenen Sachen, insbesondere Gebäude (§ 94 Abs. 1 Satz 1)";
+    label en unofficial "The essential component parts of a plot of land include things firmly attached to the land, in particular buildings (§ 94 (1))";
+    when fest_mit_grund_und_boden_verbunden(s, g, AufDauer);
+    then wesentlicher_bestandteil(s, g);
+}
+
+@source(BGB_P94)
+rule WesentlicherBestandteilDurchErzeugnis(s: Sache, g: Sache) strict {
+    label de official "Zu den wesentlichen Bestandteilen eines Grundstücks gehören die Erzeugnisse des Grundstücks, solange sie mit dem Boden zusammenhängen (§ 94 Abs. 1 Satz 1)";
+    label en unofficial "The essential component parts include the produce of the land as long as it is attached to the soil (§ 94 (1))";
+    when erzeugnis_des_grundstuecks_mit_dem_boden_zusammenhaengend(s, g);
+    then wesentlicher_bestandteil(s, g);
+}
+
+@source(BGB_P94)
+rule SamenUndPflanze(s: Sache, g: Sache) strict {
+    label de official "Samen wird mit dem Aussäen, eine Pflanze wird mit dem Einpflanzen wesentlicher Bestandteil des Grundstücks (§ 94 Abs. 1 Satz 2)";
+    label en unofficial "Seed becomes an essential component part upon sowing, a plant upon planting (§ 94 (1) sentence 2)";
+    when ausgesaet_oder_eingepflanzt(s, g);
+    then wesentlicher_bestandteil(s, g);
+}
+
+@source(BGB_P94)
+rule WesentlicherBestandteilDesGebaeudes(s: Sache, geb: Sache) strict {
+    label de official "Zu den wesentlichen Bestandteilen eines Gebäudes gehören die zur Herstellung des Gebäudes eingefügten Sachen (§ 94 Abs. 2)";
+    label en unofficial "The essential component parts of a building include the things inserted for its construction (§ 94 (2))";
+    when zur_herstellung_des_gebaeudes_eingefuegt(s, geb, AufDauer);
+    then wesentlicher_bestandteil(s, geb);
+}
+
+@source(BGB_P95)
+rule ScheinbestandteilDesGrundstuecks(s: Sache, g: Sache) strict {
+    label de official "Zu den Bestandteilen eines Grundstücks gehören solche Sachen nicht, die nur zu einem vorübergehenden Zweck mit dem Grund und Boden verbunden sind (§ 95 Abs. 1 Satz 1)";
+    label en unofficial "Things attached to the land only for a temporary purpose are not component parts (§ 95 (1) sentence 1)";
+    when fest_mit_grund_und_boden_verbunden(s, g, NurVoruebergehend);
+    then kein_bestandteil(s, g);
+}
+
+@source(BGB_P95)
+rule ScheinbestandteilKraftRechtsausuebung(s: Sache, g: Sache) strict {
+    label de official "Das Gleiche gilt von einem Gebäude oder anderen Werk, das in Ausübung eines Rechts an einem fremden Grundstück von dem Berechtigten mit dem Grundstück verbunden worden ist (§ 95 Abs. 1 Satz 2)";
+    label en unofficial "The same applies to a building attached to another's land in the exercise of a right over that land (§ 95 (1) sentence 2)";
+    when in_ausuebung_eines_rechts_verbunden(s, g);
+    then kein_bestandteil(s, g);
+}
+
+@source(BGB_P95)
+rule ScheinbestandteilDesGebaeudes(s: Sache, geb: Sache) strict {
+    label de official "Sachen, die nur zu einem vorübergehenden Zwecke in ein Gebäude eingefügt sind, gehören nicht zu den Bestandteilen des Gebäudes (§ 95 Abs. 2)";
+    label en unofficial "Things inserted into a building only for a temporary purpose are not component parts of the building (§ 95 (2))";
+    when zur_herstellung_des_gebaeudes_eingefuegt(s, geb, NurVoruebergehend);
+    then kein_bestandteil(s, geb);
+}
+
+pub entity Recht {
+    label de official "Recht (§§ 96, 99 Abs. 2, 100, 101, 103)";
+    label en unofficial "right (§§ 96, 99 (2), 100, 101, 103)";
+}
+pub relation mit_dem_eigentum_am_grundstueck_verbunden(recht: Recht, grundstueck: Sache) kind empirical {
+    label de official "das Recht ist mit dem Eigentum an einem Grundstück verbunden (§ 96)";
+    label en unofficial "the right is connected with the ownership of a plot of land (§ 96)";
+}
+pub relation gilt_als_bestandteil_des_grundstuecks(recht: Recht, grundstueck: Sache) kind institutional {
+    label de official "das Recht gilt als Bestandteil des Grundstücks (§ 96)";
+    label en unofficial "the right is deemed a component part of the land (§ 96)";
+}
+
+@source(BGB_P96)
+rule RechteAlsBestandteileDesGrundstuecks(recht: Recht, g: Sache) strict {
+    label de official "Rechte, die mit dem Eigentum an einem Grundstück verbunden sind, gelten als Bestandteile des Grundstücks (§ 96)";
+    label en unofficial "Rights connected with the ownership of land are deemed component parts of the land (§ 96)";
+    when mit_dem_eigentum_am_grundstueck_verbunden(recht, g);
+    then gilt_als_bestandteil_des_grundstuecks(recht, g);
+}
+
+// --- §§ 97, 98 Zubehör ----------------------------------------------------------------------------------
+
+@source(BGB_P97)
+pub external judgment relation zur_dienstbarkeit_am_wirtschaftlichen_zweck_bestimmt(neben: Sache, haupt: Sache) {
+    authority Court;
+    label de official "§ 97 Abs. 1 Satz 1: die bewegliche Sache ist dem wirtschaftlichen Zwecke der Hauptsache zu dienen bestimmt";
+    label en unofficial "§ 97 (1) sentence 1: the movable thing is intended to serve the economic purpose of the principal thing";
+}
+
+@source(BGB_P97)
+pub external judgment relation im_verkehr_nicht_als_zubehoer_angesehen(neben: Sache, haupt: Sache) {
+    authority Court;
+    label de official "§ 97 Abs. 1 Satz 2: die Sache wird im Verkehr nicht als Zubehör angesehen";
+    label en unofficial "§ 97 (1) sentence 2: in trade the thing is not regarded as an accessory";
+}
+
+pub relation dient_dem_wirtschaftlichen_zweck(neben: Sache, haupt: Sache) kind institutional {
+    label de official "die Sache ist dem wirtschaftlichen Zwecke der Hauptsache zu dienen bestimmt (§ 97 Abs. 1 Satz 1, § 98)";
+    label en unofficial "the thing is intended to serve the economic purpose of the principal thing (§ 97 (1), § 98)";
+}
+pub relation raeumliches_verhaeltnis_zur_hauptsache(neben: Sache, haupt: Sache) kind empirical {
+    label de official "die Sache steht zur Hauptsache in einem der Bestimmung entsprechenden räumlichen Verhältnis (§ 97 Abs. 1 Satz 1)";
+    label en unofficial "the thing stands in a spatial relationship to the principal thing corresponding to that intention (§ 97 (1))";
+}
+pub relation voruebergehende_benutzung_fuer_fremden_zweck(neben: Sache, haupt: Sache) kind empirical {
+    label de official "die Sache wird nur vorübergehend für den wirtschaftlichen Zweck einer anderen benutzt (§ 97 Abs. 2 Satz 1)";
+    label en unofficial "the thing is used only temporarily for another thing's economic purpose (§ 97 (2) sentence 1)";
+}
+pub relation voruebergehende_trennung(neben: Sache, haupt: Sache) kind empirical {
+    label de official "das Zubehörstück ist vorübergehend von der Hauptsache getrennt (§ 97 Abs. 2 Satz 2)";
+    label en unofficial "the accessory is temporarily separated from the principal thing (§ 97 (2) sentence 2)";
+}
+pub relation zubehoer(neben: Sache, haupt: Sache) kind institutional {
+    label de official "Zubehör der Hauptsache (§ 97)";
+    label en unofficial "accessory of the principal thing (§ 97)";
+}
+pub relation gebaeude_dauernd_fuer_gewerblichen_betrieb_eingerichtet(haupt: Sache) kind empirical {
+    label de official "das Gebäude ist für einen gewerblichen Betrieb dauernd eingerichtet, insbesondere Mühle, Schmiede, Brauhaus, Fabrik (§ 98 Nr. 1)";
+    label en unofficial "the building is permanently equipped for a commercial enterprise (§ 98 no. 1)";
+}
+pub relation zum_betrieb_bestimmte_maschine_oder_geraetschaft(neben: Sache, haupt: Sache) kind empirical {
+    label de official "die zu dem Betrieb bestimmten Maschinen und sonstigen Gerätschaften (§ 98 Nr. 1)";
+    label en unofficial "the machinery and other equipment intended for the enterprise (§ 98 no. 1)";
+}
+pub relation landgut(haupt: Sache) kind empirical {
+    label de official "die Hauptsache ist ein Landgut (§ 98 Nr. 2)";
+    label en unofficial "the principal thing is an agricultural estate (§ 98 no. 2)";
+}
+pub relation zum_wirtschaftsbetrieb_bestimmtes_geraet_vieh_erzeugnis_duenger(neben: Sache, haupt: Sache) kind empirical {
+    label de official "das zum Wirtschaftsbetrieb bestimmte Gerät und Vieh, die landwirtschaftlichen Erzeugnisse, soweit sie zur Fortführung der Wirtschaft erforderlich sind, sowie der vorhandene, auf dem Gut gewonnene Dünger (§ 98 Nr. 2)";
+    label en unofficial "equipment and livestock intended for the farm, agricultural produce needed to continue farming, and manure produced on the estate (§ 98 no. 2)";
+}
+
+@source(BGB_P98)
+rule GewerblichesInventarDientDemZweck(neben: Sache, haupt: Sache) strict {
+    label de official "Dem wirtschaftlichen Zwecke der Hauptsache sind zu dienen bestimmt bei einem Gebäude, das für einen gewerblichen Betrieb dauernd eingerichtet ist, die zu dem Betrieb bestimmten Maschinen und sonstigen Gerätschaften (§ 98 Nr. 1)";
+    label en unofficial "Machinery and equipment intended for the enterprise of a permanently equipped commercial building are intended to serve its economic purpose (§ 98 no. 1)";
+    when gebaeude_dauernd_fuer_gewerblichen_betrieb_eingerichtet(haupt)
+        and zum_betrieb_bestimmte_maschine_oder_geraetschaft(neben, haupt);
+    then dient_dem_wirtschaftlichen_zweck(neben, haupt);
+}
+
+@source(BGB_P98)
+rule LandwirtschaftlichesInventarDientDemZweck(neben: Sache, haupt: Sache) strict {
+    label de official "Dem wirtschaftlichen Zwecke der Hauptsache sind zu dienen bestimmt bei einem Landgut das zum Wirtschaftsbetrieb bestimmte Gerät und Vieh, die landwirtschaftlichen Erzeugnisse und der vorhandene, auf dem Gut gewonnene Dünger (§ 98 Nr. 2)";
+    label en unofficial "On an agricultural estate, the equipment, livestock, produce and manure are intended to serve its economic purpose (§ 98 no. 2)";
+    when landgut(haupt) and zum_wirtschaftsbetrieb_bestimmtes_geraet_vieh_erzeugnis_duenger(neben, haupt);
+    then dient_dem_wirtschaftlichen_zweck(neben, haupt);
+}
+
+@source(BGB_P97)
+rule ZweckbestimmungDurchUrteil(neben: Sache, haupt: Sache) strict {
+    label de official "Die Bestimmung, dem wirtschaftlichen Zwecke der Hauptsache zu dienen, stellt im Streitfall das Gericht fest (§ 97 Abs. 1 Satz 1)";
+    label en unofficial "Whether the thing is intended to serve the economic purpose of the principal thing is found by the court (§ 97 (1))";
+    when zur_dienstbarkeit_am_wirtschaftlichen_zweck_bestimmt(neben, haupt);
+    then dient_dem_wirtschaftlichen_zweck(neben, haupt);
+}
+
+@source(BGB_P97)
+rule Zubehoereigenschaft(neben: Sache, haupt: Sache) strict {
+    label de official "Zubehör sind bewegliche Sachen, die, ohne Bestandteile der Hauptsache zu sein, dem wirtschaftlichen Zwecke der Hauptsache zu dienen bestimmt sind und zu ihr in einem dieser Bestimmung entsprechenden räumlichen Verhältnis stehen; eine Sache ist nicht Zubehör, wenn sie im Verkehr nicht als Zubehör angesehen wird (§ 97 Abs. 1)";
+    label en unofficial "Accessories are movable things which, without being component parts, are intended to serve the economic purpose of the principal thing and stand in a corresponding spatial relationship; not so if trade does not regard them as accessories (§ 97 (1))";
+    when beweglich(neben)
+        and not_known(wesentlicher_bestandteil(neben, haupt))
+        and dient_dem_wirtschaftlichen_zweck(neben, haupt)
+        and raeumliches_verhaeltnis_zur_hauptsache(neben, haupt)
+        and not im_verkehr_nicht_als_zubehoer_angesehen(neben, haupt);
+    then zubehoer(neben, haupt);
+}
+
+@source(BGB_P97)
+rule VoruebergehendeBenutzungBegruendetKeinZubehoer(neben: Sache, haupt: Sache) strict {
+    label de official "Die vorübergehende Benutzung einer Sache für den wirtschaftlichen Zweck einer anderen begründet nicht die Zubehöreigenschaft (§ 97 Abs. 2 Satz 1)";
+    label en unofficial "Temporary use of a thing for another's economic purpose does not create the character of an accessory (§ 97 (2) sentence 1)";
+    when voruebergehende_benutzung_fuer_fremden_zweck(neben, haupt);
+    then not zubehoer(neben, haupt);
+}
+
+@source(BGB_P97)
+rule VoruebergehendeTrennungHebtZubehoerNichtAuf(neben: Sache, haupt: Sache) strict {
+    label de official "Die vorübergehende Trennung eines Zubehörstücks von der Hauptsache hebt die Zubehöreigenschaft nicht auf (§ 97 Abs. 2 Satz 2)";
+    label en unofficial "Temporary separation of an accessory from the principal thing does not end its character as an accessory (§ 97 (2) sentence 2)";
+    when voruebergehende_trennung(neben, haupt) and monotone(zubehoer(neben, haupt));
+    then zubehoer(neben, haupt);
+}
+
+// --- §§ 99–103 Früchte, Nutzungen, Lasten -----------------------------------------------------------------
+
+pub relation erzeugnis_oder_ausbeute_der_sache(f: Sache, s: Sache) kind empirical {
+    label de official "Erzeugnis der Sache oder sonstige Ausbeute, welche aus der Sache ihrer Bestimmung gemäß gewonnen wird (§ 99 Abs. 1)";
+    label en unofficial "produce of the thing or other yield obtained from it in accordance with its intended use (§ 99 (1))";
+}
+pub relation ertrag_des_rechts(f: Sache, recht: Recht) kind empirical {
+    label de official "Ertrag, welchen das Recht seiner Bestimmung gemäß gewährt (§ 99 Abs. 2)";
+    label en unofficial "yield which the right affords in accordance with its intended use (§ 99 (2))";
+}
+pub relation ertrag_aus_rechtsverhaeltnis(f: Sache, s: Sache) kind empirical {
+    label de official "Ertrag, welchen eine Sache oder ein Recht vermöge eines Rechtsverhältnisses gewährt (§ 99 Abs. 3)";
+    label en unofficial "yield which a thing or right affords by virtue of a legal relationship (§ 99 (3))";
+}
+pub relation frucht_der_sache(f: Sache, s: Sache) kind institutional {
+    label de official "Frucht einer Sache (§ 99 Abs. 1, 3)";
+    label en unofficial "fruit of a thing (§ 99 (1), (3))";
+}
+pub relation frucht_des_rechts(f: Sache, recht: Recht) kind institutional {
+    label de official "Frucht eines Rechts (§ 99 Abs. 2)";
+    label en unofficial "fruit of a right (§ 99 (2))";
+}
+pub relation gebrauchsvorteil(v: Sache, s: Sache) kind empirical {
+    label de official "Vorteil, welchen der Gebrauch der Sache oder des Rechts gewährt (§ 100)";
+    label en unofficial "advantage afforded by the use of the thing or right (§ 100)";
+}
+pub relation nutzung(n: Sache, s: Sache) kind institutional {
+    label de official "Nutzung einer Sache oder eines Rechts (§ 100)";
+    label en unofficial "emolument of a thing or right (§ 100)";
+}
+
+@source(BGB_P99)
+rule FruchtDerSache(f: Sache, s: Sache) strict {
+    label de official "Früchte einer Sache sind die Erzeugnisse der Sache und die sonstige Ausbeute, welche aus der Sache ihrer Bestimmung gemäß gewonnen wird (§ 99 Abs. 1)";
+    label en unofficial "Fruits of a thing are its produce and other yield obtained in accordance with its intended use (§ 99 (1))";
+    when erzeugnis_oder_ausbeute_der_sache(f, s);
+    then frucht_der_sache(f, s);
+}
+
+@source(BGB_P99)
+rule FruchtDesRechts(f: Sache, recht: Recht) strict {
+    label de official "Früchte eines Rechts sind die Erträge, welche das Recht seiner Bestimmung gemäß gewährt (§ 99 Abs. 2)";
+    label en unofficial "Fruits of a right are the yields which the right affords in accordance with its intended use (§ 99 (2))";
+    when ertrag_des_rechts(f, recht);
+    then frucht_des_rechts(f, recht);
+}
+
+@source(BGB_P99)
+rule FruchtAusRechtsverhaeltnis(f: Sache, s: Sache) strict {
+    label de official "Früchte sind auch die Erträge, welche eine Sache oder ein Recht vermöge eines Rechtsverhältnisses gewährt (§ 99 Abs. 3)";
+    label en unofficial "Fruits also include the yields which a thing or right affords by virtue of a legal relationship (§ 99 (3))";
+    when ertrag_aus_rechtsverhaeltnis(f, s);
+    then frucht_der_sache(f, s);
+}
+
+@source(BGB_P100)
+rule NutzungAusFrucht(f: Sache, s: Sache) strict {
+    label de official "Nutzungen sind die Früchte einer Sache oder eines Rechts (§ 100)";
+    label en unofficial "Emoluments are the fruits of a thing or of a right (§ 100)";
+    when frucht_der_sache(f, s);
+    then nutzung(f, s);
+}
+
+@source(BGB_P100)
+rule NutzungAusGebrauchsvorteil(v: Sache, s: Sache) strict {
+    label de official "Nutzungen sind auch die Vorteile, welche der Gebrauch der Sache oder des Rechts gewährt (§ 100)";
+    label en unofficial "Emoluments also include the advantages afforded by the use of the thing or right (§ 100)";
+    when gebrauchsvorteil(v, s);
+    then nutzung(v, s);
+}
+
+// § 101: Verteilung der Früchte. Der Fall gibt die Dauer der Berechtigung
+// (erster und letzter Tag) und den Zeitraum, für den der regelmäßig
+// wiederkehrende Ertrag geschuldet ist.
+pub entity Berechtigung {
+    label de official "Berechtigung, die Früchte einer Sache oder eines Rechts bis zu einer bestimmten Zeit oder von einer bestimmten Zeit an zu beziehen (§ 101)";
+    label en unofficial "entitlement to take the fruits of a thing or right up to or from a certain time (§ 101)";
+}
+pub relation berechtigter(b: Berechtigung, p: Person) kind empirical {
+    key(b);
+    label de official "Person, der die Früchte gebühren (§ 101)";
+    label en unofficial "person to whom the fruits belong (§ 101)";
+}
+pub relation dauer_der_berechtigung(b: Berechtigung, von: Date, bis: Date) kind empirical {
+    key(b);
+    label de official "Dauer der Berechtigung, erster und letzter Tag eingeschlossen (§ 101)";
+    label en unofficial "duration of the entitlement, first and last day included (§ 101)";
+}
+pub relation trennung_waehrend_der_berechtigung(f: Sache, b: Berechtigung) kind empirical {
+    label de official "das Erzeugnis oder der Bestandteil wird während der Dauer der Berechtigung von der Sache getrennt (§ 101 Nr. 1)";
+    label en unofficial "the produce or component is separated from the thing during the entitlement (§ 101 no. 1)";
+}
+pub relation faelligkeit_waehrend_der_berechtigung(f: Sache, b: Berechtigung) kind empirical {
+    label de official "die andere Frucht wird während der Dauer der Berechtigung fällig (§ 101 Nr. 2 Halbsatz 1)";
+    label en unofficial "the other fruit falls due during the entitlement (§ 101 no. 2, first half-sentence)";
+}
+pub relation anderes_bestimmt(b: Berechtigung) kind empirical {
+    label de official "es ist ein anderes bestimmt (§ 101 Eingang, § 103) — Angabe des Falls";
+    label en unofficial "something else is provided (opening words of § 101, § 103) — case input";
+}
+pub relation regelmaessig_wiederkehrender_ertrag(f: Sache, betrag: Money, von: Date, bis: Date) kind empirical {
+    key(f);
+    label de official "Vergütung für die Überlassung des Gebrauchs oder des Fruchtgenusses, Zinsen, Gewinnanteile oder andere regelmäßig wiederkehrende Erträge mit ihrem Zeitraum (§ 101 Nr. 2 Halbsatz 2)";
+    label en unofficial "remuneration for the grant of use, interest, profit shares or other regularly recurring yields with their period (§ 101 no. 2, second half-sentence)";
+}
+pub relation frucht_gebuehrt(f: Sache, p: Person) kind institutional {
+    label de official "die Frucht gebührt dem Berechtigten (§ 101 Nr. 1, Nr. 2 Halbsatz 1)";
+    label en unofficial "the fruit belongs to the entitled person (§ 101 no. 1, no. 2)";
+}
+pub relation anteil_am_ertrag(f: Sache, p: Person, betrag: Money) kind institutional {
+    key(f, p);
+    label de official "der der Dauer der Berechtigung entsprechende Teil des regelmäßig wiederkehrenden Ertrags (§ 101 Nr. 2 Halbsatz 2), auf den Cent gerundet (Politik des Pakets)";
+    label en unofficial "the part of the recurring yield corresponding to the duration of the entitlement (§ 101 no. 2), rounded once to the cent";
+}
+
+@source(BGB_P101)
+rule GetrennteErzeugnisseGebuehrenDemBerechtigten(f: Sache, b: Berechtigung, p: Person) strict {
+    label de official "Dem Berechtigten gebühren die in § 99 Abs. 1 bezeichneten Erzeugnisse und Bestandteile insoweit, als sie während der Dauer der Berechtigung von der Sache getrennt werden (§ 101 Nr. 1)";
+    label en unofficial "The produce and components under § 99 (1) belong to the entitled person in so far as they are separated during the entitlement (§ 101 no. 1)";
+    when trennung_waehrend_der_berechtigung(f, b) and berechtigter(b, p) and not anderes_bestimmt(b);
+    then frucht_gebuehrt(f, p);
+}
+
+@source(BGB_P101)
+rule FaelligeFruechteGebuehrenDemBerechtigten(f: Sache, b: Berechtigung, p: Person) strict {
+    label de official "Andere Früchte gebühren dem Berechtigten insoweit, als sie während der Dauer der Berechtigung fällig werden (§ 101 Nr. 2 Halbsatz 1)";
+    label en unofficial "Other fruits belong to the entitled person in so far as they fall due during the entitlement (§ 101 no. 2)";
+    when faelligkeit_waehrend_der_berechtigung(f, b) and berechtigter(b, p) and not anderes_bestimmt(b);
+    then frucht_gebuehrt(f, p);
+}
+
+@source(BGB_P101)
+rule AnteiligerTeilDesWiederkehrendenErtrags(f: Sache, b: Berechtigung, p: Person, betrag: Money,
+    von: Date, bis: Date, bvon: Date, bbis: Date) strict {
+    label de official "Bestehen die Früchte in der Vergütung für die Überlassung des Gebrauchs oder des Fruchtgenusses, in Zinsen, Gewinnanteilen oder anderen regelmäßig wiederkehrenden Erträgen, so gebührt dem Berechtigten ein der Dauer seiner Berechtigung entsprechender Teil (§ 101 Nr. 2 Halbsatz 2) — Tage der Berechtigung zu Tagen des Zeitraums, einmal auf den Cent gerundet";
+    label en unofficial "Where the fruits consist in remuneration, interest, profit shares or other recurring yields, the entitled person is due the part corresponding to the duration of the entitlement (§ 101 no. 2) — days of entitlement over days of the period, rounded once to the cent";
+    when regelmaessig_wiederkehrender_ertrag(f, betrag, von, bis)
+        and dauer_der_berechtigung(b, bvon, bbis)
+        and berechtigter(b, p)
+        and not anderes_bestimmt(b);
+    then anteil_am_ertrag(f, p,
+        div_round(betrag * (days_between(bvon, bbis) + 1),
+                  (days_between(von, bis) + 1) * 1.0, 2, "HALF_UP"));
+}
+
+pub relation zur_herausgabe_von_fruechten_verpflichtet(p: Person, f: Sache) kind empirical {
+    label de official "die Person ist zur Herausgabe von Früchten verpflichtet (§ 102)";
+    label en unofficial "the person is obliged to hand over fruits (§ 102)";
+}
+pub relation gewinnungskosten(f: Sache, betrag: Money) kind empirical {
+    key(f);
+    label de official "die auf die Gewinnung der Früchte verwendeten Kosten (§ 102)";
+    label en unofficial "the costs expended on obtaining the fruits (§ 102)";
+}
+pub relation wert_der_fruechte(f: Sache, betrag: Money) kind empirical {
+    key(f);
+    label de official "Wert der Früchte (§ 102)";
+    label en unofficial "value of the fruits (§ 102)";
+}
+pub relation kosten_entsprechen_ordnungsmaessiger_wirtschaft(f: Sache) kind empirical {
+    label de official "die Kosten entsprechen einer ordnungsmäßigen Wirtschaft (§ 102) — festgestellte Tatsache";
+    label en unofficial "the costs correspond to proper husbandry (§ 102) — established fact";
+}
+pub relation ersatz_der_gewinnungskosten(p: Person, f: Sache, betrag: Money) kind institutional {
+    key(p, f);
+    label de official "Ersatz der auf die Gewinnung der Früchte verwendeten Kosten (§ 102)";
+    label en unofficial "compensation for the costs expended on obtaining the fruits (§ 102)";
+}
+
+@source(BGB_P102)
+rule ErsatzDerGewinnungskosten(p: Person, f: Sache, kosten: Money, wert: Money) strict {
+    label de official "Wer zur Herausgabe von Früchten verpflichtet ist, kann Ersatz der auf die Gewinnung der Früchte verwendeten Kosten insoweit verlangen, als sie einer ordnungsmäßigen Wirtschaft entsprechen und den Wert der Früchte nicht übersteigen (§ 102)";
+    label en unofficial "A person obliged to hand over fruits may claim compensation for the costs of obtaining them in so far as they correspond to proper husbandry and do not exceed the value of the fruits (§ 102)";
+    when zur_herausgabe_von_fruechten_verpflichtet(p, f)
+        and gewinnungskosten(f, kosten)
+        and wert_der_fruechte(f, wert)
+        and kosten_entsprechen_ordnungsmaessiger_wirtschaft(f)
+        and kosten <= wert;
+    then ersatz_der_gewinnungskosten(p, f, kosten);
+}
+
+@source(BGB_P102)
+rule ErsatzDerGewinnungskostenBegrenztAufDenWert(p: Person, f: Sache, kosten: Money, wert: Money) strict {
+    label de official "Übersteigen die Kosten den Wert der Früchte, so ist der Ersatz auf den Wert der Früchte begrenzt (§ 102)";
+    label en unofficial "If the costs exceed the value of the fruits, compensation is limited to that value (§ 102)";
+    when zur_herausgabe_von_fruechten_verpflichtet(p, f)
+        and gewinnungskosten(f, kosten)
+        and wert_der_fruechte(f, wert)
+        and kosten_entsprechen_ordnungsmaessiger_wirtschaft(f)
+        and kosten > wert;
+    then ersatz_der_gewinnungskosten(p, f, wert);
+}
+
+pub entity Last {
+    label de official "Last einer Sache oder eines Rechts (§ 103)";
+    label en unofficial "charge on a thing or right (§ 103)";
+}
+pub relation lastenpflicht(p: Person, l: Last, von: Date, bis: Date) kind empirical {
+    label de official "die Person ist verpflichtet, die Lasten bis zu einer bestimmten Zeit oder von einer bestimmten Zeit an zu tragen (§ 103)";
+    label en unofficial "the person is obliged to bear the charges up to or from a certain time (§ 103)";
+}
+pub relation regelmaessig_wiederkehrende_last(l: Last, betrag: Money, von: Date, bis: Date) kind empirical {
+    key(l);
+    label de official "regelmäßig wiederkehrende Last mit ihrem Zeitraum (§ 103)";
+    label en unofficial "regularly recurring charge with its period (§ 103)";
+}
+pub relation andere_last(l: Last, betrag: Money, tag: Date) kind empirical {
+    key(l);
+    label de official "andere (nicht regelmäßig wiederkehrende) Last mit ihrem Betrag und dem Tag, an dem sie zu entrichten ist (§ 103)";
+    label en unofficial "other (non-recurring) charge with its amount and the day on which it is payable (§ 103)";
+}
+pub relation zu_tragender_lastenanteil(p: Person, l: Last, betrag: Money) kind institutional {
+    key(p, l);
+    label de official "der nach dem Verhältnis der Dauer der Verpflichtung zu tragende Teil der regelmäßig wiederkehrenden Last (§ 103), einmal auf den Cent gerundet";
+    label en unofficial "the part of the recurring charge to be borne in proportion to the duration of the obligation (§ 103), rounded once to the cent";
+}
+
+@source(BGB_P103)
+rule AnteilAnDerWiederkehrendenLast(p: Person, l: Last, betrag: Money, von: Date, bis: Date,
+    pvon: Date, pbis: Date) strict {
+    label de official "Wer verpflichtet ist, die Lasten einer Sache oder eines Rechts bis zu einer bestimmten Zeit oder von einer bestimmten Zeit an zu tragen, hat die regelmäßig wiederkehrenden Lasten nach dem Verhältnis der Dauer seiner Verpflichtung zu tragen (§ 103)";
+    label en unofficial "A person obliged to bear the charges up to or from a certain time bears the recurring charges in proportion to the duration of their obligation (§ 103)";
+    when regelmaessig_wiederkehrende_last(l, betrag, von, bis) and lastenpflicht(p, l, pvon, pbis);
+    then zu_tragender_lastenanteil(p, l,
+        div_round(betrag * (days_between(pvon, pbis) + 1),
+                  (days_between(von, bis) + 1) * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P103)
+rule AndereLastNachZeitpunktDerEntrichtung(p: Person, l: Last, betrag: Money, tag: Date,
+    pvon: Date, pbis: Date) strict {
+    label de official "Andere Lasten hat er insoweit zu tragen, als sie während der Dauer seiner Verpflichtung zu entrichten sind (§ 103)";
+    label en unofficial "Other charges are borne in so far as they are payable during the duration of the obligation (§ 103)";
+    when andere_last(l, betrag, tag)
+        and lastenpflicht(p, l, pvon, pbis)
+        and tag >= pvon
+        and tag <= pbis;
+    then zu_tragender_lastenanteil(p, l, betrag);
+}

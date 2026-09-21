@@ -1,0 +1,75 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+
+test "§§ 556, 558–560, 567, 573, 573a: Positionen vorhanden" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:p556"), entity_ref("urn:de:bgb:miete:p556:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:p556"), entity_ref("urn:de:bgb:miete:p556:M")) { origin case_input; }
+        assert "f3": mietverhaeltnis_beginn_am(entity_ref("urn:de:bgb:miete:p556"), @2026-01-01) { origin case_input; }
+        assert "f4": abrechnungspflicht(entity_ref("urn:de:bgb:miete:p556"), entity_ref("urn:de:bgb:miete:p556:V")) { origin case_input; }
+        assert "f4b": abrechnung_des(entity_ref("urn:de:bgb:miete:p556:A"), entity_ref("urn:de:bgb:miete:p556")) { origin case_input; }
+        assert "f4c": nachforderung_ausgeschlossen(entity_ref("urn:de:bgb:miete:p556:A")) { origin case_input; }
+        assert "f5": erhoehung_des(entity_ref("urn:de:bgb:miete:p556:E"), entity_ref("urn:de:bgb:miete:p556")) { origin case_input; }
+        assert "f6": erhoehungsrecht_559(entity_ref("urn:de:bgb:miete:p556:E"), entity_ref("urn:de:bgb:miete:p556:V")) { origin case_input; }
+        assert "f7": erhoehung_zugegangen_am(entity_ref("urn:de:bgb:miete:p556:E"), @2026-01-01) { origin case_input; }
+        assert "f8": umlage_geschuldet_ab(entity_ref("urn:de:bgb:miete:p556"), @2026-02-01) { origin case_input; }
+        assert "f9": belastung_mit_recht_eines_dritten(entity_ref("urn:de:bgb:miete:p556")) { origin case_input; }
+        assert "f10": kuendigung_des(entity_ref("urn:de:bgb:miete:p556:K"), entity_ref("urn:de:bgb:miete:p556")) { origin case_input; }
+        assert "f11": berechtigtes_interesse_liegt_vor(entity_ref("urn:de:bgb:miete:p556")) { origin case_input; }
+        assert "f12": selbstbewohntes_gebaeude_mit_zwei_wohnungen(entity_ref("urn:de:bgb:miete:p556")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Abrechnung556, ACTIVE);
+    expect position(Nachforderung556, VIOLATED);
+    expect position(Kappung558, ACTIVE);
+    expect position(Erhoehung559, ACTIVE);
+    expect position(Umlage560, SATISFIED);
+    expect position(Belastung567, ACTIVE);
+    expect position(Kuendigung573, ACTIVE);
+    expect position(Kuendigung573a, ACTIVE);
+}
+
+test "§§ 556, 558–560, 567, 573, 573a: Positionen außerhalb des Falls" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:p556b"), entity_ref("urn:de:bgb:miete:p556b:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:p556b"), entity_ref("urn:de:bgb:miete:p556b:M")) { origin case_input; }
+        assert "f3": mietverhaeltnis_beginn_am(entity_ref("urn:de:bgb:miete:p556b"), @2026-01-01) { origin case_input; }
+    }
+    evaluate positions();
+    expect not position(Abrechnung556, ACTIVE);
+    expect not position(Nachforderung556, ACTIVE);
+    expect not position(Kappung558, ACTIVE);
+    expect not position(Erhoehung559, ACTIVE);
+    expect not position(Umlage560, ACTIVE);
+    expect not position(Belastung567, ACTIVE);
+    expect not position(Kuendigung573, ACTIVE);
+    expect not position(Kuendigung573a, ACTIVE);
+}
+
+test "§ 556 Abs. 3 Satz 3: Verbot einer zusätzlichen Forderung bleibt bis zum Verstoß aktiv" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:p556-maintenance"), entity_ref("urn:de:bgb:miete:p556-maintenance:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:p556-maintenance"), entity_ref("urn:de:bgb:miete:p556-maintenance:M")) { origin case_input; }
+        assert "f3": mietverhaeltnis_beginn_am(entity_ref("urn:de:bgb:miete:p556-maintenance"), @2026-01-01) { origin case_input; }
+        assert "f4": abrechnung_des(entity_ref("urn:de:bgb:miete:p556-maintenance:A"), entity_ref("urn:de:bgb:miete:p556-maintenance")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Nachforderung556, ACTIVE);
+}
+
+test "§ 558 Abs. 3: Überschreitung der Grenze verletzt das Verbot" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:p558-maintenance"), entity_ref("urn:de:bgb:miete:p558-maintenance:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:p558-maintenance"), entity_ref("urn:de:bgb:miete:p558-maintenance:M")) { origin case_input; }
+        assert "f3": mietverhaeltnis_beginn_am(entity_ref("urn:de:bgb:miete:p558-maintenance"), @2026-01-01) { origin case_input; }
+        assert "f4": erhoehung_des(entity_ref("urn:de:bgb:miete:p558-maintenance:E"), entity_ref("urn:de:bgb:miete:p558-maintenance")) { origin case_input; }
+        assert "f5": kappungsgrenze_ueberschritten(entity_ref("urn:de:bgb:miete:p558-maintenance:E")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Kappung558, VIOLATED);
+}

@@ -1,0 +1,39 @@
+// Годность входа: счёт вместо отрицания (§115), каждый дефект назван.
+// Цикл ищется по уже вычисленным предкам (модуль 03), поэтому вывод предков
+// НЕ ждёт годности — иначе цикл через годность был бы нестратифицируем;
+// годности ждут степени и именованные родственники.
+
+language "law.core" version "0.2";
+package calc.kinship version "0.1.0";
+namespace "urn:law:calc:kinship";
+
+rule DeclaredByDegree(f: Family, p: DegreeCount) strict { label ru official "семья с политикой счёта подлежит проверке"; when family_degree_count(f, p); then family_declared(f); }
+rule DeclaredByAdoption(f: Family, p: AdoptionEffect) strict { label ru official "семья с политикой усыновления подлежит проверке"; when family_adoption_effect(f, p); then family_declared(f); }
+rule DeclaredByCap(f: Family, n: Integer) strict { label ru official "семья с пределом глубины подлежит проверке"; when family_depth_cap(f, n); then family_declared(f); }
+rule DeclaredByEdge(f: Family, p: Actor, c: Actor, k: EdgeKind) strict { label ru official "семья с родительской связью подлежит проверке"; when parent_edge(f, p, c, k); then family_declared(f); }
+
+rule DegreeCountMissing(f: Family) strict { label ru official "политика счёта степеней не объявлена"; when family_declared(f) and (count distinct p: DegreeCount where family_degree_count(f, p)) == 0; then family_defect(f, DegreeCountMissing); }
+rule DegreeCountAmbiguous(f: Family) strict { label ru official "объявлены две политики счёта степеней"; when family_declared(f) and (count distinct p: DegreeCount where family_degree_count(f, p)) >= 2; then family_defect(f, DegreeCountAmbiguous); }
+rule AdoptionEffectMissing(f: Family) strict { label ru official "политика усыновления не объявлена"; when family_declared(f) and (count distinct p: AdoptionEffect where family_adoption_effect(f, p)) == 0; then family_defect(f, AdoptionEffectMissing); }
+rule AdoptionEffectAmbiguous(f: Family) strict { label ru official "объявлены две политики усыновления"; when family_declared(f) and (count distinct p: AdoptionEffect where family_adoption_effect(f, p)) >= 2; then family_defect(f, AdoptionEffectAmbiguous); }
+rule DepthCapMissing(f: Family) strict { label ru official "предел глубины не объявлен"; when family_declared(f) and (count all n: Integer where family_depth_cap(f, n)) == 0; then family_defect(f, DepthCapMissing); }
+rule DepthCapAmbiguous(f: Family) strict { label ru official "предел глубины объявлен дважды"; when family_declared(f) and (count all n: Integer where family_depth_cap(f, n)) >= 2; then family_defect(f, DepthCapAmbiguous); }
+rule DepthCapNotPositive(f: Family, n: Integer) strict { label ru official "предел глубины не положителен"; when family_depth_cap(f, n) and n <= 0; then family_defect(f, DepthCapNotPositive); }
+
+rule SelfParent(f: Family, p: Actor, k: EdgeKind) strict {
+    label ru official "лицо объявлено собственным родителем";
+    when parent_edge(f, p, p, k);
+    then family_defect(f, SelfParent);
+}
+
+rule CycleDetected(f: Family, p: Actor, d: Integer) strict {
+    label ru official "цикл в графе: лицо — свой предок глубже нуля";
+    when ancestor_or_self(f, p, p, d) and d >= 1;
+    then family_defect(f, CycleDetected);
+}
+
+rule FamilyWellformed(f: Family) strict {
+    label ru official "семья пригодна: ни одного дефекта не выведено";
+    when family_declared(f) and (count distinct d: KinshipDefect where family_defect(f, d)) == 0;
+    then family_wellformed(f);
+}

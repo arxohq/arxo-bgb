@@ -1,0 +1,1115 @@
+// --- Titel 3: Unterhaltspflicht (§§ 1601–1615n) -------------------------------------------------
+//
+// AUFBAU DES TITELS. § 1601 sagt, WER einander Unterhalt schuldet (Verwandte
+// in gerader Linie — gerechnet aus dem Graphen des Titels 1); §§ 1602, 1603
+// sagen, WANN der Anspruch besteht (Bedürftigkeit des Berechtigten,
+// Leistungsfähigkeit des Pflichtigen); §§ 1606, 1609 ordnen MEHRERE Pflichtige
+// und mehrere Berechtigte; §§ 1610, 1612–1612c bestimmen das MASS und die ART;
+// § 1613 die Vergangenheit; §§ 1615l–1615n den Anspruch aus Anlass der Geburt.
+//
+// DREI KANÄLE (DECISION-0194). Der Titel ist voller Wertungen, und sie werden
+// NICHT flach behauptet:
+//   - „außerstande, sich selbst zu unterhalten“ (§ 1602 Abs. 1),
+//     „ohne Gefährdung seines angemessenen Unterhalts“ (§ 1603 Abs. 1),
+//     „angemessener Unterhalt“ und „Lebensstellung“ (§ 1610 Abs. 1),
+//     „der Billigkeit entspricht“ (§ 1611 Abs. 1, § 1615l Abs. 2 Satz 4)
+//     → `external judgment relation … { authority Court; }`;
+//   - Zahlen, die der Text SELBST nennt (87, 100, 117 Prozent; sechs Wochen,
+//     acht Wochen, drei Jahre, ein Jahr, 21. Lebensjahr) → Regeln;
+//   - Zahlen, die der Text NICHT nennt: der Mindestunterhalt selbst ist durch
+//     Rechtsverordnung festgelegt (§ 1612a Abs. 4) und daher EINGANG mit
+//     Geltungszeitraum, keine Konstante des Pakets; die Düsseldorfer Tabelle
+//     ist kein Recht und kommt im Paket nicht vor (README, Grenzen).
+//
+// RUNDUNG (Ledger D-13-03). Gerundet wird nur, wo der Text es anordnet:
+// § 1612a Abs. 2 Satz 2 „auf volle Euro aufzurunden“ — EIN `div_round` je
+// Betrag mit `precision 0` und Modus `CEILING`. Das halbe Kindergeld des
+// § 1612b Abs. 1 Nr. 1 teilt EINMAL kaufmännisch auf den Cent.
+
+// --- § 1601 Unterhaltsverpflichtete ---------------------------------------------------------------
+
+pub relation unterhaltspflicht_dem_grunde_nach(f: Familie, pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Verwandte in gerader Linie sind verpflichtet, einander Unterhalt zu gewähren (§ 1601)";
+    label en unofficial "Relatives in the direct line are obliged to maintain each other (§ 1601)";
+}
+
+@source(BGB_P1601)
+rule VerwandteInGeraderLinie(f: Familie, p: Person, b: Person) strict {
+    label de official "Verwandte in gerader Linie sind verpflichtet, einander Unterhalt zu gewähren (§ 1601)";
+    label en unofficial "Relatives in the direct line are obliged to maintain each other (§ 1601)";
+    when verwandt_in_gerader_linie(f, p, b);
+    then unterhaltspflicht_dem_grunde_nach(f, p, b);
+}
+
+// --- § 1602 Bedürftigkeit, § 1603 Leistungsfähigkeit ---------------------------------------------
+
+@source(BGB_P1602)
+pub external judgment relation ausserstande_sich_selbst_zu_unterhalten(berechtigter: Person) {
+    authority Court;
+    label de official "§ 1602 Abs. 1. Unterhaltsberechtigt ist nur, wer außerstande ist, sich selbst zu unterhalten";
+    label en unofficial "§ 1602 (1). Only a person unable to maintain himself is entitled to maintenance";
+}
+@source(BGB_P1603)
+pub external judgment relation gefaehrdung_des_angemessenen_eigenen_unterhalts(pflichtiger: Person, berechtigter: Person) {
+    authority Court;
+    label de official "§ 1603 Abs. 1. Der Pflichtige ist bei Berücksichtigung seiner sonstigen Verpflichtungen außerstande, ohne Gefährdung seines angemessenen Unterhalts den Unterhalt zu gewähren";
+    label en unofficial "§ 1603 (1). Taking his other obligations into account, the obligor is unable to grant maintenance without endangering his own reasonable maintenance";
+}
+
+pub relation minderjaehriges_kind(kind: Person) kind empirical {
+    label de official "Das Kind ist minderjährig (§ 1602 Abs. 2, § 1603 Abs. 2 Satz 1, § 1612a Abs. 1 Satz 1)";
+    label en unofficial "the child is a minor (§ 1602 (2), § 1603 (2) sentence 1, § 1612a (1) sentence 1)";
+}
+pub relation einkuenfte_des_vermoegens_und_arbeitsertrag_reichen_nicht(kind: Person) kind empirical {
+    label de official "Die Einkünfte des Vermögens des minderjährigen Kindes und der Ertrag seiner Arbeit reichen zum Unterhalt nicht aus (§ 1602 Abs. 2)";
+    label en unofficial "the income from the minor child's assets and the proceeds of its work do not suffice for its maintenance (§ 1602 (2))";
+}
+pub relation anderer_unterhaltspflichtiger_verwandter_vorhanden(kind: Person) kind empirical {
+    label de official "Ein anderer unterhaltspflichtiger Verwandter ist vorhanden (§ 1603 Abs. 2 Satz 3 Halbsatz 1)";
+    label en unofficial "another relative liable for maintenance exists (§ 1603 (2) sentence 3 first half-sentence)";
+}
+pub relation unterhalt_aus_dem_stamm_des_vermoegens_moeglich(kind: Person) kind empirical {
+    label de official "Der Unterhalt des Kindes kann aus dem Stamme seines Vermögens bestritten werden (§ 1603 Abs. 2 Satz 3 Halbsatz 2)";
+    label en unofficial "the child's maintenance can be met from the substance of its assets (§ 1603 (2) sentence 3 second half-sentence)";
+}
+pub relation volljaehrig_unverheiratet_in_schulausbildung_im_haushalt(kind: Person) kind empirical {
+    label de official "Volljähriges unverheiratetes Kind bis zur Vollendung des 21. Lebensjahrs, das im Haushalt der Eltern oder eines Elternteils lebt und sich in der allgemeinen Schulausbildung befindet (§ 1603 Abs. 2 Satz 2)";
+    label en unofficial "unmarried child of full age until completion of the 21st year of life, living in a parent's household and in general school education (§ 1603 (2) sentence 2)";
+}
+pub relation elternteil(f: Familie, elternteil: Person, kind: Person) kind institutional {
+    label de official "Elternteil des Kindes: Mutter (§ 1591) oder Vater (§ 1592, § 1593)";
+    label en unofficial "parent of the child: mother (§ 1591) or father (§ 1592, § 1593)";
+}
+
+pub relation beduerftig(berechtigter: Person) kind institutional {
+    label de official "Bedürftigkeit: unterhaltsberechtigt ist nur, wer außerstande ist, sich selbst zu unterhalten (§ 1602 Abs. 1); das minderjährige Kind auch bei eigenem Vermögen, soweit dessen Einkünfte und der Ertrag seiner Arbeit nicht ausreichen (Abs. 2)";
+    label en unofficial "neediness: only a person unable to maintain himself is entitled (§ 1602 (1)); a minor child also where the income from its assets and work does not suffice (subsection (2))";
+}
+pub relation nicht_leistungsfaehig(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Unterhaltspflichtig ist nicht, wer bei Berücksichtigung seiner sonstigen Verpflichtungen außerstande ist, ohne Gefährdung seines angemessenen Unterhalts den Unterhalt zu gewähren (§ 1603 Abs. 1)";
+    label en unofficial "a person unable, taking his other obligations into account, to grant maintenance without endangering his own reasonable maintenance is not liable (§ 1603 (1))";
+}
+pub relation gesteigerte_unterhaltspflicht(pflichtiger: Person, kind: Person) kind institutional {
+    label de official "Gesteigerte Unterhaltspflicht der Eltern: alle verfügbaren Mittel sind gleichmäßig zu verwenden (§ 1603 Abs. 2 Satz 1, 2)";
+    label en unofficial "heightened duty of parents: all available means must be used equally (§ 1603 (2) sentences 1, 2)";
+}
+pub relation unterhaltsanspruch_besteht(f: Familie, pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Der Unterhaltsanspruch besteht: Verwandtschaft in gerader Linie (§ 1601), Bedürftigkeit (§ 1602) und Leistungsfähigkeit (§ 1603)";
+    label en unofficial "the maintenance claim exists: kinship in the direct line (§ 1601), neediness (§ 1602) and capacity to pay (§ 1603)";
+}
+
+@source(BGB_P1602) {
+    rule BeduerftigkeitAbs1(b: Person) strict {
+        label de official "Unterhaltsberechtigt ist nur, wer außerstande ist, sich selbst zu unterhalten (§ 1602 Abs. 1)";
+        label en unofficial "Only a person unable to maintain himself is entitled to maintenance (§ 1602 (1))";
+        when ausserstande_sich_selbst_zu_unterhalten(b);
+        then beduerftig(b);
+    }
+    rule BeduerftigkeitDesMinderjaehrigenKindes(k: Person) strict {
+        label de official "Ein minderjähriges Kind kann von seinen Eltern, auch wenn es Vermögen hat, die Gewährung des Unterhalts insoweit verlangen, als die Einkünfte seines Vermögens und der Ertrag seiner Arbeit zum Unterhalt nicht ausreichen (§ 1602 Abs. 2)";
+        label en unofficial "A minor child may claim maintenance from its parents even if it has assets, to the extent that the income from its assets and the proceeds of its work do not suffice (§ 1602 (2))";
+        when minderjaehriges_kind(k) and einkuenfte_des_vermoegens_und_arbeitsertrag_reichen_nicht(k);
+        then beduerftig(k);
+    }
+}
+
+@source(BGB_P1603) {
+    rule NichtLeistungsfaehig(p: Person, b: Person) strict {
+        label de official "Unterhaltspflichtig ist nicht, wer bei Berücksichtigung seiner sonstigen Verpflichtungen außerstande ist, ohne Gefährdung seines angemessenen Unterhalts den Unterhalt zu gewähren (§ 1603 Abs. 1)";
+        label en unofficial "A person unable, taking his other obligations into account, to grant maintenance without endangering his own reasonable maintenance is not liable (§ 1603 (1))";
+        when gefaehrdung_des_angemessenen_eigenen_unterhalts(p, b);
+        then nicht_leistungsfaehig(p, b);
+    }
+    rule GesteigertePflichtGegenueberMinderjaehrigen(f: Familie, p: Person, k: Person) strict {
+        label de official "Befinden sich Eltern in dieser Lage, so sind sie ihren minderjährigen Kindern gegenüber verpflichtet, alle verfügbaren Mittel zu ihrem und der Kinder Unterhalt gleichmäßig zu verwenden (§ 1603 Abs. 2 Satz 1); diese Verpflichtung tritt nicht ein, wenn ein anderer unterhaltspflichtiger Verwandter vorhanden ist oder der Unterhalt aus dem Stamme des Vermögens bestritten werden kann (Satz 3)";
+        label en unofficial "If parents are in that position they must use all available means equally for their own and the children's maintenance (§ 1603 (2) sentence 1); this duty does not arise where another liable relative exists or the maintenance can be met from the substance of the assets (sentence 3)";
+        when elternteil(f, p, k) and minderjaehriges_kind(k) and nicht_leistungsfaehig(p, k)
+         and not_known(anderer_unterhaltspflichtiger_verwandter_vorhanden(k))
+         and not_known(unterhalt_aus_dem_stamm_des_vermoegens_moeglich(k));
+        then gesteigerte_unterhaltspflicht(p, k);
+    }
+    rule GesteigertePflichtGegenueberPrivilegiertVolljaehrigen(f: Familie, p: Person, k: Person) strict {
+        label de official "Den minderjährigen Kindern stehen volljährige unverheiratete Kinder bis zur Vollendung des 21. Lebensjahrs gleich, solange sie im Haushalt der Eltern oder eines Elternteils leben und sich in der allgemeinen Schulausbildung befinden (§ 1603 Abs. 2 Satz 2)";
+        label en unofficial "Unmarried children of full age until completion of the 21st year of life rank equally with minor children while they live in a parent's household and are in general school education (§ 1603 (2) sentence 2)";
+        when elternteil(f, p, k) and volljaehrig_unverheiratet_in_schulausbildung_im_haushalt(k) and nicht_leistungsfaehig(p, k)
+         and not_known(anderer_unterhaltspflichtiger_verwandter_vorhanden(k))
+         and not_known(unterhalt_aus_dem_stamm_des_vermoegens_moeglich(k));
+        then gesteigerte_unterhaltspflicht(p, k);
+    }
+}
+
+@source(BGB_P1601)
+rule UnterhaltsanspruchBesteht(f: Familie, p: Person, b: Person) strict {
+    label de official "Der Anspruch setzt Verwandtschaft in gerader Linie (§ 1601), Bedürftigkeit (§ 1602) und Leistungsfähigkeit des Pflichtigen (§ 1603 Abs. 1 im Umkehrschluss) voraus";
+    label en unofficial "The claim requires kinship in the direct line (§ 1601), neediness (§ 1602) and the obligor's capacity to pay (§ 1603 (1) a contrario)";
+    when unterhaltspflicht_dem_grunde_nach(f, p, b) and beduerftig(b) and not_known(nicht_leistungsfaehig(p, b));
+    then unterhaltsanspruch_besteht(f, p, b);
+}
+
+// Eltern: die Brücke vom Titel 2 in den Titel 3. Vater und Mutter des Kindes
+// sind seine Eltern; damit liest § 1603 Abs. 2 die Abstammung des Titels 2 und
+// behauptet sie nicht selbst.
+
+@source(BGB_P1601) {
+    rule MutterIstElternteil(f: Familie, m: Person, k: Person) strict {
+        label de official "Die Mutter des Kindes (§ 1591) ist sein Elternteil";
+        label en unofficial "The mother of the child (§ 1591) is its parent";
+        when mutter(k, m) and abstammung(f, m, k);
+        then elternteil(f, m, k);
+    }
+    rule VaterIstElternteil(f: Familie, v: Person, k: Person) strict {
+        label de official "Der Vater des Kindes (§ 1592, § 1593) ist sein Elternteil";
+        label en unofficial "The father of the child (§ 1592, § 1593) is its parent";
+        when vater(k, v) and abstammung(f, v, k);
+        then elternteil(f, v, k);
+    }
+}
+
+// --- § 1606 Rangverhältnisse mehrerer Pflichtiger ------------------------------------------------
+//
+// Abs. 1 und 2 sind reine ORDNUNG und werden aus dem Graphen gerechnet: die
+// Abkömmlinge (absteigende Linie) vor den Verwandten der aufsteigenden Linie,
+// und innerhalb jeder Richtung die NÄHEREN vor den entfernteren — das ist der
+// Grad des § 1589, den der Rechner liefert.
+
+pub relation haftet_vor(f: Familie, frueher: Person, spaeter: Person, berechtigter: Person) kind institutional {
+    label de official "Rangverhältnis mehrerer Pflichtiger: der eine haftet vor dem anderen (§ 1606 Abs. 1, 2)";
+    label en unofficial "rank of several obligors: one is liable before the other (§ 1606 (1), (2))";
+}
+
+@source(BGB_P1606) {
+    rule AbkoemmlingeVorAufsteigenden(f: Familie, d: Person, a: Person, b: Person) strict {
+        label de official "Die Abkömmlinge sind vor den Verwandten der aufsteigenden Linie unterhaltspflichtig (§ 1606 Abs. 1)";
+        label en unofficial "Descendants are liable for maintenance before relatives in the ascending line (§ 1606 (1))";
+        when calc.kinship::kin_line(f, d, b, calc.kinship::Descending) and calc.kinship::kin_line(f, a, b, calc.kinship::Ascending);
+        then haftet_vor(f, d, a, b);
+    }
+    rule NaehereVorEntfernterenAbsteigend(f: Familie, n: Person, e: Person, b: Person, gn: Integer, ge: Integer) strict {
+        label de official "Unter den Abkömmlingen haften die näheren vor den entfernteren (§ 1606 Abs. 2)";
+        label en unofficial "Among descendants the nearer are liable before the more remote (§ 1606 (2))";
+        when calc.kinship::kin_line(f, n, b, calc.kinship::Descending) and calc.kinship::kin_line(f, e, b, calc.kinship::Descending)
+         and verwandt(f, n, b, gn) and verwandt(f, e, b, ge) and gn < ge;
+        then haftet_vor(f, n, e, b);
+    }
+    rule NaehereVorEntfernterenAufsteigend(f: Familie, n: Person, e: Person, b: Person, gn: Integer, ge: Integer) strict {
+        label de official "Unter den Verwandten der aufsteigenden Linie haften die näheren vor den entfernteren (§ 1606 Abs. 2)";
+        label en unofficial "Among relatives in the ascending line the nearer are liable before the more remote (§ 1606 (2))";
+        when calc.kinship::kin_line(f, n, b, calc.kinship::Ascending) and calc.kinship::kin_line(f, e, b, calc.kinship::Ascending)
+         and verwandt(f, n, b, gn) and verwandt(f, e, b, ge) and gn < ge;
+        then haftet_vor(f, n, e, b);
+    }
+}
+
+// Abs. 3 Satz 1: mehrere gleich nahe Verwandte haften ANTEILIG nach ihren
+// Erwerbs- und Vermögensverhältnissen. Der Anteil wird als PAAR GANZER ZAHLEN
+// geführt (eigene Verhältnisse, Summe der Verhältnisse aller gleich nahen
+// Pflichtigen) — kein Geld, keine Rundung (Muster D-07). Satz 2: der
+// betreuende Elternteil erfüllt seine Verpflichtung IN DER REGEL durch Pflege
+// und Erziehung; „in der Regel“ ist eine Wertung und steht im Urteilskanal.
+
+pub relation erwerbs_und_vermoegensverhaeltnisse(pflichtiger: Person, berechtigter: Person, wert: Integer) kind empirical {
+    key(pflichtiger, berechtigter);
+    label de official "Erwerbs- und Vermögensverhältnisse des Pflichtigen gegenüber diesem Berechtigten, in Cent (§ 1606 Abs. 3 Satz 1) — Eingang des Falls; der Text nennt weder Einheit noch Bewertungsweise";
+    label en unofficial "the obligor's earning and asset position towards this beneficiary, in cents (§ 1606 (3) sentence 1) — input of the case; the text names neither unit nor method of valuation";
+}
+pub relation summe_der_verhaeltnisse(berechtigter: Person, summe: Integer) kind empirical {
+    key(berechtigter);
+    label de official "Summe der Erwerbs- und Vermögensverhältnisse aller anteilig haftenden Verwandten (§ 1606 Abs. 3 Satz 1) — EINGANG des Falls; die Summe über die gleich nahen Verwandten ist ein Aggregat über eine Menge, die aus dem rekursiven Abschluss des Graphen `calc.kinship` folgt, und macht das Programm unstratifizierbar (gemessen, Ledger D-13-04)";
+    label en unofficial "sum of the earning and asset positions of all proportionally liable relatives (§ 1606 (3) sentence 1) — INPUT of the case; an aggregate over a set derived from the recursive closure of the `calc.kinship` graph makes the program unstratifiable (measured, ledger D-13-04)";
+}
+pub relation haftungsanteil(pflichtiger: Person, berechtigter: Person, zaehler: Integer, nenner: Integer) kind institutional {
+    key(pflichtiger, berechtigter);
+    label de official "Anteil des Pflichtigen an der Haftung, als Paar ganzer Zahlen (§ 1606 Abs. 3 Satz 1)";
+    label en unofficial "the obligor's share of the liability, as a pair of integers (§ 1606 (3) sentence 1)";
+}
+
+@source(BGB_P1606)
+pub external judgment relation betreuung_erfuellt_die_unterhaltspflicht(elternteil: Person, kind: Person) {
+    authority Court;
+    label de official "§ 1606 Abs. 3 Satz 2. Der Elternteil, der ein minderjähriges Kind betreut, erfüllt seine Verpflichtung, zum Unterhalt des Kindes beizutragen, in der Regel durch die Pflege und die Erziehung des Kindes";
+    label en unofficial "§ 1606 (3) sentence 2. The parent caring for a minor child as a rule fulfils the duty to contribute to the child's maintenance by caring for and bringing up the child";
+}
+
+@source(BGB_P1606) {
+    rule AnteiligeHaftung(p: Person, b: Person, w: Integer, s: Integer) strict {
+        label de official "Mehrere gleich nahe Verwandte haften anteilig nach ihren Erwerbs- und Vermögensverhältnissen (§ 1606 Abs. 3 Satz 1)";
+        label en unofficial "Several equally close relatives are liable proportionally according to their earning and asset positions (§ 1606 (3) sentence 1)";
+        when erwerbs_und_vermoegensverhaeltnisse(p, b, w) and summe_der_verhaeltnisse(b, s) and s > 0;
+        then haftungsanteil(p, b, w, s);
+    }
+}
+
+// --- § 1609 Rangfolge mehrerer Unterhaltsberechtigter --------------------------------------------
+//
+// Der Text nennt eine ABGESCHLOSSENE Aufzählung von sieben Rängen. Sie wird
+// als Aufzählung geführt; jede Nummer schreibt eine eigene Regel mit dem
+// Merkmal, das der Text für sie nennt. Nummer 2 („Ehe von langer Dauer“,
+// § 1578b) und die Betreuung eines Kindes verweisen auf die Ehesachen des
+// Pakets de.bgb.ehe; die Zuordnung zu Nummer 2 und 3 ist daher ein EINGANG des
+// Falls, keine Rechnung dieses Pakets (Grenze, README).
+
+pub enum Unterhaltsrang {
+    label de official "Rangfolge mehrerer Unterhaltsberechtigter (§ 1609 Nr. 1–7)";
+    label en unofficial "rank of several persons entitled to maintenance (§ 1609 nos. 1–7)";
+    Rang1MinderjaehrigeKinder,
+    Rang2BetreuendeElternteileUndEhegattenLangerEhe,
+    Rang3SonstigeEhegatten,
+    Rang4SonstigeKinder,
+    Rang5EnkelUndWeitereAbkoemmlinge,
+    Rang6Eltern,
+    Rang7WeitereVerwandteDerAufsteigendenLinie
+}
+
+pub relation pflichtiger_ausserstande_allen_zu_gewaehren(pflichtiger: Person) kind empirical {
+    label de official "Der Unterhaltspflichtige ist außerstande, allen Berechtigten Unterhalt zu gewähren (§ 1609 Satz 1)";
+    label en unofficial "the obligor is unable to grant maintenance to all persons entitled (§ 1609 sentence 1)";
+}
+pub relation berechtigter_nach_nummer_2_oder_3(berechtigter: Person, rang: Unterhaltsrang) kind empirical {
+    label de official "Zuordnung eines Ehegatten oder betreuenden Elternteils zu Nummer 2 oder Nummer 3 (§ 1609 Nr. 2, 3) — Eingang des Falls: die Merkmale stehen im Recht der Ehe (§ 1578b)";
+    label en unofficial "assignment of a spouse or caring parent to no. 2 or no. 3 (§ 1609 nos. 2, 3) — input of the case: the criteria lie in the law of marriage (§ 1578b)";
+}
+pub relation unterhaltsrang(pflichtiger: Person, berechtigter: Person, rang: Unterhaltsrang) kind institutional {
+    label de official "Rang des Berechtigten, wenn der Pflichtige außerstande ist, allen Unterhalt zu gewähren (§ 1609)";
+    label en unofficial "rank of the person entitled where the obligor cannot maintain all (§ 1609)";
+}
+
+@source(BGB_P1609) {
+    rule Rang1(f: Familie, p: Person, k: Person) strict {
+        label de official "Rang 1: minderjährige Kinder und Kinder im Sinne des § 1603 Abs. 2 Satz 2 (§ 1609 Nr. 1)";
+        label en unofficial "Rank 1: minor children and children within the meaning of § 1603 (2) sentence 2 (§ 1609 no. 1)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and elternteil(f, p, k) and minderjaehriges_kind(k);
+        then unterhaltsrang(p, k, Rang1MinderjaehrigeKinder);
+    }
+    rule Rang1Privilegiert(f: Familie, p: Person, k: Person) strict {
+        label de official "Rang 1 auch für die volljährigen unverheirateten Kinder des § 1603 Abs. 2 Satz 2 (§ 1609 Nr. 1)";
+        label en unofficial "Rank 1 also for the unmarried children of full age of § 1603 (2) sentence 2 (§ 1609 no. 1)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and elternteil(f, p, k) and volljaehrig_unverheiratet_in_schulausbildung_im_haushalt(k);
+        then unterhaltsrang(p, k, Rang1MinderjaehrigeKinder);
+    }
+    rule Rang2Und3AusDemFall(p: Person, b: Person, r: Unterhaltsrang) strict {
+        label de official "Rang 2 und Rang 3: betreuende Elternteile, Ehegatten und geschiedene Ehegatten (§ 1609 Nr. 2, 3)";
+        label en unofficial "Ranks 2 and 3: caring parents, spouses and divorced spouses (§ 1609 nos. 2, 3)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and berechtigter_nach_nummer_2_oder_3(b, r);
+        then unterhaltsrang(p, b, r);
+    }
+    rule Rang4(f: Familie, p: Person, k: Person) strict {
+        label de official "Rang 4: Kinder, die nicht unter Nummer 1 fallen (§ 1609 Nr. 4)";
+        label en unofficial "Rank 4: children not falling under no. 1 (§ 1609 no. 4)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and elternteil(f, p, k)
+         and not_known(minderjaehriges_kind(k)) and not_known(volljaehrig_unverheiratet_in_schulausbildung_im_haushalt(k));
+        then unterhaltsrang(p, k, Rang4SonstigeKinder);
+    }
+    rule Rang5(f: Familie, p: Person, e: Person, g: Integer) strict {
+        label de official "Rang 5: Enkelkinder und weitere Abkömmlinge (§ 1609 Nr. 5)";
+        label en unofficial "Rank 5: grandchildren and further descendants (§ 1609 no. 5)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and calc.kinship::kin_line(f, e, p, calc.kinship::Descending)
+         and verwandt(f, p, e, g) and g >= 2;
+        then unterhaltsrang(p, e, Rang5EnkelUndWeitereAbkoemmlinge);
+    }
+    rule Rang6(f: Familie, p: Person, e: Person) strict {
+        label de official "Rang 6: Eltern (§ 1609 Nr. 6)";
+        label en unofficial "Rank 6: parents (§ 1609 no. 6)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and elternteil(f, e, p);
+        then unterhaltsrang(p, e, Rang6Eltern);
+    }
+    rule Rang7(f: Familie, p: Person, a: Person, g: Integer) strict {
+        label de official "Rang 7: weitere Verwandte der aufsteigenden Linie; unter ihnen gehen die Näheren den Entfernteren vor (§ 1609 Nr. 7)";
+        label en unofficial "Rank 7: further relatives in the ascending line; among them the nearer precede the more remote (§ 1609 no. 7)";
+        when pflichtiger_ausserstande_allen_zu_gewaehren(p) and calc.kinship::kin_line(f, a, p, calc.kinship::Ascending)
+         and verwandt(f, a, p, g) and g >= 2;
+        then unterhaltsrang(p, a, Rang7WeitereVerwandteDerAufsteigendenLinie);
+    }
+}
+
+// --- § 1610 Maß des Unterhalts -------------------------------------------------------------------
+
+@source(BGB_P1610)
+pub external judgment relation angemessener_unterhalt(berechtigter: Person, betrag: Money) {
+    authority Court;
+    label de official "§ 1610 Abs. 1, 2. Das Maß des zu gewährenden Unterhalts bestimmt sich nach der Lebensstellung des Bedürftigen (angemessener Unterhalt); er umfasst den gesamten Lebensbedarf einschließlich der Kosten einer angemessenen Vorbildung zu einem Beruf, bei einer der Erziehung bedürftigen Person auch die Kosten der Erziehung";
+    label en unofficial "§ 1610 (1), (2). The measure of maintenance is determined by the beneficiary's station in life (reasonable maintenance); it covers all needs of life including the costs of an appropriate preparation for an occupation and, for a person needing education, the costs of education";
+}
+
+// --- § 1612 Art der Unterhaltsgewährung ----------------------------------------------------------
+
+pub relation besondere_gruende_fuer_andere_art(pflichtiger: Person, berechtigter: Person) kind empirical {
+    label de official "Besondere Gründe rechtfertigen die Gewährung des Unterhalts in anderer Art (§ 1612 Abs. 1 Satz 2)";
+    label en unofficial "special reasons justify granting maintenance in another way (§ 1612 (1) sentence 2)";
+}
+pub relation unterhalt_durch_geldrente(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Der Unterhalt ist durch Entrichtung einer Geldrente zu gewähren (§ 1612 Abs. 1 Satz 1); sie ist monatlich im Voraus zu zahlen (Abs. 3 Satz 1)";
+    label en unofficial "Maintenance is to be granted by paying a monetary annuity (§ 1612 (1) sentence 1); it is payable monthly in advance (subsection (3) sentence 1)";
+}
+pub relation voller_monatsbetrag_geschuldet(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Der Verpflichtete schuldet den vollen Monatsbetrag auch dann, wenn der Berechtigte im Laufe des Monats stirbt (§ 1612 Abs. 3 Satz 2)";
+    label en unofficial "The obligor owes the full monthly amount even if the beneficiary dies during the month (§ 1612 (3) sentence 2)";
+}
+pub relation berechtigter_im_laufe_des_monats_verstorben(berechtigter: Person) kind empirical {
+    label de official "Der Berechtigte ist im Laufe des Monats gestorben (§ 1612 Abs. 3 Satz 2)";
+    label en unofficial "the beneficiary died during the month (§ 1612 (3) sentence 2)";
+}
+
+@source(BGB_P1612) {
+    rule UnterhaltDurchGeldrente(f: Familie, p: Person, b: Person) strict {
+        label de official "Der Unterhalt ist durch Entrichtung einer Geldrente zu gewähren (§ 1612 Abs. 1 Satz 1); der Verpflichtete kann verlangen, dass ihm die Gewährung in anderer Art gestattet wird, wenn besondere Gründe es rechtfertigen (Satz 2)";
+        label en unofficial "Maintenance is to be granted by a monetary annuity (§ 1612 (1) sentence 1); the obligor may demand another form where special reasons justify it (sentence 2)";
+        when unterhaltsanspruch_besteht(f, p, b) and not_known(besondere_gruende_fuer_andere_art(p, b));
+        then unterhalt_durch_geldrente(p, b);
+    }
+    rule VollerMonatsbetrag(p: Person, b: Person) strict {
+        label de official "Der Verpflichtete schuldet den vollen Monatsbetrag auch dann, wenn der Berechtigte im Laufe des Monats stirbt (§ 1612 Abs. 3 Satz 2)";
+        label en unofficial "The obligor owes the full monthly amount even if the beneficiary dies during the month (§ 1612 (3) sentence 2)";
+        when unterhalt_durch_geldrente(p, b) and berechtigter_im_laufe_des_monats_verstorben(b);
+        then voller_monatsbetrag_geschuldet(p, b);
+    }
+}
+
+// --- § 1612a Mindestunterhalt minderjähriger Kinder ----------------------------------------------
+//
+// DREI ALTERSSTUFEN mit den Prozentsätzen, die der Text SELBST nennt: 87, 100
+// und 117 Prozent des Mindestunterhalts. Die Stufe folgt dem Alter, gerechnet
+// über `de.bgb.fristen::lebensjahr_vollendet_am` (§ 187 Abs. 2, § 188 Abs. 2:
+// der Tag, mit dessen ABLAUF das Lebensjahr vollendet ist). Abs. 3 verschiebt
+// den Wechsel auf den BEGINN DES MONATS, in dem das Kind das betreffende
+// Lebensjahr vollendet — deshalb wird nicht der Tag, sondern `month_start_of`
+// des Vollendungstages verglichen, und zwar auf BEIDEN Seiten jeder Stufe.
+//
+// Der Mindestunterhalt selbst ist nach Abs. 4 durch Rechtsverordnung
+// festzulegen (Mindestunterhaltsverordnung). Er ist daher ein EINGANG mit
+// Geltungszeitraum; eine Zahl im Paket wäre eine erfundene Konstante.
+
+pub relation mindestunterhalt(von: Date, bis: Date, betrag: Money) kind empirical {
+    label de official "Monatlicher Mindestunterhalt nach der Rechtsverordnung des § 1612a Abs. 4 (Mindestunterhaltsverordnung), mit ihrem Geltungszeitraum — Eingang des Falls, keine Zahl des BGB";
+    label en unofficial "monthly minimum maintenance under the statutory instrument of § 1612a (4), with its period of validity — input of the case, not a figure of the BGB";
+}
+pub relation lebt_nicht_im_haushalt_des_elternteils(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das minderjährige Kind lebt mit diesem Elternteil nicht in einem Haushalt (§ 1612a Abs. 1 Satz 1)";
+    label en unofficial "the minor child does not live in a household with this parent (§ 1612a (1) sentence 1)";
+}
+pub relation unterhaltsmonat(kind: Person, tag: Date) kind empirical {
+    key(kind);
+    label de official "Erster Tag des Monats, für den der Unterhalt berechnet wird (§ 1612a Abs. 3) — Eingang des Falls";
+    label en unofficial "first day of the month for which the maintenance is computed (§ 1612a (3)) — input of the case";
+}
+
+pub relation altersstufe_zwei_ab(kind: Person, tag: Date) kind institutional {
+    label de official "Beginn des Monats, in dem das Kind das sechste Lebensjahr vollendet: ab ihm gilt die zweite Altersstufe (§ 1612a Abs. 1 Satz 3 Nr. 2, Abs. 3)";
+    label en unofficial "start of the month in which the child completes its sixth year of life: from it the second age band applies (§ 1612a (1) sentence 3 no. 2, (3))";
+}
+pub relation altersstufe_drei_ab(kind: Person, tag: Date) kind institutional {
+    label de official "Beginn des Monats, in dem das Kind das zwölfte Lebensjahr vollendet: ab ihm gilt die dritte Altersstufe (§ 1612a Abs. 1 Satz 3 Nr. 3, Abs. 3)";
+    label en unofficial "start of the month in which the child completes its twelfth year of life: from it the third age band applies (§ 1612a (1) sentence 3 no. 3, (3))";
+}
+pub relation prozentsatz_des_mindestunterhalts(kind: Person, prozent: Integer) kind institutional {
+    key(kind);
+    label de official "Prozentsatz des Mindestunterhalts nach der Altersstufe des Kindes (§ 1612a Abs. 1 Satz 3)";
+    label en unofficial "percentage of the minimum maintenance according to the child's age band (§ 1612a (1) sentence 3)";
+}
+pub relation mindestunterhaltsanspruch(kind: Person, elternteil: Person, betrag: Money) kind institutional {
+    key(kind, elternteil);
+    label de official "Unterhalt als Prozentsatz des jeweiligen Mindestunterhalts, auf volle Euro aufgerundet (§ 1612a Abs. 1 Satz 1, Abs. 2 Satz 2)";
+    label en unofficial "maintenance as a percentage of the applicable minimum maintenance, rounded up to full euros (§ 1612a (1) sentence 1, (2) sentence 2)";
+}
+
+@source(BGB_P1612a) {
+    rule AltersstufeZweiAb(k: Person, t: Date) strict {
+        label de official "Der Unterhalt einer höheren Altersstufe ist ab dem Beginn des Monats maßgebend, in dem das Kind das betreffende Lebensjahr vollendet (§ 1612a Abs. 3): sechstes Lebensjahr";
+        label en unofficial "The maintenance of a higher age band applies from the beginning of the month in which the child completes the relevant year of life (§ 1612a (3)): sixth year";
+        when de.bgb.fristen::lebensjahr_vollendet_am(k, 6 calendar_year, t);
+        then altersstufe_zwei_ab(k, month_start_of(t));
+    }
+    rule AltersstufeDreiAb(k: Person, t: Date) strict {
+        label de official "Der Unterhalt einer höheren Altersstufe ist ab dem Beginn des Monats maßgebend, in dem das Kind das betreffende Lebensjahr vollendet (§ 1612a Abs. 3): zwölftes Lebensjahr";
+        label en unofficial "The maintenance of a higher age band applies from the beginning of the month in which the child completes the relevant year of life (§ 1612a (3)): twelfth year";
+        when de.bgb.fristen::lebensjahr_vollendet_am(k, 12 calendar_year, t);
+        then altersstufe_drei_ab(k, month_start_of(t));
+    }
+    rule ErsteAltersstufe(k: Person, m: Date, z: Date) strict {
+        label de official "Für die Zeit bis zur Vollendung des sechsten Lebensjahrs (erste Altersstufe) 87 Prozent (§ 1612a Abs. 1 Satz 3 Nr. 1)";
+        label en unofficial "For the time until completion of the sixth year of life (first age band) 87 per cent (§ 1612a (1) sentence 3 no. 1)";
+        when unterhaltsmonat(k, m) and altersstufe_zwei_ab(k, z) and m < z;
+        then prozentsatz_des_mindestunterhalts(k, 87);
+    }
+    rule ZweiteAltersstufe(k: Person, m: Date, z: Date, d: Date) strict {
+        label de official "Für die Zeit vom siebten bis zur Vollendung des zwölften Lebensjahrs (zweite Altersstufe) 100 Prozent (§ 1612a Abs. 1 Satz 3 Nr. 2)";
+        label en unofficial "For the time from the seventh until completion of the twelfth year of life (second age band) 100 per cent (§ 1612a (1) sentence 3 no. 2)";
+        when unterhaltsmonat(k, m) and altersstufe_zwei_ab(k, z) and altersstufe_drei_ab(k, d) and m >= z and m < d;
+        then prozentsatz_des_mindestunterhalts(k, 100);
+    }
+    rule DritteAltersstufe(k: Person, m: Date, d: Date) strict {
+        label de official "Für die Zeit vom 13. Lebensjahr an (dritte Altersstufe) 117 Prozent (§ 1612a Abs. 1 Satz 3 Nr. 3)";
+        label en unofficial "For the time from the 13th year of life on (third age band) 117 per cent (§ 1612a (1) sentence 3 no. 3)";
+        when unterhaltsmonat(k, m) and altersstufe_drei_ab(k, d) and m >= d;
+        then prozentsatz_des_mindestunterhalts(k, 117);
+    }
+    rule MindestunterhaltsanspruchBerechnen(k: Person, e: Person, m: Date, pz: Integer, v: Date, bis: Date, betrag: Money) strict {
+        label de official "Ein minderjähriges Kind kann von einem Elternteil, mit dem es nicht in einem Haushalt lebt, den Unterhalt als Prozentsatz des jeweiligen Mindestunterhalts verlangen (§ 1612a Abs. 1 Satz 1); der sich ergebende Betrag ist auf volle Euro aufzurunden (Abs. 2 Satz 2)";
+        label en unofficial "A minor child may claim from a parent with whom it does not live maintenance as a percentage of the applicable minimum maintenance (§ 1612a (1) sentence 1); the resulting amount is rounded up to full euros ((2) sentence 2)";
+        when minderjaehriges_kind(k) and lebt_nicht_im_haushalt_des_elternteils(k, e)
+         and unterhaltsmonat(k, m) and prozentsatz_des_mindestunterhalts(k, pz)
+         and mindestunterhalt(v, bis, betrag) and m >= v and m <= bis;
+        then mindestunterhaltsanspruch(k, e, div_round(betrag * pz, 100.0, 0, "CEILING"));
+    }
+}
+
+// --- § 1612b Deckung des Barbedarfs durch Kindergeld ---------------------------------------------
+//
+// Das Kindergeld MINDERT den Barbedarf: zur Hälfte, wenn ein Elternteil seine
+// Unterhaltspflicht durch Betreuung erfüllt (§ 1606 Abs. 3 Satz 2), sonst in
+// voller Höhe. Die Halbierung ist die einzige Teilung dieses Paragraphen und
+// wird EINMAL je Betrag kaufmännisch auf den Cent gerechnet (Ledger D-13-03);
+// der Text nennt dafür kein Verfahren, und ein zweites Runden nach der
+// Subtraktion gäbe einen anderen Betrag.
+
+pub relation kindergeld(kind: Person, betrag: Money) kind empirical {
+    key(kind);
+    label de official "Das auf das Kind entfallende Kindergeld (§ 1612b Abs. 1 Satz 1) — Eingang des Falls; die Höhe steht im Einkommensteuergesetz, nicht im BGB";
+    label en unofficial "the child benefit attributable to the child (§ 1612b (1) sentence 1) — input of the case; its amount is in the Income Tax Act, not in the BGB";
+}
+pub relation erhoehung_wegen_nicht_gemeinschaftlichen_kindes(kind: Person, betrag: Money) kind empirical {
+    label de official "Umfang der Erhöhung des Kindergeldes wegen der Berücksichtigung eines nicht gemeinschaftlichen Kindes; in diesem Umfang ist es nicht bedarfsmindernd zu berücksichtigen (§ 1612b Abs. 2)";
+    label en unofficial "amount by which the child benefit is increased because a non-joint child is taken into account; to that extent it does not reduce the need (§ 1612b (2))";
+}
+pub relation anzurechnendes_kindergeld(kind: Person, betrag: Money) kind institutional {
+    key(kind);
+    label de official "Das auf das Kind entfallende Kindergeld, soweit es den Barbedarf mindert (§ 1612b Abs. 1)";
+    label en unofficial "the child benefit attributable to the child insofar as it reduces the cash need (§ 1612b (1))";
+}
+pub relation barbedarf_nach_kindergeld(kind: Person, elternteil: Person, betrag: Money) kind institutional {
+    key(kind, elternteil);
+    label de official "Barbedarf des Kindes nach Abzug des anzurechnenden Kindergeldes (§ 1612b Abs. 1 Satz 2)";
+    label en unofficial "the child's cash need after deduction of the child benefit to be credited (§ 1612b (1) sentence 2)";
+}
+
+@source(BGB_P1612b) {
+    rule KindergeldZurHaelfte(k: Person, e: Person, kg: Money) strict {
+        label de official "Das auf das Kind entfallende Kindergeld ist zur Deckung seines Barbedarfs zur Hälfte zu verwenden, wenn ein Elternteil seine Unterhaltspflicht durch Betreuung des Kindes erfüllt (§ 1612b Abs. 1 Satz 1 Nr. 1)";
+        label en unofficial "The child benefit is to be used to cover the child's cash need by one half where a parent fulfils the maintenance duty by caring for the child (§ 1612b (1) sentence 1 no. 1)";
+        when kindergeld(k, kg) and betreuung_erfuellt_die_unterhaltspflicht(e, k);
+        then anzurechnendes_kindergeld(k, div_round(kg, 2.0, 2, "HALF_UP"));
+    }
+    rule KindergeldInVollerHoehe(k: Person, kg: Money) strict {
+        label de official "In allen anderen Fällen ist das Kindergeld in voller Höhe zur Deckung des Barbedarfs zu verwenden (§ 1612b Abs. 1 Satz 1 Nr. 2)";
+        label en unofficial "In all other cases the child benefit is to be used in full to cover the cash need (§ 1612b (1) sentence 1 no. 2)";
+        when kindergeld(k, kg) and not_known(betreuung_durch_einen_elternteil(k));
+        then anzurechnendes_kindergeld(k, kg);
+    }
+    rule BarbedarfNachKindergeld(k: Person, e: Person, bedarf: Money, anrechnung: Money) strict {
+        label de official "In diesem Umfang mindert das Kindergeld den Barbedarf des Kindes (§ 1612b Abs. 1 Satz 2)";
+        label en unofficial "To that extent the child benefit reduces the child's cash need (§ 1612b (1) sentence 2)";
+        when mindestunterhaltsanspruch(k, e, bedarf) and anzurechnendes_kindergeld(k, anrechnung);
+        then barbedarf_nach_kindergeld(k, e, bedarf - anrechnung);
+    }
+}
+
+pub relation betreuung_durch_einen_elternteil(kind: Person) kind institutional {
+    label de official "Ein Elternteil erfüllt seine Unterhaltspflicht durch die Betreuung des Kindes (§ 1606 Abs. 3 Satz 2): einstelliger Kopf für die Fallunterscheidung des § 1612b Abs. 1";
+    label en unofficial "a parent fulfils the maintenance duty by caring for the child (§ 1606 (3) sentence 2): one-place head for the distinction of § 1612b (1)";
+}
+
+@source(BGB_P1612b)
+rule BetreuungDurchEinenElternteil(e: Person, k: Person) strict {
+    label de official "Einstelliger Kopf der Betreuung: die Fallunterscheidung des § 1612b Abs. 1 Nr. 2 fragt nur, OB ein Elternteil durch Betreuung erfüllt";
+    label en unofficial "One-place head of care: the distinction of § 1612b (1) no. 2 asks only WHETHER a parent fulfils by caring";
+    when betreuung_erfuellt_die_unterhaltspflicht(e, k);
+    then betreuung_durch_einen_elternteil(k);
+}
+
+// § 1612c: dieselbe Rechnung für andere kindbezogene Leistungen.
+
+pub relation regelmaessige_kindbezogene_leistung(kind: Person, betrag: Money) kind empirical {
+    label de official "Regelmäßig wiederkehrende kindbezogene Leistung, die den Anspruch auf Kindergeld ausschließt (§ 1612c)";
+    label en unofficial "recurring child-related benefit which excludes the entitlement to child benefit (§ 1612c)";
+}
+
+@source(BGB_P1612c)
+rule KindbezogeneLeistungWieKindergeld(k: Person, betrag: Money) strict {
+    label de official "§ 1612b gilt entsprechend für regelmäßig wiederkehrende kindbezogene Leistungen, soweit sie den Anspruch auf Kindergeld ausschließen (§ 1612c)";
+    label en unofficial "§ 1612b applies mutatis mutandis to recurring child-related benefits insofar as they exclude the entitlement to child benefit (§ 1612c)";
+    when regelmaessige_kindbezogene_leistung(k, betrag);
+    then kindergeld(k, betrag);
+}
+
+// --- § 1613 Unterhalt für die Vergangenheit -------------------------------------------------------
+//
+// Abs. 1 Satz 2: der Unterhalt wird AB DEM ERSTEN DES MONATS geschuldet, in
+// den das Ereignis (Auskunftsaufforderung, Verzug, Rechtshängigkeit) fällt —
+// `month_start_of` des Ereignistages, wenn der Anspruch dem Grunde nach zu
+// diesem Zeitpunkt bestanden hat. Abs. 2 Nr. 1: der Sonderbedarf ist nach
+// Ablauf EINES JAHRES seit seiner Entstehung nur bei vorherigem Verzug oder
+// Rechtshängigkeit geltend zu machen — eine Kalenderfrist über de.bgb.fristen.
+
+pub relation aufforderung_zur_auskunft_am(pflichtiger: Person, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Tag, zu dem der Verpflichtete zum Zwecke der Geltendmachung des Unterhaltsanspruchs aufgefordert worden ist, über seine Einkünfte und sein Vermögen Auskunft zu erteilen (§ 1613 Abs. 1 Satz 1)";
+    label en unofficial "day on which the obligor was requested, for the purpose of asserting the maintenance claim, to give information on his income and assets (§ 1613 (1) sentence 1)";
+}
+pub relation verzug_eingetreten_am(pflichtiger: Person, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Tag, zu dem der Verpflichtete in Verzug gekommen ist (§ 1613 Abs. 1 Satz 1)";
+    label en unofficial "day on which the obligor came into default (§ 1613 (1) sentence 1)";
+}
+pub relation rechtshaengig_geworden_am(pflichtiger: Person, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Tag, zu dem der Unterhaltsanspruch rechtshängig geworden ist (§ 1613 Abs. 1 Satz 1)";
+    label en unofficial "day on which the maintenance claim became pending (§ 1613 (1) sentence 1)";
+}
+pub relation anspruch_dem_grunde_nach_bestand_am(pflichtiger: Person, berechtigter: Person, tag: Date) kind empirical {
+    label de official "Der Unterhaltsanspruch hat dem Grunde nach zu diesem Zeitpunkt bestanden (§ 1613 Abs. 1 Satz 2)";
+    label en unofficial "the maintenance claim existed in principle at that point in time (§ 1613 (1) sentence 2)";
+}
+pub relation sonderbedarf_entstanden_am(berechtigter: Person, tag: Date) kind empirical {
+    label de official "Tag der Entstehung eines unregelmäßigen außergewöhnlich hohen Bedarfs (Sonderbedarf, § 1613 Abs. 2 Nr. 1)";
+    label en unofficial "day on which an irregular, exceptionally high need arose (special need, § 1613 (2) no. 1)";
+}
+pub relation sonderbedarfsfrist(berechtigter: Person, f: de.bgb.fristen::Frist) kind empirical {
+    key(berechtigter);
+    label de official "Träger der Jahresfrist des § 1613 Abs. 2 Nr. 1 Halbsatz 2";
+    label en unofficial "carrier of the one-year period of § 1613 (2) no. 1 second half-sentence";
+}
+pub relation verzug_oder_rechtshaengigkeit_vor_fristablauf(berechtigter: Person) kind empirical {
+    label de official "Vor Ablauf des Jahres ist der Verpflichtete in Verzug gekommen oder der Anspruch rechtshängig geworden (§ 1613 Abs. 2 Nr. 1 Halbsatz 2)";
+    label en unofficial "before the year elapsed the obligor came into default or the claim became pending (§ 1613 (2) no. 1 second half-sentence)";
+}
+
+pub relation unterhalt_geschuldet_ab(pflichtiger: Person, berechtigter: Person, tag: Date) kind institutional {
+    label de official "Der Unterhalt wird ab dem Ersten des Monats geschuldet, in den das bezeichnete Ereignis fällt (§ 1613 Abs. 1 Satz 2)";
+    label en unofficial "maintenance is owed from the first day of the month into which the designated event falls (§ 1613 (1) sentence 2)";
+}
+pub relation letzter_tag_der_sonderbedarfsfrist(berechtigter: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Jahresfrist des § 1613 Abs. 2 Nr. 1";
+    label en unofficial "last day of the one-year period of § 1613 (2) no. 1";
+}
+pub relation sonderbedarf_nicht_mehr_geltend_zu_machen(berechtigter: Person) kind institutional {
+    label de official "Nach Ablauf eines Jahres seit seiner Entstehung kann der Sonderbedarf nur geltend gemacht werden, wenn vorher der Verpflichtete in Verzug gekommen oder der Anspruch rechtshängig geworden ist (§ 1613 Abs. 2 Nr. 1)";
+    label en unofficial "After one year from its arising the special need may be asserted only if the obligor was previously in default or the claim became pending (§ 1613 (2) no. 1)";
+}
+
+@source(BGB_P1613) {
+    rule VergangenheitAbAuskunftsaufforderung(p: Person, b: Person, t: Date) strict {
+        label de official "Für die Vergangenheit kann der Berechtigte Erfüllung von dem Zeitpunkt an fordern, zu welchem der Verpflichtete zur Auskunft aufgefordert worden ist; der Unterhalt wird ab dem Ersten des Monats geschuldet, in den dieses Ereignis fällt (§ 1613 Abs. 1)";
+        label en unofficial "For the past the beneficiary may demand performance from the time the obligor was requested to give information; maintenance is owed from the first of the month into which that event falls (§ 1613 (1))";
+        when aufforderung_zur_auskunft_am(p, b, t) and anspruch_dem_grunde_nach_bestand_am(p, b, t);
+        then unterhalt_geschuldet_ab(p, b, month_start_of(t));
+    }
+    rule VergangenheitAbVerzug(p: Person, b: Person, t: Date) strict {
+        label de official "Dasselbe gilt von dem Zeitpunkt an, zu welchem der Verpflichtete in Verzug gekommen ist (§ 1613 Abs. 1)";
+        label en unofficial "The same applies from the time the obligor came into default (§ 1613 (1))";
+        when verzug_eingetreten_am(p, b, t) and anspruch_dem_grunde_nach_bestand_am(p, b, t);
+        then unterhalt_geschuldet_ab(p, b, month_start_of(t));
+    }
+    rule VergangenheitAbRechtshaengigkeit(p: Person, b: Person, t: Date) strict {
+        label de official "Dasselbe gilt von dem Zeitpunkt an, zu welchem der Unterhaltsanspruch rechtshängig geworden ist (§ 1613 Abs. 1)";
+        label en unofficial "The same applies from the time the maintenance claim became pending (§ 1613 (1))";
+        when rechtshaengig_geworden_am(p, b, t) and anspruch_dem_grunde_nach_bestand_am(p, b, t);
+        then unterhalt_geschuldet_ab(p, b, month_start_of(t));
+    }
+    rule SonderbedarfsfristEreignis(b: Person, f: de.bgb.fristen::Frist, t: Date) strict {
+        label de official "Die Jahresfrist läuft von der Entstehung des Sonderbedarfs an (§ 1613 Abs. 2 Nr. 1)";
+        label en unofficial "The one-year period runs from the arising of the special need (§ 1613 (2) no. 1)";
+        when sonderbedarfsfrist(b, f) and sonderbedarf_entstanden_am(b, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule SonderbedarfsfristDauer(b: Person, f: de.bgb.fristen::Frist) strict {
+        label de official "Die Frist beträgt ein Jahr seit der Entstehung des Sonderbedarfs (§ 1613 Abs. 2 Nr. 1)";
+        label en unofficial "The period is one year from the arising of the special need (§ 1613 (2) no. 1)";
+        when sonderbedarfsfrist(b, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_year);
+    }
+    rule SonderbedarfsfristEnde(b: Person, f: de.bgb.fristen::Frist, e: Date) strict {
+        label de official "Letzter Tag der Jahresfrist des Sonderbedarfs: innerhalb der Frist ist der Anspruch geltend zu machen, daher gilt § 193 (Ledger D-03-01)";
+        label en unofficial "Last day of the one-year period of the special need: the claim must be asserted within it, so § 193 applies (ledger D-03-01)";
+        when sonderbedarfsfrist(b, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_sonderbedarfsfrist(b, e);
+    }
+    rule SonderbedarfVerfristet(b: Person, e: Date, t: Date) strict {
+        label de official "Nach Ablauf eines Jahres seit seiner Entstehung kann der Sonderbedarf nur bei vorherigem Verzug oder Rechtshängigkeit geltend gemacht werden (§ 1613 Abs. 2 Nr. 1 Halbsatz 2)";
+        label en unofficial "After one year the special need may be asserted only upon prior default or pendency (§ 1613 (2) no. 1 second half-sentence)";
+        when letzter_tag_der_sonderbedarfsfrist(b, e) and bewertungstag(b, t) and t > e
+         and not_known(verzug_oder_rechtshaengigkeit_vor_fristablauf(b));
+        then sonderbedarf_nicht_mehr_geltend_zu_machen(b);
+    }
+}
+
+// --- § 1614 Verzicht, § 1615 Erlöschen ------------------------------------------------------------
+
+pub relation verzicht_fuer_die_zukunft_erklaert(pflichtiger: Person, berechtigter: Person) kind empirical {
+    label de official "Für die Zukunft ist auf den Unterhalt verzichtet worden (§ 1614 Abs. 1)";
+    label en unofficial "maintenance has been waived for the future (§ 1614 (1))";
+}
+pub relation verzicht_unwirksam(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Für die Zukunft kann auf den Unterhalt nicht verzichtet werden (§ 1614 Abs. 1)";
+    label en unofficial "Maintenance cannot be waived for the future (§ 1614 (1))";
+}
+pub relation berechtigter_verstorben(berechtigter: Person) kind empirical {
+    label de official "Der Berechtigte ist gestorben (§ 1615 Abs. 1)";
+    label en unofficial "the beneficiary has died (§ 1615 (1))";
+}
+pub relation pflichtiger_verstorben(pflichtiger: Person) kind empirical {
+    label de official "Der Verpflichtete ist gestorben (§ 1615 Abs. 1)";
+    label en unofficial "the obligor has died (§ 1615 (1))";
+}
+pub relation unterhaltsanspruch_erloschen(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Der Unterhaltsanspruch erlischt mit dem Tode des Berechtigten oder des Verpflichteten (§ 1615 Abs. 1)";
+    label en unofficial "the maintenance claim expires on the death of the beneficiary or of the obligor (§ 1615 (1))";
+}
+
+@source(BGB_P1614)
+rule VerzichtFuerDieZukunftUnwirksam(p: Person, b: Person) strict {
+    label de official "Für die Zukunft kann auf den Unterhalt nicht verzichtet werden (§ 1614 Abs. 1)";
+    label en unofficial "Maintenance cannot be waived for the future (§ 1614 (1))";
+    when verzicht_fuer_die_zukunft_erklaert(p, b);
+    then verzicht_unwirksam(p, b);
+}
+
+@source(BGB_P1615) {
+    rule ErloeschenBeiTodDesBerechtigten(f: Familie, p: Person, b: Person) strict {
+        label de official "Der Unterhaltsanspruch erlischt mit dem Tode des Berechtigten (§ 1615 Abs. 1)";
+        label en unofficial "The maintenance claim expires on the death of the beneficiary (§ 1615 (1))";
+        when unterhaltspflicht_dem_grunde_nach(f, p, b) and berechtigter_verstorben(b);
+        then unterhaltsanspruch_erloschen(p, b);
+    }
+    rule ErloeschenBeiTodDesVerpflichteten(f: Familie, p: Person, b: Person) strict {
+        label de official "Der Unterhaltsanspruch erlischt mit dem Tode des Verpflichteten (§ 1615 Abs. 1)";
+        label en unofficial "The maintenance claim expires on the death of the obligor (§ 1615 (1))";
+        when unterhaltspflicht_dem_grunde_nach(f, p, b) and pflichtiger_verstorben(p);
+        then unterhaltsanspruch_erloschen(p, b);
+    }
+}
+
+// --- §§ 1615l–1615n Unterhalt aus Anlass der Geburt ----------------------------------------------
+//
+// Abs. 1 Satz 1 nennt DREI Zahlen, die das Paket rechnet: sechs Wochen VOR und
+// acht Wochen NACH der Geburt. Abs. 2 Satz 3 nennt zwei weitere: frühestens
+// vier Monate vor der Geburt, mindestens drei Jahre nach der Geburt. Die
+// Verlängerung nach Satz 4 („solange und soweit dies der Billigkeit
+// entspricht“) ist eine Wertung und steht im Urteilskanal.
+
+pub relation geburt_des_kindes_am(kind: Person, tag: Date) kind empirical {
+    key(kind);
+    label de official "Tag der Geburt des Kindes (§ 1615l Abs. 1 Satz 1)";
+    label en unofficial "day of the child's birth (§ 1615l (1) sentence 1)";
+}
+pub relation vater_des_kindes_1615l(kind: Person, vater: Person) kind empirical {
+    label de official "Vater im Sinne des § 1615l Abs. 1 Satz 1";
+    label en unofficial "father within the meaning of § 1615l (1) sentence 1";
+}
+pub relation mutter_des_kindes_1615l(kind: Person, mutter: Person) kind empirical {
+    label de official "Mutter im Sinne des § 1615l Abs. 1 Satz 1";
+    label en unofficial "mother within the meaning of § 1615l (1) sentence 1";
+}
+pub relation erwerbstaetigkeit_wegen_schwangerschaft_unmoeglich(mutter: Person) kind empirical {
+    label de official "Die Mutter geht einer Erwerbstätigkeit nicht nach, weil sie infolge der Schwangerschaft oder einer durch sie verursachten Krankheit dazu außerstande ist (§ 1615l Abs. 2 Satz 1)";
+    label en unofficial "the mother does not pursue gainful employment because she is unable to do so as a result of the pregnancy or an illness caused by it (§ 1615l (2) sentence 1)";
+}
+pub relation erwerbstaetigkeit_wegen_betreuung_nicht_zu_erwarten(mutter: Person) kind empirical {
+    label de official "Von der Mutter kann wegen der Pflege oder Erziehung des Kindes eine Erwerbstätigkeit nicht erwartet werden (§ 1615l Abs. 2 Satz 2)";
+    label en unofficial "gainful employment cannot be expected of the mother because of the care or upbringing of the child (§ 1615l (2) sentence 2)";
+}
+
+@source(BGB_P1615l)
+pub external judgment relation verlaengerung_entspricht_der_billigkeit(mutter: Person, bis: Date) {
+    authority Court;
+    label de official "§ 1615l Abs. 2 Satz 4, 5. Die Unterhaltspflicht verlängert sich, solange und soweit dies der Billigkeit entspricht; dabei sind insbesondere die Belange des Kindes und die bestehenden Möglichkeiten der Kinderbetreuung zu berücksichtigen";
+    label en unofficial "§ 1615l (2) sentences 4, 5. The maintenance duty is extended as long as and to the extent this corresponds to equity; the child's interests and the existing possibilities of childcare are to be taken into account in particular";
+}
+
+pub relation unterhaltszeitraum_tag(kind: Person, tag: Date) kind empirical {
+    key(kind);
+    label de official "Tag, für den geprüft wird, ob er in den Unterhaltszeitraum des § 1615l fällt (Eingang des Falls)";
+    label en unofficial "day for which it is assessed whether it falls within the maintenance period of § 1615l (input of the case)";
+}
+pub relation letzter_tag_des_zeitraums_1615l(kind: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag des Zeitraums: acht Wochen nach der Geburt (§ 1615l Abs. 1 Satz 1)";
+    label en unofficial "last day of the period: eight weeks after the birth (§ 1615l (1) sentence 1)";
+}
+pub relation sechs_wochen_nach_dem_tag(kind: Person, tag: Date) kind institutional {
+    label de official "Sechs Wochen NACH dem geprüften Tag: liegt die Geburt nicht danach, so lag der Tag nicht mehr als sechs Wochen vor der Geburt (§ 1615l Abs. 1 Satz 1, vorwärts gerechnet)";
+    label en unofficial "six weeks AFTER the assessed day: if the birth is not later, the day was not more than six weeks before the birth (§ 1615l (1) sentence 1, computed forwards)";
+}
+pub relation vier_monate_nach_dem_tag(kind: Person, tag: Date) kind institutional {
+    label de official "Vier Monate NACH dem geprüften Tag: liegt die Geburt nicht danach, so lag der Tag nicht mehr als vier Monate vor der Geburt (§ 1615l Abs. 2 Satz 3, vorwärts gerechnet)";
+    label en unofficial "four months AFTER the assessed day: if the birth is not later, the day was not more than four months before the birth (§ 1615l (2) sentence 3, computed forwards)";
+}
+pub relation unterhalt_aus_anlass_der_geburt(mutter: Person, vater: Person, von: Date, bis: Date) kind institutional {
+    label de official "Der Vater hat der Mutter für die Dauer von sechs Wochen vor und acht Wochen nach der Geburt des Kindes Unterhalt zu gewähren (§ 1615l Abs. 1 Satz 1)";
+    label en unofficial "The father must maintain the mother for six weeks before and eight weeks after the birth of the child (§ 1615l (1) sentence 1)";
+}
+pub relation betreuungsunterhalt_mindestens_bis(mutter: Person, vater: Person, tag: Date) kind institutional {
+    label de official "Die Unterhaltspflicht beginnt frühestens vier Monate vor der Geburt und besteht für mindestens drei Jahre nach der Geburt (§ 1615l Abs. 2 Satz 3)";
+    label en unofficial "the maintenance duty begins at the earliest four months before the birth and lasts for at least three years after the birth (§ 1615l (2) sentence 3)";
+}
+pub relation betreuungsunterhalt_fruehestens_ab(mutter: Person, vater: Person, tag: Date) kind institutional {
+    label de official "Frühester Beginn der Unterhaltspflicht: vier Monate vor der Geburt (§ 1615l Abs. 2 Satz 3)";
+    label en unofficial "earliest beginning of the maintenance duty: four months before the birth (§ 1615l (2) sentence 3)";
+}
+
+@source(BGB_P1615l) {
+    rule LetzterTagDesZeitraums1615l(k: Person, g: Date) strict {
+        label de official "Acht Wochen nach der Geburt des Kindes (§ 1615l Abs. 1 Satz 1)";
+        label en unofficial "Eight weeks after the birth of the child (§ 1615l (1) sentence 1)";
+        when geburt_des_kindes_am(k, g);
+        then letzter_tag_des_zeitraums_1615l(k, add_calendar_period(g, 8 calendar_week));
+    }
+    rule SechsWochenNachDemTag(k: Person, tag: Date) strict {
+        label de official "Sechs Wochen vor der Geburt, vorwärts gerechnet: der geprüfte Tag plus sechs Wochen (§ 1615l Abs. 1 Satz 1)";
+        label en unofficial "Six weeks before the birth, computed forwards: the assessed day plus six weeks (§ 1615l (1) sentence 1)";
+        when unterhaltszeitraum_tag(k, tag);
+        then sechs_wochen_nach_dem_tag(k, add_calendar_period(tag, 6 calendar_week));
+    }
+    rule TagImZeitraum1615l(k: Person, m: Person, v: Person, tag: Date, g: Date, sechs: Date, letzter: Date) strict {
+        label de official "Der Vater hat der Mutter für die Dauer von sechs Wochen vor und acht Wochen nach der Geburt des Kindes Unterhalt zu gewähren (§ 1615l Abs. 1 Satz 1): der geprüfte Tag liegt im Zeitraum, wenn die Geburt nicht später als sechs Wochen nach ihm und der Tag nicht nach dem achten Wochen­tag nach der Geburt liegt";
+        label en unofficial "The father must maintain the mother for six weeks before and eight weeks after the birth (§ 1615l (1) sentence 1): the assessed day lies in the period if the birth is not later than six weeks after it and the day is not after the eighth week following the birth";
+        when unterhaltszeitraum_tag(k, tag) and geburt_des_kindes_am(k, g) and mutter_des_kindes_1615l(k, m) and vater_des_kindes_1615l(k, v)
+         and sechs_wochen_nach_dem_tag(k, sechs) and letzter_tag_des_zeitraums_1615l(k, letzter)
+         and g <= sechs and tag <= letzter;
+        then unterhalt_aus_anlass_der_geburt(m, v, tag, letzter);
+    }
+    rule BetreuungsunterhaltDreiJahre(k: Person, m: Person, v: Person, g: Date) strict {
+        label de official "Die Unterhaltspflicht besteht für mindestens drei Jahre nach der Geburt (§ 1615l Abs. 2 Satz 3)";
+        label en unofficial "The maintenance duty lasts for at least three years after the birth (§ 1615l (2) sentence 3)";
+        when geburt_des_kindes_am(k, g) and mutter_des_kindes_1615l(k, m) and vater_des_kindes_1615l(k, v)
+         and erwerbstaetigkeit_wegen_betreuung_nicht_zu_erwarten(m);
+        then betreuungsunterhalt_mindestens_bis(m, v, add_calendar_period(g, 3 calendar_year));
+    }
+    rule VierMonateNachDemTag(k: Person, tag: Date) strict {
+        label de official "Vier Monate vor der Geburt, vorwärts gerechnet: der geprüfte Tag plus vier Monate (§ 1615l Abs. 2 Satz 3)";
+        label en unofficial "Four months before the birth, computed forwards: the assessed day plus four months (§ 1615l (2) sentence 3)";
+        when unterhaltszeitraum_tag(k, tag);
+        then vier_monate_nach_dem_tag(k, add_calendar_period(tag, 4 calendar_month));
+    }
+    rule BetreuungsunterhaltNichtVorVierMonaten(k: Person, m: Person, v: Person, tag: Date, g: Date, vier: Date) strict {
+        label de official "Die Unterhaltspflicht beginnt frühestens vier Monate vor der Geburt (§ 1615l Abs. 2 Satz 3): der geprüfte Tag liegt nicht zu früh, wenn die Geburt nicht später als vier Monate nach ihm liegt";
+        label en unofficial "The maintenance duty begins at the earliest four months before the birth (§ 1615l (2) sentence 3): the assessed day is not too early if the birth is not later than four months after it";
+        when unterhaltszeitraum_tag(k, tag) and geburt_des_kindes_am(k, g) and mutter_des_kindes_1615l(k, m) and vater_des_kindes_1615l(k, v)
+         and erwerbstaetigkeit_wegen_schwangerschaft_unmoeglich(m)
+         and vier_monate_nach_dem_tag(k, vier) and g <= vier;
+        then betreuungsunterhalt_fruehestens_ab(m, v, tag);
+    }
+}
+
+// § 1615n: die Ansprüche bestehen auch, wenn der Vater vor der Geburt
+// gestorben oder das Kind tot geboren ist — die Norm nimmt der Regel des
+// § 1615 Abs. 1 (Erlöschen mit dem Tode) ihren Anwendungsfall und wird
+// deshalb als eigener positiver Kopf geschrieben.
+
+pub relation vater_vor_der_geburt_verstorben(kind: Person) kind empirical {
+    label de official "Der Vater ist vor der Geburt des Kindes gestorben (§ 1615n Satz 1)";
+    label en unofficial "the father died before the birth of the child (§ 1615n sentence 1)";
+}
+pub relation kind_tot_geboren(kind: Person) kind empirical {
+    label de official "Das Kind ist tot geboren (§ 1615n Satz 1)";
+    label en unofficial "the child was stillborn (§ 1615n sentence 1)";
+}
+pub relation anspruch_1615l_besteht_fort(mutter: Person, vater: Person) kind institutional {
+    label de official "Die Ansprüche nach den §§ 1615l, 1615m bestehen auch dann, wenn der Vater vor der Geburt des Kindes gestorben oder wenn das Kind tot geboren ist (§ 1615n Satz 1)";
+    label en unofficial "The claims under §§ 1615l, 1615m exist even if the father died before the birth or the child was stillborn (§ 1615n sentence 1)";
+}
+
+@source(BGB_P1615n) {
+    rule AnspruchTrotzTodDesVaters(k: Person, m: Person, v: Person) strict {
+        label de official "Die Ansprüche nach den §§ 1615l, 1615m bestehen auch dann, wenn der Vater vor der Geburt des Kindes gestorben ist (§ 1615n Satz 1)";
+        label en unofficial "The claims under §§ 1615l, 1615m exist even if the father died before the birth of the child (§ 1615n sentence 1)";
+        when mutter_des_kindes_1615l(k, m) and vater_des_kindes_1615l(k, v) and vater_vor_der_geburt_verstorben(k);
+        then anspruch_1615l_besteht_fort(m, v);
+    }
+    rule AnspruchTrotzTotgeburt(k: Person, m: Person, v: Person) strict {
+        label de official "Die Ansprüche nach den §§ 1615l, 1615m bestehen auch dann, wenn das Kind tot geboren ist (§ 1615n Satz 1)";
+        label en unofficial "The claims under §§ 1615l, 1615m exist even if the child was stillborn (§ 1615n sentence 1)";
+        when mutter_des_kindes_1615l(k, m) and vater_des_kindes_1615l(k, v) and kind_tot_geboren(k);
+        then anspruch_1615l_besteht_fort(m, v);
+    }
+}
+
+// --- § 1605 Auskunftspflicht, § 1607 Ersatzhaftung, § 1608 Ehegatte, § 1611, § 1615m --------------
+
+pub relation auskunft_verlangt(pflichtiger: Person, berechtigter: Person) kind empirical {
+    label de official "Der Verwandte verlangt Auskunft über Einkünfte und Vermögen (§ 1605 Abs. 1 Satz 1)";
+    label en unofficial "the relative demands information on income and assets (§ 1605 (1) sentence 1)";
+}
+pub relation auskunft_zur_feststellung_erforderlich(pflichtiger: Person, berechtigter: Person) kind empirical {
+    label de official "Die Auskunft ist zur Feststellung eines Unterhaltsanspruchs oder einer Unterhaltsverpflichtung erforderlich (§ 1605 Abs. 1 Satz 1)";
+    label en unofficial "the information is necessary to establish a maintenance claim or duty (§ 1605 (1) sentence 1)";
+}
+pub relation auskunftspflicht(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Verwandte in gerader Linie sind einander verpflichtet, auf Verlangen über ihre Einkünfte und ihr Vermögen Auskunft zu erteilen (§ 1605 Abs. 1 Satz 1)";
+    label en unofficial "Relatives in the direct line are obliged to give each other information on income and assets upon demand (§ 1605 (1) sentence 1)";
+}
+pub relation ehegatte_des_beduerftigen(berechtigter: Person, ehegatte: Person) kind empirical {
+    label de official "Ehegatte des Bedürftigen (§ 1608 Abs. 1 Satz 1)";
+    label en unofficial "spouse of the needy person (§ 1608 (1) sentence 1)";
+}
+pub relation ehegatte_haftet_vor_den_verwandten(berechtigter: Person, ehegatte: Person) kind institutional {
+    label de official "Der Ehegatte des Bedürftigen haftet vor dessen Verwandten (§ 1608 Abs. 1 Satz 1); ist er außerstande, ohne Gefährdung seines angemessenen Unterhalts zu leisten, haften die Verwandten vor dem Ehegatten (Satz 2)";
+    label en unofficial "The spouse of the needy person is liable before that person's relatives (§ 1608 (1) sentence 1); if unable to perform without endangering his own reasonable maintenance, the relatives are liable before the spouse (sentence 2)";
+}
+pub relation verwandte_haften_vor_dem_ehegatten(berechtigter: Person, ehegatte: Person) kind institutional {
+    label de official "Soweit der Ehegatte außerstande ist, ohne Gefährdung seines angemessenen Unterhalts den Unterhalt zu gewähren, haften die Verwandten vor dem Ehegatten (§ 1608 Abs. 1 Satz 2)";
+    label en unofficial "Insofar as the spouse is unable to grant maintenance without endangering his own reasonable maintenance, the relatives are liable before the spouse (§ 1608 (1) sentence 2)";
+}
+pub relation ersatzhaftung(f: Familie, nachrangiger: Person, berechtigter: Person) kind institutional {
+    label de official "Soweit ein Verwandter auf Grund des § 1603 nicht unterhaltspflichtig ist, hat der nach ihm haftende Verwandte den Unterhalt zu gewähren (§ 1607 Abs. 1)";
+    label en unofficial "Insofar as a relative is not liable under § 1603, the relative liable after him must grant the maintenance (§ 1607 (1))";
+}
+
+@source(BGB_P1605)
+rule AuskunftspflichtInGeraderLinie(f: Familie, p: Person, b: Person) strict {
+    label de official "Verwandte in gerader Linie sind einander verpflichtet, auf Verlangen über ihre Einkünfte und ihr Vermögen Auskunft zu erteilen, soweit dies zur Feststellung eines Unterhaltsanspruchs oder einer Unterhaltsverpflichtung erforderlich ist (§ 1605 Abs. 1 Satz 1)";
+    label en unofficial "Relatives in the direct line must give each other information on income and assets upon demand, insofar as this is necessary to establish a maintenance claim or duty (§ 1605 (1) sentence 1)";
+    when verwandt_in_gerader_linie(f, p, b) and auskunft_verlangt(p, b) and auskunft_zur_feststellung_erforderlich(p, b);
+    then auskunftspflicht(p, b);
+}
+
+@source(BGB_P1607)
+rule ErsatzhaftungDesNachrangigen(f: Familie, vorrangiger: Person, nachrangiger: Person, b: Person) strict {
+    label de official "Soweit ein Verwandter auf Grund des § 1603 nicht unterhaltspflichtig ist, hat der nach ihm haftende Verwandte den Unterhalt zu gewähren (§ 1607 Abs. 1)";
+    label en unofficial "Insofar as a relative is not liable under § 1603, the relative liable after him must grant the maintenance (§ 1607 (1))";
+    when haftet_vor(f, vorrangiger, nachrangiger, b) and nicht_leistungsfaehig(vorrangiger, b)
+     and unterhaltspflicht_dem_grunde_nach(f, nachrangiger, b) and not_known(nicht_leistungsfaehig(nachrangiger, b));
+    then ersatzhaftung(f, nachrangiger, b);
+}
+
+@source(BGB_P1608) {
+    rule EhegatteHaftetVorDenVerwandten(b: Person, s: Person) strict {
+        label de official "Der Ehegatte des Bedürftigen haftet vor dessen Verwandten (§ 1608 Abs. 1 Satz 1)";
+        label en unofficial "The spouse of the needy person is liable before that person's relatives (§ 1608 (1) sentence 1)";
+        when ehegatte_des_beduerftigen(b, s) and beduerftig(b) and not_known(nicht_leistungsfaehig(s, b));
+        then ehegatte_haftet_vor_den_verwandten(b, s);
+    }
+    rule VerwandteHaftenVorDemEhegatten(b: Person, s: Person) strict {
+        label de official "Soweit jedoch der Ehegatte bei Berücksichtigung seiner sonstigen Verpflichtungen außerstande ist, ohne Gefährdung seines angemessenen Unterhalts den Unterhalt zu gewähren, haften die Verwandten vor dem Ehegatten (§ 1608 Abs. 1 Satz 2)";
+        label en unofficial "Insofar as the spouse is unable, taking his other obligations into account, to grant maintenance without endangering his own reasonable maintenance, the relatives are liable before the spouse (§ 1608 (1) sentence 2)";
+        when ehegatte_des_beduerftigen(b, s) and beduerftig(b) and nicht_leistungsfaehig(s, b);
+        then verwandte_haften_vor_dem_ehegatten(b, s);
+    }
+}
+
+@source(BGB_P1611)
+pub external judgment relation beitrag_der_billigkeit_entspricht(berechtigter: Person, pflichtiger: Person, betrag: Money) {
+    authority Court;
+    label de official "§ 1611 Abs. 1 Satz 1. Ist der Unterhaltsberechtigte durch sein sittliches Verschulden bedürftig geworden, hat er seine eigene Unterhaltspflicht gröblich vernachlässigt oder sich vorsätzlich einer schweren Verfehlung schuldig gemacht, so braucht der Verpflichtete nur einen Beitrag in der Höhe zu leisten, die der Billigkeit entspricht";
+    label en unofficial "§ 1611 (1) sentence 1. Where the beneficiary became needy through his own moral fault, grossly neglected his own maintenance duty or intentionally committed a serious offence, the obligor need only contribute the amount corresponding to equity";
+}
+@source(BGB_P1611)
+pub external judgment relation inanspruchnahme_grob_unbillig(berechtigter: Person, pflichtiger: Person) {
+    authority Court;
+    label de official "§ 1611 Abs. 1 Satz 2. Die Inanspruchnahme des Verpflichteten wäre grob unbillig; die Verpflichtung fällt ganz weg";
+    label en unofficial "§ 1611 (1) sentence 2. Recourse against the obligor would be grossly inequitable; the duty ceases entirely";
+}
+
+pub relation unterhaltspflicht_entfaellt(pflichtiger: Person, berechtigter: Person) kind institutional {
+    label de official "Die Verpflichtung fällt ganz weg, wenn die Inanspruchnahme des Verpflichteten grob unbillig wäre (§ 1611 Abs. 1 Satz 2); auf die Unterhaltspflicht von Eltern gegenüber ihren minderjährigen Kindern ist Absatz 1 nicht anzuwenden (Abs. 2)";
+    label en unofficial "The duty ceases entirely where recourse against the obligor would be grossly inequitable (§ 1611 (1) sentence 2); subsection (1) does not apply to parents' duty towards their minor children ((2))";
+}
+
+@source(BGB_P1611)
+rule UnterhaltspflichtEntfaellt(f: Familie, p: Person, b: Person) strict {
+    label de official "Die Verpflichtung fällt ganz weg, wenn die Inanspruchnahme des Verpflichteten grob unbillig wäre (§ 1611 Abs. 1 Satz 2); die Vorschriften des Absatzes 1 sind auf die Unterhaltspflicht von Eltern gegenüber ihren minderjährigen Kindern nicht anzuwenden (Abs. 2)";
+    label en unofficial "The duty ceases entirely where recourse would be grossly inequitable (§ 1611 (1) sentence 2); subsection (1) does not apply to parents' duty towards their minor children ((2))";
+    when unterhaltspflicht_dem_grunde_nach(f, p, b) and inanspruchnahme_grob_unbillig(b, p)
+     and not_known(eltern_gegenueber_minderjaehrigem_kind(f, p, b));
+    then unterhaltspflicht_entfaellt(p, b);
+}
+
+pub relation eltern_gegenueber_minderjaehrigem_kind(f: Familie, elternteil: Person, kind: Person) kind institutional {
+    label de official "Unterhaltspflicht von Eltern gegenüber ihrem minderjährigen Kind: auf sie ist § 1611 Abs. 1 nicht anzuwenden (§ 1611 Abs. 2)";
+    label en unofficial "parents' maintenance duty towards their minor child: § 1611 (1) does not apply to it (§ 1611 (2))";
+}
+
+@source(BGB_P1611)
+rule ElternGegenueberMinderjaehrigemKind(f: Familie, p: Person, k: Person) strict {
+    label de official "Die Vorschriften des Absatzes 1 sind auf die Unterhaltspflicht von Eltern gegenüber ihren minderjährigen Kindern nicht anzuwenden (§ 1611 Abs. 2)";
+    label en unofficial "Subsection (1) does not apply to parents' maintenance duty towards their minor children (§ 1611 (2))";
+    when elternteil(f, p, k) and minderjaehriges_kind(k);
+    then eltern_gegenueber_minderjaehrigem_kind(f, p, k);
+}
+
+pub relation mutter_infolge_der_entbindung_verstorben(kind: Person, mutter: Person) kind empirical {
+    label de official "Die Mutter ist infolge der Schwangerschaft oder der Entbindung gestorben (§ 1615m)";
+    label en unofficial "the mother died as a result of the pregnancy or the delivery (§ 1615m)";
+}
+pub relation beerdigungskosten_vom_erben_nicht_zu_erlangen(kind: Person) kind empirical {
+    label de official "Die Bezahlung der Beerdigungskosten ist von dem Erben der Mutter nicht zu erlangen (§ 1615m)";
+    label en unofficial "payment of the funeral costs cannot be obtained from the mother's heir (§ 1615m)";
+}
+pub relation beerdigungskosten_zu_tragen(vater: Person, mutter: Person) kind institutional {
+    label de official "Stirbt die Mutter infolge der Schwangerschaft oder der Entbindung, so hat der Vater die Kosten der Beerdigung zu tragen, soweit ihre Bezahlung nicht von dem Erben der Mutter zu erlangen ist (§ 1615m)";
+    label en unofficial "If the mother dies as a result of the pregnancy or the delivery, the father must bear the funeral costs insofar as payment cannot be obtained from her heir (§ 1615m)";
+}
+
+@source(BGB_P1615m)
+rule BeerdigungskostenDerMutter(k: Person, m: Person, v: Person) strict {
+    label de official "Stirbt die Mutter infolge der Schwangerschaft oder der Entbindung, so hat der Vater die Kosten der Beerdigung zu tragen, soweit ihre Bezahlung nicht von dem Erben der Mutter zu erlangen ist (§ 1615m)";
+    label en unofficial "If the mother dies as a result of the pregnancy or the delivery, the father must bear the funeral costs insofar as payment cannot be obtained from her heir (§ 1615m)";
+    when mutter_infolge_der_entbindung_verstorben(k, m) and vater_des_kindes_1615l(k, v) and beerdigungskosten_vom_erben_nicht_zu_erlangen(k);
+    then beerdigungskosten_zu_tragen(v, m);
+}
+
+// --- § 1604 Einfluss des Güterstands ---------------------------------------------------------------
+//
+// Der Güterstand selbst gehört NICHT diesem Paket: er wird qualifiziert aus
+// `de.bgb.ehe` gelesen (`de.bgb.ehe::gueterstand(Ehe, Guetergemeinschaft)`),
+// die Ehe des Pflichtigen ist Eingang des Falls. § 1604 ordnet zwei FIKTIONEN
+// an: Satz 1 rechnet die Leistungsfähigkeit so, als ob das Gesamtgut dem
+// Pflichtigen allein gehörte; Satz 2 behandelt bei beiderseitigen bedürftigen
+// Verwandten den Unterhalt aus dem Gesamtgut so, als ob die Bedürftigen zu
+// BEIDEN Ehegatten in dem vermittelnden Verwandtschaftsverhältnis stünden.
+
+pub relation ehe_des_pflichtigen(pflichtiger: Person, ehe: de.bgb.ehe::Ehe) kind empirical {
+    label de official "Ehe, in der der Unterhaltspflichtige lebt (§ 1604): Anknüpfung an den Güterstand des Pakets de.bgb.ehe";
+    label en unofficial "marriage in which the person liable for maintenance lives (§ 1604): connection to the property regime of package de.bgb.ehe";
+}
+pub relation leistungsfaehigkeit_nach_dem_gesamtgut(pflichtiger: Person) kind institutional {
+    label de official "Lebt der Unterhaltspflichtige in Gütergemeinschaft, bestimmt sich seine Unterhaltspflicht Verwandten gegenüber so, als ob das Gesamtgut ihm gehörte (§ 1604 Satz 1)";
+    label en unofficial "Where the person liable lives under community of property, his maintenance duty towards relatives is determined as if the common property belonged to him (§ 1604 sentence 1)";
+}
+pub relation unterhalt_aus_dem_gesamtgut(erster: Person, zweiter: Person, beduerftiger: Person) kind institutional {
+    label de official "Haben beide in Gütergemeinschaft lebende Personen bedürftige Verwandte, ist der Unterhalt aus dem Gesamtgut so zu gewähren, als ob die Bedürftigen zu beiden Unterhaltspflichtigen in dem Verwandtschaftsverhältnis stünden, auf dem die Unterhaltspflicht des Verpflichteten beruht (§ 1604 Satz 2)";
+    label en unofficial "Where both persons living under community of property have needy relatives, maintenance is to be granted from the common property as if the needy persons stood to both obligors in the kinship on which the obligor's duty rests (§ 1604 sentence 2)";
+}
+
+@source(BGB_P1604) {
+    rule GesamtgutGiltAlsEigenesVermoegen(p: Person, e: de.bgb.ehe::Ehe) strict {
+        label de official "Lebt der Unterhaltspflichtige in Gütergemeinschaft, bestimmt sich seine Unterhaltspflicht Verwandten gegenüber so, als ob das Gesamtgut ihm gehörte (§ 1604 Satz 1)";
+        label en unofficial "Where the person liable lives under community of property, his maintenance duty towards relatives is determined as if the common property belonged to him (§ 1604 sentence 1)";
+        when ehe_des_pflichtigen(p, e) and de.bgb.ehe::gueterstand(e, de.bgb.ehe::Guetergemeinschaft);
+        then leistungsfaehigkeit_nach_dem_gesamtgut(p);
+    }
+    rule UnterhaltAusDemGesamtgut(f: Familie, e: de.bgb.ehe::Ehe, p: Person, q: Person, b: Person) strict {
+        label de official "Haben beide in Gütergemeinschaft lebende Personen bedürftige Verwandte, ist der Unterhalt aus dem Gesamtgut so zu gewähren, als ob die Bedürftigen zu beiden Unterhaltspflichtigen in dem Verwandtschaftsverhältnis stünden, auf dem die Unterhaltspflicht des Verpflichteten beruht (§ 1604 Satz 2)";
+        label en unofficial "Where both persons living under community of property have needy relatives, maintenance is granted from the common property as if the needy persons stood to both obligors in the mediating kinship (§ 1604 sentence 2)";
+        when ehe_des_pflichtigen(p, e) and de.bgb.ehe::gueterstand(e, de.bgb.ehe::Guetergemeinschaft)
+         and de.bgb.ehe::ehegatte(e, q) and unterhaltsanspruch_besteht(f, p, b);
+        then unterhalt_aus_dem_gesamtgut(p, q, b);
+    }
+}
+
+// --- § 1610 Maß des Unterhalts -----------------------------------------------------------------
+//
+// Abs. 1 ist eine WERTUNG und bleibt im Urteilskanal (`angemessener_unterhalt`,
+// oben bei § 1603 erklärt): die Lebensstellung des Bedürftigen bemisst kein
+// Rechner. Abs. 2 dagegen ist ein geschlossener Katalog dessen, WAS der
+// Unterhalt umfasst, und wird ausgeführt.
+
+pub enum Bedarfsposten {
+    label de official "Posten des Lebensbedarfs, den der Unterhalt umfasst (§ 1610 Abs. 2)";
+    label en unofficial "items of living needs covered by maintenance (§ 1610 (2))";
+    GesamterLebensbedarf,
+    KostenDerVorbildungZumBeruf,
+    KostenDerErziehung
+}
+
+pub relation erziehung_beduerftige_person(berechtigter: Person) kind empirical {
+    label de official "Der Berechtigte ist eine der Erziehung bedürftige Person (§ 1610 Abs. 2 Halbsatz 2)";
+    label en unofficial "the person entitled is a person in need of education (§ 1610 (2) second half-sentence)";
+}
+pub relation mass_des_unterhalts(pflichtiger: Person, berechtigter: Person, betrag: Money) kind institutional {
+    key(pflichtiger, berechtigter);
+    label de official "Das Maß des zu gewährenden Unterhalts bestimmt sich nach der Lebensstellung des Bedürftigen (angemessener Unterhalt, § 1610 Abs. 1)";
+    label en unofficial "The measure of maintenance is determined by the position in life of the needy person (reasonable maintenance, § 1610 (1))";
+}
+pub relation unterhalt_umfasst(berechtigter: Person, posten: Bedarfsposten) kind institutional {
+    label de official "Der Unterhalt umfasst den gesamten Lebensbedarf einschließlich der Kosten einer angemessenen Vorbildung zu einem Beruf, bei einer der Erziehung bedürftigen Person auch die Kosten der Erziehung (§ 1610 Abs. 2)";
+    label en unofficial "Maintenance covers the entire living needs including the costs of reasonable preparatory education for a profession and, for a person in need of education, also the costs of education (§ 1610 (2))";
+}
+
+@source(BGB_P1610) {
+    rule MassNachDerLebensstellung(f: Familie, p: Person, b: Person, betrag: Money) strict {
+        label de official "Das Maß des zu gewährenden Unterhalts bestimmt sich nach der Lebensstellung des Bedürftigen (angemessener Unterhalt) (§ 1610 Abs. 1)";
+        label en unofficial "The measure of the maintenance to be granted is determined by the position in life of the needy person (reasonable maintenance) (§ 1610 (1))";
+        when unterhaltsanspruch_besteht(f, p, b) and angemessener_unterhalt(b, betrag);
+        then mass_des_unterhalts(p, b, betrag);
+    }
+    rule UnterhaltUmfasstDenLebensbedarf(f: Familie, p: Person, b: Person) strict {
+        label de official "Der Unterhalt umfasst den gesamten Lebensbedarf (§ 1610 Abs. 2 Halbsatz 1)";
+        label en unofficial "Maintenance covers the entire living needs (§ 1610 (2) first half-sentence)";
+        when unterhaltsanspruch_besteht(f, p, b);
+        then unterhalt_umfasst(b, GesamterLebensbedarf);
+    }
+    rule UnterhaltUmfasstDieVorbildung(f: Familie, p: Person, b: Person) strict {
+        label de official "Der Unterhalt umfasst die Kosten einer angemessenen Vorbildung zu einem Beruf (§ 1610 Abs. 2 Halbsatz 1)";
+        label en unofficial "Maintenance covers the costs of a reasonable preparatory education for a profession (§ 1610 (2) first half-sentence)";
+        when unterhaltsanspruch_besteht(f, p, b);
+        then unterhalt_umfasst(b, KostenDerVorbildungZumBeruf);
+    }
+    rule UnterhaltUmfasstDieErziehung(f: Familie, p: Person, b: Person) strict {
+        label de official "Bei einer der Erziehung bedürftigen Person umfasst der Unterhalt auch die Kosten der Erziehung (§ 1610 Abs. 2 Halbsatz 2)";
+        label en unofficial "For a person in need of education, maintenance also covers the costs of education (§ 1610 (2) second half-sentence)";
+        when unterhaltsanspruch_besteht(f, p, b) and erziehung_beduerftige_person(b);
+        then unterhalt_umfasst(b, KostenDerErziehung);
+    }
+}
+
+// --- § 1610a Deckungsvermutung bei schadensbedingten Mehraufwendungen --------------------------
+//
+// Eine widerlegliche Vermutung: die Kosten der Aufwendungen sind NICHT
+// geringer als die Höhe der in Anspruch genommenen Sozialleistungen. Der
+// Gegenbeweis ist ein ausdrücklicher Eingang des Falls — das Schweigen des
+// Falls widerlegt die Vermutung nicht.
+
+pub relation sozialleistungen_fuer_schadensbedingte_aufwendungen(person: Person, betrag: Money) kind empirical {
+    key(person);
+    label de official "Für Aufwendungen infolge eines Körper- oder Gesundheitsschadens werden Sozialleistungen in dieser Höhe in Anspruch genommen (§ 1610a)";
+    label en unofficial "social benefits of this amount are claimed for expenses resulting from bodily injury or damage to health (§ 1610a)";
+}
+pub relation geringere_kosten_nachgewiesen(person: Person, betrag: Money) kind empirical {
+    label de official "Der Gegenbeweis ist geführt: die Kosten der Aufwendungen sind geringer als die Höhe der Sozialleistungen (Widerlegung der Vermutung des § 1610a)";
+    label en unofficial "the presumption of § 1610a is rebutted: the costs of the expenses are lower than the amount of the social benefits";
+}
+pub relation kosten_der_aufwendungen_mindestens(person: Person, betrag: Money) kind institutional {
+    label de official "Bei der Feststellung eines Unterhaltsanspruchs wird vermutet, dass die Kosten der Aufwendungen nicht geringer sind als die Höhe dieser Sozialleistungen (§ 1610a)";
+    label en unofficial "In determining a maintenance claim it is presumed that the costs of the expenses are not lower than the amount of these social benefits (§ 1610a)";
+}
+
+@source(BGB_P1610a)
+presumption DeckungsvermutungBeiSozialleistungen(p: Person, betrag: Money) {
+    label de official "Werden für Aufwendungen infolge eines Körper- oder Gesundheitsschadens Sozialleistungen in Anspruch genommen, wird bei der Feststellung eines Unterhaltsanspruchs vermutet, dass die Kosten der Aufwendungen nicht geringer sind als die Höhe dieser Sozialleistungen (§ 1610a)";
+    label en unofficial "Where social benefits are claimed for expenses resulting from bodily injury or damage to health, it is presumed when determining a maintenance claim that the costs of the expenses are not lower than the amount of those benefits (§ 1610a)";
+    when sozialleistungen_fuer_schadensbedingte_aufwendungen(p, betrag);
+    presume kosten_der_aufwendungen_mindestens(p, betrag);
+    unless geringere_kosten_nachgewiesen(p, betrag);
+}
+
+// --- § 1615a Anwendbare Vorschriften ------------------------------------------------------------
+//
+// Die Kollisionsnorm des Untertitels 2: besteht keine Vaterschaft nach § 1592
+// Nr. 1, § 1593 und haben die Eltern das Kind weder während ihrer Ehe gezeugt
+// noch nach der Geburt einander geheiratet, so gelten die ALLGEMEINEN
+// Vorschriften, soweit die §§ 1615l–1615n nichts anderes bestimmen.
+
+pub relation waehrend_der_ehe_gezeugt(kind: Person) kind empirical {
+    label de official "Die Eltern haben das Kind während ihrer Ehe gezeugt (§ 1615a)";
+    label en unofficial "the parents conceived the child during their marriage (§ 1615a)";
+}
+pub relation eltern_nach_der_geburt_verheiratet(kind: Person) kind empirical {
+    label de official "Die Eltern haben nach der Geburt des Kindes die Ehe miteinander geschlossen (§ 1615a)";
+    label en unofficial "the parents married each other after the birth of the child (§ 1615a)";
+}
+pub relation allgemeine_vorschriften_anwendbar(kind: Person) kind institutional {
+    label de official "Besteht für ein Kind keine Vaterschaft nach § 1592 Nr. 1, § 1593 und haben die Eltern das Kind auch nicht während ihrer Ehe gezeugt oder nach seiner Geburt die Ehe miteinander geschlossen, gelten die allgemeinen Vorschriften (§ 1615a)";
+    label en unofficial "Where no paternity under § 1592 no. 1, § 1593 exists and the parents neither conceived the child during their marriage nor married each other after its birth, the general provisions apply (§ 1615a)";
+}
+
+pub relation vaterschaft_nach_1592_nr1_oder_1593(kind: Person) kind institutional {
+    label de official "Für das Kind besteht eine Vaterschaft nach § 1592 Nr. 1 oder § 1593 (einstelliger Kopf für die Verneinung des § 1615a)";
+    label en unofficial "paternity under § 1592 no. 1 or § 1593 exists for the child (one-place head for the negation in § 1615a)";
+}
+
+@source(BGB_P1615a) {
+    rule VaterschaftNach1592Nr1Besteht(k: Person, m: Person) strict {
+        label de official "Einstelliger Kopf: für das Kind besteht eine Vaterschaft nach § 1592 Nr. 1 (§ 1615a)";
+        label en unofficial "One-place head: paternity under § 1592 no. 1 exists for the child (§ 1615a)";
+        when vaterschaft_nach_1592_nr1(k, m);
+        then vaterschaft_nach_1592_nr1_oder_1593(k);
+    }
+    rule VaterschaftNach1593Besteht(k: Person, m: Person) strict {
+        label de official "Einstelliger Kopf: für das Kind besteht eine Vaterschaft nach § 1593 (§ 1615a)";
+        label en unofficial "One-place head: paternity under § 1593 exists for the child (§ 1615a)";
+        when vaterschaft_nach_1593(k, m);
+        then vaterschaft_nach_1592_nr1_oder_1593(k);
+    }
+    rule AllgemeineVorschriftenGelten(k: Person, tag: Date) strict {
+        label de official "Besteht für ein Kind keine Vaterschaft nach § 1592 Nr. 1, § 1593 und haben die Eltern das Kind auch nicht während ihrer Ehe gezeugt oder nach seiner Geburt die Ehe miteinander geschlossen, gelten die allgemeinen Vorschriften, soweit sich nichts anderes aus den folgenden Vorschriften ergibt (§ 1615a)";
+        label en unofficial "Where no paternity under § 1592 no. 1, § 1593 exists and the parents neither conceived the child during their marriage nor married each other after its birth, the general provisions apply unless the following provisions provide otherwise (§ 1615a)";
+        when geburt_des_kindes_am(k, tag) and not_known(vaterschaft_nach_1592_nr1_oder_1593(k))
+         and not_known(waehrend_der_ehe_gezeugt(k)) and not_known(eltern_nach_der_geburt_verheiratet(k));
+        then allgemeine_vorschriften_anwendbar(k);
+    }
+}

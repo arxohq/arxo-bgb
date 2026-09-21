@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1612a Abs. 1 Satz 3 Nr. 1: Kind geboren am 10.05.2018, das sechste Lebensjahr ist mit Ablauf des 09.05.2024 vollendet (§ 187 Abs. 2, § 188 Abs. 2); die zweite Altersstufe gilt ab Beginn des Monats der Vollendung, also ab 01.05.2024 (Abs. 3). Für den Monat April 2024 gilt daher die ERSTE Stufe: 87 Prozent von 537,00 € sind 467,19 €, aufgerundet auf volle Euro (Abs. 2 Satz 2) 468,00 €.
+test "§ 1612a: erste Altersstufe — 87 Prozent, auf volle Euro aufgerundet" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": minderjaehriges_kind(entity_ref("urn:de:bgb:vw:u02:K")) { origin case_input; }
+        assert "f2": lebt_nicht_im_haushalt_des_elternteils(entity_ref("urn:de:bgb:vw:u02:K"), entity_ref("urn:de:bgb:vw:u02:E")) { origin case_input; }
+        assert "f3": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:u02:K"), @2018-05-10) { origin case_input; }
+        assert "f4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:u02:K"), 6 calendar_year) { origin case_input; }
+        assert "f5": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:u02:K"), 12 calendar_year) { origin case_input; }
+        assert "f6": unterhaltsmonat(entity_ref("urn:de:bgb:vw:u02:K"), @2024-04-01) { origin case_input; }
+        assert "f7": mindestunterhalt(@2024-01-01, @2024-12-31, 537.00 EUR) { origin case_input; }
+    }
+    evaluate truth(altersstufe_zwei_ab(entity_ref("urn:de:bgb:vw:u02:K"), @2024-05-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(prozentsatz_des_mindestunterhalts(entity_ref("urn:de:bgb:vw:u02:K"), 87));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(mindestunterhaltsanspruch(entity_ref("urn:de:bgb:vw:u02:K"), entity_ref("urn:de:bgb:vw:u02:E"), 468.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

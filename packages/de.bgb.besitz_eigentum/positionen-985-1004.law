@@ -1,0 +1,46 @@
+pub relation position_trigger_985(s: Sache, eigentuemer: Person, besitzer: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls: der Eigentümer verlangt Herausgabe vom Besitzer (§ 985)";
+    label en unofficial "case input: the owner demands return from the possessor (§ 985)";
+}
+pub relation position_trigger_1004(e: Einwirkung, eigentuemer: Person, stoerer: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls: der Eigentümer verlangt Unterlassung (§ 1004)";
+    label en unofficial "case input: the owner demands an injunction (§ 1004)";
+}
+pub relation herausgabe_985_geschuldet(s: Sache, eigentuemer: Person, besitzer: Person, tag: Date) kind empirical {
+    label de official "Die Herausgabe der Sache nach § 985 ist geschuldet";
+    label en unofficial "Return of the thing under § 985 is owed";
+}
+pub relation unterlassung_1004_geschuldet(e: Einwirkung, eigentuemer: Person, stoerer: Person, tag: Date) kind empirical {
+    label de official "Die Unterlassung weiterer Beeinträchtigungen nach § 1004 ist geschuldet";
+    label en unofficial "Refraining from further impairment under § 1004 is owed";
+}
+
+@source(BGB_P985)
+rule PositionHerausgabe985(s: Sache, besitz: Besitz, eigentuemer: Person, besitzer: Person, tag: Date) strict {
+    label de official "Der Besitzer hat dem Eigentümer die Sache herauszugeben (§ 985)";
+    label en unofficial "The possessor must return the thing to the owner (§ 985)";
+    when eigentuemer_vor_dem_vorgang(s, eigentuemer);
+    when besitzlage_sache(besitz, s);
+    when besitzlage_person(besitz, besitzer);
+    when position_trigger_985(s, eigentuemer, besitzer, tag);
+    then duty Herausgabe985 {
+        bearer besitzer;
+        beneficiary eigentuemer;
+        achieve herausgabe_985_geschuldet(s, eigentuemer, besitzer, tag) during [tag, infinity);
+    };
+}
+
+@source(BGB_P1004)
+rule PositionUnterlassung1004(e: Einwirkung, s: Sache, eigentuemer: Person, stoerer: Person, tag: Date) strict {
+    label de official "Der Störer hat weitere Beeinträchtigungen des Eigentums zu unterlassen (§ 1004)";
+    label en unofficial "The interferer must refrain from further impairment of ownership (§ 1004)";
+    when eigentum_in_anderer_weise_beeintraechtigt(e, s, stoerer);
+    when eigentuemer_vor_dem_vorgang(s, eigentuemer);
+    when weitere_beeintraechtigungen_zu_besorgen(e);
+    when position_trigger_1004(e, eigentuemer, stoerer, tag);
+    then duty Unterlassung1004 {
+        bearer stoerer;
+        beneficiary eigentuemer;
+        achieve unterlassung_1004_geschuldet(e, eigentuemer, stoerer, tag) during [tag, infinity);
+    };
+}

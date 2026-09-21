@@ -1,0 +1,44 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 879 (Nachbarpaket), § 1113 Abs. 1, § 1181 Abs. 1: Drei Hypotheken in derselben Abteilung des Grundbuchs, laufende Nummern 1, 2 und 3 über 100 000, 80 000 und 60 000 €. Der Erlös beträgt 150 000 € und reicht nicht für alle. Die erste Hypothek wird voll befriedigt, die zweite mit dem Rest von 50 000 €, die dritte fällt ganz aus. GRENZE: das Verteilungsverfahren der Zwangsversteigerung (§§ 10, 44, 52, 105 ff. ZVG) ist nicht formalisiert (Ledger D-11-03).
+test "§ 1181 Abs. 1: Verteilung eines unzureichenden Erlöses auf drei Belastungen nach dem Rang" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "r1": de.bgb.besitz_eigentum::recht_am_grundstueck(entity_ref("urn:de:bgb:dr:r01:h1"), entity_ref("urn:de:bgb:dr:r01:grundstueck")) { origin adjudicated; }
+        assert "r2": de.bgb.besitz_eigentum::recht_am_grundstueck(entity_ref("urn:de:bgb:dr:r01:h2"), entity_ref("urn:de:bgb:dr:r01:grundstueck")) { origin adjudicated; }
+        assert "r3": de.bgb.besitz_eigentum::recht_am_grundstueck(entity_ref("urn:de:bgb:dr:r01:h3"), entity_ref("urn:de:bgb:dr:r01:grundstueck")) { origin adjudicated; }
+        assert "r4": de.bgb.besitz_eigentum::eingetragen_in_abteilung(entity_ref("urn:de:bgb:dr:r01:h1"), 3) { origin adjudicated; }
+        assert "r5": de.bgb.besitz_eigentum::eingetragen_in_abteilung(entity_ref("urn:de:bgb:dr:r01:h2"), 3) { origin adjudicated; }
+        assert "r6": de.bgb.besitz_eigentum::eingetragen_in_abteilung(entity_ref("urn:de:bgb:dr:r01:h3"), 3) { origin adjudicated; }
+        assert "r7": de.bgb.besitz_eigentum::reihenfolge_der_eintragung(entity_ref("urn:de:bgb:dr:r01:h1"), 1) { origin adjudicated; }
+        assert "r8": de.bgb.besitz_eigentum::reihenfolge_der_eintragung(entity_ref("urn:de:bgb:dr:r01:h2"), 2) { origin adjudicated; }
+        assert "r9": de.bgb.besitz_eigentum::reihenfolge_der_eintragung(entity_ref("urn:de:bgb:dr:r01:h3"), 3) { origin adjudicated; }
+        assert "g1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:r01:h1"), entity_ref("urn:de:bgb:dr:r01:grundstueck")) { origin case_input; }
+        assert "g2": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:r01:h2"), entity_ref("urn:de:bgb:dr:r01:grundstueck")) { origin case_input; }
+        assert "g3": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:r01:h3"), entity_ref("urn:de:bgb:dr:r01:grundstueck")) { origin case_input; }
+        assert "s1": geldsumme(entity_ref("urn:de:bgb:dr:r01:h1"), 100000.00 EUR) { origin adjudicated; }
+        assert "s2": geldsumme(entity_ref("urn:de:bgb:dr:r01:h2"), 80000.00 EUR) { origin adjudicated; }
+        assert "s3": geldsumme(entity_ref("urn:de:bgb:dr:r01:h3"), 60000.00 EUR) { origin adjudicated; }
+        assert "v1": erstrangige_belastung(entity_ref("urn:de:bgb:dr:r01:h1")) { origin case_input; }
+        assert "e1": erloes_aus_dem_grundstueck(entity_ref("urn:de:bgb:dr:r01:grundstueck"), 150000.00 EUR) { origin adjudicated; }
+    }
+    evaluate truth(aus_dem_erloes_zugeteilt(entity_ref("urn:de:bgb:dr:r01:h1"), 100000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aus_dem_erloes_zugeteilt(entity_ref("urn:de:bgb:dr:r01:h2"), 50000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aus_dem_erloes_zugeteilt(entity_ref("urn:de:bgb:dr:r01:h3"), 0.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aus_dem_grundstueck_voll_befriedigt(entity_ref("urn:de:bgb:dr:r01:h1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aus_dem_grundstueck_ausgefallen(entity_ref("urn:de:bgb:dr:r01:h2"), 30000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(aus_dem_grundstueck_ausgefallen(entity_ref("urn:de:bgb:dr:r01:h3"), 60000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

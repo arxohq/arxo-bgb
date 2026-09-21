@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 203 Satz 2: Verhandlungen vom 1. bis 15. November 2023 (15 Tage) — verschobenes Ende 15. Januar 2024; die Verjährung tritt frühestens drei Monate nach dem Ende der Hemmung ein: 15. Februar 2024 ist maßgeblich.
+test "§ 203 Satz 2: Mindestfrist von drei Monaten nach Verhandlungen ist später als das verschobene Ende" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:a09"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:a09"), @2020-03-15) { origin adjudicated; }
+        assert "h": hemmung(entity_ref("urn:de:bgb:fristen:pilot:a09"), @2023-11-01, @2023-11-15) { origin case_input; }
+        assert "g": hemmungsgrund(entity_ref("urn:de:bgb:fristen:pilot:a09"), Verhandlungen) { origin case_input; }
+    }
+    evaluate truth(verjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:pilot:a09"), @2024-01-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_fruehestens(entity_ref("urn:de:bgb:fristen:pilot:a09"), @2024-02-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:a09"), @2024-02-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

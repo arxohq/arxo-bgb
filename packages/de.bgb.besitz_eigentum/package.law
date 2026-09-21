@@ -1,0 +1,174 @@
+// BÜRGERLICHES GESETZBUCH — BESITZ UND EIGENTUM (BG-10)
+//
+// Buch 3 Abschnitt 1 (Besitz, §§ 854–872), Abschnitt 2 (allgemeine
+// Vorschriften über Rechte an Grundstücken, §§ 873–902) und Abschnitt 3
+// (Eigentum, §§ 903–1011; die Positionen §§ 1012–1017 sind mit dem
+// Erbbaurecht weggefallen). Quellen: sources.law (generiert aus dem Register
+// DOKNR — nicht von Hand ändern). Aufgabenkarte, Grenzen und offene Fragen:
+// README.md.
+//
+// FORM DES PAKETS
+//
+// 1. BESITZ IST EINE LAGE, KEINE EIGENSCHAFT DER PERSON. Die Entität
+//    `Besitz` trägt Sache, Person und Tag; `besitzer`, `mittelbarer
+//    Besitzer` und `eigenbesitzer` sind Projektionen dieser Lage auf den
+//    maßgebenden Zeitpunkt des Falls. § 856 erzeugt daher ein EIGENES
+//    Prädikat (`besitz_beendet`) und macht `besitzer` nicht widerleglich:
+//    ein widerleglicher (defeasible) `besitzer` zöge jede Kette dieses Pakets
+//    in denselben Layer (§111) und verschluckte die Urteilsanfragen der
+//    §§ 859, 904, 906, 912, 932, 950 (Ledger D-10-02).
+//
+// 2. DREI KANÄLE FÜR BEWERTENDE MERKMALE (DECISION-0194, Nabe de.bgb.core):
+//    „unverhältnismäßig groß“ (§ 904), „unwesentlich“, „ortsüblich“,
+//    „wirtschaftlich zumutbar“, „angemessen“ (§ 906, § 910, § 1003),
+//    „sofort“ (§ 859 Abs. 3, § 912 Abs. 1), „unverzüglich“ (§ 960 Abs. 2,
+//    § 965), „grobe Fahrlässigkeit“ (§ 912, § 932 Abs. 2), „erheblich
+//    geringer“ (§ 950 Abs. 1) sind Wertungen des Gerichts — `external
+//    judgment relation … { authority Court; }`. „Kenntnis“, „Eintragung im
+//    Grundbuch“, „Rechtshängigkeit“, „abhanden gekommen“ sind FESTGESTELLTE
+//    TATSACHEN — `kind empirical`, im Fall mit `origin adjudicated`. Ein
+//    flacher Fallsatz über das Ergebnis ist verboten.
+//
+// 3. FRISTEN NUR ÜBER `de.bgb.fristen` (DECISION-0319, Р4). Dieses Paket
+//    nennt Ereignis und Länge und hängt sie an eine Frist des Falls
+//    (`de.bgb.fristen::frist_ereignis`, `frist_dauer_kalender`); das Ende
+//    rechnet dort § 188 Abs. 2 und 3. Der ERWERBSFRIST (§ 900 dreißig Jahre,
+//    § 937 zehn Jahre, § 973 sechs Monate) ist § 193 fremd — sie liest das
+//    kalendarische Ende (`frist_ende_kalender`); die KLAGEFRISTEN der §§ 864,
+//    977 Satz 2, 978 Abs. 3 Satz 2 und 1002 lesen `frist_ende` mit der
+//    Verlegung des § 193 (Ledger D-10-05; korrigiert D-10-08 — § 977 und
+//    § 978 Abs. 3 erlöschen durch Ablauf ODER vorherige Klage wie § 864, das
+//    ist eine Klagefrist, keine Erwerbsfrist). § 981 Abs. 1 (ebenfalls drei
+//    Jahre) bleibt Teil des nicht geführten Verwertungsverfahrens (D-10-08).
+//    Zeile je Norm: docs/foundations/de-bgb/DEADLINES.json, Abschnitt BG-10.
+//
+// 4. BRÜCHE SIND EXAKT. „Zur Hälfte“ (§ 923 Abs. 1, § 984), „zu gleichen
+//    Teilen“ (§ 919 Abs. 3, § 922, § 923 Abs. 2) und das Wertverhältnis des
+//    § 947 Abs. 1 werden als Paar ganzer Zahlen (Zähler, Nenner) geführt und
+//    erst am Ende zum exakten `Rational` geteilt. Geld entsteht nur beim
+//    Finderlohn (§ 971, § 978 Abs. 2): dort steht die Rundung im README
+//    („Rundung“) und im Ledger D-10-06.
+//
+// 5. FEHLEN EINES FAKTUMS IST KEINE VERNEINUNG. Wo der Text ein Negativ
+//    verlangt („ohne dessen Willen“, „sofern nicht das Gesetz gestattet“,
+//    „nicht abhanden gekommen“), trägt der Fall die ausdrückliche Eingabe
+//    (`keine_gesetzliche_gestattung`, `nicht_abhanden_gekommen`, …).
+
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Sache = de.bgb.core::Sache;
+type Frist = de.bgb.fristen::Frist;
+
+// Kalenderschritt der §§ 188 Abs. 2, 3 (Politik wie BGB_FRISTEN_KALENDER der
+// Nabe der Fristen); eine Politik je Fall (§168.2).
+deadline policy BGB_BESITZ_EIGENTUM_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Sachen, Grundstücke, Werte -----------------------------------------------------------------
+
+pub entity Grundstueck : Sache {
+    label de official "Grundstück: unbeweglicher Teil der Erdoberfläche, für den im Grundbuch ein eigenes Blatt geführt wird (§§ 873 ff.)";
+    label en unofficial "Land: immovable plot with its own page in the land register (§§ 873 et seq.)";
+}
+
+pub relation bewegliche_sache(s: Sache) kind empirical {
+    label de official "bewegliche Sache (§ 929): Eingabe des Falls, die das Grundstück von der Fahrnis scheidet";
+    label en unofficial "movable thing (§ 929): case input separating land from movables";
+}
+pub relation wert_in_cent(s: Sache, betrag: Integer) kind empirical {
+    key(s);
+    label de official "Wert der Sache in Cent als ganze Zahl — Eingabe des Falls für die Verhältnisrechnung des § 947 Abs. 1; das Gesetz nennt weder Einheit noch Bewertungsverfahren";
+    label en unofficial "value of the thing in cents as an integer — case input for the ratio of § 947 (1); the statute names neither unit nor valuation method";
+}
+
+// --- Besitz als Lage ----------------------------------------------------------------------------
+
+pub entity Besitz {
+    label de official "Besitzlage: tatsächliche Gewalt einer Person über eine Sache (§ 854) mit ihrer Art und ihrem Anfang";
+    label en unofficial "possession: a person's physical control of a thing (§ 854) with its kind and its beginning";
+}
+
+pub relation besitzlage_sache(b: Besitz, s: Sache) kind empirical {
+    key(b);
+    label de official "Sache, auf die sich die Besitzlage bezieht (§ 854 Abs. 1)";
+    label en unofficial "thing to which the possession relates (§ 854 (1))";
+}
+pub relation besitzlage_person(b: Besitz, p: Person) kind empirical {
+    key(b);
+    label de official "Person, die die Besitzlage innehat (§ 854 Abs. 1)";
+    label en unofficial "person holding the possession (§ 854 (1))";
+}
+
+pub relation besitzer(s: Sache, p: Person) kind derived {
+    label de official "unmittelbarer Besitzer der Sache zum maßgebenden Zeitpunkt des Falls (§ 854, § 855, § 865)";
+    label en unofficial "direct possessor of the thing at the time decisive for the case (§ 854, § 855, § 865)";
+}
+pub relation mittelbarer_besitzer(s: Sache, p: Person) kind derived {
+    label de official "mittelbarer Besitzer (§ 868, § 871)";
+    label en unofficial "indirect possessor (§ 868, § 871)";
+}
+pub relation eigenbesitzer(s: Sache, p: Person) kind derived {
+    label de official "Eigenbesitzer: wer eine Sache als ihm gehörend besitzt (§ 872)";
+    label en unofficial "proprietary possessor: a person who possesses a thing as belonging to themselves (§ 872)";
+}
+
+// --- Eigentum -----------------------------------------------------------------------------------
+
+pub relation eigentuemer_vor_dem_vorgang(s: Sache, p: Person) kind empirical {
+    label de official "Eigentümer der Sache vor dem Vorgang, den der Fall beurteilt — Eingabe des Falls (§ 903)";
+    label en unofficial "owner of the thing before the transaction judged by the case — case input (§ 903)";
+}
+pub relation eigentum_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an der Sache nach den §§ 925 ff., 929 ff., 937, 946 ff., 958, 973, 984";
+    label en unofficial "acquisition of ownership under §§ 925 et seq., 929 et seq., 937, 946 et seq., 958, 973, 984";
+}
+pub relation eigentuemer(s: Sache, p: Person) kind derived {
+    label de official "Eigentümer der Sache nach dem beurteilten Vorgang (§ 903): der Erwerber, sonst der bisherige Eigentümer";
+    label en unofficial "owner of the thing after the transaction judged (§ 903): the acquirer, otherwise the previous owner";
+}
+pub relation miteigentumsanteil(s: Sache, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(s, p);
+    label de official "Bruchteil des Miteigentums als Paar ganzer Zahlen (§ 947 Abs. 1, § 963, § 984, § 1008)";
+    label en unofficial "co-ownership share as a pair of integers (§ 947 (1), § 963, § 984, § 1008)";
+}
+pub relation miteigentumsquote(s: Sache, p: Person, quote: Rational) kind derived {
+    key(s, p);
+    label de official "Bruchteil des Miteigentums als exakter Bruch (§ 1008)";
+    label en unofficial "co-ownership share as an exact fraction (§ 1008)";
+}

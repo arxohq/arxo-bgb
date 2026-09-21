@@ -1,0 +1,1493 @@
+// --- Untertitel 1 Dienstvertrag (§§ 611–630) ------------------------------------------------------
+//
+// Reihenfolge: Grundpflichten und Arbeitsvertragsbegriff (§§ 611, 611a),
+// Vergütung (§§ 612, 612a, 614, 615, 616), Fürsorge (§§ 613, 617–619a),
+// Beendigung durch Zeitablauf und ordentliche Kündigung (§§ 620–625),
+// außerordentliche Kündigung (§§ 626–628), Nachwirkungen (§§ 629, 630).
+// § 611b ist weggefallen und trägt keine Regel.
+
+// --- § 611 Vertragstypische Pflichten beim Dienstvertrag ------------------------------------------
+
+pub relation dienstverpflichteter(d: Dienstverhaeltnis, p: Person) kind empirical {
+    key(d);
+    label de official "wer Dienste zusagt (§ 611 Abs. 1)";
+    label en unofficial "the party who promises services (§ 611 (1))";
+}
+pub relation dienstberechtigter(d: Dienstverhaeltnis, p: Person) kind empirical {
+    key(d);
+    label de official "der andere Teil, der zur Vergütung verpflichtet ist (§ 611 Abs. 1)";
+    label en unofficial "the other party, obliged to the compensation (§ 611 (1))";
+}
+pub relation dienstbeginn_am(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag, ab dem das Dienstverhältnis Pflichten trägt";
+    label en unofficial "day from which the service relationship carries duties";
+}
+pub relation dienstleistung_erbracht_am(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    label de official "Tag, an dem die versprochenen Dienste geleistet wurden";
+    label en unofficial "day on which the promised services were rendered";
+}
+pub relation vereinbarte_verguetung(d: Dienstverhaeltnis, betrag: Money) kind empirical {
+    key(d);
+    label de official "die vereinbarte Vergütung (§ 611 Abs. 1, § 612 Abs. 1)";
+    label en unofficial "the agreed compensation (§ 611 (1), § 612 (1))";
+}
+pub relation verguetung_gewaehrt(d: Dienstverhaeltnis) kind empirical {
+    label de official "die vereinbarte Vergütung wurde gewährt (§ 611 Abs. 1)";
+    label en unofficial "the agreed compensation was granted (§ 611 (1))";
+}
+
+@source(BGB_P611)
+rule Pflichten611DienstePflicht(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Durch den Dienstvertrag wird derjenige, welcher Dienste zusagt, zur Leistung der versprochenen Dienste verpflichtet (§ 611 Abs. 1)";
+    label en unofficial "By the service contract the party who promises services is obliged to render them (§ 611 (1))";
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then duty DienstePflicht611 {
+        bearer verpflichteter;
+        achieve dienstleistung_erbracht_am(d, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P611)
+rule PositionPflichten611DienstePflicht(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der Dienstverpflichtete muss die versprochenen Dienste leisten (§ 611 Abs. 1) — normative Position";
+    label en unofficial "the service provider must render the promised services (§ 611 (1)) — normative position";
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then duty DienstePflicht611Position {
+        bearer verpflichteter;
+        achieve dienstleistung_erbracht_am(d, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P611)
+rule Pflichten611VerguetungsPflicht(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der andere Teil ist zur Gewährung der vereinbarten Vergütung verpflichtet (§ 611 Abs. 1)";
+    label en unofficial "The other party is obliged to grant the agreed compensation (§ 611 (1))";
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then duty VerguetungsPflicht611 {
+        bearer berechtigter;
+        achieve verguetung_gewaehrt(d) during [beginn, infinity);
+    };
+}
+
+// --- § 611a Arbeitsvertrag --------------------------------------------------------------------------
+
+@source(BGB_P611a)
+pub external judgment relation arbeitsvertrag_gesamtbetrachtung(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 611a Abs. 1. Für die Feststellung, ob ein Arbeitsvertrag vorliegt, ist eine Gesamtbetrachtung aller Umstände vorzunehmen; weisungsgebunden ist, wer nicht im Wesentlichen frei seine Tätigkeit gestalten und seine Arbeitszeit bestimmen kann";
+    label en unofficial "§ 611a (1). Whether an employment contract exists is determined by an overall assessment of all circumstances; a person is bound by instructions if unable to organise their activity and working time substantially freely";
+}
+pub relation arbeitsverhaeltnis(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "Arbeitsvertrag im Sinne des § 611a — Arbeitsverhältnis im Sinne des § 622";
+    label en unofficial "employment contract within § 611a — employment relationship within § 622";
+}
+
+@source(BGB_P611a)
+rule Arbeitsverhaeltnis611a(d: Dienstverhaeltnis) strict {
+    label de official "Durch den Arbeitsvertrag wird der Arbeitnehmer im Dienste eines anderen zur Leistung weisungsgebundener, fremdbestimmter Arbeit in persönlicher Abhängigkeit verpflichtet (§ 611a Abs. 1 Satz 1)";
+    label en unofficial "By the employment contract the employee is obliged to perform work bound by instructions, determined by another and in personal dependence (§ 611a (1) sentence 1)";
+    when arbeitsvertrag_gesamtbetrachtung(d);
+    then arbeitsverhaeltnis(d);
+}
+
+pub relation arbeitnehmer(d: Dienstverhaeltnis, p: Person) kind institutional {
+    key(d);
+    label de official "Arbeitnehmer des Arbeitsverhältnisses (§ 611a)";
+    label en unofficial "employee under the employment relationship (§ 611a)";
+}
+pub relation arbeitgeber(d: Dienstverhaeltnis, p: Person) kind institutional {
+    key(d);
+    label de official "Arbeitgeber des Arbeitsverhältnisses (§ 611a Abs. 2)";
+    label en unofficial "employer under the employment relationship (§ 611a (2))";
+}
+
+@source(BGB_P611a)
+rule Arbeitnehmer611a(d: Dienstverhaeltnis, p: Person) strict {
+    label de official "der zur Dienstleistung Verpflichtete eines Arbeitsverhältnisses ist der Arbeitnehmer (§ 611a Abs. 1)";
+    label en unofficial "the party obliged to render service in an employment relationship is the employee (§ 611a (1))";
+    when arbeitsverhaeltnis(d);
+    when dienstverpflichteter(d, p);
+    then arbeitnehmer(d, p);
+}
+
+@source(BGB_P611a)
+rule Arbeitgeber611a(d: Dienstverhaeltnis, p: Person) strict {
+    label de official "Der Arbeitgeber ist zur Zahlung der vereinbarten Vergütung verpflichtet (§ 611a Abs. 2)";
+    label en unofficial "The employer is obliged to pay the agreed compensation (§ 611a (2))";
+    when arbeitsverhaeltnis(d);
+    when dienstberechtigter(d, p);
+    then arbeitgeber(d, p);
+}
+
+// --- § 612 Vergütung -------------------------------------------------------------------------------
+
+@source(BGB_P612)
+pub external judgment relation dienstleistung_nur_gegen_verguetung_zu_erwarten(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 612 Abs. 1. Die Dienstleistung ist den Umständen nach nur gegen eine Vergütung zu erwarten";
+    label en unofficial "§ 612 (1). Having regard to the circumstances, the service is only to be expected in return for compensation";
+}
+pub relation verguetung_stillschweigend_vereinbart(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "eine Vergütung gilt als stillschweigend vereinbart (§ 612 Abs. 1)";
+    label en unofficial "compensation is deemed tacitly agreed (§ 612 (1))";
+}
+
+@source(BGB_P612)
+rule StillschweigendeVerguetung612Abs1(d: Dienstverhaeltnis) strict {
+    label de official "Eine Vergütung gilt als stillschweigend vereinbart, wenn die Dienstleistung den Umständen nach nur gegen eine Vergütung zu erwarten ist (§ 612 Abs. 1)";
+    label en unofficial "Compensation is deemed tacitly agreed where the service is, given the circumstances, only to be expected in return for compensation (§ 612 (1))";
+    when dienstleistung_nur_gegen_verguetung_zu_erwarten(d);
+    then verguetung_stillschweigend_vereinbart(d);
+}
+
+pub relation hoehe_der_verguetung_nicht_bestimmt(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Höhe der Vergütung ist nicht bestimmt (§ 612 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the amount of the compensation is not determined (§ 612 (2)) — express statement of the case";
+}
+pub relation taxe_vorhanden(d: Dienstverhaeltnis) kind empirical {
+    label de official "es besteht eine Taxe für die Dienstleistung (§ 612 Abs. 2)";
+    label en unofficial "a fixed official scale exists for the service (§ 612 (2))";
+}
+pub relation kein_taxe_vorhanden(d: Dienstverhaeltnis) kind empirical {
+    label de official "es besteht keine Taxe für die Dienstleistung (§ 612 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no fixed official scale exists for the service (§ 612 (2)) — express statement of the case";
+}
+pub relation taxmaessige_verguetung_hoehe(d: Dienstverhaeltnis, betrag: Money) kind empirical {
+    key(d);
+    label de official "die taxmäßige Vergütung (§ 612 Abs. 2)";
+    label en unofficial "the compensation under the fixed official scale (§ 612 (2))";
+}
+pub relation uebliche_verguetung_hoehe(d: Dienstverhaeltnis, betrag: Money) kind empirical {
+    key(d);
+    label de official "die übliche Vergütung (§ 612 Abs. 2)";
+    label en unofficial "the customary compensation (§ 612 (2))";
+}
+pub relation verguetung_hoehe_bestimmt(d: Dienstverhaeltnis, betrag: Money) kind institutional {
+    key(d);
+    label de official "als vereinbart anzusehende Höhe der Vergütung (§ 612 Abs. 2)";
+    label en unofficial "amount of compensation to be regarded as agreed (§ 612 (2))";
+}
+
+@source(BGB_P612)
+rule TaxmaessigeVerguetung612Abs2(d: Dienstverhaeltnis, betrag: Money) strict {
+    label de official "Ist die Höhe der Vergütung nicht bestimmt, so ist bei dem Bestehen einer Taxe die taxmäßige Vergütung als vereinbart anzusehen (§ 612 Abs. 2)";
+    label en unofficial "Where the amount is not determined and a fixed official scale exists, the compensation under that scale is regarded as agreed (§ 612 (2))";
+    when hoehe_der_verguetung_nicht_bestimmt(d);
+    when taxe_vorhanden(d);
+    when taxmaessige_verguetung_hoehe(d, betrag);
+    then verguetung_hoehe_bestimmt(d, betrag);
+}
+
+@source(BGB_P612)
+rule UeblicheVerguetung612Abs2(d: Dienstverhaeltnis, betrag: Money) strict {
+    label de official "Ist die Höhe der Vergütung nicht bestimmt, so ist in Ermangelung einer Taxe die übliche Vergütung als vereinbart anzusehen (§ 612 Abs. 2)";
+    label en unofficial "Where the amount is not determined and no fixed official scale exists, the customary compensation is regarded as agreed (§ 612 (2))";
+    when hoehe_der_verguetung_nicht_bestimmt(d);
+    when kein_taxe_vorhanden(d);
+    when uebliche_verguetung_hoehe(d, betrag);
+    then verguetung_hoehe_bestimmt(d, betrag);
+}
+
+// --- § 612a Maßregelungsverbot ----------------------------------------------------------------------
+
+pub relation benachteiligung_wegen_rechtsausuebung(d: Dienstverhaeltnis, ag: Person, an: Person) kind empirical {
+    label de official "der Arbeitgeber benachteiligt den Arbeitnehmer bei einer Vereinbarung oder Maßnahme, weil dieser in zulässiger Weise seine Rechte ausübt (§ 612a) — festgestellte Tatsache der Kausalität";
+    label en unofficial "the employer disadvantages the employee in an agreement or measure because the employee lawfully exercises their rights (§ 612a) — established fact of causation";
+}
+
+@source(BGB_P612a)
+rule Massregelungsverbot612a(d: Dienstverhaeltnis, ag: Person, an: Person, beginn: Date) strict {
+    label de official "Der Arbeitgeber darf einen Arbeitnehmer bei einer Vereinbarung oder einer Maßnahme nicht benachteiligen, weil der Arbeitnehmer in zulässiger Weise seine Rechte ausübt (§ 612a)";
+    label en unofficial "The employer must not disadvantage an employee in an agreement or measure because the employee lawfully exercises their rights (§ 612a)";
+    when arbeitgeber(d, ag);
+    when arbeitnehmer(d, an);
+    when dienstbeginn_am(d, beginn);
+    then prohibition RechtsausuebungOhneBenachteiligung612a {
+        bearer ag;
+        beneficiary an;
+        action benachteiligung_wegen_rechtsausuebung(d, ag, an);
+        window [beginn, infinity);
+    };
+}
+
+pub relation violation_massregelungsverbot_612a(d: Dienstverhaeltnis, ag: Person, an: Person) kind derived {
+    label de official "Der Arbeitgeber hat den Arbeitnehmer entgegen dem Maßregelungsverbot benachteiligt (§ 612a)";
+    label en unofficial "the employer disadvantaged the employee in violation of the retaliation prohibition (§ 612a)";
+}
+@source(BGB_P612a)
+rule ViolationMassregelungsverbot612a(d: Dienstverhaeltnis, ag: Person, an: Person) strict {
+    label de official "Der Arbeitgeber hat den Arbeitnehmer entgegen dem Maßregelungsverbot benachteiligt (§ 612a)";
+    label en unofficial "the employer disadvantaged the employee in violation of the retaliation prohibition (§ 612a)";
+    when benachteiligung_wegen_rechtsausuebung(d, ag, an);
+    then violation_massregelungsverbot_612a(d, ag, an);
+}
+@source(BGB_P612a)
+rule MaintenanceMassregelungsverbot612a(d: Dienstverhaeltnis, ag: Person, an: Person, beginn: Date) strict {
+    label de official "Der Arbeitgeber hat den Arbeitnehmer entgegen dem Maßregelungsverbot benachteiligt (§ 612a)";
+    label en unofficial "the employer disadvantaged the employee in violation of the retaliation prohibition (§ 612a)";
+    when arbeitgeber(d, ag) and arbeitnehmer(d, an) and dienstbeginn_am(d, beginn);
+    then duty MaintenanceMassregelungsverbot612aDuty {
+        bearer ag;
+        beneficiary an;
+        goal maintenance {
+            condition not violation_massregelungsverbot_612a(d, ag, an);
+            window [beginn, infinity);
+        }
+    };
+}
+
+// --- § 613 Unübertragbarkeit ------------------------------------------------------------------------
+
+pub relation keine_abweichende_vereinbarung_613(d: Dienstverhaeltnis) kind empirical {
+    label de official "über die persönliche Leistungspflicht und die Übertragbarkeit des Anspruchs ist nichts anderes vereinbart (§ 613) — ausdrückliche Angabe des Falls; das Schweigen des Falls verneint nichts";
+    label en unofficial "nothing else is agreed on personal performance and the transferability of the claim (§ 613) — express statement of the case; silence is not a denial";
+}
+pub relation persoenliche_leistungspflicht(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "der zur Dienstleistung Verpflichtete hat die Dienste im Zweifel in Person zu leisten (§ 613 Satz 1)";
+    label en unofficial "in case of doubt, the person obliged to serve must perform in person (§ 613 sentence 1)";
+}
+pub relation anspruch_auf_dienste_unuebertragbar(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "der Anspruch auf die Dienste ist im Zweifel nicht übertragbar (§ 613 Satz 2)";
+    label en unofficial "in case of doubt, the claim to the services is not transferable (§ 613 sentence 2)";
+}
+
+@source(BGB_P613)
+rule PersoenlicheLeistung613Satz1(d: Dienstverhaeltnis) strict {
+    label de official "Der zur Dienstleistung Verpflichtete hat die Dienste im Zweifel in Person zu leisten (§ 613 Satz 1)";
+    label en unofficial "In case of doubt the person obliged to serve must perform the services in person (§ 613 sentence 1)";
+    when keine_abweichende_vereinbarung_613(d);
+    then persoenliche_leistungspflicht(d);
+}
+
+pub relation persoenliche_leistung_erbracht_613(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Dienstleistung wurde persönlich erbracht (§ 613 Satz 1)";
+    label en unofficial "the service was performed personally (§ 613 sentence 1)";
+}
+
+@source(BGB_P613)
+rule PositionPersoenlicheLeistung613Satz1(d: Dienstverhaeltnis, verpflichteter: Person, beginn: Date) strict {
+    label de official "Der Dienstverpflichtete muss die Dienste persönlich leisten (§ 613 Satz 1) — normative Position";
+    label en unofficial "the service provider must perform personally (§ 613 sentence 1) — normative position";
+    when keine_abweichende_vereinbarung_613(d);
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstbeginn_am(d, beginn);
+    then duty PersoenlicheLeistung613Satz1Position {
+        bearer verpflichteter;
+        achieve persoenliche_leistung_erbracht_613(d) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P613)
+rule Unuebertragbarkeit613Satz2(d: Dienstverhaeltnis) strict {
+    label de official "Der Anspruch auf die Dienste ist im Zweifel nicht übertragbar (§ 613 Satz 2)";
+    label en unofficial "In case of doubt the claim to the services is not transferable (§ 613 sentence 2)";
+    when keine_abweichende_vereinbarung_613(d);
+    then anspruch_auf_dienste_unuebertragbar(d);
+}
+
+pub relation anspruch_auf_dienste_uebertragen_613(d: Dienstverhaeltnis, berechtigter: Person, verpflichteter: Person) kind empirical {
+    label de official "der Anspruch auf die Dienste wurde übertragen (§ 613 Satz 2)";
+    label en unofficial "the claim to the services was transferred (§ 613 sentence 2)";
+}
+
+@source(BGB_P613)
+rule PositionUnuebertragbarkeit613Satz2(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der Dienstberechtigte darf den Anspruch auf die Dienste nicht übertragen (§ 613 Satz 2) — normative Position";
+    label en unofficial "the service recipient must not transfer the claim to the services (§ 613 sentence 2) — normative position";
+    when keine_abweichende_vereinbarung_613(d);
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then prohibition Unuebertragbarkeit613Satz2Position {
+        bearer berechtigter;
+        beneficiary verpflichteter;
+        action anspruch_auf_dienste_uebertragen_613(d, berechtigter, verpflichteter);
+        window [beginn, infinity);
+    };
+}
+
+pub relation violation_unuebertragbarkeit_613(d: Dienstverhaeltnis, berechtigter: Person, verpflichteter: Person) kind derived {
+    label de official "Der Dienstberechtigte hat den Anspruch auf die Dienste entgegen § 613 Satz 2 übertragen";
+    label en unofficial "the service recipient transferred the claim to the services in violation of § 613 sentence 2";
+}
+@source(BGB_P613)
+rule ViolationUnuebertragbarkeit613(d: Dienstverhaeltnis, berechtigter: Person, verpflichteter: Person) strict {
+    label de official "Der Dienstberechtigte hat den Anspruch auf die Dienste entgegen § 613 Satz 2 übertragen";
+    label en unofficial "the service recipient transferred the claim to the services in violation of § 613 sentence 2";
+    when anspruch_auf_dienste_uebertragen_613(d, berechtigter, verpflichteter);
+    then violation_unuebertragbarkeit_613(d, berechtigter, verpflichteter);
+}
+@source(BGB_P613)
+rule MaintenanceUnuebertragbarkeit613(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der Dienstberechtigte hat den Anspruch auf die Dienste entgegen § 613 Satz 2 übertragen";
+    label en unofficial "the service recipient transferred the claim to the services in violation of § 613 sentence 2";
+    when keine_abweichende_vereinbarung_613(d)
+      and dienstverpflichteter(d, verpflichteter)
+      and dienstberechtigter(d, berechtigter)
+      and dienstbeginn_am(d, beginn);
+    then duty MaintenanceUnuebertragbarkeit613Duty {
+        bearer berechtigter;
+        beneficiary verpflichteter;
+        goal maintenance {
+            condition not violation_unuebertragbarkeit_613(d, berechtigter, verpflichteter);
+            window [beginn, infinity);
+        }
+    };
+}
+
+// --- § 613a Rechte und Pflichten bei Betriebsübergang -----------------------------------------------
+//
+// Institutioneller Kern (Abs. 1 Satz 1, Abs. 4, Abs. 6); Abs. 1 Satz 2–4,
+// Abs. 2 Satz 2, Abs. 3 und Abs. 5 sind institutionelle Tatsachen ohne
+// eigene Schlussfolgerungskette (Kopf dieser Datei, Grenze 1).
+
+pub relation betriebsuebergang(d: Dienstverhaeltnis, alter_inhaber: Person, neuer_inhaber: Person, tag: Date) kind empirical {
+    key(d);
+    label de official "ein Betrieb oder Betriebsteil geht durch Rechtsgeschäft auf einen anderen Inhaber über (§ 613a Abs. 1 Satz 1)";
+    label en unofficial "a business or part of a business is transferred to another owner by legal transaction (§ 613a (1) sentence 1)";
+}
+pub relation rechte_und_pflichten_eintritt_613a(d: Dienstverhaeltnis, neuer_inhaber: Person) kind institutional {
+    key(d);
+    label de official "der neue Inhaber tritt in die Rechte und Pflichten aus dem im Zeitpunkt des Übergangs bestehenden Arbeitsverhältnis ein (§ 613a Abs. 1 Satz 1)";
+    label en unofficial "the new owner succeeds to the rights and duties under the employment relationship existing at the time of transfer (§ 613a (1) sentence 1)";
+}
+
+@source(BGB_P613a)
+rule RechteUndPflichtenEintritt613a(d: Dienstverhaeltnis, alt: Person, neu: Person, tag: Date) strict {
+    label de official "Geht ein Betrieb oder Betriebsteil durch Rechtsgeschäft auf einen anderen Inhaber über, so tritt dieser in die Rechte und Pflichten aus den im Zeitpunkt des Übergangs bestehenden Arbeitsverhältnissen ein (§ 613a Abs. 1 Satz 1)";
+    label en unofficial "Where a business or part of a business is transferred to another owner by legal transaction, that owner succeeds to the rights and duties under the employment relationships existing at the time of transfer (§ 613a (1) sentence 1)";
+    when betriebsuebergang(d, alt, neu, tag);
+    then rechte_und_pflichten_eintritt_613a(d, neu);
+}
+
+pub relation kuendigung_wegen_betriebsuebergang(d: Dienstverhaeltnis, kuendigender: Person) kind empirical {
+    label de official "die Kündigung des Arbeitsverhältnisses erfolgt wegen des Übergangs eines Betriebs oder Betriebsteils (§ 613a Abs. 4 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the dismissal is made because of the transfer of a business or part of a business (§ 613a (4) sentence 1) — established fact";
+}
+pub relation kuendigung_unwirksam_613a(d: Dienstverhaeltnis, kuendigender: Person) kind institutional {
+    key(d, kuendigender);
+    label de official "die Kündigung des Arbeitsverhältnisses wegen des Betriebsübergangs ist unwirksam (§ 613a Abs. 4 Satz 1)";
+    label en unofficial "dismissal on account of the transfer of the business is invalid (§ 613a (4) sentence 1)";
+}
+
+@source(BGB_P613a)
+rule KuendigungWegenUebergangUnwirksam613a(d: Dienstverhaeltnis, kuendigender: Person) strict {
+    label de official "Die Kündigung des Arbeitsverhältnisses eines Arbeitnehmers durch den bisherigen Arbeitgeber oder durch den neuen Inhaber wegen des Übergangs eines Betriebs oder eines Betriebsteils ist unwirksam (§ 613a Abs. 4 Satz 1)";
+    label en unofficial "Dismissal of an employee's employment relationship by the former employer or the new owner because of the transfer of a business or part of a business is invalid (§ 613a (4) sentence 1)";
+    when kuendigung_wegen_betriebsuebergang(d, kuendigender);
+    then kuendigung_unwirksam_613a(d, kuendigender);
+}
+
+pub relation unterrichtung_zugegangen_am_613a(d: Dienstverhaeltnis, an: Person, tag: Date) kind empirical {
+    key(d, an);
+    label de official "Tag des Zugangs der Unterrichtung nach § 613a Abs. 5 beim Arbeitnehmer";
+    label en unofficial "day the notification under § 613a (5) is received by the employee";
+}
+pub relation widerspruchsfrist_ende_613a(d: Dienstverhaeltnis, an: Person, tag: Date) kind institutional {
+    key(d, an);
+    label de official "letzter Tag der Monatsfrist des Widerspruchs gegen den Übergang des Arbeitsverhältnisses (§ 613a Abs. 6 Satz 1)";
+    label en unofficial "last day of the one-month period to object to the transfer of the employment relationship (§ 613a (6) sentence 1)";
+}
+
+@source(BGB_P613a)
+rule Widerspruchsfrist613aAbs6(d: Dienstverhaeltnis, an: Person, tag: Date) strict {
+    label de official "Der Arbeitnehmer kann dem Übergang des Arbeitsverhältnisses innerhalb eines Monats nach Zugang der Unterrichtung nach Absatz 5 schriftlich widersprechen (§ 613a Abs. 6 Satz 1) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "The employee may object in writing to the transfer of the employment relationship within one month of receiving the notification under paragraph 5 (§ 613a (6) sentence 1) — policy BGB_DIENST_WERK_KALENDER";
+    when unterrichtung_zugegangen_am_613a(d, an, tag);
+    then widerspruchsfrist_ende_613a(d, an, add_calendar_period(tag, 1 calendar_month));
+}
+
+pub relation widerspruch_gegen_uebergang(d: Dienstverhaeltnis, an: Person, tag: Date) kind empirical {
+    key(d, an);
+    label de official "der Arbeitnehmer widerspricht dem Übergang des Arbeitsverhältnisses (§ 613a Abs. 6 Satz 1, 2)";
+    label en unofficial "the employee objects to the transfer of the employment relationship (§ 613a (6) sentences 1, 2)";
+}
+pub relation widerspruch_613a_rechtzeitig(d: Dienstverhaeltnis, an: Person) kind institutional {
+    key(d, an);
+    label de official "der Widerspruch wurde innerhalb der Monatsfrist erklärt (§ 613a Abs. 6 Satz 1)";
+    label en unofficial "the objection was declared within the one-month period (§ 613a (6) sentence 1)";
+}
+
+@source(BGB_P613a)
+rule WiderspruchRechtzeitig613a(d: Dienstverhaeltnis, an: Person, tag: Date, ende: Date) strict {
+    label de official "Der Widerspruch ist rechtzeitig, wenn er innerhalb eines Monats nach Zugang der Unterrichtung erklärt wird (§ 613a Abs. 6 Satz 1)";
+    label en unofficial "The objection is timely if declared within one month of receiving the notification (§ 613a (6) sentence 1)";
+    when widerspruch_gegen_uebergang(d, an, tag);
+    when widerspruchsfrist_ende_613a(d, an, ende);
+    when tag <= ende;
+    then widerspruch_613a_rechtzeitig(d, an);
+}
+
+// --- § 614 Fälligkeit der Vergütung ------------------------------------------------------------------
+
+pub relation verguetung_nach_zeitabschnitten_bemessen(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nach Zeitabschnitten bemessen (§ 614 Satz 2)";
+    label en unofficial "the compensation is measured by periods of time (§ 614 sentence 2)";
+}
+pub relation verguetung_nicht_nach_zeitabschnitten_bemessen(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nicht nach Zeitabschnitten bemessen (§ 614 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the compensation is not measured by periods of time (§ 614 sentence 1) — express statement of the case";
+}
+pub relation verguetungszeitabschnitt_ablauf_am(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    label de official "Ablauf eines Zeitabschnitts, nach dem die Vergütung bemessen ist (§ 614 Satz 2)";
+    label en unofficial "end of a period of time by which the compensation is measured (§ 614 sentence 2)";
+}
+pub relation verguetung_faellig_am(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    label de official "Tag, an dem die Vergütung zu entrichten ist (§ 614)";
+    label en unofficial "day on which the compensation is due (§ 614)";
+}
+
+@source(BGB_P614)
+rule Faelligkeit614Allgemein(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Die Vergütung ist nach der Leistung der Dienste zu entrichten (§ 614 Satz 1)";
+    label en unofficial "The compensation must be paid after the services have been rendered (§ 614 sentence 1)";
+    when dienstleistung_erbracht_am(d, tag);
+    when verguetung_nicht_nach_zeitabschnitten_bemessen(d);
+    then verguetung_faellig_am(d, tag);
+}
+
+@source(BGB_P614)
+rule Faelligkeit614Zeitabschnitt(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Ist die Vergütung nach Zeitabschnitten bemessen, so ist sie nach dem Ablauf der einzelnen Zeitabschnitte zu entrichten (§ 614 Satz 2)";
+    label en unofficial "If the compensation is measured by periods of time, it must be paid after the end of each period (§ 614 sentence 2)";
+    when verguetungszeitabschnitt_ablauf_am(d, tag);
+    when verguetung_nach_zeitabschnitten_bemessen(d);
+    then verguetung_faellig_am(d, tag);
+}
+
+// --- § 615 Vergütung bei Annahmeverzug und bei Betriebsrisiko -----------------------------------------
+
+pub relation annahmeverzug_des_dienstberechtigten(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Dienstberechtigte ist mit der Annahme der Dienste in Verzug (§ 615 Satz 1)";
+    label en unofficial "the party entitled to the service is in default of acceptance (§ 615 sentence 1)";
+}
+pub relation betriebsrisiko_beim_arbeitgeber(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Arbeitgeber trägt das Risiko des Arbeitsausfalls (§ 615 Satz 3)";
+    label en unofficial "the employer bears the risk of the loss of work (§ 615 sentence 3)";
+}
+pub relation ersparter_wert(d: Dienstverhaeltnis, betrag: Money) kind empirical {
+    key(d);
+    label de official "Wert dessen, was der Verpflichtete infolge des Unterbleibens der Dienstleistung erspart oder durch anderweitige Verwendung erwirbt (§ 615 Satz 2)";
+    label en unofficial "value of what the obliged party saves as a result of not rendering the service or acquires by other use of their services (§ 615 sentence 2)";
+}
+pub relation verguetungsanspruch_615(d: Dienstverhaeltnis, betrag: Money) kind institutional {
+    key(d);
+    label de official "Vergütungsanspruch trotz Nichtleistung infolge Annahmeverzugs oder Betriebsrisikos, nach Anrechnung (§ 615)";
+    label en unofficial "claim to compensation despite non-performance due to default of acceptance or operating risk, after set-off (§ 615)";
+}
+
+@source(BGB_P615)
+rule Verguetung615Annahmeverzug(d: Dienstverhaeltnis, vb: Money, ew: Money) strict {
+    label de official "Kommt der Dienstberechtigte mit der Annahme der Dienste in Verzug, so kann der Verpflichtete die vereinbarte Vergütung verlangen, ohne zur Nachleistung verpflichtet zu sein; er muss sich den ersparten oder anderweit erworbenen Wert anrechnen lassen (§ 615 Satz 1, 2)";
+    label en unofficial "If the party entitled to the service is in default of acceptance, the obliged party may claim the agreed compensation without being obliged to make up the service; the value saved or otherwise acquired is set off (§ 615 sentences 1, 2)";
+    when annahmeverzug_des_dienstberechtigten(d);
+    when vereinbarte_verguetung(d, vb);
+    when ersparter_wert(d, ew);
+    then verguetungsanspruch_615(d, vb - ew);
+}
+
+@source(BGB_P615)
+rule Verguetung615Betriebsrisiko(d: Dienstverhaeltnis, vb: Money, ew: Money) strict {
+    label de official "Die Sätze 1 und 2 gelten entsprechend in den Fällen, in denen der Arbeitgeber das Risiko des Arbeitsausfalls trägt (§ 615 Satz 3)";
+    label en unofficial "Sentences 1 and 2 apply correspondingly where the employer bears the risk of the loss of work (§ 615 sentence 3)";
+    when betriebsrisiko_beim_arbeitgeber(d);
+    when vereinbarte_verguetung(d, vb);
+    when ersparter_wert(d, ew);
+    then verguetungsanspruch_615(d, vb - ew);
+}
+
+// --- § 616 Vorübergehende Verhinderung ----------------------------------------------------------------
+
+pub relation verhinderung_ohne_verschulden(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Verpflichtete wird ohne sein Verschulden durch einen in seiner Person liegenden Grund an der Dienstleistung verhindert (§ 616 Satz 1)";
+    label en unofficial "the obliged party is prevented from rendering the service by a reason in their own person, without their fault (§ 616 sentence 1)";
+}
+@source(BGB_P616)
+pub external judgment relation verhinderungszeit_verhaeltnismaessig_nicht_erheblich(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 616 Satz 1. Die Zeit der Verhinderung ist verhältnismäßig nicht erheblich";
+    label en unofficial "§ 616 sentence 1. The time of prevention is, proportionately, not significant";
+}
+pub relation versicherungsleistung_fuer_verhinderungszeit(d: Dienstverhaeltnis, betrag: Money) kind empirical {
+    key(d);
+    label de official "Betrag, welcher dem Verpflichteten für die Zeit der Verhinderung aus einer gesetzlichen Kranken- oder Unfallversicherung zukommt (§ 616 Satz 2)";
+    label en unofficial "amount accruing to the obliged party for the time of prevention from a statutory health or accident insurance (§ 616 sentence 2)";
+}
+pub relation verguetungsanspruch_616(d: Dienstverhaeltnis, betrag: Money) kind institutional {
+    key(d);
+    label de official "Vergütungsanspruch trotz vorübergehender Verhinderung, nach Anrechnung (§ 616)";
+    label en unofficial "claim to compensation despite temporary prevention, after set-off (§ 616)";
+}
+
+@source(BGB_P616)
+rule Verguetung616(d: Dienstverhaeltnis, vb: Money, vl: Money) strict {
+    label de official "Der zur Dienstleistung Verpflichtete wird des Anspruchs auf die Vergütung nicht dadurch verlustig, dass er für eine verhältnismäßig nicht erhebliche Zeit ohne sein Verschulden an der Dienstleistung verhindert wird; er muss sich die Versicherungsleistung anrechnen lassen (§ 616 Satz 1, 2)";
+    label en unofficial "The obliged party does not lose the claim to compensation by being prevented, without fault and for a proportionately insignificant time, from rendering the service; the insurance benefit is set off (§ 616 sentences 1, 2)";
+    when verhinderung_ohne_verschulden(d);
+    when verhinderungszeit_verhaeltnismaessig_nicht_erheblich(d);
+    when vereinbarte_verguetung(d, vb);
+    when versicherungsleistung_fuer_verhinderungszeit(d, vl);
+    then verguetungsanspruch_616(d, vb - vl);
+}
+
+// --- § 617 Pflicht zur Krankenfürsorge -----------------------------------------------------------------
+
+pub relation dauerndes_dienstverhaeltnis(d: Dienstverhaeltnis) kind empirical {
+    label de official "dauerndes Dienstverhältnis, das die Erwerbstätigkeit des Verpflichteten vollständig oder hauptsächlich in Anspruch nimmt (§ 617 Abs. 1, § 629, § 630)";
+    label en unofficial "lasting service relationship occupying the obliged party's earning activity fully or mainly (§ 617 (1), § 629, § 630)";
+}
+pub relation haeusliche_gemeinschaft(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Verpflichtete ist in die häusliche Gemeinschaft aufgenommen (§ 617 Abs. 1, § 618 Abs. 2)";
+    label en unofficial "the obliged party has been admitted to the household community (§ 617 (1), § 618 (2))";
+}
+pub relation erkrankung_am_617(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag der Erkrankung des Verpflichteten (§ 617 Abs. 1)";
+    label en unofficial "day the obliged party fell ill (§ 617 (1))";
+}
+@source(BGB_P617)
+pub external judgment relation erkrankung_vorsaetzlich_oder_grob_fahrlaessig_herbeigefuehrt(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 617 Abs. 1. Die Erkrankung wurde von dem Verpflichteten vorsätzlich oder durch grobe Fahrlässigkeit herbeigeführt";
+    label en unofficial "§ 617 (1). The illness was brought about by the obliged party intentionally or through gross negligence";
+}
+pub relation krankenversicherung_oder_oeffentliche_krankenpflege_vorgesorgt(d: Dienstverhaeltnis) kind empirical {
+    label de official "für Verpflegung und ärztliche Behandlung ist durch Versicherung oder eine Einrichtung der öffentlichen Krankenpflege Vorsorge getroffen (§ 617 Abs. 2)";
+    label en unofficial "provision for care and medical treatment has been made through insurance or a public health-care institution (§ 617 (2))";
+}
+pub relation pflicht_krankenfuersorge_617(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "Pflicht des Dienstberechtigten zur Verpflegung und ärztlichen Behandlung bei Erkrankung (§ 617)";
+    label en unofficial "duty of the party entitled to the service to provide care and medical treatment in the event of illness (§ 617)";
+}
+pub relation krankenfuersorge_ende_617(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "letzter Tag der Pflicht zur Krankenfürsorge — sechs Wochen ab Erkrankung (§ 617 Abs. 1)";
+    label en unofficial "last day of the duty of care in illness — six weeks from the illness (§ 617 (1))";
+}
+
+@source(BGB_P617)
+rule Krankenfuersorge617Abs1(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Ist bei einem dauernden Dienstverhältnis der Verpflichtete in die häusliche Gemeinschaft aufgenommen, so hat der Dienstberechtigte ihm im Falle der Erkrankung die erforderliche Verpflegung und ärztliche Behandlung zu gewähren, sofern nicht die Erkrankung von dem Verpflichteten vorsätzlich oder durch grobe Fahrlässigkeit herbeigeführt worden ist, und die Verpflichtung nicht nach Absatz 2 entfällt (§ 617 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "In a lasting service relationship where the obliged party has been admitted to the household community, the entitled party must provide the necessary care and medical treatment in the event of illness, unless the illness was intentionally or grossly negligently brought about by the obliged party, and the duty does not lapse under paragraph 2 (§ 617 (1) sentence 1, (2))";
+    when dauerndes_dienstverhaeltnis(d);
+    when haeusliche_gemeinschaft(d);
+    when erkrankung_am_617(d, tag);
+    when not erkrankung_vorsaetzlich_oder_grob_fahrlaessig_herbeigefuehrt(d);
+    when kein_krankenversicherung_oder_oeffentliche_krankenpflege_vorgesorgt(d);
+    then pflicht_krankenfuersorge_617(d);
+}
+
+pub relation kein_krankenversicherung_oder_oeffentliche_krankenpflege_vorgesorgt(d: Dienstverhaeltnis) kind empirical {
+    label de official "für Verpflegung und ärztliche Behandlung ist KEINE Vorsorge durch Versicherung oder öffentliche Krankenpflege getroffen (§ 617 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "no provision for care and medical treatment has been made through insurance or public health care (§ 617 (2)) — express statement of the case";
+}
+
+@source(BGB_P617)
+rule KrankenfuersorgeEnde617(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Der Dienstberechtigte gewährt die Verpflegung und ärztliche Behandlung bis zur Dauer von sechs Wochen (§ 617 Abs. 1 Satz 1) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "The entitled party provides the care and medical treatment for up to six weeks (§ 617 (1) sentence 1) — policy BGB_DIENST_WERK_KALENDER";
+    when pflicht_krankenfuersorge_617(d);
+    when erkrankung_am_617(d, tag);
+    then krankenfuersorge_ende_617(d, add_calendar_period(tag, 6 calendar_week));
+}
+
+// --- § 618 Pflicht zu Schutzmaßnahmen -----------------------------------------------------------------
+
+pub relation raeume_und_gerraetschaften_gefahrfrei_eingerichtet(d: Dienstverhaeltnis) kind empirical {
+    label de official "Räume, Vorrichtungen und Gerätschaften sind so eingerichtet, dass der Verpflichtete gegen Gefahr für Leben und Gesundheit geschützt ist (§ 618 Abs. 1)";
+    label en unofficial "rooms, fixtures and equipment are arranged so that the obliged party is protected against danger to life and health (§ 618 (1))";
+}
+pub relation schutzpflicht_618_nicht_erfuellt(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Dienstberechtigte erfüllt die ihm nach § 618 obliegenden Verpflichtungen nicht (§ 618 Abs. 3)";
+    label en unofficial "the entitled party does not fulfil the duties incumbent on them under § 618 (§ 618 (3))";
+}
+pub relation schadensersatzpflicht_618(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "Schadensersatzpflicht nach den für unerlaubte Handlungen geltenden Vorschriften der §§ 842 bis 846 (§ 618 Abs. 3)";
+    label en unofficial "duty to compensate damage under §§ 842 to 846 applicable to torts (§ 618 (3))";
+}
+
+@source(BGB_P618)
+rule Schutzmassnahmenpflicht618(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der Dienstberechtigte hat Räume, Vorrichtungen oder Gerätschaften so einzurichten und zu unterhalten, dass der Verpflichtete gegen Gefahr für Leben und Gesundheit geschützt ist, soweit die Natur der Dienstleistung es gestattet (§ 618 Abs. 1)";
+    label en unofficial "The entitled party must arrange and maintain rooms, fixtures or equipment so that the obliged party is protected against danger to life and health, as far as the nature of the service permits (§ 618 (1))";
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then duty SchutzmassnahmenGewaehren618 {
+        bearer berechtigter;
+        achieve raeume_und_gerraetschaften_gefahrfrei_eingerichtet(d) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P618)
+rule Schadensersatz618Abs3(d: Dienstverhaeltnis) strict {
+    label de official "Erfüllt der Dienstberechtigte die ihm in Ansehung des Lebens und der Gesundheit des Verpflichteten obliegenden Verpflichtungen nicht, so finden auf seine Verpflichtung zum Schadensersatz die für unerlaubte Handlungen geltenden Vorschriften der §§ 842 bis 846 entsprechende Anwendung (§ 618 Abs. 3)";
+    label en unofficial "If the entitled party fails to fulfil the duties incumbent on them regarding the life and health of the obliged party, §§ 842 to 846 on torts apply correspondingly to the duty to compensate (§ 618 (3))";
+    when schutzpflicht_618_nicht_erfuellt(d);
+    then schadensersatzpflicht_618(d);
+}
+
+// --- § 619 Unabdingbarkeit der Fürsorgepflichten --------------------------------------------------------
+
+pub relation vertragliche_aufhebung_oder_beschraenkung_617_618(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Verpflichtungen nach §§ 617, 618 sind im Voraus durch Vertrag aufgehoben oder beschränkt worden (§ 619)";
+    label en unofficial "the duties under §§ 617, 618 have been lifted or restricted in advance by contract (§ 619)";
+}
+pub relation vertragsklausel_619_unwirksam(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "die Aufhebung oder Beschränkung der Fürsorgepflichten ist unwirksam (§ 619)";
+    label en unofficial "the lifting or restriction of the duties of care is invalid (§ 619)";
+}
+
+@source(BGB_P619)
+rule Unabdingbarkeit619(d: Dienstverhaeltnis) strict {
+    label de official "Die dem Dienstberechtigten nach den §§ 617, 618 obliegenden Verpflichtungen können nicht im Voraus durch Vertrag aufgehoben oder beschränkt werden (§ 619)";
+    label en unofficial "The duties incumbent on the entitled party under §§ 617, 618 cannot be lifted or restricted in advance by contract (§ 619)";
+    when vertragliche_aufhebung_oder_beschraenkung_617_618(d);
+    then vertragsklausel_619_unwirksam(d);
+}
+
+// --- § 619a Beweislast bei Haftung des Arbeitnehmers ------------------------------------------------------
+
+pub relation pflichtverletzung_durch_arbeitnehmer(d: Dienstverhaeltnis, p: Person) kind empirical {
+    label de official "Verletzung einer Pflicht aus dem Arbeitsverhältnis durch den Arbeitnehmer, aus der ein Schaden des Arbeitgebers entsteht (§ 619a)";
+    label en unofficial "breach by the employee of a duty under the employment relationship, from which the employer's damage arises (§ 619a)";
+}
+pub relation vertretenmuessen_der_pflichtverletzung(d: Dienstverhaeltnis, p: Person) kind empirical {
+    label de official "der Arbeitnehmer hat die Pflichtverletzung zu vertreten (§ 619a) — festgestellte Tatsache";
+    label en unofficial "the employee is responsible for the breach of duty (§ 619a) — established fact";
+}
+pub relation ersatzpflicht_619a(d: Dienstverhaeltnis, p: Person) kind institutional {
+    key(d, p);
+    label de official "der Arbeitnehmer hat dem Arbeitgeber Ersatz für den aus der Pflichtverletzung entstehenden Schaden zu leisten (§ 619a)";
+    label en unofficial "the employee must compensate the employer for the damage arising from the breach of duty (§ 619a)";
+}
+
+@source(BGB_P619a)
+rule Ersatzpflicht619a(d: Dienstverhaeltnis, p: Person) strict {
+    label de official "Abweichend von § 280 Abs. 1 hat der Arbeitnehmer dem Arbeitgeber Ersatz für den aus der Verletzung einer Pflicht aus dem Arbeitsverhältnis entstehenden Schaden nur zu leisten, wenn er die Pflichtverletzung zu vertreten hat (§ 619a)";
+    label en unofficial "By way of derogation from § 280 (1), the employee must compensate the employer for damage arising from a breach of a duty under the employment relationship only where the employee is responsible for the breach (§ 619a)";
+    when arbeitsverhaeltnis(d);
+    when pflichtverletzung_durch_arbeitnehmer(d, p);
+    when vertretenmuessen_der_pflichtverletzung(d, p);
+    then ersatzpflicht_619a(d, p);
+}
+
+// --- § 620 Beendigung des Dienstverhältnisses -------------------------------------------------------------
+
+pub relation dienstverhaeltnis_befristet(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis ist für eine bestimmte Zeit eingegangen (§ 620 Abs. 1)";
+    label en unofficial "the service relationship was entered into for a fixed time (§ 620 (1))";
+}
+pub relation befristung_ablauf_am(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag des Ablaufs der Zeit, für die das Dienstverhältnis eingegangen ist (§ 620 Abs. 1)";
+    label en unofficial "day the time for which the service relationship was entered into expires (§ 620 (1))";
+}
+pub relation dienstverhaeltnis_beendet_am(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "Tag der Beendigung des Dienstverhältnisses";
+    label en unofficial "day the service relationship ends";
+}
+pub relation dienstverhaeltnis_unbestimmte_dauer(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Dauer des Dienstverhältnisses ist weder bestimmt noch aus der Beschaffenheit oder dem Zwecke der Dienste zu entnehmen (§ 620 Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the duration of the service relationship is neither fixed nor apparent from the nature or purpose of the services (§ 620 (2)) — express statement of the case";
+}
+
+@source(BGB_P620)
+rule Beendigung620Abs1(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Das Dienstverhältnis endigt mit dem Ablauf der Zeit, für die es eingegangen ist (§ 620 Abs. 1)";
+    label en unofficial "The service relationship ends when the time for which it was entered into expires (§ 620 (1))";
+    when dienstverhaeltnis_befristet(d);
+    when befristung_ablauf_am(d, tag);
+    then dienstverhaeltnis_beendet_am(d, tag);
+}
+
+// --- § 621 Kündigungsfristen bei Dienstverhältnissen (kein Arbeitsverhältnis im Sinne des § 622) -------------
+//
+// Alle fünf Ziffern sind ausgeführt. Ziffer 2 (Wochenlohn) rechnet den
+// ersten Werktag einer Woche mit `add_business_days` über dem Kalender
+// KALENDER_BUNDESWEIT des Eigentümerpakets `de.bgb.fristen`, das dieses
+// Paket seit dem Schnitt des Untertitels 3 importiert; der Anfang der Woche
+// ist — wie bei `de.bgb.miete` (Ledger D-06-08) — eine Angabe des Falls, weil
+// die Fläche v1 keinen Term für den Wochenanfang kennt (§258). Der Sonnabend
+// wird als fünfter Tag nach dem Wochenanfang gerechnet und NICHT über den
+// Kalender bestimmt; die offene Frage D-Q06-1 (Sonnabend als Werktag) berührt
+// Ziffer 2 daher nicht: `add_business_days` wird hier nur auf den ERSTEN
+// Werktag der Woche angewandt, und ein arbeitsfreier Sonnabend verschiebt
+// diesen nicht. Ziffer 4 rechnet das Kalendervierteljahr aus seinem Anfang
+// (ebenfalls Angabe des Falls nach D-06-08) mit zwei Monatsschritten und
+// `month_end_of`. Ledger D-07-12.
+
+pub relation kuendigungserklaerung_am(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag der Kündigungserklärung (§§ 621, 622, 624)";
+    label en unofficial "day the notice of termination is declared (§§ 621, 622, 624)";
+}
+pub relation kein_arbeitsverhaeltnis_im_sinne_des_622(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis ist kein Arbeitsverhältnis im Sinne des § 622 (§§ 621, 627) — ausdrückliche Angabe des Falls; § 611a Abs. 1 stellt die Zuordnung selbst unter eine Wertung, ein bloßes `not arbeitsverhaeltnis(d)` würde die ganze Kette an ihre Beantwortung binden";
+    label en unofficial "the service relationship is not an employment relationship within § 622 (§§ 621, 627) — express statement of the case; § 611a (1) itself places the classification under a judgment, so a bare `not arbeitsverhaeltnis(d)` would tie this whole chain to its answer";
+}
+pub relation verguetung_nach_tagen_bemessen_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nach Tagen bemessen (§ 621 Nr. 1)";
+    label en unofficial "the compensation is measured by days (§ 621 no. 1)";
+}
+pub relation verguetung_nach_monaten_bemessen_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nach Monaten bemessen (§ 621 Nr. 3)";
+    label en unofficial "the compensation is measured by months (§ 621 no. 3)";
+}
+pub relation verguetung_nicht_nach_zeitabschnitten_bemessen_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nicht nach Zeitabschnitten bemessen (§ 621 Nr. 5) — ausdrückliche Angabe des Falls";
+    label en unofficial "the compensation is not measured by periods of time (§ 621 no. 5) — express statement of the case";
+}
+pub relation erwerbstaetigkeit_voll_oder_hauptsaechlich_beansprucht_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis nimmt die Erwerbstätigkeit des Verpflichteten vollständig oder hauptsächlich in Anspruch (§ 621 Nr. 5 Halbsatz 2)";
+    label en unofficial "the service relationship occupies the obliged party's earning activity fully or mainly (§ 621 no. 5 second half-sentence)";
+}
+pub relation erwerbstaetigkeit_nicht_voll_oder_hauptsaechlich_beansprucht_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis nimmt die Erwerbstätigkeit des Verpflichteten NICHT vollständig oder hauptsächlich in Anspruch (§ 621 Nr. 5) — ausdrückliche Angabe des Falls";
+    label en unofficial "the service relationship does NOT occupy the obliged party's earning activity fully or mainly (§ 621 no. 5) — express statement of the case";
+}
+pub relation kuendigungstermin_621(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "Termin, für dessen Ablauf die Kündigung nach § 621 zulässig ist";
+    label en unofficial "date for whose end notice is permitted under § 621";
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr1(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Bei einem Dienstverhältnis, das kein Arbeitsverhältnis im Sinne des § 622 ist, ist die Kündigung zulässig, wenn die Vergütung nach Tagen bemessen ist, an jedem Tag für den Ablauf des folgenden Tages (§ 621 Nr. 1)";
+    label en unofficial "In a service relationship that is not an employment relationship within § 622, where compensation is measured by days, notice may be given on any day for the end of the following day (§ 621 no. 1)";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when verguetung_nach_tagen_bemessen_621(d);
+    when kuendigungserklaerung_am(d, tag);
+    then kuendigungstermin_621(d, add_calendar_period(tag, 1 calendar_day));
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr3Rechtzeitig(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Ist die Vergütung nach Monaten bemessen, so ist die Kündigung spätestens am 15. eines Monats für den Schluss des Kalendermonats zulässig (§ 621 Nr. 3) — rechtzeitig erklärt";
+    label en unofficial "Where compensation is measured by months, notice given by the 15th of a month is permitted for the end of that calendar month (§ 621 no. 3) — declared in time";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when verguetung_nach_monaten_bemessen_621(d);
+    when kuendigungserklaerung_am(d, tag);
+    when tag <= add_calendar_period(month_start_of(tag), 14 calendar_day);
+    then kuendigungstermin_621(d, month_end_of(tag));
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr3Verspaetet(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Ist die Vergütung nach Monaten bemessen und wird die Kündigung nach dem 15. des Monats erklärt, so gilt sie für den Schluss des folgenden Kalendermonats (§ 621 Nr. 3)";
+    label en unofficial "Where compensation is measured by months and notice is given after the 15th, it takes effect for the end of the following calendar month (§ 621 no. 3)";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when verguetung_nach_monaten_bemessen_621(d);
+    when kuendigungserklaerung_am(d, tag);
+    when tag > add_calendar_period(month_start_of(tag), 14 calendar_day);
+    then kuendigungstermin_621(d, month_end_of(add_calendar_period(tag, 1 calendar_month)));
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr5Jederzeit(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Ist die Vergütung nicht nach Zeitabschnitten bemessen, so ist die Kündigung jederzeit zulässig (§ 621 Nr. 5 Halbsatz 1)";
+    label en unofficial "Where compensation is not measured by periods of time, notice may be given at any time (§ 621 no. 5 first half-sentence)";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when verguetung_nicht_nach_zeitabschnitten_bemessen_621(d);
+    when erwerbstaetigkeit_nicht_voll_oder_hauptsaechlich_beansprucht_621(d);
+    when kuendigungserklaerung_am(d, tag);
+    then kuendigungstermin_621(d, tag);
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr5ZweiWochen(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Bei einem die Erwerbstätigkeit des Verpflichteten vollständig oder hauptsächlich in Anspruch nehmenden Dienstverhältnis ist eine Kündigungsfrist von zwei Wochen einzuhalten (§ 621 Nr. 5 Halbsatz 2)";
+    label en unofficial "In a service relationship occupying the obliged party's earning activity fully or mainly, a notice period of two weeks must be observed (§ 621 no. 5 second half-sentence)";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when verguetung_nicht_nach_zeitabschnitten_bemessen_621(d);
+    when erwerbstaetigkeit_voll_oder_hauptsaechlich_beansprucht_621(d);
+    when kuendigungserklaerung_am(d, tag);
+    then kuendigungstermin_621(d, add_calendar_period(tag, 2 calendar_week));
+}
+
+pub relation verguetung_nach_wochen_bemessen_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nach Wochen bemessen (§ 621 Nr. 2)";
+    label en unofficial "the compensation is measured by weeks (§ 621 no. 2)";
+}
+pub relation wochenbeginn_621(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "erster Tag der Woche, in der gekündigt wird (§ 621 Nr. 2) — Angabe des Falls; die Fläche v1 kennt keinen Term für den Wochenanfang (§258, Ledger D-06-08)";
+    label en unofficial "first day of the week in which notice is given (§ 621 no. 2) — statement of the case; the v1 surface has no term for the start of a week (§258, ledger D-06-08)";
+}
+pub relation erster_werktag_der_woche_621(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "der erste Werktag der Woche, an dem die Kündigung spätestens zu erklären ist (§ 621 Nr. 2) — gerechnet über den Kalender KALENDER_BUNDESWEIT des Pakets de.bgb.fristen";
+    label en unofficial "the first working day of the week by which notice must be given at the latest (§ 621 no. 2) — computed over the calendar KALENDER_BUNDESWEIT of the package de.bgb.fristen";
+}
+pub relation folgender_sonnabend_621(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "der Sonnabend der Woche, mit dessen Ablauf das Dienstverhältnis endet (§ 621 Nr. 2) — fünf Tage nach dem Wochenanfang";
+    label en unofficial "the Saturday of the week at whose end the service relationship ends (§ 621 no. 2) — five days after the start of the week";
+}
+
+@source(BGB_P621)
+rule ErsterWerktagDerWoche621Nr2(d: Dienstverhaeltnis, beginn: Date) strict {
+    label de official "Ist die Vergütung nach Wochen bemessen, so ist die Kündigung spätestens am ersten Werktag einer Woche zulässig (§ 621 Nr. 2)";
+    label en unofficial "Where the compensation is measured by weeks, notice is permitted at the latest on the first working day of a week (§ 621 no. 2)";
+    when verguetung_nach_wochen_bemessen_621(d);
+    when wochenbeginn_621(d, beginn);
+    then erster_werktag_der_woche_621(d, add_business_days(beginn, 1 business_day));
+}
+
+@source(BGB_P621)
+rule FolgenderSonnabend621Nr2(d: Dienstverhaeltnis, beginn: Date) strict {
+    label de official "Die Kündigung wirkt für den Ablauf des folgenden Sonnabends (§ 621 Nr. 2) — der Sonnabend ist der fünfte Tag nach dem Wochenanfang";
+    label en unofficial "The notice takes effect for the end of the following Saturday (§ 621 no. 2) — the Saturday is the fifth day after the start of the week";
+    when verguetung_nach_wochen_bemessen_621(d);
+    when wochenbeginn_621(d, beginn);
+    then folgender_sonnabend_621(d, add_calendar_period(beginn, 5 calendar_day));
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr2(d: Dienstverhaeltnis, tag: Date, werktag: Date, sonnabend: Date) strict {
+    label de official "Ist die Vergütung nach Wochen bemessen, so ist die Kündigung spätestens am ersten Werktag einer Woche für den Ablauf des folgenden Sonnabends zulässig (§ 621 Nr. 2)";
+    label en unofficial "Where the compensation is measured by weeks, notice is permitted at the latest on the first working day of a week for the end of the following Saturday (§ 621 no. 2)";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when kuendigungserklaerung_am(d, tag);
+    when erster_werktag_der_woche_621(d, werktag);
+    when folgender_sonnabend_621(d, sonnabend);
+    when tag <= werktag;
+    then kuendigungstermin_621(d, sonnabend);
+}
+
+pub relation verguetung_nach_vierteljahren_bemessen_621(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Vergütung ist nach Vierteljahren oder längeren Zeitabschnitten bemessen (§ 621 Nr. 4)";
+    label en unofficial "the compensation is measured by quarters or longer periods (§ 621 no. 4)";
+}
+pub relation kalendervierteljahr_beginn_621(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "erster Tag des Kalendervierteljahrs, für dessen Schluss gekündigt wird (§ 621 Nr. 4) — Angabe des Falls; die Fläche v1 kennt keinen Term für den Quartalsanfang (§258, Ledger D-06-08)";
+    label en unofficial "first day of the calendar quarter for whose end notice is given (§ 621 no. 4) — statement of the case; the v1 surface has no term for the start of a quarter (§258, ledger D-06-08)";
+}
+pub relation kalendervierteljahr_ende_621(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "letzter Tag des Kalendervierteljahrs (§ 621 Nr. 4) — zwei Monatsschritte vom Quartalsanfang und der Monatsletzte (§ 188 Abs. 3)";
+    label en unofficial "last day of the calendar quarter (§ 621 no. 4) — two month steps from the start of the quarter and the last day of that month (§ 188 (3))";
+}
+pub relation kuendigung_plus_sechs_wochen_621(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "der Tag sechs Wochen nach der Kündigungserklärung — die Kündigungsfrist des § 621 Nr. 4 ist gewahrt, wenn er nicht nach dem Quartalsschluss liegt";
+    label en unofficial "the day six weeks after the declaration of notice — the period of § 621 no. 4 is observed if it is not after the end of the quarter";
+}
+
+@source(BGB_P621)
+rule Kalendervierteljahrsende621Nr4(d: Dienstverhaeltnis, beginn: Date) strict {
+    label de official "Das Kalendervierteljahr endet mit dem letzten Tag seines dritten Monats (§ 621 Nr. 4, § 188 Abs. 3)";
+    label en unofficial "The calendar quarter ends on the last day of its third month (§ 621 no. 4, § 188 (3))";
+    when verguetung_nach_vierteljahren_bemessen_621(d);
+    when kalendervierteljahr_beginn_621(d, beginn);
+    then kalendervierteljahr_ende_621(d, month_end_of(add_calendar_period(beginn, 2 calendar_month)));
+}
+
+@source(BGB_P621)
+rule Sechswochenfrist621Nr4(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Bei nach Vierteljahren bemessener Vergütung ist eine Kündigungsfrist von sechs Wochen einzuhalten (§ 621 Nr. 4) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "Where the compensation is measured by quarters, a notice period of six weeks must be observed (§ 621 no. 4) — policy BGB_DIENST_WERK_KALENDER";
+    when verguetung_nach_vierteljahren_bemessen_621(d);
+    when kuendigungserklaerung_am(d, tag);
+    then kuendigung_plus_sechs_wochen_621(d, add_calendar_period(tag, 6 calendar_week));
+}
+
+@source(BGB_P621)
+rule Kuendigungstermin621Nr4(d: Dienstverhaeltnis, grenze: Date, quartalsende: Date) strict {
+    label de official "Ist die Vergütung nach Vierteljahren oder längeren Zeitabschnitten bemessen, so ist die Kündigung unter Einhaltung einer Kündigungsfrist von sechs Wochen für den Schluss eines Kalendervierteljahrs zulässig (§ 621 Nr. 4)";
+    label en unofficial "Where the compensation is measured by quarters or longer periods, notice is permitted for the end of a calendar quarter subject to a notice period of six weeks (§ 621 no. 4)";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when dienstverhaeltnis_unbestimmte_dauer(d);
+    when kuendigung_plus_sechs_wochen_621(d, grenze);
+    when kalendervierteljahr_ende_621(d, quartalsende);
+    when grenze <= quartalsende;
+    then kuendigungstermin_621(d, quartalsende);
+}
+
+// --- § 622 Kündigungsfristen bei Arbeitsverhältnissen -----------------------------------------------------
+//
+// Abs. 4–6 (Tarifvertrag, kürzere Einzelvertragsfrist, Höchstfrist des
+// Arbeitnehmers) sind institutionelle Randbedingungen ohne eigene
+// Schlussfolgerungskette in diesem Schnitt; Abs. 1–3 sind ausgeführt.
+
+pub relation arbeitgeberkuendigung(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung erfolgt durch den Arbeitgeber (§ 622 Abs. 2)";
+    label en unofficial "the notice is given by the employer (§ 622 (2))";
+}
+pub relation arbeitnehmerkuendigung(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung erfolgt durch den Arbeitnehmer — Absatz 2 gilt nur für die Kündigung durch den Arbeitgeber (§ 622 Abs. 2 Satz 1), die Grundfrist des Absatzes 1 bleibt maßgebend";
+    label en unofficial "the notice is given by the employee — paragraph 2 applies only to notice given by the employer (§ 622 (2) sentence 1), the basic period of paragraph 1 remains decisive";
+}
+pub relation beschaeftigt_seit(d: Dienstverhaeltnis, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag, seit dem das Arbeitsverhältnis in dem Betrieb oder Unternehmen besteht (§ 622 Abs. 2 Satz 1)";
+    label en unofficial "day since which the employment relationship has existed in the establishment or undertaking (§ 622 (2) sentence 1)";
+}
+pub relation in_probezeit(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung erfolgt während einer vereinbarten Probezeit von längstens sechs Monaten (§ 622 Abs. 3)";
+    label en unofficial "notice is given during an agreed probationary period of no more than six months (§ 622 (3))";
+}
+pub relation nicht_in_probezeit_622(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung erfolgt NICHT während einer vereinbarten Probezeit (§ 622 Abs. 1, 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "notice is NOT given during an agreed probationary period (§ 622 (1), (2)) — express statement of the case";
+}
+pub relation kuendigungstermin_622(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "Termin, für dessen Ablauf die Kündigung nach § 622 zulässig ist";
+    label en unofficial "date for whose end notice is permitted under § 622";
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs3Probezeit(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Während einer vereinbarten Probezeit, längstens für die Dauer von sechs Monaten, kann das Arbeitsverhältnis mit einer Frist von zwei Wochen gekündigt werden (§ 622 Abs. 3)";
+    label en unofficial "During an agreed probationary period, for no more than six months, the employment relationship may be terminated with two weeks' notice (§ 622 (3))";
+    when arbeitsverhaeltnis(d);
+    when in_probezeit(d);
+    when kuendigungserklaerung_am(d, tag);
+    then kuendigungstermin_622(d, add_calendar_period(tag, 2 calendar_week));
+}
+
+// Absatz 1 ist die Grundfrist: sie gilt für die Kündigung durch den
+// Arbeitnehmer immer, für die Kündigung durch den Arbeitgeber nur unterhalb
+// der Zweijahresschwelle des Absatzes 2 — sonst träfen für dasselbe
+// Dienstverhältnis zwei verschiedene Termine aufeinander (Ledger D-07-04).
+// Je zwei Regeln (Arbeitnehmer- und unterschwellige Arbeitgeberkündigung)
+// für denselben Kopf.
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs1FruehmonatArbeitnehmer(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Das Arbeitsverhältnis kann mit einer Frist von vier Wochen zum Fünfzehnten oder zum Ende eines Kalendermonats gekündigt werden (§ 622 Abs. 1); frühester zulässiger Termin ist der Fünfzehnte, wenn die Vierwochenfrist spätestens an ihm abläuft — Kündigung durch den Arbeitnehmer";
+    label en unofficial "The employment relationship may be terminated with four weeks' notice to the 15th or to the end of a calendar month (§ 622 (1)); the 15th is the earliest permitted date where the four-week period ends by then — notice given by the employee";
+    when arbeitsverhaeltnis(d);
+    when arbeitnehmerkuendigung(d);
+    when nicht_in_probezeit_622(d);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(tag, 28 calendar_day) <= add_calendar_period(month_start_of(add_calendar_period(tag, 28 calendar_day)), 14 calendar_day);
+    then kuendigungstermin_622(d, add_calendar_period(month_start_of(add_calendar_period(tag, 28 calendar_day)), 14 calendar_day));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs1FruehmonatArbeitgeberUnterSchwelle(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Das Arbeitsverhältnis kann mit einer Frist von vier Wochen zum Fünfzehnten oder zum Ende eines Kalendermonats gekündigt werden (§ 622 Abs. 1); frühester zulässiger Termin ist der Fünfzehnte, wenn die Vierwochenfrist spätestens an ihm abläuft — Kündigung durch den Arbeitgeber unterhalb der Zweijahresschwelle des Absatzes 2";
+    label en unofficial "The employment relationship may be terminated with four weeks' notice to the 15th or to the end of a calendar month (§ 622 (1)); the 15th is the earliest permitted date where the four-week period ends by then — notice given by the employer below the two-year threshold of paragraph 2";
+    when arbeitsverhaeltnis(d);
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when nicht_in_probezeit_622(d);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 2 calendar_year) > tag;
+    when add_calendar_period(tag, 28 calendar_day) <= add_calendar_period(month_start_of(add_calendar_period(tag, 28 calendar_day)), 14 calendar_day);
+    then kuendigungstermin_622(d, add_calendar_period(month_start_of(add_calendar_period(tag, 28 calendar_day)), 14 calendar_day));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs1MonatsendeArbeitnehmer(d: Dienstverhaeltnis, tag: Date) strict {
+    label de official "Das Arbeitsverhältnis kann mit einer Frist von vier Wochen zum Fünfzehnten oder zum Ende eines Kalendermonats gekündigt werden (§ 622 Abs. 1); liegt der Fünfzehnte vor dem Ablauf der Vierwochenfrist, ist frühester zulässiger Termin das Monatsende — Kündigung durch den Arbeitnehmer";
+    label en unofficial "The employment relationship may be terminated with four weeks' notice to the 15th or to the end of a calendar month (§ 622 (1)); where the 15th precedes the end of the four-week period, the earliest permitted date is the month's end — notice given by the employee";
+    when arbeitsverhaeltnis(d);
+    when arbeitnehmerkuendigung(d);
+    when nicht_in_probezeit_622(d);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(tag, 28 calendar_day) > add_calendar_period(month_start_of(add_calendar_period(tag, 28 calendar_day)), 14 calendar_day);
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 28 calendar_day)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs1MonatsendeArbeitgeberUnterSchwelle(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Das Arbeitsverhältnis kann mit einer Frist von vier Wochen zum Fünfzehnten oder zum Ende eines Kalendermonats gekündigt werden (§ 622 Abs. 1); liegt der Fünfzehnte vor dem Ablauf der Vierwochenfrist, ist frühester zulässiger Termin das Monatsende — Kündigung durch den Arbeitgeber unterhalb der Zweijahresschwelle des Absatzes 2";
+    label en unofficial "The employment relationship may be terminated with four weeks' notice to the 15th or to the end of a calendar month (§ 622 (1)); where the 15th precedes the end of the four-week period, the earliest permitted date is the month's end — notice given by the employer below the two-year threshold of paragraph 2";
+    when arbeitsverhaeltnis(d);
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when nicht_in_probezeit_622(d);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 2 calendar_year) > tag;
+    when add_calendar_period(tag, 28 calendar_day) > add_calendar_period(month_start_of(add_calendar_period(tag, 28 calendar_day)), 14 calendar_day);
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 28 calendar_day)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe1(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: zwei Jahre Bestand — ein Monat zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 1)";
+    label en unofficial "Notice by the employer: two years' standing — one month to the end of a calendar month (§ 622 (2) sentence 1 no. 1)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 2 calendar_year) <= tag;
+    when add_calendar_period(seit, 5 calendar_year) > tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 1 calendar_month)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe2(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: fünf Jahre Bestand — zwei Monate zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 2)";
+    label en unofficial "Notice by the employer: five years' standing — two months to the end of a calendar month (§ 622 (2) sentence 1 no. 2)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 5 calendar_year) <= tag;
+    when add_calendar_period(seit, 8 calendar_year) > tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 2 calendar_month)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe3(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: acht Jahre Bestand — drei Monate zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 3)";
+    label en unofficial "Notice by the employer: eight years' standing — three months to the end of a calendar month (§ 622 (2) sentence 1 no. 3)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 8 calendar_year) <= tag;
+    when add_calendar_period(seit, 10 calendar_year) > tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 3 calendar_month)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe4(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: zehn Jahre Bestand — vier Monate zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 4)";
+    label en unofficial "Notice by the employer: ten years' standing — four months to the end of a calendar month (§ 622 (2) sentence 1 no. 4)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 10 calendar_year) <= tag;
+    when add_calendar_period(seit, 12 calendar_year) > tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 4 calendar_month)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe5(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: zwölf Jahre Bestand — fünf Monate zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 5)";
+    label en unofficial "Notice by the employer: twelve years' standing — five months to the end of a calendar month (§ 622 (2) sentence 1 no. 5)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 12 calendar_year) <= tag;
+    when add_calendar_period(seit, 15 calendar_year) > tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 5 calendar_month)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe6(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: 15 Jahre Bestand — sechs Monate zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 6)";
+    label en unofficial "Notice by the employer: 15 years' standing — six months to the end of a calendar month (§ 622 (2) sentence 1 no. 6)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 15 calendar_year) <= tag;
+    when add_calendar_period(seit, 20 calendar_year) > tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 6 calendar_month)));
+}
+
+@source(BGB_P622)
+rule Kuendigungstermin622Abs2Stufe7(d: Dienstverhaeltnis, tag: Date, seit: Date) strict {
+    label de official "Kündigung durch den Arbeitgeber: 20 Jahre Bestand — sieben Monate zum Ende eines Kalendermonats (§ 622 Abs. 2 Satz 1 Nr. 7)";
+    label en unofficial "Notice by the employer: 20 years' standing — seven months to the end of a calendar month (§ 622 (2) sentence 1 no. 7)";
+    when arbeitgeberkuendigung(d);
+    when beschaeftigt_seit(d, seit);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(seit, 20 calendar_year) <= tag;
+    then kuendigungstermin_622(d, month_end_of(add_calendar_period(tag, 7 calendar_month)));
+}
+
+// --- § 623 Schriftform der Kündigung ------------------------------------------------------------------
+
+pub relation kuendigung_in_schriftform(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung oder der Auflösungsvertrag wird schriftlich erklärt (§ 623)";
+    label en unofficial "the notice or termination agreement is declared in writing (§ 623)";
+}
+pub relation kuendigung_elektronisch_erklaert(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung wird in elektronischer Form erklärt (§ 623) — ausdrücklich ausgeschlossen";
+    label en unofficial "the notice is declared in electronic form (§ 623) — expressly excluded";
+}
+pub relation kuendigung_623_wirksam(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "die Kündigung erfüllt das Formerfordernis des § 623";
+    label en unofficial "the notice satisfies the form requirement of § 623";
+}
+pub relation kuendigung_623_unwirksam(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "die Kündigung erfüllt das Formerfordernis des § 623 nicht";
+    label en unofficial "the notice does not satisfy the form requirement of § 623";
+}
+
+@source(BGB_P623)
+rule Schriftform623Wirksam(d: Dienstverhaeltnis) strict {
+    label de official "Die Beendigung von Arbeitsverhältnissen durch Kündigung oder Auflösungsvertrag bedarf zu ihrer Wirksamkeit der Schriftform (§ 623)";
+    label en unofficial "The termination of employment relationships by notice or termination agreement requires written form to be effective (§ 623)";
+    when arbeitsverhaeltnis(d);
+    when kuendigung_in_schriftform(d);
+    then kuendigung_623_wirksam(d);
+}
+
+@source(BGB_P623)
+rule Schriftform623Elektronisch(d: Dienstverhaeltnis) strict {
+    label de official "Die elektronische Form ist ausgeschlossen (§ 623)";
+    label en unofficial "The electronic form is excluded (§ 623)";
+    when arbeitsverhaeltnis(d);
+    when kuendigung_elektronisch_erklaert(d);
+    then kuendigung_623_unwirksam(d);
+}
+
+// --- § 624 Kündigungsfrist bei Verträgen über mehr als fünf Jahre --------------------------------------
+
+pub relation dienstverhaeltnis_auf_lebenszeit(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis ist für die Lebenszeit einer Person eingegangen (§ 624)";
+    label en unofficial "the service relationship was entered into for the lifetime of a person (§ 624)";
+}
+pub relation dienstverhaeltnis_ueber_fuenf_jahre_vereinbart(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis ist für längere Zeit als fünf Jahre eingegangen (§ 624)";
+    label en unofficial "the service relationship was entered into for a period longer than five years (§ 624)";
+}
+pub relation kuendigungstermin_624(d: Dienstverhaeltnis, tag: Date) kind institutional {
+    key(d);
+    label de official "Termin, für dessen Ablauf die Kündigung nach § 624 zulässig ist";
+    label en unofficial "date for whose end notice is permitted under § 624";
+}
+
+@source(BGB_P624)
+rule Kuendigungstermin624Lebenszeit(d: Dienstverhaeltnis, beginn: Date, tag: Date) strict {
+    label de official "Ist das Dienstverhältnis für die Lebenszeit einer Person eingegangen, so kann es von dem Verpflichteten nach dem Ablauf von fünf Jahren mit einer Frist von sechs Monaten gekündigt werden (§ 624)";
+    label en unofficial "Where the service relationship was entered into for the lifetime of a person, the obliged party may terminate it after five years with six months' notice (§ 624)";
+    when dienstverhaeltnis_auf_lebenszeit(d);
+    when dienstbeginn_am(d, beginn);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(beginn, 5 calendar_year) <= tag;
+    then kuendigungstermin_624(d, add_calendar_period(tag, 6 calendar_month));
+}
+
+@source(BGB_P624)
+rule Kuendigungstermin624UeberFuenfJahre(d: Dienstverhaeltnis, beginn: Date, tag: Date) strict {
+    label de official "Ist das Dienstverhältnis für längere Zeit als fünf Jahre eingegangen, so kann es von dem Verpflichteten nach dem Ablauf von fünf Jahren mit einer Frist von sechs Monaten gekündigt werden (§ 624)";
+    label en unofficial "Where the service relationship was entered into for a period longer than five years, the obliged party may terminate it after five years with six months' notice (§ 624)";
+    when dienstverhaeltnis_ueber_fuenf_jahre_vereinbart(d);
+    when dienstbeginn_am(d, beginn);
+    when kuendigungserklaerung_am(d, tag);
+    when add_calendar_period(beginn, 5 calendar_year) <= tag;
+    then kuendigungstermin_624(d, add_calendar_period(tag, 6 calendar_month));
+}
+
+// --- § 625 Stillschweigende Verlängerung ---------------------------------------------------------------
+
+pub relation dienstverhaeltnis_nach_ablauf_fortgesetzt(d: Dienstverhaeltnis) kind empirical {
+    label de official "das Dienstverhältnis wird nach dem Ablauf der Dienstzeit von dem Verpflichteten mit Wissen des anderen Teiles fortgesetzt (§ 625)";
+    label en unofficial "the service relationship is continued by the obliged party after the service time has expired, with the other party's knowledge (§ 625)";
+}
+pub relation kein_widerspruch_erklaert_625(d: Dienstverhaeltnis) kind empirical {
+    label de official "der andere Teil hat der Fortsetzung nicht widersprochen (§ 625) — ausdrückliche Angabe des Falls";
+    label en unofficial "the other party did not object to the continuation (§ 625) — express statement of the case";
+}
+pub relation widerspruch_erklaert_625(d: Dienstverhaeltnis) kind empirical {
+    label de official "der andere Teil widerspricht der Fortsetzung (§ 625)";
+    label en unofficial "the other party objects to the continuation (§ 625)";
+}
+@source(BGB_P625)
+pub external judgment relation widerspruch_625_unverzueglich(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 625. Der Widerspruch wird unverzüglich erklärt";
+    label en unofficial "§ 625. The objection is declared without undue delay";
+}
+pub relation dienstverhaeltnis_verlaengert_625(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "das Dienstverhältnis gilt als auf unbestimmte Zeit verlängert (§ 625)";
+    label en unofficial "the service relationship is deemed extended for an indefinite time (§ 625)";
+}
+
+@source(BGB_P625)
+rule Verlaengerung625KeinWiderspruch(d: Dienstverhaeltnis) strict {
+    label de official "Wird das Dienstverhältnis nach dem Ablauf der Dienstzeit fortgesetzt, ohne dass widersprochen wird, so gilt es als auf unbestimmte Zeit verlängert (§ 625)";
+    label en unofficial "If the service relationship is continued after the service time has expired without objection, it is deemed extended for an indefinite time (§ 625)";
+    when dienstverhaeltnis_nach_ablauf_fortgesetzt(d);
+    when kein_widerspruch_erklaert_625(d);
+    then dienstverhaeltnis_verlaengert_625(d);
+}
+
+@source(BGB_P625)
+rule Verlaengerung625WiderspruchVerspaetet(d: Dienstverhaeltnis) strict {
+    label de official "Widerspricht der andere Teil, jedoch nicht unverzüglich, so gilt das Dienstverhältnis dennoch als auf unbestimmte Zeit verlängert (§ 625)";
+    label en unofficial "If the other party objects but not without undue delay, the service relationship is nevertheless deemed extended for an indefinite time (§ 625)";
+    when dienstverhaeltnis_nach_ablauf_fortgesetzt(d);
+    when widerspruch_erklaert_625(d);
+    when not widerspruch_625_unverzueglich(d);
+    then dienstverhaeltnis_verlaengert_625(d);
+}
+
+// --- § 626 Fristlose Kündigung aus wichtigem Grund ------------------------------------------------------
+
+@source(BGB_P626)
+pub external judgment relation wichtiger_grund_626(d: Dienstverhaeltnis, kuendigender: Person) {
+    authority Court;
+    label de official "§ 626 Abs. 1. Tatsachen liegen vor, auf Grund derer dem Kündigenden unter Berücksichtigung aller Umstände des Einzelfalles und unter Abwägung der Interessen beider Vertragsteile die Fortsetzung des Dienstverhältnisses bis zum Ablauf der Kündigungsfrist nicht zugemutet werden kann";
+    label en unofficial "§ 626 (1). Facts exist under which, having regard to all circumstances of the individual case and weighing the interests of both parties, the terminating party cannot be expected to continue the service relationship until the notice period expires";
+}
+pub relation ausserordentliche_kuendigung_zulaessig_626(d: Dienstverhaeltnis, kuendigender: Person) kind institutional {
+    key(d, kuendigender);
+    label de official "Kündigung des Dienstverhältnisses ohne Einhaltung einer Kündigungsfrist ist zulässig (§ 626 Abs. 1)";
+    label en unofficial "termination of the service relationship without observing a notice period is permitted (§ 626 (1))";
+}
+
+@source(BGB_P626)
+rule AusserordentlicheKuendigung626(d: Dienstverhaeltnis, kuendigender: Person) strict {
+    label de official "Das Dienstverhältnis kann von jedem Vertragsteil aus wichtigem Grund ohne Einhaltung einer Kündigungsfrist gekündigt werden (§ 626 Abs. 1)";
+    label en unofficial "Either party may terminate the service relationship for good cause without observing a notice period (§ 626 (1))";
+    when wichtiger_grund_626(d, kuendigender);
+    then ausserordentliche_kuendigung_zulaessig_626(d, kuendigender);
+}
+
+pub relation kenntnis_erlangt_am_626(d: Dienstverhaeltnis, kuendigungsberechtigter: Person, tag: Date) kind empirical {
+    key(d, kuendigungsberechtigter);
+    label de official "Tag, an dem der Kündigungsberechtigte von den für die Kündigung maßgebenden Tatsachen Kenntnis erlangt (§ 626 Abs. 2 Satz 2)";
+    label en unofficial "day on which the party entitled to give notice obtains knowledge of the facts material to the notice (§ 626 (2) sentence 2)";
+}
+pub relation kuendigungsfrist_626_ende(d: Dienstverhaeltnis, kuendigungsberechtigter: Person, tag: Date) kind institutional {
+    key(d, kuendigungsberechtigter);
+    label de official "letzter Tag, an dem die Kündigung nach § 626 erfolgen kann (§ 626 Abs. 2 Satz 1)";
+    label en unofficial "last day on which notice may be given under § 626 (§ 626 (2) sentence 1)";
+}
+
+@source(BGB_P626)
+rule Kuendigungsfrist626(d: Dienstverhaeltnis, p: Person, tag: Date) strict {
+    label de official "Die Kündigung kann nur innerhalb von zwei Wochen erfolgen; die Frist beginnt mit dem Zeitpunkt, in dem der Kündigungsberechtigte von den für die Kündigung maßgebenden Tatsachen Kenntnis erlangt (§ 626 Abs. 2 Satz 1, 2) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "Notice may only be given within two weeks; the period begins when the party entitled to give notice obtains knowledge of the facts material to the notice (§ 626 (2) sentences 1, 2) — policy BGB_DIENST_WERK_KALENDER";
+    when kenntnis_erlangt_am_626(d, p, tag);
+    then kuendigungsfrist_626_ende(d, p, add_calendar_period(tag, 2 calendar_week));
+}
+
+pub relation kuendigungserklaerung_am_626(d: Dienstverhaeltnis, kuendigender: Person, tag: Date) kind empirical {
+    key(d, kuendigender);
+    label de official "Tag der Erklärung der außerordentlichen Kündigung (§ 626 Abs. 2 Satz 1)";
+    label en unofficial "day the extraordinary notice is declared (§ 626 (2) sentence 1)";
+}
+pub relation kuendigung_626_innerhalb_der_frist(d: Dienstverhaeltnis, p: Person) kind institutional {
+    key(d, p);
+    label de official "die außerordentliche Kündigung wurde innerhalb der Zweiwochenfrist erklärt (§ 626 Abs. 2 Satz 1)";
+    label en unofficial "the extraordinary notice was declared within the two-week period (§ 626 (2) sentence 1)";
+}
+
+@source(BGB_P626)
+rule Kuendigung626Rechtzeitig(d: Dienstverhaeltnis, p: Person, erklaerung: Date, ende: Date) strict {
+    label de official "Die außerordentliche Kündigung ist rechtzeitig, wenn sie innerhalb der Zweiwochenfrist erklärt wird (§ 626 Abs. 2 Satz 1)";
+    label en unofficial "The extraordinary notice is timely if declared within the two-week period (§ 626 (2) sentence 1)";
+    when kuendigungserklaerung_am_626(d, p, erklaerung);
+    when kuendigungsfrist_626_ende(d, p, ende);
+    when erklaerung <= ende;
+    then kuendigung_626_innerhalb_der_frist(d, p);
+}
+
+// --- § 627 Fristlose Kündigung bei Vertrauensstellung ----------------------------------------------------
+
+@source(BGB_P627)
+pub external judgment relation dienste_hoeherer_art_auf_grund_besonderen_vertrauens(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 627 Abs. 1. Der zur Dienstleistung Verpflichtete hat Dienste höherer Art zu leisten, die auf Grund besonderen Vertrauens übertragen zu werden pflegen";
+    label en unofficial "§ 627 (1). The party obliged to perform services must render services of a higher kind, customarily entrusted on the basis of special confidence";
+}
+pub relation kein_dauerndes_dienstverhaeltnis_mit_festen_bezuegen(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Verpflichtete steht nicht in einem dauernden Dienstverhältnis mit festen Bezügen (§ 627 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the obliged party is not in a lasting service relationship with fixed remuneration (§ 627 (1)) — express statement of the case";
+}
+pub relation ausserordentliche_kuendigung_zulaessig_627(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "die Kündigung ist auch ohne die in § 626 bezeichnete Voraussetzung zulässig (§ 627 Abs. 1)";
+    label en unofficial "notice is permitted even without the requirement stated in § 626 (§ 627 (1))";
+}
+
+@source(BGB_P627)
+rule AusserordentlicheKuendigung627(d: Dienstverhaeltnis) strict {
+    label de official "Bei einem Dienstverhältnis, das kein Arbeitsverhältnis im Sinne des § 622 ist, ist die Kündigung auch ohne die in § 626 bezeichnete Voraussetzung zulässig, wenn der zur Dienstleistung Verpflichtete, ohne in einem dauernden Dienstverhältnis mit festen Bezügen zu stehen, Dienste höherer Art zu leisten hat, die auf Grund besonderen Vertrauens übertragen zu werden pflegen (§ 627 Abs. 1)";
+    label en unofficial "In a service relationship that is not an employment relationship within § 622, notice is permitted even without the requirement of § 626 where the party obliged to serve, without being in a lasting service relationship with fixed remuneration, must render services of a higher kind customarily entrusted on the basis of special confidence (§ 627 (1))";
+    when kein_arbeitsverhaeltnis_im_sinne_des_622(d);
+    when kein_dauerndes_dienstverhaeltnis_mit_festen_bezuegen(d);
+    when dienste_hoeherer_art_auf_grund_besonderen_vertrauens(d);
+    then ausserordentliche_kuendigung_zulaessig_627(d);
+}
+
+pub relation kuendigung_zur_unzeit_627(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Verpflichtete kündigt zur Unzeit, ohne dass sich der Dienstberechtigte die Dienste anderweit beschaffen kann (§ 627 Abs. 2 Satz 1)";
+    label en unofficial "the obliged party gives notice at an inopportune time, so that the entitled party cannot procure the services elsewhere (§ 627 (2) sentence 1)";
+}
+@source(BGB_P627)
+pub external judgment relation wichtiger_grund_fuer_unzeitige_kuendigung_627(d: Dienstverhaeltnis) {
+    authority Court;
+    label de official "§ 627 Abs. 2 Satz 1. Ein wichtiger Grund für die unzeitige Kündigung liegt vor";
+    label en unofficial "§ 627 (2) sentence 1. Good cause exists for the notice given at an inopportune time";
+}
+pub relation schadensersatzpflicht_627(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "Pflicht zum Ersatz des aus der unzeitigen Kündigung entstehenden Schadens (§ 627 Abs. 2 Satz 2)";
+    label en unofficial "duty to compensate the damage arising from notice given at an inopportune time (§ 627 (2) sentence 2)";
+}
+
+@source(BGB_P627)
+rule Schadensersatz627(d: Dienstverhaeltnis) strict {
+    label de official "Der Verpflichtete darf nur in der Art kündigen, dass sich der Dienstberechtigte die Dienste anderweit beschaffen kann, es sei denn, dass ein wichtiger Grund für die unzeitige Kündigung vorliegt; kündigt er ohne solchen Grund zur Unzeit, so hat er dem Dienstberechtigten den daraus entstehenden Schaden zu ersetzen (§ 627 Abs. 2)";
+    label en unofficial "The obliged party may give notice only in a manner allowing the entitled party to procure the services elsewhere, unless good cause exists for the inopportune notice; giving notice without such cause at an inopportune time obliges the party to compensate the resulting damage (§ 627 (2))";
+    when kuendigung_zur_unzeit_627(d);
+    when not wichtiger_grund_fuer_unzeitige_kuendigung_627(d);
+    then schadensersatzpflicht_627(d);
+}
+
+// --- § 628 Teilvergütung und Schadensersatz bei fristloser Kündigung ---------------------------------------
+
+pub relation dienstleistung_begonnen_628(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Dienstleistung hat begonnen, bevor das Dienstverhältnis auf Grund des § 626 oder des § 627 gekündigt wird (§ 628 Abs. 1 Satz 1)";
+    label en unofficial "the service began before the service relationship is terminated on the basis of § 626 or § 627 (§ 628 (1) sentence 1)";
+}
+pub relation bisherige_leistungen_anteil(d: Dienstverhaeltnis, betrag: Money) kind empirical {
+    key(d);
+    label de official "der den bisherigen Leistungen entsprechende Teil der Vergütung (§ 628 Abs. 1 Satz 1)";
+    label en unofficial "the part of the compensation corresponding to the services rendered so far (§ 628 (1) sentence 1)";
+}
+pub relation teilverguetungsanspruch_628(d: Dienstverhaeltnis, betrag: Money) kind institutional {
+    key(d);
+    label de official "Anspruch auf den den bisherigen Leistungen entsprechenden Teil der Vergütung (§ 628 Abs. 1 Satz 1)";
+    label en unofficial "claim to the part of the compensation corresponding to the services rendered so far (§ 628 (1) sentence 1)";
+}
+
+@source(BGB_P628)
+rule Teilverguetung628NachAusserordentlicherKuendigung626(d: Dienstverhaeltnis, kuendigender: Person, betrag: Money) strict {
+    label de official "Wird nach dem Beginn der Dienstleistung das Dienstverhältnis auf Grund des § 626 gekündigt, so kann der Verpflichtete einen seinen bisherigen Leistungen entsprechenden Teil der Vergütung verlangen (§ 628 Abs. 1 Satz 1)";
+    label en unofficial "If, after the service has begun, the service relationship is terminated on the basis of § 626, the obliged party may claim the part of the compensation corresponding to the services rendered so far (§ 628 (1) sentence 1)";
+    when dienstleistung_begonnen_628(d);
+    when ausserordentliche_kuendigung_zulaessig_626(d, kuendigender);
+    when bisherige_leistungen_anteil(d, betrag);
+    then teilverguetungsanspruch_628(d, betrag);
+}
+
+@source(BGB_P628)
+rule Teilverguetung628NachAusserordentlicherKuendigung627(d: Dienstverhaeltnis, betrag: Money) strict {
+    label de official "Wird nach dem Beginn der Dienstleistung das Dienstverhältnis auf Grund des § 627 gekündigt, so kann der Verpflichtete einen seinen bisherigen Leistungen entsprechenden Teil der Vergütung verlangen (§ 628 Abs. 1 Satz 1)";
+    label en unofficial "If, after the service has begun, the service relationship is terminated on the basis of § 627, the obliged party may claim the part of the compensation corresponding to the services rendered so far (§ 628 (1) sentence 1)";
+    when dienstleistung_begonnen_628(d);
+    when ausserordentliche_kuendigung_zulaessig_627(d);
+    when bisherige_leistungen_anteil(d, betrag);
+    then teilverguetungsanspruch_628(d, betrag);
+}
+
+pub relation kuendigung_durch_vertragswidriges_verhalten_veranlasst_628(d: Dienstverhaeltnis) kind empirical {
+    label de official "die Kündigung wird durch vertragswidriges Verhalten des anderen Teiles veranlasst (§ 628 Abs. 2)";
+    label en unofficial "the notice is occasioned by the other party's conduct in breach of contract (§ 628 (2))";
+}
+pub relation schadensersatzpflicht_628(d: Dienstverhaeltnis) kind institutional {
+    key(d);
+    label de official "Pflicht zum Ersatz des durch die Aufhebung des Dienstverhältnisses entstehenden Schadens (§ 628 Abs. 2)";
+    label en unofficial "duty to compensate the damage arising from the ending of the service relationship (§ 628 (2))";
+}
+
+@source(BGB_P628)
+rule Schadensersatz628Abs2(d: Dienstverhaeltnis) strict {
+    label de official "Wird die Kündigung durch vertragswidriges Verhalten des anderen Teiles veranlasst, so ist dieser zum Ersatz des durch die Aufhebung des Dienstverhältnisses entstehenden Schadens verpflichtet (§ 628 Abs. 2)";
+    label en unofficial "Where the notice is occasioned by the other party's conduct in breach of contract, that party must compensate the damage arising from the ending of the service relationship (§ 628 (2))";
+    when kuendigung_durch_vertragswidriges_verhalten_veranlasst_628(d);
+    then schadensersatzpflicht_628(d);
+}
+
+// --- § 629 Freizeit zur Stellungssuche -----------------------------------------------------------------
+
+pub relation kuendigung_erklaert_629(d: Dienstverhaeltnis) kind empirical {
+    label de official "das dauernde Dienstverhältnis wurde gekündigt (§ 629)";
+    label en unofficial "the lasting service relationship has been terminated by notice (§ 629)";
+}
+pub relation freizeit_verlangt_629(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Verpflichtete verlangt angemessene Zeit zum Aufsuchen eines anderen Dienstverhältnisses (§ 629)";
+    label en unofficial "the obliged party demands reasonable time to seek another service relationship (§ 629)";
+}
+pub relation angemessene_freizeit_gewaehrt_629(d: Dienstverhaeltnis) kind empirical {
+    label de official "angemessene Zeit zum Aufsuchen eines anderen Dienstverhältnisses wurde gewährt (§ 629)";
+    label en unofficial "reasonable time to seek another service relationship has been granted (§ 629)";
+}
+
+@source(BGB_P629)
+rule Freizeitgewaehrungspflicht629(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Nach der Kündigung eines dauernden Dienstverhältnisses hat der Dienstberechtigte dem Verpflichteten auf Verlangen angemessene Zeit zum Aufsuchen eines anderen Dienstverhältnisses zu gewähren (§ 629)";
+    label en unofficial "After notice of termination of a lasting service relationship, the entitled party must, on demand, grant the obliged party reasonable time to seek another service relationship (§ 629)";
+    when dauerndes_dienstverhaeltnis(d);
+    when kuendigung_erklaert_629(d);
+    when freizeit_verlangt_629(d);
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then duty FreizeitGewaehren629 {
+        bearer berechtigter;
+        achieve angemessene_freizeit_gewaehrt_629(d) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P629)
+rule PositionFreizeitgewaehrungspflicht629(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, beginn: Date) strict {
+    label de official "Der Dienstberechtigte muss angemessene Freizeit gewähren (§ 629) — normative Position";
+    label en unofficial "the service recipient must grant reasonable time off (§ 629) — normative position";
+    when dauerndes_dienstverhaeltnis(d);
+    when kuendigung_erklaert_629(d);
+    when freizeit_verlangt_629(d);
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    when dienstbeginn_am(d, beginn);
+    then duty FreizeitGewaehren629Position {
+        bearer berechtigter;
+        achieve angemessene_freizeit_gewaehrt_629(d) during [beginn, infinity);
+    };
+}
+
+// --- § 630 Pflicht zur Zeugniserteilung ----------------------------------------------------------------
+
+pub relation zeugnisverlangen_gestellt_630(d: Dienstverhaeltnis) kind empirical {
+    label de official "der Verpflichtete verlangt bei Beendigung des dauernden Dienstverhältnisses ein schriftliches Zeugnis (§ 630 Satz 1)";
+    label en unofficial "at the end of the lasting service relationship, the obliged party demands a written reference (§ 630 sentence 1)";
+}
+pub relation zeugnis_erteilt_630(d: Dienstverhaeltnis) kind empirical {
+    label de official "ein schriftliches Zeugnis über das Dienstverhältnis und dessen Dauer wurde erteilt (§ 630 Satz 1)";
+    label en unofficial "a written reference on the service relationship and its duration has been issued (§ 630 sentence 1)";
+}
+
+@source(BGB_P630)
+rule Zeugniserteilungspflicht630(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, tag: Date) strict {
+    label de official "Bei der Beendigung eines dauernden Dienstverhältnisses kann der Verpflichtete von dem anderen Teil ein schriftliches Zeugnis über das Dienstverhältnis und dessen Dauer fordern (§ 630 Satz 1)";
+    label en unofficial "On termination of a lasting service relationship, the obliged party may demand a written reference on the service relationship and its duration from the other party (§ 630 sentence 1)";
+    when dauerndes_dienstverhaeltnis(d);
+    when dienstverhaeltnis_beendet_am(d, tag);
+    when zeugnisverlangen_gestellt_630(d);
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    then duty ZeugniserteilungPflicht630 {
+        bearer berechtigter;
+        achieve zeugnis_erteilt_630(d) during [tag, infinity);
+    };
+}
+
+@source(BGB_P630)
+rule PositionZeugniserteilungspflicht630(d: Dienstverhaeltnis, verpflichteter: Person, berechtigter: Person, tag: Date) strict {
+    label de official "Der Dienstberechtigte muss ein Zeugnis erteilen (§ 630 Satz 1) — normative Position";
+    label en unofficial "the service recipient must issue a reference (§ 630 sentence 1) — normative position";
+    when dauerndes_dienstverhaeltnis(d);
+    when dienstverhaeltnis_beendet_am(d, tag);
+    when zeugnisverlangen_gestellt_630(d);
+    when dienstverpflichteter(d, verpflichteter);
+    when dienstberechtigter(d, berechtigter);
+    then duty Zeugniserteilungspflicht630Position {
+        bearer berechtigter;
+        achieve zeugnis_erteilt_630(d) during [tag, infinity);
+    };
+}

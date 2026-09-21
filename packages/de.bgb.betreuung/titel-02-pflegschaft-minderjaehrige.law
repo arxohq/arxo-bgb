@@ -1,0 +1,167 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 4 ABSCHNITT 3 TITEL 2 — PFLEGSCHAFT FÜR
+// MINDERJÄHRIGE (§§ 1809–1813)
+//
+// § 1813 ordnet an, dass auf diese Pflegschaften die Vorschriften der
+// Vormundschaft entsprechend anwendbar sind (Ausnahme: § 1809 Absatz 1 Satz 1
+// wendet §§ 1782, 1783 nicht an). Nach D-14-01 heißt das: die Titel-1-Regeln
+// dieses Pakets (Genehmigungen, Aufsicht, Vergütung — dort über
+// `gesetzlicher_vertreter` bzw. `vormund_bestellt` formuliert) gelten auch
+// für den Pfleger dieses Titels, sobald er als `gesetzlicher_vertreter`
+// erscheint; eine eigene Kopie der Maschinerie wird nicht gebaut.
+
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+
+// § 1809: Ergänzungspflegschaft.
+
+pub relation eltern_oder_vormund_an_besorgung_verhindert(vertreter: Person, m: Person, angelegenheit: Text) kind empirical {
+    label de official "Eltern oder Vormund sind an der Besorgung einer Angelegenheit des unter elterlicher Sorge oder Vormundschaft stehenden Minderjährigen verhindert (§ 1809 Absatz 1 Satz 1)";
+    label en unofficial "the parents or guardian are prevented from attending to a matter of the minor under parental custody or guardianship (§ 1809 (1) sentence 1)";
+}
+pub relation ergaenzungspfleger_kandidat(p: Person, m: Person, angelegenheit: Text) kind empirical {
+    label de official "Person, die das Familiengericht zum Ergänzungspfleger für die betreffende Angelegenheit bestellen will (§ 1809)";
+    label en unofficial "person the family court intends to appoint as supplementary curator for the matter concerned (§ 1809)";
+}
+pub relation ergaenzungspfleger_bestellt(p: Person, m: Person, angelegenheit: Text) kind institutional {
+    label de official "Ergänzungspfleger für die betreffende Angelegenheit bestellt (§ 1809 Absatz 1 Satz 1)";
+    label en unofficial "supplementary curator appointed for the matter concerned (§ 1809 (1) sentence 1)";
+}
+@source(BGB_P1809)
+rule ErgaenzungspflegschaftBestellung(vertreter: Person, p: Person, m: Person, angelegenheit: Text) strict {
+    label de official "Wer unter elterlicher Sorge oder Vormundschaft steht, erhält für Angelegenheiten, an deren Besorgung Eltern oder Vormund verhindert sind, einen Pfleger (§ 1809 Absatz 1 Satz 1)";
+    label en unofficial "a person under parental custody or guardianship receives a curator for matters the parents or guardian are prevented from handling (§ 1809 (1) sentence 1)";
+    when eltern_oder_vormund_an_besorgung_verhindert(vertreter, m, angelegenheit) and ergaenzungspfleger_kandidat(p, m, angelegenheit);
+    then ergaenzungspfleger_bestellt(p, m, angelegenheit);
+}
+@source(BGB_P1809)
+rule ErgaenzungspflegerGesetzlicherVertreter(p: Person, m: Person, angelegenheit: Text) strict {
+    label de official "Der Pfleger hat die Pflicht und das Recht, die ihm übertragenen Angelegenheiten im Interesse des Pfleglings zu dessen Wohl zu besorgen und diesen zu vertreten (§ 1809 Absatz 1 Satz 2)";
+    label en unofficial "the curator has the duty and right to attend to the matters entrusted to them in the ward's interest for their welfare, and to represent them (§ 1809 (1) sentence 2)";
+    when ergaenzungspfleger_bestellt(p, m, angelegenheit);
+    then gesetzlicher_vertreter(p, m);
+}
+pub relation pflegschaft_dem_familiengericht_unverzueglich_anzuzeigen(vertreter: Person, m: Person) kind institutional {
+    label de official "Wird eine Pflegschaft erforderlich, haben Eltern oder Vormund dies dem Familiengericht unverzüglich anzuzeigen (§ 1809 Absatz 2)";
+    label en unofficial "where a curatorship becomes necessary, the parents or guardian must notify the family court without delay (§ 1809 (2))";
+}
+@source(BGB_P1809)
+rule AnzeigepflichtErgaenzungspflegschaft(vertreter: Person, m: Person, angelegenheit: Text) strict {
+    label de official "Wird eine Pflegschaft erforderlich, haben Eltern oder Vormund dies dem Familiengericht unverzüglich anzuzeigen (§ 1809 Absatz 2)";
+    label en unofficial "where a curatorship becomes necessary, the parents or guardian must notify the family court without delay (§ 1809 (2))";
+    when eltern_oder_vormund_an_besorgung_verhindert(vertreter, m, angelegenheit);
+    then pflegschaft_dem_familiengericht_unverzueglich_anzuzeigen(vertreter, m);
+}
+
+// § 1810: Pflegschaft für ein ungeborenes Kind.
+
+pub relation eltern_waeren_an_sorge_verhindert_wenn_geboren(kuenftiges_kind: Person) kind empirical {
+    label de official "Die Eltern wären an der Ausübung der elterlichen Sorge verhindert, wäre das bereits gezeugte Kind bereits geboren (§ 1810 Satz 1)";
+    label en unofficial "the parents would be prevented from exercising parental custody had the already-conceived child already been born (§ 1810 sentence 1)";
+}
+pub relation pfleger_fuer_ungeborenes_kind_bestellbar(kuenftiges_kind: Person) kind institutional {
+    label de official "Ein Pfleger zur Wahrung der künftigen Rechte des ungeborenen Kindes kann bestellt werden (§ 1810 Satz 1)";
+    label en unofficial "a curator to safeguard the future rights of the unborn child may be appointed (§ 1810 sentence 1)";
+}
+@source(BGB_P1810)
+rule PflegschaftFuerUngeborenesKind(kuenftiges_kind: Person) strict {
+    label de official "Für ein bereits gezeugtes Kind kann zur Wahrung seiner künftigen Rechte ein Pfleger bestellt werden, sofern die Eltern bei bereits erfolgter Geburt an der Sorge verhindert wären (§ 1810 Satz 1)";
+    label en unofficial "a curator to safeguard an already-conceived child's future rights may be appointed if the parents would be prevented from exercising custody had the child already been born (§ 1810 sentence 1)";
+    when eltern_waeren_an_sorge_verhindert_wenn_geboren(kuenftiges_kind);
+    then pfleger_fuer_ungeborenes_kind_bestellbar(kuenftiges_kind);
+}
+
+// § 1811: Zuwendungspflegschaft.
+
+pub relation minderjaehriger_erwirbt_zugewendetes_vermoegen(m: Person, zuwendender: Person) kind empirical {
+    label de official "Der Minderjährige erwirbt von Todes wegen oder unter Lebenden Vermögen durch unentgeltliche Zuwendung (§ 1811 Absatz 1 Nummer 1)";
+    label en unofficial "the minor acquires assets by gratuitous disposition on death or inter vivos (§ 1811 (1) no. 1)";
+}
+pub relation zuwendender_schliesst_verwaltung_durch_eltern_oder_vormund_aus(m: Person, zuwendender: Person) kind empirical {
+    label de official "Der Erblasser oder Zuwendende hat bestimmt, dass Eltern oder Vormund das zugewendete Vermögen nicht verwalten sollen (§ 1811 Absatz 1 Nummer 2)";
+    label en unofficial "the testator or donor has directed that the parents or guardian shall not administer the assigned assets (§ 1811 (1) no. 2)";
+}
+pub relation zuwendungspfleger_kandidat(p: Person, m: Person, zuwendender: Person) kind empirical {
+    label de official "Person, die als Zuwendungspfleger benannt oder vom Familiengericht bestellt werden soll (§ 1811)";
+    label en unofficial "person to be named or appointed by the family court as curator for the gift (§ 1811)";
+}
+pub relation zuwendungspfleger_bestellt(p: Person, m: Person, zuwendender: Person) kind institutional {
+    label de official "Zuwendungspfleger bestellt (§ 1811 Absatz 1)";
+    label en unofficial "curator for the gift appointed (§ 1811 (1))";
+}
+@source(BGB_P1811)
+rule ZuwendungspflegschaftBestellung(p: Person, m: Person, zuwendender: Person) strict {
+    label de official "Erwirbt der Minderjährige unentgeltlich zugewendetes Vermögen und hat der Zuwendende die Verwaltung durch Eltern oder Vormund ausgeschlossen, erhält er einen Zuwendungspfleger (§ 1811 Absatz 1)";
+    label en unofficial "where the minor acquires gratuitously assigned assets and the donor has excluded administration by the parents or guardian, the minor receives a curator for the gift (§ 1811 (1))";
+    when minderjaehriger_erwirbt_zugewendetes_vermoegen(m, zuwendender) and zuwendender_schliesst_verwaltung_durch_eltern_oder_vormund_aus(m, zuwendender) and zuwendungspfleger_kandidat(p, m, zuwendender);
+    then zuwendungspfleger_bestellt(p, m, zuwendender);
+}
+@source(BGB_P1811)
+rule ZuwendungspflegerGesetzlicherVertreter(p: Person, m: Person, zuwendender: Person) strict {
+    label de official "Der Zuwendungspfleger ist gesetzlicher Vertreter des Minderjährigen für das zugewendete Vermögen (§ 1811 Absatz 1, § 1813 Absatz 1)";
+    label en unofficial "the curator for the gift is the minor's statutory representative for the assigned assets (§ 1811 (1), § 1813 (1))";
+    when zuwendungspfleger_bestellt(p, m, zuwendender);
+    then gesetzlicher_vertreter(p, m);
+}
+
+// § 1812: Aufhebung und Ende der Pflegschaft (dieses Titels).
+
+pub relation grund_der_pflegschaft_weggefallen(p: Person, m: Person) kind empirical {
+    label de official "Der Grund für die Anordnung der Pflegschaft ist weggefallen (§ 1812 Absatz 1)";
+    label en unofficial "the ground for ordering the curatorship has ceased to exist (§ 1812 (1))";
+}
+pub relation pflegschaft_dieses_titels_aufzuheben(p: Person, m: Person) kind institutional {
+    label de official "Die Pflegschaft ist aufzuheben (§ 1812 Absatz 1)";
+    label en unofficial "the curatorship must be terminated (§ 1812 (1))";
+}
+@source(BGB_P1812)
+rule AufhebungBeiWegfallDesGrundes(p: Person, m: Person) strict {
+    label de official "Die Pflegschaft ist aufzuheben, wenn der Grund für ihre Anordnung weggefallen ist (§ 1812 Absatz 1)";
+    label en unofficial "the curatorship must be terminated once the ground for ordering it has ceased to exist (§ 1812 (1))";
+    when grund_der_pflegschaft_weggefallen(p, m);
+    then pflegschaft_dieses_titels_aufzuheben(p, m);
+}
+pub relation angelegenheit_der_einzelpflegschaft_erledigt(p: Person, m: Person) kind empirical {
+    label de official "Die einzelne Angelegenheit, zu deren Besorgung die Pflegschaft angeordnet wurde, ist erledigt (§ 1812 Absatz 2)";
+    label en unofficial "the individual matter for which the curatorship was ordered has been dealt with (§ 1812 (2))";
+}
+pub relation pflegschaft_endet_kraft_gesetzes(p: Person, m: Person) kind institutional {
+    label de official "Die Pflegschaft endet mit der Beendigung der elterlichen Sorge oder der Vormundschaft, bei einer Einzelangelegenheit mit deren Erledigung (§ 1812 Absatz 2)";
+    label en unofficial "the curatorship ends with the termination of parental custody or guardianship, or, for a curatorship covering a single matter, once that matter is dealt with (§ 1812 (2))";
+}
+pub relation pflegschaft_besteht_neben_vormundschaft(p: Person, m: Person) kind empirical {
+    label de official "Die Pflegschaft besteht neben der Vormundschaft für denselben Minderjährigen (§ 1812 Absatz 2)";
+    label en unofficial "the curatorship exists alongside the guardianship for the same minor (§ 1812 (2))";
+}
+@source(BGB_P1812) {
+    rule PflegschaftEndetMitVormundschaft(p: Person, m: Person) strict {
+        label de official "Die Pflegschaft endet mit der Beendigung der Vormundschaft (§ 1812 Absatz 2)";
+        label en unofficial "the curatorship ends with the termination of the guardianship (§ 1812 (2))";
+        when pflegschaft_besteht_neben_vormundschaft(p, m) and vormundschaft_endet(m);
+        then pflegschaft_endet_kraft_gesetzes(p, m);
+    }
+    rule PflegschaftEndetMitErledigungDerEinzelangelegenheit(p: Person, m: Person) strict {
+        label de official "Die Pflegschaft zur Besorgung einer einzelnen Angelegenheit endet mit deren Erledigung (§ 1812 Absatz 2)";
+        label en unofficial "a curatorship for a single matter ends once that matter is dealt with (§ 1812 (2))";
+        when angelegenheit_der_einzelpflegschaft_erledigt(p, m);
+        then pflegschaft_endet_kraft_gesetzes(p, m);
+    }
+}
+
+// § 1813: Anwendung des Vormundschaftsrechts — die Brücke, die D-14-01 trägt.
+
+pub relation nicht_anwendbar_1782_1783_bei_1809(p: Person, m: Person) kind institutional {
+    label de official "Für Pflegschaften nach § 1809 Absatz 1 Satz 1 gelten die §§ 1782 und 1783 (elterliche Benennung/Ausschluss, Übergehen der benannten Person) nicht (§ 1813 Absatz 2)";
+    label en unofficial "for curatorships under § 1809 (1) sentence 1, §§ 1782 and 1783 (parental nomination/exclusion, passing over the named person) do not apply (§ 1813 (2))";
+}
+@source(BGB_P1813)
+rule AusnahmeFuerErgaenzungspflegschaft(p: Person, m: Person, angelegenheit: Text) strict {
+    label de official "Für Pflegschaften nach § 1809 Absatz 1 Satz 1 gelten die §§ 1782 und 1783 nicht (§ 1813 Absatz 2)";
+    label en unofficial "for curatorships under § 1809 (1) sentence 1, §§ 1782 and 1783 do not apply (§ 1813 (2))";
+    when ergaenzungspfleger_bestellt(p, m, angelegenheit);
+    then nicht_anwendbar_1782_1783_bei_1809(p, m);
+}
+// § 1813 Absatz 1 selbst — die entsprechende Anwendung des übrigen Vormundschaftsrechts
+// (Genehmigungen, Aufsicht, Vergütung) — wirkt bereits dadurch, dass Zuwendungs- und
+// Ergänzungspfleger als `gesetzlicher_vertreter` erscheinen (D-14-01): die Regeln dieser
+// Datei und der Titel-3-Dateien lesen dieses Prädikat unabhängig vom Amt.

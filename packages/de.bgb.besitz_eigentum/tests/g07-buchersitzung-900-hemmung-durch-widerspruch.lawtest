@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 900 Abs. 1 Satz 3: der Lauf der Frist ist gehemmt, solange ein Widerspruch eingetragen ist. Der Widerspruch stand vom 1. Januar bis zum 31. Dezember 2010 — 365 Tage (Grenzen eingeschlossen); das Ende verschiebt sich vom 15. Juni 2025 auf den 15. Juni 2026.
+test "§ 900 Abs. 1 Satz 3: eingetragener Widerspruch verschiebt das Ende um 365 Tage" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": recht_am_grundstueck(entity_ref("urn:de:bgb:be:g:recht"), entity_ref("urn:de:bgb:be:g:grundstueck")) { origin case_input; }
+        assert "f2": im_grundbuch_eingetragen_fuer(entity_ref("urn:de:bgb:be:g:recht"), entity_ref("urn:de:bgb:be:g:P")) { origin adjudicated; }
+        assert "f3": eingetragen_am(entity_ref("urn:de:bgb:be:g:recht"), @1995-06-15) { origin adjudicated; }
+        assert "f4": eigenbesitz_waehrend_der_ganzen_zeit(entity_ref("urn:de:bgb:be:g:recht")) { origin case_input; }
+        assert "f5": buchersitzungsfrist(entity_ref("urn:de:bgb:be:g:recht"), entity_ref("urn:de:bgb:be:g:frist")) { origin case_input; }
+        assert "f6": widerspruch_eingetragen_von_bis(entity_ref("urn:de:bgb:be:g:recht"), @2010-01-01, @2010-12-31) { origin adjudicated; }
+    }
+    evaluate truth(hemmungstage_der_buchersitzung(entity_ref("urn:de:bgb:be:g:recht"), 365));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(buchersitzung_vollendet_am(entity_ref("urn:de:bgb:be:g:recht"), @2026-06-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

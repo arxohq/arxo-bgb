@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// §§ 177, 179 Abs. 2: der Vertreter handelt ohne Vertretungsmacht, der Vertretene verweigert die Genehmigung. Der Vertreter kannte den Mangel nicht und der andere Teil musste ihn nicht kennen: er haftet nur auf den Vertrauensschaden (§ 179 Abs. 2), nicht auf Erfüllung (§ 179 Abs. 1).
+test "§ 179 Abs. 2: der gutgläubige Vertreter haftet nur auf den Vertrauensschaden" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "a1": geschaeftsart(entity_ref("urn:de:bgb:at:v01:vertrag"), Vertrag) { origin case_input; }
+        assert "a2": ohne_vertretungsmacht_gehandelt(entity_ref("urn:de:bgb:at:v01:vertrag")) { origin case_input; }
+        assert "a3": vertreter(entity_ref("urn:de:bgb:at:v01:vertrag"), entity_ref("urn:de:bgb:at:v01:vertreter")) { origin case_input; }
+        assert "a4": vertretener(entity_ref("urn:de:bgb:at:v01:vertrag"), entity_ref("urn:de:bgb:at:v01:vertretener")) { origin case_input; }
+        assert "a5": not genehmigung_des_vertretenen(entity_ref("urn:de:bgb:at:v01:vertrag")) { origin case_input; }
+        assert "a6": genehmigung_verweigert_durch_vertretenen(entity_ref("urn:de:bgb:at:v01:vertrag")) { origin case_input; }
+        assert "a7": not vertreter_kannte_den_mangel(entity_ref("urn:de:bgb:at:v01:vertrag")) { origin adjudicated; }
+        assert "a8": not mangel_der_vertretungsmacht_gekannt(entity_ref("urn:de:bgb:at:v01:vertrag")) { origin adjudicated; }
+    }
+    evaluate truth(schwebend_unwirksam(entity_ref("urn:de:bgb:at:v01:vertrag")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vertreter_haftet_auf_vertrauensschaden(entity_ref("urn:de:bgb:at:v01:vertrag"), entity_ref("urn:de:bgb:at:v01:vertreter")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(vertreter_haftet_auf_erfuellung_oder_schadensersatz(entity_ref("urn:de:bgb:at:v01:vertrag"), entity_ref("urn:de:bgb:at:v01:vertreter")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

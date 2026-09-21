@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 948 Abs. 1: untrennbare Vermischung — § 947 findet entsprechende Anwendung. Zwei Ölsorten im Wert von 300 und 700 Cent werden vermischt; die Anteile folgen dem Wertverhältnis (3/10, 7/10) nach § 947 Abs. 1.
+test "§ 948 Abs. 1: Vermischung gilt als Verbindung — Miteigentum nach Wertverhältnis" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": vermischt_oder_vermengt_untrennbar(entity_ref("urn:de:bgb:be:vk01:vb"), entity_ref("urn:de:bgb:be:vk01:oel-a")) { origin case_input; }
+        assert "f2": vermischt_oder_vermengt_untrennbar(entity_ref("urn:de:bgb:be:vk01:vb"), entity_ref("urn:de:bgb:be:vk01:oel-b")) { origin case_input; }
+        assert "f3": einheitliche_sache(entity_ref("urn:de:bgb:be:vk01:vb"), entity_ref("urn:de:bgb:be:vk01:gemisch")) { origin case_input; }
+        assert "f4": wert_in_cent(entity_ref("urn:de:bgb:be:vk01:oel-a"), 300) { origin case_input; }
+        assert "f5": wert_in_cent(entity_ref("urn:de:bgb:be:vk01:oel-b"), 700) { origin case_input; }
+        assert "f6": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:vk01:oel-a"), entity_ref("urn:de:bgb:be:vk01:A")) { origin case_input; }
+        assert "f7": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:vk01:oel-b"), entity_ref("urn:de:bgb:be:vk01:B")) { origin case_input; }
+    }
+    evaluate truth(verbundene_sache(entity_ref("urn:de:bgb:be:vk01:vb"), entity_ref("urn:de:bgb:be:vk01:oel-a")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(miteigentumsanteil(entity_ref("urn:de:bgb:be:vk01:gemisch"), entity_ref("urn:de:bgb:be:vk01:A"), 300, 1000));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(miteigentumsanteil(entity_ref("urn:de:bgb:be:vk01:gemisch"), entity_ref("urn:de:bgb:be:vk01:B"), 700, 1000));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

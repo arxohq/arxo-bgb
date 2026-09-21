@@ -1,0 +1,292 @@
+// --- Titel 26, zweiter Teil: Verfügung eines Nichtberechtigten, Umfang der
+// --- Bereicherungshaftung, verschärfte Haftung, Einrede, Herausgabepflicht Dritter
+// --- (§§ 816, 818–822)
+
+// --- § 816 Verfügung eines Nichtberechtigten ----------------------------------------------------
+
+pub relation berechtigter(b: Bereicherung, p: Person) kind empirical {
+    key(b);
+    label de official "der Berechtigte, gegenüber dem die Verfügung wirksam ist (§ 816 Abs. 1)";
+    label en unofficial "the entitled person against whom the disposition is effective (§ 816 (1))";
+}
+pub relation verfuegung_eines_nichtberechtigten(b: Bereicherung) kind empirical {
+    label de official "ein Nichtberechtigter hat über einen Gegenstand eine Verfügung getroffen, die dem Berechtigten gegenüber wirksam ist (§ 816 Abs. 1 Satz 1)";
+    label en unofficial "an unauthorised person made a disposition of an object which is effective against the entitled person (§ 816 (1) sentence 1)";
+}
+pub relation verfuegung_unentgeltlich(b: Bereicherung) kind empirical {
+    label de official "die Verfügung erfolgte unentgeltlich (§ 816 Abs. 1 Satz 2)";
+    label en unofficial "the disposition was made gratuitously (§ 816 (1) sentence 2)";
+}
+pub relation unmittelbarer_rechtlicher_vorteil(b: Bereicherung, p: Person) kind empirical {
+    label de official "wer auf Grund der Verfügung unmittelbar einen rechtlichen Vorteil erlangt (§ 816 Abs. 1 Satz 2)";
+    label en unofficial "the person who directly obtains a legal advantage on the basis of the disposition (§ 816 (1) sentence 2)";
+}
+pub relation leistung_an_nichtberechtigten(b: Bereicherung) kind empirical {
+    label de official "an einen Nichtberechtigten wurde eine Leistung bewirkt, die dem Berechtigten gegenüber wirksam ist (§ 816 Abs. 2)";
+    label en unofficial "performance was rendered to an unauthorised person and is effective against the entitled person (§ 816 (2))";
+}
+
+pub relation herausgabepflicht_nichtberechtigter(b: Bereicherung, schuldner: Person, glaeubiger: Person) kind institutional {
+    label de official "Verpflichtung des Nichtberechtigten gegenüber dem Berechtigten zur Herausgabe des Erlangten (§ 816 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "duty of the unauthorised person towards the entitled person to hand over what was obtained (§ 816 (1) sentence 1, (2))";
+}
+pub relation herausgabepflicht_unentgeltlich_beguenstigter(b: Bereicherung, beguenstigter: Person, glaeubiger: Person) kind institutional {
+    label de official "Verpflichtung dessen, der auf Grund einer unentgeltlichen Verfügung unmittelbar einen rechtlichen Vorteil erlangt hat (§ 816 Abs. 1 Satz 2)";
+    label en unofficial "duty of the person who directly obtained a legal advantage from a gratuitous disposition (§ 816 (1) sentence 2)";
+}
+
+@source(BGB_P816)
+rule Verfuegung816Abs1Satz1(b: Bereicherung, n: Person, ber: Person) strict {
+    label de official "Trifft ein Nichtberechtigter über einen Gegenstand eine Verfügung, die dem Berechtigten gegenüber wirksam ist, so ist er dem Berechtigten zur Herausgabe des durch die Verfügung Erlangten verpflichtet (§ 816 Abs. 1 Satz 1)";
+    label en unofficial "If an unauthorised person makes a disposition of an object which is effective against the entitled person, he must hand over to the entitled person what he obtained by the disposition (§ 816 (1) sentence 1)";
+    when verfuegung_eines_nichtberechtigten(b) and empfaenger(b, n) and berechtigter(b, ber);
+    then herausgabepflicht_nichtberechtigter(b, n, ber);
+}
+
+@source(BGB_P816)
+rule Verfuegung816Abs1Satz2(b: Bereicherung, g: Person, ber: Person) strict {
+    label de official "Erfolgt die Verfügung unentgeltlich, so trifft die gleiche Verpflichtung denjenigen, welcher auf Grund der Verfügung unmittelbar einen rechtlichen Vorteil erlangt (§ 816 Abs. 1 Satz 2)";
+    label en unofficial "If the disposition is gratuitous, the same duty falls on the person who directly obtains a legal advantage on the basis of the disposition (§ 816 (1) sentence 2)";
+    when verfuegung_eines_nichtberechtigten(b) and verfuegung_unentgeltlich(b)
+     and unmittelbarer_rechtlicher_vorteil(b, g) and berechtigter(b, ber);
+    then herausgabepflicht_unentgeltlich_beguenstigter(b, g, ber);
+}
+
+@source(BGB_P816)
+rule Leistung816Abs2(b: Bereicherung, n: Person, ber: Person) strict {
+    label de official "Wird an einen Nichtberechtigten eine Leistung bewirkt, die dem Berechtigten gegenüber wirksam ist, so ist der Nichtberechtigte dem Berechtigten zur Herausgabe des Geleisteten verpflichtet (§ 816 Abs. 2)";
+    label en unofficial "If performance is rendered to an unauthorised person and is effective against the entitled person, the unauthorised person must hand over to the entitled person what was rendered (§ 816 (2))";
+    when leistung_an_nichtberechtigten(b) and empfaenger(b, n) and berechtigter(b, ber);
+    then herausgabepflicht_nichtberechtigter(b, n, ber);
+}
+
+// --- § 818 Umfang des Bereicherungsanspruchs ----------------------------------------------------
+//
+// Abs. 1 erweitert den Gegenstand (Nutzungen, Surrogate), Abs. 2 setzt an seine
+// Stelle den WERT, Abs. 3 nimmt den weggefallenen Teil wieder heraus, Abs. 4
+// verweist ab Rechtshängigkeit auf die allgemeinen Vorschriften. Der geschuldete
+// Geldbetrag entsteht nur, wenn der Fall entweder den Wegfall beziffert oder
+// ausdrücklich sagt, dass keine Entreicherung eingetreten ist: das Schweigen des
+// Falls ist keine Verneinung des § 818 Abs. 3.
+
+pub relation gezogene_nutzungen(b: Bereicherung) kind empirical {
+    label de official "der Empfänger hat Nutzungen gezogen (§ 818 Abs. 1)";
+    label en unofficial "the recipient drew emoluments (§ 818 (1))";
+}
+pub relation surrogat_erworben(b: Bereicherung) kind empirical {
+    label de official "der Empfänger hat auf Grund eines erlangten Rechts oder als Ersatz für Zerstörung, Beschädigung oder Entziehung des erlangten Gegenstands etwas erworben (§ 818 Abs. 1)";
+    label en unofficial "the recipient acquired something on the basis of a right obtained or as compensation for destruction, damage to or deprivation of the object obtained (§ 818 (1))";
+}
+pub relation herausgabe_nicht_moeglich(b: Bereicherung) kind empirical {
+    label de official "die Herausgabe ist wegen der Beschaffenheit des Erlangten nicht möglich oder der Empfänger ist aus einem anderen Grunde zur Herausgabe außerstande (§ 818 Abs. 2)";
+    label en unofficial "handing over is impossible because of the nature of what was obtained, or the recipient is unable to hand it over for another reason (§ 818 (2))";
+}
+pub relation wert_des_erlangten(b: Bereicherung, wert: Money) kind empirical {
+    key(b);
+    label de official "Wert des Erlangten, der nach § 818 Abs. 2 zu ersetzen ist";
+    label en unofficial "value of what was obtained, to be compensated under § 818 (2)";
+}
+pub relation weggefallene_bereicherung(b: Bereicherung, betrag: Money) kind empirical {
+    key(b);
+    label de official "Betrag, um den der Empfänger nicht mehr bereichert ist (§ 818 Abs. 3)";
+    label en unofficial "amount by which the recipient is no longer enriched (§ 818 (3))";
+}
+pub relation keine_entreicherung(b: Bereicherung) kind empirical {
+    label de official "eine Entreicherung ist nicht eingetreten (§ 818 Abs. 3) — ausdrückliche Angabe des Falls; das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "no loss of enrichment occurred (§ 818 (3)) — express statement of the case; silence is not a denial";
+}
+pub relation rechtshaengigkeit_eingetreten_am(b: Bereicherung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag des Eintritts der Rechtshängigkeit (§ 818 Abs. 4)";
+    label en unofficial "day on which the action became pending (§ 818 (4))";
+}
+
+pub relation herausgabe_erstreckt_sich_auf_nutzungen(b: Bereicherung) kind institutional {
+    label de official "die Verpflichtung zur Herausgabe erstreckt sich auf die gezogenen Nutzungen (§ 818 Abs. 1)";
+    label en unofficial "the duty to hand over extends to the emoluments drawn (§ 818 (1))";
+}
+pub relation herausgabe_erstreckt_sich_auf_surrogat(b: Bereicherung) kind institutional {
+    label de official "die Verpflichtung zur Herausgabe erstreckt sich auf das Surrogat (§ 818 Abs. 1)";
+    label en unofficial "the duty to hand over extends to the substitute obtained (§ 818 (1))";
+}
+pub relation wertersatzpflicht(b: Bereicherung, wert: Money) kind institutional {
+    key(b);
+    label de official "der Empfänger hat den Wert zu ersetzen (§ 818 Abs. 2)";
+    label en unofficial "the recipient must compensate the value (§ 818 (2))";
+}
+pub relation geschuldeter_betrag(b: Bereicherung, betrag: Money) kind institutional {
+    key(b);
+    label de official "geschuldeter Geldbetrag nach Abzug der weggefallenen Bereicherung (§ 818 Abs. 2 und 3)";
+    label en unofficial "monetary amount owed after deducting the enrichment no longer present (§ 818 (2) and (3))";
+}
+pub relation verschaerfte_haftung_ab(b: Bereicherung, tag: Date) kind institutional {
+    label de official "von diesem Tag an haftet der Empfänger nach den allgemeinen Vorschriften (§ 818 Abs. 4, § 819, § 820)";
+    label en unofficial "from this day the recipient is liable under the general provisions (§ 818 (4), § 819, § 820)";
+}
+
+@source(BGB_P818)
+rule Umfang818Nutzungen(b: Bereicherung) strict {
+    label de official "Die Verpflichtung zur Herausgabe erstreckt sich auf die gezogenen Nutzungen (§ 818 Abs. 1)";
+    label en unofficial "The duty to hand over extends to the emoluments drawn (§ 818 (1))";
+    when herausgabepflicht(b) and gezogene_nutzungen(b);
+    then herausgabe_erstreckt_sich_auf_nutzungen(b);
+}
+@source(BGB_P818)
+rule Umfang818Surrogat(b: Bereicherung) strict {
+    label de official "Die Verpflichtung zur Herausgabe erstreckt sich auf dasjenige, was der Empfänger auf Grund eines erlangten Rechts oder als Ersatz für die Zerstörung, Beschädigung oder Entziehung des erlangten Gegenstands erwirbt (§ 818 Abs. 1)";
+    label en unofficial "The duty to hand over extends to what the recipient acquires on the basis of a right obtained or as compensation for destruction, damage to or deprivation of the object obtained (§ 818 (1))";
+    when herausgabepflicht(b) and surrogat_erworben(b);
+    then herausgabe_erstreckt_sich_auf_surrogat(b);
+}
+@source(BGB_P818)
+rule Wertersatz818Abs2(b: Bereicherung, w: Money) strict {
+    label de official "Ist die Herausgabe wegen der Beschaffenheit des Erlangten nicht möglich oder ist der Empfänger aus einem anderen Grunde zur Herausgabe außerstande, so hat er den Wert zu ersetzen (§ 818 Abs. 2)";
+    label en unofficial "If handing over is impossible because of the nature of what was obtained, or the recipient is otherwise unable to hand it over, he must compensate the value (§ 818 (2))";
+    when herausgabepflicht(b) and herausgabe_nicht_moeglich(b) and wert_des_erlangten(b, w);
+    then wertersatzpflicht(b, w);
+}
+@source(BGB_P818)
+rule Entreicherung818Abs3(b: Bereicherung, w: Money, e: Money) strict {
+    label de official "Die Verpflichtung zum Ersatz des Wertes ist ausgeschlossen, soweit der Empfänger nicht mehr bereichert ist (§ 818 Abs. 3): geschuldet bleibt der Wert abzüglich des weggefallenen Betrages";
+    label en unofficial "The duty to compensate the value is excluded so far as the recipient is no longer enriched (§ 818 (3)): what remains owed is the value less the amount no longer present";
+    when wertersatzpflicht(b, w) and weggefallene_bereicherung(b, e);
+    then geschuldeter_betrag(b, w - e);
+}
+@source(BGB_P818)
+rule KeineEntreicherung818Abs3(b: Bereicherung, w: Money) strict {
+    label de official "Ohne Entreicherung bleibt der volle Wert geschuldet (§ 818 Abs. 2 und 3) — die Entreicherung muss der Fall ausdrücklich verneinen";
+    label en unofficial "Without loss of enrichment the full value remains owed (§ 818 (2) and (3)) — the case must expressly deny the loss";
+    when wertersatzpflicht(b, w) and keine_entreicherung(b);
+    then geschuldeter_betrag(b, w);
+}
+@source(BGB_P818)
+rule VerschaerfteHaftungAbRechtshaengigkeit(b: Bereicherung, t: Date) strict {
+    label de official "Von dem Eintritt der Rechtshängigkeit an haftet der Empfänger nach den allgemeinen Vorschriften (§ 818 Abs. 4)";
+    label en unofficial "From the day the action becomes pending the recipient is liable under the general provisions (§ 818 (4))";
+    when herausgabepflicht(b) and rechtshaengigkeit_eingetreten_am(b, t);
+    then verschaerfte_haftung_ab(b, t);
+}
+
+// --- § 819 Verschärfte Haftung bei Kenntnis und bei Gesetzes- oder Sittenverstoß ------------------
+//
+// Die Kenntnis des Mangels ist eine FESTGESTELLTE TATSACHE (im Fall origin
+// adjudicated), nicht eine Wertung: § 819 fragt, ob der Empfänger den Mangel
+// kannte, nicht, ob er ihn hätte kennen müssen.
+
+pub relation mangel_bei_empfang_gekannt(b: Bereicherung) kind empirical {
+    label de official "der Empfänger kennt den Mangel des rechtlichen Grundes bei dem Empfang (§ 819 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "the recipient knows of the defect in the legal ground at the time of receipt (§ 819 (1)) — established fact";
+}
+pub relation mangel_erfahren_am(b: Bereicherung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem der Empfänger den Mangel des rechtlichen Grundes später erfahren hat (§ 819 Abs. 1)";
+    label en unofficial "day on which the recipient later learned of the defect in the legal ground (§ 819 (1))";
+}
+
+@source(BGB_P819)
+rule VerschaerfteHaftungKenntnisBeiEmpfang(b: Bereicherung, t: Date) strict {
+    label de official "Kennt der Empfänger den Mangel des rechtlichen Grundes bei dem Empfang, so ist er von dem Empfang an zur Herausgabe verpflichtet, wie wenn der Anspruch zu dieser Zeit rechtshängig geworden wäre (§ 819 Abs. 1)";
+    label en unofficial "If the recipient knows of the defect in the legal ground at receipt, he is liable from receipt as if the claim had become pending at that time (§ 819 (1))";
+    when herausgabepflicht(b) and mangel_bei_empfang_gekannt(b) and empfangstag(b, t);
+    then verschaerfte_haftung_ab(b, t);
+}
+@source(BGB_P819)
+rule VerschaerfteHaftungSpaetereKenntnis(b: Bereicherung, t: Date) strict {
+    label de official "Erfährt der Empfänger den Mangel des rechtlichen Grundes später, so ist er von der Erlangung der Kenntnis an in gleicher Weise verpflichtet (§ 819 Abs. 1)";
+    label en unofficial "If the recipient learns of the defect later, he is liable in the same way from the time he acquires that knowledge (§ 819 (1))";
+    when herausgabepflicht(b) and mangel_erfahren_am(b, t);
+    then verschaerfte_haftung_ab(b, t);
+}
+@source(BGB_P819)
+rule VerschaerfteHaftungVerstoss(b: Bereicherung, t: Date) strict {
+    label de official "Verstößt der Empfänger durch die Annahme der Leistung gegen ein gesetzliches Verbot oder gegen die guten Sitten, so ist er von dem Empfang der Leistung an in der gleichen Weise verpflichtet (§ 819 Abs. 2)";
+    label en unofficial "If by accepting the performance the recipient breaches a statutory prohibition or public policy, he is liable in the same way from receipt (§ 819 (2))";
+    when verstoss_des_empfaengers(b) and empfangstag(b, t);
+    then verschaerfte_haftung_ab(b, t);
+}
+
+// --- § 820 Verschärfte Haftung bei ungewissem Erfolgseintritt ------------------------------------
+
+pub relation erfolgseintritt_als_ungewiss_angesehen(b: Bereicherung) kind empirical {
+    label de official "der Eintritt des mit der Leistung bezweckten Erfolgs wurde nach dem Inhalt des Rechtsgeschäfts als ungewiss angesehen (§ 820 Abs. 1 Satz 1)";
+    label en unofficial "under the terms of the transaction the occurrence of the intended result was regarded as uncertain (§ 820 (1) sentence 1)";
+}
+pub relation wegfall_des_rechtsgrundes_als_moeglich_angesehen(b: Bereicherung) kind empirical {
+    label de official "der Wegfall des Rechtsgrundes wurde nach dem Inhalt des Rechtsgeschäfts als möglich angesehen (§ 820 Abs. 1 Satz 2)";
+    label en unofficial "under the terms of the transaction the cessation of the legal ground was regarded as possible (§ 820 (1) sentence 2)";
+}
+pub relation erfahren_von_nichteintritt_am(b: Bereicherung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem der Empfänger erfährt, dass der Erfolg nicht eingetreten oder der Rechtsgrund weggefallen ist (§ 820 Abs. 2)";
+    label en unofficial "day on which the recipient learns that the result did not occur or that the legal ground ceased (§ 820 (2))";
+}
+pub relation zinspflicht_ab(b: Bereicherung, tag: Date) kind institutional {
+    key(b);
+    label de official "von diesem Zeitpunkt an hat der Empfänger Zinsen zu entrichten (§ 820 Abs. 2)";
+    label en unofficial "from this time the recipient must pay interest (§ 820 (2))";
+}
+
+@source(BGB_P820)
+rule VerschaerfteHaftung820UngewisserErfolg(b: Bereicherung, t: Date) strict {
+    label de official "War mit der Leistung ein Erfolg bezweckt, dessen Eintritt als ungewiss angesehen wurde, so ist der Empfänger, falls der Erfolg nicht eintritt, zur Herausgabe so verpflichtet, wie wenn der Anspruch zur Zeit des Empfangs rechtshängig geworden wäre (§ 820 Abs. 1 Satz 1)";
+    label en unofficial "If the performance aimed at a result whose occurrence was regarded as uncertain, then, if the result does not occur, the recipient is liable as if the claim had become pending at the time of receipt (§ 820 (1) sentence 1)";
+    when erfolgseintritt_als_ungewiss_angesehen(b) and bezweckter_erfolg_nicht_eingetreten(b) and empfangstag(b, t);
+    then verschaerfte_haftung_ab(b, t);
+}
+@source(BGB_P820)
+rule VerschaerfteHaftung820Rechtsgrundwegfall(b: Bereicherung, t: Date) strict {
+    label de official "Das Gleiche gilt, wenn die Leistung aus einem Rechtsgrund, dessen Wegfall als möglich angesehen wurde, erfolgt ist und der Rechtsgrund wegfällt (§ 820 Abs. 1 Satz 2)";
+    label en unofficial "The same applies if the performance was made on a legal ground whose cessation was regarded as possible and that ground ceases (§ 820 (1) sentence 2)";
+    when wegfall_des_rechtsgrundes_als_moeglich_angesehen(b) and rechtlicher_grund_spaeter_weggefallen(b) and empfangstag(b, t);
+    then verschaerfte_haftung_ab(b, t);
+}
+@source(BGB_P820)
+rule Zinsen820Abs2(b: Bereicherung, t: Date) strict {
+    label de official "Zinsen hat der Empfänger erst von dem Zeitpunkt an zu entrichten, in welchem er erfährt, dass der Erfolg nicht eingetreten oder dass der Rechtsgrund weggefallen ist (§ 820 Abs. 2)";
+    label en unofficial "The recipient must pay interest only from the time he learns that the result did not occur or that the legal ground ceased (§ 820 (2))";
+    when herausgabepflicht(b) and erfahren_von_nichteintritt_am(b, t);
+    then zinspflicht_ab(b, t);
+}
+
+// --- § 821 Einrede der Bereicherung -------------------------------------------------------------
+
+pub relation verbindlichkeit_ohne_rechtlichen_grund_eingegangen(b: Bereicherung) kind empirical {
+    label de official "jemand ist ohne rechtlichen Grund eine Verbindlichkeit eingegangen (§ 821)";
+    label en unofficial "a person incurred an obligation without legal ground (§ 821)";
+}
+pub relation einrede_der_bereicherung(b: Bereicherung, schuldner: Person) kind institutional {
+    label de official "Recht, die Erfüllung zu verweigern, auch wenn der Anspruch auf Befreiung von der Verbindlichkeit verjährt ist (§ 821)";
+    label en unofficial "right to refuse performance even if the claim for release from the obligation is time-barred (§ 821)";
+}
+
+@source(BGB_P821)
+rule Einrede821(b: Bereicherung, p: Person) strict {
+    label de official "Wer ohne rechtlichen Grund eine Verbindlichkeit eingeht, kann die Erfüllung auch dann verweigern, wenn der Anspruch auf Befreiung von der Verbindlichkeit verjährt ist (§ 821)";
+    label en unofficial "A person who incurs an obligation without legal ground may refuse performance even if the claim for release from the obligation is time-barred (§ 821)";
+    when verbindlichkeit_ohne_rechtlichen_grund_eingegangen(b) and empfaenger(b, p);
+    then einrede_der_bereicherung(b, p);
+}
+
+// --- § 822 Herausgabepflicht Dritter ------------------------------------------------------------
+
+pub relation unentgeltlich_zugewendet_an(b: Bereicherung, dritter: Person) kind empirical {
+    label de official "der Empfänger hat das Erlangte unentgeltlich einem Dritten zugewendet (§ 822)";
+    label en unofficial "the recipient gratuitously transferred what he obtained to a third party (§ 822)";
+}
+pub relation verpflichtung_des_empfaengers_infolgedessen_ausgeschlossen(b: Bereicherung) kind empirical {
+    label de official "infolge der unentgeltlichen Zuwendung ist die Verpflichtung des Empfängers zur Herausgabe der Bereicherung ausgeschlossen (§ 822) — ausdrückliche Angabe des Falls";
+    label en unofficial "as a result of the gratuitous transfer the recipient's duty to hand over the enrichment is excluded (§ 822) — express statement of the case";
+}
+pub relation herausgabepflicht_dritter(b: Bereicherung, dritter: Person, glaeubiger: Person) kind institutional {
+    label de official "der Dritte ist zur Herausgabe verpflichtet, wie wenn er die Zuwendung von dem Gläubiger ohne rechtlichen Grund erhalten hätte (§ 822)";
+    label en unofficial "the third party must hand over as if he had received the transfer from the creditor without legal ground (§ 822)";
+}
+
+@source(BGB_P822)
+rule Herausgabepflicht822(b: Bereicherung, d: Person, g: Person) strict {
+    label de official "Wendet der Empfänger das Erlangte unentgeltlich einem Dritten zu, so ist, soweit infolgedessen die Verpflichtung des Empfängers zur Herausgabe der Bereicherung ausgeschlossen ist, der Dritte zur Herausgabe verpflichtet (§ 822)";
+    label en unofficial "If the recipient gratuitously transfers what he obtained to a third party, then, so far as the recipient's duty to hand over is thereby excluded, the third party must hand it over (§ 822)";
+    when herausgabepflicht(b) and unentgeltlich_zugewendet_an(b, d)
+     and verpflichtung_des_empfaengers_infolgedessen_ausgeschlossen(b) and entreicherter(b, g);
+    then herausgabepflicht_dritter(b, d, g);
+}

@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+// § 1813 Absatz 1 i.V.m. § 1863 Absatz 3 (D-14-06 Block 7): der nach § 1809 bestellte Ergänzungspfleger ist gesetzlicher Vertreter (§ 1809 Absatz 1 Satz 2) und trägt daher — über die generische Betreuungsrecht-Maschinerie, ohne eigene Kopie (D-14-01) — dieselbe Jahresberichtspflicht wie ein Betreuer. Übernahme 10.01.2026 (Samstag); Jahresfrist endet kalendarisch am 10.01.2027 (Sonntag) und wird nach § 193 auf Montag, den 11.01.2027, verlegt.
+test "§ 1813/§ 1863 Absatz 3: Jahresberichtsfrist gilt auch für den Ergänzungspfleger" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_BETREUUNG_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": eltern_oder_vormund_an_besorgung_verhindert(entity_ref("urn:de:bgb:bt:m58:VT"), entity_ref("urn:de:bgb:bt:m58:M"), "Erbauseinandersetzung") { origin case_input; }
+        assert "f2": ergaenzungspfleger_kandidat(entity_ref("urn:de:bgb:bt:m58:P"), entity_ref("urn:de:bgb:bt:m58:M"), "Erbauseinandersetzung") { origin case_input; }
+        assert "f3": jahresbericht_faellig_am(entity_ref("urn:de:bgb:bt:m58:P"), entity_ref("urn:de:bgb:bt:m58:M"), entity_ref("urn:de:bgb:bt:m58:F")) { origin case_input; }
+        assert "f4": jahresberichtsfrist_ereignistag(entity_ref("urn:de:bgb:bt:m58:F"), @2026-01-10) { origin case_input; }
+    }
+    evaluate truth(ergaenzungspfleger_bestellt(entity_ref("urn:de:bgb:bt:m58:P"), entity_ref("urn:de:bgb:bt:m58:M"), "Erbauseinandersetzung"));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesetzlicher_vertreter(entity_ref("urn:de:bgb:bt:m58:P"), entity_ref("urn:de:bgb:bt:m58:M")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::frist_ende(entity_ref("urn:de:bgb:bt:m58:F"), @2027-01-11));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

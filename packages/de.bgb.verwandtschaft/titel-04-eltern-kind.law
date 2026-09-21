@@ -1,0 +1,1019 @@
+// --- Titel 4: Rechtsverhältnis zwischen Eltern und Kind (§§ 1616–1625) ---------------------------
+//
+// WAS HIER AUSGEFÜHRT IST UND WARUM (Ledger D-13-07). Der Titel besteht
+// überwiegend aus NAMENSRECHT. Das Paket rechnet KEINE Namen: aus welchen
+// Buchstaben ein Doppelname gebildet wird, ob ein Bindestrich steht und wie ein
+// Name alphabetisch voransteht, ist Zeichenarbeit und keine Rechtsfolge, die
+// eine Regel aus Merkmalen zöge. Ausgeführt werden die BEDINGUNGEN, die die
+// Normen an eine Namensbestimmung knüpfen und die der Text selbst in Merkmalen
+// nennt: wer bestimmen darf (gemeinsame Sorge, Alleinsorge, Volljährigkeit),
+// WESSEN Einwilligung nötig ist (das Kind ab Vollendung des fünften
+// Lebensjahrs, der andere Elternteil, der nahe Angehörige), WANN eine Erklärung
+// öffentlich zu beglaubigen ist, WELCHE FRIST läuft (ein Monat nach der Geburt,
+// § 1617 Abs. 4) und WAS bei ihrem Ablauf eintritt. Der gewählte Name selbst
+// ist Eingang und Ausgang des Standesamts, nicht dieses Pakets.
+//
+// DIE FÜNF JAHRE SIND EINE SCHWELLE, KEINE FRIST. Sie werden über
+// `de.bgb.fristen::lebensjahr_vollendet_am` (§ 187 Abs. 2, § 188 Abs. 2)
+// gerechnet und am Tag der Erklärung geprüft; beide Seiten der Schwelle stehen
+// im Szenario. Dieselbe Mechanik trägt die 14 Jahre des § 1617c Abs. 1 Satz 2.
+//
+// DIE GERICHTLICHE ERSETZUNG einer Einwilligung (§ 1617d Abs. 2 Satz 3,
+// § 1617e Abs. 2 Satz 2, § 1617f Abs. 2 Satz 3) hängt am Kindeswohl und bleibt
+// im Urteilskanal (§ 47.3); der Beschluss selbst ist eine festgestellte
+// Tatsache des Falls (`origin adjudicated`).
+
+// --- Gemeinsame Eingänge und Schwellen des Titels -------------------------------------------------
+
+pub relation erklaerungstag(kind: Person, tag: Date) kind empirical {
+    label de official "Tag, an dem die Erklärung gegenüber dem Standesamt abgegeben wird (Bezugstag der Altersschwellen dieses Titels)";
+    label en unofficial "day on which the declaration is made to the registry office (reference day for the age thresholds of this title)";
+}
+pub relation erklaerung_nach_der_beurkundung_der_geburt(kind: Person) kind empirical {
+    label de official "Die Erklärung wird nach der Beurkundung der Geburt abgegeben (§ 1617 Abs. 3, § 1617a Abs. 4 Satz 2, § 1617f Abs. 5)";
+    label en unofficial "the declaration is made after the registration of the birth (§ 1617 (3), § 1617a (4) sentence 2, § 1617f (5))";
+}
+pub relation eltern_fuehren_ehenamen(kind: Person) kind empirical {
+    label de official "Die Eltern führen einen Ehenamen (§ 1616; Umkehrung: § 1617 Abs. 1, § 1617a Abs. 1)";
+    label en unofficial "the parents bear a married name (§ 1616; converse: § 1617 (1), § 1617a (1))";
+}
+pub relation anderer_elternteil_verstorben(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der andere Elternteil ist bereits verstorben: seine Einwilligung ist nicht erforderlich (§ 1617a Abs. 4 Satz 1 Halbsatz 2, § 1617i Abs. 1 Satz 3)";
+    label en unofficial "the other parent is already deceased: his consent is not required (§ 1617a (4) sentence 1, § 1617i (1) sentence 3)";
+}
+pub relation kind_fuehrt_den_namen_des_anderen_elternteils(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das Kind führt den Namen dieses Elternteils (§ 1617d Abs. 2 Satz 2, § 1617e Abs. 2 Satz 1, § 1617f Abs. 2 Satz 2)";
+    label en unofficial "the child bears the name of this parent (§ 1617d (2) sentence 2, § 1617e (2) sentence 1, § 1617f (2) sentence 2)";
+}
+
+pub relation fuenftes_lebensjahr_vollendet(kind: Person) kind institutional {
+    label de official "Das Kind hat am Tag der Erklärung das fünfte Lebensjahr vollendet (Schwelle der §§ 1617a Abs. 4, 1617b Abs. 1, 1617c Abs. 1, 1617d Abs. 2, 1617e Abs. 2, 1617f Abs. 2, 1617g Abs. 2)";
+    label en unofficial "on the day of the declaration the child has completed its fifth year of life (threshold of §§ 1617a (4), 1617b (1), 1617c (1), 1617d (2), 1617e (2), 1617f (2), 1617g (2))";
+}
+pub relation fuenftes_lebensjahr_nicht_vollendet(kind: Person) kind institutional {
+    label de official "Das Kind hat am Tag der Erklärung das fünfte Lebensjahr noch nicht vollendet (§ 1617b Abs. 2 Satz 1)";
+    label en unofficial "on the day of the declaration the child has not yet completed its fifth year of life (§ 1617b (2) sentence 1)";
+}
+pub relation vierzehntes_lebensjahr_vollendet(kind: Person) kind institutional {
+    label de official "Das Kind hat am Tag der Erklärung das 14. Lebensjahr vollendet (§ 1617c Abs. 1 Satz 2)";
+    label en unofficial "on the day of the declaration the child has completed its 14th year of life (§ 1617c (1) sentence 2)";
+}
+
+@source(BGB_P1617c) {
+    rule FuenftesLebensjahrVollendet(k: Person, v: Date, t: Date) strict {
+        label de official "Die Schwelle der Namensbestimmungen ist die Vollendung des fünften Lebensjahrs, geprüft am Tag der Erklärung (§ 1617c Abs. 1 Satz 1)";
+        label en unofficial "The threshold of the name provisions is completion of the fifth year of life, tested on the day of the declaration (§ 1617c (1) sentence 1)";
+        when de.bgb.fristen::lebensjahr_vollendet_am(k, 5 calendar_year, v) and erklaerungstag(k, t) and t > v;
+        then fuenftes_lebensjahr_vollendet(k);
+    }
+    rule FuenftesLebensjahrNichtVollendet(k: Person, v: Date, t: Date) strict {
+        label de official "Die Gegenseite derselben Schwelle: das Kind hat das fünfte Lebensjahr noch nicht vollendet (§ 1617b Abs. 2 Satz 1, § 1617c Abs. 1 Satz 1 im Umkehrschluss)";
+        label en unofficial "The other side of the same threshold: the child has not yet completed its fifth year of life (§ 1617b (2) sentence 1, § 1617c (1) sentence 1 a contrario)";
+        when de.bgb.fristen::lebensjahr_vollendet_am(k, 5 calendar_year, v) and erklaerungstag(k, t) and t <= v;
+        then fuenftes_lebensjahr_nicht_vollendet(k);
+    }
+    rule VierzehntesLebensjahrVollendet(k: Person, v: Date, t: Date) strict {
+        label de official "Ein in der Geschäftsfähigkeit beschränktes Kind, welches das 14. Lebensjahr vollendet hat, kann die Erklärung nur selbst abgeben (§ 1617c Abs. 1 Satz 2)";
+        label en unofficial "A child with limited capacity that has completed its 14th year of life may make the declaration only itself (§ 1617c (1) sentence 2)";
+        when de.bgb.fristen::lebensjahr_vollendet_am(k, 14 calendar_year, v) and erklaerungstag(k, t) and t > v;
+        then vierzehntes_lebensjahr_vollendet(k);
+    }
+}
+
+// --- § 1616 Geburtsname bei Eltern mit Ehenamen ---------------------------------------------------
+
+pub relation geburtsname_ist_der_ehename(kind: Person) kind institutional {
+    label de official "Das Kind erhält den Ehenamen seiner Eltern als Geburtsnamen (§ 1616)";
+    label en unofficial "The child receives the married name of its parents as its birth name (§ 1616)";
+}
+
+@source(BGB_P1616)
+rule GeburtsnameIstDerEhename(k: Person) strict {
+    label de official "Das Kind erhält den Ehenamen seiner Eltern als Geburtsnamen (§ 1616)";
+    label en unofficial "The child receives the married name of its parents as its birth name (§ 1616)";
+    when eltern_fuehren_ehenamen(k);
+    then geburtsname_ist_der_ehename(k);
+}
+
+// --- § 1617 Geburtsname bei Eltern ohne Ehenamen und gemeinsamer Sorge ---------------------------
+//
+// Abs. 1 gibt den Eltern das Bestimmungsrecht und nennt zwei WÄHLBARE FORMEN;
+// Abs. 3 verlangt die öffentliche Beglaubigung nach der Beurkundung der Geburt;
+// Abs. 4 ist die Frist: treffen die Eltern binnen eines Monats nach der Geburt
+// keine Bestimmung, so tritt der alphabetische Doppelname von Gesetzes wegen
+// ein, und lehnt ein Elternteil ihn ab, überträgt das Familiengericht das
+// Bestimmungsrecht einem Elternteil. Abs. 5 erstreckt die Bestimmung auf die
+// weiteren gemeinsamen Kinder.
+
+pub enum Namensform {
+    label de official "Wählbare Form des Geburtsnamens (§ 1617 Abs. 1 Satz 1)";
+    label en unofficial "selectable form of the birth name (§ 1617 (1) sentence 1)";
+    FamiliennameEinesElternteils,
+    DoppelnameBeiderElternteile
+}
+
+pub relation bestimmung_getroffen(kind: Person) kind empirical {
+    label de official "Die Eltern haben durch Erklärung gegenüber dem Standesamt einen Geburtsnamen bestimmt (§ 1617 Abs. 1 Satz 1)";
+    label en unofficial "the parents determined a birth name by declaration to the registry office (§ 1617 (1) sentence 1)";
+}
+pub relation bestimmung_ohne_bindestrich_verlangt(kind: Person) kind empirical {
+    label de official "Die Eltern bestimmen mit der Erklärung, dass die Namen des Doppelnamens nicht durch einen Bindestrich verbunden werden (§ 1617 Abs. 1 Satz 2 Halbsatz 2)";
+    label en unofficial "with the declaration the parents determine that the names of the double name are not joined by a hyphen (§ 1617 (1) sentence 2)";
+}
+pub relation doppelname_abgelehnt(kind: Person, elternteil: Person) kind empirical {
+    label de official "Zumindest ein Elternteil lehnt den sich aus § 1617 Abs. 4 Sätze 1 bis 3 ergebenden Geburtsnamen durch Erklärung gegenüber dem Standesamt ab (Abs. 4 Satz 4)";
+    label en unofficial "at least one parent rejects the birth name resulting from § 1617 (4) sentences 1 to 3 by declaration to the registry office ((4) sentence 4)";
+}
+pub relation bestimmungsrecht_gerichtlich_uebertragen(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das Familiengericht hat das Recht zur Bestimmung des Geburtsnamens diesem Elternteil übertragen (§ 1617 Abs. 4 Satz 4) — festgestellte Tatsache";
+    label en unofficial "the family court transferred the right to determine the birth name to this parent (§ 1617 (4) sentence 4) — adjudicated fact";
+}
+pub relation gerichtliche_frist_abgelaufen_ohne_ausuebung(kind: Person) kind empirical {
+    label de official "Die vom Gericht gesetzte Frist ist abgelaufen, ohne dass das Bestimmungsrecht ausgeübt worden ist (§ 1617 Abs. 4 Satz 7)";
+    label en unofficial "the period set by the court expired without the right of determination having been exercised (§ 1617 (4) sentence 7)";
+}
+pub relation weiteres_gemeinsames_kind(erstes: Person, weiteres: Person) kind empirical {
+    label de official "Weiteres gemeinsames Kind derselben Eltern (§ 1617 Abs. 5)";
+    label en unofficial "further common child of the same parents (§ 1617 (5))";
+}
+
+pub relation bestimmungsrecht_der_eltern(kind: Person) kind institutional {
+    label de official "Führen die Eltern keinen Ehenamen und steht ihnen die elterliche Sorge gemeinsam zu, so bestimmen sie den Geburtsnamen des Kindes durch Erklärung gegenüber dem Standesamt (§ 1617 Abs. 1 Satz 1)";
+    label en unofficial "Where the parents bear no married name and have joint parental custody, they determine the child's birth name by declaration to the registry office (§ 1617 (1) sentence 1)";
+}
+pub relation waehlbare_namensform(kind: Person, form: Namensform) kind institutional {
+    label de official "Wählbar sind der Familienname eines Elternteils oder ein aus den Namen beider Elternteile gebildeter Doppelname (§ 1617 Abs. 1 Satz 1 Nr. 1, 2)";
+    label en unofficial "Selectable are the family name of one parent or a double name formed from the names of both parents (§ 1617 (1) sentence 1 nos. 1, 2)";
+}
+pub relation doppelname_ohne_bindestrich(kind: Person) kind institutional {
+    label de official "Die für den Doppelnamen herangezogenen Namen werden durch einen Bindestrich verbunden, es sei denn, die Eltern bestimmen mit der Erklärung etwas anderes (§ 1617 Abs. 1 Satz 2)";
+    label en unofficial "The names used for the double name are joined by a hyphen unless the parents determine otherwise with the declaration (§ 1617 (1) sentence 2)";
+}
+pub relation oeffentliche_beglaubigung_erforderlich(kind: Person) kind institutional {
+    label de official "Eine nach der Beurkundung der Geburt abgegebene Erklärung muss öffentlich beglaubigt werden (§ 1617 Abs. 3)";
+    label en unofficial "A declaration made after the registration of the birth must be publicly certified (§ 1617 (3))";
+}
+pub relation bestimmungsfrist_1617(kind: Person, f: de.bgb.fristen::Frist) kind empirical {
+    label de official "Frist des § 1617 Abs. 4 Satz 1: ein Monat nach der Geburt des Kindes";
+    label en unofficial "period of § 1617 (4) sentence 1: one month after the birth of the child";
+}
+pub relation letzter_tag_der_bestimmungsfrist(kind: Person, tag: Date) kind institutional {
+    label de official "Letzter Tag der Monatsfrist des § 1617 Abs. 4 Satz 1; innerhalb der Frist ist eine Erklärung gegenüber dem Standesamt abzugeben, daher gilt § 193";
+    label en unofficial "last day of the one-month period of § 1617 (4) sentence 1; a declaration is to be made within it, so § 193 applies";
+}
+pub relation alphabetischer_doppelname_kraft_gesetzes(kind: Person) kind institutional {
+    label de official "Treffen die Eltern binnen eines Monats nach der Geburt des Kindes keine Bestimmung, so erhält das Kind einen in alphabetischer Reihenfolge aus den Namen beider Elternteile gebildeten Doppelnamen (§ 1617 Abs. 4 Satz 1)";
+    label en unofficial "If the parents make no determination within one month after the birth, the child receives a double name formed in alphabetical order from the names of both parents (§ 1617 (4) sentence 1)";
+}
+pub relation gericht_uebertraegt_das_bestimmungsrecht(kind: Person) kind institutional {
+    label de official "Lehnt zumindest ein Elternteil den sich ergebenden Geburtsnamen ab, so überträgt das Familiengericht das Recht zur Bestimmung des Geburtsnamens einem Elternteil (§ 1617 Abs. 4 Satz 4)";
+    label en unofficial "If at least one parent rejects the resulting birth name, the family court transfers the right of determination to one parent (§ 1617 (4) sentence 4)";
+}
+pub relation bestimmungsrecht_des_elternteils(kind: Person, elternteil: Person) kind institutional {
+    label de official "Das Familiengericht hat das Bestimmungsrecht diesem Elternteil übertragen (§ 1617 Abs. 4 Satz 4)";
+    label en unofficial "the family court transferred the right of determination to this parent (§ 1617 (4) sentence 4)";
+}
+pub relation doppelname_nach_ablauf_der_gerichtlichen_frist(kind: Person) kind institutional {
+    label de official "Ist nach Ablauf der vom Gericht gesetzten Frist das Bestimmungsrecht nicht ausgeübt worden, so erhält das Kind den sich nach den Sätzen 1 bis 3 ergebenden Geburtsnamen (§ 1617 Abs. 4 Satz 7)";
+    label en unofficial "If after expiry of the period set by the court the right of determination has not been exercised, the child receives the birth name resulting from sentences 1 to 3 (§ 1617 (4) sentence 7)";
+}
+pub relation geburtsname_gilt_fuer_weitere_kinder(weiteres: Person) kind institutional {
+    label de official "Der von den Eltern oder einem Elternteil bestimmte Geburtsname gilt auch für ihre weiteren gemeinsamen Kinder (§ 1617 Abs. 5)";
+    label en unofficial "The birth name determined by the parents or one parent also applies to their further common children (§ 1617 (5))";
+}
+
+@source(BGB_P1617) {
+    rule BestimmungsrechtDerEltern(k: Person) strict {
+        label de official "Führen die Eltern keinen Ehenamen und steht ihnen die elterliche Sorge gemeinsam zu, so bestimmen sie durch Erklärung gegenüber dem Standesamt den Geburtsnamen des Kindes (§ 1617 Abs. 1 Satz 1)";
+        label en unofficial "Where the parents bear no married name and have joint parental custody, they determine the child's birth name by declaration to the registry office (§ 1617 (1) sentence 1)";
+        when not_known(eltern_fuehren_ehenamen(k)) and elterliche_sorge_gemeinsam(k);
+        then bestimmungsrecht_der_eltern(k);
+    }
+    rule WaehlbarFamilienname(k: Person) strict {
+        label de official "Wählbar ist der Familienname, den ein Elternteil zur Zeit der Erklärung führt (§ 1617 Abs. 1 Satz 1 Nr. 1)";
+        label en unofficial "Selectable is the family name borne by one parent at the time of the declaration (§ 1617 (1) sentence 1 no. 1)";
+        when bestimmungsrecht_der_eltern(k);
+        then waehlbare_namensform(k, FamiliennameEinesElternteils);
+    }
+    rule WaehlbarDoppelname(k: Person) strict {
+        label de official "Wählbar ist ein aus den Namen beider Elternteile gebildeter Doppelname (§ 1617 Abs. 1 Satz 1 Nr. 2)";
+        label en unofficial "Selectable is a double name formed from the names of both parents (§ 1617 (1) sentence 1 no. 2)";
+        when bestimmungsrecht_der_eltern(k);
+        then waehlbare_namensform(k, DoppelnameBeiderElternteile);
+    }
+    rule DoppelnameOhneBindestrich(k: Person) strict {
+        label de official "Die herangezogenen Namen werden durch einen Bindestrich verbunden, es sei denn, die Eltern bestimmen mit der Erklärung, dass sie nicht durch einen Bindestrich verbunden werden (§ 1617 Abs. 1 Satz 2)";
+        label en unofficial "The names used are joined by a hyphen unless the parents determine with the declaration that they are not (§ 1617 (1) sentence 2)";
+        when bestimmung_getroffen(k) and bestimmung_ohne_bindestrich_verlangt(k);
+        then doppelname_ohne_bindestrich(k);
+    }
+    rule BeglaubigungNachDerBeurkundung(k: Person) strict {
+        label de official "Eine nach der Beurkundung der Geburt abgegebene Erklärung muss öffentlich beglaubigt werden (§ 1617 Abs. 3)";
+        label en unofficial "A declaration made after the registration of the birth must be publicly certified (§ 1617 (3))";
+        when bestimmung_getroffen(k) and erklaerung_nach_der_beurkundung_der_geburt(k);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+    rule BestimmungsfristEreignis(k: Person, f: de.bgb.fristen::Frist, g: Date) strict {
+        label de official "Die Monatsfrist läuft von der Geburt des Kindes an (§ 1617 Abs. 4 Satz 1; § 187 Abs. 1: der Tag der Geburt zählt nicht mit)";
+        label en unofficial "The one-month period runs from the birth of the child (§ 1617 (4) sentence 1; § 187 (1): the day of birth is not counted)";
+        when bestimmungsfrist_1617(k, f) and geburt_des_kindes_am(k, g);
+        then de.bgb.fristen::frist_ereignis(f, g);
+    }
+    rule BestimmungsfristDauer(k: Person, f: de.bgb.fristen::Frist) strict {
+        label de official "Die Frist beträgt einen Monat nach der Geburt des Kindes (§ 1617 Abs. 4 Satz 1)";
+        label en unofficial "The period is one month after the birth of the child (§ 1617 (4) sentence 1)";
+        when bestimmungsfrist_1617(k, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 1 calendar_month);
+    }
+    rule BestimmungsfristEnde(k: Person, f: de.bgb.fristen::Frist, e: Date) strict {
+        label de official "Letzter Tag der Monatsfrist: innerhalb der Frist ist eine Erklärung gegenüber dem Standesamt abzugeben, daher gilt § 193 (Ledger D-03-01)";
+        label en unofficial "Last day of the one-month period: a declaration is to be made within it, so § 193 applies (ledger D-03-01)";
+        when bestimmungsfrist_1617(k, f) and de.bgb.fristen::frist_ende(f, e);
+        then letzter_tag_der_bestimmungsfrist(k, e);
+    }
+    rule AlphabetischerDoppelnameKraftGesetzes(k: Person, e: Date, t: Date) strict {
+        label de official "Treffen die Eltern binnen eines Monats nach der Geburt des Kindes keine Bestimmung, so erhält das Kind einen in alphabetischer Reihenfolge aus den Namen beider Elternteile gebildeten Doppelnamen (§ 1617 Abs. 4 Satz 1)";
+        label en unofficial "If the parents make no determination within one month after the birth, the child receives a double name formed in alphabetical order from the names of both parents (§ 1617 (4) sentence 1)";
+        when bestimmungsrecht_der_eltern(k) and letzter_tag_der_bestimmungsfrist(k, e)
+         and erklaerungstag(k, t) and t > e and not_known(bestimmung_getroffen(k));
+        then alphabetischer_doppelname_kraft_gesetzes(k);
+    }
+    rule GerichtUebertraegtDasBestimmungsrecht(k: Person, e: Person) strict {
+        label de official "Ergibt sich ein Geburtsname, den zumindest ein Elternteil ablehnt, so überträgt das Familiengericht das Recht zur Bestimmung des Geburtsnamens einem Elternteil (§ 1617 Abs. 4 Satz 4)";
+        label en unofficial "If a birth name results that at least one parent rejects, the family court transfers the right of determination to one parent (§ 1617 (4) sentence 4)";
+        when alphabetischer_doppelname_kraft_gesetzes(k) and doppelname_abgelehnt(k, e);
+        then gericht_uebertraegt_das_bestimmungsrecht(k);
+    }
+    rule BestimmungsrechtDesElternteils(k: Person, e: Person) strict {
+        label de official "Das Familiengericht überträgt das Recht zur Bestimmung des Geburtsnamens einem Elternteil (§ 1617 Abs. 4 Satz 4)";
+        label en unofficial "The family court transfers the right to determine the birth name to one parent (§ 1617 (4) sentence 4)";
+        when gericht_uebertraegt_das_bestimmungsrecht(k) and bestimmungsrecht_gerichtlich_uebertragen(k, e);
+        then bestimmungsrecht_des_elternteils(k, e);
+    }
+    rule NachFristablaufGiltDerDoppelname(k: Person) strict {
+        label de official "Ist nach Ablauf der vom Gericht gesetzten Frist das Bestimmungsrecht nicht ausgeübt worden, so erhält das Kind den sich nach den Sätzen 1 bis 3 ergebenden Geburtsnamen (§ 1617 Abs. 4 Satz 7)";
+        label en unofficial "If after expiry of the period set by the court the right of determination has not been exercised, the child receives the birth name resulting from sentences 1 to 3 (§ 1617 (4) sentence 7)";
+        when gericht_uebertraegt_das_bestimmungsrecht(k) and gerichtliche_frist_abgelaufen_ohne_ausuebung(k);
+        then doppelname_nach_ablauf_der_gerichtlichen_frist(k);
+    }
+    rule GeburtsnameGiltFuerWeitereKinder(erstes: Person, weiteres: Person) strict {
+        label de official "Der von den Eltern oder einem Elternteil bestimmte Geburtsname gilt auch für ihre weiteren gemeinsamen Kinder (§ 1617 Abs. 5)";
+        label en unofficial "The birth name determined by the parents or one parent also applies to their further common children (§ 1617 (5))";
+        when bestimmung_getroffen(erstes) and weiteres_gemeinsames_kind(erstes, weiteres);
+        then geburtsname_gilt_fuer_weitere_kinder(weiteres);
+    }
+}
+
+// --- Gemeinsame Rechtsfolgen der Namenserklärungen ------------------------------------------------
+//
+// Drei Rechtsfolgen kehren in §§ 1617a–1617i wieder und werden deshalb EINMAL
+// erklärt, aber in jedem Paragraphen mit eigener Regel und eigenem Anker
+// erzeugt: die Einwilligung des Kindes ab Vollendung des fünften Lebensjahrs,
+// die Einwilligung des anderen Elternteils und die öffentliche Beglaubigung.
+
+pub relation einwilligung_des_kindes_erforderlich(kind: Person) kind institutional {
+    label de official "Die Erklärung bedarf der Einwilligung des Kindes, wenn es das fünfte Lebensjahr vollendet hat (§§ 1617a Abs. 4, 1617d Abs. 2, 1617e Abs. 2, 1617f Abs. 2, 1617g Abs. 2)";
+    label en unofficial "The declaration requires the child's consent where it has completed its fifth year of life (§§ 1617a (4), 1617d (2), 1617e (2), 1617f (2), 1617g (2))";
+}
+pub relation einwilligung_des_anderen_elternteils_erforderlich(kind: Person, elternteil: Person) kind institutional {
+    label de official "Die Erklärung bedarf der Einwilligung des anderen Elternteils (§§ 1617a Abs. 4, 1617d Abs. 2, 1617e Abs. 2, 1617f Abs. 2, 1617g Abs. 2)";
+    label en unofficial "The declaration requires the consent of the other parent (§§ 1617a (4), 1617d (2), 1617e (2), 1617f (2), 1617g (2))";
+}
+pub relation erklaerung_nur_durch_das_kind_selbst(kind: Person) kind institutional {
+    label de official "Ein in der Geschäftsfähigkeit beschränktes Kind, welches das 14. Lebensjahr vollendet hat, kann die Erklärung nur selbst abgeben; es bedarf hierzu der Zustimmung seines gesetzlichen Vertreters (§ 1617c Abs. 1 Satz 2)";
+    label en unofficial "A child of limited capacity that has completed its 14th year may make the declaration only itself, with the approval of its legal representative (§ 1617c (1) sentence 2)";
+}
+
+pub relation name_besteht_aus_mehreren_namen(person: Person) kind empirical {
+    label de official "Der Name dieser Person besteht aus mehreren Namen (§ 1617 Abs. 2, § 1617a Abs. 2, § 1617i Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "the name of this person consists of several names (§ 1617 (2), § 1617a (2), § 1617i (1) sentence 1 no. 1)";
+}
+pub relation namenserteilung_erklaert(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Elternteil erteilt dem Kind durch Erklärung gegenüber dem Standesamt einen Namen (§ 1617a Abs. 2, 3)";
+    label en unofficial "the parent grants the child a name by declaration to the registry office (§ 1617a (2), (3))";
+}
+pub relation anderer_elternteil(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der andere Elternteil des Kindes (Gegenstück zu dem erklärenden Elternteil)";
+    label en unofficial "the other parent of the child (counterpart to the declaring parent)";
+}
+
+@source(BGB_P1617d)
+pub external judgment relation erteilung_dient_dem_wohl_des_kindes(kind: Person) {
+    authority Court;
+    label de official "§ 1617d Abs. 2 Satz 3, § 1617e Abs. 2 Satz 2, § 1617f Abs. 2 Satz 3. Das Familiengericht kann die Einwilligung des anderen Elternteils ersetzen, wenn die Erteilung dem Wohl des Kindes dient";
+    label en unofficial "§ 1617d (2) sentence 3, § 1617e (2) sentence 2, § 1617f (2) sentence 3. The family court may replace the other parent's consent where the grant serves the child's welfare";
+}
+
+// --- § 1617a Geburtsname bei Eltern ohne Ehenamen und Alleinsorge --------------------------------
+
+pub relation geburtsname_ist_der_name_des_sorgeberechtigten(kind: Person, elternteil: Person) kind institutional {
+    label de official "Führen die Eltern keinen Ehenamen und steht die elterliche Sorge nur einem Elternteil zu, so erhält das Kind den Familiennamen dieses Elternteils im Zeitpunkt der Geburt als Geburtsnamen (§ 1617a Abs. 1)";
+    label en unofficial "Where the parents bear no married name and only one parent has parental custody, the child receives that parent's family name at the time of birth (§ 1617a (1))";
+}
+pub relation erteilung_einzelner_namen_moeglich(kind: Person, elternteil: Person) kind institutional {
+    label de official "Besteht der Name des allein sorgeberechtigten Elternteils aus mehreren Namen, so kann er dem Kind nur einen oder einige dieser Namen erteilen (§ 1617a Abs. 2)";
+    label en unofficial "Where the name of the sole custodial parent consists of several names, he may grant the child only one or some of them (§ 1617a (2))";
+}
+pub relation erteilung_des_namens_des_anderen_elternteils(kind: Person, elternteil: Person) kind institutional {
+    label de official "Der allein sorgeberechtigte Elternteil kann dem Kind den Familiennamen des anderen Elternteils oder einen aus den Familiennamen beider Elternteile gebildeten Doppelnamen erteilen (§ 1617a Abs. 3)";
+    label en unofficial "The sole custodial parent may grant the child the other parent's family name or a double name formed from both parents' family names (§ 1617a (3))";
+}
+
+@source(BGB_P1617a) {
+    rule GeburtsnameBeiAlleinsorge(k: Person, e: Person) strict {
+        label de official "Führen die Eltern keinen Ehenamen und steht die elterliche Sorge nur einem Elternteil zu, so erhält das Kind den Familiennamen, den dieser Elternteil im Zeitpunkt der Geburt führt, als Geburtsnamen (§ 1617a Abs. 1)";
+        label en unofficial "Where the parents bear no married name and only one parent has custody, the child receives that parent's family name at the time of birth as its birth name (§ 1617a (1))";
+        when not_known(eltern_fuehren_ehenamen(k)) and elterliche_sorge_allein(k, e);
+        then geburtsname_ist_der_name_des_sorgeberechtigten(k, e);
+    }
+    rule ErteilungEinzelnerNamen(k: Person, e: Person) strict {
+        label de official "Besteht der Name des Elternteils, dessen Name Geburtsname geworden ist und dem die elterliche Sorge allein zusteht, aus mehreren Namen, so kann er dem Kind nur einen oder einige der Namen erteilen (§ 1617a Abs. 2)";
+        label en unofficial "Where that parent's name consists of several names, he may grant the child only one or some of them (§ 1617a (2))";
+        when geburtsname_ist_der_name_des_sorgeberechtigten(k, e) and name_besteht_aus_mehreren_namen(e);
+        then erteilung_einzelner_namen_moeglich(k, e);
+    }
+    rule ErteilungDesNamensDesAnderen(k: Person, e: Person) strict {
+        label de official "Der Elternteil, dessen Name Geburtsname des Kindes geworden ist und dem die elterliche Sorge allein zusteht, kann dem Kind den Familiennamen des anderen Elternteils oder einen Doppelnamen erteilen (§ 1617a Abs. 3)";
+        label en unofficial "That parent may grant the child the other parent's family name or a double name (§ 1617a (3))";
+        when geburtsname_ist_der_name_des_sorgeberechtigten(k, e) and namenserteilung_erklaert(k, e);
+        then erteilung_des_namens_des_anderen_elternteils(k, e);
+    }
+    rule EinwilligungDesKindesAbFuenf1617a(k: Person, e: Person) strict {
+        label de official "Die Erteilung des Namens nach den Absätzen 2 und 3 bedarf, wenn das Kind das fünfte Lebensjahr vollendet hat, der Einwilligung des Kindes (§ 1617a Abs. 4 Satz 1)";
+        label en unofficial "The grant of the name under subsections (2) and (3) requires the child's consent where the child has completed its fifth year of life (§ 1617a (4) sentence 1)";
+        when namenserteilung_erklaert(k, e) and fuenftes_lebensjahr_vollendet(k);
+        then einwilligung_des_kindes_erforderlich(k);
+    }
+    rule EinwilligungDesAnderenElternteils1617a(k: Person, e: Person, a: Person) strict {
+        label de official "In den Fällen des Absatzes 3 bedarf die Erteilung auch der Einwilligung des anderen Elternteils, es sei denn, dieser ist bereits verstorben (§ 1617a Abs. 4 Satz 1)";
+        label en unofficial "In the cases of subsection (3) the grant also requires the other parent's consent unless he is already deceased (§ 1617a (4) sentence 1)";
+        when erteilung_des_namens_des_anderen_elternteils(k, e) and anderer_elternteil(k, a)
+         and not_known(anderer_elternteil_verstorben(k, a));
+        then einwilligung_des_anderen_elternteils_erforderlich(k, a);
+    }
+    rule Beglaubigung1617a(k: Person, e: Person) strict {
+        label de official "Die Erklärungen müssen öffentlich beglaubigt werden, die Erklärung nach Absatz 2 jedoch nur, wenn sie nach der Beurkundung der Geburt abgegeben wird (§ 1617a Abs. 4 Satz 2)";
+        label en unofficial "The declarations must be publicly certified; the declaration under subsection (2) only if made after the registration of the birth (§ 1617a (4) sentence 2)";
+        when namenserteilung_erklaert(k, e) and erklaerung_nach_der_beurkundung_der_geburt(k);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617b Name bei nachträglicher gemeinsamer Sorge oder Scheinvaterschaft --------------------
+
+pub relation gemeinsame_sorge_nachtraeglich_begruendet(kind: Person) kind empirical {
+    label de official "Eine gemeinsame Sorge der Eltern wird erst begründet, wenn das Kind bereits einen Geburtsnamen führt (§ 1617b Abs. 1 Satz 1)";
+    label en unofficial "joint parental custody arises only after the child already bears a birth name (§ 1617b (1) sentence 1)";
+}
+pub relation anschluss_des_kindes_erklaert(kind: Person) kind empirical {
+    label de official "Das Kind schließt sich der Bestimmung oder Namensgebung an (§ 1617b Abs. 1 Satz 2, § 1617c Abs. 1 Satz 1)";
+    label en unofficial "the child joins the determination or the giving of the name (§ 1617b (1) sentence 2, § 1617c (1) sentence 1)";
+}
+// § 1617b Abs. 2 Satz 1 liest die rechtskräftige Feststellung der Nichtvaterschaft
+// aus Titel 2 (`nichtvaterschaft_rechtskraeftig_festgestellt`, § 1599 Abs. 1).
+pub relation antrag_des_kindes_1617b(kind: Person) kind empirical {
+    label de official "Das Kind beantragt den Familiennamen der Mutter als Geburtsnamen (§ 1617b Abs. 2 Satz 1)";
+    label en unofficial "the child applies for the mother's family name as its birth name (§ 1617b (2) sentence 1)";
+}
+pub relation antrag_des_mannes_1617b(kind: Person, mann: Person) kind empirical {
+    label de official "Der Mann beantragt den Familiennamen der Mutter als Geburtsnamen des Kindes (§ 1617b Abs. 2 Satz 1)";
+    label en unofficial "the man applies for the mother's family name as the child's birth name (§ 1617b (2) sentence 1)";
+}
+
+pub relation neubestimmung_des_geburtsnamens_moeglich(kind: Person) kind institutional {
+    label de official "Wird eine gemeinsame Sorge der Eltern erst begründet, wenn das Kind bereits einen Geburtsnamen führt, so kann dieser neu bestimmt werden (§ 1617b Abs. 1 Satz 1)";
+    label en unofficial "Where joint custody arises only after the child already bears a birth name, that name may be newly determined (§ 1617b (1) sentence 1)";
+}
+pub relation neubestimmung_wirksam(kind: Person) kind institutional {
+    label de official "Hat das Kind das fünfte Lebensjahr vollendet, so ist die Bestimmung nur wirksam, wenn es sich der Bestimmung anschließt (§ 1617b Abs. 1 Satz 2)";
+    label en unofficial "Where the child has completed its fifth year, the determination is effective only if the child joins it (§ 1617b (1) sentence 2)";
+}
+pub relation geburtsname_wird_der_name_der_mutter(kind: Person) kind institutional {
+    label de official "Wird rechtskräftig festgestellt, dass der Mann nicht der Vater ist, so erhält das Kind auf seinen Antrag den Familiennamen der Mutter im Zeitpunkt der Geburt als Geburtsnamen (§ 1617b Abs. 2 Satz 1)";
+    label en unofficial "Where it is established with final effect that the man is not the father, the child receives on its application the mother's family name at the time of birth (§ 1617b (2) sentence 1)";
+}
+
+@source(BGB_P1617b) {
+    rule NeubestimmungMoeglich(k: Person) strict {
+        label de official "Wird eine gemeinsame Sorge der Eltern erst begründet, wenn das Kind bereits einen Geburtsnamen führt, so kann dieser neu bestimmt werden (§ 1617b Abs. 1 Satz 1)";
+        label en unofficial "Where joint custody arises only after the child already bears a birth name, that name may be newly determined (§ 1617b (1) sentence 1)";
+        when gemeinsame_sorge_nachtraeglich_begruendet(k) and elterliche_sorge_gemeinsam(k);
+        then neubestimmung_des_geburtsnamens_moeglich(k);
+    }
+    rule NeubestimmungWirksamMitAnschluss(k: Person) strict {
+        label de official "Hat das Kind das fünfte Lebensjahr vollendet, so ist die Bestimmung nur wirksam, wenn es sich der Bestimmung anschließt (§ 1617b Abs. 1 Satz 2)";
+        label en unofficial "If the child has completed its fifth year, the determination is effective only if it joins the determination (§ 1617b (1) sentence 2)";
+        when neubestimmung_des_geburtsnamens_moeglich(k) and bestimmung_getroffen(k)
+         and fuenftes_lebensjahr_vollendet(k) and anschluss_des_kindes_erklaert(k);
+        then neubestimmung_wirksam(k);
+    }
+    rule NeubestimmungWirksamUnterFuenf(k: Person) strict {
+        label de official "Vor Vollendung des fünften Lebensjahrs ist die Bestimmung ohne Anschluss des Kindes wirksam (§ 1617b Abs. 1 Satz 2 im Umkehrschluss)";
+        label en unofficial "Before completion of the fifth year the determination is effective without the child joining it (§ 1617b (1) sentence 2 a contrario)";
+        when neubestimmung_des_geburtsnamens_moeglich(k) and bestimmung_getroffen(k)
+         and fuenftes_lebensjahr_nicht_vollendet(k);
+        then neubestimmung_wirksam(k);
+    }
+    rule NameDerMutterAufAntragDesKindes(k: Person, m: Person) strict {
+        label de official "Wird rechtskräftig festgestellt, dass ein Mann, dessen Familienname Geburtsname des Kindes geworden ist, nicht der Vater ist, so erhält das Kind auf seinen Antrag den Familiennamen der Mutter (§ 1617b Abs. 2 Satz 1)";
+        label en unofficial "Where it is finally established that a man whose family name became the child's birth name is not the father, the child receives on its application the mother's family name (§ 1617b (2) sentence 1)";
+        when nichtvaterschaft_rechtskraeftig_festgestellt(k, m) and antrag_des_kindes_1617b(k);
+        then geburtsname_wird_der_name_der_mutter(k);
+    }
+    rule NameDerMutterAufAntragDesMannes(k: Person, m: Person) strict {
+        label de official "Hat das Kind das fünfte Lebensjahr noch nicht vollendet, so erfolgt die Namensänderung auch auf Antrag des Mannes (§ 1617b Abs. 2 Satz 1)";
+        label en unofficial "Where the child has not yet completed its fifth year, the change also takes place on the man's application (§ 1617b (2) sentence 1)";
+        when nichtvaterschaft_rechtskraeftig_festgestellt(k, m) and antrag_des_mannes_1617b(k, m)
+         and fuenftes_lebensjahr_nicht_vollendet(k);
+        then geburtsname_wird_der_name_der_mutter(k);
+    }
+    rule Beglaubigung1617b(k: Person, m: Person) strict {
+        label de official "Der Antrag erfolgt durch Erklärung gegenüber dem Standesamt, die öffentlich beglaubigt werden muss (§ 1617b Abs. 2 Satz 2)";
+        label en unofficial "The application is made by declaration to the registry office, which must be publicly certified (§ 1617b (2) sentence 2)";
+        when nichtvaterschaft_rechtskraeftig_festgestellt(k, m) and antrag_des_kindes_1617b(k);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617c Name bei Namensänderung der Eltern ---------------------------------------------------
+
+pub relation ehename_nachtraeglich_bestimmt(kind: Person) kind empirical {
+    label de official "Die Eltern bestimmen einen Ehenamen, nachdem das Kind das fünfte Lebensjahr vollendet hat (§ 1617c Abs. 1 Satz 1)";
+    label en unofficial "the parents determine a married name after the child has completed its fifth year of life (§ 1617c (1) sentence 1)";
+}
+pub relation ehename_des_kindes_geaendert(kind: Person) kind empirical {
+    label de official "Der Ehename, der Geburtsname eines Kindes geworden ist, ändert sich (§ 1617c Abs. 2 Nr. 1)";
+    label en unofficial "the married name that became a child's birth name changes (§ 1617c (2) no. 1)";
+}
+pub relation familienname_eines_elternteils_geaendert(kind: Person) kind empirical {
+    label de official "In den Fällen der §§ 1617, 1617a und 1617b ändert sich der Familienname eines Elternteils, der Geburtsname des Kindes geworden ist, auf andere Weise als durch Eheschließung (§ 1617c Abs. 2 Nr. 2)";
+    label en unofficial "in the cases of §§ 1617, 1617a and 1617b the family name of a parent that became the child's birth name changes otherwise than by marriage (§ 1617c (2) no. 2)";
+}
+pub relation kind_in_der_geschaeftsfaehigkeit_beschraenkt(kind: Person) kind empirical {
+    label de official "Das Kind ist in der Geschäftsfähigkeit beschränkt (§ 1617c Abs. 1 Satz 2)";
+    label en unofficial "the child has limited capacity to contract (§ 1617c (1) sentence 2)";
+}
+pub relation geburtsname_des_kindes_geaendert(kind: Person) kind empirical {
+    label de official "Der Geburtsname des Kindes ändert sich (§ 1617c Abs. 3)";
+    label en unofficial "the child's birth name changes (§ 1617c (3))";
+}
+pub relation ehegatte_des_kindes_schliesst_sich_an(kind: Person) kind empirical {
+    label de official "Der Ehegatte des Kindes schließt sich der Namensänderung an (§ 1617c Abs. 3)";
+    label en unofficial "the child's spouse joins the change of name (§ 1617c (3))";
+}
+
+pub relation erstreckung_auf_den_geburtsnamen(kind: Person) kind institutional {
+    label de official "Der Ehename erstreckt sich auf den Geburtsnamen des Kindes nur dann, wenn es sich der Namensgebung anschließt (§ 1617c Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "The married name extends to the child's birth name only if the child joins the giving of the name (§ 1617c (1) sentence 1, (2))";
+}
+pub relation erstreckung_auf_den_ehenamen_des_kindes(kind: Person) kind institutional {
+    label de official "Eine Änderung des Geburtsnamens erstreckt sich auf den Ehenamen des Kindes nur dann, wenn sich auch der Ehegatte der Namensänderung anschließt (§ 1617c Abs. 3)";
+    label en unofficial "A change of the birth name extends to the child's married name only if the spouse also joins the change (§ 1617c (3))";
+}
+
+@source(BGB_P1617c) {
+    rule ErstreckungNurMitAnschluss(k: Person) strict {
+        label de official "Bestimmen die Eltern einen Ehenamen, nachdem das Kind das fünfte Lebensjahr vollendet hat, so erstreckt sich der Ehename auf den Geburtsnamen des Kindes nur dann, wenn es sich der Namensgebung anschließt (§ 1617c Abs. 1 Satz 1)";
+        label en unofficial "Where the parents determine a married name after the child has completed its fifth year, it extends to the child's birth name only if the child joins (§ 1617c (1) sentence 1)";
+        when ehename_nachtraeglich_bestimmt(k) and fuenftes_lebensjahr_vollendet(k) and anschluss_des_kindes_erklaert(k);
+        then erstreckung_auf_den_geburtsnamen(k);
+    }
+    rule ErstreckungBeiAenderungDesEhenamens(k: Person) strict {
+        label de official "Absatz 1 gilt entsprechend, wenn sich der Ehename, der Geburtsname eines Kindes geworden ist, ändert (§ 1617c Abs. 2 Nr. 1)";
+        label en unofficial "Subsection (1) applies accordingly where the married name that became a child's birth name changes (§ 1617c (2) no. 1)";
+        when ehename_des_kindes_geaendert(k) and fuenftes_lebensjahr_vollendet(k) and anschluss_des_kindes_erklaert(k);
+        then erstreckung_auf_den_geburtsnamen(k);
+    }
+    rule ErstreckungBeiAenderungDesFamiliennamens(k: Person) strict {
+        label de official "Absatz 1 gilt entsprechend, wenn sich in den Fällen der §§ 1617, 1617a und 1617b der Familienname eines Elternteils, der Geburtsname geworden ist, auf andere Weise als durch Eheschließung ändert (§ 1617c Abs. 2 Nr. 2)";
+        label en unofficial "Subsection (1) applies accordingly where in the cases of §§ 1617, 1617a and 1617b a parent's family name that became the birth name changes otherwise than by marriage (§ 1617c (2) no. 2)";
+        when familienname_eines_elternteils_geaendert(k) and fuenftes_lebensjahr_vollendet(k) and anschluss_des_kindes_erklaert(k);
+        then erstreckung_auf_den_geburtsnamen(k);
+    }
+    rule ErklaerungNurDurchDasKindSelbst(k: Person) strict {
+        label de official "Ein in der Geschäftsfähigkeit beschränktes Kind, welches das 14. Lebensjahr vollendet hat, kann die Erklärung nur selbst abgeben; es bedarf hierzu der Zustimmung seines gesetzlichen Vertreters (§ 1617c Abs. 1 Satz 2)";
+        label en unofficial "A child of limited capacity that has completed its 14th year may make the declaration only itself, with the approval of its legal representative (§ 1617c (1) sentence 2)";
+        when kind_in_der_geschaeftsfaehigkeit_beschraenkt(k) and vierzehntes_lebensjahr_vollendet(k);
+        then erklaerung_nur_durch_das_kind_selbst(k);
+    }
+    rule ErstreckungAufDenEhenamenDesKindes(k: Person) strict {
+        label de official "Eine Änderung des Geburtsnamens erstreckt sich auf den Ehenamen des Kindes nur dann, wenn sich auch der Ehegatte der Namensänderung anschließt (§ 1617c Abs. 3)";
+        label en unofficial "A change of the birth name extends to the child's married name only if the spouse also joins the change (§ 1617c (3))";
+        when geburtsname_des_kindes_geaendert(k) and ehegatte_des_kindes_schliesst_sich_an(k);
+        then erstreckung_auf_den_ehenamen_des_kindes(k);
+    }
+}
+
+// --- § 1617d Name nach Scheidung der Eltern oder Tod eines Elternteils ---------------------------
+
+pub relation eltern_geschieden(kind: Person) kind empirical {
+    label de official "Die Eltern sind geschieden (§ 1617d Abs. 1, Abs. 2 Satz 2)";
+    label en unofficial "the parents are divorced (§ 1617d (1), (2) sentence 2)";
+}
+pub relation anderer_elternteil_gestorben(kind: Person) kind empirical {
+    label de official "Der andere Elternteil ist gestorben (§ 1617d Abs. 1)";
+    label en unofficial "the other parent has died (§ 1617d (1))";
+}
+pub relation frueheren_namen_wieder_angenommen(elternteil: Person) kind empirical {
+    label de official "Der Elternteil hat seinen früheren Namen nach § 1355 Abs. 5 Satz 2 wieder angenommen (§ 1617d Abs. 1 Nr. 1, Abs. 3)";
+    label en unofficial "the parent resumed a former name under § 1355 (5) sentence 2 (§ 1617d (1) no. 1, (3))";
+}
+pub relation kind_in_den_haushalt_aufgenommen(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Elternteil hat das Kind in seinen Haushalt aufgenommen (§ 1617d Abs. 1)";
+    label en unofficial "the parent has taken the child into his household (§ 1617d (1))";
+}
+pub relation einwilligung_des_elternteils_erteilt(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Elternteil hat in die Namenserteilung oder Neubestimmung eingewilligt (§ 1617d Abs. 2, Abs. 3 Satz 2, § 1617e Abs. 2, § 1617i Abs. 1 Satz 3)";
+    label en unofficial "the parent consented to the grant or new determination of the name (§ 1617d (2), (3) sentence 2, § 1617e (2), § 1617i (1) sentence 3)";
+}
+pub relation einwilligung_gerichtlich_ersetzt_namensrecht(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das Familiengericht hat die Einwilligung des anderen Elternteils ersetzt (§ 1617d Abs. 2 Satz 3, § 1617e Abs. 2 Satz 2, § 1617f Abs. 2 Satz 3) — festgestellte Tatsache";
+    label en unofficial "the family court replaced the other parent's consent (§ 1617d (2) sentence 3, § 1617e (2) sentence 2, § 1617f (2) sentence 3) — adjudicated fact";
+}
+
+pub relation erteilungsrecht_nach_scheidung_oder_tod(kind: Person, elternteil: Person) kind institutional {
+    label de official "Der Elternteil, dessen Name nicht Ehename geworden ist, dem nach der Scheidung oder nach dem Tod des anderen Elternteils die elterliche Sorge zusteht und der das Kind in seinen Haushalt aufgenommen hat, kann dem Kind seinen wieder angenommenen Namen oder einen Doppelnamen als Geburtsnamen erteilen (§ 1617d Abs. 1)";
+    label en unofficial "The parent whose name did not become the married name, who has custody after divorce or the other parent's death and has taken the child into his household, may grant the child his resumed name or a double name as birth name (§ 1617d (1))";
+}
+pub relation neubestimmung_durch_volljaehriges_kind(kind: Person) kind institutional {
+    label de official "Ein volljähriges Kind, dessen einer Elternteil nach Scheidung oder Tod einen früheren Namen wieder angenommen hat, kann seinen Geburtsnamen neu bestimmen (§ 1617d Abs. 3 Satz 1)";
+    label en unofficial "An adult child one of whose parents resumed a former name after divorce or death may newly determine its birth name (§ 1617d (3) sentence 1)";
+}
+pub relation einwilligung_ersetzt(kind: Person, elternteil: Person) kind institutional {
+    label de official "Das Familiengericht kann die Einwilligung des anderen Elternteils ersetzen, wenn die Erteilung dem Wohl des Kindes dient (§ 1617d Abs. 2 Satz 3, § 1617e Abs. 2 Satz 2, § 1617f Abs. 2 Satz 3)";
+    label en unofficial "The family court may replace the other parent's consent where the grant serves the child's welfare (§ 1617d (2) sentence 3, § 1617e (2) sentence 2, § 1617f (2) sentence 3)";
+}
+
+@source(BGB_P1617d) {
+    rule ErteilungsrechtNachScheidung(k: Person, e: Person) strict {
+        label de official "Derjenige Elternteil, dessen Name nicht Ehename geworden ist, dem die elterliche Sorge nach der Scheidung der Eltern zusteht und der das Kind in seinen Haushalt aufgenommen hat, kann dem Kind seinen wieder angenommenen Namen als Geburtsnamen erteilen (§ 1617d Abs. 1 Nr. 1)";
+        label en unofficial "The parent whose name did not become the married name, who has custody after the divorce and has taken the child into his household, may grant the child his resumed name (§ 1617d (1) no. 1)";
+        when eltern_geschieden(k) and frueheren_namen_wieder_angenommen(e) and kind_in_den_haushalt_aufgenommen(k, e)
+         and not_known(eltern_fuehren_ehenamen(k));
+        then erteilungsrecht_nach_scheidung_oder_tod(k, e);
+    }
+    rule ErteilungsrechtNachTod(k: Person, e: Person) strict {
+        label de official "Dasselbe gilt für den Elternteil, dem nach dem Tod des anderen Elternteils die elterliche Sorge allein zusteht (§ 1617d Abs. 1)";
+        label en unofficial "The same applies to the parent who has sole custody after the death of the other parent (§ 1617d (1))";
+        when anderer_elternteil_gestorben(k) and elterliche_sorge_allein(k, e) and frueheren_namen_wieder_angenommen(e)
+         and kind_in_den_haushalt_aufgenommen(k, e) and not_known(eltern_fuehren_ehenamen(k));
+        then erteilungsrecht_nach_scheidung_oder_tod(k, e);
+    }
+    rule EinwilligungDesKindesAbFuenf1617d(k: Person, e: Person) strict {
+        label de official "Wenn das Kind das fünfte Lebensjahr vollendet hat, bedarf die Erteilung des Geburtsnamens nach Absatz 1 seiner Einwilligung (§ 1617d Abs. 2 Satz 1)";
+        label en unofficial "Where the child has completed its fifth year, the grant of the birth name under subsection (1) requires its consent (§ 1617d (2) sentence 1)";
+        when erteilungsrecht_nach_scheidung_oder_tod(k, e) and fuenftes_lebensjahr_vollendet(k);
+        then einwilligung_des_kindes_erforderlich(k);
+    }
+    rule EinwilligungDesAnderenElternteils1617d(k: Person, e: Person, a: Person) strict {
+        label de official "Im Fall der Scheidung bedarf die Erteilung auch der Einwilligung des anderen Elternteils, wenn das Kind dessen Namen führt (§ 1617d Abs. 2 Satz 2)";
+        label en unofficial "In the case of divorce the grant also requires the other parent's consent where the child bears his name (§ 1617d (2) sentence 2)";
+        when erteilungsrecht_nach_scheidung_oder_tod(k, e) and eltern_geschieden(k)
+         and anderer_elternteil(k, a) and kind_fuehrt_den_namen_des_anderen_elternteils(k, a);
+        then einwilligung_des_anderen_elternteils_erforderlich(k, a);
+    }
+    rule EinwilligungDesAnderenElternteilsErsetzt(k: Person, a: Person) strict {
+        label de official "Das Familiengericht kann die Einwilligung des anderen Elternteils ersetzen, wenn die Erteilung dem Wohl des Kindes dient (§ 1617d Abs. 2 Satz 3)";
+        label en unofficial "The family court may replace the other parent's consent where the grant serves the child's welfare (§ 1617d (2) sentence 3)";
+        when einwilligung_des_anderen_elternteils_erforderlich(k, a) and erteilung_dient_dem_wohl_des_kindes(k)
+         and einwilligung_gerichtlich_ersetzt_namensrecht(k, a);
+        then einwilligung_ersetzt(k, a);
+    }
+    rule NeubestimmungDurchVolljaehrigesKind(k: Person, e: Person) strict {
+        label de official "Ein volljähriges Kind, dessen einer Elternteil nach Scheidung der Eltern oder Tod des anderen Elternteils einen früheren Namen wieder angenommen hat, kann durch Erklärung gegenüber dem Standesamt seinen Geburtsnamen neu bestimmen; die Neubestimmung bedarf der Einwilligung dieses Elternteils (§ 1617d Abs. 3)";
+        label en unofficial "An adult child one of whose parents resumed a former name may newly determine its birth name by declaration to the registry office; this requires that parent's consent (§ 1617d (3))";
+        when kind_volljaehrig(k) and frueheren_namen_wieder_angenommen(e) and einwilligung_des_elternteils_erteilt(k, e);
+        then neubestimmung_durch_volljaehriges_kind(k);
+    }
+    rule Beglaubigung1617d(k: Person, e: Person) strict {
+        label de official "Die Erklärungen müssen öffentlich beglaubigt werden (§ 1617d Abs. 4)";
+        label en unofficial "The declarations must be publicly certified (§ 1617d (4))";
+        when erteilungsrecht_nach_scheidung_oder_tod(k, e) and namenserteilung_erklaert(k, e);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617e Einbenennung, Rückbenennung ----------------------------------------------------------
+
+pub relation ehegatte_des_elternteils(kind: Person, elternteil: Person, ehegatte: Person) kind empirical {
+    label de official "Ehegatte des sorgeberechtigten Elternteils, der nicht Elternteil des Kindes ist (§ 1617e Abs. 1 Satz 1)";
+    label en unofficial "spouse of the custodial parent who is not a parent of the child (§ 1617e (1) sentence 1)";
+}
+pub relation kind_im_gemeinsamen_haushalt_aufgenommen(kind: Person, elternteil: Person, ehegatte: Person) kind empirical {
+    label de official "Der Elternteil und sein Ehegatte haben das Kind in ihren gemeinsamen Haushalt aufgenommen (§ 1617e Abs. 1 Satz 1)";
+    label en unofficial "the parent and his spouse have taken the child into their joint household (§ 1617e (1) sentence 1)";
+}
+pub relation einbenennung_erklaert(kind: Person, elternteil: Person) kind empirical {
+    label de official "Die Einbenennung wird durch Erklärung gegenüber dem Standesamt erklärt (§ 1617e Abs. 1 Satz 1)";
+    label en unofficial "the naming-in is declared to the registry office (§ 1617e (1) sentence 1)";
+}
+pub relation ehe_aufgeloest_oder_kind_ausgeschieden(kind: Person) kind empirical {
+    label de official "Die Ehe zwischen dem Elternteil und seinem Ehegatten ist aufgelöst oder das Kind ist aus dem gemeinsamen Haushalt ausgeschieden (§ 1617e Abs. 4 Satz 1)";
+    label en unofficial "the marriage between the parent and his spouse has been dissolved or the child has left the joint household (§ 1617e (4) sentence 1)";
+}
+pub relation rueckbenennung_erklaert(kind: Person, erklaerender: Person) kind empirical {
+    label de official "Die Rückbenennung wird durch Erklärung gegenüber dem Standesamt erklärt (§ 1617e Abs. 4 Satz 1)";
+    label en unofficial "the reversal of the naming-in is declared to the registry office (§ 1617e (4) sentence 1)";
+}
+
+pub relation einbenennung_zulaessig(kind: Person, elternteil: Person) kind institutional {
+    label de official "Der sorgeberechtigte Elternteil und sein Ehegatte, der nicht Elternteil des Kindes ist, können dem Kind, das sie in ihren gemeinsamen Haushalt aufgenommen haben, ihren Ehenamen oder einen Doppelnamen als Geburtsnamen erteilen (§ 1617e Abs. 1 Satz 1)";
+    label en unofficial "The custodial parent and his spouse, who is not a parent of the child, may grant the child taken into their joint household their married name or a double name (§ 1617e (1) sentence 1)";
+}
+pub relation rueckbenennung_zulaessig(kind: Person, erklaerender: Person) kind institutional {
+    label de official "Wird die Ehe aufgelöst oder scheidet das Kind aus dem gemeinsamen Haushalt aus, so können der sorgeberechtigte Elternteil oder das volljährige Kind selbst die Einbenennung rückgängig machen (§ 1617e Abs. 4 Satz 1)";
+    label en unofficial "If the marriage is dissolved or the child leaves the joint household, the custodial parent or the adult child itself may reverse the naming-in (§ 1617e (4) sentence 1)";
+}
+
+@source(BGB_P1617e) {
+    rule EinbenennungBeiGemeinsamerSorge(k: Person, e: Person, s: Person) strict {
+        label de official "Der Elternteil, dem die elterliche Sorge gemeinsam mit dem anderen Elternteil zusteht, und sein Ehegatte, der nicht Elternteil des Kindes ist, können dem Kind, das sie in ihren gemeinsamen Haushalt aufgenommen haben, ihren Ehenamen als Geburtsnamen erteilen (§ 1617e Abs. 1 Satz 1 Nr. 1)";
+        label en unofficial "The parent with joint custody and his spouse, not a parent of the child, may grant the child taken into their joint household their married name (§ 1617e (1) sentence 1 no. 1)";
+        when elterliche_sorge_gemeinsam(k) and ehegatte_des_elternteils(k, e, s)
+         and kind_im_gemeinsamen_haushalt_aufgenommen(k, e, s) and einbenennung_erklaert(k, e);
+        then einbenennung_zulaessig(k, e);
+    }
+    rule EinbenennungBeiAlleinsorge(k: Person, e: Person, s: Person) strict {
+        label de official "Dasselbe gilt für den Elternteil, dem die elterliche Sorge allein zusteht (§ 1617e Abs. 1 Satz 1)";
+        label en unofficial "The same applies to the parent with sole custody (§ 1617e (1) sentence 1)";
+        when elterliche_sorge_allein(k, e) and ehegatte_des_elternteils(k, e, s)
+         and kind_im_gemeinsamen_haushalt_aufgenommen(k, e, s) and einbenennung_erklaert(k, e);
+        then einbenennung_zulaessig(k, e);
+    }
+    rule EinwilligungDesAnderenElternteils1617e(k: Person, e: Person, a: Person) strict {
+        label de official "Die Einbenennung bedarf der Einwilligung des anderen Elternteils, wenn das Kind dessen Namen führt oder diesem Elternteil die elterliche Sorge gemeinsam mit dem einbenennenden Elternteil zusteht (§ 1617e Abs. 2 Satz 1)";
+        label en unofficial "The naming-in requires the other parent's consent where the child bears his name or he has joint custody with the naming parent (§ 1617e (2) sentence 1)";
+        when einbenennung_zulaessig(k, e) and anderer_elternteil(k, a) and kind_fuehrt_den_namen_des_anderen_elternteils(k, a);
+        then einwilligung_des_anderen_elternteils_erforderlich(k, a);
+    }
+    rule EinwilligungDesAnderenBeiGemeinsamerSorge1617e(k: Person, e: Person, a: Person) strict {
+        label de official "Die Einbenennung bedarf der Einwilligung des anderen Elternteils auch dann, wenn diesem die elterliche Sorge gemeinsam mit dem einbenennenden Elternteil zusteht (§ 1617e Abs. 2 Satz 1)";
+        label en unofficial "The naming-in also requires the other parent's consent where he has joint custody with the naming parent (§ 1617e (2) sentence 1)";
+        when einbenennung_zulaessig(k, e) and anderer_elternteil(k, a) and elterliche_sorge_gemeinsam(k);
+        then einwilligung_des_anderen_elternteils_erforderlich(k, a);
+    }
+    rule EinwilligungDesKindesAbFuenf1617e(k: Person, e: Person) strict {
+        label de official "Wenn das Kind das fünfte Lebensjahr vollendet hat, bedarf die Einbenennung auch seiner Einwilligung (§ 1617e Abs. 2 Satz 3)";
+        label en unofficial "Where the child has completed its fifth year, the naming-in also requires its consent (§ 1617e (2) sentence 3)";
+        when einbenennung_zulaessig(k, e) and fuenftes_lebensjahr_vollendet(k);
+        then einwilligung_des_kindes_erforderlich(k);
+    }
+    rule RueckbenennungDurchDenElternteil(k: Person, e: Person) strict {
+        label de official "Wird die Ehe aufgelöst oder scheidet das Kind aus dem gemeinsamen Haushalt aus, so kann jeder Elternteil, dem die elterliche Sorge allein oder gemeinsam zusteht, die Einbenennung rückgängig machen (§ 1617e Abs. 4 Satz 1 Nr. 1)";
+        label en unofficial "If the marriage is dissolved or the child leaves the joint household, any parent with sole or joint custody may reverse the naming-in (§ 1617e (4) sentence 1 no. 1)";
+        when ehe_aufgeloest_oder_kind_ausgeschieden(k) and elterliche_sorge_allein(k, e) and rueckbenennung_erklaert(k, e);
+        then rueckbenennung_zulaessig(k, e);
+    }
+    rule RueckbenennungDurchDasVolljaehrigeKind(k: Person) strict {
+        label de official "Die Einbenennung kann auch das Kind selbst rückgängig machen, sobald es volljährig ist (§ 1617e Abs. 4 Satz 1 Nr. 2)";
+        label en unofficial "The child itself may reverse the naming-in once it is of full age (§ 1617e (4) sentence 1 no. 2)";
+        when ehe_aufgeloest_oder_kind_ausgeschieden(k) and kind_volljaehrig(k) and rueckbenennung_erklaert(k, k);
+        then rueckbenennung_zulaessig(k, k);
+    }
+    rule Beglaubigung1617e(k: Person, e: Person) strict {
+        label de official "Die Erklärungen müssen öffentlich beglaubigt werden (§ 1617e Abs. 5 Satz 1)";
+        label en unofficial "The declarations must be publicly certified (§ 1617e (5) sentence 1)";
+        when einbenennung_zulaessig(k, e);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617f Geschlechtsangepasste Form des Geburtsnamens -----------------------------------------
+//
+// Abs. 1 nennt einen GESCHLOSSENEN Katalog dreier Gründe; jeder ist ein eigener
+// Kopf. Abs. 4 Satz 4 ist eine SPERRE: im Fall des Widerrufs ist eine erneute
+// Erklärung nach Absatz 1 nicht zulässig.
+
+pub relation sorbische_volkszugehoerigkeit(kind: Person) kind empirical {
+    label de official "Das Kind gehört dem sorbischen Volk an und die Form entspricht der sorbischen Tradition (§ 1617f Abs. 1 Nr. 1)";
+    label en unofficial "the child belongs to the Sorbian people and the form corresponds to Sorbian tradition (§ 1617f (1) no. 1)";
+}
+pub relation anpassung_entspricht_der_herkunft(kind: Person) kind empirical {
+    label de official "Die Anpassung ist in der Rechtsordnung eines anderen Staates vorgesehen und entspricht der Herkunft des Kindes (§ 1617f Abs. 1 Nr. 2)";
+    label en unofficial "the adaptation is provided for in the law of another state and corresponds to the child's origin (§ 1617f (1) no. 2)";
+}
+pub relation name_stammt_aus_dem_dortigen_sprachraum(kind: Person) kind empirical {
+    label de official "Die Anpassung ist in der Rechtsordnung eines anderen Staates vorgesehen und der Name stammt traditionell aus dem dortigen Sprachraum (§ 1617f Abs. 1 Nr. 3)";
+    label en unofficial "the adaptation is provided for in the law of another state and the name traditionally originates from that linguistic area (§ 1617f (1) no. 3)";
+}
+pub relation anpassung_erklaert(kind: Person, erklaerender: Person) kind empirical {
+    label de official "Die Erklärung über die geschlechtsangepasste Form wird gegenüber dem Standesamt abgegeben (§ 1617f Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "the declaration on the gender-adapted form is made to the registry office (§ 1617f (1), (2) sentence 1)";
+}
+pub relation anpassung_widerrufen(kind: Person) kind empirical {
+    label de official "Die Erklärung nach Absatz 1 ist gegenüber dem Standesamt widerrufen worden (§ 1617f Abs. 4 Satz 1)";
+    label en unofficial "the declaration under subsection (1) has been revoked before the registry office (§ 1617f (4) sentence 1)";
+}
+
+pub relation anpassung_des_geburtsnamens_zulaessig(kind: Person) kind institutional {
+    label de official "Der Geburtsname eines Kindes kann durch Erklärung gegenüber dem Standesamt seinem Geschlecht angepasst werden (§ 1617f Abs. 1)";
+    label en unofficial "A child's birth name may be adapted to its gender by declaration to the registry office (§ 1617f (1))";
+}
+pub relation erneute_anpassung_unzulaessig(kind: Person) kind institutional {
+    label de official "Im Fall des Widerrufs ist eine erneute Erklärung nach Absatz 1 nicht zulässig (§ 1617f Abs. 4 Satz 4)";
+    label en unofficial "In the case of revocation a renewed declaration under subsection (1) is not admissible (§ 1617f (4) sentence 4)";
+}
+
+@source(BGB_P1617f) {
+    rule AnpassungSorbischeTradition(k: Person) strict {
+        label de official "Der Geburtsname kann angepasst werden, wenn die Form der sorbischen Tradition entspricht und das Kind dem sorbischen Volk angehört (§ 1617f Abs. 1 Nr. 1)";
+        label en unofficial "The birth name may be adapted where the form corresponds to Sorbian tradition and the child belongs to the Sorbian people (§ 1617f (1) no. 1)";
+        when sorbische_volkszugehoerigkeit(k) and not_known(anpassung_widerrufen(k));
+        then anpassung_des_geburtsnamens_zulaessig(k);
+    }
+    rule AnpassungHerkunft(k: Person) strict {
+        label de official "Der Geburtsname kann angepasst werden, wenn die Anpassung in der Rechtsordnung eines anderen Staates vorgesehen ist und der Herkunft des Kindes entspricht (§ 1617f Abs. 1 Nr. 2)";
+        label en unofficial "The birth name may be adapted where the adaptation is provided for in another state's law and corresponds to the child's origin (§ 1617f (1) no. 2)";
+        when anpassung_entspricht_der_herkunft(k) and not_known(anpassung_widerrufen(k));
+        then anpassung_des_geburtsnamens_zulaessig(k);
+    }
+    rule AnpassungSprachraum(k: Person) strict {
+        label de official "Der Geburtsname kann angepasst werden, wenn die Anpassung in der Rechtsordnung eines anderen Staates vorgesehen ist und der Name traditionell aus dem dortigen Sprachraum stammt (§ 1617f Abs. 1 Nr. 3)";
+        label en unofficial "The birth name may be adapted where the adaptation is provided for in another state's law and the name traditionally originates from that linguistic area (§ 1617f (1) no. 3)";
+        when name_stammt_aus_dem_dortigen_sprachraum(k) and not_known(anpassung_widerrufen(k));
+        then anpassung_des_geburtsnamens_zulaessig(k);
+    }
+    rule EinwilligungDesAnderenElternteils1617f(k: Person, a: Person) strict {
+        label de official "Die Anpassung des Geburtsnamens bedarf der Einwilligung des anderen Elternteils, wenn das Kind dessen Namen führt (§ 1617f Abs. 2 Satz 2)";
+        label en unofficial "The adaptation requires the other parent's consent where the child bears his name (§ 1617f (2) sentence 2)";
+        when anpassung_des_geburtsnamens_zulaessig(k) and anderer_elternteil(k, a)
+         and kind_fuehrt_den_namen_des_anderen_elternteils(k, a);
+        then einwilligung_des_anderen_elternteils_erforderlich(k, a);
+    }
+    rule EinwilligungDesKindesAbFuenf1617f(k: Person) strict {
+        label de official "Wenn das Kind das fünfte Lebensjahr vollendet hat, bedarf die Anpassung auch seiner Einwilligung (§ 1617f Abs. 2 Satz 4)";
+        label en unofficial "Where the child has completed its fifth year, the adaptation also requires its consent (§ 1617f (2) sentence 4)";
+        when anpassung_des_geburtsnamens_zulaessig(k) and fuenftes_lebensjahr_vollendet(k);
+        then einwilligung_des_kindes_erforderlich(k);
+    }
+    rule ErneuteAnpassungUnzulaessig(k: Person) strict {
+        label de official "Im Fall des Widerrufs ist eine erneute Erklärung nach Absatz 1 nicht zulässig (§ 1617f Abs. 4 Satz 4)";
+        label en unofficial "In the case of revocation a renewed declaration under subsection (1) is not admissible (§ 1617f (4) sentence 4)";
+        when anpassung_widerrufen(k);
+        then erneute_anpassung_unzulaessig(k);
+    }
+    rule Beglaubigung1617f(k: Person, e: Person) strict {
+        label de official "Nach der Beurkundung der Geburt abgegebene Erklärungen müssen öffentlich beglaubigt werden (§ 1617f Abs. 5)";
+        label en unofficial "Declarations made after the registration of the birth must be publicly certified (§ 1617f (5))";
+        when anpassung_erklaert(k, e) and erklaerung_nach_der_beurkundung_der_geburt(k);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617g Geburtsname nach friesischer Tradition -----------------------------------------------
+
+pub relation friesische_volksgruppe(kind: Person) kind empirical {
+    label de official "Das minderjährige Kind gehört der friesischen Volksgruppe an (§ 1617g Abs. 1)";
+    label en unofficial "the minor child belongs to the Frisian ethnic group (§ 1617g (1))";
+}
+pub relation abgeleiteter_name_bestimmt(kind: Person) kind empirical {
+    label de official "Zum Geburtsnamen soll ein gemäß der friesischen Tradition von einem Vornamen eines Elternteils abgeleiteter Name bestimmt werden (§ 1617g Abs. 1 Nr. 1)";
+    label en unofficial "a name derived from a parent's first name according to Frisian tradition is to be determined as the birth name (§ 1617g (1) no. 1)";
+}
+pub relation abgeleiteter_doppelname_bestimmt(kind: Person) kind empirical {
+    label de official "Zum Geburtsnamen soll ein nicht durch Bindestrich verbundener Doppelname aus einem abgeleiteten Namen und dem Familiennamen eines Elternteils bestimmt werden (§ 1617g Abs. 1 Nr. 2)";
+    label en unofficial "a double name without hyphen, composed of a derived name and a parent's family name, is to be determined as the birth name (§ 1617g (1) no. 2)";
+}
+
+pub relation friesischer_geburtsname_bestimmbar(kind: Person, form: Namensform) kind institutional {
+    label de official "Abweichend von § 1616 und ergänzend zu den §§ 1617 bis 1617b kann zum Geburtsnamen eines minderjährigen Kindes der friesischen Volksgruppe ein abgeleiteter Name oder ein abgeleiteter Doppelname bestimmt werden (§ 1617g Abs. 1)";
+    label en unofficial "By way of derogation from § 1616 and in addition to §§ 1617 to 1617b, a derived name or a derived double name may be determined as the birth name of a minor child of the Frisian ethnic group (§ 1617g (1))";
+}
+
+@source(BGB_P1617g) {
+    rule FriesischerAbgeleiteterName(k: Person) strict {
+        label de official "Zum Geburtsnamen eines minderjährigen Kindes, das der friesischen Volksgruppe angehört, kann ein gemäß der friesischen Tradition von einem Vornamen eines Elternteils abgeleiteter Name bestimmt werden (§ 1617g Abs. 1 Nr. 1)";
+        label en unofficial "A name derived from a parent's first name according to Frisian tradition may be determined as the birth name of a minor child of the Frisian ethnic group (§ 1617g (1) no. 1)";
+        when friesische_volksgruppe(k) and minderjaehriges_kind(k) and abgeleiteter_name_bestimmt(k);
+        then friesischer_geburtsname_bestimmbar(k, FamiliennameEinesElternteils);
+    }
+    rule FriesischerDoppelname(k: Person) strict {
+        label de official "Zum Geburtsnamen kann auch ein nicht durch Bindestrich verbundener Doppelname aus einem abgeleiteten Namen und dem Familiennamen eines Elternteils bestimmt werden (§ 1617g Abs. 1 Nr. 2)";
+        label en unofficial "A double name without hyphen, composed of a derived name and a parent's family name, may also be determined (§ 1617g (1) no. 2)";
+        when friesische_volksgruppe(k) and minderjaehriges_kind(k) and abgeleiteter_doppelname_bestimmt(k);
+        then friesischer_geburtsname_bestimmbar(k, DoppelnameBeiderElternteile);
+    }
+    rule EinwilligungDesAnderenElternteils1617g(k: Person, form: Namensform, a: Person) strict {
+        label de official "Die Bestimmung des Geburtsnamens durch einen Elternteil bedarf der Einwilligung des anderen Elternteils (§ 1617g Abs. 2 Satz 2)";
+        label en unofficial "Determination of the birth name by one parent requires the other parent's consent (§ 1617g (2) sentence 2)";
+        when friesischer_geburtsname_bestimmbar(k, form) and elterliche_sorge_allein(k, a);
+        then einwilligung_des_anderen_elternteils_erforderlich(k, a);
+    }
+    rule EinwilligungDesKindesAbFuenf1617g(k: Person, form: Namensform) strict {
+        label de official "Wenn das Kind das fünfte Lebensjahr vollendet hat, bedarf die Bestimmung auch seiner Einwilligung (§ 1617g Abs. 2 Satz 3)";
+        label en unofficial "Where the child has completed its fifth year, the determination also requires its consent (§ 1617g (2) sentence 3)";
+        when friesischer_geburtsname_bestimmbar(k, form) and fuenftes_lebensjahr_vollendet(k);
+        then einwilligung_des_kindes_erforderlich(k);
+    }
+    rule Beglaubigung1617g(k: Person, form: Namensform) strict {
+        label de official "Die Erklärung gegenüber dem Standesamt ist öffentlich zu beglaubigen (§ 1617g Abs. 2 Satz 1)";
+        label en unofficial "The declaration to the registry office must be publicly certified (§ 1617g (2) sentence 1)";
+        when friesischer_geburtsname_bestimmbar(k, form) and eltern_fuehren_ehenamen(k);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617h Geburtsname nach dänischer Tradition -------------------------------------------------
+
+pub relation daenische_minderheit(kind: Person) kind empirical {
+    label de official "Das minderjährige Kind gehört der dänischen Minderheit an (§ 1617h Abs. 1)";
+    label en unofficial "the minor child belongs to the Danish minority (§ 1617h (1))";
+}
+pub relation naher_angehoeriger(kind: Person, angehoeriger: Person) kind empirical {
+    label de official "Naher Angehöriger, dessen Familienname an erster Stelle des Doppelnamens steht (§ 1617h Abs. 1 Nr. 1)";
+    label en unofficial "close relative whose family name stands first in the double name (§ 1617h (1) no. 1)";
+}
+pub relation naher_angehoeriger_verstorben(kind: Person, angehoeriger: Person) kind empirical {
+    label de official "Der nahe Angehörige ist bereits verstorben: seine Einwilligung ist nicht erforderlich (§ 1617h Abs. 3 Satz 1)";
+    label en unofficial "the close relative is already deceased: his consent is not required (§ 1617h (3) sentence 1)";
+}
+
+pub relation daenischer_doppelname_bestimmbar(kind: Person, angehoeriger: Person) kind institutional {
+    label de official "Zum Geburtsnamen eines minderjährigen Kindes, das der dänischen Minderheit angehört, kann ein nicht durch Bindestrich verbundener Doppelname aus dem Familiennamen eines nahen Angehörigen und dem eines Elternteils bestimmt werden (§ 1617h Abs. 1)";
+    label en unofficial "A double name without hyphen, composed of a close relative's family name and a parent's family name, may be determined as the birth name of a minor child of the Danish minority (§ 1617h (1))";
+}
+pub relation einwilligung_des_nahen_angehoerigen_erforderlich(kind: Person, angehoeriger: Person) kind institutional {
+    label de official "Die Bestimmung und die Voranstellung bedürfen der Einwilligung des nahen Angehörigen, es sei denn, dieser ist bereits verstorben (§ 1617h Abs. 3 Satz 1)";
+    label en unofficial "The determination and the prefixing require the close relative's consent unless he is already deceased (§ 1617h (3) sentence 1)";
+}
+
+@source(BGB_P1617h) {
+    rule DaenischerDoppelname(k: Person, n: Person) strict {
+        label de official "Abweichend von § 1616 und ergänzend zu den §§ 1617 bis 1617b kann zum Geburtsnamen eines minderjährigen Kindes, das der dänischen Minderheit angehört, ein nicht durch Bindestrich verbundener Doppelname bestimmt werden (§ 1617h Abs. 1)";
+        label en unofficial "By way of derogation from § 1616 and in addition to §§ 1617 to 1617b, a double name without hyphen may be determined as the birth name of a minor child of the Danish minority (§ 1617h (1))";
+        when daenische_minderheit(k) and minderjaehriges_kind(k) and naher_angehoeriger(k, n);
+        then daenischer_doppelname_bestimmbar(k, n);
+    }
+    rule EinwilligungDesNahenAngehoerigen(k: Person, n: Person) strict {
+        label de official "Die Bestimmung nach Absatz 1 und die Voranstellung nach Absatz 2 bedürfen der Einwilligung des nahen Angehörigen, es sei denn, dieser ist bereits verstorben (§ 1617h Abs. 3 Satz 1)";
+        label en unofficial "The determination under subsection (1) and the prefixing under subsection (2) require the close relative's consent unless he is already deceased (§ 1617h (3) sentence 1)";
+        when daenischer_doppelname_bestimmbar(k, n) and not_known(naher_angehoeriger_verstorben(k, n));
+        then einwilligung_des_nahen_angehoerigen_erforderlich(k, n);
+    }
+    rule Beglaubigung1617h(k: Person, n: Person) strict {
+        label de official "Die Einwilligung ist gegenüber dem Standesamt zu erklären; sie muss öffentlich beglaubigt werden (§ 1617h Abs. 3 Satz 2)";
+        label en unofficial "The consent must be declared to the registry office and publicly certified (§ 1617h (3) sentence 2)";
+        when einwilligung_des_nahen_angehoerigen_erforderlich(k, n);
+        then oeffentliche_beglaubigung_erforderlich(k);
+    }
+}
+
+// --- § 1617i Neubestimmung des Familiennamens durch volljährige Personen -------------------------
+//
+// Das Wort „EINMALIG“ ist eine Sperre und wird als solche ausgeführt: hat die
+// Person ihren Geburtsnamen bereits nach dieser Vorschrift neu bestimmt, so
+// steht ihr das Recht nicht mehr zu.
+
+pub relation geburtsname_als_minderjaehrige_erworben(person: Person) kind empirical {
+    label de official "Die volljährige Person hat den Geburtsnamen als Minderjährige erworben (§ 1617i Abs. 1 Satz 1)";
+    label en unofficial "the adult person acquired the birth name as a minor (§ 1617i (1) sentence 1)";
+}
+pub relation familienname_nur_eines_elternteils_erhalten(person: Person) kind empirical {
+    label de official "Die Person hat den Familiennamen nur eines Elternteils als Geburtsnamen erhalten (§ 1617i Abs. 1 Satz 1 Nr. 2)";
+    label en unofficial "the person received the family name of only one parent as birth name (§ 1617i (1) sentence 1 no. 2)";
+}
+pub relation bereits_einmal_neu_bestimmt(person: Person) kind empirical {
+    label de official "Die Person hat ihren Geburtsnamen bereits nach § 1617i neu bestimmt: das Recht ist verbraucht (§ 1617i Abs. 1 Satz 1 „einmalig“)";
+    label en unofficial "the person has already newly determined its birth name under § 1617i: the right is used up (§ 1617i (1) sentence 1 \"once\")";
+}
+pub relation doppelname_gefuehrt(person: Person) kind empirical {
+    label de official "Die volljährige Person führt einen Doppelnamen (§ 1617i Abs. 4 Satz 1)";
+    label en unofficial "the adult person bears a double name (§ 1617i (4) sentence 1)";
+}
+pub relation bindestrich_vorhanden(person: Person) kind empirical {
+    label de official "Der Doppelname enthält einen Bindestrich (§ 1617i Abs. 4 Satz 1 Nr. 1, 2)";
+    label en unofficial "the double name contains a hyphen (§ 1617i (4) sentence 1 nos. 1, 2)";
+}
+
+pub relation neubestimmungsrecht_der_volljaehrigen_person(person: Person, form: Namensform) kind institutional {
+    label de official "Jede volljährige Person kann den Geburtsnamen, den sie als Minderjährige erworben hat, einmalig neu bestimmen (§ 1617i Abs. 1 Satz 1)";
+    label en unofficial "Any adult person may once newly determine the birth name acquired as a minor (§ 1617i (1) sentence 1)";
+}
+pub relation bindestrich_kann_wegfallen(person: Person) kind institutional {
+    label de official "Führt eine volljährige Person einen Doppelnamen, so kann sie bestimmen, dass ein vorhandener Bindestrich wegfällt (§ 1617i Abs. 4 Satz 1 Nr. 1)";
+    label en unofficial "Where an adult person bears a double name, it may determine that an existing hyphen is dropped (§ 1617i (4) sentence 1 no. 1)";
+}
+pub relation bindestrich_kann_hinzugefuegt_werden(person: Person) kind institutional {
+    label de official "Führt eine volljährige Person einen ohne Bindestrich gebildeten Doppelnamen, so kann sie bestimmen, dass ein Bindestrich hinzugefügt wird (§ 1617i Abs. 4 Satz 1 Nr. 2)";
+    label en unofficial "Where an adult person bears a double name formed without a hyphen, it may determine that a hyphen is added (§ 1617i (4) sentence 1 no. 2)";
+}
+
+@source(BGB_P1617i) {
+    rule NeubestimmungAusMehrerenNamen(p: Person) strict {
+        label de official "Besteht der Geburtsname aus mehreren Namen, so kann die volljährige Person nur einen oder einige der Namen zu ihrem Geburtsnamen bestimmen (§ 1617i Abs. 1 Satz 1 Nr. 1)";
+        label en unofficial "Where the birth name consists of several names, the adult person may determine only one or some of them as its birth name (§ 1617i (1) sentence 1 no. 1)";
+        when kind_volljaehrig(p) and geburtsname_als_minderjaehrige_erworben(p)
+         and name_besteht_aus_mehreren_namen(p) and not_known(bereits_einmal_neu_bestimmt(p));
+        then neubestimmungsrecht_der_volljaehrigen_person(p, FamiliennameEinesElternteils);
+    }
+    rule NeubestimmungDurchDenNamenDesAnderenElternteils(p: Person) strict {
+        label de official "Hat die Person den Familiennamen nur eines Elternteils als Geburtsnamen erhalten, so kann sie diesen durch den Familiennamen des anderen Elternteils ersetzen oder ihm diesen voranstellen oder anfügen (§ 1617i Abs. 1 Satz 1 Nr. 2)";
+        label en unofficial "Where the person received only one parent's family name, it may replace it by the other parent's family name or prefix or append it (§ 1617i (1) sentence 1 no. 2)";
+        when kind_volljaehrig(p) and geburtsname_als_minderjaehrige_erworben(p)
+         and familienname_nur_eines_elternteils_erhalten(p) and not_known(bereits_einmal_neu_bestimmt(p));
+        then neubestimmungsrecht_der_volljaehrigen_person(p, DoppelnameBeiderElternteile);
+    }
+    rule EinwilligungDesElternteils1617i(p: Person, form: Namensform, e: Person) strict {
+        label de official "Die Neubestimmung bedarf der Einwilligung desjenigen Elternteils, dessen Name zum neuen Geburtsnamen bestimmt wird, es sei denn, der Elternteil ist bereits verstorben (§ 1617i Abs. 1 Satz 3)";
+        label en unofficial "The new determination requires the consent of the parent whose name is determined as the new birth name, unless that parent is already deceased (§ 1617i (1) sentence 3)";
+        when neubestimmungsrecht_der_volljaehrigen_person(p, form) and anderer_elternteil(p, e)
+         and not_known(anderer_elternteil_verstorben(p, e));
+        then einwilligung_des_anderen_elternteils_erforderlich(p, e);
+    }
+    rule BindestrichKannWegfallen(p: Person) strict {
+        label de official "Führt eine volljährige Person einen Doppelnamen, so kann sie bestimmen, dass ein vorhandener Bindestrich wegfällt (§ 1617i Abs. 4 Satz 1 Nr. 1)";
+        label en unofficial "Where an adult person bears a double name, it may determine that an existing hyphen is dropped (§ 1617i (4) sentence 1 no. 1)";
+        when kind_volljaehrig(p) and doppelname_gefuehrt(p) and bindestrich_vorhanden(p);
+        then bindestrich_kann_wegfallen(p);
+    }
+    rule BindestrichKannHinzugefuegtWerden(p: Person) strict {
+        label de official "Wurde der Doppelname ohne einen Bindestrich gebildet, so kann die volljährige Person bestimmen, dass ein Bindestrich hinzugefügt wird (§ 1617i Abs. 4 Satz 1 Nr. 2)";
+        label en unofficial "Where the double name was formed without a hyphen, the adult person may determine that a hyphen is added (§ 1617i (4) sentence 1 no. 2)";
+        when kind_volljaehrig(p) and doppelname_gefuehrt(p) and not_known(bindestrich_vorhanden(p));
+        then bindestrich_kann_hinzugefuegt_werden(p);
+    }
+    rule Beglaubigung1617i(p: Person, form: Namensform) strict {
+        label de official "Die Erklärungen nach den Absätzen 1, 2 und 4 sind gegenüber dem Standesamt abzugeben und öffentlich zu beglaubigen (§ 1617i Abs. 5)";
+        label en unofficial "The declarations under subsections (1), (2) and (4) must be made to the registry office and publicly certified (§ 1617i (5))";
+        when neubestimmungsrecht_der_volljaehrigen_person(p, form);
+        then oeffentliche_beglaubigung_erforderlich(p);
+    }
+}
+
+// --- § 1618 Pflicht zu Beistand und Rücksicht -----------------------------------------------------
+
+pub relation beistands_und_ruecksichtspflicht(erster: Person, zweiter: Person) kind institutional {
+    label de official "Eltern und Kinder sind einander Beistand und Rücksicht schuldig (§ 1618)";
+    label en unofficial "Parents and children owe each other assistance and consideration (§ 1618)";
+}
+
+@source(BGB_P1618) {
+    rule BeistandDerElternGegenueberDemKind(f: Familie, e: Person, k: Person) strict {
+        label de official "Eltern und Kinder sind einander Beistand und Rücksicht schuldig (§ 1618): die Pflicht des Elternteils gegenüber dem Kind";
+        label en unofficial "Parents and children owe each other assistance and consideration (§ 1618): the parent's duty towards the child";
+        when elternteil(f, e, k);
+        then beistands_und_ruecksichtspflicht(e, k);
+    }
+    rule BeistandDesKindesGegenueberDenEltern(f: Familie, e: Person, k: Person) strict {
+        label de official "Eltern und Kinder sind einander Beistand und Rücksicht schuldig (§ 1618): die Pflicht des Kindes gegenüber dem Elternteil";
+        label en unofficial "Parents and children owe each other assistance and consideration (§ 1618): the child's duty towards the parent";
+        when elternteil(f, e, k);
+        then beistands_und_ruecksichtspflicht(k, e);
+    }
+}
+
+// --- § 1620 Aufwendungen des Kindes für den elterlichen Haushalt --------------------------------
+//
+// „Im Zweifel ist anzunehmen“ — eine widerlegliche Vermutung: die Absicht,
+// Ersatz zu verlangen, fehlt. Der Nachweis der Ersatzabsicht ist ein
+// ausdrücklicher Eingang des Falls; das Schweigen des Falls widerlegt nicht.
+
+pub relation volljaehriges_kind_im_elterlichen_hausstand(kind: Person, elternteil: Person) kind empirical {
+    label de official "Ein dem elterlichen Hausstand angehörendes volljähriges Kind (§ 1620 Satz 1)";
+    label en unofficial "an adult child belonging to the parental household (§ 1620 sentence 1)";
+}
+pub relation aufwendung_fuer_den_haushalt(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das Kind macht zur Bestreitung der Kosten des Haushalts aus seinem Vermögen eine Aufwendung oder überlässt den Eltern zu diesem Zweck etwas aus seinem Vermögen (§ 1620)";
+    label en unofficial "the child makes an expenditure from its assets for the costs of the household or leaves something from its assets to the parents for that purpose (§ 1620)";
+}
+pub relation ersatzabsicht_nachgewiesen(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Zweifel ist ausgeräumt: die Absicht, Ersatz zu verlangen, ist nachgewiesen (Widerlegung der Vermutung des § 1620)";
+    label en unofficial "the doubt is removed: the intention to demand reimbursement is proven (rebuttal of the presumption of § 1620)";
+}
+pub relation ersatzabsicht_fehlt(kind: Person, elternteil: Person) kind institutional {
+    label de official "Im Zweifel ist anzunehmen, dass die Absicht fehlt, Ersatz zu verlangen (§ 1620)";
+    label en unofficial "In case of doubt it is to be assumed that the intention to demand reimbursement is absent (§ 1620)";
+}
+
+@source(BGB_P1620)
+presumption ErsatzabsichtFehltImZweifel(k: Person, e: Person) {
+    label de official "Macht ein dem elterlichen Hausstand angehörendes volljähriges Kind zur Bestreitung der Kosten des Haushalts aus seinem Vermögen eine Aufwendung oder überlässt es den Eltern zu diesem Zwecke etwas aus seinem Vermögen, so ist im Zweifel anzunehmen, dass die Absicht fehlt, Ersatz zu verlangen (§ 1620)";
+    label en unofficial "Where an adult child belonging to the parental household makes an expenditure from its assets for the household costs, it is to be assumed in case of doubt that the intention to demand reimbursement is absent (§ 1620)";
+    when volljaehriges_kind_im_elterlichen_hausstand(k, e) and aufwendung_fuer_den_haushalt(k, e);
+    presume ersatzabsicht_fehlt(k, e);
+    unless ersatzabsicht_nachgewiesen(k, e);
+}
+
+// --- § 1625 Ausstattung aus dem Kindesvermögen ----------------------------------------------------
+
+pub relation vermoegen_unterliegt_der_verwaltung(kind: Person, elternteil: Person) kind empirical {
+    label de official "Das Vermögen des Kindes unterliegt kraft elterlicher Sorge, Vormundschaft oder Betreuung der Verwaltung dieses Elternteils (§ 1625 Satz 1)";
+    label en unofficial "the child's assets are subject to the administration of this parent by virtue of parental custody, guardianship or curatorship (§ 1625 sentence 1)";
+}
+pub relation ausstattung_aus_eigenem_vermoegen_nachgewiesen(kind: Person, elternteil: Person) kind empirical {
+    label de official "Der Zweifel ist ausgeräumt: die Ausstattung ist aus dem eigenen Vermögen des Elternteils gewährt (Widerlegung der Vermutung des § 1625)";
+    label en unofficial "the doubt is removed: the endowment is granted from the parent's own assets (rebuttal of the presumption of § 1625)";
+}
+pub relation ausstattung_aus_dem_kindesvermoegen(kind: Person, elternteil: Person) kind institutional {
+    label de official "Gewährt ein Elternteil einem Kind, dessen Vermögen seiner Verwaltung unterliegt, eine Ausstattung, so ist im Zweifel anzunehmen, dass er sie aus diesem Vermögen gewährt (§ 1625)";
+    label en unofficial "Where a parent grants an endowment to a child whose assets are under his administration, it is to be assumed in case of doubt that he grants it from those assets (§ 1625)";
+}
+
+@source(BGB_P1625)
+presumption AusstattungAusDemKindesvermoegen(k: Person, e: Person, betrag: Money) {
+    label de official "Gewährt der Vater einem Kind, dessen Vermögen kraft elterlicher Sorge, Vormundschaft oder Betreuung seiner Verwaltung unterliegt, eine Ausstattung, so ist im Zweifel anzunehmen, dass er sie aus diesem Vermögen gewährt; diese Vorschrift findet auf die Mutter entsprechende Anwendung (§ 1625)";
+    label en unofficial "Where the father grants an endowment to a child whose assets are under his administration, it is to be assumed in case of doubt that he grants it from those assets; the provision applies accordingly to the mother (§ 1625)";
+    when zuwendung_zur_ausstattung(k, e, betrag) and vermoegen_unterliegt_der_verwaltung(k, e);
+    presume ausstattung_aus_dem_kindesvermoegen(k, e);
+    unless ausstattung_aus_eigenem_vermoegen_nachgewiesen(k, e);
+}

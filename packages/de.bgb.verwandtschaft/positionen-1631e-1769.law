@@ -1,0 +1,56 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+
+pub relation position_trigger_1631e(kind: Person, elternteil: Person, tag: Date) kind empirical { label de official "Operativer Eingriff nach § 1631e"; label en unofficial "surgical intervention under § 1631e"; }
+pub relation position_trigger_1666a(kind: Person, elternteil: Person, tag: Date) kind empirical { label de official "Kindesschutzmaßnahme nach § 1666a"; label en unofficial "child-protection measure under § 1666a"; }
+pub relation position_trigger_1745(annehmender: Person, kind: Person, tag: Date) kind empirical { label de official "Adoptionsantrag nach § 1745"; label en unofficial "adoption application under § 1745"; }
+pub relation position_trigger_1762(antragsteller: Person, annehmender: Person, kind: Person, tag: Date) kind empirical { label de official "Aufhebungsantrag nach § 1762"; label en unofficial "annulment application under § 1762"; }
+pub relation position_trigger_1769(annehmender: Person, kind: Person, tag: Date) kind empirical { label de official "Volljährigenadoption nach § 1769"; label en unofficial "adult adoption under § 1769"; }
+pub relation genehmigung_1631e_geschuldet(kind: Person) kind empirical { label de official "Genehmigung des Familiengerichts ist einzuholen (§ 1631e)"; label en unofficial "family court approval must be obtained (§ 1631e)"; }
+pub relation massnahme_1666a_zulaessig(kind: Person) kind empirical { label de official "Die Trennung ist nur bei Erforderlichkeit und Subsidiarität zulässig (§ 1666a)"; label en unofficial "separation is permissible only when necessary and subsidiary (§ 1666a)"; }
+pub relation aufhebung_1762_ausuebbar(antragsteller: Person, annehmender: Person, kind: Person) kind empirical { label de official "Der Berechtigte kann den Aufhebungsantrag stellen (§ 1762)"; label en unofficial "the entitled person may file the annulment application (§ 1762)"; }
+pub relation verstoss_annahmeverbot_1745(annehmender: Person, kind: Person) kind derived { label de official "Die Annahme wurde trotz entgegenstehender Interessen ausgesprochen (§ 1745)"; label en unofficial "adoption was pronounced despite overriding interests opposing it (§ 1745)"; }
+pub relation verstoss_annahmeverbot_1769(annehmender: Person, kind: Person) kind derived { label de official "Die Volljährigenannahme wurde trotz entgegenstehender Interessen ausgesprochen (§ 1769)"; label en unofficial "adult adoption was pronounced despite overriding interests opposing it (§ 1769)"; }
+
+@source(BGB_P1631e)
+rule PositionGenehmigung1631e(kind: Person, elternteil: Person, tag: Date) strict { label de official "Die Einwilligung in den Eingriff bedarf der Genehmigung (§ 1631e)"; label en unofficial "Consent to the intervention requires approval (§ 1631e)"; when position_trigger_1631e(kind, elternteil, tag); then duty Genehmigung1631e { bearer elternteil; achieve genehmigung_1631e_geschuldet(kind) during [tag, infinity); }; }
+@source(BGB_P1666a)
+rule PositionMassnahme1666a(kind: Person, elternteil: Person, tag: Date) strict { label de official "Die Trennung des Kindes ist nur unter den gesetzlichen Voraussetzungen zulässig (§ 1666a)"; label en unofficial "separation of the child is permissible only under statutory conditions (§ 1666a)"; when position_trigger_1666a(kind, elternteil, tag); then duty Massnahme1666a { bearer elternteil; achieve massnahme_1666a_zulaessig(kind) during [tag, infinity); }; }
+@source(BGB_P1745)
+rule PositionAnnahmeverbot1745(annehmender: Person, kind: Person, tag: Date) strict { label de official "Die Annahme darf bei entgegenstehenden Interessen nicht ausgesprochen werden (§ 1745)"; label en unofficial "adoption must not be pronounced where overriding interests oppose it (§ 1745)"; when position_trigger_1745(annehmender, kind, tag); then prohibition Annahmeverbot1745 { bearer annehmender; action annahme_ausgesprochen(annehmender, kind); window [tag, infinity); }; }
+@source(BGB_P1745)
+rule ViolationAnnahmeverbot1745(annehmender: Person, kind: Person) strict {
+    label de official "Die Annahme darf bei entgegenstehenden Interessen nicht ausgesprochen werden (§ 1745)";
+    label en unofficial "adoption must not be pronounced where overriding interests oppose it (§ 1745)";
+    when annahme_ausgesprochen(annehmender, kind);
+    then verstoss_annahmeverbot_1745(annehmender, kind);
+}
+@source(BGB_P1745)
+rule MaintenanceAnnahmeverbot1745Rule(annehmender: Person, kind: Person, tag: Date) strict {
+    label de official "Die Annahme darf bei entgegenstehenden Interessen nicht ausgesprochen werden (§ 1745)";
+    label en unofficial "adoption must not be pronounced where overriding interests oppose it (§ 1745)";
+    when position_trigger_1745(annehmender, kind, tag);
+    then duty MaintenanceAnnahmeverbot1745 {
+        bearer annehmender;
+        goal maintenance {
+            condition not verstoss_annahmeverbot_1745(annehmender, kind);
+            window [tag, infinity);
+        }
+    };
+}
+@source(BGB_P1762)
+rule PositionAufhebung1762(antragsteller: Person, annehmender: Person, kind: Person, tag: Date) strict { label de official "Der Berechtigte kann den Aufhebungsantrag fristgerecht stellen (§ 1762)"; label en unofficial "The entitled person may timely file the annulment application (§ 1762)"; when position_trigger_1762(antragsteller, annehmender, kind, tag); then power Aufhebung1762 { holder antragsteller; over kind; exercise aufhebung_1762_ausuebbar(antragsteller, annehmender, kind); valid_when aufhebung_1762_ausuebbar(antragsteller, annehmender, kind); effect create(aufhebung_1762_ausuebbar(antragsteller, annehmender, kind)); window [tag, infinity); }; }
+@source(BGB_P1769)
+rule PositionAnnahmeverbot1769(annehmender: Person, kind: Person, tag: Date) strict { label de official "Die Volljährigenannahme darf bei entgegenstehenden Interessen nicht ausgesprochen werden (§ 1769)"; label en unofficial "adult adoption must not be pronounced where overriding interests oppose it (§ 1769)"; when position_trigger_1769(annehmender, kind, tag); then prohibition Annahmeverbot1769 { bearer annehmender; action annahme_ausgesprochen(annehmender, kind); window [tag, infinity); }; }
+@source(BGB_P1769)
+rule ViolationAnnahmeverbot1769(annehmender: Person, kind: Person) strict {
+    label de official "Die Volljährigenannahme darf bei entgegenstehenden Interessen nicht ausgesprochen werden (§ 1769)";
+    label en unofficial "adult adoption must not be pronounced where overriding interests oppose it (§ 1769)";
+    when annahme_ausgesprochen(annehmender, kind);
+    then verstoss_annahmeverbot_1769(annehmender, kind);
+}
+@source(BGB_P1769)
+rule MaintenanceAnnahmeverbot1769Rule(annehmender: Person, kind: Person, tag: Date) strict {
+    label de official "Die Volljährigenannahme darf bei entgegenstehenden Interessen nicht ausgesprochen werden (§ 1769)";
+    label en unofficial "adult adoption must not be pronounced where overriding interests oppose it (§ 1769)"; when position_trigger_1769(annehmender, kind, tag); then duty MaintenanceAnnahmeverbot1769 { bearer annehmender; goal maintenance { condition not verstoss_annahmeverbot_1769(annehmender, kind); window [tag, infinity); } }; }

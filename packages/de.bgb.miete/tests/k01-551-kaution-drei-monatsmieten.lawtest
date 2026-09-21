@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 551 Abs. 1: die Sicherheit darf höchstens das Dreifache der auf einen Monat entfallenden Miete ohne Betriebskosten betragen. Nettomiete 820,00 €, Höchstbetrag also 2 460,00 €; vereinbart sind 2 500,00 € — die Grenze ist überschritten. Abs. 2 Satz 1: drei gleiche monatliche Teilzahlungen, 2 500,00 / 3 = 833,33 € (HALF_UP auf den Cent); die erste ist zu Beginn des Mietverhältnisses am 1. März 2025 fällig.
+test "§ 551: Höchstbetrag der Kaution und drei gleiche Teilzahlungen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:k01"), entity_ref("urn:de:bgb:miete:k01:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:k01"), entity_ref("urn:de:bgb:miete:k01:M")) { origin case_input; }
+        assert "f3": gegenstandsart(entity_ref("urn:de:bgb:miete:k01"), Wohnraum) { origin case_input; }
+        assert "f4": nettomiete_monatlich(entity_ref("urn:de:bgb:miete:k01"), 820.00 EUR) { origin case_input; }
+        assert "f5": mietverhaeltnis_beginn_am(entity_ref("urn:de:bgb:miete:k01"), @2025-03-01) { origin case_input; }
+        assert "f6": sicherheit_des(entity_ref("urn:de:bgb:miete:k01:S"), entity_ref("urn:de:bgb:miete:k01")) { origin case_input; }
+        assert "f7": sicherheit_vereinbart_betrag(entity_ref("urn:de:bgb:miete:k01:S"), 2500.00 EUR) { origin case_input; }
+        assert "f8": sicherheit_als_geldsumme(entity_ref("urn:de:bgb:miete:k01:S")) { origin case_input; }
+    }
+    evaluate truth(hoechstbetrag_der_sicherheit(entity_ref("urn:de:bgb:miete:k01:S"), 2460.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(sicherheit_uebersteigt_hoechstbetrag(entity_ref("urn:de:bgb:miete:k01:S")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(monatliche_teilzahlung(entity_ref("urn:de:bgb:miete:k01:S"), 833.33 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(erste_teilzahlung_faellig_am(entity_ref("urn:de:bgb:miete:k01:S"), @2025-03-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+
+test "§§214–216: dated deontic positions are active" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "p214": leistungsverweigerung_214_beginn_am(entity_ref("urn:de:bgb:fristen:position:a214"), entity_ref("urn:de:bgb:fristen:position:debtor"), @2026-06-14) { origin case_input; }
+        assert "p215": aufrechnung_215_beginn_am(entity_ref("urn:de:bgb:fristen:position:a215"), entity_ref("urn:de:bgb:fristen:position:creditor"), @2026-06-14) { origin case_input; }
+        assert "p216": befriedigung_216_beginn_am(entity_ref("urn:de:bgb:fristen:position:a216"), entity_ref("urn:de:bgb:fristen:position:creditor"), @2026-06-14) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(LibertyLeistungsverweigerung214, ACTIVE);
+    expect position(LibertyAufrechnung215, ACTIVE);
+    expect position(LibertyBefriedigung216, ACTIVE);
+}
+
+test "§§214–216: positions are absent without dated triggers" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+    }
+    evaluate positions();
+    expect not position(LibertyLeistungsverweigerung214, ACTIVE);
+    expect not position(LibertyAufrechnung215, ACTIVE);
+    expect not position(LibertyBefriedigung216, ACTIVE);
+}

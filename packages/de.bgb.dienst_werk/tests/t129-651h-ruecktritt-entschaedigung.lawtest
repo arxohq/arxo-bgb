@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// § 651h Abs. 1, 5: Rücktritt des Reisenden am 1. Juni 2026 vor dem Reisebeginn am 20. Juni; der Veranstalter verliert den Anspruch auf den Reisepreis, kann aber eine angemessene Entschädigung verlangen und hat binnen 14 Tagen (15. Juni) zu erstatten.
+
+test "urn:query:bgb-dw-t129-651h-ruecktritt-entschaedigung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dienst_werk::KALENDER_BUNDESWEIT; deadline_policy BGB_DIENST_WERK_KALENDER; }
+        assert "f1": mindestens_zwei_arten_von_reiseleistungen_651a(entity_ref("urn:de:bgb:dw:t129")) { origin case_input; }
+        assert "f2": kein_ausschlussfall_651a_abs4(entity_ref("urn:de:bgb:dw:t129")) { origin case_input; }
+        assert "f3": kein_ausschlussfall_651a_abs5(entity_ref("urn:de:bgb:dw:t129")) { origin case_input; }
+        assert "f4": ruecktritt_des_reisenden_am_651h(entity_ref("urn:de:bgb:dw:t129"), @2026-06-01) { origin case_input; }
+        assert "f5": reisebeginn_am(entity_ref("urn:de:bgb:dw:t129"), @2026-06-20) { origin case_input; }
+        assert "f6": entschaedigung_angemessen_651h(entity_ref("urn:de:bgb:dw:t129")) { origin adjudicated; }
+        assert "f7": not unvermeidbare_aussergewoehnliche_umstaende_651h(entity_ref("urn:de:bgb:dw:t129")) { origin adjudicated; }
+    }
+    evaluate truth(anspruch_auf_reisepreis_entfallen_651h(entity_ref("urn:de:bgb:dw:t129")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(entschaedigungsanspruch_651h(entity_ref("urn:de:bgb:dw:t129")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(rueckerstattungsfrist_ende_651h(entity_ref("urn:de:bgb:dw:t129"), @2026-06-15));
+    expect truth_status == TRUE_ONLY;
+}

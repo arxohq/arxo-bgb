@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// Negativer Fall: die Person handelt gewerblich (§ 14 Abs. 1) — über BG-03
+// wird `unternehmer_im_kauf` hergeleitet, `verbraucher` bleibt unbewiesen.
+test "Brücke § 474: gewerbliches Handeln leitet Unternehmer her, nicht Verbraucher" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "a1": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:kauf:br02:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::handelt_in_ausuebung_der_taetigkeit(entity_ref("urn:de:bgb:kauf:br02:p1"), entity_ref("urn:de:bgb:kauf:br02:r1")) { origin case_input; }
+        assert "a3": rechtsgeschaeft_des_kaufvertrags(entity_ref("urn:de:bgb:kauf:br02"), entity_ref("urn:de:bgb:kauf:br02:r1")) { origin case_input; }
+    }
+    evaluate truth(unternehmer_im_kauf(entity_ref("urn:de:bgb:kauf:br02"), entity_ref("urn:de:bgb:kauf:br02:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:kauf:br02"), entity_ref("urn:de:bgb:kauf:br02:p1")));
+    expect truth_status == NEITHER;
+}

@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1074(r: Recht, niesser: Person, tag: Date) kind empirical { label de official "Eingang des Falls zum Einzug der Forderung (§ 1074)"; label en unofficial "case input for collection by the usufructuary (§ 1074)"; }
+pub relation einziehung_1074_ausuebbar(r: Recht, niesser: Person) kind empirical { label de official "Der Nießbraucher ist zur Einziehung berechtigt (§ 1074)"; label en unofficial "The usufructuary may collect the claim (§ 1074)"; }
+pub relation position_trigger_1078(r: Recht, niesser: Person, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Mitwirkung bei der Einziehung (§ 1078)"; label en unofficial "case input for cooperation in collection (§ 1078)"; }
+pub relation mitwirkung_1078_geschuldet(r: Recht, niesser: Person, glaeubiger: Person) kind empirical { label de official "Die Mitwirkung bei der Einziehung ist geschuldet (§ 1078)"; label en unofficial "Cooperation in collection is owed (§ 1078)"; }
+pub relation position_trigger_1079(r: Recht, niesser: Person, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Anlage des eingezogenen Kapitals (§ 1079)"; label en unofficial "case input for investment of collected capital (§ 1079)"; }
+pub relation anlage_1079_geschuldet(r: Recht, niesser: Person, glaeubiger: Person) kind empirical { label de official "Die Mitwirkung an der ordnungsmäßigen Anlage ist geschuldet (§ 1079)"; label en unofficial "Cooperation in proper investment is owed (§ 1079)"; }
+
+@source(BGB_P1074)
+rule PositionEinziehung1074(r: Recht, niesser: Person, tag: Date) strict { label de official "Der Nießbraucher hat die Befugnis zur Einziehung (§ 1074)"; label en unofficial "The usufructuary has the power to collect (§ 1074)"; when position_trigger_1074(r, niesser, tag); then power Einziehung1074 { holder niesser; over r; exercise einziehung_1074_ausuebbar(r, niesser); valid_when einziehung_1074_ausuebbar(r, niesser); effect create(einziehung_1074_ausuebbar(r, niesser)); window [tag, infinity); }; }
+@source(BGB_P1078)
+rule PositionMitwirkung1078(r: Recht, niesser: Person, glaeubiger: Person, tag: Date) strict { label de official "Nießbraucher und Gläubiger sind zur Mitwirkung verpflichtet (§ 1078)"; label en unofficial "The usufructuary and creditor must cooperate (§ 1078)"; when position_trigger_1078(r, niesser, glaeubiger, tag); then duty Mitwirkung1078 { bearer niesser; beneficiary glaeubiger; achieve mitwirkung_1078_geschuldet(r, niesser, glaeubiger) during [tag, infinity); }; }
+@source(BGB_P1079)
+rule PositionAnlage1079(r: Recht, niesser: Person, glaeubiger: Person, tag: Date) strict { label de official "Nießbraucher und Gläubiger sind zur Mitwirkung bei der Anlage verpflichtet (§ 1079)"; label en unofficial "The usufructuary and creditor must cooperate in investment (§ 1079)"; when position_trigger_1079(r, niesser, glaeubiger, tag); then duty Anlage1079 { bearer niesser; beneficiary glaeubiger; achieve anlage_1079_geschuldet(r, niesser, glaeubiger) during [tag, infinity); }; }

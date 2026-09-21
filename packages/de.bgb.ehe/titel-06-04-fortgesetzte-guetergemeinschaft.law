@@ -1,0 +1,833 @@
+// TITEL 6, UNTERTITEL 2, KAPITEL 2, UNTERKAPITEL 3 —
+// FORTGESETZTE GÜTERGEMEINSCHAFT (§§ 1483–1518)
+//
+// Die fortgesetzte Gütergemeinschaft ist die einzige Stelle des Abschnitts, an
+// der das Güterrecht in das ERBRECHT hineinreicht: der Anteil des verstorbenen
+// Ehegatten am Gesamtgut gehört gerade NICHT zum Nachlass (§ 1483 Abs. 1
+// Satz 3), die anteilsberechtigten Abkömmlinge treten an die Stelle des
+// anderen Ehegatten (§ 1487 Abs. 1), und mehrere Abkömmlinge teilen ihre
+// Hälfte nach den Verhältnissen der gesetzlichen Erbfolge (§ 1503 Abs. 1).
+//
+// RICHTUNG DER ABHÄNGIGKEIT. Auch hier gilt `erbfolge → ehe`: dieses Paket
+// importiert `de.bgb.erbfolge` NICHT. Wer bei gesetzlicher Erbfolge als Erbe
+// berufen wäre (§ 1483 Abs. 1 Satz 2) und mit welchem Anteil (§ 1503 Abs. 1),
+// ist deshalb ein ausdrücklicher EINGANG des Falls — und zwar als PAAR GANZER
+// ZAHLEN, wie die Brüche der Erbfolge (Muster D-07): Brüche entstehen dort nur
+// durch Multiplikation, ein gemeinsamer Nenner wird nicht gebraucht.
+//
+// DIE HÄLFTE DER ABKÖMMLINGE (§ 1501 Abs. 1, § 1503 Abs. 1, § 1505). Der Text
+// nennt die Hälfte des Gesamtguts als das, was den Abkömmlingen gebührt, und
+// als Pflichtteil die Hälfte des Wertes des Anteils. Beide Male ist es EINE
+// Teilung je Betrag, kaufmännisch auf den Cent (Ledger D-12-06).
+//
+// VERWEISUNGEN. § 1484 Abs. 2 verweist auf das Ausschlagungsrecht
+// (§§ 1943–1959), § 1505 auf das Recht auf Ergänzung des Pflichtteils,
+// § 1506 auf die Erbunwürdigkeit, § 1507 auf den Erbschein, § 1509 und § 1513
+// auf die Entziehung des Pflichtteils, § 1517 auf den Erbverzicht — alle in
+// `de.bgb.erbfolge` und `de.bgb.verfuegungen`. Die Regeln stellen fest, DASS
+// verwiesen wird, und nennen das Ziel in ihrer Marke.
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// --- Eingänge des Falls ---------------------------------------------------------------------------
+
+relation fortsetzung_durch_ehevertrag_vereinbart(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten haben durch Ehevertrag vereinbart, dass die Gütergemeinschaft nach dem Tod eines Ehegatten zwischen dem überlebenden Ehegatten und den gemeinschaftlichen Abkömmlingen fortgesetzt wird (§ 1483 Abs. 1 Satz 1)";
+    label en unofficial "the spouses agreed by marriage contract that the community continues after the death of one spouse with the common descendants (§ 1483 (1) sentence 1)";
+}
+relation gemeinschaftlicher_abkoemmling_erbberufen(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Gemeinschaftlicher Abkömmling, der bei gesetzlicher Erbfolge als Erbe berufen ist (§ 1483 Abs. 1 Satz 2) — ausdrücklicher EINGANG: `de.bgb.erbfolge` wird nicht importiert (Rückimportverbot)";
+    label en unofficial "common descendant called as heir on intestacy (§ 1483 (1) sentence 2) — explicit input: `de.bgb.erbfolge` is not imported";
+}
+relation nicht_gemeinschaftlicher_abkoemmling(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Neben den gemeinschaftlichen Abkömmlingen vorhandener anderer Abkömmling (§ 1483 Abs. 2)";
+    label en unofficial "other descendant present alongside the common descendants (§ 1483 (2))";
+}
+relation fortsetzung_abgelehnt(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte lehnt die Fortsetzung der Gütergemeinschaft ab (§ 1484 Abs. 1)";
+    label en unofficial "the surviving spouse rejects the continuation of the community (§ 1484 (1))";
+}
+relation genehmigung_des_betreuungsgerichts_zur_ablehnung(ehe: Ehe) kind empirical {
+    label de official "Bei einer Ablehnung durch den Betreuer des überlebenden Ehegatten ist die Genehmigung des Betreuungsgerichts erteilt (§ 1484 Abs. 2 Satz 2) — festgestellte Tatsache";
+    label en unofficial "on rejection by the custodian the approval of the custodianship court has been granted ((2) sentence 2) — established fact";
+}
+relation erwerb_aus_dem_nachlass_des_verstorbenen(ehe: Ehe, s: de.bgb.core::Sache) kind empirical {
+    label de official "Vermögen, das der überlebende Ehegatte aus dem Nachlass des verstorbenen Ehegatten oder nach Eintritt der fortgesetzten Gütergemeinschaft erwirbt (§ 1485 Abs. 1)";
+    label en unofficial "assets acquired by the surviving spouse from the estate or after the continuation began (§ 1485 (1))";
+}
+relation vermoegen_des_abkoemmlings(ehe: Ehe, abkoemmling: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Vermögen, das ein gemeinschaftlicher Abkömmling zur Zeit des Eintritts der fortgesetzten Gütergemeinschaft hat oder später erwirbt (§ 1485 Abs. 2)";
+    label en unofficial "assets which a common descendant has at the start of the continued community or acquires later (§ 1485 (2))";
+}
+relation bisheriges_vorbehaltsgut(ehe: Ehe, ueberlebender: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Was der überlebende Ehegatte bisher als Vorbehaltsgut gehabt hat oder nach § 1418 Abs. 2 Nr. 2, 3 als Vorbehaltsgut erwirbt (§ 1486 Abs. 1)";
+    label en unofficial "what the surviving spouse had as reserved property or acquires as such (§ 1486 (1))";
+}
+relation bisheriges_sondergut(ehe: Ehe, ueberlebender: Person, s: de.bgb.core::Sache) kind empirical {
+    label de official "Was der überlebende Ehegatte bisher als Sondergut gehabt hat oder als Sondergut erwirbt (§ 1486 Abs. 2)";
+    label en unofficial "what the surviving spouse had as separate property or acquires as such (§ 1486 (2))";
+}
+relation verbindlichkeit_des_ueberlebenden(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Verbindlichkeit des überlebenden Ehegatten (§ 1488)";
+    label en unofficial "liability of the surviving spouse (§ 1488)";
+}
+relation gesamtgutsverbindlichkeit_der_ehelichen_guetergemeinschaft(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Verbindlichkeit des verstorbenen Ehegatten, die Gesamtgutsverbindlichkeit der ehelichen Gütergemeinschaft war (§ 1488)";
+    label en unofficial "liability of the deceased spouse which was a community liability of the marital community (§ 1488)";
+}
+relation haftung_nur_infolge_des_eintritts(ehe: Ehe, vb: Verbindlichkeit) kind empirical {
+    label de official "Die persönliche Haftung trifft den überlebenden Ehegatten nur infolge des Eintritts der fortgesetzten Gütergemeinschaft (§ 1489 Abs. 2)";
+    label en unofficial "the personal liability affects the surviving spouse only because of the start of the continued community (§ 1489 (2))";
+}
+relation anteilsberechtigter_abkoemmling_verstorben(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Ein anteilsberechtigter Abkömmling ist gestorben (§ 1490 Satz 1)";
+    label en unofficial "a share-entitled descendant has died (§ 1490 sentence 1)";
+}
+relation abkoemmling_des_verstorbenen_abkoemmlings(ehe: Ehe, verstorbener: Person, nachfolger: Person) kind empirical {
+    label de official "Abkömmling des verstorbenen Abkömmlings, der anteilsberechtigt wäre, wenn jener den verstorbenen Ehegatten nicht überlebt hätte (§ 1490 Satz 2)";
+    label en unofficial "descendant of the deceased descendant who would be share-entitled (§ 1490 sentence 2)";
+}
+relation verzicht_auf_den_anteil_erklaert(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Ein anteilsberechtigter Abkömmling verzichtet in öffentlich beglaubigter Form gegenüber dem Nachlassgericht oder durch notariell beurkundeten Vertrag auf seinen Anteil am Gesamtgut (§ 1491 Abs. 1, 2)";
+    label en unofficial "a share-entitled descendant renounces his share in publicly certified form or by notarised contract (§ 1491 (1), (2))";
+}
+relation genehmigung_zum_verzicht(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Steht der Abkömmling unter elterlicher Sorge oder Vormundschaft, ist die Genehmigung des Familiengerichts, bei Betreuung die des Betreuungsgerichts erteilt (§ 1491 Abs. 3) — festgestellte Tatsache";
+    label en unofficial "where the descendant is under parental care or guardianship, the court's approval has been granted ((3)) — established fact";
+}
+relation abkoemmling_minderjaehrig_oder_unter_vormundschaft(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Der Abkömmling steht unter elterlicher Sorge oder unter Vormundschaft (§ 1491 Abs. 3)";
+    label en unofficial "the descendant is under parental care or guardianship ((3))";
+}
+relation aufhebung_durch_den_ueberlebenden_erklaert(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte hebt die fortgesetzte Gütergemeinschaft durch Erklärung gegenüber dem Nachlassgericht in öffentlich beglaubigter Form oder durch notariell beurkundeten Vertrag auf (§ 1492 Abs. 1, 2)";
+    label en unofficial "the surviving spouse terminates the continued community by declaration to the probate court or by notarised contract (§ 1492 (1), (2))";
+}
+relation wiederverheiratung_oder_lebenspartnerschaft(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte heiratet wieder oder begründet eine Lebenspartnerschaft (§ 1493 Abs. 1)";
+    label en unofficial "the surviving spouse remarries or enters a civil partnership (§ 1493 (1))";
+}
+relation anteilsberechtigter_abkoemmling_minderjaehrig(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Ein anteilsberechtigter Abkömmling ist minderjährig (§ 1493 Abs. 2 Satz 1)";
+    label en unofficial "a share-entitled descendant is a minor (§ 1493 (2) sentence 1)";
+}
+relation tod_des_ueberlebenden_ehegatten_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag des Todes des überlebenden Ehegatten oder der nach dem Verschollenheitsgesetz festgestellte Todeszeitpunkt (§ 1494)";
+    label en unofficial "day of the death of the surviving spouse or the point in time deemed the time of death (§ 1494)";
+}
+relation elterliche_sorge_verwirkt(ehe: Ehe, ueberlebender: Person, abkoemmling: Person) kind empirical {
+    label de official "Der überlebende Ehegatte hat die elterliche Sorge für den Abkömmling verwirkt oder würde sie verwirkt haben (§ 1495 Nr. 4)";
+    label en unofficial "the surviving spouse has forfeited parental care for the descendant or would have done so (§ 1495 no. 4)";
+}
+relation abfindung_fuer_den_verzicht_gewaehrt(ehe: Ehe, abkoemmling: Person, wert: Money) kind empirical {
+    label de official "Einem anteilsberechtigten Abkömmling ist für den Verzicht auf seinen Anteil eine Abfindung aus dem Gesamtgut gewährt worden (§ 1501 Abs. 1)";
+    label en unofficial "a share-entitled descendant was granted a settlement out of the community property for renouncing his share (§ 1501 (1))";
+}
+relation abweichende_vereinbarung_ueber_die_abfindung(ehe: Ehe) kind empirical {
+    label de official "Der überlebende Ehegatte hat mit den übrigen anteilsberechtigten Abkömmlingen eine abweichende, notariell beurkundete Vereinbarung getroffen (§ 1501 Abs. 2)";
+    label en unofficial "the surviving spouse made a differing, notarised agreement with the remaining descendants ((2))";
+}
+relation uebernahme_verlangt(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte verlangt, das Gesamtgut oder einzelne Gegenstände gegen Ersatz des Wertes zu übernehmen (§ 1502 Abs. 1 Satz 1)";
+    label en unofficial "the surviving spouse demands to take over the community property against replacement of value (§ 1502 (1) sentence 1)";
+}
+relation erbquote_des_abkoemmlings(ehe: Ehe, abkoemmling: Person, zaehler: Integer, nenner: Integer) kind empirical {
+    label de official "Anteil, zu dem der Abkömmling im Falle der gesetzlichen Erbfolge als Erbe des verstorbenen Ehegatten berufen wäre, als Paar ganzer Zahlen (§ 1503 Abs. 1) — ausdrücklicher EINGANG des Falls (Rückimportverbot gegenüber `de.bgb.erbfolge`)";
+    label en unofficial "share to which the descendant would be called on intestacy, as a pair of integers (§ 1503 (1)) — explicit input";
+}
+relation haelfte_der_abkoemmlinge(ehe: Ehe, wert: Money) kind empirical {
+    key(ehe);
+    label de official "Die den Abkömmlingen zufallende Hälfte des Gesamtguts (§ 1501 Abs. 1, § 1503 Abs. 1)";
+    label en unofficial "the half of the community property accruing to the descendants (§ 1501 (1), § 1503 (1))";
+}
+relation haftung_nach_1480_besteht(ehe: Ehe, abkoemmling: Person, vb: Verbindlichkeit) kind empirical {
+    label de official "Der anteilsberechtigte Abkömmling haftet den Gesamtgutsgläubigern nach § 1480 (§ 1504 Satz 1)";
+    label en unofficial "the share-entitled descendant is liable to the community creditors under § 1480 (§ 1504 sentence 1)";
+}
+relation wert_des_anteils_des_abkoemmlings(ehe: Ehe, abkoemmling: Person, wert: Money) kind empirical {
+    label de official "Wert des dem Abkömmling zur Zeit der Beendigung gebührenden Anteils am Gesamtgut (§ 1505 Satz 2)";
+    label en unofficial "value of the share in the community property due to the descendant at the end of the continued community (§ 1505 sentence 2)";
+}
+relation abkoemmling_erbunwuerdig(ehe: Ehe, abkoemmling: Person) kind empirical {
+    label de official "Der gemeinschaftliche Abkömmling ist erbunwürdig (§ 1506 Satz 1) — festgestellte Tatsache; die Vorschriften über die Erbunwürdigkeit stehen in `de.bgb.erbfolge`";
+    label en unofficial "the common descendant is unworthy to inherit (§ 1506 sentence 1) — established fact";
+}
+relation zeugnis_beantragt(ehe: Ehe, ueberlebender: Person) kind empirical {
+    label de official "Der überlebende Ehegatte beantragt beim Nachlassgericht ein Zeugnis über die Fortsetzung der Gütergemeinschaft (§ 1507 Satz 1)";
+    label en unofficial "the surviving spouse applies to the probate court for a certificate of the continuation (§ 1507 sentence 1)";
+}
+relation fortsetzung_letztwillig_ausgeschlossen(ehe: Ehe, ausschliessender: Person) kind empirical {
+    label de official "Ein Ehegatte hat für den Fall, dass die Ehe durch seinen Tod aufgelöst wird, die Fortsetzung der Gütergemeinschaft durch letztwillige Verfügung ausgeschlossen (§ 1509 Satz 1)";
+    label en unofficial "a spouse excluded the continuation by testamentary disposition (§ 1509 sentence 1)";
+}
+relation zur_pflichtteilsentziehung_berechtigt(ehe: Ehe, berechtigter: Person, betroffener: Person) kind empirical {
+    label de official "Der Ehegatte ist berechtigt, dem anderen Ehegatten oder dem Abkömmling den Pflichtteil zu entziehen (§ 1509 Satz 1, § 1513 Abs. 1) — festgestellte Tatsache; die Entziehungsgründe stehen in `de.bgb.verfuegungen`";
+    label en unofficial "the spouse is entitled to withdraw the compulsory share from the other or from the descendant (§ 1509, § 1513 (1)) — established fact";
+}
+relation abkoemmling_letztwillig_ausgeschlossen(ehe: Ehe, ausschliessender: Person, abkoemmling: Person) kind empirical {
+    label de official "Ein Ehegatte hat einen gemeinschaftlichen Abkömmling von der fortgesetzten Gütergemeinschaft durch letztwillige Verfügung ausgeschlossen (§ 1511 Abs. 1)";
+    label en unofficial "a spouse excluded a common descendant from the continued community by testamentary disposition (§ 1511 (1))";
+}
+relation anteil_letztwillig_herabgesetzt(ehe: Ehe, ausschliessender: Person, abkoemmling: Person) kind empirical {
+    label de official "Ein Ehegatte hat den Anteil eines anteilsberechtigten Abkömmlings durch letztwillige Verfügung bis auf die Hälfte herabgesetzt (§ 1512)";
+    label en unofficial "a spouse reduced a descendant's share by testamentary disposition to at most one half (§ 1512)";
+}
+relation anteil_letztwillig_entzogen(ehe: Ehe, ausschliessender: Person, abkoemmling: Person) kind empirical {
+    label de official "Ein Ehegatte hat einem anteilsberechtigten Abkömmling den Anteil durch letztwillige Verfügung entzogen (§ 1513 Abs. 1)";
+    label en unofficial "a spouse withdrew a descendant's share by testamentary disposition (§ 1513 (1))";
+}
+relation entzogener_betrag_einem_dritten_zugewendet(ehe: Ehe, ausschliessender: Person, dritter: Person) kind empirical {
+    label de official "Ein Ehegatte hat den entzogenen Betrag einem Dritten durch letztwillige Verfügung zugewendet (§ 1514)";
+    label en unofficial "a spouse allocated the withdrawn amount to a third party by testamentary disposition (§ 1514)";
+}
+relation uebernahmerecht_letztwillig_angeordnet(ehe: Ehe, ausschliessender: Person, beguenstigter: Person) kind empirical {
+    label de official "Ein Ehegatte hat durch letztwillige Verfügung angeordnet, dass ein anteilsberechtigter Abkömmling oder der überlebende Ehegatte das Gesamtgut oder einzelne Gegenstände gegen Ersatz des Wertes übernehmen darf (§ 1515 Abs. 1, 3)";
+    label en unofficial "a spouse ordered by testamentary disposition that a descendant or the survivor may take over the property against replacement of value (§ 1515 (1), (3))";
+}
+relation landgut_im_gesamtgut(ehe: Ehe) kind empirical {
+    label de official "Zu dem Gesamtgut gehört ein Landgut; es kann angeordnet werden, dass es mit dem Ertragswert angesetzt wird, und § 2049 findet Anwendung (§ 1515 Abs. 2)";
+    label en unofficial "the community property includes a farm; it may be ordered that it be valued at its yield value, § 2049 applying ((2))";
+}
+relation zustimmung_des_anderen_ehegatten_notariell(ehe: Ehe, zustimmender: Person) kind empirical {
+    label de official "Der andere Ehegatte hat den Verfügungen der §§ 1511 bis 1515 in notariell beurkundeter Form zugestimmt; die Zustimmung kann nicht durch einen Vertreter erteilt werden und ist unwiderruflich (§ 1516 Abs. 1, 2)";
+    label en unofficial "the other spouse consented to the dispositions of §§ 1511 to 1515 in notarised form; consent cannot be given by a representative and is irrevocable (§ 1516 (1), (2))";
+}
+relation gemeinschaftliches_testament(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten treffen die in den §§ 1511 bis 1515 bezeichneten Verfügungen in einem gemeinschaftlichen Testament (§ 1516 Abs. 3)";
+    label en unofficial "the spouses make the dispositions of §§ 1511 to 1515 in a joint will ((3))";
+}
+relation verzichtsvertrag_des_abkoemmlings(ehe: Ehe, abkoemmling: Person, ehegatte_partei: Person) kind empirical {
+    label de official "Vertrag, durch den ein gemeinschaftlicher Abkömmling einem der Ehegatten gegenüber für den Fall, dass die Ehe durch dessen Tod aufgelöst wird, auf seinen Anteil am Gesamtgut der fortgesetzten Gütergemeinschaft verzichtet (§ 1517 Abs. 1 Satz 1)";
+    label en unofficial "contract by which a common descendant renounces his share in the continued community towards one of the spouses (§ 1517 (1) sentence 1)";
+}
+relation anordnung_widerspricht_den_1483_bis_1517(ehe: Ehe, ausschliessender: Person) kind empirical {
+    label de official "Anordnung, die mit den Vorschriften der §§ 1483 bis 1517 in Widerspruch steht (§ 1518 Satz 1)";
+    label en unofficial "disposition contradicting §§ 1483 to 1517 (§ 1518 sentence 1)";
+}
+relation fortsetzungsvertrag_durch_ehevertrag_aufgehoben(ehe: Ehe) kind empirical {
+    label de official "Die Ehegatten heben den Vertrag, durch den sie die Fortsetzung der Gütergemeinschaft vereinbart haben, durch Ehevertrag auf (§ 1518 Satz 2)";
+    label en unofficial "the spouses cancel by marriage contract the agreement on continuation (§ 1518 sentence 2)";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation fortgesetzte_guetergemeinschaft_eingetreten(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Die Gütergemeinschaft wird nach dem Tod eines Ehegatten zwischen dem überlebenden Ehegatten und den gemeinschaftlichen Abkömmlingen fortgesetzt (§ 1483 Abs. 1 Satz 1, 2)";
+    label en unofficial "The community of property continues after the death of one spouse between the survivor and the common descendants (§ 1483 (1))";
+}
+pub relation anteilsberechtigter_abkoemmling(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Gemeinschaftlicher Abkömmling, der an der fortgesetzten Gütergemeinschaft anteilsberechtigt ist (§ 1483 Abs. 1 Satz 2)";
+    label en unofficial "Common descendant entitled to a share in the continued community (§ 1483 (1) sentence 2)";
+}
+pub relation anteil_gehoert_nicht_zum_nachlass(ehe: Ehe, verstorbener: Person) kind institutional {
+    label de official "Der Anteil des verstorbenen Ehegatten am Gesamtgut gehört nicht zum Nachlass; im Übrigen wird der Ehegatte nach den allgemeinen Vorschriften beerbt (§ 1483 Abs. 1 Satz 3)";
+    label en unofficial "The deceased spouse's share in the community property does not form part of the estate ((1) sentence 3)";
+}
+relation erbrecht_des_anderen_abkoemmlings_unberuehrt(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Sind neben den gemeinschaftlichen Abkömmlingen andere Abkömmlinge vorhanden, so bestimmen sich ihr Erbrecht und ihre Erbteile so, wie wenn fortgesetzte Gütergemeinschaft nicht eingetreten wäre (§ 1483 Abs. 2)";
+    label en unofficial "Where other descendants are present, their rights of succession are determined as if the continuation had not occurred ((2))";
+}
+relation fortsetzung_wirksam_abgelehnt(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Der überlebende Ehegatte hat die Fortsetzung der Gütergemeinschaft wirksam abgelehnt; es gilt das Gleiche wie im Falle des § 1482 (§ 1484 Abs. 1, 3)";
+    label en unofficial "The surviving spouse has effectively rejected the continuation; the same applies as in § 1482 ((1), (3))";
+}
+pub relation gesamtgut_der_fortgesetzten_guetergemeinschaft(ehe: Ehe, s: de.bgb.core::Sache) kind institutional {
+    label de official "Das Gesamtgut der fortgesetzten Gütergemeinschaft besteht aus dem ehelichen Gesamtgut und aus dem Vermögen, das der überlebende Ehegatte aus dem Nachlass oder nach Eintritt der fortgesetzten Gütergemeinschaft erwirbt (§ 1485 Abs. 1)";
+    label en unofficial "The community property of the continued community comprises the marital community property and what the survivor acquires from the estate or afterwards (§ 1485 (1))";
+}
+relation vermoegen_des_abkoemmlings_bleibt_aussen_vor(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Das Vermögen, das ein gemeinschaftlicher Abkömmling zur Zeit des Eintritts der fortgesetzten Gütergemeinschaft hat oder später erwirbt, gehört nicht zu dem Gesamtgut (§ 1485 Abs. 2)";
+    label en unofficial "The assets which a common descendant has or later acquires do not belong to the community property ((2))";
+}
+relation rechtsstellung_wie_alleinverwalter(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Der überlebende Ehegatte hat die rechtliche Stellung des Ehegatten, der das Gesamtgut allein verwaltet; die anteilsberechtigten Abkömmlinge haben die rechtliche Stellung des anderen Ehegatten (§ 1487 Abs. 1)";
+    label en unofficial "The surviving spouse has the legal position of the sole administrator; the share-entitled descendants that of the other spouse (§ 1487 (1))";
+}
+relation gesamtgutsverbindlichkeit_der_fortgesetzten(ehe: Ehe, vb: Verbindlichkeit) kind institutional {
+    label de official "Gesamtgutsverbindlichkeiten der fortgesetzten Gütergemeinschaft sind die Verbindlichkeiten des überlebenden Ehegatten sowie solche Verbindlichkeiten des verstorbenen Ehegatten, die Gesamtgutsverbindlichkeiten der ehelichen Gütergemeinschaft waren (§ 1488)";
+    label en unofficial "Community liabilities of the continued community are the survivor's liabilities and those of the deceased which were community liabilities of the marital community (§ 1488)";
+}
+relation ueberlebender_haftet_persoenlich(ehe: Ehe, ueberlebender: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Für die Gesamtgutsverbindlichkeiten der fortgesetzten Gütergemeinschaft haftet der überlebende Ehegatte persönlich (§ 1489 Abs. 1); trifft ihn die Haftung nur infolge des Eintritts, so gelten die Vorschriften über die Haftung des Erben entsprechend (Abs. 2)";
+    label en unofficial "The surviving spouse is personally liable for the community liabilities ((1))";
+}
+relation keine_persoenliche_haftung_der_abkoemmlinge(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Eine persönliche Haftung der anteilsberechtigten Abkömmlinge für die Verbindlichkeiten des verstorbenen oder des überlebenden Ehegatten wird durch die fortgesetzte Gütergemeinschaft nicht begründet (§ 1489 Abs. 3)";
+    label en unofficial "The continued community does not create personal liability of the share-entitled descendants ((3))";
+}
+relation anteil_faellt_nicht_in_den_nachlass_des_abkoemmlings(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Stirbt ein anteilsberechtigter Abkömmling, so gehört sein Anteil an dem Gesamtgut nicht zu seinem Nachlass (§ 1490 Satz 1)";
+    label en unofficial "If a share-entitled descendant dies, his share does not form part of his estate (§ 1490 sentence 1)";
+}
+relation anteil_waechst_an(ehe: Ehe, empfaenger: Person) kind institutional {
+    label de official "Hinterlässt der verstorbene Abkömmling keine anteilsberechtigten Abkömmlinge, so wächst sein Anteil den übrigen anteilsberechtigten Abkömmlingen und, wenn solche nicht vorhanden sind, dem überlebenden Ehegatten an (§ 1490 Satz 3)";
+    label en unofficial "If the deceased descendant leaves no such descendants, his share accrues to the remaining ones and otherwise to the surviving spouse (§ 1490 sentence 3)";
+}
+relation verzicht_wirksam(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Der Verzicht auf den Anteil am Gesamtgut ist wirksam; er hat die gleichen Wirkungen, wie wenn der Verzichtende zur Zeit des Verzichts ohne Hinterlassung von Abkömmlingen gestorben wäre (§ 1491 Abs. 4)";
+    label en unofficial "The renunciation of the share is effective; it has the same effects as if the renouncing person had died without descendants ((4))";
+}
+pub relation fortgesetzte_guetergemeinschaft_beendet(ehe: Ehe, grund: Text) kind institutional {
+    label de official "Die fortgesetzte Gütergemeinschaft ist beendet (§§ 1492, 1493, 1494, 1496)";
+    label en unofficial "The continued community of property has ended (§§ 1492, 1493, 1494, 1496)";
+}
+relation anzeige_und_auseinandersetzung_geschuldet(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Der überlebende Ehegatte hat, wenn ein anteilsberechtigter Abkömmling minderjährig ist, die Absicht der Wiederverheiratung dem Familiengericht anzuzeigen, ein Verzeichnis des Gesamtguts einzureichen, die Gütergemeinschaft aufzuheben und die Auseinandersetzung herbeizuführen (§ 1493 Abs. 2 Satz 1)";
+    label en unofficial "Where a share-entitled descendant is a minor, the surviving spouse must notify the family court, submit an inventory, terminate the community and bring about the division ((2) sentence 1)";
+}
+relation aufhebung_durch_abkoemmling_beantragbar(ehe: Ehe, abkoemmling: Person, nummer: Integer) kind institutional {
+    label de official "Ein anteilsberechtigter Abkömmling kann gegen den überlebenden Ehegatten die Aufhebung der fortgesetzten Gütergemeinschaft beantragen (§ 1495 Nr. 1 bis 4)";
+    label en unofficial "A share-entitled descendant may apply against the surviving spouse for the termination of the continued community (§ 1495 nos. 1 to 4)";
+}
+relation aufhebung_wirkt_fuer_alle_abkoemmlinge(ehe: Ehe) kind institutional {
+    label de official "Die Aufhebung tritt in den Fällen des § 1495 mit der Rechtskraft der richterlichen Entscheidung ein; sie tritt für ALLE Abkömmlinge ein, auch wenn die Entscheidung auf den Antrag eines der Abkömmlinge ergangen ist (§ 1496)";
+    label en unofficial "The termination takes effect for ALL descendants even if the decision was made on one descendant's application (§ 1496)";
+}
+relation auseinandersetzung_mit_den_abkoemmlingen_geschuldet(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Nach der Beendigung der fortgesetzten Gütergemeinschaft setzen sich der überlebende Ehegatte und die Abkömmlinge über das Gesamtgut auseinander; bis dahin gelten die §§ 1419, 1472, 1473 (§ 1497)";
+    label en unofficial "After the continued community ends, the surviving spouse and the descendants divide the community property (§ 1497)";
+}
+relation auseinandersetzung_nach_1475_bis_1481_entsprechend(ehe: Ehe) kind institutional {
+    label de official "Auf die Auseinandersetzung sind die §§ 1475, 1476, § 1477 Abs. 1, §§ 1479, 1480 und § 1481 Abs. 1, 3 anzuwenden; an die Stelle des allein verwaltenden Ehegatten tritt der überlebende Ehegatte, an die Stelle des anderen Ehegatten treten die anteilsberechtigten Abkömmlinge (§ 1498)";
+    label en unofficial "§§ 1475, 1476, 1477 (1), 1479, 1480 and 1481 (1), (3) apply to the division, with the survivor in place of the sole administrator (§ 1498)";
+}
+relation faellt_dem_ueberlebenden_zur_last(ehe: Ehe, ueberlebender: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Bei der Auseinandersetzung fallen dem überlebenden Ehegatten die in § 1499 Nr. 1 bis 3 bezeichneten Verbindlichkeiten und Ausstattungen zur Last";
+    label en unofficial "On the division the liabilities and endowments named in § 1499 nos. 1 to 3 fall to the surviving spouse";
+}
+relation abkoemmlinge_muessen_sich_anrechnen_lassen(ehe: Ehe, abkoemmling: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Die anteilsberechtigten Abkömmlinge müssen sich Verbindlichkeiten des verstorbenen Ehegatten, die diesem zur Last fielen, bei der Auseinandersetzung auf ihren Anteil anrechnen lassen, soweit der überlebende Ehegatte vom Erben keine Deckung erlangen konnte; das Gleiche gilt für das, was der verstorbene Ehegatte zum Gesamtgut zu ersetzen hatte (§ 1500)";
+    label en unofficial "The share-entitled descendants must allow the deceased spouse's liabilities to be set off against their share (§ 1500)";
+}
+relation abfindung_wird_eingerechnet(ehe: Ehe, abkoemmling: Person, wert: Money) kind institutional {
+    label de official "Ist einem anteilsberechtigten Abkömmling für den Verzicht eine Abfindung aus dem Gesamtgut gewährt worden, so wird sie bei der Auseinandersetzung in das Gesamtgut eingerechnet und auf die den Abkömmlingen gebührende Hälfte angerechnet (§ 1501 Abs. 1)";
+    label en unofficial "A settlement granted for a renunciation is included in the community property and set off against the descendants' half (§ 1501 (1))";
+}
+relation uebernahmerecht_des_ueberlebenden(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Der überlebende Ehegatte ist berechtigt, das Gesamtgut oder einzelne dazu gehörende Gegenstände gegen Ersatz des Wertes zu übernehmen; das Recht geht nicht auf den Erben über und steht ihm bei einer Aufhebung nach § 1495 nicht zu (§ 1502 Abs. 1, 2)";
+    label en unofficial "The surviving spouse may take over the community property against replacement of value; the right does not pass to his heir (§ 1502 (1), (2))";
+}
+pub relation anteil_des_abkoemmlings_am_gesamtgut(ehe: Ehe, abkoemmling: Person, betrag: Money) kind institutional {
+    label de official "Mehrere anteilsberechtigte Abkömmlinge teilen die ihnen zufallende Hälfte des Gesamtguts nach dem Verhältnis der Anteile, zu denen sie im Falle der gesetzlichen Erbfolge als Erben des verstorbenen Ehegatten berufen sein würden (§ 1503 Abs. 1); gerechnet wird EINMAL je Abkömmling, kaufmännisch auf den Cent";
+    label en unofficial "Several share-entitled descendants divide their half in the proportion of the shares to which they would be called on intestacy (§ 1503 (1))";
+}
+relation haftung_nach_der_groesse_des_anteils(ehe: Ehe, abkoemmling: Person, vb: Verbindlichkeit) kind institutional {
+    label de official "Soweit die anteilsberechtigten Abkömmlinge nach § 1480 den Gesamtgutsgläubigern haften, sind sie im Verhältnis zueinander nach der Größe ihres Anteils verpflichtet; die Verpflichtung beschränkt sich auf die ihnen zugeteilten Gegenstände (§ 1504)";
+    label en unofficial "In so far as the descendants are liable under § 1480, they are obliged among themselves in proportion to their shares (§ 1504)";
+}
+pub relation pflichtteilsaehnlicher_anspruch_des_abkoemmlings(ehe: Ehe, abkoemmling: Person, betrag: Money) kind institutional {
+    label de official "Die Vorschriften über das Recht auf Ergänzung des Pflichtteils finden zugunsten eines anteilsberechtigten Abkömmlings entsprechende Anwendung; als Pflichtteil gilt die HÄLFTE des Wertes des ihm gebührenden Anteils (§ 1505)";
+    label en unofficial "The provisions on supplementing the compulsory share apply in favour of a share-entitled descendant; the compulsory share is HALF the value of his share (§ 1505)";
+}
+relation anteilsunwuerdig(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Ist ein gemeinschaftlicher Abkömmling erbunwürdig, so ist er auch des Anteils an dem Gesamtgut unwürdig; die Vorschriften über die Erbunwürdigkeit finden entsprechende Anwendung (§ 1506)";
+    label en unofficial "A common descendant unworthy to inherit is also unworthy of the share in the community property (§ 1506)";
+}
+relation zeugnis_zu_erteilen(ehe: Ehe, ueberlebender: Person) kind institutional {
+    label de official "Das Nachlassgericht hat dem überlebenden Ehegatten auf Antrag ein Zeugnis über die Fortsetzung der Gütergemeinschaft zu erteilen; die Vorschriften über den Erbschein finden entsprechende Anwendung (§ 1507)";
+    label en unofficial "The probate court must issue the surviving spouse a certificate of the continuation on application; the rules on the certificate of inheritance apply (§ 1507)";
+}
+relation fortsetzung_ausgeschlossen(ehe: Ehe, ausschliessender: Person) kind institutional {
+    label de official "Die Fortsetzung der Gütergemeinschaft ist durch letztwillige Verfügung ausgeschlossen; es gilt das Gleiche wie im Falle des § 1482 (§ 1509, § 1510)";
+    label en unofficial "The continuation has been excluded by testamentary disposition; the same applies as in § 1482 (§ 1509, § 1510)";
+}
+relation abkoemmling_ausgeschlossen(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Der gemeinschaftliche Abkömmling ist von der fortgesetzten Gütergemeinschaft durch letztwillige Verfügung ausgeschlossen (§ 1511 Abs. 1)";
+    label en unofficial "The common descendant has been excluded from the continued community by testamentary disposition (§ 1511 (1))";
+}
+pub relation zahlungsanspruch_des_ausgeschlossenen_abkoemmlings(ehe: Ehe, abkoemmling: Person, betrag: Money) kind institutional {
+    label de official "Der ausgeschlossene Abkömmling kann, unbeschadet seines Erbrechts, aus dem Gesamtgut der fortgesetzten Gütergemeinschaft die Zahlung des Betrags verlangen, der ihm von dem Gesamtgut der ehelichen Gütergemeinschaft als Pflichtteil gebühren würde (§ 1511 Abs. 2)";
+    label en unofficial "The excluded descendant may demand payment of the amount which would be his compulsory share of the marital community property ((2))";
+}
+relation anteil_herabgesetzt(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Der einem anteilsberechtigten Abkömmling gebührende Anteil ist durch letztwillige Verfügung bis auf die Hälfte herabgesetzt (§ 1512)";
+    label en unofficial "The share due to a share-entitled descendant has been reduced by testamentary disposition to at most one half (§ 1512)";
+}
+relation anteil_entzogen(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Der einem anteilsberechtigten Abkömmling gebührende Anteil ist durch letztwillige Verfügung entzogen; der Ehegatte muss berechtigt sein, dem Abkömmling den Pflichtteil zu entziehen (§ 1513 Abs. 1)";
+    label en unofficial "The share due to a share-entitled descendant has been withdrawn by testamentary disposition (§ 1513 (1))";
+}
+relation entzogener_betrag_zugewendet(ehe: Ehe, dritter: Person) kind institutional {
+    label de official "Der nach § 1512 oder § 1513 Abs. 1 entzogene Betrag ist einem Dritten durch letztwillige Verfügung zugewendet (§ 1514)";
+    label en unofficial "The amount withdrawn under § 1512 or § 1513 (1) has been allocated to a third party (§ 1514)";
+}
+relation uebernahmerecht_angeordnet(ehe: Ehe, beguenstigter: Person) kind institutional {
+    label de official "Ein anteilsberechtigter Abkömmling oder der überlebende Ehegatte hat das Recht, bei der Teilung das Gesamtgut oder einzelne Gegenstände gegen Ersatz des Wertes zu übernehmen; gehört ein Landgut dazu, so kann der Ertragswert angesetzt werden (§ 1515)";
+    label en unofficial "A share-entitled descendant or the surviving spouse has the right to take over the property against replacement of value; a farm may be valued at its yield value (§ 1515)";
+}
+relation verfuegung_wirksam(ehe: Ehe, ausschliessender: Person) kind institutional {
+    label de official "Zur Wirksamkeit der in den §§ 1511 bis 1515 bezeichneten Verfügungen ist die Zustimmung des anderen Ehegatten erforderlich; sie bedarf der notariellen Beurkundung und ist unwiderruflich (§ 1516)";
+    label en unofficial "The dispositions of §§ 1511 to 1515 require the other spouse's consent, which must be notarised and is irrevocable (§ 1516)";
+}
+relation verzichtsvertrag_wirksam(ehe: Ehe, abkoemmling: Person) kind institutional {
+    label de official "Zur Wirksamkeit des Verzichtsvertrags ist die Zustimmung des anderen Ehegatten erforderlich; die für den Erbverzicht geltenden Vorschriften finden entsprechende Anwendung (§ 1517)";
+    label en unofficial "The renunciation contract requires the other spouse's consent; the rules on renunciation of inheritance apply (§ 1517)";
+}
+relation anordnung_unzulaessig(ehe: Ehe, ausschliessender: Person) kind institutional {
+    label de official "Anordnungen, die mit den Vorschriften der §§ 1483 bis 1517 in Widerspruch stehen, können von den Ehegatten weder durch letztwillige Verfügung noch durch Vertrag getroffen werden; das Recht, den Fortsetzungsvertrag durch Ehevertrag aufzuheben, bleibt unberührt (§ 1518)";
+    label en unofficial "Dispositions contradicting §§ 1483 to 1517 cannot be made; the right to cancel the continuation agreement by marriage contract is unaffected (§ 1518)";
+}
+
+// --- Regeln -------------------------------------------------------------------------------------------
+
+@source(BGB_P1483) {
+    rule EintrittDerFortgesetztenGuetergemeinschaft(ehe: Ehe, verstorbener: Person, ueberlebender: Person) strict {
+        label de official "Die Ehegatten können durch Ehevertrag vereinbaren, dass die Gütergemeinschaft nach dem Tod eines Ehegatten zwischen dem überlebenden Ehegatten und den gemeinschaftlichen Abkömmlingen fortgesetzt wird; treffen sie eine solche Vereinbarung, so wird die Gütergemeinschaft mit den gemeinschaftlichen Abkömmlingen fortgesetzt, die bei gesetzlicher Erbfolge als Erben berufen sind (§ 1483 Abs. 1 Sätze 1, 2)";
+        label en unofficial "The spouses may agree that the community continues after the death of one of them with the common descendants called as heirs on intestacy ((1) sentences 1, 2)";
+        when gueterstand(ehe, Guetergemeinschaft) and fortsetzung_durch_ehevertrag_vereinbart(ehe)
+         and ehe_durch_tod_aufgeloest(ehe, verstorbener) and anderer_ehegatte(ehe, verstorbener, ueberlebender)
+         and not_known(fortsetzung_abgelehnt(ehe, ueberlebender))
+         and not_known(fortsetzung_letztwillig_ausgeschlossen(ehe, verstorbener));
+        then fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender);
+    }
+    rule AnteilsberechtigterAbkoemmling(ehe: Ehe, ueberlebender: Person, a: Person) strict {
+        label de official "Anteilsberechtigt sind die gemeinschaftlichen Abkömmlinge, die bei gesetzlicher Erbfolge als Erben berufen sind (§ 1483 Abs. 1 Satz 2)";
+        label en unofficial "Entitled to a share are the common descendants called as heirs on intestacy ((1) sentence 2)";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and gemeinschaftlicher_abkoemmling_erbberufen(ehe, a)
+         and not_known(abkoemmling_erbunwuerdig(ehe, a))
+         and not_known(verzicht_auf_den_anteil_erklaert(ehe, a));
+        then anteilsberechtigter_abkoemmling(ehe, a);
+    }
+    rule AnteilGehoertNichtZumNachlass(ehe: Ehe, verstorbener: Person, ueberlebender: Person) strict {
+        label de official "Der Anteil des verstorbenen Ehegatten am Gesamtgut gehört nicht zum Nachlass; im Übrigen wird der Ehegatte nach den allgemeinen Vorschriften beerbt (§ 1483 Abs. 1 Satz 3)";
+        label en unofficial "The deceased spouse's share does not form part of the estate ((1) sentence 3)";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and ehe_durch_tod_aufgeloest(ehe, verstorbener);
+        then anteil_gehoert_nicht_zum_nachlass(ehe, verstorbener);
+    }
+    rule ErbrechtAndererAbkoemmlingeUnberuehrt(ehe: Ehe, ueberlebender: Person, a: Person) strict {
+        label de official "Sind neben den gemeinschaftlichen Abkömmlingen andere Abkömmlinge vorhanden, so bestimmen sich ihr Erbrecht und ihre Erbteile so, wie wenn fortgesetzte Gütergemeinschaft nicht eingetreten wäre (§ 1483 Abs. 2)";
+        label en unofficial "Where other descendants are present, their succession rights are determined as if no continuation had occurred ((2))";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and nicht_gemeinschaftlicher_abkoemmling(ehe, a);
+        then erbrecht_des_anderen_abkoemmlings_unberuehrt(ehe, a);
+    }
+}
+
+@source(BGB_P1484)
+rule AblehnungDerFortsetzung(ehe: Ehe, ueberlebender: Person) strict {
+    label de official "Der überlebende Ehegatte kann die Fortsetzung der Gütergemeinschaft ablehnen; auf die Ablehnung finden die für die Ausschlagung einer Erbschaft geltenden Vorschriften der §§ 1943 bis 1959 entsprechende Anwendung; lehnt er ab, so gilt das Gleiche wie im Falle des § 1482 (§ 1484)";
+    label en unofficial "The surviving spouse may reject the continuation; the rules on disclaiming an inheritance apply; on rejection the same applies as in § 1482 (§ 1484)";
+    when fortsetzung_durch_ehevertrag_vereinbart(ehe) and fortsetzung_abgelehnt(ehe, ueberlebender);
+    then fortsetzung_wirksam_abgelehnt(ehe, ueberlebender);
+}
+
+@source(BGB_P1484)
+rule NachDerAblehnungGiltWieder1482(ehe: Ehe, ueberlebender: Person, verstorbener: Person) strict {
+    label de official "Lehnt der Ehegatte die Fortsetzung der Gütergemeinschaft ab, so gilt das Gleiche wie im Falle des § 1482: der Anteil des verstorbenen Ehegatten am Gesamtgut gehört zum Nachlass (§ 1484 Abs. 3)";
+    label en unofficial "If the spouse rejects the continuation, the same applies as in § 1482: the deceased spouse's share forms part of the estate ((3))";
+    when fortsetzung_wirksam_abgelehnt(ehe, ueberlebender) and ehe_durch_tod_aufgeloest(ehe, verstorbener);
+    then anteil_am_gesamtgut_faellt_in_den_nachlass(ehe, verstorbener);
+}
+
+@source(BGB_P1485) {
+    rule GesamtgutDerFortgesetztenGuetergemeinschaft(ehe: Ehe, ueberlebender: Person, s: de.bgb.core::Sache) strict {
+        label de official "Das Gesamtgut der fortgesetzten Gütergemeinschaft besteht aus dem ehelichen Gesamtgut, soweit es nicht nach § 1483 Abs. 2 einem nicht anteilsberechtigten Abkömmling zufällt (§ 1485 Abs. 1)";
+        label en unofficial "The community property of the continued community comprises the marital community property ((1))";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender) and gesamtgut(ehe, s);
+        then gesamtgut_der_fortgesetzten_guetergemeinschaft(ehe, s);
+    }
+    rule ErwerbAusDemNachlassWirdGesamtgut(ehe: Ehe, ueberlebender: Person, s: de.bgb.core::Sache) strict {
+        label de official "Zum Gesamtgut gehört auch das Vermögen, das der überlebende Ehegatte aus dem Nachlass des verstorbenen Ehegatten oder nach dem Eintritt der fortgesetzten Gütergemeinschaft erwirbt (§ 1485 Abs. 1); § 1416 Abs. 2, 3 gilt entsprechend (Abs. 3)";
+        label en unofficial "The community property also includes what the survivor acquires from the estate or after the continuation began ((1))";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and erwerb_aus_dem_nachlass_des_verstorbenen(ehe, s);
+        then gesamtgut_der_fortgesetzten_guetergemeinschaft(ehe, s);
+    }
+    rule VermoegenDesAbkoemmlingsGehoertNichtDazu(ehe: Ehe, a: Person, s: de.bgb.core::Sache) strict {
+        label de official "Das Vermögen, das ein gemeinschaftlicher Abkömmling zur Zeit des Eintritts der fortgesetzten Gütergemeinschaft hat oder später erwirbt, gehört nicht zu dem Gesamtgut (§ 1485 Abs. 2)";
+        label en unofficial "The assets which a common descendant has or later acquires do not belong to the community property ((2))";
+        when anteilsberechtigter_abkoemmling(ehe, a) and vermoegen_des_abkoemmlings(ehe, a, s);
+        then vermoegen_des_abkoemmlings_bleibt_aussen_vor(ehe, a);
+    }
+}
+
+@source(BGB_P1486) {
+    rule VorbehaltsgutDesUeberlebenden(ehe: Ehe, ueberlebender: Person, s: de.bgb.core::Sache) strict {
+        label de official "Vorbehaltsgut des überlebenden Ehegatten ist, was er bisher als Vorbehaltsgut gehabt hat oder was er nach § 1418 Abs. 2 Nr. 2, 3 als Vorbehaltsgut erwirbt (§ 1486 Abs. 1)";
+        label en unofficial "Reserved property of the surviving spouse is what he had as such or acquires as such ((1))";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and bisheriges_vorbehaltsgut(ehe, ueberlebender, s);
+        then vorbehaltsgut(ehe, ueberlebender, s);
+    }
+    rule SondergutDesUeberlebenden(ehe: Ehe, ueberlebender: Person, s: de.bgb.core::Sache) strict {
+        label de official "Sondergut des überlebenden Ehegatten ist, was er bisher als Sondergut gehabt hat oder was er als Sondergut erwirbt (§ 1486 Abs. 2)";
+        label en unofficial "Separate property of the surviving spouse is what he had as such or acquires as such ((2))";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and bisheriges_sondergut(ehe, ueberlebender, s);
+        then sondergut(ehe, ueberlebender, s);
+    }
+}
+
+@source(BGB_P1487)
+rule RechtsstellungDesUeberlebenden(ehe: Ehe, ueberlebender: Person) strict {
+    label de official "Die Rechte und Verbindlichkeiten des überlebenden Ehegatten sowie der anteilsberechtigten Abkömmlinge bestimmen sich nach den §§ 1419, 1422 bis 1428, 1434, § 1435 Satz 1, 3 und den §§ 1436, 1445; der überlebende Ehegatte hat die rechtliche Stellung des allein verwaltenden Ehegatten, die Abkömmlinge die des anderen Ehegatten (§ 1487 Abs. 1); was er zum Gesamtgut schuldet, ist erst nach der Beendigung zu leisten (Abs. 2)";
+    label en unofficial "The rights and obligations follow §§ 1419, 1422 to 1428, 1434, 1435, 1436, 1445; the survivor has the position of the sole administrator ((1))";
+    when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender);
+    then rechtsstellung_wie_alleinverwalter(ehe, ueberlebender);
+}
+
+@source(BGB_P1488) {
+    rule VerbindlichkeitenDesUeberlebenden(ehe: Ehe, ueberlebender: Person, vb: Verbindlichkeit) strict {
+        label de official "Gesamtgutsverbindlichkeiten der fortgesetzten Gütergemeinschaft sind die Verbindlichkeiten des überlebenden Ehegatten (§ 1488 Alt. 1)";
+        label en unofficial "Community liabilities of the continued community are the survivor's liabilities (§ 1488)";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and verbindlichkeit_des_ueberlebenden(ehe, vb);
+        then gesamtgutsverbindlichkeit_der_fortgesetzten(ehe, vb);
+    }
+    rule FortwirkendeVerbindlichkeitenDesVerstorbenen(ehe: Ehe, ueberlebender: Person, vb: Verbindlichkeit) strict {
+        label de official "Gesamtgutsverbindlichkeiten der fortgesetzten Gütergemeinschaft sind auch solche Verbindlichkeiten des verstorbenen Ehegatten, die Gesamtgutsverbindlichkeiten der ehelichen Gütergemeinschaft waren (§ 1488 Alt. 2)";
+        label en unofficial "They also include the deceased spouse's liabilities which were community liabilities of the marital community (§ 1488)";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and gesamtgutsverbindlichkeit_der_ehelichen_guetergemeinschaft(ehe, vb);
+        then gesamtgutsverbindlichkeit_der_fortgesetzten(ehe, vb);
+    }
+}
+
+@source(BGB_P1489) {
+    rule PersoenlicheHaftungDesUeberlebenden(ehe: Ehe, ueberlebender: Person, vb: Verbindlichkeit) strict {
+        label de official "Für die Gesamtgutsverbindlichkeiten der fortgesetzten Gütergemeinschaft haftet der überlebende Ehegatte persönlich; soweit die Haftung ihn nur infolge des Eintritts trifft, gelten die Vorschriften über die Haftung des Erben für die Nachlassverbindlichkeiten entsprechend (§ 1489 Abs. 1, 2)";
+        label en unofficial "The surviving spouse is personally liable for the community liabilities ((1), (2))";
+        when gesamtgutsverbindlichkeit_der_fortgesetzten(ehe, vb)
+         and fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender);
+        then ueberlebender_haftet_persoenlich(ehe, ueberlebender, vb);
+    }
+    rule KeinePersoenlicheHaftungDerAbkoemmlinge(ehe: Ehe, a: Person) strict {
+        label de official "Eine persönliche Haftung der anteilsberechtigten Abkömmlinge für die Verbindlichkeiten des verstorbenen oder des überlebenden Ehegatten wird durch die fortgesetzte Gütergemeinschaft nicht begründet (§ 1489 Abs. 3)";
+        label en unofficial "The continued community does not create personal liability of the share-entitled descendants ((3))";
+        when anteilsberechtigter_abkoemmling(ehe, a);
+        then keine_persoenliche_haftung_der_abkoemmlinge(ehe, a);
+    }
+}
+
+@source(BGB_P1490) {
+    rule AnteilFaelltNichtInDenNachlassDesAbkoemmlings(ehe: Ehe, a: Person) strict {
+        label de official "Stirbt ein anteilsberechtigter Abkömmling, so gehört sein Anteil an dem Gesamtgut nicht zu seinem Nachlass (§ 1490 Satz 1)";
+        label en unofficial "If a share-entitled descendant dies, his share does not form part of his estate (§ 1490 sentence 1)";
+        when anteilsberechtigter_abkoemmling(ehe, a) and anteilsberechtigter_abkoemmling_verstorben(ehe, a);
+        then anteil_faellt_nicht_in_den_nachlass_des_abkoemmlings(ehe, a);
+    }
+    rule NachfolgerTrittAnDieStelle(ehe: Ehe, a: Person, nachfolger: Person) strict {
+        label de official "Hinterlässt der verstorbene Abkömmling Abkömmlinge, die anteilsberechtigt sein würden, wenn er den verstorbenen Ehegatten nicht überlebt hätte, so treten diese an seine Stelle (§ 1490 Satz 2)";
+        label en unofficial "If he leaves descendants who would be share-entitled, they take his place (§ 1490 sentence 2)";
+        when anteilsberechtigter_abkoemmling_verstorben(ehe, a)
+         and abkoemmling_des_verstorbenen_abkoemmlings(ehe, a, nachfolger);
+        then anteilsberechtigter_abkoemmling(ehe, nachfolger);
+    }
+    rule AnwachsungAnDieUebrigen(ehe: Ehe, a: Person, uebriger: Person) strict {
+        label de official "Hinterlässt der verstorbene Abkömmling solche Abkömmlinge nicht, so wächst sein Anteil den übrigen anteilsberechtigten Abkömmlingen und, wenn solche nicht vorhanden sind, dem überlebenden Ehegatten an (§ 1490 Satz 3)";
+        label en unofficial "If he leaves no such descendants, his share accrues to the remaining share-entitled descendants and otherwise to the surviving spouse (§ 1490 sentence 3)";
+        when anteilsberechtigter_abkoemmling_verstorben(ehe, a) and anteilsberechtigter_abkoemmling(ehe, uebriger)
+         and uebriger != a;
+        then anteil_waechst_an(ehe, uebriger);
+    }
+}
+
+@source(BGB_P1491) {
+    rule VerzichtOhneGenehmigungsbeduerfnis(ehe: Ehe, a: Person) strict {
+        label de official "Ein anteilsberechtigter Abkömmling kann auf seinen Anteil an dem Gesamtgut verzichten; der Verzicht erfolgt durch öffentlich beglaubigte Erklärung gegenüber dem Nachlassgericht oder durch notariell beurkundeten Vertrag (§ 1491 Abs. 1, 2)";
+        label en unofficial "A share-entitled descendant may renounce his share by publicly certified declaration or notarised contract ((1), (2))";
+        when verzicht_auf_den_anteil_erklaert(ehe, a)
+         and not_known(abkoemmling_minderjaehrig_oder_unter_vormundschaft(ehe, a));
+        then verzicht_wirksam(ehe, a);
+    }
+    rule VerzichtMitGenehmigung(ehe: Ehe, a: Person) strict {
+        label de official "Steht der Abkömmling unter elterlicher Sorge oder unter Vormundschaft, so ist zu dem Verzicht die Genehmigung des Familiengerichts erforderlich; bei einem Verzicht durch den Betreuer die des Betreuungsgerichts (§ 1491 Abs. 3)";
+        label en unofficial "Where the descendant is under parental care or guardianship, the court's approval is required ((3))";
+        when verzicht_auf_den_anteil_erklaert(ehe, a)
+         and abkoemmling_minderjaehrig_oder_unter_vormundschaft(ehe, a)
+         and genehmigung_zum_verzicht(ehe, a);
+        then verzicht_wirksam(ehe, a);
+    }
+}
+
+@source(BGB_P1492)
+rule AufhebungDurchDenUeberlebenden(ehe: Ehe, ueberlebender: Person) strict {
+    label de official "Der überlebende Ehegatte kann die fortgesetzte Gütergemeinschaft jederzeit aufheben; die Aufhebung erfolgt durch öffentlich beglaubigte Erklärung gegenüber dem Nachlassgericht oder durch notariell beurkundeten Vertrag mit den anteilsberechtigten Abkömmlingen (§ 1492 Abs. 1, 2)";
+    label en unofficial "The surviving spouse may terminate the continued community at any time by publicly certified declaration or notarised contract (§ 1492 (1), (2))";
+    when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+     and aufhebung_durch_den_ueberlebenden_erklaert(ehe, ueberlebender);
+    then fortgesetzte_guetergemeinschaft_beendet(ehe, "§ 1492: Aufhebung durch den überlebenden Ehegatten");
+}
+
+@source(BGB_P1493) {
+    rule EndeDurchWiederverheiratung(ehe: Ehe, ueberlebender: Person) strict {
+        label de official "Die fortgesetzte Gütergemeinschaft endet, wenn der überlebende Ehegatte wieder heiratet oder eine Lebenspartnerschaft begründet (§ 1493 Abs. 1)";
+        label en unofficial "The continued community ends if the surviving spouse remarries or enters a civil partnership ((1))";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and wiederverheiratung_oder_lebenspartnerschaft(ehe, ueberlebender);
+        then fortgesetzte_guetergemeinschaft_beendet(ehe, "§ 1493 Abs. 1: Wiederverheiratung oder Begründung einer Lebenspartnerschaft");
+    }
+    rule AnzeigepflichtBeiMinderjaehrigenAbkoemmlingen(ehe: Ehe, ueberlebender: Person, a: Person) strict {
+        label de official "Der überlebende Ehegatte hat, wenn ein anteilsberechtigter Abkömmling minderjährig ist, die Absicht der Wiederverheiratung dem Familiengericht anzuzeigen, ein Verzeichnis des Gesamtguts einzureichen, die Gütergemeinschaft aufzuheben und die Auseinandersetzung herbeizuführen (§ 1493 Abs. 2 Satz 1)";
+        label en unofficial "Where a share-entitled descendant is a minor, the survivor must notify the family court, submit an inventory and bring about the division ((2) sentence 1)";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and wiederverheiratung_oder_lebenspartnerschaft(ehe, ueberlebender)
+         and anteilsberechtigter_abkoemmling(ehe, a) and anteilsberechtigter_abkoemmling_minderjaehrig(ehe, a);
+        then anzeige_und_auseinandersetzung_geschuldet(ehe, ueberlebender);
+    }
+}
+
+@source(BGB_P1494)
+rule EndeDurchDenTodDesUeberlebenden(ehe: Ehe, ueberlebender: Person, t: Date) strict {
+    label de official "Die fortgesetzte Gütergemeinschaft endet mit dem Tode des überlebenden Ehegatten; wird er für tot erklärt oder seine Todeszeit nach dem Verschollenheitsgesetz festgestellt, so endet sie mit dem Zeitpunkt, der als Zeitpunkt des Todes gilt (§ 1494)";
+    label en unofficial "The continued community ends with the death of the surviving spouse (§ 1494)";
+    when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+     and tod_des_ueberlebenden_ehegatten_am(ehe, t);
+    then fortgesetzte_guetergemeinschaft_beendet(ehe, "§ 1494: Tod des überlebenden Ehegatten");
+}
+
+@source(BGB_P1495) {
+    rule AufhebungsantragWegenGefaehrdung(ehe: Ehe, a: Person, ueberlebender: Person) strict {
+        label de official "Ein anteilsberechtigter Abkömmling kann gegen den überlebenden Ehegatten die Aufhebung der fortgesetzten Gütergemeinschaft beantragen, wenn seine Rechte für die Zukunft dadurch erheblich gefährdet werden können, dass der überlebende Ehegatte zur Verwaltung unfähig ist oder sein Verwaltungsrecht missbraucht (§ 1495 Nr. 1)";
+        label en unofficial "A share-entitled descendant may apply for termination where his rights may be seriously endangered (§ 1495 no. 1)";
+        when anteilsberechtigter_abkoemmling(ehe, a) and fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and erhebliche_gefaehrdung_der_rechte(ehe, a);
+        then aufhebung_durch_abkoemmling_beantragbar(ehe, a, 1);
+    }
+    rule AufhebungsantragWegenUnterhaltsverletzung(ehe: Ehe, a: Person, ueberlebender: Person) strict {
+        label de official "Der Abkömmling kann die Aufhebung beantragen, wenn der überlebende Ehegatte seine Verpflichtung, dem Abkömmling Unterhalt zu gewähren, verletzt hat und für die Zukunft eine erhebliche Gefährdung des Unterhalts zu besorgen ist (§ 1495 Nr. 2)";
+        label en unofficial "He may apply where the survivor breached the duty to maintain him and future endangerment is to be feared (§ 1495 no. 2)";
+        when anteilsberechtigter_abkoemmling(ehe, a) and fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and unterhaltspflicht_verletzt_und_gefaehrdung_zu_besorgen(ehe, ueberlebender);
+        then aufhebung_durch_abkoemmling_beantragbar(ehe, a, 2);
+    }
+    rule AufhebungsantragWegenBetreuung(ehe: Ehe, a: Person, ueberlebender: Person) strict {
+        label de official "Der Abkömmling kann die Aufhebung beantragen, wenn die Verwaltung des Gesamtguts in den Aufgabenkreis des Betreuers des überlebenden Ehegatten fällt (§ 1495 Nr. 3)";
+        label en unofficial "He may apply where the administration falls within the remit of the survivor's custodian (§ 1495 no. 3)";
+        when anteilsberechtigter_abkoemmling(ehe, a) and fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and verwaltung_im_aufgabenkreis_des_betreuers(ehe, ueberlebender);
+        then aufhebung_durch_abkoemmling_beantragbar(ehe, a, 3);
+    }
+    rule AufhebungsantragWegenVerwirkterSorge(ehe: Ehe, a: Person, ueberlebender: Person) strict {
+        label de official "Der Abkömmling kann die Aufhebung beantragen, wenn der überlebende Ehegatte die elterliche Sorge für den Abkömmling verwirkt hat oder, falls sie ihm zugestanden hätte, verwirkt haben würde (§ 1495 Nr. 4)";
+        label en unofficial "He may apply where the survivor has forfeited parental care for him (§ 1495 no. 4)";
+        when anteilsberechtigter_abkoemmling(ehe, a) and elterliche_sorge_verwirkt(ehe, ueberlebender, a);
+        then aufhebung_durch_abkoemmling_beantragbar(ehe, a, 4);
+    }
+}
+
+@source(BGB_P1496) {
+    rule WirkungDerAufhebungFuerAlleAbkoemmlinge(ehe: Ehe, t: Date) strict {
+        label de official "Die Aufhebung der fortgesetzten Gütergemeinschaft tritt in den Fällen des § 1495 mit der Rechtskraft der richterlichen Entscheidung ein; sie tritt für ALLE Abkömmlinge ein, auch wenn die Entscheidung auf den Antrag eines der Abkömmlinge ergangen ist (§ 1496)";
+        label en unofficial "The termination takes effect for ALL descendants even if obtained by one of them (§ 1496)";
+        when aufhebungsentscheidung_guetergemeinschaft_rechtskraeftig_am(ehe, t);
+        then aufhebung_wirkt_fuer_alle_abkoemmlinge(ehe);
+    }
+    rule BeendigungDurchRichterlicheAufhebung(ehe: Ehe, ueberlebender: Person, t: Date) strict {
+        label de official "Mit der Rechtskraft der Entscheidung ist die fortgesetzte Gütergemeinschaft beendet (§ 1496 Satz 1)";
+        label en unofficial "Upon the decision becoming final the continued community has ended (§ 1496 sentence 1)";
+        when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender)
+         and aufhebungsentscheidung_guetergemeinschaft_rechtskraeftig_am(ehe, t);
+        then fortgesetzte_guetergemeinschaft_beendet(ehe, "§ 1496: richterliche Aufhebung auf Antrag eines Abkömmlings");
+    }
+}
+
+@source(BGB_P1497)
+rule AuseinandersetzungNachDerBeendigung(ehe: Ehe, ueberlebender: Person, grund: Text) strict {
+    label de official "Nach der Beendigung der fortgesetzten Gütergemeinschaft setzen sich der überlebende Ehegatte und die Abkömmlinge über das Gesamtgut auseinander; bis zur Auseinandersetzung bestimmt sich ihr Rechtsverhältnis nach den §§ 1419, 1472, 1473 (§ 1497)";
+    label en unofficial "After the continued community ends, the survivor and the descendants divide the community property (§ 1497)";
+    when fortgesetzte_guetergemeinschaft_beendet(ehe, grund) and fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender);
+    then auseinandersetzung_mit_den_abkoemmlingen_geschuldet(ehe, ueberlebender);
+}
+
+@source(BGB_P1498)
+rule DurchfuehrungDerAuseinandersetzungEntsprechend(ehe: Ehe, ueberlebender: Person) strict {
+    label de official "Auf die Auseinandersetzung sind die §§ 1475, 1476, § 1477 Abs. 1, die §§ 1479, 1480 und § 1481 Abs. 1, 3 anzuwenden; an die Stelle des allein verwaltenden Ehegatten tritt der überlebende Ehegatte, an die Stelle des anderen Ehegatten treten die anteilsberechtigten Abkömmlinge; die Verpflichtung des § 1476 Abs. 2 Satz 2 besteht nur für den überlebenden Ehegatten (§ 1498)";
+    label en unofficial "§§ 1475, 1476, 1477 (1), 1479, 1480 and 1481 (1), (3) apply, with the survivor in place of the sole administrator (§ 1498)";
+    when auseinandersetzung_mit_den_abkoemmlingen_geschuldet(ehe, ueberlebender);
+    then auseinandersetzung_nach_1475_bis_1481_entsprechend(ehe);
+}
+
+@source(BGB_P1499)
+rule LastenDesUeberlebendenBeiDerAuseinandersetzung(ehe: Ehe, ueberlebender: Person, vb: Verbindlichkeit) strict {
+    label de official "Bei der Auseinandersetzung fallen dem überlebenden Ehegatten die ihm beim Eintritt obliegenden Gesamtgutsverbindlichkeiten, für die das eheliche Gesamtgut nicht haftete oder die ihm im Verhältnis der Ehegatten zur Last fielen (Nr. 1), die nach dem Eintritt entstandenen entsprechenden Verbindlichkeiten (Nr. 2) und übermäßige Ausstattungen (Nr. 3) zur Last (§ 1499)";
+    label en unofficial "On the division the liabilities named in § 1499 nos. 1 to 3 fall to the surviving spouse";
+    when auseinandersetzung_mit_den_abkoemmlingen_geschuldet(ehe, ueberlebender)
+     and verbindlichkeit_des_ueberlebenden(ehe, vb);
+    then faellt_dem_ueberlebenden_zur_last(ehe, ueberlebender, vb);
+}
+
+@source(BGB_P1500)
+rule AnrechnungAufDenAnteilDerAbkoemmlinge(ehe: Ehe, a: Person, vb: Verbindlichkeit, verstorbener: Person) strict {
+    label de official "Die anteilsberechtigten Abkömmlinge müssen sich Verbindlichkeiten des verstorbenen Ehegatten, die diesem im Verhältnis der Ehegatten zueinander zur Last fielen, bei der Auseinandersetzung auf ihren Anteil insoweit anrechnen lassen, als der überlebende Ehegatte vom Erben keine Deckung erlangen konnte; in gleicher Weise haben sie sich anrechnen zu lassen, was der verstorbene Ehegatte zum Gesamtgut zu ersetzen hatte (§ 1500)";
+    label en unofficial "The share-entitled descendants must allow the deceased spouse's liabilities to be set off against their share (§ 1500)";
+    when anteilsberechtigter_abkoemmling(ehe, a)
+     and verbindlichkeit_faellt_dem_ehegatten_zur_last(ehe, verstorbener, vb)
+     and ehe_durch_tod_aufgeloest(ehe, verstorbener);
+    then abkoemmlinge_muessen_sich_anrechnen_lassen(ehe, a, vb);
+}
+
+@source(BGB_P1501)
+rule EinrechnungDerAbfindung(ehe: Ehe, a: Person, wert: Money) strict {
+    label de official "Ist einem anteilsberechtigten Abkömmling für den Verzicht auf seinen Anteil eine Abfindung aus dem Gesamtgut gewährt worden, so wird sie bei der Auseinandersetzung in das Gesamtgut eingerechnet und auf die den Abkömmlingen gebührende Hälfte angerechnet; eine abweichende notariell beurkundete Vereinbarung geht vor (§ 1501)";
+    label en unofficial "A settlement granted for a renunciation is included in the community property and set off against the descendants' half (§ 1501)";
+    when abfindung_fuer_den_verzicht_gewaehrt(ehe, a, wert)
+     and not_known(abweichende_vereinbarung_ueber_die_abfindung(ehe));
+    then abfindung_wird_eingerechnet(ehe, a, wert);
+}
+
+@source(BGB_P1502)
+rule UebernahmerechtDesUeberlebenden(ehe: Ehe, ueberlebender: Person) strict {
+    label de official "Der überlebende Ehegatte ist berechtigt, das Gesamtgut oder einzelne dazu gehörende Gegenstände gegen Ersatz des Wertes zu übernehmen; das Recht geht nicht auf den Erben über, und es steht ihm nicht zu, wenn die fortgesetzte Gütergemeinschaft auf Grund des § 1495 aufgehoben worden ist (§ 1502 Abs. 1, 2)";
+    label en unofficial "The surviving spouse may take over the community property against replacement of value; the right does not pass to his heir and is lost on a § 1495 termination (§ 1502)";
+    when uebernahme_verlangt(ehe, ueberlebender)
+     and not_known(aufhebung_durch_abkoemmling_beantragbar(ehe, ueberlebender, 1));
+    then uebernahmerecht_des_ueberlebenden(ehe, ueberlebender);
+}
+
+@source(BGB_P1503)
+rule TeilungUnterDenAbkoemmlingen(ehe: Ehe, a: Person, haelfte: Money, z: Integer, n: Integer) strict {
+    label de official "Mehrere anteilsberechtigte Abkömmlinge teilen die ihnen zufallende Hälfte des Gesamtguts nach dem Verhältnis der Anteile, zu denen sie im Falle der gesetzlichen Erbfolge als Erben des verstorbenen Ehegatten berufen sein würden, wenn dieser erst zur Zeit der Beendigung gestorben wäre (§ 1503 Abs. 1); das Vorempfangene kommt zur Ausgleichung (Abs. 2)";
+    label en unofficial "Several share-entitled descendants divide their half in the proportion of the shares to which they would be called on intestacy (§ 1503 (1))";
+    when anteilsberechtigter_abkoemmling(ehe, a) and haelfte_der_abkoemmlinge(ehe, haelfte)
+     and erbquote_des_abkoemmlings(ehe, a, z, n);
+    then anteil_des_abkoemmlings_am_gesamtgut(ehe, a, div_round(haelfte * z, n * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P1504)
+rule HaftungsausgleichUnterAbkoemmlingen(ehe: Ehe, a: Person, vb: Verbindlichkeit) strict {
+    label de official "Soweit die anteilsberechtigten Abkömmlinge nach § 1480 den Gesamtgutsgläubigern haften, sind sie im Verhältnis zueinander nach der Größe ihres Anteils an dem Gesamtgut verpflichtet; die Verpflichtung beschränkt sich auf die ihnen zugeteilten Gegenstände, und die §§ 1990, 1991 finden entsprechende Anwendung (§ 1504)";
+    label en unofficial "In so far as the descendants are liable under § 1480, they are obliged among themselves in proportion to their shares (§ 1504)";
+    when anteilsberechtigter_abkoemmling(ehe, a) and haftung_nach_1480_besteht(ehe, a, vb);
+    then haftung_nach_der_groesse_des_anteils(ehe, a, vb);
+}
+
+@source(BGB_P1505)
+rule ErgaenzungDesAnteils(ehe: Ehe, a: Person, wert: Money) strict {
+    label de official "Die Vorschriften über das Recht auf Ergänzung des Pflichtteils finden zugunsten eines anteilsberechtigten Abkömmlings entsprechende Anwendung; an die Stelle des Erbfalls tritt die Beendigung der fortgesetzten Gütergemeinschaft, als gesetzlicher Erbteil gilt der gebührende Anteil, als Pflichtteil die HÄLFTE seines Wertes (§ 1505)";
+    label en unofficial "The rules on supplementing the compulsory share apply in favour of a share-entitled descendant; the compulsory share is HALF the value of his share (§ 1505)";
+    when anteilsberechtigter_abkoemmling(ehe, a) and wert_des_anteils_des_abkoemmlings(ehe, a, wert);
+    then pflichtteilsaehnlicher_anspruch_des_abkoemmlings(ehe, a, div_round(wert, 2 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P1506)
+rule Anteilsunwuerdigkeit(ehe: Ehe, a: Person) strict {
+    label de official "Ist ein gemeinschaftlicher Abkömmling erbunwürdig, so ist er auch des Anteils an dem Gesamtgut unwürdig; die Vorschriften über die Erbunwürdigkeit finden entsprechende Anwendung (§ 1506)";
+    label en unofficial "A common descendant unworthy to inherit is also unworthy of the share in the community property (§ 1506)";
+    when abkoemmling_erbunwuerdig(ehe, a);
+    then anteilsunwuerdig(ehe, a);
+}
+
+@source(BGB_P1507)
+rule ZeugnisUeberDieFortsetzung(ehe: Ehe, ueberlebender: Person) strict {
+    label de official "Das Nachlassgericht hat dem überlebenden Ehegatten auf Antrag ein Zeugnis über die Fortsetzung der Gütergemeinschaft zu erteilen; die Vorschriften über den Erbschein finden entsprechende Anwendung (§ 1507)";
+    label en unofficial "The probate court must issue the surviving spouse a certificate of the continuation on application (§ 1507)";
+    when fortgesetzte_guetergemeinschaft_eingetreten(ehe, ueberlebender) and zeugnis_beantragt(ehe, ueberlebender);
+    then zeugnis_zu_erteilen(ehe, ueberlebender);
+}
+
+@source(BGB_P1509)
+rule AusschliessungDurchLetztwilligeVerfuegung(ehe: Ehe, ausschliessender: Person, anderer: Person) strict {
+    label de official "Jeder Ehegatte kann für den Fall, dass die Ehe durch seinen Tod aufgelöst wird, die Fortsetzung der Gütergemeinschaft durch letztwillige Verfügung ausschließen, wenn er berechtigt ist, dem anderen Ehegatten den Pflichtteil zu entziehen oder die Aufhebung der Gütergemeinschaft zu beantragen; auf die Ausschließung finden die Vorschriften über die Entziehung des Pflichtteils entsprechende Anwendung (§ 1509)";
+    label en unofficial "Each spouse may exclude the continuation by testamentary disposition where entitled to withdraw the other's compulsory share or to apply for termination (§ 1509)";
+    when fortsetzung_letztwillig_ausgeschlossen(ehe, ausschliessender)
+     and anderer_ehegatte(ehe, ausschliessender, anderer)
+     and zur_pflichtteilsentziehung_berechtigt(ehe, ausschliessender, anderer);
+    then fortsetzung_ausgeschlossen(ehe, ausschliessender);
+}
+
+@source(BGB_P1510)
+rule WirkungDerAusschliessung(ehe: Ehe, ausschliessender: Person) strict {
+    label de official "Wird die Fortsetzung der Gütergemeinschaft ausgeschlossen, so gilt das Gleiche wie im Falle des § 1482: der Anteil des verstorbenen Ehegatten am Gesamtgut gehört zum Nachlass (§ 1510)";
+    label en unofficial "Where the continuation is excluded, the same applies as in § 1482 (§ 1510)";
+    when fortsetzung_ausgeschlossen(ehe, ausschliessender);
+    then anteil_am_gesamtgut_faellt_in_den_nachlass(ehe, ausschliessender);
+}
+
+@source(BGB_P1511) {
+    rule AusschliessungEinesAbkoemmlings(ehe: Ehe, ausschliessender: Person, a: Person) strict {
+        label de official "Jeder Ehegatte kann für den Fall, dass die Ehe durch seinen Tod aufgelöst wird, einen gemeinschaftlichen Abkömmling von der fortgesetzten Gütergemeinschaft durch letztwillige Verfügung ausschließen (§ 1511 Abs. 1)";
+        label en unofficial "Each spouse may exclude a common descendant from the continued community by testamentary disposition ((1))";
+        when abkoemmling_letztwillig_ausgeschlossen(ehe, ausschliessender, a)
+         and zustimmung_des_anderen_ehegatten_notariell(ehe, ausschliessender);
+        then abkoemmling_ausgeschlossen(ehe, a);
+    }
+    rule ZahlungsanspruchDesAusgeschlossenen(ehe: Ehe, a: Person, wert: Money) strict {
+        label de official "Der ausgeschlossene Abkömmling kann, unbeschadet seines Erbrechts, aus dem Gesamtgut der fortgesetzten Gütergemeinschaft die Zahlung des Betrags verlangen, der ihm von dem Gesamtgut der ehelichen Gütergemeinschaft als Pflichtteil gebühren würde, wenn die fortgesetzte Gütergemeinschaft nicht eingetreten wäre (§ 1511 Abs. 2)";
+        label en unofficial "The excluded descendant may demand payment of the amount which would be his compulsory share ((2))";
+        when abkoemmling_ausgeschlossen(ehe, a) and wert_des_anteils_des_abkoemmlings(ehe, a, wert);
+        then zahlungsanspruch_des_ausgeschlossenen_abkoemmlings(ehe, a, div_round(wert, 2 * 1.0, 2, "HALF_UP"));
+    }
+}
+
+@source(BGB_P1512)
+rule HerabsetzungDesAnteils(ehe: Ehe, ausschliessender: Person, a: Person) strict {
+    label de official "Jeder Ehegatte kann für den Fall, dass mit seinem Tode die fortgesetzte Gütergemeinschaft eintritt, den einem anteilsberechtigten Abkömmling gebührenden Anteil am Gesamtgut durch letztwillige Verfügung bis auf die HÄLFTE herabsetzen (§ 1512)";
+    label en unofficial "Each spouse may reduce by testamentary disposition the share due to a descendant to at most ONE HALF (§ 1512)";
+    when anteil_letztwillig_herabgesetzt(ehe, ausschliessender, a)
+     and zustimmung_des_anderen_ehegatten_notariell(ehe, ausschliessender);
+    then anteil_herabgesetzt(ehe, a);
+}
+
+@source(BGB_P1513)
+rule EntziehungDesAnteils(ehe: Ehe, ausschliessender: Person, a: Person) strict {
+    label de official "Jeder Ehegatte kann einem anteilsberechtigten Abkömmling den ihm gebührenden Anteil am Gesamtgut durch letztwillige Verfügung entziehen, wenn er berechtigt ist, dem Abkömmling den Pflichtteil zu entziehen; § 2336 Abs. 2, 3 findet entsprechende Anwendung (§ 1513 Abs. 1)";
+    label en unofficial "Each spouse may withdraw a descendant's share by testamentary disposition where entitled to withdraw his compulsory share ((1))";
+    when anteil_letztwillig_entzogen(ehe, ausschliessender, a)
+     and zur_pflichtteilsentziehung_berechtigt(ehe, ausschliessender, a)
+     and zustimmung_des_anderen_ehegatten_notariell(ehe, ausschliessender);
+    then anteil_entzogen(ehe, a);
+}
+
+@source(BGB_P1514)
+rule ZuwendungDesEntzogenenBetrags(ehe: Ehe, ausschliessender: Person, dritter: Person) strict {
+    label de official "Jeder Ehegatte kann den Betrag, den er nach § 1512 oder nach § 1513 Abs. 1 einem Abkömmling entzieht, auch einem Dritten durch letztwillige Verfügung zuwenden (§ 1514)";
+    label en unofficial "Each spouse may allocate the amount withdrawn under § 1512 or § 1513 (1) to a third party (§ 1514)";
+    when entzogener_betrag_einem_dritten_zugewendet(ehe, ausschliessender, dritter)
+     and zustimmung_des_anderen_ehegatten_notariell(ehe, ausschliessender);
+    then entzogener_betrag_zugewendet(ehe, dritter);
+}
+
+@source(BGB_P1515)
+rule UebernahmerechtDurchLetztwilligeVerfuegung(ehe: Ehe, ausschliessender: Person, beguenstigter: Person) strict {
+    label de official "Jeder Ehegatte kann durch letztwillige Verfügung anordnen, dass ein anteilsberechtigter Abkömmling das Recht haben soll, bei der Teilung das Gesamtgut oder einzelne Gegenstände gegen Ersatz des Wertes zu übernehmen; gehört ein Landgut dazu, so kann es mit dem Ertragswert angesetzt werden, und § 2049 findet Anwendung; das Landgutübernahmerecht kann auch dem überlebenden Ehegatten eingeräumt werden (§ 1515)";
+    label en unofficial "Each spouse may order that a share-entitled descendant may take over the property against replacement of value; a farm may be valued at its yield value (§ 1515)";
+    when uebernahmerecht_letztwillig_angeordnet(ehe, ausschliessender, beguenstigter)
+     and zustimmung_des_anderen_ehegatten_notariell(ehe, ausschliessender);
+    then uebernahmerecht_angeordnet(ehe, beguenstigter);
+}
+
+@source(BGB_P1516) {
+    rule ZustimmungDesAnderenEhegatten(ehe: Ehe, ausschliessender: Person, zustimmender: Person) strict {
+        label de official "Zur Wirksamkeit der in den §§ 1511 bis 1515 bezeichneten Verfügungen eines Ehegatten ist die Zustimmung des anderen Ehegatten erforderlich; sie kann nicht durch einen Vertreter erteilt werden, bedarf der notariellen Beurkundung und ist unwiderruflich (§ 1516 Abs. 1, 2)";
+        label en unofficial "The dispositions of §§ 1511 to 1515 require the other spouse's consent, which must be notarised and is irrevocable ((1), (2))";
+        when anderer_ehegatte(ehe, ausschliessender, zustimmender)
+         and zustimmung_des_anderen_ehegatten_notariell(ehe, ausschliessender);
+        then verfuegung_wirksam(ehe, ausschliessender);
+    }
+    rule VerfuegungenImGemeinschaftlichenTestament(ehe: Ehe, ausschliessender: Person) strict {
+        label de official "Die Ehegatten können die in den §§ 1511 bis 1515 bezeichneten Verfügungen auch in einem gemeinschaftlichen Testament treffen (§ 1516 Abs. 3)";
+        label en unofficial "The spouses may also make the dispositions of §§ 1511 to 1515 in a joint will ((3))";
+        when gemeinschaftliches_testament(ehe) and ehegatte(ehe, ausschliessender);
+        then verfuegung_wirksam(ehe, ausschliessender);
+    }
+}
+
+@source(BGB_P1517)
+rule VerzichtsvertragDesAbkoemmlings(ehe: Ehe, a: Person, partei: Person, zustimmender: Person) strict {
+    label de official "Zur Wirksamkeit eines Vertrags, durch den ein gemeinschaftlicher Abkömmling einem der Ehegatten gegenüber auf seinen Anteil am Gesamtgut der fortgesetzten Gütergemeinschaft verzichtet oder durch den ein solcher Verzicht aufgehoben wird, ist die Zustimmung des anderen Ehegatten erforderlich; die für den Erbverzicht geltenden Vorschriften finden entsprechende Anwendung (§ 1517)";
+    label en unofficial "A contract by which a common descendant renounces his share requires the other spouse's consent; the rules on renunciation of inheritance apply (§ 1517)";
+    when verzichtsvertrag_des_abkoemmlings(ehe, a, partei) and anderer_ehegatte(ehe, partei, zustimmender)
+     and zustimmung_des_anderen_ehegatten_notariell(ehe, partei);
+    then verzichtsvertrag_wirksam(ehe, a);
+}
+
+@source(BGB_P1518) {
+    rule ZwingendesRecht(ehe: Ehe, ausschliessender: Person) strict {
+        label de official "Anordnungen, die mit den Vorschriften der §§ 1483 bis 1517 in Widerspruch stehen, können von den Ehegatten weder durch letztwillige Verfügung noch durch Vertrag getroffen werden (§ 1518 Satz 1)";
+        label en unofficial "Dispositions contradicting §§ 1483 to 1517 cannot be made either by will or by contract (§ 1518 sentence 1)";
+        when anordnung_widerspricht_den_1483_bis_1517(ehe, ausschliessender);
+        then anordnung_unzulaessig(ehe, ausschliessender);
+    }
+    rule AufhebungDesFortsetzungsvertragsBleibtZulaessig(ehe: Ehe, ueberlebender: Person) strict {
+        label de official "Das Recht der Ehegatten, den Vertrag, durch den sie die Fortsetzung der Gütergemeinschaft vereinbart haben, durch Ehevertrag aufzuheben, bleibt unberührt (§ 1518 Satz 2)";
+        label en unofficial "The spouses' right to cancel the continuation agreement by marriage contract is unaffected (§ 1518 sentence 2)";
+        when fortsetzungsvertrag_durch_ehevertrag_aufgehoben(ehe) and ehegatte(ehe, ueberlebender);
+        then fortgesetzte_guetergemeinschaft_beendet(ehe, "§ 1518 Satz 2: Aufhebung des Fortsetzungsvertrags durch Ehevertrag");
+    }
+}

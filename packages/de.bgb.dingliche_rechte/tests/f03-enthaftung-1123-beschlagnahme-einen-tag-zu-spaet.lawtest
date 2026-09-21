@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1123 Abs. 2 Satz 1 — andere Seite derselben Grenze: Die Beschlagnahme erfolgt am 16.03.2026, einen Tag nach dem Ablauf der Jahresfrist. Die Forderung ist bereits am 15.03.2026 frei geworden.
+test "§ 1123 Abs. 2 Satz 1: Beschlagnahme einen Tag nach dem Ablauf — die Forderung ist bereits frei" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:f03:hyp"), entity_ref("urn:de:bgb:dr:f03:grundstueck")) { origin case_input; }
+        assert "f2": grundstueck_vermietet_oder_verpachtet(entity_ref("urn:de:bgb:dr:f03:grundstueck")) { origin case_input; }
+        assert "f3": gegenstand_des_grundstuecks(entity_ref("urn:de:bgb:dr:f03:miete"), entity_ref("urn:de:bgb:dr:f03:grundstueck")) { origin case_input; }
+        assert "f4": miet_oder_pachtforderung(entity_ref("urn:de:bgb:dr:f03:miete")) { origin case_input; }
+        assert "f5": faellig_geworden_am(entity_ref("urn:de:bgb:dr:f03:miete"), @2025-03-15) { origin adjudicated; }
+        assert "f6": enthaftungsfrist(entity_ref("urn:de:bgb:dr:f03:miete"), entity_ref("urn:de:bgb:dr:f03:frist")) { origin case_input; }
+        assert "f7": beschlagnahme_am(entity_ref("urn:de:bgb:dr:f03:miete"), @2026-03-16) { origin adjudicated; }
+    }
+    evaluate truth(enthaftung_eingetreten_am(entity_ref("urn:de:bgb:dr:f03:miete"), @2026-03-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

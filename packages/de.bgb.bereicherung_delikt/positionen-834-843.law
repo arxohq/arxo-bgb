@@ -1,0 +1,41 @@
+@source(BGB_P834)
+rule PositionHaftung834(h: Handlung, a: Person, d: Person, tag: Date) defeasible {
+    label de official "Der vertragliche Tieraufseher hat dem geschädigten Dritten den Schaden zu ersetzen (§ 834)";
+    label en unofficial "The contractual animal supervisor must compensate the injured third party (§ 834)";
+    when tieraufseher_durch_vertrag(h, a) and geschaedigter_dritter(h, d);
+    when handlungstag(h, tag);
+    then duty Duty834Tieraufseher {
+        bearer a;
+        beneficiary d;
+        achieve haftung_834(h, a, d) during [tag, infinity);
+    };
+}
+
+@source(BGB_P842)
+rule PositionUmfang842(h: Handlung, v: Person, tag: Date) defeasible {
+    label de official "Die Ersatzpflicht umfasst die Erwerbs- und Fortkommensnachteile des Verletzten (§ 842)";
+    label en unofficial "The compensation duty covers the injured person's livelihood and advancement losses (§ 842)";
+    when gegen_die_person_gerichtete_handlung(h)
+     and nachteil_fuer_erwerb_oder_fortkommen(h)
+     and verletzter(h, v);
+    when handlungstag(h, tag);
+    then duty Duty842Erwerbsnachteile {
+        bearer v;
+        beneficiary v;
+        achieve ersatzpflicht_erstreckt_sich_auf_erwerbsnachteile(h) during [tag, infinity);
+    };
+}
+
+@source(BGB_P843)
+rule PositionGeldrente843(h: Handlung, v: Person, betrag: Money, tag: Date) defeasible {
+    label de official "Dem Verletzten ist durch eine Geldrente Schadensersatz zu leisten (§ 843)";
+    label en unofficial "The injured person must receive compensation by a money annuity (§ 843)";
+    when erwerbsfaehigkeit_aufgehoben_oder_gemindert(h)
+     and verletzter(h, v) and rentenbetrag(h, betrag);
+    when handlungstag(h, tag);
+    then duty Duty843Geldrente {
+        bearer v;
+        beneficiary v;
+        achieve geldrente(h, v, betrag) during [tag, infinity);
+    };
+}

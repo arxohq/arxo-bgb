@@ -1,0 +1,1029 @@
+// ABSCHNITT 3 TITEL 5: RÜCKTRITT (§§ 346–354) UND WIDERRUFSRECHT BEI
+// VERBRAUCHERVERTRÄGEN (§§ 355–361)
+//
+// DIE VIER FRISTEN DIESES TITELS (Zeilen in DEADLINES.json, BG-04):
+//
+// 1. WIDERRUFSFRIST § 355 Abs. 2: 14 Tage, Beginn mit Vertragsschluss, soweit
+//    nichts anderes bestimmt ist. Tagesfrist: der Tag des Ereignisses zählt
+//    nicht (§ 187 Abs. 1), Ende mit dem Ablauf des letzten Tages (§ 188
+//    Abs. 1), § 193 als Roll der Politik `BGB_SCHULDRECHT_AT_TAG`.
+// 2. BEGINN BEI WAREN § 356 Abs. 2 Nr. 1 Buchstabe a: der Erhalt der Ware
+//    tritt an die Stelle des Vertragsschlusses; bei getrennter Lieferung die
+//    letzte Ware (Buchstabe b), bei Teilsendungen das letzte Stück (c), bei
+//    regelmäßiger Lieferung die erste Ware (d).
+// 3. BEGINNSPERRE § 356 Abs. 3: die Frist beginnt nicht vor der Unterrichtung
+//    nach Artikel 246a EGBGB. Der Tag der Unterrichtung ist Eingang des Falls
+//    (EGBGB ist nicht Gegenstand dieses Pakets — SOURCES.json.external); ist
+//    er später als der Zeitpunkt nach Absatz 2, beginnt die Frist mit ihm.
+// 4. HÖCHSTFRIST § 356 Abs. 4: „spätestens zwölf Monate und 14 Tage nach dem
+//    in Absatz 2 oder § 355 Absatz 2 Satz 2 genannten Zeitpunkt“. Zwei
+//    Schritte unter der KALENDERPOLITIK: zwölf Monate (§ 188 Abs. 2, 3) und
+//    danach 14 Tage; die Verlegung des § 193 rechnet die Regel `Verlegung193`
+//    in `de.bgb.fristen` ausdrücklich (bei kalendarischem Schritt ist der Roll
+//    der Politik verboten). EINE POLITIK JE FALL: die Tagesfrist des § 355 und
+//    die Höchstfrist des § 356 Abs. 4 gehören in getrennte Fälle.
+//
+// Die besonderen Höchstfristen der §§ 356b Abs. 2, 356c Abs. 3 und 4, 356d
+// Abs. 2, 356e und 356f („zwölf Monate und 14 Tage“, bei § 356c Abs. 3 „drei
+// Monate und 14 Tage“) rechnen mit denselben Köpfen; der Fall benennt den
+// Anfangszeitpunkt, den die jeweilige Norm bestimmt.
+//
+// WERTUNGEN DES GERICHTS: die angemessene Frist zur Ausübung des vertraglichen
+// Rücktrittsrechts (§ 350), die Unverzüglichkeit der Aufrechnung nach Rücktritt
+// (§ 352), der Zurückweisung und der Zahlung des Reugelds (§ 353) sowie die
+// Unverzüglichkeit der Rückgewähr (§ 355 Abs. 3 Satz 1) — „unverzüglich“ ist
+// ein bewertendes Merkmal, keine Frist von null Tagen (DECISION-0194).
+
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+// --- § 346 Wirkungen des Rücktritts ----------------------------------------------------------------
+
+pub relation ruecktritt_erklaert(v: Vertrag, teil: Person, tag: Date) kind institutional {
+    key(v);
+    label de official "Der Rücktritt ist durch Erklärung gegenüber dem anderen Teil erfolgt (§ 349)";
+    label en unofficial "withdrawal was declared to the other party (§ 349)";
+}
+pub relation vertragliches_ruecktrittsrecht_vorbehalten(v: Vertrag, teil: Person) kind empirical {
+    label de official "Eine Vertragspartei hat sich vertraglich den Rücktritt vorbehalten (§ 346 Abs. 1)";
+    label en unofficial "a party has contractually reserved a right of withdrawal (§ 346 (1))";
+}
+pub relation rueckgewaehr_der_empfangenen_leistungen(v: Vertrag, teil: Person) kind institutional {
+    label de official "Im Falle des Rücktritts sind die empfangenen Leistungen zurückzugewähren und die gezogenen Nutzungen herauszugeben (§ 346 Abs. 1)";
+    label en unofficial "upon withdrawal the performances received must be returned and the emoluments obtained surrendered (§ 346 (1))";
+}
+pub enum Wertersatzgrund {
+    label de official "Grund, aus dem statt der Rückgewähr Wertersatz zu leisten ist (§ 346 Abs. 2 Satz 1)";
+    label en unofficial "ground for compensation of value instead of return (§ 346 (2) sentence 1)";
+    RueckgewaehrNachNaturAusgeschlossen,
+    VerbrauchtVeraeussertBelastetVerarbeitetUmgestaltet,
+    VerschlechtertOderUntergegangen
+}
+pub relation wertersatzgrund_liegt_vor(v: Vertrag, grund: Wertersatzgrund) kind empirical {
+    label de official "Einer der Gründe des § 346 Abs. 2 Satz 1 liegt vor; die durch die bestimmungsgemäße Ingebrauchnahme entstandene Verschlechterung bleibt außer Betracht (Nr. 3 Halbsatz 2)";
+    label en unofficial "one of the grounds of § 346 (2) sentence 1 exists; deterioration from intended use is left out of account (no. 3)";
+}
+pub relation im_vertrag_bestimmte_gegenleistung(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Im Vertrag bestimmte Gegenleistung; sie ist bei der Berechnung des Wertersatzes zugrunde zu legen (§ 346 Abs. 2 Satz 2)";
+    label en unofficial "counter-performance fixed in the contract; it is the basis for calculating compensation of value (§ 346 (2) sentence 2)";
+}
+pub relation wertersatz(v: Vertrag, betrag: Money) kind institutional {
+    key(v);
+    label de official "Statt der Rückgewähr oder Herausgabe zu leistender Wertersatz (§ 346 Abs. 2)";
+    label en unofficial "compensation of value owed instead of return (§ 346 (2))";
+}
+pub enum WertersatzAusschlussgrund {
+    label de official "Grund, aus dem die Pflicht zum Wertersatz entfällt (§ 346 Abs. 3 Satz 1)";
+    label en unofficial "ground on which the duty to compensate value lapses (§ 346 (3) sentence 1)";
+    MangelZeigteSichErstBeiVerarbeitung,
+    GlaeubigerHatVerschlechterungZuVertreten,
+    EigenuebicheSorgfaltBeiGesetzlichemRuecktrittsrecht
+}
+pub relation wertersatzausschluss_liegt_vor(v: Vertrag, grund: WertersatzAusschlussgrund) kind empirical {
+    label de official "Einer der Gründe des § 346 Abs. 3 Satz 1 liegt vor";
+    label en unofficial "one of the grounds of § 346 (3) sentence 1 exists";
+}
+pub relation wertersatzpflicht_entfaellt(v: Vertrag) kind institutional {
+    label de official "Die Pflicht zum Wertersatz entfällt; eine verbleibende Bereicherung ist herauszugeben (§ 346 Abs. 3)";
+    label en unofficial "the duty to compensate value lapses; any remaining enrichment must be surrendered (§ 346 (3))";
+}
+pub relation schadensersatz_wegen_verletzung_der_rueckgewaehrpflicht(v: Vertrag, teil: Person) kind institutional {
+    label de official "Der Gläubiger kann wegen Verletzung einer Pflicht aus Absatz 1 nach Maßgabe der §§ 280 bis 283 Schadensersatz verlangen (§ 346 Abs. 4)";
+    label en unofficial "the creditor may claim damages under §§ 280 to 283 for breach of a duty under (1) (§ 346 (4))";
+}
+
+@source(BGB_P346)
+rule RueckgewaehrNachRuecktritt(v: Vertrag, teil: Person, tag: Date) strict {
+    label de official "Hat sich eine Vertragspartei vertraglich den Rücktritt vorbehalten oder steht ihr ein gesetzliches Rücktrittsrecht zu, so sind im Falle des Rücktritts die empfangenen Leistungen zurückzugewähren und die gezogenen Nutzungen herauszugeben (§ 346 Abs. 1)";
+    label en unofficial "Where a party has reserved or has a statutory right of withdrawal, upon withdrawal the performances received must be returned and emoluments surrendered (§ 346 (1))";
+    when ruecktrittsrecht(v, teil);
+    when ruecktritt_erklaert(v, teil, tag);
+    then rueckgewaehr_der_empfangenen_leistungen(v, teil);
+}
+
+@source(BGB_P346)
+rule RueckgewaehrNachVertraglichemRuecktritt(v: Vertrag, teil: Person, tag: Date) strict {
+    label de official "Auch der vertraglich vorbehaltene Rücktritt löst die Rückgewähr der empfangenen Leistungen und die Herausgabe der gezogenen Nutzungen aus (§ 346 Abs. 1)";
+    label en unofficial "A contractually reserved withdrawal likewise triggers return of performances and surrender of emoluments (§ 346 (1))";
+    when vertragliches_ruecktrittsrecht_vorbehalten(v, teil);
+    when ruecktritt_erklaert(v, teil, tag);
+    then rueckgewaehr_der_empfangenen_leistungen(v, teil);
+}
+
+@source(BGB_P346)
+rule WertersatzStattRueckgewaehr(v: Vertrag, teil: Person, grund: Wertersatzgrund, betrag: Money) strict {
+    label de official "Statt der Rückgewähr oder Herausgabe hat der Schuldner Wertersatz zu leisten, soweit einer der in Absatz 2 Satz 1 genannten Gründe vorliegt; ist im Vertrag eine Gegenleistung bestimmt, ist sie bei der Berechnung des Wertersatzes zugrunde zu legen (§ 346 Abs. 2)";
+    label en unofficial "Instead of return the debtor must compensate value where one of the grounds of (2) sentence 1 applies; a counter-performance fixed in the contract is the basis of the calculation (§ 346 (2))";
+    when rueckgewaehr_der_empfangenen_leistungen(v, teil);
+    when wertersatzgrund_liegt_vor(v, grund);
+    when im_vertrag_bestimmte_gegenleistung(v, betrag);
+    then wertersatz(v, betrag);
+}
+
+@source(BGB_P346)
+rule WertersatzpflichtEntfaellt(v: Vertrag, grund: WertersatzAusschlussgrund) strict {
+    label de official "Die Pflicht zum Wertersatz entfällt in den Fällen des § 346 Abs. 3 Satz 1; eine verbleibende Bereicherung ist herauszugeben (Satz 2)";
+    label en unofficial "The duty to compensate value lapses in the cases of § 346 (3) sentence 1; a remaining enrichment must be surrendered (sentence 2)";
+    when wertersatzausschluss_liegt_vor(v, grund);
+    then wertersatzpflicht_entfaellt(v);
+}
+
+@source(BGB_P346)
+rule SchadensersatzWegenVerletzungDerRueckgewaehrpflicht(v: Vertrag, teil: Person) strict {
+    label de official "Der Gläubiger kann wegen Verletzung einer Pflicht aus Absatz 1 nach Maßgabe der §§ 280 bis 283 Schadensersatz verlangen (§ 346 Abs. 4)";
+    label en unofficial "The creditor may claim damages under §§ 280 to 283 for breach of a duty under (1) (§ 346 (4))";
+    when rueckgewaehr_der_empfangenen_leistungen(v, teil);
+    when pflichtverletzung_festgestellt(v, teil);
+    then schadensersatz_wegen_verletzung_der_rueckgewaehrpflicht(v, teil);
+}
+
+// --- §§ 347–354 --------------------------------------------------------------------------------------
+
+pub relation nutzungen_entgegen_ordnungsmaessiger_wirtschaft_nicht_gezogen(v: Vertrag, teil: Person) kind empirical {
+    label de official "Der Schuldner zieht Nutzungen entgegen den Regeln einer ordnungsmäßigen Wirtschaft nicht, obwohl ihm das möglich gewesen wäre (§ 347 Abs. 1 Satz 1)";
+    label en unofficial "the debtor fails to take emoluments contrary to the rules of proper management although he could have (§ 347 (1) sentence 1)";
+}
+pub relation wertersatz_fuer_nicht_gezogene_nutzungen(v: Vertrag, teil: Person) kind institutional {
+    label de official "Der Schuldner ist dem Gläubiger zum Wertersatz verpflichtet; im Falle eines gesetzlichen Rücktrittsrechts hat der Berechtigte nur für die eigenübliche Sorgfalt einzustehen (§ 347 Abs. 1)";
+    label en unofficial "the debtor must compensate the value; under a statutory right of withdrawal the entitled person answers only for customary care (§ 347 (1))";
+}
+pub relation notwendige_verwendungen(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Notwendige Verwendungen des Schuldners auf den Gegenstand (§ 347 Abs. 2 Satz 1)";
+    label en unofficial "necessary outlays of the debtor on the object (§ 347 (2) sentence 1)";
+}
+pub relation ersatz_notwendiger_verwendungen(v: Vertrag, betrag: Money) kind institutional {
+    key(v);
+    label de official "Gibt der Schuldner den Gegenstand zurück, leistet er Wertersatz oder ist seine Wertersatzpflicht nach § 346 Abs. 3 Nr. 1 oder 2 ausgeschlossen, so sind ihm notwendige Verwendungen zu ersetzen (§ 347 Abs. 2 Satz 1)";
+    label en unofficial "where the debtor returns the object, compensates its value or is released under § 346 (3) nos. 1, 2, his necessary outlays must be reimbursed (§ 347 (2) sentence 1)";
+}
+pub relation ruecktrittsverpflichtungen_zug_um_zug(v: Vertrag) kind institutional {
+    label de official "Die sich aus dem Rücktritt ergebenden Verpflichtungen der Parteien sind Zug um Zug zu erfüllen; §§ 320, 322 finden entsprechende Anwendung (§ 348)";
+    label en unofficial "the duties arising from withdrawal are to be performed concurrently; §§ 320, 322 apply accordingly (§ 348)";
+}
+@source(BGB_P350)
+pub external judgment relation frist_zur_ausuebung_des_ruecktritts_angemessen(v: Vertrag, ende: Date) {
+    authority Court;
+    label de official "§ 350. Das Gericht hat festgestellt, dass die dem Berechtigten für die Ausübung des vertraglichen Rücktrittsrechts bestimmte Frist angemessen ist und mit dem Ablauf dieses Tages endet";
+    label en unofficial "§ 350. The court found the period fixed for exercising the contractual right of withdrawal reasonable, ending at the close of that day";
+}
+pub relation ruecktritt_vor_fristablauf_nicht_erklaert(v: Vertrag) kind empirical {
+    label de official "Der Rücktritt ist vor dem Ablauf der Frist nicht erklärt worden (§ 350 Satz 2)";
+    label en unofficial "withdrawal was not declared before the period expired (§ 350 sentence 2)";
+}
+pub relation ruecktrittsrecht_erloschen(v: Vertrag, teil: Person) kind institutional {
+    label de official "Das Rücktrittsrecht erlischt (§ 350 Satz 2, § 351 Satz 2)";
+    label en unofficial "the right of withdrawal lapses (§ 350 sentence 2, § 351 sentence 2)";
+}
+pub relation mehrere_beteiligte_auf_einer_seite(v: Vertrag) kind empirical {
+    label de official "Bei dem Vertrag sind auf der einen oder der anderen Seite mehrere beteiligt (§ 351 Satz 1)";
+    label en unofficial "several persons are involved on one side of the contract (§ 351 sentence 1)";
+}
+pub relation ruecktrittsrecht_nur_von_allen_und_gegen_alle(v: Vertrag) kind institutional {
+    label de official "Das Rücktrittsrecht kann nur von allen und gegen alle ausgeübt werden; erlischt es für einen der Berechtigten, so erlischt es auch für die übrigen (§ 351)";
+    label en unofficial "the right of withdrawal may be exercised only by all and against all; if it lapses for one, it lapses for the others (§ 351)";
+}
+pub relation befreiung_durch_aufrechnung_moeglich_gewesen(v: Vertrag, teil: Person) kind empirical {
+    label de official "Der Schuldner konnte sich von der Verbindlichkeit durch Aufrechnung befreien (§ 352)";
+    label en unofficial "the debtor could have discharged the obligation by set-off (§ 352)";
+}
+@source(BGB_P352)
+pub external judgment relation aufrechnung_unverzueglich_nach_ruecktritt_erklaert(v: Vertrag, teil: Person) {
+    authority Court;
+    label de official "§ 352. Das Gericht hat festgestellt, dass der Schuldner die Aufrechnung unverzüglich nach dem Rücktritt erklärt hat";
+    label en unofficial "§ 352. The court found that the debtor declared the set-off without undue delay after the withdrawal";
+}
+pub relation ruecktritt_unwirksam(v: Vertrag) kind institutional {
+    label de official "Der Rücktritt wird unwirksam (§ 352) beziehungsweise ist unwirksam (§ 353 Satz 1)";
+    label en unofficial "the withdrawal becomes ineffective (§ 352) or is ineffective (§ 353 sentence 1)";
+}
+pub relation reugeld_vorbehalten(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Der Rücktritt ist gegen Zahlung eines Reugelds vorbehalten (§ 353 Satz 1)";
+    label en unofficial "withdrawal is reserved against payment of forfeit money (§ 353 sentence 1)";
+}
+pub relation reugeld_nicht_vor_oder_bei_der_erklaerung_entrichtet(v: Vertrag) kind empirical {
+    label de official "Das Reugeld ist nicht vor oder bei der Erklärung entrichtet worden (§ 353 Satz 1)";
+    label en unofficial "the forfeit money was not paid before or upon the declaration (§ 353 sentence 1)";
+}
+@source(BGB_P353)
+pub external judgment relation erklaerung_unverzueglich_zurueckgewiesen(v: Vertrag) {
+    authority Court;
+    label de official "§ 353 Satz 1. Das Gericht hat festgestellt, dass der andere Teil die Erklärung aus diesem Grunde unverzüglich zurückgewiesen hat";
+    label en unofficial "§ 353 sentence 1. The court found that the other party rejected the declaration without undue delay on that ground";
+}
+pub relation verwirkungsklausel_vereinbart(v: Vertrag, schuldner: Person) kind empirical {
+    label de official "Der Vertrag ist mit dem Vorbehalt geschlossen, dass der Schuldner seiner Rechte aus dem Vertrag verlustig sein soll, wenn er seine Verbindlichkeit nicht erfüllt (§ 354)";
+    label en unofficial "the contract was concluded with the proviso that the debtor forfeits his rights if he does not perform (§ 354)";
+}
+pub relation verbindlichkeit_nicht_erfuellt(v: Vertrag, schuldner: Person) kind empirical {
+    label de official "Der Schuldner erfüllt seine Verbindlichkeit nicht (§ 354)";
+    label en unofficial "the debtor does not perform his obligation (§ 354)";
+}
+
+@source(BGB_P347)
+rule WertersatzFuerNichtGezogeneNutzungen(v: Vertrag, teil: Person) strict {
+    label de official "Zieht der Schuldner Nutzungen entgegen den Regeln einer ordnungsmäßigen Wirtschaft nicht, obwohl ihm das möglich gewesen wäre, so ist er dem Gläubiger zum Wertersatz verpflichtet (§ 347 Abs. 1 Satz 1)";
+    label en unofficial "If the debtor fails to take emoluments contrary to proper management although he could have, he must compensate their value (§ 347 (1) sentence 1)";
+    when rueckgewaehr_der_empfangenen_leistungen(v, teil);
+    when nutzungen_entgegen_ordnungsmaessiger_wirtschaft_nicht_gezogen(v, teil);
+    then wertersatz_fuer_nicht_gezogene_nutzungen(v, teil);
+}
+
+@source(BGB_P347)
+rule ErsatzNotwendigerVerwendungenNachRuecktritt(v: Vertrag, teil: Person, betrag: Money) strict {
+    label de official "Gibt der Schuldner den Gegenstand zurück, leistet er Wertersatz oder ist seine Wertersatzpflicht gemäß § 346 Abs. 3 Nr. 1 oder 2 ausgeschlossen, so sind ihm notwendige Verwendungen zu ersetzen (§ 347 Abs. 2 Satz 1)";
+    label en unofficial "Where the debtor returns the object, compensates its value or is released under § 346 (3) nos. 1, 2, his necessary outlays are reimbursed (§ 347 (2) sentence 1)";
+    when rueckgewaehr_der_empfangenen_leistungen(v, teil);
+    when notwendige_verwendungen(v, betrag);
+    then ersatz_notwendiger_verwendungen(v, betrag);
+}
+
+@source(BGB_P348)
+rule RuecktrittsverpflichtungenZugUmZug(v: Vertrag, teil: Person) strict {
+    label de official "Die sich aus dem Rücktritt ergebenden Verpflichtungen der Parteien sind Zug um Zug zu erfüllen; die Vorschriften der §§ 320, 322 finden entsprechende Anwendung (§ 348)";
+    label en unofficial "The duties arising from withdrawal are to be performed concurrently; §§ 320, 322 apply accordingly (§ 348)";
+    when rueckgewaehr_der_empfangenen_leistungen(v, teil);
+    then ruecktrittsverpflichtungen_zug_um_zug(v);
+}
+
+@source(BGB_P350)
+rule ErloeschenDesVertraglichenRuecktrittsrechtsNachFristsetzung(v: Vertrag, teil: Person, ende: Date) strict {
+    label de official "Ist für die Ausübung des vertraglichen Rücktrittsrechts eine Frist nicht vereinbart, so kann dem Berechtigten von dem anderen Teil für die Ausübung eine angemessene Frist bestimmt werden; das Rücktrittsrecht erlischt, wenn nicht der Rücktritt vor dem Ablauf der Frist erklärt wird (§ 350)";
+    label en unofficial "Where no period is agreed for exercising a contractual right of withdrawal, the other party may fix a reasonable one; the right lapses unless withdrawal is declared before its expiry (§ 350)";
+    when vertragliches_ruecktrittsrecht_vorbehalten(v, teil);
+    when frist_zur_ausuebung_des_ruecktritts_angemessen(v, ende);
+    when ruecktritt_vor_fristablauf_nicht_erklaert(v);
+    then ruecktrittsrecht_erloschen(v, teil);
+}
+
+@source(BGB_P351)
+rule UnteilbarkeitDesRuecktrittsrechts(v: Vertrag) strict {
+    label de official "Sind bei einem Vertrag auf der einen oder der anderen Seite mehrere beteiligt, so kann das Rücktrittsrecht nur von allen und gegen alle ausgeübt werden (§ 351 Satz 1)";
+    label en unofficial "Where several persons are involved on one side, the right of withdrawal may be exercised only by all and against all (§ 351 sentence 1)";
+    when mehrere_beteiligte_auf_einer_seite(v);
+    then ruecktrittsrecht_nur_von_allen_und_gegen_alle(v);
+}
+
+@source(BGB_P352)
+rule RuecktrittWirdDurchAufrechnungUnwirksam(v: Vertrag, teil: Person, tag: Date) strict {
+    label de official "Der Rücktritt wegen Nichterfüllung einer Verbindlichkeit wird unwirksam, wenn der Schuldner sich von der Verbindlichkeit durch Aufrechnung befreien konnte und unverzüglich nach dem Rücktritt die Aufrechnung erklärt (§ 352)";
+    label en unofficial "Withdrawal for non-performance becomes ineffective if the debtor could have discharged by set-off and declares it without undue delay after the withdrawal (§ 352)";
+    when ruecktritt_erklaert(v, teil, tag);
+    when befreiung_durch_aufrechnung_moeglich_gewesen(v, teil);
+    when aufrechnung_unverzueglich_nach_ruecktritt_erklaert(v, teil);
+    then ruecktritt_unwirksam(v);
+}
+
+@source(BGB_P353)
+rule RuecktrittGegenReugeldOhneZahlungUnwirksam(v: Vertrag, teil: Person, tag: Date, betrag: Money) strict {
+    label de official "Ist der Rücktritt gegen Zahlung eines Reugelds vorbehalten, so ist der Rücktritt unwirksam, wenn das Reugeld nicht vor oder bei der Erklärung entrichtet wird und der andere Teil aus diesem Grunde die Erklärung unverzüglich zurückweist (§ 353 Satz 1)";
+    label en unofficial "Where withdrawal is reserved against forfeit money, it is ineffective if the money is not paid before or upon the declaration and the other party rejects it without undue delay (§ 353 sentence 1)";
+    when reugeld_vorbehalten(v, betrag);
+    when ruecktritt_erklaert(v, teil, tag);
+    when reugeld_nicht_vor_oder_bei_der_erklaerung_entrichtet(v);
+    when erklaerung_unverzueglich_zurueckgewiesen(v);
+    then ruecktritt_unwirksam(v);
+}
+
+@source(BGB_P354)
+rule VerwirkungsklauselGibtRuecktrittsrecht(v: Vertrag, glaeubiger: Person, schuldner: Person) strict {
+    label de official "Ist ein Vertrag mit dem Vorbehalt geschlossen, dass der Schuldner seiner Rechte aus dem Vertrag verlustig sein soll, wenn er seine Verbindlichkeit nicht erfüllt, so ist der Gläubiger bei dem Eintritt dieses Falles zum Rücktritt von dem Vertrag berechtigt (§ 354)";
+    label en unofficial "Where a contract reserves forfeiture of the debtor's rights upon non-performance, the creditor may withdraw upon that event (§ 354)";
+    when verwirkungsklausel_vereinbart(v, schuldner);
+    when verbindlichkeit_nicht_erfuellt(v, schuldner);
+    when vertragspartei(v, glaeubiger);
+    then ruecktrittsrecht(v, glaeubiger);
+}
+
+// --- § 355 Widerrufsrecht: Frist von 14 Tagen -----------------------------------------------------------
+
+pub entity Widerrufsfrist : Frist {
+    label de official "Widerrufsfrist des Verbrauchers (§ 355 Abs. 2, § 356 Abs. 2, 3)";
+    label en unofficial "period for the consumer's withdrawal (§ 355 (2), § 356 (2), (3))";
+}
+pub entity Hoechstfrist : Frist {
+    label de official "Höchstfrist, nach deren Ablauf das Widerrufsrecht erlischt (§ 356 Abs. 4, § 356b Abs. 2 Satz 4, § 356c Abs. 3, 4, § 356d Abs. 2, § 356e, § 356f)";
+    label en unofficial "long-stop period on whose expiry the right of withdrawal lapses (§ 356 (4) and the parallel provisions)";
+}
+pub relation widerrufsrecht_eingeraeumt(v: Vertrag, verbraucherpartei: Person) kind empirical {
+    label de official "Einem Verbraucher ist durch Gesetz ein Widerrufsrecht nach § 355 eingeräumt (§ 355 Abs. 1 Satz 1)";
+    label en unofficial "a consumer is granted a statutory right of withdrawal under § 355 (§ 355 (1) sentence 1)";
+}
+pub relation widerrufsfrist_des_vertrags(v: Vertrag, f: Widerrufsfrist) kind empirical {
+    key(v);
+    label de official "Widerrufsfrist dieses Vertrags";
+    label en unofficial "period for withdrawal of this contract";
+}
+pub relation hoechstfrist_des_vertrags(v: Vertrag, f: Hoechstfrist) kind empirical {
+    key(v);
+    label de official "Höchstfrist dieses Vertrags (§ 356 Abs. 4 und Parallelvorschriften)";
+    label en unofficial "long-stop period of this contract (§ 356 (4) and parallel provisions)";
+}
+pub relation erhalt_der_ware(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, an dem der Verbraucher oder ein von ihm benannter Dritter, der nicht Frachtführer ist, die Waren, die letzte Ware, die letzte Teilsendung oder die erste Ware erhalten hat (§ 356 Abs. 2 Nr. 1 Buchstaben a bis d)";
+    label en unofficial "day on which the consumer or a third party designated by him received the goods, the last goods, the last consignment or the first goods (§ 356 (2) no. 1 (a) to (d))";
+}
+pub relation unterrichtung_ueber_das_widerrufsrecht_am(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, an dem der Unternehmer den Verbraucher entsprechend den Anforderungen des Artikels 246a § 1 Absatz 2 Satz 1 Nummer 1 EGBGB unterrichtet hat (§ 356 Abs. 3 Satz 1) — Eingang des Falls; das EGBGB ist nicht Gegenstand dieses Pakets";
+    label en unofficial "day on which the trader informed the consumer as required by Article 246a § 1 (2) sentence 1 no. 1 EGBGB (§ 356 (3) sentence 1) — case input";
+}
+pub relation fristbeginn_des_widerrufs(v: Vertrag, tag: Date) kind institutional {
+    key(v);
+    label de official "Zeitpunkt, mit dem die Widerrufsfrist beginnt (§ 355 Abs. 2 Satz 2, § 356 Abs. 2, 3)";
+    label en unofficial "point in time at which the period for withdrawal begins (§ 355 (2) sentence 2, § 356 (2), (3))";
+}
+pub relation widerruf_erklaert_am(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, an dem der Verbraucher den Widerruf gegenüber dem Unternehmer erklärt beziehungsweise abgesandt hat; zur Fristwahrung genügt die rechtzeitige Absendung (§ 355 Abs. 1 Sätze 2 bis 5)";
+    label en unofficial "day on which the consumer declared or dispatched the withdrawal; timely dispatch suffices (§ 355 (1) sentences 2 to 5)";
+}
+pub relation widerruf_fristgerecht(v: Vertrag) kind institutional {
+    label de official "Der Verbraucher hat seine Willenserklärung fristgerecht widerrufen (§ 355 Abs. 1 Satz 1)";
+    label en unofficial "the consumer withdrew his declaration of intention within the period (§ 355 (1) sentence 1)";
+}
+pub relation nicht_mehr_an_die_willenserklaerung_gebunden(v: Vertrag, verbraucherpartei: Person) kind institutional {
+    label de official "Der Verbraucher und der Unternehmer sind an ihre auf den Abschluss des Vertrags gerichteten Willenserklärungen nicht mehr gebunden (§ 355 Abs. 1 Satz 1)";
+    label en unofficial "consumer and trader are no longer bound by their declarations of intention directed at concluding the contract (§ 355 (1) sentence 1)";
+}
+pub relation widerrufsrecht_erloschen(v: Vertrag) kind institutional {
+    label de official "Das Widerrufsrecht ist erloschen (§ 356 Abs. 4 bis 6 und Parallelvorschriften)";
+    label en unofficial "the right of withdrawal has lapsed (§ 356 (4) to (6) and parallel provisions)";
+}
+
+@source(BGB_P355)
+rule FristbeginnMitVertragsschluss(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Die Widerrufsfrist beginnt mit Vertragsschluss, soweit nichts anderes bestimmt ist (§ 355 Abs. 2 Satz 2)";
+    label en unofficial "The period for withdrawal begins on conclusion of the contract unless otherwise provided (§ 355 (2) sentence 2)";
+    when widerrufsfrist_des_vertrags(v, f);
+    when vertrag_geschlossen_am(v, tag);
+    when kein_besonderer_fristbeginn(v);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+@source(BGB_P356)
+rule FristbeginnMitErhaltDerWare(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Die Widerrufsfrist beginnt bei einem Verbrauchsgüterkauf, sobald der Verbraucher oder ein von ihm benannter Dritter, der nicht Frachtführer ist, die Waren erhalten hat (§ 356 Abs. 2 Nr. 1 Buchstabe a; Buchstaben b bis d für getrennte Lieferung, Teilsendungen und regelmäßige Lieferung)";
+    label en unofficial "For a consumer sale the period begins once the consumer or a designated third party has received the goods (§ 356 (2) no. 1)";
+    when widerrufsfrist_des_vertrags(v, f);
+    when erhalt_der_ware(v, tag);
+    when keine_spaetere_unterrichtung(v);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+@source(BGB_P356)
+rule FristbeginnNichtVorDerUnterrichtung(v: Vertrag, f: Widerrufsfrist, unterrichtung: Date) strict {
+    label de official "Die Widerrufsfrist beginnt nicht, bevor der Unternehmer den Verbraucher entsprechend den Anforderungen des Artikels 246a § 1 Absatz 2 Satz 1 Nummer 1 EGBGB unterrichtet hat (§ 356 Abs. 3 Satz 1)";
+    label en unofficial "The period does not begin before the trader has informed the consumer as required by Article 246a EGBGB (§ 356 (3) sentence 1)";
+    when widerrufsfrist_des_vertrags(v, f);
+    when unterrichtung_ueber_das_widerrufsrecht_am(v, unterrichtung);
+    when spaetere_unterrichtung(v);
+    then fristbeginn_des_widerrufs(v, unterrichtung);
+}
+
+@source(BGB_P355)
+rule EreignisDerWiderrufsfrist(v: Vertrag, f: Widerrufsfrist, beginn: Date) strict {
+    label de official "Der Zeitpunkt des Fristbeginns ist das für den Anfang der Frist maßgebende Ereignis (§ 187 Abs. 1 in Verbindung mit § 355 Abs. 2 Satz 2)";
+    label en unofficial "The point at which the period begins is the event decisive for its start (§ 187 (1) with § 355 (2) sentence 2)";
+    when widerrufsfrist_des_vertrags(v, f);
+    when fristbeginn_des_widerrufs(v, beginn);
+    then de.bgb.fristen::frist_ereignis(f, beginn);
+}
+
+@source(BGB_P355)
+rule DauerDerWiderrufsfristVierzehnTage(v: Vertrag, f: Widerrufsfrist, beginn: Date) strict {
+    label de official "Die Widerrufsfrist beträgt 14 Tage (§ 355 Abs. 2 Satz 1) — Tagesfrist nach §§ 187 Abs. 1, 188 Abs. 1, § 193 (Politik BGB_SCHULDRECHT_AT_TAG)";
+    label en unofficial "The period for withdrawal is 14 days (§ 355 (2) sentence 1) — a period fixed by days under §§ 187 (1), 188 (1), 193";
+    when widerrufsfrist_des_vertrags(v, f);
+    when de.bgb.fristen::frist_ereignis(f, beginn);
+    then de.bgb.fristen::frist_dauer_tage(f, 14 calendar_day);
+}
+
+@source(BGB_P355)
+rule WiderrufIstFristgerecht(v: Vertrag, f: Widerrufsfrist, ende: Date, erklaert: Date) strict {
+    label de official "Zur Fristwahrung genügt die rechtzeitige Absendung des Widerrufs (§ 355 Abs. 1 Satz 5): der Widerruf ist fristgerecht, wenn er nicht nach dem Ende der Widerrufsfrist erklärt oder abgesandt ist";
+    label en unofficial "Timely dispatch suffices (§ 355 (1) sentence 5): the withdrawal is in time if it is not declared or dispatched after the end of the period";
+    when widerrufsfrist_des_vertrags(v, f);
+    when de.bgb.fristen::frist_ende(f, ende);
+    when widerruf_erklaert_am(v, erklaert);
+    when erklaert <= ende;
+    then widerruf_fristgerecht(v);
+}
+
+@source(BGB_P355)
+rule BindungAnDieWillenserklaerungEntfaellt(v: Vertrag, verbraucherpartei: Person) strict {
+    label de official "Wird einem Verbraucher durch Gesetz ein Widerrufsrecht nach dieser Vorschrift eingeräumt, so sind der Verbraucher und der Unternehmer an ihre auf den Abschluss des Vertrags gerichteten Willenserklärungen nicht mehr gebunden, wenn der Verbraucher seine Willenserklärung fristgerecht widerrufen hat (§ 355 Abs. 1 Satz 1)";
+    label en unofficial "Where a consumer is granted a statutory right of withdrawal, consumer and trader cease to be bound by their declarations once the consumer has withdrawn in time (§ 355 (1) sentence 1)";
+    when widerrufsrecht_eingeraeumt(v, verbraucherpartei);
+    when widerruf_fristgerecht(v);
+    then nicht_mehr_an_die_willenserklaerung_gebunden(v, verbraucherpartei);
+}
+
+// --- § 356 Abs. 4: Höchstfrist von zwölf Monaten und 14 Tagen -------------------------------------------
+
+@source(BGB_P356)
+rule KalendarischesEndeDerHoechstfrist(v: Vertrag, f: Hoechstfrist, beginn: Date) strict {
+    label de official "Das Widerrufsrecht erlischt spätestens zwölf Monate und 14 Tage nach dem in Absatz 2 oder § 355 Absatz 2 Satz 2 genannten Zeitpunkt (§ 356 Abs. 4 Satz 1) — zwölf Monate nach § 188 Abs. 2 und 3, danach 14 Tage, unter der Politik BGB_SCHULDRECHT_AT_KALENDER";
+    label en unofficial "The right of withdrawal lapses at the latest twelve months and 14 days after the time named in (2) or § 355 (2) sentence 2 (§ 356 (4) sentence 1) — twelve months under § 188 (2), (3), then 14 days";
+    when hoechstfrist_des_vertrags(v, f);
+    when fristbeginn_des_widerrufs(v, beginn);
+    then de.bgb.fristen::frist_ende_kalender(f, add_calendar_period(add_calendar_period(beginn, 12 calendar_month), 14 calendar_day));
+}
+
+@source(BGB_P356)
+rule ErloeschenDesWiderrufsrechtsNachHoechstfrist(v: Vertrag, f: Hoechstfrist, ende: Date, erklaert: Date) strict {
+    label de official "Nach dem Ablauf der Höchstfrist erlischt das Widerrufsrecht (§ 356 Abs. 4 Satz 1); fällt ihr Ende auf einen Sonnabend, Sonntag oder Feiertag, tritt der nächste Werktag an seine Stelle (§ 193, Regel Verlegung193 in de.bgb.fristen)";
+    label en unofficial "On expiry of the long-stop period the right of withdrawal lapses (§ 356 (4) sentence 1); § 193 moves an end falling on a Saturday, Sunday or holiday to the next working day";
+    when hoechstfrist_des_vertrags(v, f);
+    when de.bgb.fristen::frist_ende(f, ende);
+    when widerruf_erklaert_am(v, erklaert);
+    when erklaert > ende;
+    then widerrufsrecht_erloschen(v);
+}
+
+// --- § 356 Abs. 5, 6: Erlöschen bei Dienstleistungen und digitalen Inhalten --------------------------------
+
+pub relation dienstleistung_vollstaendig_erbracht_mit_zustimmung(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat die Dienstleistung vollständig erbracht und der Verbraucher hat vor Beginn der Erbringung ausdrücklich zugestimmt, dass vor Ablauf der Widerrufsfrist begonnen wird, die Zustimmung bei einem außerhalb von Geschäftsräumen geschlossenen Vertrag auf einem dauerhaften Datenträger übermittelt und seine Kenntnis vom Erlöschen bestätigt (§ 356 Abs. 5 Nr. 2)";
+    label en unofficial "the trader fully performed the service and the consumer gave the express consent and confirmations required by § 356 (5) no. 2";
+}
+pub relation unentgeltliche_dienstleistung_vollstaendig_erbracht(v: Vertrag) kind empirical {
+    label de official "Bei einem Vertrag, der den Verbraucher nicht zur Zahlung eines Preises verpflichtet, hat der Unternehmer die Dienstleistung vollständig erbracht (§ 356 Abs. 5 Nr. 1)";
+    label en unofficial "in a contract without payment obligation the trader fully performed the service (§ 356 (5) no. 1)";
+}
+pub relation digitale_inhalte_mit_zustimmung_begonnen(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat mit der Vertragserfüllung begonnen, der Verbraucher hat ausdrücklich zugestimmt und seine Kenntnis vom Erlöschen bestätigt und der Unternehmer hat eine Bestätigung nach § 312f zur Verfügung gestellt (§ 356 Abs. 6 Nr. 2)";
+    label en unofficial "the trader began performance and the consumer gave the consent and confirmations required by § 356 (6) no. 2";
+}
+
+@source(BGB_P356)
+rule ErloeschenBeiVollstaendigErbrachterDienstleistung(v: Vertrag) strict {
+    label de official "Das Widerrufsrecht erlischt bei einem Vertrag über die Erbringung von Dienstleistungen mit der vollständigen Erbringung der Dienstleistung, wenn der Verbraucher vor Beginn der Erbringung ausdrücklich zugestimmt und seine Kenntnis vom Erlöschen bestätigt hat (§ 356 Abs. 5 Nr. 2)";
+    label en unofficial "The right of withdrawal lapses upon complete performance of a service where the consumer expressly consented and confirmed his knowledge (§ 356 (5) no. 2)";
+    when dienstleistung_vollstaendig_erbracht_mit_zustimmung(v);
+    then widerrufsrecht_erloschen(v);
+}
+
+@source(BGB_P356)
+rule ErloeschenBeiUnentgeltlicherDienstleistung(v: Vertrag) strict {
+    label de official "Das Widerrufsrecht erlischt bei einem Vertrag, der den Verbraucher nicht zur Zahlung eines Preises verpflichtet, wenn der Unternehmer die Dienstleistung vollständig erbracht hat (§ 356 Abs. 5 Nr. 1)";
+    label en unofficial "In a contract without payment obligation the right lapses once the trader has fully performed the service (§ 356 (5) no. 1)";
+    when unentgeltliche_dienstleistung_vollstaendig_erbracht(v);
+    then widerrufsrecht_erloschen(v);
+}
+
+@source(BGB_P356)
+rule ErloeschenBeiDigitalenInhalten(v: Vertrag) strict {
+    label de official "Das Widerrufsrecht erlischt bei Verträgen über die Bereitstellung nicht auf einem körperlichen Datenträger befindlicher digitaler Inhalte, wenn der Unternehmer mit der Vertragserfüllung begonnen hat und die Zustimmung und Bestätigungen des Verbrauchers vorliegen (§ 356 Abs. 6 Nr. 2)";
+    label en unofficial "For digital content not on a tangible medium the right lapses once performance began with the consumer's consent and confirmations (§ 356 (6) no. 2)";
+    when digitale_inhalte_mit_zustimmung_begonnen(v);
+    then widerrufsrecht_erloschen(v);
+}
+
+// --- Eingänge des Falls zum Fristbeginn ---------------------------------------------------------------------
+
+@source(BGB_P355)
+pub relation kein_besonderer_fristbeginn(v: Vertrag) kind empirical {
+    label de official "Für den Fristbeginn ist nichts anderes bestimmt als der Vertragsschluss (§ 355 Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing other than conclusion of the contract is provided for the start of the period (§ 355 (2) sentence 2) — explicit case input";
+}
+@source(BGB_P356)
+pub relation spaetere_unterrichtung(v: Vertrag) kind empirical {
+    label de official "Die Unterrichtung nach Artikel 246a EGBGB ist später erfolgt als der Zeitpunkt des Absatzes 2 oder des § 355 Abs. 2 Satz 2 (§ 356 Abs. 3 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the information under Article 246a EGBGB was given later than the time under (2) or § 355 (2) sentence 2 — explicit case input";
+}
+@source(BGB_P356)
+pub relation keine_spaetere_unterrichtung(v: Vertrag) kind empirical {
+    label de official "Die Unterrichtung ist nicht später erfolgt als der Zeitpunkt des Absatzes 2 (§ 356 Abs. 3 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the information was not given later than the time under (2) (§ 356 (3) sentence 1) — explicit case input";
+}
+
+// --- §§ 356a–356f Besondere Widerrufsrechte -------------------------------------------------------------------
+
+pub relation widerrufsfunktion_auf_online_benutzeroberflaeche(v: Vertrag) kind empirical {
+    label de official "Der Fernabsatzvertrag wird über eine Online-Benutzeroberfläche geschlossen; der Unternehmer hat die Widerrufsfunktion mit der Beschriftung „Vertrag widerrufen“ während des Laufs der Widerrufsfrist ständig verfügbar zu halten (§ 356a Abs. 1)";
+    label en unofficial "the distance contract is concluded through an online interface; the trader must keep the withdrawal function available (§ 356a (1))";
+}
+pub relation widerruf_ueber_widerrufsfunktion_versandt_am(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Der Verbraucher hat die Widerrufserklärung über die Widerrufsfunktion nach § 356a Abs. 3 versandt (§ 356a Abs. 5)";
+    label en unofficial "the consumer dispatched the withdrawal through the withdrawal function (§ 356a (5))";
+}
+pub relation widerruf_gilt_als_zugegangen(v: Vertrag) kind institutional {
+    label de official "Die Widerrufserklärung gilt als dem Unternehmer innerhalb der Widerrufsfrist zugegangen, wenn sie vor Ablauf dieser Frist über die Widerrufsfunktion versandt worden ist (§ 356a Abs. 5)";
+    label en unofficial "the withdrawal is deemed received within the period if it was dispatched through the withdrawal function before its expiry (§ 356a (5))";
+}
+pub relation eingangsbestaetigung_zu_uebermitteln(v: Vertrag, unternehmerpartei: Person) kind institutional {
+    label de official "Der Unternehmer hat dem Verbraucher unverzüglich eine Eingangsbestätigung auf einem dauerhaften Datenträger zu übermitteln, die den Inhalt der Widerrufserklärung sowie Datum und Uhrzeit ihres Eingangs enthält (§ 356a Abs. 4); bei Nutzung der Webseite nach § 356 Abs. 1 Satz 1 ist der Zugang unverzüglich zu bestätigen (§ 356 Abs. 1 Satz 2)";
+    label en unofficial "the trader must send the consumer an acknowledgement of receipt on a durable medium without undue delay (§ 356a (4); § 356 (1) sentence 2)";
+}
+pub relation verbraucherdarlehensvertrag(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein Verbraucherdarlehensvertrag (§ 356b)";
+    label en unofficial "the contract is a consumer loan contract (§ 356b)";
+}
+pub relation vertragsurkunde_zur_verfuegung_gestellt_am(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, an dem der Darlehensgeber dem Darlehensnehmer die Vertragsurkunde, seinen schriftlichen Antrag oder eine Abschrift zur Verfügung gestellt hat (§ 356b Abs. 1)";
+    label en unofficial "day on which the lender provided the borrower with the contract document or a copy (§ 356b (1))";
+}
+pub relation pflichtangaben_nachgeholt_am(v: Vertrag, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der Nachholung der Pflichtangaben nach § 492 Absatz 6 (§ 356b Abs. 2 Sätze 1, 2)";
+    label en unofficial "day on which the mandatory information was supplied subsequently under § 492 (6) (§ 356b (2))";
+}
+pub relation widerrufsfrist_betraegt_einen_monat(v: Vertrag) kind institutional {
+    label de official "In den Fällen des § 356b Abs. 2 Sätze 1 und 2 beträgt die Widerrufsfrist einen Monat (§ 356b Abs. 2 Satz 3)";
+    label en unofficial "in the cases of § 356b (2) sentences 1 and 2 the period for withdrawal is one month (§ 356b (2) sentence 3)";
+}
+pub relation teilzeit_wohnrechtevertrag_oder_urlaubsprodukt(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein Teilzeit-Wohnrechtevertrag, ein Vertrag über ein langfristiges Urlaubsprodukt, ein Vermittlungsvertrag oder ein Tauschsystemvertrag (§ 356c)";
+    label en unofficial "the contract is a timeshare, long-term holiday product, brokerage or exchange system contract (§ 356c)";
+}
+pub relation vorvertragliche_informationen_unvollstaendig(v: Vertrag) kind empirical {
+    label de official "Die vorvertraglichen Informationen oder das Formblatt sind nicht, nicht vollständig oder nicht in der vorgeschriebenen Sprache überlassen worden (§ 356c Abs. 3 Satz 1)";
+    label en unofficial "the pre-contractual information or the form was not, or not completely, provided in the prescribed language (§ 356c (3) sentence 1)";
+}
+pub relation ratenlieferungsvertrag(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein Ratenlieferungsvertrag, der weder im Fernabsatz noch außerhalb von Geschäftsräumen geschlossen wird (§ 356d Abs. 1)";
+    label en unofficial "the contract is an instalment supply contract concluded neither at a distance nor off premises (§ 356d (1))";
+}
+pub relation verbraucherbauvertrag(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein Verbraucherbauvertrag (§ 650i Absatz 1, § 356e)";
+    label en unofficial "the contract is a consumer construction contract (§ 356e)";
+}
+pub relation unentgeltliches_darlehen_oder_finanzierungshilfe(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer gewährt dem Verbraucher ein unentgeltliches Darlehen oder eine unentgeltliche Finanzierungshilfe (§ 356f Satz 1)";
+    label en unofficial "the trader grants the consumer a gratuitous loan or financing aid (§ 356f sentence 1)";
+}
+
+@source(BGB_P356a)
+rule WiderrufUeberDieWiderrufsfunktionGiltAlsZugegangen(v: Vertrag, f: Widerrufsfrist, ende: Date, versandt: Date) strict {
+    label de official "Die Widerrufserklärung des Verbrauchers gilt als dem Unternehmer innerhalb der Widerrufsfrist zugegangen, wenn er sie nach Absatz 3 vor Ablauf dieser Frist über die Widerrufsfunktion versandt hat (§ 356a Abs. 5)";
+    label en unofficial "The consumer's withdrawal is deemed received within the period if dispatched through the withdrawal function before its expiry (§ 356a (5))";
+    when widerrufsfunktion_auf_online_benutzeroberflaeche(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when de.bgb.fristen::frist_ende(f, ende);
+    when widerruf_ueber_widerrufsfunktion_versandt_am(v, versandt);
+    when versandt <= ende;
+    then widerruf_gilt_als_zugegangen(v);
+}
+
+@source(BGB_P356a)
+rule EingangsbestaetigungNachWiderrufsfunktion(v: Vertrag, unternehmerpartei: Person) strict {
+    label de official "Der Unternehmer hat dem Verbraucher, wenn dieser die Bestätigungsfunktion aktiviert hat, auf einem dauerhaften Datenträger unverzüglich eine Eingangsbestätigung zu übermitteln (§ 356a Abs. 4)";
+    label en unofficial "Once the consumer has activated the confirmation function the trader must send an acknowledgement on a durable medium without undue delay (§ 356a (4))";
+    when widerruf_gilt_als_zugegangen(v);
+    when vertragspartei(v, unternehmerpartei);
+    when unternehmer(unternehmerpartei);
+    then eingangsbestaetigung_zu_uebermitteln(v, unternehmerpartei);
+}
+
+@source(BGB_P356b)
+rule FristbeginnBeimVerbraucherdarlehen(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Die Widerrufsfrist beginnt auch nicht, bevor der Darlehensgeber dem Darlehensnehmer eine für diesen bestimmte Vertragsurkunde, den schriftlichen Antrag oder eine Abschrift zur Verfügung gestellt hat (§ 356b Abs. 1)";
+    label en unofficial "The period does not begin before the lender has provided the borrower with the contract document or a copy (§ 356b (1))";
+    when verbraucherdarlehensvertrag(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when vertragsurkunde_zur_verfuegung_gestellt_am(v, tag);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+@source(BGB_P356b)
+rule WiderrufsfristEinesMonatsNachNachholungDerPflichtangaben(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Enthält die zur Verfügung gestellte Urkunde die Pflichtangaben nicht, beginnt die Frist erst mit deren Nachholung; in diesen Fällen beträgt die Widerrufsfrist einen Monat (§ 356b Abs. 2 Sätze 1 bis 3)";
+    label en unofficial "Where the document lacks the mandatory information the period begins only when it is supplied; in those cases the period is one month (§ 356b (2))";
+    when verbraucherdarlehensvertrag(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when pflichtangaben_nachgeholt_am(v, tag);
+    then widerrufsfrist_betraegt_einen_monat(v);
+}
+
+@source(BGB_P356c)
+rule FristbeginnBeimTeilzeitWohnrechtevertrag(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Die Widerrufsfrist beginnt mit dem Zeitpunkt des Vertragsschlusses oder des Abschlusses eines Vorvertrags; erhält der Verbraucher die Vertragsurkunde erst nach Vertragsschluss, beginnt sie mit dem Zeitpunkt des Erhalts (§ 356c Abs. 2)";
+    label en unofficial "The period begins on conclusion of the contract or of a preliminary contract; if the document is received later, on receipt (§ 356c (2))";
+    when teilzeit_wohnrechtevertrag_oder_urlaubsprodukt(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when vertragsurkunde_zur_verfuegung_gestellt_am(v, tag);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+@source(BGB_P356c)
+rule HoechstfristVonDreiMonatenUndVierzehnTagen(v: Vertrag, f: Hoechstfrist, beginn: Date) strict {
+    label de official "Sind die vorvertraglichen Informationen nicht vollständig überlassen worden, erlischt das Widerrufsrecht spätestens drei Monate und 14 Tage nach dem in Absatz 2 genannten Zeitpunkt (§ 356c Abs. 3 Satz 2)";
+    label en unofficial "Where the pre-contractual information was incomplete, the right lapses at the latest three months and 14 days after the time named in (2) (§ 356c (3) sentence 2)";
+    when teilzeit_wohnrechtevertrag_oder_urlaubsprodukt(v);
+    when vorvertragliche_informationen_unvollstaendig(v);
+    when hoechstfrist_des_vertrags(v, f);
+    when fristbeginn_des_widerrufs(v, beginn);
+    then de.bgb.fristen::frist_ende_kalender(f, add_calendar_period(add_calendar_period(beginn, 3 calendar_month), 14 calendar_day));
+}
+
+@source(BGB_P356d)
+rule FristbeginnBeimRatenlieferungsvertrag(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Bei einem Ratenlieferungsvertrag, der weder im Fernabsatz noch außerhalb von Geschäftsräumen geschlossen wird, beginnt die Widerrufsfrist nicht, bevor der Unternehmer den Verbraucher gemäß Artikel 246 Absatz 3 EGBGB über sein Widerrufsrecht unterrichtet hat (§ 356d Abs. 1)";
+    label en unofficial "For such an instalment supply contract the period does not begin before the trader has informed the consumer under Article 246 (3) EGBGB (§ 356d (1))";
+    when ratenlieferungsvertrag(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when unterrichtung_ueber_das_widerrufsrecht_am(v, tag);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+@source(BGB_P356e)
+rule FristbeginnBeimVerbraucherbauvertrag(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Bei einem Verbraucherbauvertrag beginnt die Widerrufsfrist nicht, bevor der Unternehmer den Verbraucher gemäß Artikel 249 § 3 EGBGB über sein Widerrufsrecht belehrt hat; das Widerrufsrecht erlischt spätestens zwölf Monate und 14 Tage nach dem in § 355 Absatz 2 Satz 2 genannten Zeitpunkt (§ 356e)";
+    label en unofficial "For a consumer construction contract the period does not begin before instruction under Article 249 § 3 EGBGB; the right lapses at the latest twelve months and 14 days after the time in § 355 (2) sentence 2 (§ 356e)";
+    when verbraucherbauvertrag(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when unterrichtung_ueber_das_widerrufsrecht_am(v, tag);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+@source(BGB_P356f)
+rule FristbeginnBeimUnentgeltlichenDarlehen(v: Vertrag, f: Widerrufsfrist, tag: Date) strict {
+    label de official "Bei einem unentgeltlichen Darlehen oder einer unentgeltlichen Finanzierungshilfe beginnt die Widerrufsfrist abweichend von § 355 Absatz 2 Satz 2 nicht, bevor der Unternehmer den Verbraucher entsprechend § 514 Absatz 2 Satz 3 unterrichtet hat (§ 356f Satz 1)";
+    label en unofficial "For a gratuitous loan or financing aid the period does not begin before the trader has informed the consumer under § 514 (2) sentence 3 (§ 356f sentence 1)";
+    when unentgeltliches_darlehen_oder_finanzierungshilfe(v);
+    when widerrufsfrist_des_vertrags(v, f);
+    when unterrichtung_ueber_das_widerrufsrecht_am(v, tag);
+    then fristbeginn_des_widerrufs(v, tag);
+}
+
+// --- §§ 357–357e Rechtsfolgen des Widerrufs ----------------------------------------------------------------
+
+pub entity Rueckgewaehrfrist : Frist {
+    label de official "Frist zur Rückgewähr der empfangenen Leistungen nach Widerruf (§ 357 Abs. 1: 14 Tage; § 357b Abs. 1: 30 Tage)";
+    label en unofficial "period for returning the performances received after withdrawal (§ 357 (1): 14 days; § 357b (1): 30 days)";
+}
+pub relation rueckgewaehrfrist_des_vertrags(v: Vertrag, f: Rueckgewaehrfrist) kind empirical {
+    key(v);
+    label de official "Rückgewährfrist dieses Vertrags";
+    label en unofficial "period for return under this contract";
+}
+pub relation finanzdienstleistungsvertrag(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist ein Vertrag über Finanzdienstleistungen (§ 357b)";
+    label en unofficial "the contract is a contract for financial services (§ 357b)";
+}
+pub relation kein_finanzdienstleistungsvertrag(v: Vertrag) kind empirical {
+    label de official "Der Vertrag ist kein Vertrag über Finanzdienstleistungen (§ 357 Abs. 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the contract is not a contract for financial services (§ 357 (1)) — explicit case input";
+}
+pub relation zusaetzliche_lieferkosten_durch_wahl_des_verbrauchers(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Zusätzliche Kosten, weil der Verbraucher sich für eine andere als die günstigste Standardlieferung entschieden hat (§ 357 Abs. 2 Satz 2)";
+    label en unofficial "additional costs because the consumer chose a delivery other than the cheapest standard delivery (§ 357 (2) sentence 2)";
+}
+pub relation zahlungen_fuer_die_lieferung_zurueckzugewaehren(v: Vertrag) kind institutional {
+    label de official "Der Unternehmer muss auch etwaige Zahlungen des Verbrauchers für die Lieferung zurückgewähren; dies gilt nicht für die Mehrkosten einer anderen als der günstigsten Standardlieferung (§ 357 Abs. 2)";
+    label en unofficial "the trader must also return payments for delivery, except the extra costs of a non-standard delivery (§ 357 (2))";
+}
+pub relation rueckzahlung_mit_demselben_zahlungsmittel(v: Vertrag) kind institutional {
+    label de official "Für die Rückzahlung muss der Unternehmer dasselbe Zahlungsmittel verwenden, das der Verbraucher bei der Zahlung verwendet hat (§ 357 Abs. 3 Satz 1)";
+    label en unofficial "for the refund the trader must use the same means of payment as the consumer (§ 357 (3) sentence 1)";
+}
+pub relation waren_zurueckerhalten_oder_absendung_nachgewiesen(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat die Waren zurückerhalten oder der Verbraucher hat den Nachweis der Absendung erbracht (§ 357 Abs. 4 Satz 1)";
+    label en unofficial "the trader has received the goods back or the consumer proved dispatch (§ 357 (4) sentence 1)";
+}
+pub relation abholung_angeboten(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat angeboten, die Waren abzuholen (§ 357 Abs. 4 Satz 2, Abs. 6)";
+    label en unofficial "the trader offered to collect the goods (§ 357 (4) sentence 2, (6))";
+}
+pub relation rueckzahlung_verweigerbar(v: Vertrag) kind institutional {
+    label de official "Bei einem Verbrauchsgüterkauf kann der Unternehmer die Rückzahlung verweigern, bis er die Waren zurückerhalten hat oder der Verbraucher den Nachweis der Absendung erbracht hat; dies gilt nicht, wenn der Unternehmer angeboten hat, die Waren abzuholen (§ 357 Abs. 4)";
+    label en unofficial "in a consumer sale the trader may withhold the refund until he receives the goods or proof of dispatch, unless he offered to collect them (§ 357 (4))";
+}
+pub relation unterrichtung_ueber_ruecksendekosten(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat den Verbraucher nach Artikel 246a § 1 Absatz 2 Satz 1 Nummer 2 EGBGB über die Pflicht zur Tragung der Rücksendekosten unterrichtet (§ 357 Abs. 5 Satz 1)";
+    label en unofficial "the trader informed the consumer of the duty to bear the return costs (§ 357 (5) sentence 1)";
+}
+pub relation verbraucher_traegt_ruecksendekosten(v: Vertrag) kind institutional {
+    label de official "Der Verbraucher trägt die unmittelbaren Kosten der Rücksendung der Waren (§ 357 Abs. 5 Satz 1)";
+    label en unofficial "the consumer bears the direct costs of returning the goods (§ 357 (5) sentence 1)";
+}
+pub relation keine_ruecksendepflicht(v: Vertrag) kind institutional {
+    label de official "Der Verbraucher ist nicht verpflichtet, die Waren zurückzusenden, wenn der Unternehmer angeboten hat, die Waren abzuholen (§ 357 Abs. 6)";
+    label en unofficial "the consumer need not return the goods where the trader offered to collect them (§ 357 (6))";
+}
+pub relation wertverlust_durch_nicht_notwendigen_umgang(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Wertverlust, der auf einen Umgang mit den Waren zurückzuführen ist, der zur Prüfung der Beschaffenheit, der Eigenschaften und der Funktionsweise nicht notwendig war (§ 357a Abs. 1 Nr. 1)";
+    label en unofficial "loss of value due to handling of the goods not necessary to establish their nature, characteristics and functioning (§ 357a (1) no. 1)";
+}
+pub relation wertersatz_fuer_wertverlust(v: Vertrag, betrag: Money) kind institutional {
+    key(v);
+    label de official "Der Verbraucher hat Wertersatz für den Wertverlust zu leisten, wenn der Unternehmer ihn über das Widerrufsrecht unterrichtet hat (§ 357a Abs. 1)";
+    label en unofficial "the consumer must compensate the loss of value where the trader informed him of the right of withdrawal (§ 357a (1))";
+}
+
+@source(BGB_P357)
+rule RueckgewaehrfristVierzehnTage(v: Vertrag, f: Rueckgewaehrfrist, tag: Date) strict {
+    label de official "Die empfangenen Leistungen sind spätestens nach 14 Tagen zurückzugewähren (§ 357 Abs. 1); die Frist beginnt für den Unternehmer mit dem Zugang und für den Verbraucher mit der Abgabe der Widerrufserklärung (§ 355 Abs. 3 Satz 2)";
+    label en unofficial "The performances received must be returned within 14 days at the latest (§ 357 (1)); the period runs from receipt of the declaration for the trader and from its dispatch for the consumer (§ 355 (3) sentence 2)";
+    when rueckgewaehrfrist_des_vertrags(v, f);
+    when kein_finanzdienstleistungsvertrag(v);
+    when widerruf_erklaert_am(v, tag);
+    then de.bgb.fristen::frist_ereignis(f, tag);
+}
+
+@source(BGB_P357)
+rule DauerDerRueckgewaehrfrist(v: Vertrag, f: Rueckgewaehrfrist, tag: Date) strict {
+    label de official "Die Rückgewährfrist beträgt 14 Tage (§ 357 Abs. 1) — Tagesfrist nach §§ 187 Abs. 1, 188 Abs. 1";
+    label en unofficial "The period for return is 14 days (§ 357 (1)) — a period fixed by days";
+    when rueckgewaehrfrist_des_vertrags(v, f);
+    when kein_finanzdienstleistungsvertrag(v);
+    when de.bgb.fristen::frist_ereignis(f, tag);
+    then de.bgb.fristen::frist_dauer_tage(f, 14 calendar_day);
+}
+
+@source(BGB_P357b)
+rule RueckgewaehrfristDreissigTageBeiFinanzdienstleistungen(v: Vertrag, f: Rueckgewaehrfrist, tag: Date) strict {
+    label de official "Bei Verträgen über Finanzdienstleistungen sind die empfangenen Leistungen spätestens nach 30 Tagen zurückzugewähren (§ 357b Abs. 1)";
+    label en unofficial "For contracts on financial services the performances received must be returned within 30 days (§ 357b (1))";
+    when rueckgewaehrfrist_des_vertrags(v, f);
+    when finanzdienstleistungsvertrag(v);
+    when de.bgb.fristen::frist_ereignis(f, tag);
+    then de.bgb.fristen::frist_dauer_tage(f, 30 calendar_day);
+}
+
+@source(BGB_P357b)
+rule EreignisDerRueckgewaehrfristBeiFinanzdienstleistungen(v: Vertrag, f: Rueckgewaehrfrist, tag: Date) strict {
+    label de official "Die Frist beginnt für den Unternehmer mit dem Zugang und für den Verbraucher mit der Abgabe der Widerrufserklärung (§ 355 Abs. 3 Satz 2, § 357b Abs. 1)";
+    label en unofficial "The period runs from receipt of the declaration for the trader and from its dispatch for the consumer (§ 355 (3) sentence 2, § 357b (1))";
+    when rueckgewaehrfrist_des_vertrags(v, f);
+    when finanzdienstleistungsvertrag(v);
+    when widerruf_erklaert_am(v, tag);
+    then de.bgb.fristen::frist_ereignis(f, tag);
+}
+
+@source(BGB_P357)
+rule ZahlungenFuerDieLieferungZurueckzugewaehren(v: Vertrag) strict {
+    label de official "Der Unternehmer muss auch etwaige Zahlungen des Verbrauchers für die Lieferung zurückgewähren (§ 357 Abs. 2 Satz 1)";
+    label en unofficial "The trader must also return any payments of the consumer for delivery (§ 357 (2) sentence 1)";
+    when widerruf_fristgerecht(v);
+    when kein_finanzdienstleistungsvertrag(v);
+    then zahlungen_fuer_die_lieferung_zurueckzugewaehren(v);
+}
+
+@source(BGB_P357)
+rule RueckzahlungMitDemselbenZahlungsmittel(v: Vertrag) strict {
+    label de official "Für die Rückzahlung muss der Unternehmer dasselbe Zahlungsmittel verwenden, das der Verbraucher bei der Zahlung verwendet hat (§ 357 Abs. 3 Satz 1)";
+    label en unofficial "For the refund the trader must use the same means of payment the consumer used (§ 357 (3) sentence 1)";
+    when widerruf_fristgerecht(v);
+    when kein_finanzdienstleistungsvertrag(v);
+    then rueckzahlung_mit_demselben_zahlungsmittel(v);
+}
+
+@source(BGB_P357)
+rule RueckzahlungDarfBisZurRuecksendungVerweigertWerden(v: Vertrag) strict {
+    label de official "Bei einem Verbrauchsgüterkauf kann der Unternehmer die Rückzahlung verweigern, bis er die Waren zurückerhalten hat oder der Verbraucher den Nachweis erbracht hat, dass er die Waren abgesandt hat; dies gilt nicht, wenn der Unternehmer angeboten hat, die Waren abzuholen (§ 357 Abs. 4)";
+    label en unofficial "In a consumer sale the trader may refuse the refund until he receives the goods or proof of dispatch, unless he offered to collect them (§ 357 (4))";
+    when widerruf_fristgerecht(v);
+    when kein_finanzdienstleistungsvertrag(v);
+    when keine_abholung_angeboten(v);
+    when waren_nicht_zurueckerhalten(v);
+    then rueckzahlung_verweigerbar(v);
+}
+
+@source(BGB_P357)
+rule VerbraucherTraegtRuecksendekostenNachUnterrichtung(v: Vertrag) strict {
+    label de official "Der Verbraucher trägt die unmittelbaren Kosten der Rücksendung der Waren, wenn der Unternehmer ihn von dieser Pflicht unterrichtet hat; dies gilt nicht, wenn der Unternehmer sich bereit erklärt hat, diese Kosten zu tragen (§ 357 Abs. 5)";
+    label en unofficial "The consumer bears the direct costs of return where the trader informed him of that duty, unless the trader agreed to bear them (§ 357 (5))";
+    when widerruf_fristgerecht(v);
+    when unterrichtung_ueber_ruecksendekosten(v);
+    when keine_kostenuebernahme_durch_den_unternehmer(v);
+    then verbraucher_traegt_ruecksendekosten(v);
+}
+
+@source(BGB_P357)
+rule KeineRuecksendepflichtBeiAbholung(v: Vertrag) strict {
+    label de official "Der Verbraucher ist nicht verpflichtet, die Waren zurückzusenden, wenn der Unternehmer angeboten hat, die Waren abzuholen (§ 357 Abs. 6); bei außerhalb von Geschäftsräumen geschlossenen Verträgen mit zur Wohnung gebrachten, nicht paketversandfähigen Waren hat der Unternehmer sie auf eigene Kosten abzuholen (Abs. 7)";
+    label en unofficial "The consumer need not return the goods where the trader offered to collect them (§ 357 (6), (7))";
+    when widerruf_fristgerecht(v);
+    when abholung_angeboten(v);
+    then keine_ruecksendepflicht(v);
+}
+
+@source(BGB_P357a)
+rule WertersatzFuerWertverlustDerWare(v: Vertrag, betrag: Money, unterrichtung: Date) strict {
+    label de official "Der Verbraucher hat Wertersatz für einen Wertverlust der Ware zu leisten, wenn der Wertverlust auf einen zur Prüfung nicht notwendigen Umgang zurückzuführen ist und der Unternehmer den Verbraucher über sein Widerrufsrecht unterrichtet hat (§ 357a Abs. 1)";
+    label en unofficial "The consumer must compensate a loss of value caused by handling not necessary for inspection where the trader informed him of the right of withdrawal (§ 357a (1))";
+    when widerruf_fristgerecht(v);
+    when wertverlust_durch_nicht_notwendigen_umgang(v, betrag);
+    when unterrichtung_ueber_das_widerrufsrecht_am(v, unterrichtung);
+    then wertersatz_fuer_wertverlust(v, betrag);
+}
+
+@source(BGB_P357)
+pub relation keine_abholung_angeboten(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat nicht angeboten, die Waren abzuholen (§ 357 Abs. 4 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the trader did not offer to collect the goods (§ 357 (4) sentence 2) — explicit case input";
+}
+@source(BGB_P357)
+pub relation waren_nicht_zurueckerhalten(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat die Waren nicht zurückerhalten und der Verbraucher hat keinen Nachweis der Absendung erbracht (§ 357 Abs. 4 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the trader has not received the goods and no proof of dispatch was given (§ 357 (4) sentence 1) — explicit case input";
+}
+@source(BGB_P357)
+pub relation keine_kostenuebernahme_durch_den_unternehmer(v: Vertrag) kind empirical {
+    label de official "Der Unternehmer hat sich nicht bereit erklärt, die Rücksendekosten zu tragen (§ 357 Abs. 5 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the trader did not agree to bear the costs of return (§ 357 (5) sentence 2) — explicit case input";
+}
+
+// --- §§ 358–361 Verbundene und zusammenhängende Verträge -----------------------------------------------------
+
+pub relation verbundener_darlehensvertrag(v: Vertrag, darlehen: Vertrag) kind empirical {
+    label de official "Der Darlehensvertrag ist mit dem Vertrag über die Lieferung einer Ware oder die Erbringung einer anderen Leistung verbunden: das Darlehen dient ganz oder teilweise der Finanzierung des anderen Vertrags und beide Verträge bilden eine wirtschaftliche Einheit (§ 358 Abs. 3)";
+    label en unofficial "the loan contract is linked to the contract for goods or services: the loan finances it and both form an economic unit (§ 358 (3))";
+}
+pub relation zusammenhaengender_vertrag(v: Vertrag, anderer: Vertrag) kind empirical {
+    label de official "Der Vertrag weist einen Bezug zu dem widerrufenen Vertrag auf und betrifft eine Leistung, die von dem Unternehmer des widerrufenen Vertrags oder einem Dritten auf der Grundlage einer Vereinbarung mit ihm erbracht wird (§ 360 Abs. 2)";
+    label en unofficial "the contract is related to the withdrawn contract and concerns a performance rendered by its trader or a third party on the basis of an agreement with him (§ 360 (2))";
+}
+pub relation auch_an_den_verbundenen_vertrag_nicht_mehr_gebunden(v: Vertrag, verbundener: Vertrag) kind institutional {
+    label de official "Der Verbraucher ist auch an seine auf den Abschluss des verbundenen oder zusammenhängenden Vertrags gerichtete Willenserklärung nicht mehr gebunden (§ 358 Abs. 1, 2, § 360 Abs. 1 Satz 1)";
+    label en unofficial "the consumer is also no longer bound by his declaration directed at the linked or related contract (§ 358 (1), (2), § 360 (1))";
+}
+pub relation einwendung_aus_dem_verbundenen_vertrag(v: Vertrag, darlehen: Vertrag) kind empirical {
+    label de official "Einwendungen aus dem verbundenen Vertrag würden den Verbraucher gegenüber dem Unternehmer zur Verweigerung seiner Leistung berechtigen (§ 359 Abs. 1 Satz 1)";
+    label en unofficial "objections from the linked contract would entitle the consumer to refuse performance towards the trader (§ 359 (1) sentence 1)";
+}
+pub relation finanziertes_entgelt(darlehen: Vertrag, betrag: Money) kind empirical {
+    key(darlehen);
+    label de official "Höhe des finanzierten Entgelts (§ 359 Abs. 2)";
+    label en unofficial "amount of the financed remuneration (§ 359 (2))";
+}
+pub relation rueckzahlung_des_darlehens_verweigerbar(darlehen: Vertrag) kind institutional {
+    label de official "Der Verbraucher kann die Rückzahlung des Darlehens verweigern (§ 359 Abs. 1 Satz 1)";
+    label en unofficial "the consumer may refuse repayment of the loan (§ 359 (1) sentence 1)";
+}
+pub relation keine_weiteren_ansprueche_gegen_den_verbraucher(v: Vertrag) kind institutional {
+    label de official "Über die Vorschriften dieses Untertitels hinaus bestehen keine weiteren Ansprüche gegen den Verbraucher infolge des Widerrufs (§ 361 Abs. 1)";
+    label en unofficial "beyond this sub-title no further claims against the consumer arise from the withdrawal (§ 361 (1))";
+}
+pub relation abweichung_zum_nachteil_des_verbrauchers_im_widerrufsrecht(v: Vertrag) kind empirical {
+    label de official "Von den Vorschriften dieses Untertitels wird zum Nachteil des Verbrauchers abgewichen oder sie werden durch anderweitige Gestaltungen umgangen (§ 361 Abs. 2)";
+    label en unofficial "the provisions of this sub-title are departed from to the consumer's disadvantage or circumvented (§ 361 (2))";
+}
+pub relation abweichung_unwirksam(v: Vertrag) kind institutional {
+    label de official "Die Abweichung ist unzulässig; die Vorschriften finden auch bei Umgehung Anwendung (§ 361 Abs. 2)";
+    label en unofficial "the departure is impermissible; the provisions also apply in case of circumvention (§ 361 (2))";
+}
+pub relation beweislast_fuer_den_fristbeginn(v: Vertrag, unternehmerpartei: Person) kind institutional {
+    label de official "Ist der Beginn der Widerrufsfrist streitig, so trifft die Beweislast den Unternehmer (§ 361 Abs. 3)";
+    label en unofficial "where the start of the period is disputed, the trader bears the burden of proof (§ 361 (3))";
+}
+pub relation fristbeginn_streitig(v: Vertrag) kind empirical {
+    label de official "Der Beginn der Widerrufsfrist ist streitig (§ 361 Abs. 3)";
+    label en unofficial "the start of the period for withdrawal is disputed (§ 361 (3))";
+}
+
+@source(BGB_P358)
+rule WiderrufErfasstDenVerbundenenDarlehensvertrag(v: Vertrag, darlehen: Vertrag) strict {
+    label de official "Hat der Verbraucher seine auf den Abschluss eines Vertrags über die Lieferung einer Ware oder die Erbringung einer anderen Leistung gerichtete Willenserklärung wirksam widerrufen, so ist er auch an seine auf den Abschluss eines mit diesem Vertrag verbundenen Darlehensvertrags gerichtete Willenserklärung nicht mehr gebunden (§ 358 Abs. 1)";
+    label en unofficial "Where the consumer has effectively withdrawn from a contract for goods or services, he is also no longer bound by his declaration for a linked loan contract (§ 358 (1))";
+    when widerruf_fristgerecht(v);
+    when verbundener_darlehensvertrag(v, darlehen);
+    then auch_an_den_verbundenen_vertrag_nicht_mehr_gebunden(v, darlehen);
+}
+
+@source(BGB_P359)
+rule EinwendungsdurchgriffBeiVerbundenenVertraegen(v: Vertrag, darlehen: Vertrag, betrag: Money) strict {
+    label de official "Der Verbraucher kann die Rückzahlung des Darlehens verweigern, soweit Einwendungen aus dem verbundenen Vertrag ihn gegenüber dem Unternehmer zur Verweigerung seiner Leistung berechtigen würden (§ 359 Abs. 1 Satz 1); Absatz 1 gilt nicht, wenn das finanzierte Entgelt weniger als 200 Euro beträgt (Abs. 2)";
+    label en unofficial "The consumer may refuse repayment of the loan so far as objections from the linked contract would entitle him to refuse performance (§ 359 (1)); not where the financed remuneration is below 200 euros ((2))";
+    when verbundener_darlehensvertrag(v, darlehen);
+    when einwendung_aus_dem_verbundenen_vertrag(v, darlehen);
+    when finanziertes_entgelt(darlehen, betrag);
+    when betrag >= 200.00 EUR;
+    then rueckzahlung_des_darlehens_verweigerbar(darlehen);
+}
+
+@source(BGB_P360)
+rule WiderrufErfasstDenZusammenhaengendenVertrag(v: Vertrag, anderer: Vertrag) strict {
+    label de official "Hat der Verbraucher seine Willenserklärung wirksam widerrufen und liegen die Voraussetzungen für einen verbundenen Vertrag nicht vor, so ist er auch an seine auf den Abschluss eines damit zusammenhängenden Vertrags gerichtete Willenserklärung nicht mehr gebunden (§ 360 Abs. 1 Satz 1)";
+    label en unofficial "Where the consumer withdrew effectively and the requirements of a linked contract are not met, he is also no longer bound by his declaration for a related contract (§ 360 (1) sentence 1)";
+    when widerruf_fristgerecht(v);
+    when zusammenhaengender_vertrag(v, anderer);
+    then auch_an_den_verbundenen_vertrag_nicht_mehr_gebunden(v, anderer);
+}
+
+@source(BGB_P361)
+rule KeineWeiterenAnspruecheGegenDenVerbraucher(v: Vertrag) strict {
+    label de official "Über die Vorschriften dieses Untertitels hinaus bestehen keine weiteren Ansprüche gegen den Verbraucher infolge des Widerrufs (§ 361 Abs. 1)";
+    label en unofficial "Beyond this sub-title no further claims against the consumer arise from the withdrawal (§ 361 (1))";
+    when widerruf_fristgerecht(v);
+    then keine_weiteren_ansprueche_gegen_den_verbraucher(v);
+}
+
+@source(BGB_P361)
+rule AbweichungZumNachteilDesVerbrauchersUnwirksam(v: Vertrag) strict {
+    label de official "Von den Vorschriften dieses Untertitels darf nicht zum Nachteil des Verbrauchers abgewichen werden; sie finden auch Anwendung, wenn sie durch anderweitige Gestaltungen umgangen werden (§ 361 Abs. 2)";
+    label en unofficial "No departure from this sub-title to the consumer's disadvantage is permitted; it also applies in case of circumvention (§ 361 (2))";
+    when abweichung_zum_nachteil_des_verbrauchers_im_widerrufsrecht(v);
+    then abweichung_unwirksam(v);
+}
+
+@source(BGB_P361)
+rule BeweislastDesUnternehmersFuerDenFristbeginn(v: Vertrag, unternehmerpartei: Person) strict {
+    label de official "Ist der Beginn der Widerrufsfrist streitig, so trifft die Beweislast den Unternehmer (§ 361 Abs. 3)";
+    label en unofficial "Where the start of the period for withdrawal is disputed, the trader bears the burden of proof (§ 361 (3))";
+    when fristbeginn_streitig(v);
+    when vertragspartei(v, unternehmerpartei);
+    when unternehmer(unternehmerpartei);
+    then beweislast_fuer_den_fristbeginn(v, unternehmerpartei);
+}
+
+// --- § 349 Erklärung des Rücktritts: eigener Kopf --------------------------------------------------------
+
+pub relation ruecktrittserklaerung_gegenueber_dem_anderen_teil(v: Vertrag, teil: Person, tag: Date) kind empirical {
+    key(v);
+    label de official "Der Berechtigte hat die Rücktrittserklärung gegenüber dem anderen Teil abgegeben (§ 349)";
+    label en unofficial "the entitled party declared the withdrawal to the other party (§ 349)";
+}
+
+@source(BGB_P349)
+rule RuecktrittErfolgtDurchErklaerung(v: Vertrag, teil: Person, tag: Date) strict {
+    label de official "Der Rücktritt erfolgt durch Erklärung gegenüber dem anderen Teil (§ 349)";
+    label en unofficial "Withdrawal is effected by declaration to the other party (§ 349)";
+    when ruecktrittserklaerung_gegenueber_dem_anderen_teil(v, teil, tag);
+    then ruecktritt_erklaert(v, teil, tag);
+}
+
+// --- §§ 357c–357e Rechtsfolgen besonderer Widerrufe --------------------------------------------------------
+
+pub relation keine_kosten_des_verbrauchers(v: Vertrag) kind institutional {
+    label de official "Der Verbraucher hat im Falle des Widerrufs keine Kosten zu tragen; die Kosten des Vertrags, seiner Durchführung und seiner Rückabwicklung hat der Unternehmer zu erstatten; eine Vergütung für geleistete Dienste und die Überlassung von Wohngebäuden ist ausgeschlossen (§ 357c Abs. 1)";
+    label en unofficial "the consumer bears no costs upon withdrawal; the trader must reimburse the costs of the contract, its performance and unwinding; remuneration for services and accommodation is excluded (§ 357c (1))";
+}
+pub relation wertverlust_durch_nicht_bestimmungsgemaesse_nutzung(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Der Wertverlust der Unterkunft im Sinne des § 481 beruht auf einer nicht bestimmungsgemäßen Nutzung (§ 357c Abs. 2)";
+    label en unofficial "the loss in value of the accommodation results from use not in accordance with its purpose (§ 357c (2))";
+}
+pub relation wertersatz_fuer_die_unterkunft(v: Vertrag, betrag: Money) kind institutional {
+    key(v);
+    label de official "Der Verbraucher hat für einen Wertverlust der Unterkunft nur Wertersatz zu leisten, soweit der Wertverlust auf einer nicht bestimmungsgemäßen Nutzung beruht (§ 357c Abs. 2)";
+    label en unofficial "the consumer owes compensation for the loss in value only so far as it results from improper use (§ 357c (2))";
+}
+pub relation ruecksendekosten_des_ratenlieferungsvertrags(v: Vertrag) kind institutional {
+    label de official "Der Verbraucher trägt die unmittelbaren Kosten der Rücksendung der empfangenen Sachen, es sei denn, der Unternehmer hat sich bereit erklärt, diese Kosten zu tragen (§ 357d Satz 2)";
+    label en unofficial "the consumer bears the direct costs of returning the goods unless the trader agreed to bear them (§ 357d sentence 2)";
+}
+pub relation rueckgewaehr_der_bauleistung_ausgeschlossen(v: Vertrag) kind empirical {
+    label de official "Die Rückgewähr der bis zum Widerruf erbrachten Leistung ist ihrer Natur nach ausgeschlossen (§ 357e Satz 1)";
+    label en unofficial "the return of the performance rendered up to the withdrawal is excluded by its nature (§ 357e sentence 1)";
+}
+pub relation vereinbarte_verguetung(v: Vertrag, betrag: Money) kind empirical {
+    key(v);
+    label de official "Vereinbarte Vergütung des Verbraucherbauvertrags; ist sie unverhältnismäßig hoch, ist der Wertersatz auf der Grundlage des Marktwertes zu berechnen (§ 357e Sätze 2, 3)";
+    label en unofficial "agreed remuneration of the consumer construction contract; if disproportionately high, the market value governs (§ 357e sentences 2, 3)";
+}
+pub relation wertersatz_beim_verbraucherbauvertrag(v: Vertrag, betrag: Money) kind institutional {
+    key(v);
+    label de official "Ist die Rückgewähr der bis zum Widerruf erbrachten Leistung ihrer Natur nach ausgeschlossen, schuldet der Verbraucher dem Unternehmer Wertersatz (§ 357e Satz 1)";
+    label en unofficial "where return is excluded by its nature the consumer owes the trader compensation of value (§ 357e sentence 1)";
+}
+
+@source(BGB_P357c)
+rule KeineKostenBeiTeilzeitWohnrechtevertraegen(v: Vertrag) strict {
+    label de official "Der Verbraucher hat im Falle des Widerrufs keine Kosten zu tragen; die Kosten des Vertrags, seiner Durchführung und seiner Rückabwicklung hat der Unternehmer dem Verbraucher zu erstatten (§ 357c Abs. 1)";
+    label en unofficial "The consumer bears no costs upon withdrawal; the trader must reimburse the costs of the contract, its performance and unwinding (§ 357c (1))";
+    when teilzeit_wohnrechtevertrag_oder_urlaubsprodukt(v);
+    when widerruf_fristgerecht(v);
+    then keine_kosten_des_verbrauchers(v);
+}
+
+@source(BGB_P357c)
+rule WertersatzNurBeiNichtBestimmungsgemaesserNutzung(v: Vertrag, betrag: Money) strict {
+    label de official "Der Verbraucher hat für einen Wertverlust der Unterkunft im Sinne des § 481 nur Wertersatz zu leisten, soweit der Wertverlust auf einer nicht bestimmungsgemäßen Nutzung der Unterkunft beruht (§ 357c Abs. 2)";
+    label en unofficial "The consumer owes compensation for a loss in value of the accommodation only so far as it results from improper use (§ 357c (2))";
+    when teilzeit_wohnrechtevertrag_oder_urlaubsprodukt(v);
+    when widerruf_fristgerecht(v);
+    when wertverlust_durch_nicht_bestimmungsgemaesse_nutzung(v, betrag);
+    then wertersatz_fuer_die_unterkunft(v, betrag);
+}
+
+@source(BGB_P357d)
+rule RuecksendekostenBeimRatenlieferungsvertrag(v: Vertrag) strict {
+    label de official "Für die Rückgewähr der empfangenen Leistungen gilt § 357 Absatz 1 bis 4 und 6 entsprechend; der Verbraucher trägt die unmittelbaren Kosten der Rücksendung der empfangenen Sachen, es sei denn, der Unternehmer hat sich bereit erklärt, diese Kosten zu tragen (§ 357d)";
+    label en unofficial "§ 357 (1) to (4) and (6) apply accordingly; the consumer bears the direct costs of return unless the trader agreed to bear them (§ 357d)";
+    when ratenlieferungsvertrag(v);
+    when widerruf_fristgerecht(v);
+    when keine_kostenuebernahme_durch_den_unternehmer(v);
+    then ruecksendekosten_des_ratenlieferungsvertrags(v);
+}
+
+@source(BGB_P357e)
+rule WertersatzBeimVerbraucherbauvertrag(v: Vertrag, betrag: Money) strict {
+    label de official "Ist die Rückgewähr der bis zum Widerruf erbrachten Leistung ihrer Natur nach ausgeschlossen, schuldet der Verbraucher dem Unternehmer Wertersatz; bei der Berechnung ist die vereinbarte Vergütung zugrunde zu legen (§ 357e Sätze 1, 2)";
+    label en unofficial "Where return of the performance is excluded by its nature the consumer owes compensation of value, calculated on the agreed remuneration (§ 357e sentences 1, 2)";
+    when verbraucherbauvertrag(v);
+    when widerruf_fristgerecht(v);
+    when rueckgewaehr_der_bauleistung_ausgeschlossen(v);
+    when vereinbarte_verguetung(v, betrag);
+    then wertersatz_beim_verbraucherbauvertrag(v, betrag);
+}

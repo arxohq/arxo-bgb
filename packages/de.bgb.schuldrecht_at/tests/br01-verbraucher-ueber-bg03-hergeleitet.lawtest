@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// Brücke D-04-09: der Fall setzt KEINEN lokalen Eingang `verbraucher(p)`,
+// sondern nur die Köpfe des § 13 aus de.bgb.allgemeiner_teil (natürliche
+// Person, Zweck überwiegend nicht gewerblich) und das Korrelat
+// `rechtsgeschaeft_des_vertrags`. Die Brücke leitet `verbraucher(p)` her.
+test "Brücke §§ 13/14: Verbraucher ausschließlich über de.bgb.allgemeiner_teil hergeleitet" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:sr-at:br01:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::zweck_ueberwiegend_nicht_gewerblich(entity_ref("urn:de:bgb:sr-at:br01:p1"), entity_ref("urn:de:bgb:sr-at:br01:r1")) { origin adjudicated; }
+        assert "a3": rechtsgeschaeft_des_vertrags(entity_ref("urn:de:bgb:sr-at:br01:v1"), entity_ref("urn:de:bgb:sr-at:br01:r1")) { origin case_input; }
+    }
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:sr-at:br01:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

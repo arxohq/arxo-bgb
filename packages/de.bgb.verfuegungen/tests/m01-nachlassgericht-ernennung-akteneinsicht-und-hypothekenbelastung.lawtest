@@ -1,0 +1,70 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2200 Abs. 1 (Ernennung durch Nachlassgericht — mündet in denselben Kopf
+// wie § 2197), § 2228 (Akteneinsicht bei glaubhaftem Interesse, Kanal
+// §47.3), § 2166 Abs. 1 (Schuld gedeckt — beide Richtungen), Abs. 2 (mit
+// Drittem — beide Seiten der Gegenausnahme), Abs. 3 (§ 1190-Ausnahme).
+test "§§ 2200, 2228, 2166: Ernennung, Akteneinsicht, Hypothekenbelastung" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+
+        // § 2200
+        assert "m1": erblasser_ersucht_nachlassgericht_um_ernennung_2200(entity_ref("urn:de:bgb:pilot:m01:T1"), entity_ref("urn:de:bgb:pilot:m01:ERBLASSER1")) { origin case_input; }
+        assert "m2": nachlassgericht_ernennt_testamentsvollstrecker_2200(entity_ref("urn:de:bgb:pilot:m01:T1"), entity_ref("urn:de:bgb:pilot:m01:TV1")) { origin adjudicated; }
+
+        // § 2228
+        assert "m3": erklaerung_nach_2198_2199_2202_2226_abgegeben_2228(entity_ref("urn:de:bgb:pilot:m01:T2"), entity_ref("urn:de:bgb:pilot:m01:ERKLAERENDER2")) { origin case_input; }
+        assert "m4": dritter_begehrt_akteneinsicht_2228(entity_ref("urn:de:bgb:pilot:m01:T2"), entity_ref("urn:de:bgb:pilot:m01:DRITTER2")) { origin case_input; }
+        assert "m5": rechtliches_interesse_glaubhaft_gemacht_2228(entity_ref("urn:de:bgb:pilot:m01:T2"), entity_ref("urn:de:bgb:pilot:m01:DRITTER2")) { origin adjudicated; }
+
+        // § 2166 Abs. 1: Schuld <= Wert
+        assert "m6": vermachtes_grundstueck_mit_hypothek_belastet_2166(entity_ref("urn:de:bgb:pilot:m01:T3"), entity_ref("urn:de:bgb:pilot:m01:VN3"), entity_ref("urn:de:bgb:pilot:m01:ERBE3")) { origin case_input; }
+        assert "m7": hypothekenschuld_betrag_2166(entity_ref("urn:de:bgb:pilot:m01:T3"), 30000.00 EUR) { origin case_input; }
+        assert "m8": grundstueckswert_beim_eigentumsuebergang_2166(entity_ref("urn:de:bgb:pilot:m01:T3"), 50000.00 EUR) { origin case_input; }
+
+        // § 2166 Abs. 1: Wert < Schuld
+        assert "m9": vermachtes_grundstueck_mit_hypothek_belastet_2166(entity_ref("urn:de:bgb:pilot:m01:T4"), entity_ref("urn:de:bgb:pilot:m01:VN4"), entity_ref("urn:de:bgb:pilot:m01:ERBE4")) { origin case_input; }
+        assert "m10": hypothekenschuld_betrag_2166(entity_ref("urn:de:bgb:pilot:m01:T4"), 60000.00 EUR) { origin case_input; }
+        assert "m11": grundstueckswert_beim_eigentumsuebergang_2166(entity_ref("urn:de:bgb:pilot:m01:T4"), 45000.00 EUR) { origin case_input; }
+
+        // § 2166 Abs. 2: Dritter verpflichtet, Erbe kann NICHT erlangen (Verpflichtung bleibt)
+        assert "m12": vermachtes_grundstueck_mit_hypothek_belastet_2166(entity_ref("urn:de:bgb:pilot:m01:T5"), entity_ref("urn:de:bgb:pilot:m01:VN5"), entity_ref("urn:de:bgb:pilot:m01:ERBE5")) { origin case_input; }
+        assert "m13": hypothekenschuld_betrag_2166(entity_ref("urn:de:bgb:pilot:m01:T5"), 20000.00 EUR) { origin case_input; }
+        assert "m14": grundstueckswert_beim_eigentumsuebergang_2166(entity_ref("urn:de:bgb:pilot:m01:T5"), 40000.00 EUR) { origin case_input; }
+        assert "m15": dritter_zur_berichtigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T5")) { origin case_input; }
+
+        // § 2166 Abs. 2: Dritter verpflichtet, Erbe KANN erlangen (Verpflichtung entfällt)
+        assert "m16": vermachtes_grundstueck_mit_hypothek_belastet_2166(entity_ref("urn:de:bgb:pilot:m01:T6"), entity_ref("urn:de:bgb:pilot:m01:VN6"), entity_ref("urn:de:bgb:pilot:m01:ERBE6")) { origin case_input; }
+        assert "m17": hypothekenschuld_betrag_2166(entity_ref("urn:de:bgb:pilot:m01:T6"), 20000.00 EUR) { origin case_input; }
+        assert "m18": grundstueckswert_beim_eigentumsuebergang_2166(entity_ref("urn:de:bgb:pilot:m01:T6"), 40000.00 EUR) { origin case_input; }
+        assert "m19": dritter_zur_berichtigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T6")) { origin case_input; }
+        assert "m20": erbe_kann_berichtigung_von_drittem_erlangen_2166(entity_ref("urn:de:bgb:pilot:m01:T6"), entity_ref("urn:de:bgb:pilot:m01:ERBE6"), entity_ref("urn:de:bgb:pilot:m01:VN6"), 20000.00 EUR) { origin case_input; }
+
+        // § 2166 Abs. 3: § 1190-Hypothek — keine Anwendung trotz gedeckter Schuld
+        assert "m21": vermachtes_grundstueck_mit_hypothek_belastet_2166(entity_ref("urn:de:bgb:pilot:m01:T7"), entity_ref("urn:de:bgb:pilot:m01:VN7"), entity_ref("urn:de:bgb:pilot:m01:ERBE7")) { origin case_input; }
+        assert "m22": hypothekenschuld_betrag_2166(entity_ref("urn:de:bgb:pilot:m01:T7"), 10000.00 EUR) { origin case_input; }
+        assert "m23": grundstueckswert_beim_eigentumsuebergang_2166(entity_ref("urn:de:bgb:pilot:m01:T7"), 50000.00 EUR) { origin case_input; }
+        assert "m24": hypothek_der_art_des_1190_2166(entity_ref("urn:de:bgb:pilot:m01:T7")) { origin case_input; }
+    }
+
+    evaluate truth(ernennung_wirksam_2197(entity_ref("urn:de:bgb:pilot:m01:T1"), entity_ref("urn:de:bgb:pilot:m01:TV1")));
+    expect truth_status == TRUE_ONLY;
+
+    evaluate truth(akteneinsicht_zu_gestatten_2228(entity_ref("urn:de:bgb:pilot:m01:T2"), entity_ref("urn:de:bgb:pilot:m01:DRITTER2")));
+    expect truth_status == TRUE_ONLY;
+
+    evaluate truth(vermaechtnisnehmer_zur_befriedigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T3"), entity_ref("urn:de:bgb:pilot:m01:VN3"), entity_ref("urn:de:bgb:pilot:m01:ERBE3"), 30000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vermaechtnisnehmer_zur_befriedigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T4"), entity_ref("urn:de:bgb:pilot:m01:VN4"), entity_ref("urn:de:bgb:pilot:m01:ERBE4"), 45000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+
+    evaluate truth(vermaechtnisnehmer_zur_befriedigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T5"), entity_ref("urn:de:bgb:pilot:m01:VN5"), entity_ref("urn:de:bgb:pilot:m01:ERBE5"), 20000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vermaechtnisnehmer_zur_befriedigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T6"), entity_ref("urn:de:bgb:pilot:m01:VN6"), entity_ref("urn:de:bgb:pilot:m01:ERBE6"), 20000.00 EUR));
+    expect truth_status == NEITHER;
+
+    evaluate truth(vermaechtnisnehmer_zur_befriedigung_verpflichtet_2166(entity_ref("urn:de:bgb:pilot:m01:T7"), entity_ref("urn:de:bgb:pilot:m01:VN7"), entity_ref("urn:de:bgb:pilot:m01:ERBE7"), 10000.00 EUR));
+    expect truth_status == NEITHER;
+}

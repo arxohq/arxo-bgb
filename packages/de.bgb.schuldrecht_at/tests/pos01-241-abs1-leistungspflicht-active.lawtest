@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 241 Abs. 1 Satz 1: die Leistungspflicht des Schuldners läuft ab der
+// Fälligkeit bis zur Bewirkung der Leistung (§ 362 Abs. 1). Am 15. Juni 2026
+// ist die Leistung (fällig seit 1. Juni 2026) noch nicht bewirkt — die
+// Pflicht ist ACTIVE, nicht VIOLATED: die Frist läuft unbestimmt fort
+// (`during [f, infinity)`), ein Nichterfüllen vor Verzug ist kein Verstoß.
+test "§ 241 Abs. 1: die Leistungspflicht ist vor Erfüllung ACTIVE" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:pos01:l1"), entity_ref("urn:de:bgb:sr-at:pos01:s1")) { origin case_input; }
+        assert "f2": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:pos01:s1"), entity_ref("urn:de:bgb:sr-at:pos01:g1")) { origin case_input; }
+        assert "f3": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:pos01:s1"), entity_ref("urn:de:bgb:sr-at:pos01:sch1")) { origin case_input; }
+        assert "f4": faelligkeit(entity_ref("urn:de:bgb:sr-at:pos01:l1"), @2026-06-01) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(LeistungAnDenGlaeubigerBewirken, ACTIVE);
+    expect not position(LeistungAnDenGlaeubigerBewirken, VIOLATED);
+    expect not position(LeistungAnDenGlaeubigerBewirken, SATISFIED);
+    expect evaluation_status == COMPUTED;
+}

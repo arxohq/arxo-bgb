@@ -1,0 +1,54 @@
+pub relation leistungskondiktion_812_beteiligte(b: Bereicherung, empfaenger: Person, leistender: Person) kind empirical {
+    label de official "Beteiligte der Leistungskondiktion nach § 812";
+    label en unofficial "parties to the performance-based enrichment claim under § 812";
+}
+pub relation leistungskondiktion_812_beginn_am(b: Bereicherung, tag: Date) kind empirical {
+    label de official "Beginn der Leistungskondiktion nach § 812";
+    label en unofficial "start of the performance-based enrichment claim under § 812";
+}
+@source(BGB_P812)
+rule PositionLeistungskondiktion812(b: Bereicherung, e: Person, l: Person, tag: Date) defeasible {
+    label de official "Der Empfänger hat die Leistung ohne Rechtsgrund herauszugeben (§ 812)";
+    label en unofficial "The recipient must hand over the performance received without legal ground (§ 812)";
+    when leistungskondiktion_812_beteiligte(b, e, l)
+     and leistungskondiktion_812_beginn_am(b, tag);
+    then liberty LibertyLeistungskondiktion812 {
+        holder e;
+        action leistungskondiktion_812_beginn_am(b, tag);
+        window [tag, infinity);
+    };
+}
+
+pub relation nichtleistungskondiktion_812_beginn_am(b: Bereicherung, tag: Date) kind empirical {
+    label de official "Beginn der Nichtleistungskondiktion nach § 812";
+    label en unofficial "start of the non-performance enrichment claim under § 812";
+}
+@source(BGB_P812)
+rule PositionNichtleistungskondiktion812(b: Bereicherung, e: Person, l: Person, tag: Date) defeasible {
+    label de official "Der ohne Rechtsgrund auf Kosten eines anderen Bereichere hat herauszugeben (§ 812)";
+    label en unofficial "The person enriched at another's expense without legal ground must hand over (§ 812)";
+    when leistungskondiktion_812_beteiligte(b, e, l)
+     and nichtleistungskondiktion_812_beginn_am(b, tag);
+    then liberty LibertyNichtleistungskondiktion812 {
+        holder e;
+        action nichtleistungskondiktion_812_beginn_am(b, tag);
+        window [tag, infinity);
+    };
+}
+
+pub relation zweckverfehlung_812_beginn_am(b: Bereicherung, tag: Date) kind empirical {
+    label de official "Beginn der Zweckverfehlungskondiktion nach § 812";
+    label en unofficial "start of the failed-purpose enrichment claim under § 812";
+}
+@source(BGB_P812)
+rule PositionZweckverfehlung812(b: Bereicherung, e: Person, l: Person, tag: Date) defeasible {
+    label de official "Der Empfänger hat wegen Zweckverfehlung herauszugeben (§ 812)";
+    label en unofficial "The recipient must hand over because the intended purpose failed (§ 812)";
+    when leistungskondiktion_812_beteiligte(b, e, l)
+     and zweckverfehlung_812_beginn_am(b, tag);
+    then liberty LibertyZweckverfehlung812 {
+        holder e;
+        action zweckverfehlung_812_beginn_am(b, tag);
+        window [tag, infinity);
+    };
+}

@@ -1,0 +1,800 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 1 — REST DER ERBFOLGE
+// (§ 1923 Abs. 2, § 1927, §§ 1928–1929, § 1931 Abs. 1 Satz 2, §§ 1932–1941).
+//
+// Der Pilot B1 (`package.law`) trägt die Ordnungen 1 bis 3 mit der Erbfolge
+// nach Stämmen und dem Ehegattenerbteil. Diese Datei schließt Abschnitt 1:
+//
+//   § 1923 Abs. 2  der Nasciturus gilt als vor dem Erbfall geboren;
+//   § 1927         mehrere Erbteile bei mehrfacher Verwandtschaft —
+//                  Anteile je STAMM (`stammanteil_im_stamm`), Summe im
+//                  `gesamterbteil_bruch`;
+//   §§ 1928, 1929  vierte und fernere Ordnungen: GRADUALSYSTEM, keine
+//                  Linien und keine Stämme (Abs. 2, 3, § 1929 Abs. 2);
+//   § 1931 Abs. 1 Satz 2  Ehegatte neben Großeltern und deren Abkömmlingen:
+//                  der Anteil der Abkömmlinge fällt dem Ehegatten zu —
+//                  als ZUSCHLAG auf den Erbteil des Satzes 1, damit die
+//                  Masse der Verwandten nicht vom Ergebnis abhängt (E-0112);
+//   §§ 1932–1936   Voraus, Ausschluss des Ehegattenerbrechts, verwandter
+//                  Ehegatte, Erbteilserhöhung, Erbrecht des Staates;
+//   §§ 1937–1941   die Verfügungen von Todes wegen NUR als Begriffe: die
+//                  Normen selbst stehen bei `de.bgb.verfuegungen` (BG-16),
+//                  hier entsteht allein der Eingang der gewillkürten Erbfolge.
+//
+// BESONDERER ERBTEIL. § 1927 Satz 2 und § 1934 Satz 2 sagen dasselbe: wer
+// aus mehreren Gründen erbt, hält mehrere Erbteile. `gesetzlicher_erbteil_bruch`
+// trägt `key(e, p)` und kann das nicht ausdrücken; deshalb führt diese Datei
+// den Anteil JE GRUND (`erbteil_aus_stamm` mit `key(e, p, stamm)` und den
+// Ehegattenerbteil) und die Summe in `gesamterbteil_bruch`. Die Regeln des
+// Piloten bleiben unverändert für den gewöhnlichen Fall; sie sind mit
+// `not_known(mehrfach_verwandt(e, p))` abgeschirmt, damit der Fall des
+// § 1927 keinen Schlüsselkonflikt auslöst (Ledger D-08, D-15-01).
+
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// --- § 1923 Abs. 2 Nasciturus ---------------------------------------------------------------------
+
+pub relation vor_dem_erbfall_gezeugt(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Person lebte zur Zeit des Erbfalls noch nicht, war aber bereits gezeugt (§ 1923 Abs. 2)";
+    label en unofficial "The person was not yet alive at the time of the devolution but was already conceived (§ 1923 (2))";
+}
+pub relation lebend_geboren(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Person ist nach dem Erbfall lebend geboren worden (§ 1 in Verbindung mit § 1923 Abs. 2) — ohne Lebendgeburt entsteht keine Rechtsfähigkeit";
+    label en unofficial "The person was born alive after the devolution (§ 1 with § 1923 (2)) — without live birth no legal capacity arises";
+}
+pub relation gilt_als_vor_dem_erbfall_geboren(e: Erbfall, p: Person) kind institutional {
+    label de official "Wer zur Zeit des Erbfalls noch nicht lebte, aber bereits gezeugt war, gilt als vor dem Erbfall geboren (§ 1923 Abs. 2)";
+    label en unofficial "A person not yet alive at the devolution but already conceived is deemed to have been born before the devolution (§ 1923 (2))";
+}
+
+@source(BGB_P1923) {
+    rule Nasciturus(e: Erbfall, p: Person) strict {
+        label de official "Wer zur Zeit des Erbfalls noch nicht lebte, aber bereits gezeugt war, gilt als vor dem Erbfall geboren (§ 1923 Abs. 2)";
+        label en unofficial "A person not yet alive at the devolution but already conceived is deemed to have been born before the devolution (§ 1923 (2))";
+        when vor_dem_erbfall_gezeugt(e, p) and lebend_geboren(e, p);
+        then gilt_als_vor_dem_erbfall_geboren(e, p);
+    }
+    rule NasciturusIstErbfaehig(e: Erbfall, p: Person) strict {
+        label de official "Der Nasciturus, der als vor dem Erbfall geboren gilt, ist erbfähig (§ 1923 Abs. 1, 2)";
+        label en unofficial "The unborn child deemed born before the devolution has capacity to inherit (§ 1923 (1), (2))";
+        when gilt_als_vor_dem_erbfall_geboren(e, p);
+        then erbfaehig(e, p);
+    }
+}
+
+// --- Anteil je Stamm: Grundlage der §§ 1927, 1934 --------------------------------------------------
+//
+// Dieselbe Rekursion wie im Piloten, aber mit dem HAUPT DES STAMMES im
+// Schlüssel: wer zwei Stämmen angehört, trägt zwei Zeilen statt eines
+// Konflikts. Die Zahl der Unterstämme (`zahl_der_unterstaemme`) hängt nicht
+// vom oberen Stamm ab und wird aus dem Piloten gelesen.
+
+pub relation stammanteil_im_stamm(e: Erbfall, stamm: Person, p: Person, ordnung: Integer, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, stamm, p, ordnung);
+    label de official "Anteil, der dem Knoten p innerhalb des Stammes mit dem Haupt `stamm` zufällt (§§ 1924–1926, § 1927 Satz 1)";
+    label en unofficial "share falling to node p within the stem headed by `stamm` (§§ 1924–1926, § 1927 sentence 1)";
+}
+pub relation erbteil_aus_stamm(e: Erbfall, p: Person, stamm: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, p, stamm);
+    label de official "Der in diesem Stamm dem Erben zufallende Anteil; jeder Anteil gilt als besonderer Erbteil (§ 1927)";
+    label en unofficial "the share falling to the heir in this stem; each share counts as a separate share of the estate (§ 1927)";
+}
+pub relation mehrfach_verwandt(e: Erbfall, p: Person) kind derived {
+    label de official "Der Erbe gehört in derselben Ordnung verschiedenen Stämmen an (§ 1927 Satz 1)";
+    label en unofficial "The heir belongs to different stems within the same order (§ 1927 sentence 1)";
+}
+pub relation hat_stammerbteil(e: Erbfall, p: Person) kind derived {
+    label de official "Dem Erben fällt ein Anteil als Verwandter zu (§§ 1924–1929)";
+    label en unofficial "a share falls to the heir as a relative (§§ 1924–1929)";
+}
+pub relation hat_ehegattenerbteil(e: Erbfall, p: Person) kind derived {
+    label de official "Dem Erben fällt ein Anteil als Ehegatte zu (§ 1931)";
+    label en unofficial "a share falls to the heir as a spouse (§ 1931)";
+}
+pub relation gesamterbteil_bruch(e: Erbfall, p: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, p);
+    label de official "Summe der besonderen Erbteile eines Erben als Bruch (§ 1927 Satz 2, § 1934 Satz 2)";
+    label en unofficial "sum of the separate shares of one heir as a fraction (§ 1927 sentence 2, § 1934 sentence 2)";
+}
+pub relation gesamterbteil(e: Erbfall, p: Person, x: Rational) kind derived {
+    key(e, p);
+    label de official "Summe der besonderen Erbteile eines Erben als exakter Bruch (§ 1927, § 1934)";
+    label en unofficial "sum of the separate shares of one heir as an exact fraction (§ 1927, § 1934)";
+}
+
+@source(BGB_P1927) {
+    rule StammanteilImStammKind(e: Erbfall, c: Person, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Jeder besetzte Kinderstamm erhält die Masse durch die Zahl der Stämme (§ 1924 Abs. 3, 4); der Anteil wird unter dem Haupt seines Stammes geführt (§ 1927 Satz 1)";
+        label en unofficial "Each occupied child stem receives the mass divided by the number of stems (§ 1924 (3), (4)); the share is kept under the head of its stem (§ 1927 sentence 1)";
+        when berufene_ordnung(e, 1) and stammhaupt(e, c, 1) and stamm_besetzt(e, c, 1)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_kinderstaemme(e, k);
+        then stammanteil_im_stamm(e, c, c, 1, z, n * k);
+    }
+    rule StammanteilImStammElternteil(e: Erbfall, p: Person, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Jeder besetzte Elternstamm erhält die Masse durch die Zahl der besetzten Elternstämme (§ 1925 Abs. 2, 3); der Anteil wird unter dem Haupt seines Stammes geführt (§ 1927 Satz 1)";
+        label en unofficial "Each occupied parent stem receives the mass divided by the number of occupied parent stems (§ 1925 (2), (3)); the share is kept under the head of its stem (§ 1927 sentence 1)";
+        when berufene_ordnung(e, 2) and stammhaupt(e, p, 2) and stamm_besetzt(e, p, 2)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_elternstaemme(e, k);
+        then stammanteil_im_stamm(e, p, p, 2, z, n * k);
+    }
+    rule StammanteilImStammGrosselternteil(e: Erbfall, g: Person, l: Person, z: Integer, n: Integer, k: Integer, m: Integer) strict {
+        label de official "Die Masse teilt sich zwischen den vertretenen Großelternpaaren und im Paar zwischen den besetzten Stämmen (§ 1926 Abs. 2–4); der Anteil wird unter dem Haupt seines Stammes geführt (§ 1927 Satz 1)";
+        label en unofficial "The mass is divided between the represented grandparent pairs and within a pair between the occupied stems (§ 1926 (2)–(4)); the share is kept under the head of its stem (§ 1927 sentence 1)";
+        when berufene_ordnung(e, 3) and grosselternteil(e, g, l) and stamm_besetzt(e, g, 3)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_linien(e, k) and zahl_der_staemme_der_linie(e, l, m);
+        then stammanteil_im_stamm(e, g, g, 3, z, n * k * m);
+    }
+    rule StammanteilImStammDesUnterstamms(e: Erbfall, st: Person, q: Person, c: Person, o: Integer, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Die an die Stelle des Vorverstorbenen tretenden Abkömmlinge erben seinen Anteil zu gleichen Teilen (§ 1924 Abs. 3, 4; § 1925 Abs. 3; § 1926 Abs. 5): der Anteil bleibt unter dem Haupt desselben Stammes (§ 1927 Satz 1)";
+        label en unofficial "The descendants taking the predeceased's place inherit his share in equal parts (§ 1924 (3), (4); § 1925 (3); § 1926 (5)): the share stays under the head of the same stem (§ 1927 sentence 1)";
+        when besetzter_unterstamm(e, q, c, o) and monotone(stammanteil_im_stamm(e, st, q, o, z, n))
+            and zahl_der_unterstaemme(e, q, o, k);
+        then stammanteil_im_stamm(e, st, c, o, z, n * k);
+    }
+    rule ErbteilAusStamm(e: Erbfall, st: Person, p: Person, o: Integer, z: Integer, n: Integer) strict {
+        label de official "Wer in der ersten, der zweiten oder der dritten Ordnung einem Stamm angehört, erhält den in diesem Stamm ihm zufallenden Anteil (§ 1927 Satz 1)";
+        label en unofficial "A person belonging to a stem of the first, second or third order receives the share falling to him in that stem (§ 1927 sentence 1)";
+        when berufene_ordnung(e, o) and erbe_von_eigenem_recht(e, p, o) and stammanteil_im_stamm(e, st, p, o, z, n);
+        then erbteil_aus_stamm(e, p, st, z, n);
+    }
+    rule MehrfachVerwandt(e: Erbfall, p: Person, s1: Person, s2: Person, z1: Integer, n1: Integer, z2: Integer, n2: Integer) strict {
+        label de official "Der Erbe gehört in derselben Ordnung verschiedenen Stämmen an (§ 1927 Satz 1)";
+        label en unofficial "The heir belongs to different stems within the same order (§ 1927 sentence 1)";
+        when erbteil_aus_stamm(e, p, s1, z1, n1) and erbteil_aus_stamm(e, p, s2, z2, n2) and s1 != s2;
+        then mehrfach_verwandt(e, p);
+    }
+    rule HatStammerbteil(e: Erbfall, p: Person, st: Person, z: Integer, n: Integer) strict {
+        label de official "Dem Erben fällt ein Anteil als Verwandter zu (§§ 1924–1927)";
+        label en unofficial "a share falls to the heir as a relative (§§ 1924–1927)";
+        when erbteil_aus_stamm(e, p, st, z, n);
+        then hat_stammerbteil(e, p);
+    }
+    rule ZweiErbteileAusZweiStaemmen(e: Erbfall, p: Person, s1: Person, s2: Person, z1: Integer, n1: Integer, z2: Integer, n2: Integer) strict {
+        label de official "Wer verschiedenen Stämmen angehört, erhält den in jedem dieser Stämme ihm zufallenden Anteil; jeder Anteil gilt als besonderer Erbteil (§ 1927): die Summe zweier Anteile über den gemeinsamen Nenner";
+        label en unofficial "A person belonging to different stems receives the share falling to him in each of them; each share counts as a separate share (§ 1927): the sum of two shares over the common denominator";
+        when erbteil_aus_stamm(e, p, s1, z1, n1) and erbteil_aus_stamm(e, p, s2, z2, n2) and s1 != s2
+            and not_known(hat_ehegattenerbteil(e, p));
+        then gesamterbteil_bruch(e, p, z1 * n2 + z2 * n1, n1 * n2);
+    }
+    rule EinErbteilAusEinemStamm(e: Erbfall, p: Person, st: Person, z: Integer, n: Integer) strict {
+        label de official "Gehört der Erbe nur einem Stamm an und erbt er nicht zugleich als Ehegatte, so ist sein Erbteil der Anteil dieses Stammes (§ 1927 im Umkehrschluss)";
+        label en unofficial "If the heir belongs to only one stem and does not also inherit as a spouse, his share is that stem's share (§ 1927 by converse)";
+        when erbteil_aus_stamm(e, p, st, z, n) and not_known(mehrfach_verwandt(e, p))
+            and not_known(hat_ehegattenerbteil(e, p));
+        then gesamterbteil_bruch(e, p, z, n);
+    }
+    rule GesamterbteilAlsBruch(e: Erbfall, p: Person, z: Integer, n: Integer) strict {
+        label de official "Die Summe der besonderen Erbteile als exakter Bruch: Zähler durch Nenner";
+        label en unofficial "The sum of the separate shares as an exact fraction: numerator over denominator";
+        when gesamterbteil_bruch(e, p, z, n);
+        then gesamterbteil(e, p, z / n);
+    }
+}
+
+// --- § 1934 Erbrecht des verwandten Ehegatten ------------------------------------------------------
+
+pub relation verwandter_ehegatte(e: Erbfall, s: Person) kind derived {
+    label de official "Der überlebende Ehegatte gehört zu den erbberechtigten Verwandten und erbt zugleich als Verwandter (§ 1934 Satz 1)";
+    label en unofficial "The surviving spouse belongs to the relatives entitled to inherit and inherits also as a relative (§ 1934 sentence 1)";
+}
+
+@source(BGB_P1934) {
+    rule HatEhegattenerbteil(e: Erbfall, s: Person, z: Integer, n: Integer) strict {
+        label de official "Dem überlebenden Ehegatten fällt ein Erbteil als Ehegatte zu (§ 1931)";
+        label en unofficial "a share falls to the surviving spouse as a spouse (§ 1931)";
+        when ehegattenerbteil_bruch(e, s, z, n);
+        then hat_ehegattenerbteil(e, s);
+    }
+    rule VerwandterEhegatte(e: Erbfall, s: Person, st: Person, z: Integer, n: Integer) strict {
+        label de official "Gehört der überlebende Ehegatte zu den erbberechtigten Verwandten, so erbt er zugleich als Verwandter (§ 1934 Satz 1)";
+        label en unofficial "If the surviving spouse belongs to the relatives entitled to inherit, he inherits also as a relative (§ 1934 sentence 1)";
+        when ueberlebender_ehegatte(e, s) and erbteil_aus_stamm(e, s, st, z, n);
+        then verwandter_ehegatte(e, s);
+    }
+    rule ErbteilDesVerwandtenEhegatten(e: Erbfall, s: Person, st: Person, z1: Integer, n1: Integer, z2: Integer, n2: Integer) strict {
+        label de official "Der Erbteil, der dem Ehegatten auf Grund der Verwandtschaft zufällt, gilt als besonderer Erbteil (§ 1934 Satz 2): die Summe beider Erbteile über den gemeinsamen Nenner";
+        label en unofficial "The share falling to the spouse by reason of kinship counts as a separate share (§ 1934 sentence 2): the sum of both shares over the common denominator";
+        when ehegattenerbteil_bruch(e, s, z1, n1) and erbteil_aus_stamm(e, s, st, z2, n2)
+            and not_known(mehrfach_verwandt(e, s));
+        then gesamterbteil_bruch(e, s, z1 * n2 + z2 * n1, n1 * n2);
+    }
+    rule ErbteilDesNurEhegatten(e: Erbfall, s: Person, z: Integer, n: Integer) strict {
+        label de official "Gehört der Ehegatte nicht zu den erbberechtigten Verwandten, so ist sein Erbteil der Ehegattenerbteil (§ 1931, § 1934 im Umkehrschluss)";
+        label en unofficial "If the spouse does not belong to the relatives entitled to inherit, his share is the spouse's share (§ 1931, § 1934 by converse)";
+        when ehegattenerbteil_bruch(e, s, z, n) and not_known(hat_stammerbteil(e, s));
+        then gesamterbteil_bruch(e, s, z, n);
+    }
+}
+
+// --- §§ 1928, 1929 Vierte und fernere Ordnungen: Gradualsystem --------------------------------------
+//
+// Ab der vierten Ordnung gibt es KEINE Stämme und KEINE Linien: leben
+// Voreltern der Ordnung, so erben sie allein und zu gleichen Teilen, „ohne
+// Unterschied, ob sie derselben Linie oder verschiedenen Linien angehören“
+// (§ 1928 Abs. 2); leben sie nicht mehr, so erbt von ihren Abkömmlingen der
+// dem GRADE nach nächste, mehrere gleich nahe zu gleichen Teilen (Abs. 3).
+// Der Grad kommt aus `calc.kinship::kin_degree` (römische Zählung, § 1589
+// Abs. 1 Satz 3 — Politik `GradzaehlungNachGeburten` des Piloten).
+
+pub relation vorelternteil(e: Erbfall, a: Person, ordnung: Integer) kind derived {
+    label de official "Vorelternteil des Erblassers der angegebenen Ordnung: Urgroßelternteil ist vierte, jede weitere Generation die nächste Ordnung (§ 1928 Abs. 1, § 1929 Abs. 1)";
+    label en unofficial "ancestor of the decedent of the given order: a great-grandparent is the fourth, every further generation the next order (§ 1928 (1), § 1929 (1))";
+}
+pub relation lebender_vorelternteil(e: Erbfall, a: Person, ordnung: Integer) kind derived {
+    label de official "Vorelternteil der Ordnung, der zur Zeit des Erbfalls lebt (§ 1928 Abs. 2)";
+    label en unofficial "ancestor of the order alive at the time of the devolution (§ 1928 (2))";
+}
+pub relation zahl_der_lebenden_voreltern(e: Erbfall, ordnung: Integer, k: Integer) kind derived {
+    key(e, ordnung);
+    label de official "Zahl der zur Zeit des Erbfalls lebenden Voreltern der Ordnung (§ 1928 Abs. 2)";
+    label en unofficial "number of ancestors of the order alive at the devolution (§ 1928 (2))";
+}
+pub relation voreltern_leben(e: Erbfall, ordnung: Integer) kind derived {
+    label de official "In dieser Ordnung lebt ein Vorelternteil zur Zeit des Erbfalls (§ 1928 Abs. 2, 3)";
+    label en unofficial "an ancestor of this order is alive at the devolution (§ 1928 (2), (3))";
+}
+pub relation abkoemmling_der_voreltern(e: Erbfall, p: Person, ordnung: Integer) kind derived {
+    label de official "Abkömmling der Voreltern der Ordnung, der zur Zeit des Erbfalls lebt (§ 1928 Abs. 1, 3)";
+    label en unofficial "descendant of the ancestors of the order who is alive at the devolution (§ 1928 (1), (3))";
+}
+pub relation grad_zum_erblasser(e: Erbfall, p: Person, grad: Integer) kind derived {
+    key(e, p);
+    label de official "Grad der Verwandtschaft mit dem Erblasser nach der Zahl der vermittelnden Geburten (§ 1589 Abs. 1 Satz 3, § 1928 Abs. 3)";
+    label en unofficial "degree of kinship with the decedent by the number of mediating births (§ 1589 (1) sentence 3, § 1928 (3))";
+}
+pub relation naechster_grad_der_ordnung(e: Erbfall, ordnung: Integer, grad: Integer) kind derived {
+    key(e, ordnung);
+    label de official "Der nächste Grad, in dem ein Abkömmling der Voreltern dieser Ordnung mit dem Erblasser verwandt ist (§ 1928 Abs. 3)";
+    label en unofficial "the nearest degree in which a descendant of the ancestors of this order is related to the decedent (§ 1928 (3))";
+}
+pub relation naechster_verwandter_der_ordnung(e: Erbfall, p: Person, ordnung: Integer) kind derived {
+    label de official "Von den Abkömmlingen der Voreltern erbt derjenige, welcher mit dem Erblasser dem Grade nach am nächsten verwandt ist (§ 1928 Abs. 3)";
+    label en unofficial "Of the ancestors' descendants the one most closely related to the decedent by degree inherits (§ 1928 (3))";
+}
+pub relation zahl_der_naechsten_verwandten(e: Erbfall, ordnung: Integer, k: Integer) kind derived {
+    key(e, ordnung);
+    label de official "Zahl der gleich nahe verwandten Abkömmlinge der Voreltern (§ 1928 Abs. 3 Halbsatz 2)";
+    label en unofficial "number of equally closely related descendants of the ancestors (§ 1928 (3) second half-sentence)";
+}
+
+@source(BGB_P1928) {
+    rule VorelternteilVierteOrdnung(e: Erbfall, f: Familie, d: Person, a: Person) strict {
+        label de official "Gesetzliche Erben der vierten Ordnung sind die Urgroßeltern des Erblassers und deren Abkömmlinge (§ 1928 Abs. 1)";
+        label en unofficial "Statutory heirs of the fourth order are the decedent's great-grandparents and their descendants (§ 1928 (1))";
+        when familie(e, f) and erblasser(e, d) and calc.kinship::ancestor_or_self(f, a, d, 3);
+        then vorelternteil(e, a, 4);
+    }
+    rule KnotenVorelternteil(e: Erbfall, a: Person, o: Integer) strict {
+        label de official "Die Voreltern der vierten und ferneren Ordnungen sind die Knoten ihrer Ordnung (§ 1928 Abs. 1, 2; § 1929 Abs. 1)";
+        label en unofficial "The ancestors of the fourth and further orders are the nodes of their order (§ 1928 (1), (2); § 1929 (1))";
+        when vorelternteil(e, a, o);
+        then knoten(e, a, o);
+    }
+    rule LebenderVorelternteil(e: Erbfall, a: Person, o: Integer) strict {
+        label de official "Leben zur Zeit des Erbfalls Urgroßeltern, so erben sie allein (§ 1928 Abs. 2)";
+        label en unofficial "If great-grandparents are alive at the devolution, they inherit alone (§ 1928 (2))";
+        when vorelternteil(e, a, o) and erbfaehig(e, a);
+        then lebender_vorelternteil(e, a, o);
+    }
+    rule ZahlDerLebendenVoreltern(e: Erbfall, a: Person, o: Integer) strict {
+        label de official "Mehrere Voreltern erben zu gleichen Teilen, ohne Unterschied, ob sie derselben Linie oder verschiedenen Linien angehören (§ 1928 Abs. 2)";
+        label en unofficial "Several ancestors inherit in equal shares, regardless of whether they belong to the same or to different lines (§ 1928 (2))";
+        when lebender_vorelternteil(e, a, o);
+        then zahl_der_lebenden_voreltern(e, o, (count distinct x: Person where lebender_vorelternteil(e, x, o)));
+    }
+    rule VorelternLeben(e: Erbfall, a: Person, o: Integer) strict {
+        label de official "In dieser Ordnung lebt ein Vorelternteil (§ 1928 Abs. 2)";
+        label en unofficial "an ancestor of this order is alive (§ 1928 (2))";
+        when lebender_vorelternteil(e, a, o);
+        then voreltern_leben(e, o);
+    }
+    rule AbkoemmlingDerVoreltern(e: Erbfall, f: Familie, a: Person, p: Person, o: Integer, m: Integer) strict {
+        label de official "Gesetzliche Erben der vierten Ordnung sind die Urgroßeltern und deren Abkömmlinge (§ 1928 Abs. 1, 3)";
+        label en unofficial "Statutory heirs of the fourth order are the great-grandparents and their descendants (§ 1928 (1), (3))";
+        when familie(e, f) and vorelternteil(e, a, o) and calc.kinship::ancestor_or_self(f, a, p, m) and m >= 1
+            and erbfaehig(e, p);
+        then abkoemmling_der_voreltern(e, p, o);
+    }
+    rule GradZumErblasser(e: Erbfall, f: Familie, d: Person, p: Person, grad: Integer) strict {
+        label de official "Der Grad der Verwandtschaft bestimmt sich nach der Zahl der sie vermittelnden Geburten (§ 1589 Abs. 1 Satz 3, § 1928 Abs. 3)";
+        label en unofficial "The degree of kinship is determined by the number of mediating births (§ 1589 (1) sentence 3, § 1928 (3))";
+        when familie(e, f) and erblasser(e, d) and calc.kinship::kin_degree(f, p, d, grad);
+        then grad_zum_erblasser(e, p, grad);
+    }
+    rule NaechsterGradDerOrdnung(e: Erbfall, p: Person, o: Integer, grad: Integer) strict {
+        label de official "Von den Abkömmlingen erbt derjenige, welcher mit dem Erblasser dem Grade nach am nächsten verwandt ist (§ 1928 Abs. 3): der kleinste vorkommende Grad";
+        label en unofficial "Of the descendants the one most closely related by degree inherits (§ 1928 (3)): the smallest degree occurring";
+        when abkoemmling_der_voreltern(e, p, o) and grad_zum_erblasser(e, p, grad)
+            and not_known(voreltern_leben(e, o));
+        then naechster_grad_der_ordnung(e, o,
+            (min all g: Integer for x: Person where abkoemmling_der_voreltern(e, x, o) and grad_zum_erblasser(e, x, g)));
+    }
+    rule NaechsterVerwandterDerOrdnung(e: Erbfall, p: Person, o: Integer, grad: Integer) strict {
+        label de official "Leben zur Zeit des Erbfalls Urgroßeltern nicht mehr, so erbt von ihren Abkömmlingen derjenige, welcher mit dem Erblasser dem Grade nach am nächsten verwandt ist (§ 1928 Abs. 3)";
+        label en unofficial "If no great-grandparents are alive, of their descendants the one most closely related by degree inherits (§ 1928 (3))";
+        when abkoemmling_der_voreltern(e, p, o) and grad_zum_erblasser(e, p, grad)
+            and naechster_grad_der_ordnung(e, o, grad) and not_known(voreltern_leben(e, o));
+        then naechster_verwandter_der_ordnung(e, p, o);
+    }
+    rule ZahlDerNaechstenVerwandten(e: Erbfall, p: Person, o: Integer) strict {
+        label de official "Mehrere gleich nahe Verwandte erben zu gleichen Teilen (§ 1928 Abs. 3 Halbsatz 2)";
+        label en unofficial "Several equally closely related persons inherit in equal shares (§ 1928 (3) second half-sentence)";
+        when naechster_verwandter_der_ordnung(e, p, o);
+        then zahl_der_naechsten_verwandten(e, o, (count distinct x: Person where naechster_verwandter_der_ordnung(e, x, o)));
+    }
+    rule OrdnungBesetztDurchVoreltern(e: Erbfall, a: Person, o: Integer) strict {
+        label de official "Ein Verwandter der Ordnung ist vorhanden, wenn ein Vorelternteil der Ordnung lebt (§ 1930, § 1928 Abs. 2)";
+        label en unofficial "A relative of the order is present when an ancestor of the order is alive (§ 1930, § 1928 (2))";
+        when lebender_vorelternteil(e, a, o);
+        then ordnung_besetzt(e, o);
+    }
+    rule OrdnungBesetztDurchAbkoemmlinge(e: Erbfall, p: Person, o: Integer) strict {
+        label de official "Ein Verwandter der Ordnung ist auch vorhanden, wenn ein Abkömmling der Voreltern lebt (§ 1930, § 1928 Abs. 3)";
+        label en unofficial "A relative of the order is also present when a descendant of the ancestors is alive (§ 1930, § 1928 (3))";
+        when abkoemmling_der_voreltern(e, p, o);
+        then ordnung_besetzt(e, o);
+    }
+    rule ErbteilLebenderVorelternteil(e: Erbfall, a: Person, o: Integer, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Leben zur Zeit des Erbfalls Voreltern der berufenen Ordnung, so erben sie allein; mehrere erben zu gleichen Teilen (§ 1928 Abs. 2)";
+        label en unofficial "If ancestors of the order called are alive, they inherit alone; several inherit in equal shares (§ 1928 (2))";
+        when berufene_ordnung(e, o) and o >= 4 and lebender_vorelternteil(e, a, o)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_lebenden_voreltern(e, o, k);
+        then erbteil_aus_stamm(e, a, a, z, n * k);
+    }
+    rule ErbteilNaechsterVerwandter(e: Erbfall, p: Person, o: Integer, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Leben Voreltern nicht mehr, so erbt der dem Grade nach nächste Abkömmling; mehrere gleich nahe zu gleichen Teilen (§ 1928 Abs. 3)";
+        label en unofficial "If no ancestors are alive, the descendant nearest by degree inherits; several equally near in equal shares (§ 1928 (3))";
+        when berufene_ordnung(e, o) and o >= 4 and naechster_verwandter_der_ordnung(e, p, o)
+            and masse_der_verwandten_bruch(e, z, n) and zahl_der_naechsten_verwandten(e, o, k);
+        then erbteil_aus_stamm(e, p, p, z, n * k);
+    }
+}
+
+@source(BGB_P1929) {
+    rule VorelternteilFernereOrdnung(e: Erbfall, f: Familie, d: Person, a: Person, k: Integer) strict {
+        label de official "Gesetzliche Erben der fünften Ordnung und der ferneren Ordnungen sind die entfernteren Voreltern des Erblassers und deren Abkömmlinge (§ 1929 Abs. 1)";
+        label en unofficial "Statutory heirs of the fifth and further orders are the decedent's more remote ancestors and their descendants (§ 1929 (1))";
+        when familie(e, f) and erblasser(e, d) and calc.kinship::ancestor_or_self(f, a, d, k) and k >= 4;
+        then vorelternteil(e, a, k + 1);
+    }
+    rule FernereOrdnungBerufen(e: Erbfall, o: Integer) strict {
+        label de official "Die Vorschrift des § 1928 Abs. 2, 3 findet auf die ferneren Ordnungen entsprechende Anwendung (§ 1929 Abs. 2); berufen ist die Ordnung, wenn keine vorhergehende besetzt ist (§ 1930)";
+        label en unofficial "§ 1928 (2), (3) applies accordingly to the further orders (§ 1929 (2)); the order is called when no preceding one is occupied (§ 1930)";
+        when ordnung_besetzt(e, o) and o >= 4 and not_known(ordnung_besetzt(e, 1)) and not_known(ordnung_besetzt(e, 2))
+            and not_known(ordnung_besetzt(e, 3)) and not_known(naehere_ordnung_besetzt(e, o));
+        then berufene_ordnung(e, o);
+    }
+}
+
+pub relation naehere_ordnung_besetzt(e: Erbfall, ordnung: Integer) kind derived {
+    label de official "Eine der Ordnung vorhergehende Ordnung ab der vierten ist besetzt (§ 1930)";
+    label en unofficial "an order preceding this one, from the fourth on, is occupied (§ 1930)";
+}
+
+@source(BGB_P1930)
+rule NaehereOrdnungBesetzt(e: Erbfall, o: Integer, naeher: Integer) strict {
+    label de official "Ein Verwandter ist nicht zur Erbfolge berufen, solange ein Verwandter einer vorhergehenden Ordnung vorhanden ist (§ 1930)";
+    label en unofficial "A relative is not called to succeed as long as a relative of a preceding order is present (§ 1930)";
+    when ordnung_besetzt(e, o) and ordnung_besetzt(e, naeher) and naeher >= 4 and naeher < o;
+    then naehere_ordnung_besetzt(e, o);
+}
+
+// --- § 1931 Abs. 1 Satz 2 Ehegatte neben Großeltern und deren Abkömmlingen --------------------------
+//
+// „Treffen mit Großeltern Abkömmlinge von Großeltern zusammen, so erhält der
+// Ehegatte auch von der anderen Hälfte den Anteil, der nach § 1926 den
+// Abkömmlingen zufallen würde.“ Der Zuschlag wird NICHT in die Masse der
+// Verwandten zurückgerechnet (das wäre ein Zyklus über `masse_der_verwandten_bruch`),
+// sondern als besonderer Erbteil des Ehegatten geführt und im
+// `gesamterbteil_bruch` zum Erbteil des Satzes 1 addiert.
+
+pub relation stamm_nur_durch_abkoemmlinge_besetzt(e: Erbfall, g: Person) kind derived {
+    label de official "Der Stamm eines Großelternteils ist nur durch dessen Abkömmlinge besetzt: der Großelternteil selbst lebt nicht mehr (§ 1926 Abs. 3, § 1931 Abs. 1 Satz 2)";
+    label en unofficial "The stem of a grandparent is occupied only by his descendants: the grandparent is no longer alive (§ 1926 (3), § 1931 (1) sentence 2)";
+}
+pub relation abkoemmlinge_von_grosseltern_treffen_zusammen(e: Erbfall) kind derived {
+    label de official "Mit Großeltern treffen Abkömmlinge von Großeltern zusammen (§ 1931 Abs. 1 Satz 2)";
+    label en unofficial "Descendants of grandparents come together with grandparents (§ 1931 (1) sentence 2)";
+}
+pub relation zahl_der_abkoemmlingsstaemme_1931(e: Erbfall, k: Integer) kind derived {
+    key(e);
+    label de official "Zahl der nur durch Abkömmlinge besetzten Großelternstämme (§ 1931 Abs. 1 Satz 2)";
+    label en unofficial "number of grandparent stems occupied only by descendants (§ 1931 (1) sentence 2)";
+}
+pub relation gleicher_anteil_der_abkoemmlingsstaemme(e: Erbfall, zaehler: Integer, nenner: Integer) kind derived {
+    key(e);
+    label de official "Alle nur durch Abkömmlinge besetzten Großelternstämme tragen denselben Anteil (§ 1926 Abs. 2–4) — Voraussetzung der Summe als Paar ganzer Zahlen";
+    label en unofficial "All grandparent stems occupied only by descendants carry the same share (§ 1926 (2)–(4)) — precondition of summing as a pair of integers";
+}
+pub relation ehegattenzuschlag_1931_bruch(e: Erbfall, s: Person, zaehler: Integer, nenner: Integer) kind derived {
+    key(e, s);
+    label de official "Der Anteil, der nach § 1926 den Abkömmlingen von Großeltern zufallen würde und dem Ehegatten zufällt (§ 1931 Abs. 1 Satz 2)";
+    label en unofficial "the share that under § 1926 would fall to the descendants of grandparents and falls to the spouse (§ 1931 (1) sentence 2)";
+}
+pub relation anteil_faellt_dem_ehegatten_zu_1931(e: Erbfall, p: Person) kind derived {
+    label de official "Der Anteil dieses Abkömmlings von Großeltern fällt dem Ehegatten zu (§ 1931 Abs. 1 Satz 2)";
+    label en unofficial "This grandparent's descendant's share falls to the spouse (§ 1931 (1) sentence 2)";
+}
+
+@source(BGB_P1931) {
+    rule StammNurDurchAbkoemmlingeBesetzt(e: Erbfall, g: Person, l: Person) strict {
+        label de official "Lebt von einem Großelternpaar der Großvater oder die Großmutter nicht mehr, so treten an die Stelle des Verstorbenen dessen Abkömmlinge (§ 1926 Abs. 3 Satz 1)";
+        label en unofficial "If one of a grandparent pair is no longer alive, his descendants take his place (§ 1926 (3) sentence 1)";
+        when grosselternteil(e, g, l) and stamm_besetzt(e, g, 3) and not_known(erbe_von_eigenem_recht(e, g, 3));
+        then stamm_nur_durch_abkoemmlinge_besetzt(e, g);
+    }
+    rule AbkoemmlingeTreffenMitGrosselternZusammen(e: Erbfall, g: Person) strict {
+        label de official "Treffen mit Großeltern Abkömmlinge von Großeltern zusammen (§ 1931 Abs. 1 Satz 2)";
+        label en unofficial "Descendants of grandparents come together with grandparents (§ 1931 (1) sentence 2)";
+        when berufene_ordnung(e, 3) and grosseltern_vorhanden(e) and stamm_nur_durch_abkoemmlinge_besetzt(e, g)
+            and ehegatte_vorhanden(e);
+        then abkoemmlinge_von_grosseltern_treffen_zusammen(e);
+    }
+    rule ZahlDerAbkoemmlingsstaemme1931(e: Erbfall, g: Person) strict {
+        label de official "Zahl der Großelternstämme, deren Anteil nach § 1926 den Abkömmlingen zufallen würde (§ 1931 Abs. 1 Satz 2)";
+        label en unofficial "number of grandparent stems whose share would fall to the descendants under § 1926 (§ 1931 (1) sentence 2)";
+        when abkoemmlinge_von_grosseltern_treffen_zusammen(e) and stamm_nur_durch_abkoemmlinge_besetzt(e, g);
+        then zahl_der_abkoemmlingsstaemme_1931(e, (count distinct x: Person where stamm_nur_durch_abkoemmlinge_besetzt(e, x)));
+    }
+    rule GleicherAnteilDerAbkoemmlingsstaemme(e: Erbfall, g: Person, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Tragen alle betroffenen Großelternstämme denselben Anteil, so ist ihre Summe das Vielfache dieses Anteils (§ 1926 Abs. 2–4, § 1931 Abs. 1 Satz 2)";
+        label en unofficial "If all affected grandparent stems carry the same share, their sum is that share multiplied (§ 1926 (2)–(4), § 1931 (1) sentence 2)";
+        when stamm_nur_durch_abkoemmlinge_besetzt(e, g) and stammanteil_bruch(e, g, 3, z, n)
+            and zahl_der_abkoemmlingsstaemme_1931(e, k)
+            and (count distinct x: Person where stamm_nur_durch_abkoemmlinge_besetzt(e, x) and stammanteil_bruch(e, x, 3, z, n)) == k;
+        then gleicher_anteil_der_abkoemmlingsstaemme(e, z, n);
+    }
+    rule Ehegattenzuschlag1931Satz2(e: Erbfall, s: Person, z: Integer, n: Integer, k: Integer) strict {
+        label de official "Treffen mit Großeltern Abkömmlinge von Großeltern zusammen, so erhält der Ehegatte auch von der anderen Hälfte den Anteil, der nach § 1926 den Abkömmlingen zufallen würde (§ 1931 Abs. 1 Satz 2)";
+        label en unofficial "Where descendants of grandparents meet grandparents, the spouse also receives from the other half the share that would fall to the descendants under § 1926 (§ 1931 (1) sentence 2)";
+        when ueberlebender_ehegatte(e, s) and abkoemmlinge_von_grosseltern_treffen_zusammen(e)
+            and gleicher_anteil_der_abkoemmlingsstaemme(e, z, n) and zahl_der_abkoemmlingsstaemme_1931(e, k);
+        then ehegattenzuschlag_1931_bruch(e, s, k * z, n);
+    }
+    rule AnteilFaelltDemEhegattenZu(e: Erbfall, p: Person, g: Person, z: Integer, n: Integer) strict {
+        label de official "Der Anteil der Abkömmlinge von Großeltern fällt dem Ehegatten zu; die Abkömmlinge erhalten nichts (§ 1931 Abs. 1 Satz 2)";
+        label en unofficial "The share of the grandparents' descendants falls to the spouse; the descendants receive nothing (§ 1931 (1) sentence 2)";
+        when abkoemmlinge_von_grosseltern_treffen_zusammen(e) and stamm_nur_durch_abkoemmlinge_besetzt(e, g)
+            and erbteil_aus_stamm(e, p, g, z, n);
+        then anteil_faellt_dem_ehegatten_zu_1931(e, p);
+    }
+    rule ErbteilDesEhegattenMitZuschlag(e: Erbfall, s: Person, z1: Integer, n1: Integer, z2: Integer, n2: Integer) strict {
+        label de official "Erbteil des Ehegatten neben Großeltern und deren Abkömmlingen: die Hälfte des Satzes 1 zuzüglich des Anteils des Satzes 2 (§ 1931 Abs. 1)";
+        label en unofficial "The spouse's share beside grandparents and their descendants: the half of sentence 1 plus the share of sentence 2 (§ 1931 (1))";
+        when ehegattenerbteil_bruch(e, s, z1, n1) and ehegattenzuschlag_1931_bruch(e, s, z2, n2)
+            and not_known(hat_stammerbteil(e, s));
+        then gesamterbteil_bruch(e, s, z1 * n2 + z2 * n1, n1 * n2);
+    }
+}
+
+// --- § 1932 Voraus des Ehegatten --------------------------------------------------------------------
+
+pub entity Nachlassgegenstand {
+    label de official "Einzelner zum Nachlass gehörender Gegenstand (§§ 1932, 2018, 2033 Abs. 2, 2040)";
+    label en unofficial "single object belonging to the estate (§§ 1932, 2018, 2033 (2), 2040)";
+}
+
+pub relation zum_ehelichen_haushalt_gehoerend(e: Erbfall, gegenstand: Nachlassgegenstand) kind empirical {
+    label de official "Der Gegenstand gehört zum ehelichen Haushalt und ist nicht Zubehör eines Grundstücks (§ 1932 Abs. 1 Satz 1)";
+    label en unofficial "The object belongs to the marital household and is not an accessory of land (§ 1932 (1) sentence 1)";
+}
+pub relation hochzeitsgeschenk(e: Erbfall, gegenstand: Nachlassgegenstand) kind empirical {
+    label de official "Der Gegenstand ist ein Hochzeitsgeschenk (§ 1932 Abs. 1 Satz 1)";
+    label en unofficial "The object is a wedding present (§ 1932 (1) sentence 1)";
+}
+pub external judgment relation zur_fuehrung_eines_angemessenen_haushalts_benoetigt(s: Person, gegenstand: Nachlassgegenstand) {
+    authority Court;
+    label de official "Der überlebende Ehegatte benötigt den Haushaltsgegenstand zur Führung eines angemessenen Haushalts (§ 1932 Abs. 1 Satz 2) — Wertung, Kanal §47.3";
+    label en unofficial "The surviving spouse needs the household object to run an appropriate household (§ 1932 (1) sentence 2) — evaluative standard, channel §47.3";
+}
+pub relation voraus(e: Erbfall, s: Person, gegenstand: Nachlassgegenstand) kind institutional {
+    label de official "Voraus des überlebenden Ehegatten: der Gegenstand gebührt ihm außer dem Erbteil (§ 1932 Abs. 1)";
+    label en unofficial "spouse's preferential share: the object belongs to him besides his share of the estate (§ 1932 (1))";
+}
+pub relation auf_voraus_gelten_vermaechtnisvorschriften(e: Erbfall, s: Person) kind institutional {
+    label de official "Auf den Voraus sind die für Vermächtnisse geltenden Vorschriften anzuwenden (§ 1932 Abs. 2)";
+    label en unofficial "The provisions on legacies apply to the preferential share (§ 1932 (2))";
+}
+
+@source(BGB_P1932) {
+    rule VorausNebenZweiterOrdnungOderGrosseltern(e: Erbfall, s: Person, g: Nachlassgegenstand) strict {
+        label de official "Ist der überlebende Ehegatte neben Verwandten der zweiten Ordnung oder neben Großeltern gesetzlicher Erbe, so gebühren ihm außer dem Erbteil die zum ehelichen Haushalt gehörenden Gegenstände und die Hochzeitsgeschenke als Voraus (§ 1932 Abs. 1 Satz 1)";
+        label en unofficial "If the surviving spouse is a statutory heir beside relatives of the second order or beside grandparents, the household objects and wedding presents belong to him as a preferential share besides his share (§ 1932 (1) sentence 1)";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 2) and zum_ehelichen_haushalt_gehoerend(e, g);
+        then voraus(e, s, g);
+    }
+    rule VorausNebenGrosseltern(e: Erbfall, s: Person, g: Nachlassgegenstand) strict {
+        label de official "Dasselbe gilt, wenn der überlebende Ehegatte neben Großeltern gesetzlicher Erbe ist (§ 1932 Abs. 1 Satz 1)";
+        label en unofficial "The same applies where the surviving spouse is a statutory heir beside grandparents (§ 1932 (1) sentence 1)";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 3) and zum_ehelichen_haushalt_gehoerend(e, g);
+        then voraus(e, s, g);
+    }
+    rule VorausHochzeitsgeschenke(e: Erbfall, s: Person, g: Nachlassgegenstand, o: Integer) strict {
+        label de official "Zum Voraus gehören auch die Hochzeitsgeschenke (§ 1932 Abs. 1 Satz 1)";
+        label en unofficial "Wedding presents also belong to the preferential share (§ 1932 (1) sentence 1)";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, o) and o >= 2 and hochzeitsgeschenk(e, g);
+        then voraus(e, s, g);
+    }
+    rule VorausNebenErsterOrdnung(e: Erbfall, s: Person, g: Nachlassgegenstand) strict {
+        label de official "Ist der überlebende Ehegatte neben Verwandten der ersten Ordnung gesetzlicher Erbe, so gebühren ihm diese Gegenstände, soweit er sie zur Führung eines angemessenen Haushalts benötigt (§ 1932 Abs. 1 Satz 2)";
+        label en unofficial "If the surviving spouse is a statutory heir beside relatives of the first order, these objects belong to him to the extent he needs them to run an appropriate household (§ 1932 (1) sentence 2)";
+        when ueberlebender_ehegatte(e, s) and berufene_ordnung(e, 1) and zum_ehelichen_haushalt_gehoerend(e, g)
+            and zur_fuehrung_eines_angemessenen_haushalts_benoetigt(s, g);
+        then voraus(e, s, g);
+    }
+    rule VorausIstVermaechtnis(e: Erbfall, s: Person, g: Nachlassgegenstand) strict {
+        label de official "Auf den Voraus sind die für Vermächtnisse geltenden Vorschriften anzuwenden (§ 1932 Abs. 2)";
+        label en unofficial "The provisions on legacies apply to the preferential share (§ 1932 (2))";
+        when voraus(e, s, g);
+        then auf_voraus_gelten_vermaechtnisvorschriften(e, s);
+    }
+}
+
+// --- § 1933 Ausschluss des Ehegattenerbrechts -------------------------------------------------------
+
+pub external judgment relation voraussetzungen_der_scheidung_lagen_vor(ehe: Ehe) {
+    authority Court;
+    label de official "Zur Zeit des Todes des Erblassers waren die Voraussetzungen für die Scheidung der Ehe gegeben (§ 1933 Satz 1; Scheitern der Ehe, § 1565) — Wertung, Kanal §47.3";
+    label en unofficial "At the time of the decedent's death the requirements for divorce were met (§ 1933 sentence 1; breakdown of the marriage, § 1565) — evaluative standard, channel §47.3";
+}
+pub relation erblasser_hat_scheidung_beantragt_oder_zugestimmt(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hatte die Scheidung beantragt oder ihr zugestimmt (§ 1933 Satz 1)";
+    label en unofficial "The decedent had applied for divorce or had consented to it (§ 1933 sentence 1)";
+}
+pub relation erblasser_war_zur_aufhebung_berechtigt_und_hat_beantragt(e: Erbfall) kind empirical {
+    label de official "Der Erblasser war berechtigt, die Aufhebung der Ehe zu beantragen, und hatte den Antrag gestellt (§ 1933 Satz 2)";
+    label en unofficial "The decedent was entitled to apply for annulment of the marriage and had made the application (§ 1933 sentence 2)";
+}
+pub relation ehegattenerbrecht_ausgeschlossen(e: Erbfall) kind institutional {
+    label de official "Das Erbrecht des überlebenden Ehegatten sowie das Recht auf den Voraus ist ausgeschlossen (§ 1933 Satz 1, 2)";
+    label en unofficial "The surviving spouse's right of succession and the right to the preferential share are excluded (§ 1933 sentences 1, 2)";
+}
+pub relation ehegatte_unterhaltsberechtigt_1569_bis_1586b(e: Erbfall) kind institutional {
+    label de official "In diesen Fällen ist der Ehegatte nach Maßgabe der §§ 1569 bis 1586b unterhaltsberechtigt (§ 1933 Satz 3)";
+    label en unofficial "In these cases the spouse is entitled to maintenance under §§ 1569 to 1586b (§ 1933 sentence 3)";
+}
+
+@source(BGB_P1933) {
+    rule AusschlussDurchScheidungsantrag(e: Erbfall, ehe: Ehe) strict {
+        label de official "Das Erbrecht des überlebenden Ehegatten ist ausgeschlossen, wenn zur Zeit des Todes des Erblassers die Voraussetzungen für die Scheidung der Ehe gegeben waren und der Erblasser die Scheidung beantragt oder ihr zugestimmt hatte (§ 1933 Satz 1)";
+        label en unofficial "The surviving spouse's right of succession is excluded where at the decedent's death the requirements for divorce were met and the decedent had applied for divorce or consented to it (§ 1933 sentence 1)";
+        when ehe_beim_erbfall(e, ehe) and voraussetzungen_der_scheidung_lagen_vor(ehe)
+            and erblasser_hat_scheidung_beantragt_oder_zugestimmt(e);
+        then ehegattenerbrecht_ausgeschlossen(e);
+    }
+    rule AusschlussDurchAufhebungsantrag(e: Erbfall, ehe: Ehe) strict {
+        label de official "Das Gleiche gilt, wenn der Erblasser berechtigt war, die Aufhebung der Ehe zu beantragen, und den Antrag gestellt hatte (§ 1933 Satz 2)";
+        label en unofficial "The same applies where the decedent was entitled to apply for annulment of the marriage and had made the application (§ 1933 sentence 2)";
+        when ehe_beim_erbfall(e, ehe) and erblasser_war_zur_aufhebung_berechtigt_und_hat_beantragt(e);
+        then ehegattenerbrecht_ausgeschlossen(e);
+    }
+    rule UnterhaltStattErbrecht(e: Erbfall) strict {
+        label de official "In diesen Fällen ist der Ehegatte nach Maßgabe der §§ 1569 bis 1586b unterhaltsberechtigt (§ 1933 Satz 3)";
+        label en unofficial "In these cases the spouse is entitled to maintenance under §§ 1569 to 1586b (§ 1933 sentence 3)";
+        when ehegattenerbrecht_ausgeschlossen(e);
+        then ehegatte_unterhaltsberechtigt_1569_bis_1586b(e);
+    }
+}
+
+// --- § 1935 Folgen der Erbteilserhöhung -------------------------------------------------------------
+
+pub relation gesetzlicher_erbe_weggefallen(e: Erbfall, p: Person) kind derived {
+    label de official "Ein gesetzlicher Erbe ist vor oder nach dem Erbfall weggefallen (§ 1935 Satz 1)";
+    label en unofficial "A statutory heir has fallen away before or after the devolution (§ 1935 sentence 1)";
+}
+pub relation erhoehung_ist_besonderer_erbteil(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Teil, um welchen sich der Erbteil erhöht, gilt in Ansehung der Vermächtnisse und Auflagen sowie der Ausgleichungspflicht als besonderer Erbteil (§ 1935)";
+    label en unofficial "The part by which the share is increased counts as a separate share as regards legacies, testamentary burdens and the duty to equalise (§ 1935)";
+}
+
+@source(BGB_P1935)
+rule ErhoehungIstBesondererErbteil(e: Erbfall, p: Person, weggefallener: Person) strict {
+    label de official "Fällt ein gesetzlicher Erbe vor oder nach dem Erbfall weg und erhöht sich infolgedessen der Erbteil eines anderen gesetzlichen Erben, so gilt der Teil, um welchen sich der Erbteil erhöht, als besonderer Erbteil (§ 1935)";
+    label en unofficial "If a statutory heir falls away before or after the devolution and another statutory heir's share is thereby increased, the part by which it is increased counts as a separate share (§ 1935)";
+    when gesetzlicher_erbe_weggefallen(e, weggefallener) and hat_stammerbteil(e, p) and p != weggefallener;
+    then erhoehung_ist_besonderer_erbteil(e, p);
+}
+
+// --- § 1936 Gesetzliches Erbrecht des Staates -------------------------------------------------------
+
+pub relation lebenspartner_beim_erbfall(e: Erbfall, p: Person) kind empirical {
+    label de official "Lebenspartner des Erblassers, der zur Zeit des Erbfalls vorhanden ist (§ 1936 Satz 1; Lebenspartnerschaftsgesetz)";
+    label en unofficial "civil partner of the decedent present at the devolution (§ 1936 sentence 1; Civil Partnership Act)";
+}
+pub relation letzter_wohnsitz_im_land(e: Erbfall, land: Person) kind empirical {
+    label de official "Land, in dem der Erblasser zur Zeit des Erbfalls seinen letzten Wohnsitz hatte (§ 1936 Satz 1)";
+    label en unofficial "Land in which the decedent had his last domicile at the devolution (§ 1936 sentence 1)";
+}
+pub relation gewoehnlicher_aufenthalt_im_land(e: Erbfall, land: Person) kind empirical {
+    label de official "Land, in dem der Erblasser zur Zeit des Erbfalls seinen gewöhnlichen Aufenthalt hatte, wenn ein letzter Wohnsitz nicht feststellbar ist (§ 1936 Satz 1)";
+    label en unofficial "Land of the decedent's habitual residence at the devolution where no last domicile can be established (§ 1936 sentence 1)";
+}
+pub relation verwandter_vorhanden(e: Erbfall) kind derived {
+    label de official "Ein Verwandter des Erblassers ist zur Zeit des Erbfalls vorhanden (§ 1936 Satz 1)";
+    label en unofficial "a relative of the decedent is present at the devolution (§ 1936 sentence 1)";
+}
+pub relation erbrecht_des_landes(e: Erbfall, land: Person) kind institutional {
+    key(e);
+    label de official "Das Land, in dem der Erblasser seinen letzten Wohnsitz hatte, erbt (§ 1936 Satz 1)";
+    label en unofficial "The Land of the decedent's last domicile inherits (§ 1936 sentence 1)";
+}
+pub relation erbrecht_des_bundes(e: Erbfall) kind institutional {
+    label de official "Im Übrigen erbt der Bund (§ 1936 Satz 2)";
+    label en unofficial "Otherwise the Federation inherits (§ 1936 sentence 2)";
+}
+
+@source(BGB_P1936) {
+    rule VerwandterVorhanden(e: Erbfall, o: Integer) strict {
+        label de official "Ein Verwandter ist vorhanden, wenn eine Ordnung besetzt ist (§ 1936 Satz 1, § 1930)";
+        label en unofficial "A relative is present when an order is occupied (§ 1936 sentence 1, § 1930)";
+        when ordnung_besetzt(e, o);
+        then verwandter_vorhanden(e);
+    }
+    rule ErbrechtDesLandes(e: Erbfall, land: Person) strict {
+        label de official "Ist zur Zeit des Erbfalls kein Verwandter, Ehegatte oder Lebenspartner des Erblassers vorhanden, erbt das Land, in dem der Erblasser zur Zeit des Erbfalls seinen letzten Wohnsitz hatte (§ 1936 Satz 1)";
+        label en unofficial "If at the devolution no relative, spouse or civil partner of the decedent is present, the Land of his last domicile inherits (§ 1936 sentence 1)";
+        when letzter_wohnsitz_im_land(e, land) and not_known(verwandter_vorhanden(e))
+            and not_known(ehegatte_vorhanden(e)) and not_known(lebenspartner_vorhanden(e));
+        then erbrecht_des_landes(e, land);
+    }
+    rule ErbrechtDesLandesNachAufenthalt(e: Erbfall, land: Person) strict {
+        label de official "Ist ein letzter Wohnsitz nicht feststellbar, erbt das Land des gewöhnlichen Aufenthalts (§ 1936 Satz 1)";
+        label en unofficial "Where no last domicile can be established, the Land of the habitual residence inherits (§ 1936 sentence 1)";
+        when gewoehnlicher_aufenthalt_im_land(e, land) and not_known(verwandter_vorhanden(e))
+            and not_known(ehegatte_vorhanden(e)) and not_known(lebenspartner_vorhanden(e))
+            and not_known(wohnsitzland_bekannt(e));
+        then erbrecht_des_landes(e, land);
+    }
+    rule ErbrechtDesBundes(e: Erbfall, d: Person) strict {
+        label de official "Im Übrigen erbt der Bund (§ 1936 Satz 2)";
+        label en unofficial "Otherwise the Federation inherits (§ 1936 sentence 2)";
+        when not_known(verwandter_vorhanden(e)) and not_known(ehegatte_vorhanden(e))
+            and not_known(lebenspartner_vorhanden(e)) and not_known(wohnsitzland_bekannt(e))
+            and not_known(aufenthaltsland_bekannt(e)) and erblasser(e, d);
+        then erbrecht_des_bundes(e);
+    }
+    rule LebenspartnerVorhanden(e: Erbfall, p: Person) strict {
+        label de official "Ein Lebenspartner des Erblassers ist vorhanden (§ 1936 Satz 1)";
+        label en unofficial "a civil partner of the decedent is present (§ 1936 sentence 1)";
+        when lebenspartner_beim_erbfall(e, p);
+        then lebenspartner_vorhanden(e);
+    }
+    rule WohnsitzlandBekannt(e: Erbfall, land: Person) strict {
+        label de official "Ein letzter Wohnsitz des Erblassers ist feststellbar (§ 1936 Satz 1)";
+        label en unofficial "a last domicile of the decedent can be established (§ 1936 sentence 1)";
+        when letzter_wohnsitz_im_land(e, land);
+        then wohnsitzland_bekannt(e);
+    }
+    rule AufenthaltslandBekannt(e: Erbfall, land: Person) strict {
+        label de official "Ein gewöhnlicher Aufenthalt des Erblassers ist feststellbar (§ 1936 Satz 1)";
+        label en unofficial "a habitual residence of the decedent can be established (§ 1936 sentence 1)";
+        when gewoehnlicher_aufenthalt_im_land(e, land);
+        then aufenthaltsland_bekannt(e);
+    }
+}
+
+pub relation lebenspartner_vorhanden(e: Erbfall) kind derived {
+    label de official "Ein Lebenspartner des Erblassers ist zur Zeit des Erbfalls vorhanden (§ 1936 Satz 1)";
+    label en unofficial "a civil partner of the decedent is present at the devolution (§ 1936 sentence 1)";
+}
+pub relation wohnsitzland_bekannt(e: Erbfall) kind derived {
+    label de official "Der letzte Wohnsitz des Erblassers ist feststellbar (§ 1936 Satz 1)";
+    label en unofficial "the decedent's last domicile can be established (§ 1936 sentence 1)";
+}
+pub relation aufenthaltsland_bekannt(e: Erbfall) kind derived {
+    label de official "Der gewöhnliche Aufenthalt des Erblassers ist feststellbar (§ 1936 Satz 1)";
+    label en unofficial "the decedent's habitual residence can be established (§ 1936 sentence 1)";
+}
+
+// --- §§ 1937–1941 Verfügungen von Todes wegen: nur die Begriffe -------------------------------------
+//
+// Die Normen der Verfügungen stehen bei `de.bgb.verfuegungen` (BG-16,
+// Abschnitte 3–9). Hier entstehen allein die Begriffe des Abschnitts 1 und
+// der Eingang der gewillkürten Erbfolge, damit die gesetzliche Erbfolge
+// weiß, dass sie verdrängt ist. Nichts wird doppelt geführt.
+
+pub relation letztwillige_verfuegung_bestimmt_erben(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat durch einseitige Verfügung von Todes wegen (Testament) den Erben bestimmt (§ 1937)";
+    label en unofficial "The decedent has designated the heir by unilateral disposition mortis causa (will) (§ 1937)";
+}
+pub relation testament_schliesst_von_gesetzlicher_erbfolge_aus(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat durch Testament einen Verwandten, den Ehegatten oder den Lebenspartner von der gesetzlichen Erbfolge ausgeschlossen, ohne einen Erben einzusetzen (§ 1938)";
+    label en unofficial "The decedent has by will excluded a relative, the spouse or the civil partner from statutory succession without appointing an heir (§ 1938)";
+}
+pub relation vermaechtnis_zugewendet(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat durch Testament einem anderen, ohne ihn als Erben einzusetzen, einen Vermögensvorteil zugewendet (§ 1939)";
+    label en unofficial "The decedent has by will conferred a pecuniary benefit on another without appointing him heir (§ 1939)";
+}
+pub relation auflage_angeordnet(e: Erbfall, beschwerter: Person) kind empirical {
+    label de official "Der Erblasser hat durch Testament den Erben oder einen Vermächtnisnehmer zu einer Leistung verpflichtet, ohne einem anderen ein Recht auf die Leistung zuzuwenden (§ 1940)";
+    label en unofficial "The decedent has by will obliged the heir or a legatee to render performance without conferring a right to it on another (§ 1940)";
+}
+pub relation erbvertrag_setzt_erben_ein(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat durch Vertrag einen Erben eingesetzt (Erbvertrag, § 1941 Abs. 1)";
+    label en unofficial "The decedent has appointed an heir by contract (contract of inheritance, § 1941 (1))";
+}
+pub relation gewillkuerter_erbe(e: Erbfall, p: Person) kind institutional {
+    label de official "Durch Verfügung von Todes wegen berufener Erbe (§§ 1937, 1941) — Eingang der gewillkürten Erbfolge, Normen bei de.bgb.verfuegungen";
+    label en unofficial "heir called by disposition mortis causa (§§ 1937, 1941) — entry point of testate succession, rules in de.bgb.verfuegungen";
+}
+pub relation von_gesetzlicher_erbfolge_ausgeschlossen(e: Erbfall, p: Person) kind institutional {
+    label de official "Durch Testament von der gesetzlichen Erbfolge ausgeschlossen (§ 1938)";
+    label en unofficial "excluded from statutory succession by will (§ 1938)";
+}
+pub relation vermaechtnisnehmer(e: Erbfall, p: Person) kind institutional {
+    label de official "Vermächtnisnehmer (§ 1939)";
+    label en unofficial "legatee (§ 1939)";
+}
+pub relation mit_auflage_beschwert(e: Erbfall, p: Person) kind institutional {
+    label de official "Mit einer Auflage beschwerter Erbe oder Vermächtnisnehmer (§ 1940)";
+    label en unofficial "heir or legatee burdened with a testamentary burden (§ 1940)";
+}
+pub relation vertragserbe(e: Erbfall, p: Person) kind institutional {
+    label de official "Vertragserbe (§ 1941 Abs. 1, 2)";
+    label en unofficial "contractual heir (§ 1941 (1), (2))";
+}
+
+@source(BGB_P1937)
+rule ErbeinsetzungDurchTestament(e: Erbfall, p: Person) strict {
+    label de official "Der Erblasser kann durch einseitige Verfügung von Todes wegen (Testament, letztwillige Verfügung) den Erben bestimmen (§ 1937)";
+    label en unofficial "The decedent may designate the heir by unilateral disposition mortis causa (will) (§ 1937)";
+    when letztwillige_verfuegung_bestimmt_erben(e, p);
+    then gewillkuerter_erbe(e, p);
+}
+
+@source(BGB_P1938)
+rule EnterbungOhneErbeinsetzung(e: Erbfall, p: Person) strict {
+    label de official "Der Erblasser kann durch Testament einen Verwandten, den Ehegatten oder den Lebenspartner von der gesetzlichen Erbfolge ausschließen, ohne einen Erben einzusetzen (§ 1938)";
+    label en unofficial "The decedent may by will exclude a relative, the spouse or the civil partner from statutory succession without appointing an heir (§ 1938)";
+    when testament_schliesst_von_gesetzlicher_erbfolge_aus(e, p);
+    then von_gesetzlicher_erbfolge_ausgeschlossen(e, p);
+}
+
+@source(BGB_P1939)
+rule Vermaechtnis(e: Erbfall, p: Person) strict {
+    label de official "Der Erblasser kann durch Testament einem anderen, ohne ihn als Erben einzusetzen, einen Vermögensvorteil zuwenden (Vermächtnis) (§ 1939)";
+    label en unofficial "The decedent may by will confer a pecuniary benefit on another without appointing him heir (legacy) (§ 1939)";
+    when vermaechtnis_zugewendet(e, p);
+    then vermaechtnisnehmer(e, p);
+}
+
+@source(BGB_P1940)
+rule Auflage(e: Erbfall, p: Person) strict {
+    label de official "Der Erblasser kann durch Testament den Erben oder einen Vermächtnisnehmer zu einer Leistung verpflichten, ohne einem anderen ein Recht auf die Leistung zuzuwenden (Auflage) (§ 1940)";
+    label en unofficial "The decedent may by will oblige the heir or a legatee to render performance without conferring a right to it on another (§ 1940)";
+    when auflage_angeordnet(e, p);
+    then mit_auflage_beschwert(e, p);
+}
+
+@source(BGB_P1941) {
+    rule Erbvertrag(e: Erbfall, p: Person) strict {
+        label de official "Der Erblasser kann durch Vertrag einen Erben einsetzen, Vermächtnisse und Auflagen anordnen sowie das anzuwendende Erbrecht wählen (Erbvertrag) (§ 1941 Abs. 1)";
+        label en unofficial "The decedent may appoint an heir, order legacies and burdens and choose the applicable law of succession by contract (§ 1941 (1))";
+        when erbvertrag_setzt_erben_ein(e, p);
+        then vertragserbe(e, p);
+    }
+    rule VertragserbeIstGewillkuerterErbe(e: Erbfall, p: Person) strict {
+        label de official "Als Erbe (Vertragserbe) kann sowohl der andere Vertragschließende als ein Dritter bedacht werden (§ 1941 Abs. 2)";
+        label en unofficial "Either the other contracting party or a third person may be appointed heir (contractual heir) (§ 1941 (2))";
+        when vertragserbe(e, p);
+        then gewillkuerter_erbe(e, p);
+    }
+}
+
+
+// --- Rechenwache über die Summe der besonderen Erbteile -----------------------------------------------
+
+pub relation nachlass_vollstaendig_verteilt(e: Erbfall) kind derived {
+    label de official "Die Summe der Erbteile aller Erben — einschließlich der mehrfach berufenen (§ 1927, § 1934) und der Ordnungen ab der vierten (§§ 1928, 1929) — ist eins (§ 1922 Abs. 1): Rechenwache, keine Norm";
+    label en unofficial "The shares of all heirs — including those called on several grounds (§ 1927, § 1934) and the orders from the fourth on (§§ 1928, 1929) — sum to one (§ 1922 (1)): arithmetic guard, not a norm";
+}
+
+@source(BGB_P1922)
+rule NachlassVollstaendigVerteilt(e: Erbfall, p: Person, x: Rational) strict {
+    label de official "Mit dem Tode einer Person geht deren Vermögen als Ganzes auf eine oder mehrere andere Personen über (§ 1922 Abs. 1): die Summe der Gesamterbteile ist eins";
+    label en unofficial "With a person's death the estate passes as a whole to one or more persons (§ 1922 (1)): the total shares sum to one";
+    when gesamterbteil(e, p, x)
+        and (sum all y: Rational for q: Person where gesamterbteil(e, q, y)) == 1 / 1;
+    then nachlass_vollstaendig_verteilt(e);
+}

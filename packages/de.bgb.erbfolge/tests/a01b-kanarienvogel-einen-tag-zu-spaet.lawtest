@@ -1,0 +1,32 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// Kanarienvogel zu a01: dieselbe Lage, die Ausschlagung aber einen Tag spaeter,
+// am 21. April 2026. § 1943: der Erbe kann die Erbschaft nicht mehr ausschlagen,
+// wenn die Frist verstrichen ist; mit dem Ablauf der Frist gilt die Erbschaft
+// als angenommen.
+test "Kanarienvogel: einen Tag nach dem Fristende gilt die Erbschaft als angenommen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:a01b:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:a01b:F"), entity_ref("urn:de:bgb:e:a01b:D"), entity_ref("urn:de:bgb:e:a01b:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K")) { origin case_input; }
+        assert "f6": kenntnis_von_anfall_und_grund_am(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K"), @2026-03-07) { origin case_input; }
+        assert "f7": keine_hemmung_der_ausschlagungsfrist(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K")) { origin case_input; }
+        assert "f8": erklaerung_zur_niederschrift_des_nachlassgerichts(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K")) { origin case_input; }
+        assert "f9": ausschlagung_erklaert_am(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K"), @2026-04-21) { origin case_input; }
+    }
+    evaluate truth(ausschlagungsfrist_verstrichen(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausschlagung_nicht_mehr_moeglich(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erbschaft_gilt_als_angenommen(entity_ref("urn:de:bgb:e:a01b:E"), entity_ref("urn:de:bgb:e:a01b:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

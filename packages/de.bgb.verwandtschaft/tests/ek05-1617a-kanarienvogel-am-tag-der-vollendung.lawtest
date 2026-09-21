@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// Kanarienvogel zu ek04: dieselbe Geburt, aber die Erklärung fällt auf den 09.06.2025 — den Tag, mit dessen ABLAUF das fünfte Lebensjahr vollendet wird. An diesem Tag ist es noch nicht vollendet; die Einwilligung des Kindes ist nicht erforderlich.
+test "§ 1617a Abs. 4: am Tag der Vollendung ist die Einwilligung des Kindes noch nicht erforderlich" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": elterliche_sorge_allein(entity_ref("urn:de:bgb:vw:ek05:K"), entity_ref("urn:de:bgb:vw:ek05:M")) { origin case_input; }
+        assert "f2": namenserteilung_erklaert(entity_ref("urn:de:bgb:vw:ek05:K"), entity_ref("urn:de:bgb:vw:ek05:M")) { origin case_input; }
+        assert "f3": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:ek05:K"), @2020-06-10) { origin case_input; }
+        assert "f4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:ek05:K"), 5 calendar_year) { origin case_input; }
+        assert "f5": erklaerungstag(entity_ref("urn:de:bgb:vw:ek05:K"), @2025-06-09) { origin case_input; }
+    }
+    evaluate truth(fuenftes_lebensjahr_vollendet(entity_ref("urn:de:bgb:vw:ek05:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(fuenftes_lebensjahr_nicht_vollendet(entity_ref("urn:de:bgb:vw:ek05:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einwilligung_des_kindes_erforderlich(entity_ref("urn:de:bgb:vw:ek05:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

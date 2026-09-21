@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 814: der Leistende hat gewusst, dass er zur Leistung nicht verpflichtet war — festgestellte Tatsache (origin adjudicated). Die Herausgabepflicht des § 812 bleibt bestehen, der Anspruch ist aber nicht durchsetzbar.
+test "§ 814: Kenntnis der Nichtschuld schließt die Rückforderung aus" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_erbracht(entity_ref("urn:de:bgb:bd:b02")) { origin case_input; }
+        assert "f2": etwas_erlangt(entity_ref("urn:de:bgb:bd:b02")) { origin case_input; }
+        assert "f3": ohne_rechtlichen_grund(entity_ref("urn:de:bgb:bd:b02")) { origin case_input; }
+        assert "f4": zur_erfuellung_geleistet(entity_ref("urn:de:bgb:bd:b02"), entity_ref("urn:de:bgb:bd:b02:A")) { origin case_input; }
+        assert "f5": gewusst_nicht_verpflichtet(entity_ref("urn:de:bgb:bd:b02")) { origin adjudicated; }
+        assert "jx0": not leistung_entsprach_sittlicher_pflicht(entity_ref("urn:de:bgb:bd:b02")) { origin adjudicated; }
+        assert "jx1": not verstoss_des_empfaengers(entity_ref("urn:de:bgb:bd:b02")) { origin adjudicated; }
+        assert "jx2": not verstoss_des_leistenden(entity_ref("urn:de:bgb:bd:b02")) { origin adjudicated; }
+    }
+    evaluate truth(herausgabepflicht_leistung(entity_ref("urn:de:bgb:bd:b02")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausschluss_814(entity_ref("urn:de:bgb:bd:b02")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(bereicherungsanspruch_leistung(entity_ref("urn:de:bgb:bd:b02")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

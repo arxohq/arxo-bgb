@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1746 Abs. 1 Satz 2, andere Seite der Schwelle: am 19.08.2025 — dem Tag der Vollendung selbst — hat das Kind das 14. Lebensjahr noch nicht vollendet; nur der gesetzliche Vertreter kann die Einwilligung erteilen, und das Kind selbst kann es nicht.
+test "§ 1746: vor Vollendung des 14. Lebensjahrs erklärt nur der gesetzliche Vertreter" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": annahmeantrag(entity_ref("urn:de:bgb:vw:n04:A"), entity_ref("urn:de:bgb:vw:n04:K")) { origin case_input; }
+        assert "f2": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:vw:n04:K"), @2011-08-20) { origin case_input; }
+        assert "f3": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:vw:n04:K"), 14 calendar_year) { origin case_input; }
+        assert "f4": annahmetag(entity_ref("urn:de:bgb:vw:n04:A"), entity_ref("urn:de:bgb:vw:n04:K"), @2025-08-19) { origin case_input; }
+        assert "f5": einwilligung_durch_gesetzlichen_vertreter(entity_ref("urn:de:bgb:vw:n04:K"), entity_ref("urn:de:bgb:vw:n04:A")) { origin case_input; }
+    }
+    evaluate truth(nur_gesetzlicher_vertreter_erklaert(entity_ref("urn:de:bgb:vw:n04:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(kind_erklaert_selbst(entity_ref("urn:de:bgb:vw:n04:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(einwilligung_des_kindes_wirksam(entity_ref("urn:de:bgb:vw:n04:K"), entity_ref("urn:de:bgb:vw:n04:A")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

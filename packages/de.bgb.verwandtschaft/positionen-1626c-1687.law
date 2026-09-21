@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+
+pub relation position_trigger_1626c(kind: Person, elternteil: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Zustimmung zur Sorgeerklärung (§ 1626c)"; label en unofficial "case input for approval of the custody declaration (§ 1626c)"; }
+pub relation zustimmung_1626c_geschuldet(kind: Person, elternteil: Person) kind empirical { label de official "Die Zustimmung des gesetzlichen Vertreters ist geschuldet (§ 1626c)"; label en unofficial "The legal representative's approval is owed (§ 1626c)"; }
+pub relation position_trigger_1631b(kind: Person, elternteil: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Genehmigung freiheitsentziehender Unterbringung (§ 1631b)"; label en unofficial "case input for approval of deprivation-of-liberty placement (§ 1631b)"; }
+pub relation genehmigung_1631b_geschuldet(kind: Person) kind empirical { label de official "Die Genehmigung des Familiengerichts ist einzuholen (§ 1631b)"; label en unofficial "The family court's approval must be obtained (§ 1631b)"; }
+pub relation position_trigger_1687(kind: Person, elternteil: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Alleinentscheidung im täglichen Leben (§ 1687)"; label en unofficial "case input for sole decisions in daily life (§ 1687)"; }
+pub relation alleinentscheidung_1687_ausuebbar(kind: Person, elternteil: Person) kind empirical { label de official "Der betreuende Elternteil darf allein in Angelegenheiten des täglichen Lebens entscheiden (§ 1687)"; label en unofficial "The custodial parent may decide alone in daily-life matters (§ 1687)"; }
+
+@source(BGB_P1626c)
+rule PositionZustimmung1626c(kind: Person, elternteil: Person, tag: Date) strict { label de official "Der gesetzliche Vertreter muss der Sorgeerklärung zustimmen (§ 1626c)"; label en unofficial "The legal representative must approve the custody declaration (§ 1626c)"; when position_trigger_1626c(kind, elternteil, tag); then duty Zustimmung1626c { bearer elternteil; achieve zustimmung_1626c_geschuldet(kind, elternteil) during [tag, infinity); }; }
+@source(BGB_P1631b)
+rule PositionGenehmigung1631b(kind: Person, elternteil: Person, tag: Date) strict { label de official "Die freiheitsentziehende Unterbringung bedarf der Genehmigung des Familiengerichts (§ 1631b)"; label en unofficial "Deprivation-of-liberty placement requires family court approval (§ 1631b)"; when position_trigger_1631b(kind, elternteil, tag); then duty Genehmigung1631b { bearer elternteil; achieve genehmigung_1631b_geschuldet(kind) during [tag, infinity); }; }
+@source(BGB_P1687)
+rule PositionAlleinentscheidung1687(kind: Person, elternteil: Person, tag: Date) strict { label de official "Der betreuende Elternteil darf allein in Angelegenheiten des täglichen Lebens entscheiden (§ 1687)"; label en unofficial "The custodial parent may decide alone in daily-life matters (§ 1687)"; when position_trigger_1687(kind, elternteil, tag); then power Alleinentscheidung1687 { holder elternteil; over kind; exercise alleinentscheidung_1687_ausuebbar(kind, elternteil); valid_when alleinentscheidung_1687_ausuebbar(kind, elternteil); effect create(alleinentscheidung_1687_ausuebbar(kind, elternteil)); window [tag, infinity); }; }

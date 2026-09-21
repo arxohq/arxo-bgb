@@ -1,0 +1,31 @@
+// § 213: Hemmung, Ablaufhemmung und erneuter Beginn der Verjährung bei
+// anderen Ansprüchen. Schicht 2 wie bei § 212 (Koordinator, 18.09): statt
+// `hemmung`/`hemmungsgrund`/`neubeginn_ereignis_am` des wahlweise
+// gegebenen Anspruchs `b` aus denen von `a` abzuleiten (schlösse denselben
+// Prädikatzyklus wie §§ 190/198/212, LDC-E4102), liest eine eigene Regel
+// direkt den bereits berechneten Gesamtkopf `verjaehrung_massgeblich_am(a, …)`
+// und überträgt ihn auf `b`. Vereinfachung (README, dokumentiert): das
+// Ergebnis für `b` übernimmt das Datum von `a` unverändert — die Norm
+// selbst verlangt nur, dass dieselben Mechanismen (Hemmung, Ablaufhemmung,
+// Neubeginn) „auch für" `b` gelten, nicht dass `b` eine eigene, davon
+// abweichende Grundfrist hätte; ein Fall mit abweichender Entstehung von
+// `b` bleibt außerhalb dieser Vereinfachung (TODO).
+
+pub relation wahlweise_anspruch(a: Anspruch, b: Anspruch) kind empirical {
+    key(b);
+    label de official "b ist aus demselben Grunde wahlweise neben dem Anspruch a oder an seiner Stelle gegeben (§ 213)";
+    label en unofficial "b is given, on the same ground, in the alternative alongside claim a or in its place (§ 213)";
+}
+pub relation verjaehrung_massgeblich_am_wahlweise(b: Anspruch, tag: Date) kind institutional {
+    key(b);
+    label de official "die für den wahlweise gegebenen Anspruch b maßgebliche Verjährung, übernommen von a (§ 213)";
+    label en unofficial "the limitation decisive for the alternatively given claim b, taken over from a (§ 213)";
+}
+
+@source(BGB_P213)
+rule Para213HemmungAblaufhemmungNeubeginnUebertragen(a: Anspruch, b: Anspruch, tag: Date) strict {
+    label de official "Die Hemmung, die Ablaufhemmung und der erneute Beginn der Verjährung gelten auch für Ansprüche, die aus demselben Grunde wahlweise neben dem Anspruch oder an seiner Stelle gegeben sind (§ 213)";
+    label en unofficial "Suspension, extension of the time-limit and the fresh start of limitation also apply to claims that, on the same ground, are given in the alternative alongside the claim or in its place (§ 213)";
+    when wahlweise_anspruch(a, b) and verjaehrung_massgeblich_am(a, tag);
+    then verjaehrung_massgeblich_am_wahlweise(b, tag);
+}

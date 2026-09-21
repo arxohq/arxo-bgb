@@ -1,0 +1,57 @@
+// BRIDGE TO THE COMPARATIVE DICTIONARY (DECISION-0091): conclusions of the
+// Code → heads of `doctrine.ius_privatum`. Owner (§§ 903, 929, 932, 937) →
+// dominium; obligation (§ 241) and duty to compensate (§§ 823–833) → obligatio
+// and Anspruch (§ 194) → remedium_datur; Herausgabeanspruch (§ 985) →
+// remedium_in_rem; the original owner’s claim to surrender (§ 985) is given as
+// intentio, and good-faith acquisition (§ 932) takes it as exceptio — otherwise
+// the dictionary never sees FALSE, it needs both grant and exclusion;
+// the limitation Einrede (§ 222) → remedium_exclusum while the obligation
+// still exists (bare right — § 222 (2)); the heir as a whole (§ 1922) →
+// heres_est and the passage of claims to and against the heir (§ 1967).
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+@source(BGB_P903)
+rule EigenthuemerDominium(x: Persona, r: Res) strict { label de official "Eigenthümer"; label en unofficial "The owner under the Code is owner under this law (§ 903)"; when eigenthuemer(x, r); then doctrine.ius_privatum::dominium(x, r); }
+@source(BGB_P854)
+rule BesitzerPossessio(y: Persona, r: Res) strict { label de official "Besitzer"; label en unofficial "The possessor under the Code possesses under this law (§ 854)"; when besitzer(y, r); then doctrine.ius_privatum::possessio(y, r); }
+@source(BGB_P241)
+rule SchuldverhaeltnisObligatio(x: Persona, y: Persona, c: Causa) strict { label de official "Schuldner"; label en unofficial "The debtor of an obligation is the debtor under this law (§ 241)"; when schuldverhaeltnis(x, y, c); then doctrine.ius_privatum::obligatio(y, x, c); }
+@source(BGB_P194, BGB_P241)
+rule SchuldverhaeltnisAnspruch(x: Persona, y: Persona, c: Causa) strict { label de official "Anspruch"; label en unofficial "The creditor may require performance from the debtor — Anspruch (§ 241; § 194)"; when schuldverhaeltnis(x, y, c); then anspruch(x, y, c); }
+@source(BGB_P823)
+rule ErsatzpflichtObligatio(a: Persona, l: Persona, c: Causa) defeasible { label de official "zum Ersatze verpflichtet"; label en unofficial "A person bound to compensate is the injured party’s debtor (§§ 823–833)"; when ersatzpflichtig(a, l, c); then doctrine.ius_privatum::obligatio(a, l, c); }
+@source(BGB_P823, BGB_P194)
+rule ErsatzpflichtAnspruch(a: Persona, l: Persona, c: Causa) defeasible { label de official "Anspruch auf Schadensersatz"; label en unofficial "The injured party’s claim to compensation is an Anspruch (§ 823; § 194)"; when ersatzpflichtig(a, l, c) and doctrine.ius_privatum::petitio(c, l, a); then anspruch(l, a, c); }
+@source(BGB_P985, BGB_P194)
+rule HerausgabeAnspruch(x: Persona, y: Persona, r: Res, c: Causa) strict { label de official "Herausgabeanspruch"; label en unofficial "The claim to surrender the thing is the owner’s Anspruch against the possessor (§ 985; § 194)"; when herausgabeanspruch(x, y, r) and doctrine.ius_privatum::petitio(c, x, y) and doctrine.ius_privatum::petitio_de_re(c, r) and not_known(herausgabe_verweigern_berechtigt(y, x, r)); then anspruch(x, y, c); }
+@source(BGB_P985)
+rule HerausgabeIntentio(x: Persona, y: Persona, r: Res, c: Causa) defeasible { label de official "Der Eigenthümer kann von dem Besitzer die Herausgabe der Sache verlangen"; label en unofficial "The original owner demanding surrender from the possessor asserts the claim of § 985 — intentio; whether ownership was lost (§ 932, § 937, § 900) is the exceptio"; when doctrine.ius_privatum::dominus_originarius(x, r) and doctrine.ius_privatum::possessor(y, r) and doctrine.ius_privatum::petitio(c, x, y) and doctrine.ius_privatum::petitio_de_re(c, r); then doctrine.ius_privatum::remedium_datur(x, y, c); }
+@source(BGB_P985)
+rule HerausgabeInRem(x: Persona, y: Persona, r: Res, c: Causa) defeasible { label de official "dinglicher Anspruch"; label en unofficial "The claim to surrender the thing is a real remedy (§ 985)"; when herausgabeanspruch(x, y, r) and doctrine.ius_privatum::petitio(c, x, y) and doctrine.ius_privatum::petitio_de_re(c, r); then doctrine.ius_privatum::remedium_in_rem(x, y, c); }
+@source(BGB_P194)
+rule AnspruchRemediumDatur(x: Persona, y: Persona, c: Causa) defeasible { label de official "Das Recht, von einem Anderen ein Thun oder ein Unterlassen zu verlangen (Anspruch)"; label en unofficial "The holder of an Anspruch is given a remedy against the obligor (§ 194)"; when anspruch(x, y, c); then doctrine.ius_privatum::remedium_datur(x, y, c); }
+@source(BGB_P241)
+rule SchuldverhaeltnisInPersonam(x: Persona, y: Persona, c: Causa) defeasible { label de official "schuldrechtlicher Anspruch"; label en unofficial "The claim to performance of an obligation is a personal remedy (§ 241)"; when schuldverhaeltnis(x, y, c); then doctrine.ius_privatum::remedium_in_personam(x, y, c); }
+@source(BGB_P823)
+rule ErsatzInPersonam(a: Persona, l: Persona, c: Causa) defeasible { label de official "Anspruch auf Schadensersatz"; label en unofficial "The claim to compensation is a personal remedy (§ 823)"; when ersatzpflichtig(a, l, c) and doctrine.ius_privatum::petitio(c, l, a); then doctrine.ius_privatum::remedium_in_personam(l, a, c); }
+@source(BGB_P305)
+rule CausaExContractu(x: Persona, y: Persona, c: Causa) strict { label de official "Vertrag"; label en unofficial "A claim arising from a contract (§ 305)"; when doctrine.ius_privatum::contractus(x, y, c); then doctrine.ius_privatum::causa_ex_contractu(c); }
+@source(BGB_P823)
+rule CausaExDelicto(a: Persona, l: Persona, c: Causa) strict { label de official "unerlaubte Handlung"; label en unofficial "A claim arising from an unlawful act (§ 823)"; when unerlaubte_handlung(a, l, c); then doctrine.ius_privatum::causa_ex_delicto(c); }
+@source(BGB_P985)
+rule CausaDeRe(c: Causa, r: Res) strict { label de official "Herausgabe der Sache"; label en unofficial "A claim concerning the thing (§ 985)"; when doctrine.ius_privatum::petitio_de_re(c, r); then doctrine.ius_privatum::causa_de_re(c, r); }
+@source(BGB_P222)
+rule EinredeExcludit(x: Persona, y: Persona, c: Causa) defeasible { label de official "berechtigt, die Leistung zu verweigern"; label en unofficial "The limitation Einrede excludes the remedy while the obligation still exists (§ 222)"; when leistung_verweigern_berechtigt(y, x, c); then doctrine.ius_privatum::remedium_exclusum(x, y, c); }
+@source(BGB_P932, BGB_P985)
+rule GutglaeubigerErwerbExcludit(x: Persona, y: Persona, r: Res, c: Causa) strict { label de official "wird der Erwerber auch dann Eigenthümer"; label en unofficial "Good-faith acquisition took the thing and with it surrender from the former owner (§ 932; § 985): the remedy is excluded"; when gutglaeubiger_erwerb(y, r) and doctrine.ius_privatum::dominus_originarius(x, r) and doctrine.ius_privatum::petitio(c, x, y) and doctrine.ius_privatum::petitio_de_re(c, r); then doctrine.ius_privatum::remedium_exclusum(x, y, c); }
+@source(BGB_P986)
+rule RechtZumBesitzExcludit(x: Persona, y: Persona, r: Res, c: Causa) strict { label de official "kann die Herausgabe verweigern"; label en unofficial "A right to possess as against the owner excludes surrender (§ 986)"; when herausgabe_verweigern_berechtigt(y, x, r) and doctrine.ius_privatum::petitio(c, x, y) and doctrine.ius_privatum::petitio_de_re(c, r); then doctrine.ius_privatum::remedium_exclusum(x, y, c); }
+@source(BGB_P1924)
+rule ErbeHeresEst(h: Persona, d: Persona) strict { label de official "gesetzlicher Erbe"; label en unofficial "The statutory heir to whom the estate has devolved is the heir under this law (§ 1924, § 1942)"; when erbschaft_angefallen(h, d); then doctrine.ius_privatum::heres_est(h, d); }
+@source(BGB_P1922)
+rule GesamtrechtsnachfolgeTransit(d: Persona, y: Persona, c: Causa) strict { label de official "Vermögen als Ganzes"; label en unofficial "The deceased creditor’s claim passes to the heir as part of the estate as a whole (§ 1922)"; when doctrine.ius_privatum::contractus(d, y, c) and erbfall(d); then doctrine.ius_privatum::remedium_transit_ad_heredem(c); }
+@source(BGB_P1967)
+rule NachlassverbindlichkeitTransit(d: Persona, c: Causa) strict { label de official "Der Erbe haftet für die Nachlaßverbindlichkeiten"; label en unofficial "A claim against the deceased debtor passes against the heir (§ 1967)"; when nachlassverbindlichkeit(d, c); then doctrine.ius_privatum::remedium_transit_contra_heredem(c); }

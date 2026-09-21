@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1207 — andere Seite: Die Sache gehört dem Verpfänder nicht, der Pfandgläubiger weiß es nicht und die Sache ist nicht abhanden gekommen. Das Pfandrecht entsteht gutgläubig, und die Vermutung des § 1248 hält.
+test "§ 1207, § 1248: ohne Kenntnis und ohne Abhandenkommen erwirbt der Pfandgläubiger gutgläubig" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_sache(entity_ref("urn:de:bgb:dr:p04:pfand"), entity_ref("urn:de:bgb:dr:p04:uhr")) { origin case_input; }
+        assert "f2": de.bgb.besitz_eigentum::bewegliche_sache(entity_ref("urn:de:bgb:dr:p04:uhr")) { origin case_input; }
+        assert "f3": pfandglaeubiger(entity_ref("urn:de:bgb:dr:p04:pfand"), entity_ref("urn:de:bgb:dr:p04:bank")) { origin case_input; }
+        assert "f4": verpfaender(entity_ref("urn:de:bgb:dr:p04:pfand"), entity_ref("urn:de:bgb:dr:p04:v")) { origin case_input; }
+        assert "f5": einigung_ueber_das_pfandrecht(entity_ref("urn:de:bgb:dr:p04:pfand")) { origin adjudicated; }
+        assert "f6": sache_dem_glaeubiger_uebergeben(entity_ref("urn:de:bgb:dr:p04:pfand")) { origin adjudicated; }
+        assert "f7": sache_gehoert_dem_verpfaender_nicht(entity_ref("urn:de:bgb:dr:p04:pfand")) { origin adjudicated; }
+        assert "f8": not kenntnis_vom_fehlenden_eigentum_des_verpfaenders(entity_ref("urn:de:bgb:dr:p04:pfand")) { origin adjudicated; }
+        assert "f9": not pfandsache_abhanden_gekommen(entity_ref("urn:de:bgb:dr:p04:pfand")) { origin adjudicated; }
+    }
+    evaluate truth(pfandrecht_entstanden(entity_ref("urn:de:bgb:dr:p04:pfand"), entity_ref("urn:de:bgb:dr:p04:bank")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verpfaender_gilt_als_eigentuemer(entity_ref("urn:de:bgb:dr:p04:pfand"), entity_ref("urn:de:bgb:dr:p04:v")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

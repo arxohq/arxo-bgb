@@ -1,0 +1,38 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// Querschnitt Kauf/Rücktritt/Verjährung, andere Seite von kq02: derselbe
+// arglistig verschwiegene Mangel, dieselbe am 31. Dezember 2026 eingetretene
+// Verjährung (§ 438 Abs. 3, de.bgb.fristen §§ 195, 199 Abs. 1), aber der
+// Verkäufer BERUFT SICH auf sie (§ 218 Abs. 1 Satz 1) — der Rücktritt wird
+// unwirksam, und der Käufer erhält das Zahlungsverweigerungsrecht des § 438
+// Abs. 4 Satz 2, weil de.bgb.kauf diesen lokalen Eingang unverändert liest
+// (D-05-02): die Brücke ersetzt nur die Herleitung von § 218, nicht die
+// nachgelagerten Regeln.
+test "§§ 438 Abs. 3, 218 Abs. 1, 438 Abs. 4: Verjährung eingetreten UND Verkäufer beruft sich — Rücktritt unwirksam" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:kq03"), entity_ref("urn:de:bgb:kauf:kq03:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:kq03"), entity_ref("urn:de:bgb:kauf:kq03:K")) { origin case_input; }
+        assert "f3": maengelanspruch(entity_ref("urn:de:bgb:kauf:kq03:A"), entity_ref("urn:de:bgb:kauf:kq03")) { origin case_input; }
+        assert "f4": ablieferung_am(entity_ref("urn:de:bgb:kauf:kq03"), @2023-04-10) { origin adjudicated; }
+        assert "f5": not grundstueckskauf(entity_ref("urn:de:bgb:kauf:kq03")) { origin case_input; }
+        assert "f6": not mangel_in_dinglichem_herausgaberecht(entity_ref("urn:de:bgb:kauf:kq03")) { origin case_input; }
+        assert "f7": not mangel_in_eingetragenem_recht(entity_ref("urn:de:bgb:kauf:kq03")) { origin case_input; }
+        assert "f8": not bauwerk(entity_ref("urn:de:bgb:kauf:kq03")) { origin case_input; }
+        assert "f9": not baustoff_mit_verursachter_mangelhaftigkeit(entity_ref("urn:de:bgb:kauf:kq03")) { origin case_input; }
+        assert "f10": mangel_arglistig_verschwiegen(entity_ref("urn:de:bgb:kauf:kq03")) { origin adjudicated; }
+        assert "f11": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:kauf:kq03:A"), @2023-04-10) { origin case_input; }
+        assert "f12": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:kauf:kq03:A"), @2023-04-10) { origin adjudicated; }
+        assert "f13": de.bgb.fristen::keine_hemmung(entity_ref("urn:de:bgb:kauf:kq03:A")) { origin case_input; }
+        assert "f14": de.bgb.fristen::ruecktritt_erklaert_wegen(entity_ref("urn:de:bgb:kauf:kq03:A")) { origin case_input; }
+        assert "f15": de.bgb.fristen::schuldner_beruft_sich_auf_verjaehrung(entity_ref("urn:de:bgb:kauf:kq03:A")) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::ruecktritt_unwirksam_wegen_verjaehrung(entity_ref("urn:de:bgb:kauf:kq03:A")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ruecktritt_nach_218_unwirksam(entity_ref("urn:de:bgb:kauf:kq03")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(zahlungsverweigerungsrecht_trotz_unwirksamen_ruecktritts(entity_ref("urn:de:bgb:kauf:kq03"), entity_ref("urn:de:bgb:kauf:kq03:K")));
+    expect truth_status == TRUE_ONLY;
+}

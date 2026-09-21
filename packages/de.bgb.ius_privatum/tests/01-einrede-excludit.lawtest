@@ -1,0 +1,35 @@
+language "law.core" version "0.2";
+package de.bgb.ius_privatum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ius-privatum";
+
+// Accrual and knowledge on 15 March 2010: regular limitation enters on
+// 31 December 2013 (§§ 195, 199 (1)). The Einrede of § 214 (1) excludes the
+// comparative remedy.
+test "einrede-214-excludit" {
+    given {
+        context {
+            legal_time @2016-01-02;
+            decision_time @2016-01-02T12:00:00Z;
+            knowledge_time @2016-01-02T12:00:00Z;
+            timezone "Europe/Berlin";
+            deadline_policy BGB_FRISTEN_KALENDER;
+            calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT";
+        }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:ius:a"), @2010-03-15) { origin case_input; }
+        assert "k": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:ius:a"), @2010-03-15) { origin adjudicated; }
+        assert "h": de.bgb.fristen::keine_hemmung(entity_ref("urn:de:bgb:ius:a")) { origin case_input; }
+        assert "e2": de.bgb.fristen::schuldner_beruft_sich_auf_verjaehrung(entity_ref("urn:de:bgb:ius:a")) { origin case_input; }
+        assert "g": de.bgb.core::anspruchsinhaber(entity_ref("urn:de:bgb:ius:a"), entity_ref("urn:de:bgb:ius:g")) { origin case_input; }
+        assert "s": de.bgb.core::anspruchsgegner(entity_ref("urn:de:bgb:ius:a"), entity_ref("urn:de:bgb:ius:s")) { origin case_input; }
+        assert "pg": persona_of(entity_ref("urn:de:bgb:ius:g"), entity_ref("urn:de:bgb:ius:gx")) { origin case_input; }
+        assert "ps": persona_of(entity_ref("urn:de:bgb:ius:s"), entity_ref("urn:de:bgb:ius:sx")) { origin case_input; }
+        assert "ca": causa_of_anspruch(entity_ref("urn:de:bgb:ius:a"), entity_ref("urn:de:bgb:ius:c")) { origin case_input; }
+        assert "pe": doctrine.ius_privatum::petitio(entity_ref("urn:de:bgb:ius:c"), entity_ref("urn:de:bgb:ius:gx"), entity_ref("urn:de:bgb:ius:sx")) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:ius:a"), @2013-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(doctrine.ius_privatum::remedium_exclusum(entity_ref("urn:de:bgb:ius:gx"), entity_ref("urn:de:bgb:ius:sx"), entity_ref("urn:de:bgb:ius:c")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

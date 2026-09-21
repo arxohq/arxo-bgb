@@ -1,0 +1,33 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 559 Abs. 1 Satz 1: 8 Prozent der für die Wohnung aufgewendeten Kosten JÄHRLICH. Kosten 24 000,00 €, jährlich 1 920,00 €, monatlich 160,00 €. § 559 Abs. 3a Satz 1: die Ausgangsmiete beträgt 800,00 € bei 80 m², also 10,00 € je m² — nicht unter 7 €, deshalb gilt die Grenze von 3 € je m², hier 240,00 €. 160,00 € bleibt darunter, die Erhöhung besteht. § 559b Abs. 2 Satz 1: Zugang am 12. Mai 2025, die erhöhte Miete ist ab dem 1. August 2025 geschuldet.
+test "§ 559: acht Prozent jährlich, Kappung drei Euro je Quadratmeter gewahrt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:e06"), entity_ref("urn:de:bgb:miete:e06:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:e06"), entity_ref("urn:de:bgb:miete:e06:M")) { origin case_input; }
+        assert "f3": gegenstandsart(entity_ref("urn:de:bgb:miete:e06"), Wohnraum) { origin case_input; }
+        assert "f4": wohnflaeche_qm(entity_ref("urn:de:bgb:miete:e06"), 80) { origin case_input; }
+        assert "f5": erhoehung_des(entity_ref("urn:de:bgb:miete:e06:E"), entity_ref("urn:de:bgb:miete:e06")) { origin case_input; }
+        assert "f6": erhoehung_nach_559_zulaessige_massnahme(entity_ref("urn:de:bgb:miete:e06:E")) { origin case_input; }
+        assert "f7": modernisierungskosten(entity_ref("urn:de:bgb:miete:e06:E"), 24000.00 EUR) { origin case_input; }
+        assert "f8": ausgangsmiete(entity_ref("urn:de:bgb:miete:e06:E"), 800.00 EUR) { origin case_input; }
+        assert "f9": erhoehung_zugegangen_am(entity_ref("urn:de:bgb:miete:e06:E"), @2025-05-12) { origin case_input; }
+        assert "f10": erhoehung_in_textform(entity_ref("urn:de:bgb:miete:e06:E")) { origin case_input; }
+        assert "f11": not ankuendigung_nach_555c_unterblieben(entity_ref("urn:de:bgb:miete:e06:E")) { origin case_input; }
+        assert "f12": not erhoehung_uebersteigt_ankuendigung_um_mehr_als_zehn_prozent(entity_ref("urn:de:bgb:miete:e06:E")) { origin case_input; }
+        assert "f13": not staffelmiete_vereinbart(entity_ref("urn:de:bgb:miete:e06")) { origin case_input; }
+    }
+    evaluate truth(monatlicher_erhoehungsbetrag(entity_ref("urn:de:bgb:miete:e06:E"), 160.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(ausgangsmiete_je_qm(entity_ref("urn:de:bgb:miete:e06:E"), 10.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(kappung_559_abs3a(entity_ref("urn:de:bgb:miete:e06:E"), 240.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(erhoehungsrecht_559(entity_ref("urn:de:bgb:miete:e06:E"), entity_ref("urn:de:bgb:miete:e06:V")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(erhoehte_miete_559_geschuldet_ab(entity_ref("urn:de:bgb:miete:e06:E"), @2025-08-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

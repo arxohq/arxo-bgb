@@ -1,0 +1,872 @@
+// --- Untertitel 2 Unterkapitel 2 (§§ 557–561): Regelungen über die Miethöhe
+//
+// DREI WEGE UND IHRE SPERREN. Der Text kennt die Vereinbarung (§ 557 Abs. 1),
+// die Staffelmiete (§ 557a), die Indexmiete (§ 557b) und die drei gesetzlichen
+// Erhöhungen der §§ 558, 559 und 560. § 557a Abs. 2 Satz 2 sperrt während der
+// Laufzeit einer Staffelmiete die §§ 558 bis 559b; § 557b Abs. 2 Satz 3
+// schließt die Erhöhung nach § 558 aus. Die Sperren sind eigene POSITIVE
+// Prädikate, die die Erhöhungsregeln über `not_known` lesen — eine negative
+// Kopfregel würde den Anspruch nicht löschen, sondern BOTH erzeugen
+// (Ledger D-06-06).
+//
+// VIER ZAHLEN AUS DEM TEXT. § 558 Abs. 1 Satz 1: 15 Monate unverändert;
+// Satz 2: ein Jahr seit der letzten Mieterhöhung. § 558 Abs. 3: 20 vom Hundert
+// in drei Jahren, 15 vom Hundert in den durch Landesverordnung bestimmten
+// Gebieten. § 559 Abs. 1: 8 Prozent der aufgewendeten Kosten JÄHRLICH — auf
+// den Monat also ein Zwölftel; Abs. 3a: 3 Euro, bei einer Ausgangsmiete unter
+// 7 Euro 2 Euro und bei der Heizungsanlage 0,50 Euro je Quadratmeter innerhalb
+// von sechs Jahren. § 559c Abs. 1: 10 000 Euro Kostengrenze, 30 Prozent
+// Pauschale. § 559e Abs. 1 und 2: 10 Prozent und 15 Prozent. Jede Zahl steht
+// im Text; keine ist ergänzt.
+//
+// DIE FRISTEN DES ZUGANGS. § 558b Abs. 1 (Beginn des dritten Kalendermonats
+// nach Zugang), Abs. 2 Satz 1 (Zustimmung bis zum Ablauf des zweiten
+// Kalendermonats), § 559b Abs. 2 (dritter Monat nach Zugang, um sechs Monate
+// verlängert) und § 561 Abs. 1 (zweiter Monat nach Zugang, Kündigung zum
+// Ablauf des übernächsten Monats) rechnen alle mit KALENDERmonaten vom Tag des
+// Zugangs; sie werden mit `month_end_of` und `month_start_of` über dem
+// Monatsschritt des § 188 Abs. 2 gebildet.
+
+// --- Träger der Mieterhöhung ----------------------------------------------------------------------
+
+pub relation erhoehung_des(e: Mieterhoehung, m: Mietverhaeltnis) kind empirical {
+    key(e);
+    label de official "Mieterhöhungsverlangen oder Mieterhöhungserklärung dieses Mietverhältnisses (§§ 558, 559, 559c, 559e, 560)";
+    label en unofficial "demand for or declaration of an increase in rent for this lease (§§ 558, 559, 559c, 559e, 560)";
+}
+pub relation erhoehung_zugegangen_am(e: Mieterhoehung, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag des Zugangs des Erhöhungsverlangens oder der Erhöhungserklärung beim Mieter (§ 558b Abs. 1 und 2, § 559b Abs. 2, § 561 Abs. 1)";
+    label en unofficial "day on which the demand or declaration reaches the tenant (§ 558b (1) and (2), § 559b (2), § 561 (1))";
+}
+pub relation erhoehung_in_textform(e: Mieterhoehung) kind empirical {
+    label de official "das Erhöhungsverlangen ist dem Mieter in Textform erklärt und begründet (§ 558a Abs. 1, § 559b Abs. 1 Satz 1, § 560 Abs. 1 Satz 2)";
+    label en unofficial "the demand is declared and substantiated to the tenant in text form (§ 558a (1), § 559b (1) sentence 1, § 560 (1) sentence 2)";
+}
+pub relation staffelmiete_vereinbart(m: Mietverhaeltnis) kind empirical {
+    label de official "die Miete ist für bestimmte Zeiträume in unterschiedlicher Höhe schriftlich vereinbart (Staffelmiete, § 557a Abs. 1)";
+    label en unofficial "the rent is agreed in writing at different levels for particular periods (stepped rent, § 557a (1))";
+}
+pub relation indexmiete_vereinbart(m: Mietverhaeltnis) kind empirical {
+    label de official "die Miete wird durch den Preisindex für die Lebenshaltung aller privaten Haushalte bestimmt (Indexmiete, § 557b Abs. 1)";
+    label en unofficial "the rent is determined by the consumer price index for all private households (index-linked rent, § 557b (1))";
+}
+pub relation letzte_mietaenderung_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Zeitpunkt der letzten Änderung der Miete ohne Erhöhungen nach den §§ 559 bis 560 (§ 558 Abs. 1 Satz 1 und 3)";
+    label en unofficial "point in time of the last change in rent, disregarding increases under §§ 559 to 560 (§ 558 (1) sentences 1 and 3)";
+}
+pub relation letzte_mieterhoehung_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Zeitpunkt der letzten Mieterhöhung (§ 558 Abs. 1 Satz 2)";
+    label en unofficial "point in time of the last increase in rent (§ 558 (1) sentence 2)";
+}
+pub relation erhoehung_eintritt_am(e: Mieterhoehung, tag: Date) kind empirical {
+    key(e);
+    label de official "Zeitpunkt, zu dem die Erhöhung eintreten soll (§ 558 Abs. 1 Satz 1)";
+    label en unofficial "point in time at which the increase is to take effect (§ 558 (1) sentence 1)";
+}
+pub relation erhoehungsverlangen_gestellt_am(e: Mieterhoehung, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag, an dem das Mieterhöhungsverlangen geltend gemacht wird (§ 558 Abs. 1 Satz 2)";
+    label en unofficial "day on which the demand for an increase is asserted (§ 558 (1) sentence 2)";
+}
+pub relation ausgangsmiete(e: Mieterhoehung, betrag: Money) kind empirical {
+    key(e);
+    label de official "die monatliche Miete vor der Erhöhung, ohne Erhöhungen nach den §§ 559 bis 560 (§ 558 Abs. 3 Satz 1, § 559 Abs. 3a Satz 2)";
+    label en unofficial "the monthly rent before the increase, disregarding increases under §§ 559 to 560 (§ 558 (3) sentence 1, § 559 (3a) sentence 2)";
+}
+pub relation miete_vor_drei_jahren(e: Mieterhoehung, betrag: Money) kind empirical {
+    key(e);
+    label de official "die Miete zu Beginn des Dreijahreszeitraums der Kappungsgrenze (§ 558 Abs. 3 Satz 1)";
+    label en unofficial "the rent at the beginning of the three-year period of the capping limit (§ 558 (3) sentence 1)";
+}
+pub relation verlangte_miete(e: Mieterhoehung, betrag: Money) kind empirical {
+    key(e);
+    label de official "die vom Vermieter verlangte erhöhte Miete (§ 558 Abs. 1 Satz 1)";
+    label en unofficial "the increased rent demanded by the lessor (§ 558 (1) sentence 1)";
+}
+pub relation kappungsgrenzengebiet(m: Mietverhaeltnis) kind empirical {
+    label de official "die Wohnung liegt in einem durch Rechtsverordnung nach § 558 Abs. 3 Satz 3 bestimmten Gebiet — Angabe des Falls mit Gebiet und Zeitraum, keine Bundesnorm";
+    label en unofficial "the dwelling lies in an area determined by a regulation under § 558 (3) sentence 3 — a statement of the case naming area and period, not federal law";
+}
+pub relation zustimmung_erklaert_am(e: Mieterhoehung, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag, an dem der Mieter der Mieterhöhung zustimmt (§ 558b Abs. 1 und 2)";
+    label en unofficial "day on which the tenant consents to the increase in rent (§ 558b (1) and (2))";
+}
+pub relation modernisierungskosten(e: Mieterhoehung, betrag: Money) kind empirical {
+    key(e);
+    label de official "die für die Wohnung aufgewendeten Kosten der Modernisierungsmaßnahme nach Abzug der Drittmittel des § 559a (§ 559 Abs. 1, § 559c Abs. 1 Satz 1)";
+    label en unofficial "the costs incurred for the dwelling for the modernisation measure after deduction of third-party funds under § 559a (§ 559 (1), § 559c (1) sentence 1)";
+}
+pub relation erhoehung_nach_559_zulaessige_massnahme(e: Mieterhoehung) kind empirical {
+    label de official "der Vermieter hat Modernisierungsmaßnahmen im Sinne des § 555b Nummer 1, 3, 4, 5 oder 6 durchgeführt (§ 559 Abs. 1 Satz 1)";
+    label en unofficial "the lessor carried out modernisation measures within the meaning of § 555b nos. 1, 3, 4, 5 or 6 (§ 559 (1) sentence 1)";
+}
+pub relation vereinfachtes_verfahren_gewaehlt(e: Mieterhoehung) kind empirical {
+    label de official "der Vermieter berechnet die Mieterhöhung nach dem vereinfachten Verfahren (§ 559c Abs. 1 Satz 1, Abs. 3 Satz 2)";
+    label en unofficial "the lessor calculates the increase under the simplified procedure (§ 559c (1) sentence 1, (3) sentence 2)";
+}
+pub relation ankuendigung_nach_555c_unterblieben(e: Mieterhoehung) kind empirical {
+    label de official "der Vermieter hat dem Mieter die Modernisierungsmaßnahme nicht nach § 555c Abs. 1 und 3 bis 5 angekündigt (§ 559b Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "the lessor did not announce the modernisation measure under § 555c (1) and (3) to (5) (§ 559b (2) sentence 2 no. 1)";
+}
+pub relation erhoehung_uebersteigt_ankuendigung_um_mehr_als_zehn_prozent(e: Mieterhoehung) kind empirical {
+    label de official "die tatsächliche Mieterhöhung übersteigt die angekündigte um mehr als 10 Prozent (§ 559 Abs. 5 Satz 2, § 559b Abs. 2 Satz 2 Nr. 2)";
+    label en unofficial "the actual increase exceeds the announced increase by more than 10 per cent (§ 559 (5) sentence 2, § 559b (2) sentence 2 no. 2)";
+}
+pub relation sonderkuendigung_561_erklaert_am(e: Mieterhoehung, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag, an dem der Mieter nach einer Mieterhöhung außerordentlich kündigt (§ 561 Abs. 1 Satz 1)";
+    label en unofficial "day on which the tenant gives extraordinary notice after an increase in rent (§ 561 (1) sentence 1)";
+}
+
+@source(BGB_P559)
+pub external judgment relation mieterhoehung_bedeutet_haerte(e: Mieterhoehung) {
+    authority Court;
+    label de official "§ 559 Abs. 4 Satz 1. Die Mieterhöhung würde auch unter Berücksichtigung der voraussichtlichen künftigen Betriebskosten für den Mieter eine Härte bedeuten, die auch unter Würdigung der berechtigten Interessen des Vermieters nicht zu rechtfertigen ist";
+    label en unofficial "§ 559 (4) sentence 1. Even taking into account the expected future operating costs, the increase would constitute hardship for the tenant that cannot be justified even weighing the lessor's legitimate interests";
+}
+
+// --- § 557 Mieterhöhungen nach Vereinbarung oder Gesetz -------------------------------------------
+
+pub relation erhoehung_nach_558_bis_560_zulaessig(m: Mietverhaeltnis) kind institutional {
+    label de official "im Übrigen kann der Vermieter Mieterhöhungen nur nach Maßgabe der §§ 558 bis 560 verlangen (§ 557 Abs. 3)";
+    label en unofficial "otherwise the lessor may demand increases only in accordance with §§ 558 to 560 (§ 557 (3))";
+}
+pub relation erhoehung_558_bis_559b_gesperrt(m: Mietverhaeltnis) kind institutional {
+    label de official "während der Laufzeit einer Staffelmiete ist eine Erhöhung nach den §§ 558 bis 559b ausgeschlossen (§ 557a Abs. 2 Satz 2)";
+    label en unofficial "during a stepped-rent arrangement an increase under §§ 558 to 559b is excluded (§ 557a (2) sentence 2)";
+}
+pub relation erhoehung_558_gesperrt(m: Mietverhaeltnis) kind institutional {
+    label de official "während der Geltung einer Indexmiete ist eine Erhöhung nach § 558 ausgeschlossen (§ 557b Abs. 2 Satz 3)";
+    label en unofficial "while an index-linked rent applies an increase under § 558 is excluded (§ 557b (2) sentence 3)";
+}
+pub relation miete_mindestens_ein_jahr_unveraendert_pflicht(m: Mietverhaeltnis) kind institutional {
+    label de official "die Miete muss jeweils mindestens ein Jahr unverändert bleiben (§ 557a Abs. 2 Satz 1, § 557b Abs. 2 Satz 1)";
+    label en unofficial "the rent must remain unchanged for at least one year at a time (§ 557a (2) sentence 1, § 557b (2) sentence 1)";
+}
+
+@source(BGB_P557)
+rule GesetzlicheErhoehung557Abs3(m: Mietverhaeltnis) strict {
+    label de official "Im Übrigen kann der Vermieter Mieterhöhungen nur nach Maßgabe der §§ 558 bis 560 verlangen (§ 557 Abs. 3)";
+    label en unofficial "Otherwise the lessor may demand increases only in accordance with §§ 558 to 560 (§ 557 (3))";
+    when gegenstandsart(m, Wohnraum);
+    then erhoehung_nach_558_bis_560_zulaessig(m);
+}
+
+@source(BGB_P557a)
+rule Staffelmiete557aAbs2(m: Mietverhaeltnis) strict {
+    label de official "Die Miete muss jeweils mindestens ein Jahr unverändert bleiben; während der Laufzeit einer Staffelmiete ist eine Erhöhung nach den §§ 558 bis 559b ausgeschlossen (§ 557a Abs. 2)";
+    label en unofficial "The rent must remain unchanged for at least one year at a time; during a stepped-rent arrangement an increase under §§ 558 to 559b is excluded (§ 557a (2))";
+    when staffelmiete_vereinbart(m);
+    then erhoehung_558_bis_559b_gesperrt(m);
+}
+
+@source(BGB_P557a)
+rule Staffelmiete557aAbs2Satz1(m: Mietverhaeltnis) strict {
+    label de official "Die Miete muss jeweils mindestens ein Jahr unverändert bleiben (§ 557a Abs. 2 Satz 1)";
+    label en unofficial "The rent must remain unchanged for at least one year at a time (§ 557a (2) sentence 1)";
+    when staffelmiete_vereinbart(m);
+    then miete_mindestens_ein_jahr_unveraendert_pflicht(m);
+}
+
+@source(BGB_P557b)
+rule Indexmiete557bAbs2(m: Mietverhaeltnis) strict {
+    label de official "Während der Geltung einer Indexmiete muss die Miete jeweils mindestens ein Jahr unverändert bleiben; eine Erhöhung nach § 558 ist ausgeschlossen (§ 557b Abs. 2 Satz 1 und 3)";
+    label en unofficial "While an index-linked rent applies the rent must remain unchanged for at least one year; an increase under § 558 is excluded (§ 557b (2) sentences 1 and 3)";
+    when indexmiete_vereinbart(m);
+    then erhoehung_558_gesperrt(m);
+}
+
+@source(BGB_P557b)
+rule Indexmiete557bAbs2Satz1(m: Mietverhaeltnis) strict {
+    label de official "Während der Geltung einer Indexmiete muss die Miete jeweils mindestens ein Jahr unverändert bleiben (§ 557b Abs. 2 Satz 1)";
+    label en unofficial "While an index-linked rent applies the rent must remain unchanged for at least one year (§ 557b (2) sentence 1)";
+    when indexmiete_vereinbart(m);
+    then miete_mindestens_ein_jahr_unveraendert_pflicht(m);
+}
+
+// --- § 558 Mieterhöhung bis zur ortsüblichen Vergleichsmiete --------------------------------------
+
+pub relation wartefrist_558_ende(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf die Miete seit 15 Monaten unverändert ist (§ 558 Abs. 1 Satz 1) — Monatsschritt nach § 188 Abs. 2, Politik BGB_MIETE_KALENDER";
+    label en unofficial "day at whose end the rent has been unchanged for 15 months (§ 558 (1) sentence 1) — monthly step under § 188 (2), policy BGB_MIETE_KALENDER";
+}
+pub relation jahressperre_558_ende(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "Tag, mit dessen Ablauf ein Jahr seit der letzten Mieterhöhung verstrichen ist; das Verlangen kann frühestens danach geltend gemacht werden (§ 558 Abs. 1 Satz 2)";
+    label en unofficial "day at whose end one year since the last increase has elapsed; the demand may be asserted at the earliest thereafter (§ 558 (1) sentence 2)";
+}
+pub relation kappungsgrenze(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "Höchstbetrag, auf den sich die Miete innerhalb von drei Jahren erhöhen darf (§ 558 Abs. 3) — 20 vom Hundert, in den bestimmten Gebieten 15 vom Hundert; eine Division je Erhöhung";
+    label en unofficial "maximum to which the rent may be raised within three years (§ 558 (3)) — 20 per cent, in the determined areas 15 per cent; one division per increase";
+}
+pub relation kappungsgrenze_ueberschritten(e: Mieterhoehung) kind institutional {
+    label de official "die verlangte Miete überschreitet die Kappungsgrenze des § 558 Abs. 3";
+    label en unofficial "the rent demanded exceeds the capping limit of § 558 (3)";
+}
+pub relation zustimmungsanspruch_558(e: Mieterhoehung, v: Person) kind institutional {
+    label de official "der Vermieter kann die Zustimmung zu einer Erhöhung der Miete bis zur ortsüblichen Vergleichsmiete verlangen (§ 558 Abs. 1 Satz 1)";
+    label en unofficial "the lessor may demand consent to an increase of the rent up to the local comparative rent (§ 558 (1) sentence 1)";
+}
+pub relation zustimmungsanspruch_558_besteht(e: Mieterhoehung) kind institutional {
+    label de official "die Voraussetzungen des Zustimmungsanspruchs des § 558 sind erfüllt — einstellige Kopfregel für die Sperren der §§ 557a, 557b und der Kappungsgrenze";
+    label en unofficial "the conditions of the claim to consent under § 558 are met — a unary head for the bars of §§ 557a, 557b and the capping limit";
+}
+
+@source(BGB_P558)
+rule Wartefrist558Abs1Satz1(m: Mietverhaeltnis, a: Date) strict {
+    label de official "Der Vermieter kann die Zustimmung zu einer Erhöhung verlangen, wenn die Miete in dem Zeitpunkt, zu dem die Erhöhung eintreten soll, seit 15 Monaten unverändert ist (§ 558 Abs. 1 Satz 1)";
+    label en unofficial "The lessor may demand consent to an increase if, at the time the increase is to take effect, the rent has been unchanged for 15 months (§ 558 (1) sentence 1)";
+    when letzte_mietaenderung_am(m, a);
+    then wartefrist_558_ende(m, add_calendar_period(a, 15 calendar_month));
+}
+
+@source(BGB_P558)
+rule Jahressperre558Abs1Satz2(m: Mietverhaeltnis, a: Date) strict {
+    label de official "Das Mieterhöhungsverlangen kann frühestens ein Jahr nach der letzten Mieterhöhung geltend gemacht werden (§ 558 Abs. 1 Satz 2)";
+    label en unofficial "The demand for an increase may be asserted at the earliest one year after the last increase in rent (§ 558 (1) sentence 2)";
+    when letzte_mieterhoehung_am(m, a);
+    then jahressperre_558_ende(m, add_calendar_period(a, 1 calendar_year));
+}
+
+@source(BGB_P558)
+rule Kappungsgrenze558Abs3Satz1(e: Mieterhoehung, m: Mietverhaeltnis, alt: Money) strict {
+    label de official "Bei Erhöhungen nach Absatz 1 darf sich die Miete innerhalb von drei Jahren nicht um mehr als 20 vom Hundert erhöhen (§ 558 Abs. 3 Satz 1) — eine Division je Erhöhung, kaufmännisch auf den Cent gerundet";
+    label en unofficial "On increases under subsection (1) the rent may not rise by more than 20 per cent within three years (§ 558 (3) sentence 1) — one division per increase, rounded commercially to the cent";
+    when erhoehung_des(e, m) and miete_vor_drei_jahren(e, alt) and not kappungsgrenzengebiet(m);
+    then kappungsgrenze(e, div_round(alt * 120, 100 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P558)
+rule Kappungsgrenze558Abs3Satz2(e: Mieterhoehung, m: Mietverhaeltnis, alt: Money) strict {
+    label de official "Der Prozentsatz nach Satz 1 beträgt 15 vom Hundert, wenn die ausreichende Versorgung der Bevölkerung mit Mietwohnungen in einer Gemeinde oder einem Teil einer Gemeinde besonders gefährdet ist und diese Gebiete nach Satz 3 bestimmt sind (§ 558 Abs. 3 Satz 2)";
+    label en unofficial "The percentage under sentence 1 is 15 per cent where the adequate supply of rented dwellings in a municipality or part of it is particularly endangered and those areas are determined under sentence 3 (§ 558 (3) sentence 2)";
+    when erhoehung_des(e, m) and miete_vor_drei_jahren(e, alt) and kappungsgrenzengebiet(m);
+    then kappungsgrenze(e, div_round(alt * 115, 100 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P558)
+rule KappungsgrenzeUeberschritten558Abs3(e: Mieterhoehung, verlangt: Money, grenze: Money) strict {
+    label de official "Die verlangte Miete überschreitet die Kappungsgrenze (§ 558 Abs. 3)";
+    label en unofficial "The rent demanded exceeds the capping limit (§ 558 (3))";
+    when verlangte_miete(e, verlangt) and kappungsgrenze(e, grenze) and verlangt > grenze;
+    then kappungsgrenze_ueberschritten(e);
+}
+
+@source(BGB_P558)
+rule Zustimmungsanspruch558Abs1(e: Mieterhoehung, m: Mietverhaeltnis, w: Date, ein: Date, verlangt: Money, vergleich: Money) defeasible {
+    label de official "Der Vermieter kann die Zustimmung zu einer Erhöhung der Miete bis zur ortsüblichen Vergleichsmiete verlangen, wenn die Miete im Zeitpunkt des Eintritts der Erhöhung seit 15 Monaten unverändert ist und die Kappungsgrenze gewahrt ist (§ 558 Abs. 1 Satz 1, Abs. 3)";
+    label en unofficial "The lessor may demand consent to an increase up to the local comparative rent if, at the time the increase takes effect, the rent has been unchanged for 15 months and the capping limit is observed (§ 558 (1) sentence 1, (3))";
+    when erhoehung_des(e, m) and wartefrist_558_ende(m, w) and erhoehung_eintritt_am(e, ein) and ein > w
+     and verlangte_miete(e, verlangt) and ortsuebliche_vergleichsmiete(m, vergleich) and verlangt <= vergleich
+     and erhoehung_in_textform(e)
+     and not_known(kappungsgrenze_ueberschritten(e))
+     and not_known(erhoehung_558_bis_559b_gesperrt(m))
+     and not_known(erhoehung_558_gesperrt(m));
+    then zustimmungsanspruch_558_besteht(e);
+}
+
+@source(BGB_P558)
+rule Zustimmungsanspruch558Traeger(e: Mieterhoehung, m: Mietverhaeltnis, v: Person) defeasible {
+    label de official "Den Anspruch auf Zustimmung hat der Vermieter (§ 558 Abs. 1 Satz 1)";
+    label en unofficial "The claim to consent vests in the lessor (§ 558 (1) sentence 1)";
+    when zustimmungsanspruch_558_besteht(e) and erhoehung_des(e, m) and vermieter(m, v);
+    then zustimmungsanspruch_558(e, v);
+}
+
+// --- § 558b Zustimmung zur Mieterhöhung -----------------------------------------------------------
+
+pub relation erhoehte_miete_geschuldet_ab(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Beginn des dritten Kalendermonats nach dem Zugang des Erhöhungsverlangens: von diesem Tag an schuldet der Mieter die erhöhte Miete (§ 558b Abs. 1)";
+    label en unofficial "beginning of the third calendar month after receipt of the demand: from that day the tenant owes the increased rent (§ 558b (1))";
+}
+pub relation zustimmungsfrist_558b_kalenderende(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Ablauf des zweiten Kalendermonats nach dem Zugang des Verlangens vor Anwendung des § 193 (§ 558b Abs. 2 Satz 1)";
+    label en unofficial "end of the second calendar month after receipt of the demand before applying § 193 (§ 558b (2) sentence 1)";
+}
+pub relation zustimmungsfrist_558b_ende(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Tag, mit dessen Ablauf die Zustimmungsfrist des § 558b Abs. 2 Satz 1 endet (§ 193)";
+    label en unofficial "day at whose end the period for consent under § 558b (2) sentence 1 expires (§ 193)";
+}
+pub relation zustimmung_rechtzeitig(e: Mieterhoehung) kind institutional {
+    label de official "der Mieter hat der Mieterhöhung bis zum Ablauf des zweiten Kalendermonats nach dem Zugang des Verlangens zugestimmt (§ 558b Abs. 2 Satz 1)";
+    label en unofficial "the tenant consented by the end of the second calendar month after receipt of the demand (§ 558b (2) sentence 1)";
+}
+pub relation klage_auf_zustimmung_zulaessig(e: Mieterhoehung, v: Person) kind institutional {
+    label de official "stimmt der Mieter nicht rechtzeitig zu, kann der Vermieter auf Erteilung der Zustimmung klagen; die Klage muss innerhalb von drei weiteren Monaten erhoben werden (§ 558b Abs. 2)";
+    label en unofficial "if the tenant does not consent in time, the lessor may sue for consent; the action must be brought within three further months (§ 558b (2))";
+}
+pub relation klagefrist_558b_ende(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Tag, mit dessen Ablauf die drei weiteren Monate für die Klage auf Zustimmung verstrichen sind (§ 558b Abs. 2 Satz 2)";
+    label en unofficial "day at whose end the three further months for the action for consent have elapsed (§ 558b (2) sentence 2)";
+}
+
+@source(BGB_P558b)
+rule ErhoehteMiete558bAbs1(e: Mieterhoehung, z: Date) strict {
+    label de official "Soweit der Mieter der Mieterhöhung zustimmt, schuldet er die erhöhte Miete mit Beginn des dritten Kalendermonats nach dem Zugang des Erhöhungsverlangens (§ 558b Abs. 1)";
+    label en unofficial "In so far as the tenant consents, he owes the increased rent from the beginning of the third calendar month after receipt of the demand (§ 558b (1))";
+    when erhoehung_zugegangen_am(e, z);
+    then erhoehte_miete_geschuldet_ab(e, month_start_of(add_calendar_period(z, 3 calendar_month)));
+}
+
+@source(BGB_P558b)
+rule Zustimmungsfrist558bAbs2Kalenderende(e: Mieterhoehung, z: Date) strict {
+    label de official "Der Mieter kann bis zum Ablauf des zweiten Kalendermonats nach dem Zugang des Verlangens zustimmen (§ 558b Abs. 2 Satz 1) — Ablauf des Kalendermonats, nicht des Monatstages";
+    label en unofficial "The tenant may consent up to the end of the second calendar month after receipt of the demand (§ 558b (2) sentence 1) — end of the calendar month, not of the monthly day";
+    when erhoehung_zugegangen_am(e, z);
+    then zustimmungsfrist_558b_kalenderende(e, month_end_of(add_calendar_period(z, 2 calendar_month)));
+}
+
+@source(BGB_P558b)
+rule Zustimmungsfrist558bVerlegung193(e: Mieterhoehung, k: Date) strict {
+    label de official "Innerhalb der Frist ist die Zustimmung zu erklären; § 193 verlegt den letzten Tag auf den nächsten Werktag";
+    label en unofficial "Consent must be declared within the period; § 193 moves the last day to the next working day";
+    when zustimmungsfrist_558b_kalenderende(e, k);
+    then zustimmungsfrist_558b_ende(e, add_business_days(k, 1 business_day));
+}
+
+@source(BGB_P558b)
+rule ZustimmungRechtzeitig558bAbs2(e: Mieterhoehung, f: Date, z: Date) strict {
+    label de official "Die Zustimmung ist rechtzeitig, wenn sie dem Vermieter bis zum Ablauf der Frist zugeht (§ 558b Abs. 2 Satz 1)";
+    label en unofficial "Consent is in time if it reaches the lessor by the end of the period (§ 558b (2) sentence 1)";
+    when zustimmungsfrist_558b_ende(e, f) and zustimmung_erklaert_am(e, z) and z <= f;
+    then zustimmung_rechtzeitig(e);
+}
+
+@source(BGB_P558b)
+rule Klagefrist558bAbs2Satz2(e: Mieterhoehung, f: Date) strict {
+    label de official "Die Klage auf Erteilung der Zustimmung muss innerhalb von drei weiteren Monaten erhoben werden (§ 558b Abs. 2 Satz 2)";
+    label en unofficial "The action for consent must be brought within three further months (§ 558b (2) sentence 2)";
+    when zustimmungsfrist_558b_kalenderende(e, f);
+    then klagefrist_558b_ende(e, add_calendar_period(f, 3 calendar_month));
+}
+
+@source(BGB_P558b)
+rule KlageAufZustimmung558bAbs2(e: Mieterhoehung, m: Mietverhaeltnis, v: Person, f: Date) defeasible {
+    label de official "Soweit der Mieter der Mieterhöhung nicht bis zum Ablauf des zweiten Kalendermonats nach dem Zugang des Verlangens zustimmt, kann der Vermieter auf Erteilung der Zustimmung klagen (§ 558b Abs. 2 Satz 1)";
+    label en unofficial "In so far as the tenant does not consent by the end of the second calendar month after receipt, the lessor may sue for consent (§ 558b (2) sentence 1)";
+    when zustimmungsanspruch_558_besteht(e) and erhoehung_des(e, m) and vermieter(m, v)
+     and zustimmungsfrist_558b_ende(e, f) and not_known(zustimmung_rechtzeitig(e));
+    then klage_auf_zustimmung_zulaessig(e, v);
+}
+
+// --- §§ 559–559f Mieterhöhung nach Modernisierungsmaßnahmen ---------------------------------------
+
+pub relation monatlicher_erhoehungsbetrag(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "der auf den Monat entfallende Erhöhungsbetrag: 8 Prozent der für die Wohnung aufgewendeten Kosten JÄHRLICH (§ 559 Abs. 1 Satz 1) — eine Division je Erhöhung (Kosten × 8 / 1200), kaufmännisch auf den Cent gerundet";
+    label en unofficial "the monthly amount of the increase: 8 per cent of the costs incurred for the dwelling per YEAR (§ 559 (1) sentence 1) — one division per increase (costs × 8 / 1200), rounded commercially to the cent";
+}
+pub relation monatlicher_erhoehungsbetrag_559e(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "der auf den Monat entfallende Erhöhungsbetrag nach § 559e Abs. 1 Satz 1: 10 Prozent der aufgewendeten Kosten abzüglich der Drittmittel, jährlich";
+    label en unofficial "the monthly amount of the increase under § 559e (1) sentence 1: 10 per cent of the costs incurred less third-party funds, per year";
+}
+pub relation kappung_559_abs3a(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "Höchstbetrag, um den sich die monatliche Miete innerhalb von sechs Jahren erhöhen darf: 3 Euro je Quadratmeter Wohnfläche, bei einer Ausgangsmiete unter 7 Euro je Quadratmeter 2 Euro (§ 559 Abs. 3a Satz 1 und 2)";
+    label en unofficial "maximum by which the monthly rent may rise within six years: 3 euro per square metre of living space, or 2 euro where the rent before the increase is below 7 euro per square metre (§ 559 (3a) sentences 1 and 2)";
+}
+pub relation ausgangsmiete_je_qm(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "die monatliche Miete vor der Mieterhöhung je Quadratmeter Wohnfläche (§ 559 Abs. 3a Satz 2) — eine Division je Erhöhung";
+    label en unofficial "the monthly rent before the increase per square metre of living space (§ 559 (3a) sentence 2) — one division per increase";
+}
+pub relation kappung_559_abs3a_ueberschritten(e: Mieterhoehung) kind institutional {
+    label de official "der Erhöhungsbetrag überschreitet die Kappung des § 559 Abs. 3a";
+    label en unofficial "the amount of the increase exceeds the cap of § 559 (3a)";
+}
+pub relation erhoehungsrecht_559(e: Mieterhoehung, v: Person) kind institutional {
+    label de official "der Vermieter kann die jährliche Miete um 8 Prozent der für die Wohnung aufgewendeten Kosten erhöhen (§ 559 Abs. 1 Satz 1)";
+    label en unofficial "the lessor may raise the annual rent by 8 per cent of the costs incurred for the dwelling (§ 559 (1) sentence 1)";
+}
+pub relation erhoehungsrecht_559_besteht(e: Mieterhoehung) kind institutional {
+    label de official "die Voraussetzungen der Mieterhöhung nach § 559 sind erfüllt; die Erhöhung ist ausgeschlossen, soweit sie eine Härte nach Abs. 4 bedeuten würde";
+    label en unofficial "the conditions for an increase under § 559 are met; the increase is excluded in so far as it would constitute hardship under subsection (4)";
+}
+pub relation erhoehte_miete_559_geschuldet_ab(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "der Mieter schuldet die erhöhte Miete mit Beginn des dritten Monats nach dem Zugang der Erklärung; die Frist verlängert sich um sechs Monate in den Fällen des § 559b Abs. 2 Satz 2";
+    label en unofficial "the tenant owes the increased rent from the beginning of the third month after receipt of the declaration; the period is extended by six months in the cases of § 559b (2) sentence 2";
+}
+pub relation vereinfachtes_verfahren_zulaessig(e: Mieterhoehung) kind institutional {
+    label de official "übersteigen die geltend gemachten Kosten für die Wohnung vor Abzug der Pauschale 10 000 Euro nicht, so kann der Vermieter die Mieterhöhung nach dem vereinfachten Verfahren berechnen (§ 559c Abs. 1 Satz 1)";
+    label en unofficial "where the costs asserted for the dwelling before deduction of the flat rate do not exceed 10 000 euro, the lessor may calculate the increase under the simplified procedure (§ 559c (1) sentence 1)";
+}
+pub relation pauschalabzug_559c(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "als Kosten, die für Erhaltungsmaßnahmen erforderlich gewesen wären, werden pauschal 30 Prozent der geltend gemachten Kosten abgezogen (§ 559c Abs. 1 Satz 2) — eine Division je Erhöhung";
+    label en unofficial "a flat 30 per cent of the asserted costs is deducted as costs that would have been necessary for maintenance (§ 559c (1) sentence 2) — one division per increase";
+}
+pub relation sperre_fuenf_jahre_559c_ende(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Tag, mit dessen Ablauf fünf Jahre seit dem Zugang der Mieterhöhungserklärung im vereinfachten Verfahren verstrichen sind; bis dahin sind Erhöhungen nach § 559 oder § 559e gesperrt (§ 559c Abs. 4 Satz 1)";
+    label en unofficial "day at whose end five years since receipt of the simplified-procedure declaration have elapsed; until then increases under § 559 or § 559e are barred (§ 559c (4) sentence 1)";
+}
+
+@source(BGB_P559)
+rule Erhoehungsbetrag559Abs1(e: Mieterhoehung, kosten: Money) strict {
+    label de official "Hat der Vermieter Modernisierungsmaßnahmen im Sinne des § 555b Nummer 1, 3, 4, 5 oder 6 durchgeführt, so kann er die jährliche Miete um 8 Prozent der für die Wohnung aufgewendeten Kosten erhöhen (§ 559 Abs. 1 Satz 1) — auf den Monat: Kosten × 8 / 1200";
+    label en unofficial "Where the lessor carried out modernisation measures under § 555b nos. 1, 3, 4, 5 or 6, he may raise the annual rent by 8 per cent of the costs incurred for the dwelling (§ 559 (1) sentence 1) — per month: costs × 8 / 1200";
+    when erhoehung_nach_559_zulaessige_massnahme(e) and modernisierungskosten(e, kosten);
+    then monatlicher_erhoehungsbetrag(e, div_round(kosten * 8, 1200 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P559)
+rule AusgangsmieteJeQm559Abs3a(e: Mieterhoehung, m: Mietverhaeltnis, alt: Money, qm: Integer) strict {
+    label de official "Für die Schwelle des § 559 Abs. 3a Satz 2 wird die monatliche Miete vor der Mieterhöhung je Quadratmeter Wohnfläche gebildet";
+    label en unofficial "For the threshold of § 559 (3a) sentence 2 the monthly rent before the increase is expressed per square metre of living space";
+    when erhoehung_des(e, m) and ausgangsmiete(e, alt) and wohnflaeche_qm(m, qm);
+    then ausgangsmiete_je_qm(e, div_round(alt, qm * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P559)
+rule Kappung559Abs3aSatz1(e: Mieterhoehung, m: Mietverhaeltnis, qm: Integer, jeqm: Money) strict {
+    label de official "Bei Erhöhungen der jährlichen Miete nach Absatz 1 darf sich die monatliche Miete innerhalb von sechs Jahren nicht um mehr als 3 Euro je Quadratmeter Wohnfläche erhöhen (§ 559 Abs. 3a Satz 1)";
+    label en unofficial "On increases of the annual rent under subsection (1) the monthly rent may not rise by more than 3 euro per square metre of living space within six years (§ 559 (3a) sentence 1)";
+    when erhoehung_des(e, m) and wohnflaeche_qm(m, qm) and ausgangsmiete_je_qm(e, jeqm)
+     and jeqm >= 7.00 EUR;
+    then kappung_559_abs3a(e, 3.00 EUR * qm);
+}
+
+@source(BGB_P559)
+rule Kappung559Abs3aSatz2(e: Mieterhoehung, m: Mietverhaeltnis, qm: Integer, jeqm: Money) strict {
+    label de official "Beträgt die monatliche Miete vor der Mieterhöhung weniger als 7 Euro pro Quadratmeter Wohnfläche, so darf sie sich abweichend von Satz 1 nicht um mehr als 2 Euro je Quadratmeter Wohnfläche erhöhen (§ 559 Abs. 3a Satz 2)";
+    label en unofficial "Where the monthly rent before the increase is less than 7 euro per square metre, it may, in derogation from sentence 1, not rise by more than 2 euro per square metre (§ 559 (3a) sentence 2)";
+    when erhoehung_des(e, m) and wohnflaeche_qm(m, qm) and ausgangsmiete_je_qm(e, jeqm)
+     and jeqm < 7.00 EUR;
+    then kappung_559_abs3a(e, 2.00 EUR * qm);
+}
+
+@source(BGB_P559)
+rule KappungUeberschritten559Abs3a(e: Mieterhoehung, betrag: Money, grenze: Money) strict {
+    label de official "Der Erhöhungsbetrag überschreitet die Kappung des § 559 Abs. 3a";
+    label en unofficial "The amount of the increase exceeds the cap of § 559 (3a)";
+    when monatlicher_erhoehungsbetrag(e, betrag) and kappung_559_abs3a(e, grenze) and betrag > grenze;
+    then kappung_559_abs3a_ueberschritten(e);
+}
+
+@source(BGB_P559)
+rule Erhoehungsrecht559(e: Mieterhoehung, m: Mietverhaeltnis, betrag: Money) defeasible {
+    label de official "Die Mieterhöhung nach § 559 Abs. 1 steht dem Vermieter zu, soweit sie die Kappung des Absatzes 3a wahrt und nicht nach Absatz 4 eine nicht zu rechtfertigende Härte bedeutet (§ 559 Abs. 1, 3a, 4)";
+    label en unofficial "The increase under § 559 (1) accrues to the lessor in so far as it observes the cap of subsection (3a) and does not constitute unjustifiable hardship under subsection (4) (§ 559 (1), (3a), (4))";
+    when erhoehung_des(e, m) and monatlicher_erhoehungsbetrag(e, betrag)
+     and not_known(kappung_559_abs3a_ueberschritten(e))
+     and not_known(erhoehung_558_bis_559b_gesperrt(m));
+    unless mieterhoehung_bedeutet_haerte(e);
+    then erhoehungsrecht_559_besteht(e);
+}
+
+@source(BGB_P559)
+rule Erhoehungsrecht559Traeger(e: Mieterhoehung, m: Mietverhaeltnis, v: Person) defeasible {
+    label de official "Das Erhöhungsrecht des § 559 Abs. 1 steht dem Vermieter zu";
+    label en unofficial "The right to increase under § 559 (1) vests in the lessor";
+    when erhoehungsrecht_559_besteht(e) and erhoehung_des(e, m) and vermieter(m, v);
+    then erhoehungsrecht_559(e, v);
+}
+
+@source(BGB_P559b)
+rule ErhoehteMiete559bAbs2Satz1(e: Mieterhoehung, z: Date) strict {
+    label de official "Der Mieter schuldet die erhöhte Miete mit Beginn des dritten Monats nach dem Zugang der Erklärung (§ 559b Abs. 2 Satz 1)";
+    label en unofficial "The tenant owes the increased rent from the beginning of the third month after receipt of the declaration (§ 559b (2) sentence 1)";
+    when erhoehung_zugegangen_am(e, z) and erhoehung_in_textform(e)
+     and not ankuendigung_nach_555c_unterblieben(e)
+     and not erhoehung_uebersteigt_ankuendigung_um_mehr_als_zehn_prozent(e);
+    then erhoehte_miete_559_geschuldet_ab(e, month_start_of(add_calendar_period(z, 3 calendar_month)));
+}
+
+@source(BGB_P559b)
+rule ErhoehteMiete559bAbs2Nr1(e: Mieterhoehung, z: Date) strict {
+    label de official "Die Frist verlängert sich um sechs Monate, wenn der Vermieter dem Mieter die Modernisierungsmaßnahme nicht nach den Vorschriften des § 555c Absatz 1 und 3 bis 5 angekündigt hat (§ 559b Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "The period is extended by six months where the lessor did not announce the modernisation measure under § 555c (1) and (3) to (5) (§ 559b (2) sentence 2 no. 1)";
+    when erhoehung_zugegangen_am(e, z) and erhoehung_in_textform(e) and ankuendigung_nach_555c_unterblieben(e);
+    then erhoehte_miete_559_geschuldet_ab(e, month_start_of(add_calendar_period(z, 9 calendar_month)));
+}
+
+@source(BGB_P559b)
+rule ErhoehteMiete559bAbs2Nr2(e: Mieterhoehung, z: Date) strict {
+    label de official "Die Frist verlängert sich um sechs Monate, wenn die tatsächliche Mieterhöhung die angekündigte um mehr als 10 Prozent übersteigt (§ 559b Abs. 2 Satz 2 Nr. 2)";
+    label en unofficial "The period is extended by six months where the actual increase exceeds the announced increase by more than 10 per cent (§ 559b (2) sentence 2 no. 2)";
+    when erhoehung_zugegangen_am(e, z) and erhoehung_in_textform(e)
+     and erhoehung_uebersteigt_ankuendigung_um_mehr_als_zehn_prozent(e);
+    then erhoehte_miete_559_geschuldet_ab(e, month_start_of(add_calendar_period(z, 9 calendar_month)));
+}
+
+@source(BGB_P559c)
+rule VereinfachtesVerfahren559cAbs1Satz1(e: Mieterhoehung, kosten: Money) strict {
+    label de official "Übersteigen die für die Modernisierungsmaßnahme geltend gemachten Kosten für die Wohnung vor Abzug der Pauschale 10 000 Euro nicht, so kann der Vermieter die Mieterhöhung nach einem vereinfachten Verfahren berechnen (§ 559c Abs. 1 Satz 1)";
+    label en unofficial "Where the costs asserted for the modernisation measure for the dwelling, before deduction of the flat rate, do not exceed 10 000 euro, the lessor may calculate the increase under a simplified procedure (§ 559c (1) sentence 1)";
+    when vereinfachtes_verfahren_gewaehlt(e) and modernisierungskosten(e, kosten) and kosten <= 10000.00 EUR;
+    then vereinfachtes_verfahren_zulaessig(e);
+}
+
+@source(BGB_P559c)
+rule Pauschalabzug559cAbs1Satz2(e: Mieterhoehung, kosten: Money) strict {
+    label de official "Als Kosten, die für Erhaltungsmaßnahmen erforderlich gewesen wären (§ 559 Absatz 2), werden pauschal 30 Prozent der nach Satz 1 geltend gemachten Kosten abgezogen (§ 559c Abs. 1 Satz 2)";
+    label en unofficial "A flat 30 per cent of the costs asserted under sentence 1 is deducted as costs that would have been necessary for maintenance (§ 559 (2)) (§ 559c (1) sentence 2)";
+    when vereinfachtes_verfahren_zulaessig(e) and modernisierungskosten(e, kosten);
+    then pauschalabzug_559c(e, div_round(kosten * 30, 100 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P559c)
+rule Sperre559cAbs4(e: Mieterhoehung, z: Date) strict {
+    label de official "Hat der Vermieter eine Mieterhöhung im vereinfachten Verfahren geltend gemacht, so kann er innerhalb von fünf Jahren nach Zugang der Mieterhöhungserklärung beim Mieter keine Mieterhöhungen nach § 559 oder § 559e geltend machen (§ 559c Abs. 4 Satz 1)";
+    label en unofficial "Where the lessor asserted an increase under the simplified procedure, he may not assert increases under § 559 or § 559e within five years after receipt of the declaration by the tenant (§ 559c (4) sentence 1)";
+    when vereinfachtes_verfahren_zulaessig(e) and erhoehung_zugegangen_am(e, z);
+    then sperre_fuenf_jahre_559c_ende(e, add_calendar_period(z, 5 calendar_year));
+}
+
+@source(BGB_P559e)
+rule Erhoehungsbetrag559eAbs1(e: Mieterhoehung, kosten: Money) strict {
+    label de official "Hat der Vermieter Modernisierungsmaßnahmen nach § 555b Nummer 1a durchgeführt und dabei Drittmittel nach § 559a in Anspruch genommen, so kann er die jährliche Miete um 10 Prozent der für die Wohnung aufgewendeten Kosten abzüglich der in Anspruch genommenen Drittmittel erhöhen (§ 559e Abs. 1 Satz 1) — auf den Monat: Kosten × 10 / 1200";
+    label en unofficial "Where the lessor carried out modernisation measures under § 555b no. 1a and used third-party funds under § 559a, he may raise the annual rent by 10 per cent of the costs incurred less the third-party funds used (§ 559e (1) sentence 1) — per month: costs × 10 / 1200";
+    when heizungsmodernisierung_mit_drittmitteln(e) and modernisierungskosten(e, kosten);
+    then monatlicher_erhoehungsbetrag_559e(e, div_round(kosten * 10, 1200 * 1.0, 2, "HALF_UP"));
+}
+
+pub relation heizungsmodernisierung_mit_drittmitteln(e: Mieterhoehung) kind empirical {
+    label de official "der Vermieter hat eine Modernisierungsmaßnahme nach § 555b Nummer 1a durchgeführt, welche die Voraussetzungen für Zuschüsse aus öffentlichen Haushalten dem Grunde nach erfüllt, und dabei Drittmittel nach § 559a in Anspruch genommen (§ 559e Abs. 1 Satz 1)";
+    label en unofficial "the lessor carried out a modernisation measure under § 555b no. 1a which in principle meets the conditions for public subsidies, and used third-party funds under § 559a (§ 559e (1) sentence 1)";
+}
+
+pub relation kappung_559e_abs3(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "im Hinblick auf eine Modernisierungsmaßnahme nach § 555b Nummer 1a darf sich die monatliche Miete um nicht mehr als 0,50 Euro je Quadratmeter Wohnfläche innerhalb von sechs Jahren erhöhen (§ 559e Abs. 3 Satz 1)";
+    label en unofficial "in respect of a modernisation measure under § 555b no. 1a the monthly rent may not rise by more than 0.50 euro per square metre of living space within six years (§ 559e (3) sentence 1)";
+}
+
+@source(BGB_P559e)
+rule Kappung559eAbs3(e: Mieterhoehung, m: Mietverhaeltnis, qm: Integer) strict {
+    label de official "§ 559 Absatz 3a Satz 1 ist mit der Maßgabe anwendbar, dass sich im Hinblick auf eine Modernisierungsmaßnahme nach § 555b Nummer 1a die monatliche Miete um nicht mehr als 0,50 Euro je Quadratmeter Wohnfläche innerhalb von sechs Jahren erhöhen darf (§ 559e Abs. 3 Satz 1)";
+    label en unofficial "§ 559 (3a) sentence 1 applies with the proviso that, in respect of a measure under § 555b no. 1a, the monthly rent may not rise by more than 0.50 euro per square metre within six years (§ 559e (3) sentence 1)";
+    when erhoehung_des(e, m) and heizungsmodernisierung_mit_drittmitteln(e) and wohnflaeche_qm(m, qm);
+    then kappung_559e_abs3(e, 0.50 EUR * qm);
+}
+
+// --- § 560 Veränderungen von Betriebskosten -------------------------------------------------------
+
+pub relation betriebskosten_erhoehung_erklaert_am(m: Mietverhaeltnis, tag: Date) kind empirical {
+    key(m);
+    label de official "Tag, an dem der Vermieter die Erhöhung der Betriebskostenpauschale in Textform erklärt (§ 560 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "day on which the lessor declares the increase in the flat rate for operating costs in text form (§ 560 (1) sentence 1, (2) sentence 1)";
+}
+pub relation umlage_im_mietvertrag_vereinbart(m: Mietverhaeltnis) kind empirical {
+    label de official "die anteilige Umlage von Erhöhungen der Betriebskosten ist im Mietvertrag vereinbart (§ 560 Abs. 1 Satz 1)";
+    label en unofficial "the proportionate apportionment of increases in operating costs is agreed in the lease (§ 560 (1) sentence 1)";
+}
+pub relation umlage_geschuldet_ab(m: Mietverhaeltnis, tag: Date) kind institutional {
+    key(m);
+    label de official "der Mieter schuldet den auf ihn entfallenden Teil der Umlage mit Beginn des auf die Erklärung folgenden übernächsten Monats (§ 560 Abs. 2 Satz 1)";
+    label en unofficial "the tenant owes his share of the apportionment from the beginning of the month after next following the declaration (§ 560 (2) sentence 1)";
+}
+
+@source(BGB_P560)
+rule Umlage560Abs2Satz1(m: Mietverhaeltnis, t: Date) strict {
+    label de official "Der Mieter schuldet den auf ihn entfallenden Teil der Umlage mit Beginn des auf die Erklärung folgenden übernächsten Monats (§ 560 Abs. 2 Satz 1)";
+    label en unofficial "The tenant owes his share of the apportionment from the beginning of the month after next following the declaration (§ 560 (2) sentence 1)";
+    when pauschale_vereinbart(m) and umlage_im_mietvertrag_vereinbart(m) and betriebskosten_erhoehung_erklaert_am(m, t);
+    then umlage_geschuldet_ab(m, month_start_of(add_calendar_period(t, 2 calendar_month)));
+}
+
+// --- § 561 Sonderkündigungsrecht des Mieters nach Mieterhöhung ------------------------------------
+
+pub relation sonderkuendigungsfrist_561_kalenderende(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Ablauf des zweiten Monats nach dem Zugang der Erklärung des Vermieters (§ 561 Abs. 1 Satz 1)";
+    label en unofficial "end of the second month after receipt of the lessor's declaration (§ 561 (1) sentence 1)";
+}
+pub relation sonderkuendigungsfrist_561_ende(e: Mieterhoehung, tag: Date) kind institutional {
+    key(e);
+    label de official "Tag, mit dessen Ablauf die Frist des § 561 Abs. 1 Satz 1 endet (§ 193)";
+    label en unofficial "day at whose end the period of § 561 (1) sentence 1 expires (§ 193)";
+}
+pub relation sonderkuendigung_561_rechtzeitig(e: Mieterhoehung) kind institutional {
+    label de official "der Mieter hat bis zum Ablauf des zweiten Monats nach dem Zugang der Erklärung gekündigt (§ 561 Abs. 1 Satz 1)";
+    label en unofficial "the tenant gave notice by the end of the second month after receipt of the declaration (§ 561 (1) sentence 1)";
+}
+pub relation mieterhoehung_tritt_nicht_ein(e: Mieterhoehung) kind institutional {
+    label de official "kündigt der Mieter, so tritt die Mieterhöhung nicht ein (§ 561 Abs. 1 Satz 2)";
+    label en unofficial "if the tenant gives notice, the increase in rent does not take effect (§ 561 (1) sentence 2)";
+}
+
+@source(BGB_P561)
+rule Sonderkuendigungsfrist561Kalenderende(e: Mieterhoehung, z: Date) strict {
+    label de official "Macht der Vermieter eine Mieterhöhung nach § 558 oder § 559 geltend, so kann der Mieter bis zum Ablauf des zweiten Monats nach dem Zugang der Erklärung außerordentlich zum Ablauf des übernächsten Monats kündigen (§ 561 Abs. 1 Satz 1)";
+    label en unofficial "Where the lessor asserts an increase under § 558 or § 559, the tenant may give extraordinary notice, to the end of the month after next, by the end of the second month after receipt of the declaration (§ 561 (1) sentence 1)";
+    when erhoehung_zugegangen_am(e, z);
+    then sonderkuendigungsfrist_561_kalenderende(e, month_end_of(add_calendar_period(z, 2 calendar_month)));
+}
+
+@source(BGB_P561)
+rule Sonderkuendigungsfrist561Verlegung193(e: Mieterhoehung, k: Date) strict {
+    label de official "Innerhalb der Frist ist die Kündigung zu erklären; § 193 verlegt den letzten Tag auf den nächsten Werktag";
+    label en unofficial "Notice must be given within the period; § 193 moves the last day to the next working day";
+    when sonderkuendigungsfrist_561_kalenderende(e, k);
+    then sonderkuendigungsfrist_561_ende(e, add_business_days(k, 1 business_day));
+}
+
+@source(BGB_P561)
+rule Sonderkuendigung561Rechtzeitig(e: Mieterhoehung, f: Date, k: Date) strict {
+    label de official "Die Sonderkündigung ist rechtzeitig, wenn sie dem Vermieter bis zum Ablauf der Frist zugeht (§ 561 Abs. 1 Satz 1)";
+    label en unofficial "The special notice is in time if it reaches the lessor by the end of the period (§ 561 (1) sentence 1)";
+    when sonderkuendigungsfrist_561_ende(e, f) and sonderkuendigung_561_erklaert_am(e, k) and k <= f;
+    then sonderkuendigung_561_rechtzeitig(e);
+}
+
+@source(BGB_P561)
+rule Mieterhoehung561Abs1Satz2(e: Mieterhoehung) strict {
+    label de official "Kündigt der Mieter, so tritt die Mieterhöhung nicht ein (§ 561 Abs. 1 Satz 2)";
+    label en unofficial "If the tenant gives notice, the increase in rent does not take effect (§ 561 (1) sentence 2)";
+    when sonderkuendigung_561_rechtzeitig(e);
+    then mieterhoehung_tritt_nicht_ein(e);
+}
+
+// --- §§ 555f, 558a, 558c–558e, 559a, 559d, 559f: Vereinbarungen, Begründungsmittel,
+// --- Mietspiegel, Drittmittel, Pflichtverletzungsvermutung, Wärmepumpe
+
+pub relation vereinbarung_aus_anlass_der_massnahme(m: Mietverhaeltnis) kind empirical {
+    label de official "die Vertragsparteien treffen nach Abschluss des Mietvertrags aus Anlass von Erhaltungs- oder Modernisierungsmaßnahmen eine Vereinbarung (§ 555f)";
+    label en unofficial "after conclusion of the lease the parties make an agreement on the occasion of maintenance or modernisation measures (§ 555f)";
+}
+pub relation begruendung_mietspiegel(e: Mieterhoehung) kind empirical {
+    label de official "das Erhöhungsverlangen nimmt auf einen Mietspiegel Bezug (§ 558a Abs. 2 Nr. 1)";
+    label en unofficial "the demand refers to a rent index (§ 558a (2) no. 1)";
+}
+pub relation begruendung_mietdatenbank(e: Mieterhoehung) kind empirical {
+    label de official "das Erhöhungsverlangen nimmt auf eine Auskunft aus einer Mietdatenbank Bezug (§ 558a Abs. 2 Nr. 2)";
+    label en unofficial "the demand refers to information from a rent database (§ 558a (2) no. 2)";
+}
+pub relation begruendung_gutachten(e: Mieterhoehung) kind empirical {
+    label de official "das Erhöhungsverlangen nimmt auf ein mit Gründen versehenes Gutachten eines öffentlich bestellten und vereidigten Sachverständigen Bezug (§ 558a Abs. 2 Nr. 3)";
+    label en unofficial "the demand refers to a reasoned opinion of a publicly appointed and sworn expert (§ 558a (2) no. 3)";
+}
+pub relation benannte_vergleichswohnungen(e: Mieterhoehung, zahl: Integer) kind empirical {
+    key(e);
+    label de official "Zahl der zur Begründung benannten vergleichbaren Wohnungen; die Benennung von drei Wohnungen genügt (§ 558a Abs. 2 Nr. 4)";
+    label en unofficial "number of comparable dwellings named in support; naming three dwellings suffices (§ 558a (2) no. 4)";
+}
+pub relation mietspiegel_nach_wissenschaftlichen_grundsaetzen(m: Mietverhaeltnis) kind empirical {
+    label de official "der Mietspiegel entspricht den Anforderungen einer nach § 558c Absatz 5 erlassenen Rechtsverordnung an qualifizierte Mietspiegel (§ 558d Abs. 1 Satz 2)";
+    label en unofficial "the rent index meets the requirements that a regulation under § 558c (5) sets for qualified rent indices (§ 558d (1) sentence 2)";
+}
+pub relation mietspiegel_zweijaehrig_angepasst(m: Mietverhaeltnis) kind empirical {
+    label de official "der qualifizierte Mietspiegel ist im Abstand von zwei Jahren der Marktentwicklung angepasst worden (§ 558d Abs. 2 Satz 1)";
+    label en unofficial "the qualified rent index has been adjusted to market developments every two years (§ 558d (2) sentence 1)";
+}
+pub relation drittmittel_uebernommen(e: Mieterhoehung, betrag: Money) kind empirical {
+    key(e);
+    label de official "Kosten, die vom Mieter oder für diesen von einem Dritten übernommen oder mit Zuschüssen aus öffentlichen Haushalten gedeckt werden (§ 559a Abs. 1)";
+    label en unofficial "costs assumed by the tenant or by a third party for him, or covered by subsidies from public budgets (§ 559a (1))";
+}
+pub relation jahresbetrag_der_zinsermaessigung(e: Mieterhoehung, betrag: Money) kind empirical {
+    key(e);
+    label de official "Jahresbetrag der Zinsermäßigung aus zinsverbilligten oder zinslosen Darlehen aus öffentlichen Haushalten (§ 559a Abs. 2 Satz 1 und 2)";
+    label en unofficial "annual amount of the interest reduction from low-interest or interest-free loans from public budgets (§ 559a (2) sentences 1 and 2)";
+}
+pub relation baubeginn_nicht_binnen_zwoelf_monaten(e: Mieterhoehung) kind empirical {
+    label de official "mit der baulichen Veränderung wird nicht innerhalb von zwölf Monaten nach dem angekündigten Beginn oder nach Zugang der Ankündigung begonnen (§ 559d Nr. 1)";
+    label en unofficial "the structural alteration is not begun within twelve months after the announced start or after receipt of the announcement (§ 559d no. 1)";
+}
+pub relation angekuendigte_erhoehung_verdoppelt_die_miete(e: Mieterhoehung) kind empirical {
+    label de official "in der Ankündigung ist ein Betrag angegeben, durch den die monatliche Miete mindestens verdoppelt würde (§ 559d Nr. 2)";
+    label en unofficial "the announcement states an amount that would at least double the monthly rent (§ 559d no. 2)";
+}
+pub relation durchfuehrung_belastet_erheblich(e: Mieterhoehung) kind empirical {
+    label de official "die bauliche Veränderung wird in einer Weise durchgeführt, die geeignet ist, zu erheblichen, objektiv nicht notwendigen Belastungen des Mieters zu führen (§ 559d Nr. 3)";
+    label en unofficial "the structural alteration is carried out in a manner apt to cause substantial, objectively unnecessary burdens for the tenant (§ 559d no. 3)";
+}
+pub relation arbeiten_ruhen_mehr_als_zwoelf_monate(e: Mieterhoehung) kind empirical {
+    label de official "die Arbeiten ruhen nach Beginn der baulichen Veränderung mehr als zwölf Monate (§ 559d Nr. 4)";
+    label en unofficial "after the start of the alteration the works are suspended for more than twelve months (§ 559d no. 4)";
+}
+pub relation waermepumpe_eingebaut(e: Mieterhoehung) kind empirical {
+    label de official "beim Einbau oder bei der Aufstellung einer Wärmepumpe wird eine Mieterhöhung nach § 559 Abs. 1 oder § 559e Abs. 1 verlangt (§ 559f Abs. 1 Satz 1)";
+    label en unofficial "on installing or setting up a heat pump an increase under § 559 (1) or § 559e (1) is demanded (§ 559f (1) sentence 1)";
+}
+pub relation jahresarbeitszahl_nachgewiesen(e: Mieterhoehung) kind empirical {
+    label de official "der Nachweis eines Fachunternehmers, dass die Jahresarbeitszahl der Wärmepumpe bei mindestens 2,5 liegt, ist erbracht (§ 559f Abs. 1 Satz 1 und Satz 3)";
+    label en unofficial "a specialist firm has furnished proof that the annual performance factor of the heat pump is at least 2.5 (§ 559f (1) sentences 1 and 3)";
+}
+pub relation nachweis_entbehrlich_559f(e: Mieterhoehung) kind empirical {
+    label de official "der Nachweis ist nach § 559f Abs. 1 Satz 2 Nr. 1 bis 4 entbehrlich (Gebäude nach 1996 errichtet, Wärmeschutzverordnung 1994, § 38 GMoG oder Vorlauftemperatur höchstens 55 Grad Celsius)";
+    label en unofficial "the proof is dispensable under § 559f (1) sentence 2 nos. 1 to 4 (building erected after 1996, 1994 thermal insulation ordinance, § 38 GMoG, or flow temperature at most 55 degrees Celsius)";
+}
+
+@source(BGB_P559d)
+pub external judgment relation nachvollziehbarer_objektiver_grund(e: Mieterhoehung) {
+    authority Court;
+    label de official "§ 559d Satz 2. Der Vermieter legt dar, dass für das Verhalten im Einzelfall ein nachvollziehbarer objektiver Grund vorliegt";
+    label en unofficial "§ 559d sentence 2. The lessor shows that there is a comprehensible objective reason for the conduct in the individual case";
+}
+
+pub relation vereinbarung_zulaessig_555f(m: Mietverhaeltnis) kind institutional {
+    label de official "die Vertragsparteien können aus Anlass von Erhaltungs- oder Modernisierungsmaßnahmen Vereinbarungen über die Durchführung, die Gewährleistungsrechte und die künftige Höhe der Miete treffen (§ 555f)";
+    label en unofficial "on the occasion of maintenance or modernisation measures the parties may agree on their performance, on warranty rights and on the future level of rent (§ 555f)";
+}
+pub relation erhoehungsverlangen_begruendet(e: Mieterhoehung) kind institutional {
+    label de official "das Mieterhöhungsverlangen ist in Textform erklärt und mit einem der Mittel des § 558a Abs. 2 begründet (§ 558a Abs. 1)";
+    label en unofficial "the demand for an increase is declared in text form and substantiated by one of the means of § 558a (2) (§ 558a (1))";
+}
+pub relation qualifizierter_mietspiegel(m: Mietverhaeltnis) kind institutional {
+    label de official "der Mietspiegel ist ein qualifizierter Mietspiegel: es wird vermutet, dass er nach anerkannten wissenschaftlichen Grundsätzen erstellt wurde (§ 558d Abs. 1 Satz 2)";
+    label en unofficial "the rent index is a qualified rent index: it is presumed to have been produced according to recognised scientific principles (§ 558d (1) sentence 2)";
+}
+pub relation mietspiegel_gibt_vergleichsmiete_wieder(m: Mietverhaeltnis) kind institutional {
+    label de official "ist § 558d Abs. 2 eingehalten, so wird vermutet, dass die im qualifizierten Mietspiegel bezeichneten Entgelte die ortsübliche Vergleichsmiete wiedergeben (§ 558d Abs. 3)";
+    label en unofficial "where § 558d (2) is observed, the charges stated in the qualified rent index are presumed to reflect the local comparative rent (§ 558d (3))";
+}
+pub relation anrechenbare_kosten(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "die für die Wohnung aufgewendeten Kosten im Sinne des § 559 nach Abzug der Drittmittel (§ 559a Abs. 1)";
+    label en unofficial "the costs incurred for the dwelling within the meaning of § 559 after deduction of third-party funds (§ 559a (1))";
+}
+pub relation pflichtverletzung_vermutet_559d(e: Mieterhoehung) kind institutional {
+    label de official "es wird vermutet, dass der Vermieter seine Pflichten aus dem Schuldverhältnis verletzt hat (§ 559d Satz 1)";
+    label en unofficial "it is presumed that the lessor has breached his duties under the obligation (§ 559d sentence 1)";
+}
+pub relation grund_der_vermutung_559d(e: Mieterhoehung) kind institutional {
+    label de official "einer der vier Tatbestände des § 559d Satz 1 Nr. 1 bis 4 ist erfüllt — sie tragen EINE Vermutung, nicht vier (§ 559d Satz 1)";
+    label en unofficial "one of the four situations of § 559d sentence 1 nos. 1 to 4 is met — they carry ONE presumption, not four (§ 559d sentence 1)";
+}
+pub relation nur_haelfte_der_kosten_559f(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "sofern der Nachweis nach § 559f Abs. 1 Satz 1 nicht erbracht wird, kann der Vermieter nur die Hälfte der für die Wohnung aufgewendeten Kosten zugrunde legen (§ 559f Abs. 2)";
+    label en unofficial "where the proof under § 559f (1) sentence 1 is not furnished, the lessor may take only half the costs incurred for the dwelling as a basis (§ 559f (2))";
+}
+
+@source(BGB_P555f)
+rule Vereinbarungen555f(m: Mietverhaeltnis) strict {
+    label de official "Die Vertragsparteien können nach Abschluss des Mietvertrags aus Anlass von Erhaltungs- oder Modernisierungsmaßnahmen Vereinbarungen treffen, insbesondere über die zeitliche und technische Durchführung, die Gewährleistungsrechte und Aufwendungsersatzansprüche des Mieters und die künftige Höhe der Miete (§ 555f)";
+    label en unofficial "After conclusion of the lease the parties may make agreements on the occasion of maintenance or modernisation measures, in particular on their timing and technical performance, on the tenant's warranty and reimbursement claims and on the future level of rent (§ 555f)";
+    when vereinbarung_aus_anlass_der_massnahme(m);
+    then vereinbarung_zulaessig_555f(m);
+}
+
+@source(BGB_P558a)
+rule Begruendung558aNr1(e: Mieterhoehung) strict {
+    label de official "Zur Begründung kann auf einen Mietspiegel Bezug genommen werden (§ 558a Abs. 1, Abs. 2 Nr. 1)";
+    label en unofficial "The demand may be substantiated by reference to a rent index (§ 558a (1), (2) no. 1)";
+    when erhoehung_in_textform(e) and begruendung_mietspiegel(e);
+    then erhoehungsverlangen_begruendet(e);
+}
+
+@source(BGB_P558a)
+rule Begruendung558aNr2(e: Mieterhoehung) strict {
+    label de official "Zur Begründung kann auf eine Auskunft aus einer Mietdatenbank Bezug genommen werden (§ 558a Abs. 2 Nr. 2)";
+    label en unofficial "The demand may be substantiated by reference to information from a rent database (§ 558a (2) no. 2)";
+    when erhoehung_in_textform(e) and begruendung_mietdatenbank(e);
+    then erhoehungsverlangen_begruendet(e);
+}
+
+@source(BGB_P558a)
+rule Begruendung558aNr3(e: Mieterhoehung) strict {
+    label de official "Zur Begründung kann auf ein mit Gründen versehenes Gutachten eines öffentlich bestellten und vereidigten Sachverständigen Bezug genommen werden (§ 558a Abs. 2 Nr. 3)";
+    label en unofficial "The demand may be substantiated by reference to a reasoned opinion of a publicly appointed and sworn expert (§ 558a (2) no. 3)";
+    when erhoehung_in_textform(e) and begruendung_gutachten(e);
+    then erhoehungsverlangen_begruendet(e);
+}
+
+@source(BGB_P558a)
+rule Begruendung558aNr4(e: Mieterhoehung, n: Integer) strict {
+    label de official "Zur Begründung kann auf entsprechende Entgelte für einzelne vergleichbare Wohnungen Bezug genommen werden; hierbei genügt die Benennung von drei Wohnungen (§ 558a Abs. 2 Nr. 4)";
+    label en unofficial "The demand may be substantiated by reference to corresponding charges for individual comparable dwellings; naming three dwellings suffices (§ 558a (2) no. 4)";
+    when erhoehung_in_textform(e) and benannte_vergleichswohnungen(e, n) and n >= 3;
+    then erhoehungsverlangen_begruendet(e);
+}
+
+@source(BGB_P558d)
+rule QualifizierterMietspiegel558dAbs1(m: Mietverhaeltnis) strict {
+    label de official "Entspricht ein Mietspiegel den Anforderungen, die eine nach § 558c Absatz 5 erlassene Rechtsverordnung an qualifizierte Mietspiegel richtet, wird vermutet, dass er nach anerkannten wissenschaftlichen Grundsätzen erstellt wurde (§ 558d Abs. 1 Satz 2)";
+    label en unofficial "Where a rent index meets the requirements that a regulation under § 558c (5) sets for qualified rent indices, it is presumed to have been produced according to recognised scientific principles (§ 558d (1) sentence 2)";
+    when mietspiegel_nach_wissenschaftlichen_grundsaetzen(m);
+    then qualifizierter_mietspiegel(m);
+}
+
+@source(BGB_P558d)
+rule Vermutung558dAbs3(m: Mietverhaeltnis) strict {
+    label de official "Ist die Vorschrift des Absatzes 2 eingehalten, so wird vermutet, dass die im qualifizierten Mietspiegel bezeichneten Entgelte die ortsübliche Vergleichsmiete wiedergeben (§ 558d Abs. 3)";
+    label en unofficial "Where subsection (2) is observed, the charges stated in the qualified rent index are presumed to reflect the local comparative rent (§ 558d (3))";
+    when qualifizierter_mietspiegel(m) and mietspiegel_zweijaehrig_angepasst(m);
+    then mietspiegel_gibt_vergleichsmiete_wieder(m);
+}
+
+@source(BGB_P559a)
+rule Drittmittel559aAbs1(e: Mieterhoehung, kosten: Money, drittmittel: Money) strict {
+    label de official "Kosten, die vom Mieter oder für diesen von einem Dritten übernommen oder mit Zuschüssen aus öffentlichen Haushalten gedeckt werden, gehören nicht zu den aufgewendeten Kosten im Sinne des § 559 (§ 559a Abs. 1)";
+    label en unofficial "Costs assumed by the tenant or for him by a third party, or covered by subsidies from public budgets, do not form part of the costs incurred within the meaning of § 559 (§ 559a (1))";
+    when modernisierungskosten(e, kosten) and drittmittel_uebernommen(e, drittmittel);
+    then anrechenbare_kosten(e, kosten - drittmittel);
+}
+
+@source(BGB_P559a)
+rule Zinsermaessigung559aAbs2(e: Mieterhoehung, betrag: Money, zins: Money) strict {
+    label de official "Werden die Kosten ganz oder teilweise durch zinsverbilligte oder zinslose Darlehen aus öffentlichen Haushalten gedeckt, so verringert sich der Erhöhungsbetrag nach § 559 um den Jahresbetrag der Zinsermäßigung (§ 559a Abs. 2 Satz 1)";
+    label en unofficial "Where the costs are wholly or partly covered by low-interest or interest-free loans from public budgets, the amount of the increase under § 559 is reduced by the annual amount of the interest reduction (§ 559a (2) sentence 1)";
+    when monatlicher_erhoehungsbetrag(e, betrag) and jahresbetrag_der_zinsermaessigung(e, zins);
+    then monatlicher_erhoehungsbetrag_nach_559a(e, div_round(betrag * 12 - zins, 12 * 1.0, 2, "HALF_UP"));
+}
+
+pub relation monatlicher_erhoehungsbetrag_nach_559a(e: Mieterhoehung, betrag: Money) kind institutional {
+    key(e);
+    label de official "der monatliche Erhöhungsbetrag nach Abzug des Jahresbetrags der Zinsermäßigung (§ 559a Abs. 2 Satz 1) — eine Division je Erhöhung";
+    label en unofficial "the monthly amount of the increase after deduction of the annual interest reduction (§ 559a (2) sentence 1) — one division per increase";
+}
+
+@source(BGB_P559d)
+rule Grund559dNr1(e: Mieterhoehung) strict {
+    label de official "Der erste Tatbestand: mit der baulichen Veränderung wird nicht innerhalb von zwölf Monaten nach dem angekündigten Beginn begonnen (§ 559d Satz 1 Nr. 1)";
+    label en unofficial "The first situation: the alteration is not begun within twelve months after the announced start (§ 559d sentence 1 no. 1)";
+    when baubeginn_nicht_binnen_zwoelf_monaten(e);
+    then grund_der_vermutung_559d(e);
+}
+
+@source(BGB_P559d)
+rule Grund559dNr2(e: Mieterhoehung) strict {
+    label de official "Der zweite Tatbestand: in der Ankündigung ist ein Betrag angegeben, durch den die monatliche Miete mindestens verdoppelt würde (§ 559d Satz 1 Nr. 2)";
+    label en unofficial "The second situation: the announcement states an amount that would at least double the monthly rent (§ 559d sentence 1 no. 2)";
+    when angekuendigte_erhoehung_verdoppelt_die_miete(e);
+    then grund_der_vermutung_559d(e);
+}
+
+@source(BGB_P559d)
+rule Grund559dNr3(e: Mieterhoehung) strict {
+    label de official "Der dritte Tatbestand: die bauliche Veränderung wird in einer Weise durchgeführt, die zu erheblichen, objektiv nicht notwendigen Belastungen des Mieters führen kann (§ 559d Satz 1 Nr. 3)";
+    label en unofficial "The third situation: the alteration is carried out in a manner apt to cause substantial, objectively unnecessary burdens for the tenant (§ 559d sentence 1 no. 3)";
+    when durchfuehrung_belastet_erheblich(e);
+    then grund_der_vermutung_559d(e);
+}
+
+@source(BGB_P559d)
+rule Grund559dNr4(e: Mieterhoehung) strict {
+    label de official "Der vierte Tatbestand: die Arbeiten ruhen nach Beginn der baulichen Veränderung mehr als zwölf Monate (§ 559d Satz 1 Nr. 4)";
+    label en unofficial "The fourth situation: after the start of the alteration the works are suspended for more than twelve months (§ 559d sentence 1 no. 4)";
+    when arbeiten_ruhen_mehr_als_zwoelf_monate(e);
+    then grund_der_vermutung_559d(e);
+}
+
+@source(BGB_P559d)
+rule Vermutung559d(e: Mieterhoehung) defeasible {
+    label de official "Es wird vermutet, dass der Vermieter seine Pflichten aus dem Schuldverhältnis verletzt hat, wenn einer der vier Tatbestände vorliegt; die Vermutung gilt nicht, wenn der Vermieter darlegt, dass für das Verhalten im Einzelfall ein nachvollziehbarer objektiver Grund vorliegt (§ 559d) — VIER Tatbestände, EINE Vermutung mit EINEM Angriff";
+    label en unofficial "It is presumed that the lessor breached his duties where one of the four situations exists; the presumption does not apply where he shows a comprehensible objective reason for the conduct (§ 559d) — FOUR situations, ONE presumption with ONE attack";
+    when grund_der_vermutung_559d(e);
+    unless nachvollziehbarer_objektiver_grund(e);
+    then pflichtverletzung_vermutet_559d(e);
+}
+
+@source(BGB_P559f)
+rule Waermepumpe559fAbs2(e: Mieterhoehung, kosten: Money) strict {
+    label de official "Sofern der Nachweis nach Absatz 1 Satz 1 nicht erbracht wird, kann der Vermieter für eine Mieterhöhung nach § 559 Absatz 1 oder § 559e Absatz 1 nur die Hälfte der für die Wohnung aufgewendeten Kosten zugrunde legen (§ 559f Abs. 2)";
+    label en unofficial "Where the proof under subsection (1) sentence 1 is not furnished, for an increase under § 559 (1) or § 559e (1) the lessor may take only half the costs incurred for the dwelling as a basis (§ 559f (2))";
+    when waermepumpe_eingebaut(e) and modernisierungskosten(e, kosten)
+     and not jahresarbeitszahl_nachgewiesen(e) and not nachweis_entbehrlich_559f(e);
+    then nur_haelfte_der_kosten_559f(e, div_round(kosten, 2 * 1.0, 2, "HALF_UP"));
+}

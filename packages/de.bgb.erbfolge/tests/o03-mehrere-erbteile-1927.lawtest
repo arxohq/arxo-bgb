@@ -1,0 +1,36 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// § 1927: Der volle Bruder S des Erblassers gehört BEIDEN Elternstämmen an —
+// dem des vorverstorbenen Vaters und dem der vorverstorbenen Mutter. Er erhält
+// den in jedem Stamm ihm zufallenden Anteil (§ 1925 Abs. 2, 3: je 1/2 des
+// Stammes, hier je 1/2 der Erbschaft), und jeder gilt als besonderer Erbteil.
+// Erwartung aus dem Text: 1/2 + 1/2 = 1.
+test "§ 1927: der volle Bruder gehört beiden Elternstämmen an" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:o03:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:o03:F"), entity_ref("urn:de:bgb:e:o03:V"), entity_ref("urn:de:bgb:e:o03:D")) { origin case_input; }
+        assert "f5": abstammung(entity_ref("urn:de:bgb:e:o03:F"), entity_ref("urn:de:bgb:e:o03:M"), entity_ref("urn:de:bgb:e:o03:D")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:o03:F"), entity_ref("urn:de:bgb:e:o03:V"), entity_ref("urn:de:bgb:e:o03:S")) { origin case_input; }
+        assert "f7": abstammung(entity_ref("urn:de:bgb:e:o03:F"), entity_ref("urn:de:bgb:e:o03:M"), entity_ref("urn:de:bgb:e:o03:S")) { origin case_input; }
+        assert "f8": vorverstorben(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:V")) { origin case_input; }
+        assert "f9": vorverstorben(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:M")) { origin case_input; }
+        assert "f10": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:S")) { origin case_input; }
+    }
+    evaluate truth(mehrfach_verwandt(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:S")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erbteil_aus_stamm(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:S"), entity_ref("urn:de:bgb:e:o03:V"), 1, 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesamterbteil(entity_ref("urn:de:bgb:e:o03:E"), entity_ref("urn:de:bgb:e:o03:S"), 1 / 1));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nachlass_vollstaendig_verteilt(entity_ref("urn:de:bgb:e:o03:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

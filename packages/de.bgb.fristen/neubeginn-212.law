@@ -1,0 +1,151 @@
+// § 212: Neubeginn der Verjährung. Zweischichtiges Modell (Koordinator,
+// 18.09): Schicht 1 bleibt `verjaehrung_eingetreten_am` (package.law,
+// unverändert). Schicht 2 ist `verjaehrung_nach_neubeginn_am`, berechnet
+// aus dem Neubeginn-Ereignis und einer vom Fall angegebenen Fristdauer —
+// KEINE Ableitung von `verjaehrung_eingetreten_am` aus sich selbst (das
+// schlösse denselben Prädikatzyklus wie §§ 190/198, LDC-E4102). Der
+// Gesamtkopf `verjaehrung_massgeblich_am` wählt Schicht 2, wenn ein
+// Neubeginn vorliegt, sonst Schicht 1 (zwei Regeln mit Garde,
+// `not_known` auf dem positiven Neubeginn-Ereignis-Prädikat statt
+// klassischer Verneinung — README-Konvention 6).
+
+// --- Abs. 1: Tatbestände des Neubeginns -----------------------------------------------------------
+
+pub enum Anerkenntnisart {
+    label de official "Art des Anerkenntnisses des Anspruchs durch den Schuldner (§ 212 Abs. 1 Nr. 1)";
+    label en unofficial "kind of the debtor's acknowledgement of the claim (§ 212 (1) no. 1)";
+    Abschlagszahlung,
+    Zinszahlung,
+    Sicherheitsleistung,
+    AndereWeise
+}
+
+pub relation anerkenntnis_durch(a: Anspruch, art: Anerkenntnisart, tag: Date) kind empirical {
+    key(a);
+    label de official "der Schuldner erkennt den Anspruch dem Gläubiger gegenüber an (§ 212 Abs. 1 Nr. 1), mit der Art des Anerkenntnisses und dem Tag";
+    label en unofficial "the debtor acknowledges the claim to the creditor (§ 212 (1) no. 1), with the kind of acknowledgement and the day";
+}
+pub relation vollstreckungshandlung_vorgenommen_oder_beantragt_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "eine gerichtliche oder behördliche Vollstreckungshandlung wird vorgenommen oder beantragt (§ 212 Abs. 1 Nr. 2)";
+    label en unofficial "a judicial or administrative enforcement measure is taken or applied for (§ 212 (1) no. 2)";
+}
+pub relation neubeginn_ereignis_am(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, an dem die Verjährung erneut beginnt (§ 212 Abs. 1)";
+    label en unofficial "day on which limitation begins anew (§ 212 (1))";
+}
+
+@source(BGB_P212)
+rule Neubeginn212Nr1Abschlagszahlung(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung beginnt erneut, wenn der Schuldner dem Gläubiger gegenüber den Anspruch durch Abschlagszahlung anerkennt (§ 212 Abs. 1 Nr. 1)";
+    label en unofficial "Limitation begins anew when the debtor acknowledges the claim to the creditor by a part payment (§ 212 (1) no. 1)";
+    when anerkenntnis_durch(a, Abschlagszahlung, tag);
+    then neubeginn_ereignis_am(a, tag);
+}
+@source(BGB_P212)
+rule Neubeginn212Nr1Zinszahlung(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung beginnt erneut, wenn der Schuldner dem Gläubiger gegenüber den Anspruch durch Zinszahlung anerkennt (§ 212 Abs. 1 Nr. 1)";
+    label en unofficial "Limitation begins anew when the debtor acknowledges the claim to the creditor by paying interest (§ 212 (1) no. 1)";
+    when anerkenntnis_durch(a, Zinszahlung, tag);
+    then neubeginn_ereignis_am(a, tag);
+}
+@source(BGB_P212)
+rule Neubeginn212Nr1Sicherheitsleistung(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung beginnt erneut, wenn der Schuldner dem Gläubiger gegenüber den Anspruch durch Sicherheitsleistung anerkennt (§ 212 Abs. 1 Nr. 1)";
+    label en unofficial "Limitation begins anew when the debtor acknowledges the claim to the creditor by giving security (§ 212 (1) no. 1)";
+    when anerkenntnis_durch(a, Sicherheitsleistung, tag);
+    then neubeginn_ereignis_am(a, tag);
+}
+@source(BGB_P212)
+rule Neubeginn212Nr1AndereWeise(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung beginnt erneut, wenn der Schuldner dem Gläubiger gegenüber den Anspruch in anderer Weise anerkennt (§ 212 Abs. 1 Nr. 1)";
+    label en unofficial "Limitation begins anew when the debtor acknowledges the claim to the creditor in some other way (§ 212 (1) no. 1)";
+    when anerkenntnis_durch(a, AndereWeise, tag);
+    then neubeginn_ereignis_am(a, tag);
+}
+
+// --- Abs. 2, 3: Rückausnahmen bei der Vollstreckungshandlung (Nr. 2) --------------------------------
+
+pub relation vollstreckungshandlung_aufgehoben_auf_antrag_oder_mangel(a: Anspruch) kind empirical {
+    label de official "die Vollstreckungshandlung wird auf Antrag des Gläubigers oder wegen Mangels der gesetzlichen Voraussetzungen aufgehoben (§ 212 Abs. 2)";
+    label en unofficial "the enforcement measure is set aside at the creditor's request or for want of the statutory requirements (§ 212 (2))";
+}
+pub relation vollstreckungsantrag_nicht_erfolgreich_oder_zurueckgenommen(a: Anspruch) kind empirical {
+    label de official "dem Antrag auf Vornahme einer Vollstreckungshandlung wird nicht stattgegeben, der Antrag wird vor der Vollstreckungshandlung zurückgenommen, oder die erwirkte Vollstreckungshandlung wird nach Absatz 2 aufgehoben (§ 212 Abs. 3)";
+    label en unofficial "the application to take an enforcement measure is not granted, is withdrawn before the measure is taken, or the measure obtained is set aside under paragraph (2) (§ 212 (3))";
+}
+pub relation vollstreckungshandlung_neubeginn_entfaellt(a: Anspruch) kind institutional {
+    key(a);
+    label de official "der erneute Beginn der Verjährung infolge der Vollstreckungshandlung gilt als nicht eingetreten (§ 212 Abs. 2, 3)";
+    label en unofficial "the fresh start of limitation resulting from the enforcement measure is deemed not to have occurred (§ 212 (2), (3))";
+}
+
+@source(BGB_P212)
+rule Neubeginn212Abs2Entfaellt(a: Anspruch) strict {
+    label de official "Der erneute Beginn der Verjährung infolge einer Vollstreckungshandlung gilt als nicht eingetreten, wenn die Vollstreckungshandlung auf Antrag des Gläubigers oder wegen Mangels der gesetzlichen Voraussetzungen aufgehoben wird (§ 212 Abs. 2)";
+    label en unofficial "The fresh start of limitation resulting from an enforcement measure is deemed not to have occurred if the measure is set aside at the creditor's request or for want of the statutory requirements (§ 212 (2))";
+    when vollstreckungshandlung_aufgehoben_auf_antrag_oder_mangel(a);
+    then vollstreckungshandlung_neubeginn_entfaellt(a);
+}
+@source(BGB_P212)
+rule Neubeginn212Abs3Entfaellt(a: Anspruch) strict {
+    label de official "Der erneute Beginn der Verjährung durch den Antrag auf Vornahme einer Vollstreckungshandlung gilt als nicht eingetreten, wenn dem Antrag nicht stattgegeben oder der Antrag vor der Vollstreckungshandlung zurückgenommen oder die erwirkte Vollstreckungshandlung nach Absatz 2 aufgehoben wird (§ 212 Abs. 3)";
+    label en unofficial "The fresh start of limitation through the application to take an enforcement measure is deemed not to have occurred if the application is not granted, is withdrawn before the measure is taken, or the measure obtained is set aside under paragraph (2) (§ 212 (3))";
+    when vollstreckungsantrag_nicht_erfolgreich_oder_zurueckgenommen(a);
+    then vollstreckungshandlung_neubeginn_entfaellt(a);
+}
+
+@source(BGB_P212)
+rule Neubeginn212Nr2(a: Anspruch, tag: Date) strict {
+    label de official "Die Verjährung beginnt erneut, wenn eine gerichtliche oder behördliche Vollstreckungshandlung vorgenommen oder beantragt wird, sofern der erneute Beginn nicht nach Absatz 2 oder 3 als nicht eingetreten gilt (§ 212 Abs. 1 Nr. 2)";
+    label en unofficial "Limitation begins anew when a judicial or administrative enforcement measure is taken or applied for, unless the fresh start is deemed not to have occurred under paragraph (2) or (3) (§ 212 (1) no. 2)";
+    when vollstreckungshandlung_vorgenommen_oder_beantragt_am(a, tag) and not_known(vollstreckungshandlung_neubeginn_entfaellt(a));
+    then neubeginn_ereignis_am(a, tag);
+}
+
+// --- Schicht 2: die Frist nach dem Neubeginn und der Gesamtkopf --------------------------------------
+
+pub relation verjaehrungsfrist_dauer_nach_neubeginn(a: Anspruch, dauer: Quantity) kind empirical {
+    key(a);
+    label de official "Dauer der Verjährungsfrist, die mit dem Neubeginn von vorn zu laufen beginnt (§ 212) — regelmäßig dieselbe Dauer wie die ursprünglich anwendbare Frist";
+    label en unofficial "duration of the limitation period that starts running afresh with the new beginning (§ 212) — ordinarily the same duration as the originally applicable period";
+}
+pub relation verjaehrung_nach_neubeginn_am(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "Tag, mit dessen Ablauf die seit dem Neubeginn laufende Verjährungsfrist endet (§ 212)";
+    label en unofficial "day at whose end the limitation period running since the fresh start ends (§ 212)";
+}
+pub relation kein_neubeginn(a: Anspruch) kind empirical {
+    label de official "kein Neubeginnstatbestand des § 212 festgestellt — ausdrückliche Angabe des Falls; das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "no ground for a fresh start under § 212 established — explicit case input; absence of an input is not a denial";
+}
+pub relation verjaehrung_massgeblich_am(a: Anspruch, tag: Date) kind institutional {
+    key(a);
+    label de official "die für den Anspruch maßgebliche Verjährung: nach Neubeginn (§ 212), sonst die reguläre Verjährung mit Hemmung (§§ 195–211)";
+    label en unofficial "the limitation decisive for the claim: after a fresh start (§ 212), otherwise the regular limitation with suspension (§§ 195-211)";
+}
+
+@source(BGB_P212)
+rule VerjaehrungNachNeubeginnEnde(a: Anspruch, e: Date, d: Quantity) strict {
+    label de official "Die seit dem Neubeginn laufende Verjährungsfrist endet mit dem Ablauf des ihrer Dauer entsprechenden Tages, vom Neubeginn an gerechnet (§ 212, § 188 Abs. 2) — Politik BGB_FRISTEN_KALENDER";
+    label en unofficial "The limitation period running since the fresh start ends on the day corresponding to its duration, counted from the fresh start (§ 212, § 188 (2)) — policy BGB_FRISTEN_KALENDER";
+    when neubeginn_ereignis_am(a, e) and verjaehrungsfrist_dauer_nach_neubeginn(a, d);
+    then verjaehrung_nach_neubeginn_am(a, add_calendar_period(e, d));
+}
+
+@source(BGB_P212)
+rule VerjaehrungMassgeblichNachNeubeginn(a: Anspruch, tag: Date) strict {
+    label de official "Liegt ein Neubeginn der Verjährung vor, ist die seit ihm laufende Frist maßgeblich (§ 212 Abs. 1)";
+    label en unofficial "If limitation has begun anew, the period running since then is decisive (§ 212 (1))";
+    when verjaehrung_nach_neubeginn_am(a, tag);
+    then verjaehrung_massgeblich_am(a, tag);
+}
+
+@source(BGB_P212)
+rule VerjaehrungMassgeblichOhneNeubeginn(a: Anspruch, tag: Date) strict {
+    label de official "Ohne festgestellten Neubeginn bleibt die reguläre Verjährung (mit Hemmung) maßgeblich";
+    label en unofficial "Without an established fresh start, the regular limitation (with suspension) remains decisive";
+    when verjaehrung_eingetreten_am(a, tag) and kein_neubeginn(a);
+    then verjaehrung_massgeblich_am(a, tag);
+}

@@ -1,0 +1,65 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+
+pub relation position_trigger_904(s: Sache, eigentuemer: Person, einwirkender: Person, tag: Date) kind empirical {
+    label de official "Eingang des Notstandsfalls nach § 904";
+    label en unofficial "case input for necessity interference under § 904";
+}
+pub relation duldung_904_geschuldet(s: Sache, eigentuemer: Person, einwirkender: Person) kind empirical {
+    label de official "Der Eigentümer schuldet die Duldung der Notstandseinwirkung (§ 904)";
+    label en unofficial "The owner owes tolerance of the necessity interference (§ 904)";
+}
+pub relation position_trigger_907(e: Einwirkung, eigentuemer: Person, nachbar: Person, tag: Date) kind empirical {
+    label de official "Eingang des Falls zur Beseitigung einer gefahrdrohenden Anlage (§ 907)";
+    label en unofficial "case input for removal of a dangerous installation (§ 907)";
+}
+pub relation beseitigung_907_ausuebbar(e: Einwirkung, eigentuemer: Person, nachbar: Person) kind empirical {
+    label de official "Der Eigentümer kann die Beseitigung der Anlage verlangen (§ 907)";
+    label en unofficial "The owner may demand removal of the installation (§ 907)";
+}
+pub relation position_trigger_917(s: Grundstueck, eigentuemer: Person, nachbar: Person, tag: Date) kind empirical {
+    label de official "Eingang des Notwegfalls nach § 917";
+    label en unofficial "case input for the necessary way under § 917";
+}
+pub relation duldung_917_geschuldet(s: Grundstueck, eigentuemer: Person, nachbar: Person) kind empirical {
+    label de official "Der Nachbar schuldet die Duldung des Notwegs (§ 917)";
+    label en unofficial "The neighbour owes tolerance of the necessary way (§ 917)";
+}
+
+@source(BGB_P904)
+rule PositionDuldung904(s: Sache, eigentuemer: Person, einwirkender: Person, tag: Date) strict {
+    label de official "Der Eigentümer hat die notwendige Notstandseinwirkung zu dulden (§ 904)";
+    label en unofficial "The owner must tolerate the necessary interference in an emergency (§ 904)";
+    when position_trigger_904(s, eigentuemer, einwirkender, tag);
+    then duty Duldung904 {
+        bearer eigentuemer;
+        achieve duldung_904_geschuldet(s, eigentuemer, einwirkender) during [tag, infinity);
+    };
+}
+
+@source(BGB_P907)
+rule PositionBeseitigung907(e: Einwirkung, eigentuemer: Person, nachbar: Person, tag: Date) strict {
+    label de official "Der Eigentümer hat die Befugnis, die Beseitigung der Anlage zu verlangen (§ 907)";
+    label en unofficial "The owner has the power to demand removal of the installation (§ 907)";
+    when position_trigger_907(e, eigentuemer, nachbar, tag);
+    then power Beseitigung907 {
+        holder eigentuemer;
+        over e;
+        exercise beseitigung_907_ausuebbar(e, eigentuemer, nachbar);
+        valid_when beseitigung_907_ausuebbar(e, eigentuemer, nachbar);
+        effect create(beseitigung_907_ausuebbar(e, eigentuemer, nachbar));
+        window [tag, infinity);
+    };
+}
+
+@source(BGB_P917)
+rule PositionDuldung917(s: Grundstueck, eigentuemer: Person, nachbar: Person, tag: Date) strict {
+    label de official "Der Nachbar hat die Benutzung zur Herstellung des Notwegs zu dulden (§ 917)";
+    label en unofficial "The neighbour must tolerate use to establish the necessary way (§ 917)";
+    when position_trigger_917(s, eigentuemer, nachbar, tag);
+    then duty Duldung917 {
+        bearer nachbar;
+        achieve duldung_917_geschuldet(s, eigentuemer, nachbar) during [tag, infinity);
+    };
+}

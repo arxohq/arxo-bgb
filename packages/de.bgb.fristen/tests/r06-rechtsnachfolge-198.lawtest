@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 198: die während des Besitzes des Rechtsvorgängers verstrichene Verjährungszeit kommt dem Rechtsnachfolger zugute — Beginn 10. Januar 2015 (Vorgänger), Frist des Nachfolgers (10 Jahre) endet am 10. Januar 2025.
+test "§ 198: Rechtsnachfolge übernimmt den Fristbeginn des Rechtsvorgängers" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:r06a"), @2015-01-10) { origin case_input; }
+        assert "g": anspruch_auf_grundstuecksrecht(entity_ref("urn:de:bgb:fristen:pilot:r06a")) { origin case_input; }
+        assert "n": rechtsnachfolge_dinglicher_anspruch(entity_ref("urn:de:bgb:fristen:pilot:r06b"), entity_ref("urn:de:bgb:fristen:pilot:r06a")) { origin case_input; }
+        assert "gn": anspruch_auf_grundstuecksrecht(entity_ref("urn:de:bgb:fristen:pilot:r06b")) { origin case_input; }
+    }
+    evaluate truth(besondere_verjaehrungsfrist_beginn_nachfolge(entity_ref("urn:de:bgb:fristen:pilot:r06b"), @2015-01-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(besondere_verjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:pilot:r06b"), @2025-01-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

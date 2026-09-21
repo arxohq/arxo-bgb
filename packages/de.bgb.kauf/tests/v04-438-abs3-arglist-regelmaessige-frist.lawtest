@@ -1,0 +1,28 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 438 Abs. 3 Satz 1: der Verkäufer hat den Mangel arglistig verschwiegen — abweichend von Absatz 1 Nr. 3 gilt die regelmäßige Verjährungsfrist. Der Anspruch ist am 10. April 2023 entstanden, im selben Jahr hat der Käufer Kenntnis erlangt; de.bgb.fristen rechnet vom Schluss des Jahres (§ 199 Abs. 1) drei Jahre: Ablauf mit dem 31. Dezember 2026 statt mit dem 10. April 2025.
+test "§ 438 Abs. 3: Arglist führt in die regelmäßige Verjährungsfrist" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:v04"), entity_ref("urn:de:bgb:kauf:v04:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:v04"), entity_ref("urn:de:bgb:kauf:v04:K")) { origin case_input; }
+        assert "f3": maengelanspruch(entity_ref("urn:de:bgb:kauf:v04:A"), entity_ref("urn:de:bgb:kauf:v04")) { origin case_input; }
+        assert "f4": ablieferung_am(entity_ref("urn:de:bgb:kauf:v04"), @2023-04-10) { origin adjudicated; }
+        assert "f5": not grundstueckskauf(entity_ref("urn:de:bgb:kauf:v04")) { origin case_input; }
+        assert "f6": not mangel_in_dinglichem_herausgaberecht(entity_ref("urn:de:bgb:kauf:v04")) { origin case_input; }
+        assert "f7": not mangel_in_eingetragenem_recht(entity_ref("urn:de:bgb:kauf:v04")) { origin case_input; }
+        assert "f8": not bauwerk(entity_ref("urn:de:bgb:kauf:v04")) { origin case_input; }
+        assert "f9": not baustoff_mit_verursachter_mangelhaftigkeit(entity_ref("urn:de:bgb:kauf:v04")) { origin case_input; }
+        assert "f10": mangel_arglistig_verschwiegen(entity_ref("urn:de:bgb:kauf:v04")) { origin adjudicated; }
+        assert "f11": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:kauf:v04:A"), @2023-04-10) { origin case_input; }
+        assert "f12": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:kauf:v04:A"), @2023-04-10) { origin adjudicated; }
+    }
+    evaluate truth(regelfrist_ende_438(entity_ref("urn:de:bgb:kauf:v04:A"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(frist_ende_438(entity_ref("urn:de:bgb:kauf:v04:A"), @2026-12-31));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(frist_ende_438(entity_ref("urn:de:bgb:kauf:v04:A"), @2025-04-10));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 904: mit beiden Antworten des Gerichts (origin adjudicated) steht die Duldungspflicht fest, und der Eigentümer kann Ersatz des ihm entstehenden Schadens verlangen (Satz 2).
+test "§ 904: Duldungspflicht und Ersatzanspruch nach der Wertung des Gerichts" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": einwirkung_auf_sache(entity_ref("urn:de:bgb:be:n:einwirkung"), entity_ref("urn:de:bgb:be:n:scheune")) { origin case_input; }
+        assert "f2": einwirkender(entity_ref("urn:de:bgb:be:n:einwirkung"), entity_ref("urn:de:bgb:be:n:N")) { origin case_input; }
+        assert "f3": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:n:scheune"), entity_ref("urn:de:bgb:be:n:H")) { origin case_input; }
+        assert "j1": einwirkung_zur_gefahrabwendung_notwendig(entity_ref("urn:de:bgb:be:n:einwirkung")) { origin adjudicated; }
+        assert "j2": drohender_schaden_unverhaeltnismaessig_gross(entity_ref("urn:de:bgb:be:n:einwirkung")) { origin adjudicated; }
+    }
+    evaluate truth(duldungspflicht_notstand(entity_ref("urn:de:bgb:be:n:scheune"), entity_ref("urn:de:bgb:be:n:H"), entity_ref("urn:de:bgb:be:n:N")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    expect judgment_requests(0);
+    evaluate truth(ersatzanspruch_wegen_notstandseinwirkung(entity_ref("urn:de:bgb:be:n:scheune"), entity_ref("urn:de:bgb:be:n:H"), entity_ref("urn:de:bgb:be:n:N")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

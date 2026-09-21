@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+// § 2 mit § 187 Abs. 2 Satz 2, § 188 Abs. 2: geboren am 15. April 2008 — das 18. Lebensjahr ist mit Ablauf des 14. April 2026 vollendet; am 14. April ist die Person noch minderjährig, am 15. April (dem 18. Geburtstag) volljährig.
+test "§ 2: volljährig ist die Person vom 18. Geburtstag an, am Vortag noch nicht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.allgemeiner_teil::KALENDER_BUNDESWEIT; deadline_policy BGB_ALLGEMEINER_TEIL_KALENDER; }
+        assert "g": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:at:p01:kind"), @2008-04-15) { origin case_input; }
+        assert "s1": stichtag(entity_ref("urn:de:bgb:at:p01:kind"), @2026-04-14) { origin case_input; }
+        assert "s2": stichtag(entity_ref("urn:de:bgb:at:p01:kind"), @2026-04-15) { origin case_input; }
+    }
+    evaluate truth(minderjaehrig_am(entity_ref("urn:de:bgb:at:p01:kind"), @2026-04-14));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(volljaehrig_am(entity_ref("urn:de:bgb:at:p01:kind"), @2026-04-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(volljaehrig_am(entity_ref("urn:de:bgb:at:p01:kind"), @2026-04-14));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

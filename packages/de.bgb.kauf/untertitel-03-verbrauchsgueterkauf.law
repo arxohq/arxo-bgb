@@ -1,0 +1,935 @@
+// --- Untertitel 3 Verbrauchsgüterkauf (§§ 474–479)
+//
+// VERBRAUCHER UND UNTERNEHMER sind Begriffe des Buches 1 (§§ 13, 14) und
+// gehören de.bgb.allgemeiner_teil (BG-03). Die dortigen Köpfe tragen eine
+// andere Signatur (sie hängen am Rechtsgeschäft dieses Pakets). Deshalb
+// erklärt BG-05 nach dem Vorbild von D-04-01 EIGENE Eingaben mit Anker auf
+// § 474 Abs. 1, der sie liest; die Brücke ersetzt sie später ohne Änderung
+// der lesenden Regeln (Ledger D-05-05).
+//
+// DER KORRIDOR 2022. Die §§ 475b bis 475e, § 477 in der heutigen Fassung und
+// die objektiven Anforderungen des § 434 Abs. 3 gelten nach Art. 229 § 58
+// EGBGB für Verträge, die AB dem 1. Januar 2022 geschlossen wurden. Der
+// Anknüpfungspunkt ist der TAG DES VERTRAGSSCHLUSSES, nicht die legal time des
+// Falls; deshalb ist der Korridor ein Garde über `vertragsschluss_am` und
+// nicht ein `effective`-Fenster (Ledger D-05-06). Für frühere Verträge
+// schweigt das Paket: das alte Recht ist nicht Teil dieses Schnitts.
+//
+// DIE VERMUTUNG DES § 477 hat drei Fenster: ein Jahr seit Gefahrübergang
+// (Abs. 1 Satz 1), sechs Monate beim Kauf eines lebenden Tieres (Abs. 1
+// Satz 2) und zwei Jahre bei dauerhaft bereitgestellten digitalen Elementen
+// (Abs. 2). Widerlegt wird sie durch die Wertung des Gerichts, die Vermutung
+// sei „mit der Art der Ware oder des mangelhaften Zustands unvereinbar“.
+
+pub relation verbraucher(k: Kaufvertrag, p: Person) kind empirical {
+    label de official "die Person ist Verbraucher im Sinne des § 13 — eigener Eingang dieses Pakets (§ 474 Abs. 1), seit der Brücke D-05-08 auch aus de.bgb.allgemeiner_teil abgeleitet";
+    label en unofficial "the person is a consumer within the meaning of § 13 — own input of this package (§ 474 (1)), since bridge D-05-08 also derived from de.bgb.allgemeiner_teil";
+}
+pub relation unternehmer_im_kauf(k: Kaufvertrag, p: Person) kind empirical {
+    label de official "die Person ist Unternehmer im Sinne des § 14 — eigener Eingang dieses Pakets (§ 474 Abs. 1), seit der Brücke D-05-08 auch aus de.bgb.allgemeiner_teil abgeleitet";
+    label en unofficial "the person is a trader within the meaning of § 14 — own input of this package (§ 474 (1)), since bridge D-05-08 also derived from de.bgb.allgemeiner_teil";
+}
+
+// --- Brücke § 474 zu de.bgb.allgemeiner_teil (D-05-08) --------------------------------------------
+//
+// Additiv, wie D-04-09/D-04-12 bei BG-04: verbraucher(k,p)/unternehmer_im_kauf
+// (k,p) bleiben eigene, am Kaufvertrag hängende Eingänge — ZWEITER Produzent
+// über das Korrelat, acht bestehende Szenarien bleiben unverändert grün.
+pub relation rechtsgeschaeft_des_kaufvertrags(k: Kaufvertrag, r: Rechtsgeschaeft) kind empirical {
+    label de official "Das Rechtsgeschäft (§§ 13, 14 — de.bgb.allgemeiner_teil), das mit diesem Kaufvertrag abgeschlossen wurde — Korrelat der Brücke D-05-08";
+    label en unofficial "the transaction (§§ 13, 14 — de.bgb.allgemeiner_teil) concluded as this purchase contract — correlate of bridge D-05-08";
+}
+
+@source(BGB_P474)
+rule VerbraucherImKaufAusAllgemeinemTeil(k: Kaufvertrag, p: Person, r: Rechtsgeschaeft) strict {
+    label de official "Verbraucher im Sinne des § 13, hergeleitet über das Rechtsgeschäft des Kaufvertrags aus dem Kopf von de.bgb.allgemeiner_teil (Brücke D-05-08)";
+    label en unofficial "consumer within the meaning of § 13, derived via the transaction of the purchase contract from de.bgb.allgemeiner_teil's head (bridge D-05-08)";
+    when rechtsgeschaeft_des_kaufvertrags(k, r);
+    when de.bgb.allgemeiner_teil::verbraucher(p, r);
+    then verbraucher(k, p);
+}
+
+@source(BGB_P474)
+rule UnternehmerImKaufAusAllgemeinemTeil(k: Kaufvertrag, p: Person, r: Rechtsgeschaeft) strict {
+    label de official "Unternehmer im Sinne des § 14, hergeleitet über das Rechtsgeschäft des Kaufvertrags aus dem Kopf von de.bgb.allgemeiner_teil (Brücke D-05-08)";
+    label en unofficial "trader within the meaning of § 14, derived via the transaction of the purchase contract from de.bgb.allgemeiner_teil's head (bridge D-05-08)";
+    when rechtsgeschaeft_des_kaufvertrags(k, r);
+    when de.bgb.allgemeiner_teil::unternehmer(p, r);
+    then unternehmer_im_kauf(k, p);
+}
+pub relation ware(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Kaufs ist eine Ware (§ 241a Abs. 1: bewegliche Sache, die nicht auf Grund von Zwangsvollstreckung oder anderen gerichtlichen Maßnahmen verkauft wird) — § 474 Abs. 1";
+    label en unofficial "the object of the sale is goods (§ 241a (1)) — § 474 (1)";
+}
+pub relation dienstleistung_neben_dem_warenverkauf(k: Kaufvertrag) kind empirical {
+    label de official "der Vertrag hat neben dem Verkauf einer Ware die Erbringung einer Dienstleistung durch den Unternehmer zum Gegenstand (§ 474 Abs. 1 Satz 2)";
+    label en unofficial "the contract also has as its object the provision of a service by the trader (§ 474 (1) sentence 2)";
+}
+pub relation gebrauchte_ware_in_oeffentlicher_versteigerung(k: Kaufvertrag) kind empirical {
+    label de official "gebrauchte Ware, die in einer öffentlich zugänglichen Versteigerung (§ 312g Abs. 2 Nr. 10) verkauft wird (§ 474 Abs. 2 Satz 2)";
+    label en unofficial "used goods sold at a publicly accessible auction (§ 312g (2) no. 10) (§ 474 (2) sentence 2)";
+}
+pub relation klare_information_ueber_nichtgeltung(k: Kaufvertrag) kind empirical {
+    label de official "dem Verbraucher wurden klare und umfassende Informationen darüber, dass die Vorschriften dieses Untertitels nicht gelten, leicht verfügbar gemacht (§ 474 Abs. 2 Satz 2)";
+    label en unofficial "clear and comprehensive information that the provisions of this sub-title do not apply was made easily available to the consumer (§ 474 (2) sentence 2)";
+}
+pub relation verbrauchsgueterkauf(k: Kaufvertrag) kind institutional {
+    label de official "Verbrauchsgüterkauf: Vertrag, durch den ein Verbraucher von einem Unternehmer eine Ware kauft (§ 474 Abs. 1)";
+    label en unofficial "sale of consumer goods: a contract by which a consumer buys goods from a trader (§ 474 (1))";
+}
+pub relation vorschriften_des_untertitels_anwendbar(k: Kaufvertrag) kind institutional {
+    label de official "für den Verbrauchsgüterkauf gelten ergänzend die Vorschriften dieses Untertitels (§ 474 Abs. 2 Satz 1)";
+    label en unofficial "the provisions of this sub-title apply additionally to the sale of consumer goods (§ 474 (2) sentence 1)";
+}
+
+@source(BGB_P474)
+rule Verbrauchsgueterkauf474Abs1Satz1(k: Kaufvertrag, vb: Person, un: Person) strict {
+    label de official "Verbrauchsgüterkäufe sind Verträge, durch die ein Verbraucher von einem Unternehmer eine Ware (§ 241a Abs. 1) kauft (§ 474 Abs. 1 Satz 1)";
+    label en unofficial "Sales of consumer goods are contracts by which a consumer buys goods (§ 241a (1)) from a trader (§ 474 (1) sentence 1)";
+    when kaeufer(k, vb) and verbraucher(k, vb) and verkaeufer(k, un) and unternehmer_im_kauf(k, un) and ware(k);
+    then verbrauchsgueterkauf(k);
+}
+
+@source(BGB_P474)
+rule Verbrauchsgueterkauf474Abs1Satz2(k: Kaufvertrag, vb: Person, un: Person) strict {
+    label de official "Um einen Verbrauchsgüterkauf handelt es sich auch bei einem Vertrag, der neben dem Verkauf einer Ware die Erbringung einer Dienstleistung durch den Unternehmer zum Gegenstand hat (§ 474 Abs. 1 Satz 2)";
+    label en unofficial "A contract which also has as its object the provision of a service by the trader is likewise a sale of consumer goods (§ 474 (1) sentence 2)";
+    when kaeufer(k, vb) and verbraucher(k, vb) and verkaeufer(k, un) and unternehmer_im_kauf(k, un)
+     and ware(k) and dienstleistung_neben_dem_warenverkauf(k);
+    then verbrauchsgueterkauf(k);
+}
+
+@source(BGB_P474)
+rule Verbrauchsgueterkauf474Abs2(k: Kaufvertrag) strict {
+    label de official "Für den Verbrauchsgüterkauf gelten ergänzend die folgenden Vorschriften dieses Untertitels; für gebrauchte Waren in einer öffentlich zugänglichen Versteigerung gilt dies nicht, wenn dem Verbraucher klare und umfassende Informationen darüber leicht verfügbar gemacht wurden (§ 474 Abs. 2)";
+    label en unofficial "The following provisions of this sub-title apply additionally to the sale of consumer goods; this does not apply to used goods sold at a publicly accessible auction where clear and comprehensive information was made easily available to the consumer (§ 474 (2)); as to contracts concluded before 1 January 2022 see Art. 229 § 58 EGBGB";
+    when verbrauchsgueterkauf(k) and neues_kaufrecht_anwendbar(k)
+     and not_known(information_schliesst_versteigerungskauf_aus(k));
+    then vorschriften_des_untertitels_anwendbar(k);
+}
+
+relation information_schliesst_versteigerungskauf_aus(k: Kaufvertrag) kind institutional {
+    label de official "gebrauchte Ware in öffentlich zugänglicher Versteigerung mit leicht verfügbarer Information über die Nichtgeltung (§ 474 Abs. 2 Satz 2)";
+    label en unofficial "used goods at a publicly accessible auction with easily available information on non-application (§ 474 (2) sentence 2)";
+}
+
+@source(BGB_P474)
+rule Versteigerungsausnahme474Abs2Satz2(k: Kaufvertrag) strict {
+    label de official "Die Ausnahme des § 474 Abs. 2 Satz 2 setzt beides voraus: gebrauchte Ware in öffentlich zugänglicher Versteigerung UND die leicht verfügbar gemachte klare Information";
+    label en unofficial "The exception of § 474 (2) sentence 2 requires both: used goods at a publicly accessible auction AND the clear information made easily available";
+    when gebrauchte_ware_in_oeffentlicher_versteigerung(k) and klare_information_ueber_nichtgeltung(k);
+    then information_schliesst_versteigerungskauf_aus(k);
+}
+
+// --- § 475 Anwendbare Vorschriften ----------------------------------------------------------------
+
+pub relation leistungszeit_weder_bestimmt_noch_zu_entnehmen(k: Kaufvertrag) kind empirical {
+    label de official "eine Zeit für die nach § 433 zu erbringenden Leistungen ist weder bestimmt noch aus den Umständen zu entnehmen (§ 475 Abs. 1 Satz 1)";
+    label en unofficial "no time for the performances owed under § 433 is fixed or ascertainable from the circumstances (§ 475 (1) sentence 1)";
+}
+pub relation spaetester_uebergabetag(k: Kaufvertrag, tag: Date) kind institutional {
+    key(k);
+    label de official "Tag, mit dessen Ablauf der Unternehmer die Ware spätestens übergeben haben muss: 30 Tage nach Vertragsschluss (§ 475 Abs. 1 Satz 2; § 187 Abs. 1 — der Tag des Vertragsschlusses wird nicht mitgerechnet)";
+    label en unofficial "day by the end of which the trader must have delivered the goods at the latest: 30 days after conclusion of the contract (§ 475 (1) sentence 2; § 187 (1))";
+}
+pub relation kaeufer_beauftragte_versendungsperson(k: Kaufvertrag) kind empirical {
+    label de official "der Käufer hat den Spediteur, den Frachtführer oder die sonst zur Ausführung der Versendung bestimmte Person oder Anstalt mit der Ausführung beauftragt (§ 475 Abs. 2)";
+    label en unofficial "the buyer commissioned the forwarder, carrier or other person or institution designated to carry out the dispatch (§ 475 (2))";
+}
+pub relation unternehmer_hat_person_zuvor_benannt(k: Kaufvertrag) kind empirical {
+    label de official "der Unternehmer hat dem Käufer diese Person oder Anstalt zuvor benannt (§ 475 Abs. 2)";
+    label en unofficial "the trader had named that person or institution to the buyer beforehand (§ 475 (2))";
+}
+pub relation information_ueber_wahlrecht_und_verjaehrungsverlaengerung(k: Kaufvertrag) kind empirical {
+    label de official "der Unternehmer hat den Verbraucher vor der Nacherfüllung über das Wahlrecht nach § 439 Abs. 1 und über die einmalige Verlängerung der Verjährungsfrist um zwölf Monate nach § 475e Abs. 5 informiert (§ 475 Abs. 4)";
+    label en unofficial "before the cure the trader informed the consumer of the right of choice under § 439 (1) and of the one-off extension of the limitation period by twelve months under § 475e (5) (§ 475 (4))";
+}
+pub relation informationspflicht_vor_nacherfuellung(k: Kaufvertrag, un: Person) kind institutional {
+    label de official "Pflicht des Unternehmers, den Verbraucher vor der Nacherfüllung über sein Wahlrecht und die Verlängerung der Verjährungsfrist zu informieren (§ 475 Abs. 4)";
+    label en unofficial "trader's duty to inform the consumer before the cure of his right of choice and of the extension of the limitation period (§ 475 (4))";
+}
+pub relation vorschussanspruch_des_verbrauchers(k: Kaufvertrag, vb: Person) kind institutional {
+    label de official "Anspruch des Verbrauchers auf Vorschuss für Aufwendungen, die ihm im Rahmen der Nacherfüllung gemäß § 439 Abs. 2 und 3 entstehen (§ 475 Abs. 5)";
+    label en unofficial "consumer's claim to an advance for expenses incurred in the course of the cure under § 439 (2) and (3) (§ 475 (5))";
+}
+pub relation pflicht_kosten_der_rueckgabe(k: Kaufvertrag, un: Person) kind institutional {
+    label de official "im Fall des Rücktritts oder des Schadensersatzes statt der ganzen Leistung trägt der Unternehmer die Kosten der Rückgabe der Ware (§ 475 Abs. 7)";
+    label en unofficial "in the case of withdrawal or damages in lieu of the entire performance the trader bears the costs of returning the goods (§ 475 (7))";
+}
+pub relation ruecktritt_oder_schadensersatz_statt_der_ganzen_leistung(k: Kaufvertrag) kind empirical {
+    label de official "der Verbraucher tritt wegen eines Mangels der Ware zurück oder verlangt Schadensersatz statt der ganzen Leistung (§ 475 Abs. 7)";
+    label en unofficial "the consumer withdraws or claims damages in lieu of the entire performance because of a defect (§ 475 (7))";
+}
+
+pub relation information_erteilt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Unternehmer hat vor der Nacherfüllung informiert (§ 475 Abs. 4)";
+    label en unofficial "the trader informed the consumer before the cure (§ 475 (4))";
+}
+pub relation rueckgabekosten_getragen_am(k: Kaufvertrag, tag: Date) kind empirical {
+    label de official "der Unternehmer hat die Kosten der Rückgabe getragen (§ 475 Abs. 7)";
+    label en unofficial "the trader bore the costs of returning the goods (§ 475 (7))";
+}
+
+@source(BGB_P475)
+pub external judgment relation nacherfuellung_in_angemessener_frist_und_ohne_erhebliche_unannehmlichkeiten(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 475 Abs. 6 Satz 1. Der Unternehmer hat die Nacherfüllung innerhalb einer angemessenen Frist ab der Unterrichtung über den Mangel und ohne erhebliche Unannehmlichkeiten für den Verbraucher durchgeführt, wobei die Art der Ware und der Zweck, für den der Verbraucher sie benötigt, zu berücksichtigen sind";
+    label en unofficial "§ 475 (6) sentence 1. The trader carried out the cure within a reasonable time from being informed of the defect and without significant inconvenience to the consumer, having regard to the kind of the goods and the purpose for which the consumer needs them";
+}
+
+@source(BGB_P475)
+rule Leistungszeit475Abs1(k: Kaufvertrag, t: Date) strict {
+    label de official "Ist eine Zeit für die nach § 433 zu erbringenden Leistungen weder bestimmt noch aus den Umständen zu entnehmen, so kann der Gläubiger diese Leistungen abweichend von § 271 Abs. 1 nur unverzüglich verlangen; der Unternehmer muss die Ware in diesem Fall spätestens 30 Tage nach Vertragsschluss übergeben (§ 475 Abs. 1 Sätze 1, 2)";
+    label en unofficial "Where no time for the performances owed under § 433 is fixed or ascertainable, the creditor may demand them, by derogation from § 271 (1), only without undue delay; in that case the trader must deliver the goods at the latest 30 days after conclusion of the contract (§ 475 (1) sentences 1, 2)";
+    when vorschriften_des_untertitels_anwendbar(k) and leistungszeit_weder_bestimmt_noch_zu_entnehmen(k)
+     and vertragsschluss_am(k, t);
+    then spaetester_uebergabetag(k, add_calendar_period(t, 30 calendar_day));
+}
+
+@source(BGB_P475)
+rule Gefahruebergang475Abs2(k: Kaufvertrag, t: Date) strict {
+    label de official "§ 447 Abs. 1 gilt mit der Maßgabe, dass die Gefahr nur dann auf den Käufer übergeht, wenn der Käufer die zur Ausführung der Versendung bestimmte Person beauftragt hat und der Unternehmer sie dem Käufer nicht zuvor benannt hat (§ 475 Abs. 2)";
+    label en unofficial "§ 447 (1) applies subject to the proviso that the risk passes to the buyer only where the buyer commissioned the person designated to carry out the dispatch and the trader had not named that person to him beforehand (§ 475 (2))";
+    when vorschriften_des_untertitels_anwendbar(k) and versendung_auf_verlangen_des_kaeufers(k)
+     and kaeufer_beauftragte_versendungsperson(k) and not unternehmer_hat_person_zuvor_benannt(k)
+     and auslieferung_an_versendungsperson_am(k, t) and not uebergabe_am(k, t);
+    then gefahruebergang_am(k, t);
+}
+
+@source(BGB_P475)
+rule Informationspflicht475Abs4(k: Kaufvertrag, un: Person, art: Nacherfuellungsart) strict {
+    label de official "Bevor der Unternehmer die Nacherfüllung gemäß § 439 durchführt, hat er den Verbraucher über sein Wahlrecht nach § 439 Abs. 1 und über die einmalige Verlängerung der Verjährungsfrist um zwölf Monate nach § 475e Abs. 5 zu informieren (§ 475 Abs. 4)";
+    label en unofficial "Before carrying out the cure under § 439 the trader must inform the consumer of his right of choice under § 439 (1) and of the one-off twelve-month extension of the limitation period under § 475e (5) (§ 475 (4))";
+    when vorschriften_des_untertitels_anwendbar(k) and anspruch_auf_nacherfuellung(k, art) and verkaeufer(k, un);
+    then informationspflicht_vor_nacherfuellung(k, un);
+}
+
+@source(BGB_P475)
+rule Position475Informationspflicht(k: Kaufvertrag, un: Person, vb: Person, beginn: Date, art: Nacherfuellungsart) strict {
+    label de official "Der Unternehmer ist verpflichtet, den Verbraucher vor der Nacherfüllung zu informieren (§ 475 Abs. 4)";
+    label en unofficial "The trader is obliged to inform the consumer before the cure (§ 475 (4))";
+    when vorschriften_des_untertitels_anwendbar(k) and anspruch_auf_nacherfuellung(k, art)
+     and verkaeufer(k, un) and kaeufer(k, vb) and vertragsschluss_am(k, beginn);
+    then duty Duty475Informationspflicht {
+        bearer un;
+        beneficiary vb;
+        achieve information_erteilt_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P475)
+rule Vorschuss475Abs5(k: Kaufvertrag, vb: Person, art: Nacherfuellungsart) strict {
+    label de official "Der Verbraucher kann von dem Unternehmer für Aufwendungen, die ihm im Rahmen der Nacherfüllung gemäß § 439 Abs. 2 und 3 entstehen und die vom Unternehmer zu tragen sind, Vorschuss verlangen (§ 475 Abs. 5)";
+    label en unofficial "The consumer may demand from the trader an advance for expenses incurred in the course of the cure under § 439 (2) and (3) which the trader must bear (§ 475 (5))";
+    when vorschriften_des_untertitels_anwendbar(k) and anspruch_auf_nacherfuellung(k, art) and kaeufer(k, vb);
+    then vorschussanspruch_des_verbrauchers(k, vb);
+}
+
+@source(BGB_P475)
+rule Rueckgabekosten475Abs7(k: Kaufvertrag, un: Person) strict {
+    label de official "Im Fall des Rücktritts oder des Schadensersatzes statt der ganzen Leistung wegen eines Mangels der Ware ist § 346 mit der Maßgabe anzuwenden, dass der Unternehmer die Kosten der Rückgabe der Ware trägt (§ 475 Abs. 7 Satz 1)";
+    label en unofficial "In the case of withdrawal or damages in lieu of the entire performance because of a defect, § 346 applies subject to the proviso that the trader bears the costs of returning the goods (§ 475 (7) sentence 1)";
+    when vorschriften_des_untertitels_anwendbar(k) and ruecktritt_oder_schadensersatz_statt_der_ganzen_leistung(k)
+     and verkaeufer(k, un);
+    then pflicht_kosten_der_rueckgabe(k, un);
+}
+
+@source(BGB_P475)
+rule Position475Rueckgabekosten(k: Kaufvertrag, un: Person, vb: Person, beginn: Date) strict {
+    label de official "Der Unternehmer ist verpflichtet, die Kosten der Rückgabe der Ware zu tragen (§ 475 Abs. 7)";
+    label en unofficial "The trader is obliged to bear the costs of returning the goods (§ 475 (7))";
+    when vorschriften_des_untertitels_anwendbar(k) and ruecktritt_oder_schadensersatz_statt_der_ganzen_leistung(k)
+     and verkaeufer(k, un) and kaeufer(k, vb) and vertragsschluss_am(k, beginn);
+    then duty Duty475Rueckgabekosten {
+        bearer un;
+        beneficiary vb;
+        achieve rueckgabekosten_getragen_am(k, beginn) during [beginn, infinity);
+    };
+}
+
+// --- § 475a Verbrauchsgüterkaufvertrag über digitale Produkte -------------------------------------
+
+pub relation koerperlicher_datentraeger_nur_fuer_digitale_inhalte(k: Kaufvertrag) kind empirical {
+    label de official "der Vertrag hat einen körperlichen Datenträger zum Gegenstand, der ausschließlich als Träger digitaler Inhalte dient (§ 475a Abs. 1)";
+    label en unofficial "the contract has as its object a tangible medium serving exclusively as a carrier of digital content (§ 475a (1))";
+}
+pub relation ware_funktionsfaehig_ohne_die_digitalen_produkte(k: Kaufvertrag) kind empirical {
+    label de official "die Ware enthält digitale Produkte oder ist mit ihnen so verbunden, dass sie ihre Funktionen auch ohne diese erfüllen kann (§ 475a Abs. 2)";
+    label en unofficial "the goods contain or are connected with digital products in such a way that they can perform their functions without them (§ 475a (2))";
+}
+
+@source(BGB_P475a)
+rule DigitaleProdukte475aAbs1(k: Kaufvertrag) strict {
+    label de official "Auf einen Verbrauchsgüterkaufvertrag über einen körperlichen Datenträger, der ausschließlich als Träger digitaler Inhalte dient, sind § 433 Abs. 1 Satz 2, die §§ 434 bis 442, 475 Abs. 3 Satz 1 und Abs. 4 bis 7 sowie die §§ 475b bis 475e, 476 und 477 nicht anzuwenden (§ 475a Abs. 1)";
+    label en unofficial "§ 433 (1) sentence 2, §§ 434 to 442, 475 (3) sentence 1 and (4) to (7) and §§ 475b to 475e, 476 and 477 do not apply to a consumer sales contract over a tangible medium serving exclusively as a carrier of digital content (§ 475a (1))";
+    when verbrauchsgueterkauf(k) and koerperlicher_datentraeger_nur_fuer_digitale_inhalte(k);
+    then maengelvorschriften_nicht_anzuwenden(k);
+}
+
+@source(BGB_P475a)
+rule DigitaleProdukte475aAbs2(k: Kaufvertrag) strict {
+    label de official "Auf die Bestandteile des Vertrags, welche die digitalen Produkte betreffen, sind bei einer auch ohne sie funktionsfähigen Ware dieselben Vorschriften nicht anzuwenden (§ 475a Abs. 2)";
+    label en unofficial "The same provisions do not apply to those parts of the contract concerning the digital products where the goods function without them (§ 475a (2))";
+    when verbrauchsgueterkauf(k) and ware_funktionsfaehig_ohne_die_digitalen_produkte(k);
+    then maengelvorschriften_nicht_anzuwenden(k);
+}
+
+// --- §§ 475b, 475c Ware mit digitalen Elementen ---------------------------------------------------
+
+pub relation ware_mit_digitalen_elementen(k: Kaufvertrag) kind empirical {
+    label de official "Kauf einer Ware mit digitalen Elementen (§ 327a Abs. 3 Satz 1), bei dem sich der Unternehmer verpflichtet, dass er oder ein Dritter die digitalen Elemente bereitstellt (§ 475b Abs. 1)";
+    label en unofficial "sale of goods with digital elements (§ 327a (3) sentence 1) where the trader undertakes that he or a third party will provide the digital elements (§ 475b (1))";
+}
+pub relation vereinbarte_aktualisierungen_bereitgestellt(k: Kaufvertrag) kind empirical {
+    label de official "für die digitalen Elemente werden die im Kaufvertrag vereinbarten Aktualisierungen während des nach dem Vertrag maßgeblichen Zeitraums bereitgestellt (§ 475b Abs. 3 Nr. 2)";
+    label en unofficial "the updates agreed in the contract are provided for the digital elements during the period relevant under the contract (§ 475b (3) no. 2)";
+}
+
+@source(BGB_P475b)
+pub external judgment relation erwartbarer_aktualisierungszeitraum_eingehalten(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 475b Abs. 4 Nr. 2. Dem Verbraucher werden während des Zeitraums, den er aufgrund der Art und des Zwecks der Ware und ihrer digitalen Elemente sowie unter Berücksichtigung der Umstände und der Art des Vertrags erwarten kann, die für den Erhalt der Vertragsmäßigkeit erforderlichen Aktualisierungen bereitgestellt und er wird über sie informiert";
+    label en unofficial "§ 475b (4) no. 2. During the period the consumer can expect, having regard to the kind and purpose of the goods and their digital elements and to the circumstances and nature of the contract, the updates necessary to maintain conformity are provided to him and he is informed of them";
+}
+
+pub relation aktualisierung_nicht_installiert(k: Kaufvertrag) kind empirical {
+    label de official "der Verbraucher hat es unterlassen, eine gemäß § 475b Abs. 4 bereitgestellte Aktualisierung innerhalb einer angemessenen Frist zu installieren (§ 475b Abs. 5)";
+    label en unofficial "the consumer failed to install an update provided under § 475b (4) within a reasonable time (§ 475b (5))";
+}
+pub relation information_ueber_verfuegbarkeit_und_folgen(k: Kaufvertrag) kind empirical {
+    label de official "der Unternehmer hat den Verbraucher über die Verfügbarkeit der Aktualisierung und die Folgen einer unterlassenen Installation informiert (§ 475b Abs. 5 Nr. 1)";
+    label en unofficial "the trader informed the consumer of the availability of the update and of the consequences of failing to install it (§ 475b (5) no. 1)";
+}
+pub relation mangelhafte_installationsanleitung(k: Kaufvertrag) kind empirical {
+    label de official "die unterlassene oder unsachgemäße Installation ist auf eine dem Verbraucher bereitgestellte mangelhafte Installationsanleitung zurückzuführen (§ 475b Abs. 5 Nr. 2)";
+    label en unofficial "the failure to install, or the improper installation, is due to defective installation instructions provided to the consumer (§ 475b (5) no. 2)";
+}
+pub relation mangel_allein_wegen_fehlender_aktualisierung(k: Kaufvertrag) kind empirical {
+    label de official "der Sachmangel ist allein auf das Fehlen dieser Aktualisierung zurückzuführen (§ 475b Abs. 5)";
+    label en unofficial "the material defect is due solely to the absence of that update (§ 475b (5))";
+}
+pub relation installation_sachgemaess(k: Kaufvertrag) kind empirical {
+    label de official "die Installation der digitalen Elemente ist sachgemäß durchgeführt worden (§ 475b Abs. 6 Nr. 2 Buchst. a)";
+    label en unofficial "the installation of the digital elements was carried out properly (§ 475b (6) no. 2 letter a)";
+}
+pub relation unsachgemaesse_installation_ohne_zurechnung(k: Kaufvertrag) kind empirical {
+    label de official "die Installation ist zwar unsachgemäß durchgeführt worden, dies beruht jedoch weder auf einer unsachgemäßen Installation durch den Unternehmer noch auf einem Mangel der Anleitung (§ 475b Abs. 6 Nr. 2 Buchst. b)";
+    label en unofficial "the installation was improper, but this is due neither to improper installation by the trader nor to a defect in the instructions (§ 475b (6) no. 2 letter b)";
+}
+pub relation sachmangel_der_ware_mit_digitalen_elementen(k: Kaufvertrag) kind institutional {
+    label de official "die Ware mit digitalen Elementen ist mit einem Sachmangel behaftet (§ 475b Abs. 2) — eigener Kopf, damit die Frage nach dem Sachmangel des § 434 nicht das Urteil über den erwartbaren Aktualisierungszeitraum mitzieht";
+    label en unofficial "the goods with digital elements have a material defect (§ 475b (2)) — its own head, so that asking about the material defect of § 434 does not drag in the judgment on the expectable update period";
+}
+pub relation aktualisierungspflicht_verletzt(k: Kaufvertrag) kind institutional {
+    label de official "die Aktualisierungspflicht nach § 475b Abs. 3 Nr. 2 oder Abs. 4 Nr. 2 ist verletzt";
+    label en unofficial "the update obligation under § 475b (3) no. 2 or (4) no. 2 has been breached";
+}
+pub relation installationsanforderungen_erfuellt(k: Kaufvertrag) kind institutional {
+    label de official "die Ware mit digitalen Elementen entspricht den Installationsanforderungen (§ 475b Abs. 6 Nr. 2)";
+    label en unofficial "the goods with digital elements meet the installation requirements (§ 475b (6) no. 2)";
+}
+pub relation keine_haftung_fuer_fehlende_aktualisierung(k: Kaufvertrag, un: Person) kind institutional {
+    label de official "der Unternehmer haftet nicht für einen Sachmangel, der allein auf das Fehlen der nicht installierten Aktualisierung zurückzuführen ist (§ 475b Abs. 5)";
+    label en unofficial "the trader is not liable for a material defect due solely to the absence of the update not installed (§ 475b (5))";
+}
+
+@source(BGB_P475b)
+rule Aktualisierungspflicht475bAbs3(k: Kaufvertrag) strict {
+    label de official "Eine Ware mit digitalen Elementen entspricht den subjektiven Anforderungen nur, wenn für die digitalen Elemente die vereinbarten Aktualisierungen während des maßgeblichen Zeitraums bereitgestellt werden (§ 475b Abs. 3 Nr. 2); unterbleiben sie, ist die Aktualisierungspflicht verletzt";
+    label en unofficial "Goods with digital elements meet the subjective requirements only where the agreed updates are provided during the relevant period (§ 475b (3) no. 2); if they are not, the update obligation is breached";
+    when ware_mit_digitalen_elementen(k) and not vereinbarte_aktualisierungen_bereitgestellt(k);
+    then aktualisierungspflicht_verletzt(k);
+}
+
+@source(BGB_P475b)
+rule Aktualisierungspflicht475bAbs4(k: Kaufvertrag) strict {
+    label de official "Eine Ware mit digitalen Elementen entspricht den objektiven Anforderungen nur, wenn dem Verbraucher während des erwartbaren Zeitraums die erforderlichen Aktualisierungen bereitgestellt werden und er über sie informiert wird (§ 475b Abs. 4 Nr. 2)";
+    label en unofficial "Goods with digital elements meet the objective requirements only where the necessary updates are provided to the consumer during the expectable period and he is informed of them (§ 475b (4) no. 2)";
+    when ware_mit_digitalen_elementen(k) and not erwartbarer_aktualisierungszeitraum_eingehalten(k);
+    then aktualisierungspflicht_verletzt(k);
+}
+
+@source(BGB_P475b)
+rule Sachmangel475bAktualisierung(k: Kaufvertrag) strict {
+    label de official "Eine Ware mit digitalen Elementen ist nur dann frei von Sachmängeln, wenn sie auch in Bezug auf die Aktualisierungspflicht den Anforderungen entspricht (§ 475b Abs. 2)";
+    label en unofficial "Goods with digital elements are free from material defects only where they also meet the requirements as to the update obligation (§ 475b (2))";
+    when aktualisierungspflicht_verletzt(k) and not_known(keine_haftung_fuer_fehlende_aktualisierung_festgestellt(k));
+    then sachmangel_der_ware_mit_digitalen_elementen(k);
+}
+
+relation keine_haftung_fuer_fehlende_aktualisierung_festgestellt(k: Kaufvertrag) kind institutional {
+    label de official "der Haftungsausschluss des § 475b Abs. 5 greift ein";
+    label en unofficial "the exclusion of liability under § 475b (5) applies";
+}
+
+@source(BGB_P475b)
+rule Haftungsausschluss475bAbs5(k: Kaufvertrag) strict {
+    label de official "Unterlässt es der Verbraucher, eine bereitgestellte Aktualisierung innerhalb einer angemessenen Frist zu installieren, so haftet der Unternehmer nicht für einen Sachmangel, der allein auf ihr Fehlen zurückzuführen ist, wenn er über Verfügbarkeit und Folgen informiert hat und die unterbliebene Installation nicht auf einer mangelhaften Anleitung beruht (§ 475b Abs. 5)";
+    label en unofficial "Where the consumer fails to install a provided update within a reasonable time, the trader is not liable for a material defect due solely to its absence, provided he informed of availability and consequences and the failure is not due to defective instructions (§ 475b (5))";
+    when aktualisierung_nicht_installiert(k) and mangel_allein_wegen_fehlender_aktualisierung(k)
+     and information_ueber_verfuegbarkeit_und_folgen(k) and not mangelhafte_installationsanleitung(k);
+    then keine_haftung_fuer_fehlende_aktualisierung_festgestellt(k);
+}
+
+@source(BGB_P475b)
+rule Haftungsausschluss475bAbs5Partei(k: Kaufvertrag, un: Person) strict {
+    label de official "Träger des Haftungsausschlusses des § 475b Abs. 5 ist der Unternehmer";
+    label en unofficial "The exclusion of liability under § 475b (5) benefits the trader";
+    when keine_haftung_fuer_fehlende_aktualisierung_festgestellt(k) and verkaeufer(k, un);
+    then keine_haftung_fuer_fehlende_aktualisierung(k, un);
+}
+
+@source(BGB_P475b)
+rule Installationsanforderungen475bAbs6Nr2a(k: Kaufvertrag) strict {
+    label de official "Soweit eine Installation durchzuführen ist, entspricht eine Ware mit digitalen Elementen den Installationsanforderungen, wenn die Installation der digitalen Elemente sachgemäß durchgeführt worden ist (§ 475b Abs. 6 Nr. 2 Buchst. a)";
+    label en unofficial "In so far as installation is to be carried out, goods with digital elements meet the installation requirements where the installation of the digital elements was carried out properly (§ 475b (6) no. 2 letter a)";
+    when ware_mit_digitalen_elementen(k) and installation_sachgemaess(k);
+    then installationsanforderungen_erfuellt(k);
+}
+
+@source(BGB_P475b)
+rule Installationsanforderungen475bAbs6Nr2b(k: Kaufvertrag) strict {
+    label de official "Die Installationsanforderungen sind auch dann erfüllt, wenn die Installation zwar unsachgemäß durchgeführt worden ist, dies jedoch weder auf einer unsachgemäßen Installation durch den Unternehmer noch auf einem Mangel der Anleitung beruht (§ 475b Abs. 6 Nr. 2 Buchst. b)";
+    label en unofficial "The installation requirements are also met where the installation was improper but this is due neither to improper installation by the trader nor to a defect in the instructions (§ 475b (6) no. 2 letter b)";
+    when ware_mit_digitalen_elementen(k) and unsachgemaesse_installation_ohne_zurechnung(k);
+    then installationsanforderungen_erfuellt(k);
+}
+
+@source(BGB_P475b)
+rule Sachmangel475bInstallation(k: Kaufvertrag) strict {
+    label de official "Ist die Installation der digitalen Elemente unsachgemäß durchgeführt worden, ohne dass Buchstabe b eingreift, so ist die Ware mit einem Sachmangel behaftet (§ 475b Abs. 2, Abs. 6 Nr. 2)";
+    label en unofficial "Where the installation of the digital elements was improper without letter b applying, the goods have a material defect (§ 475b (2), (6) no. 2)";
+    when ware_mit_digitalen_elementen(k) and not installation_sachgemaess(k)
+     and not unsachgemaesse_installation_ohne_zurechnung(k);
+    then sachmangel_der_ware_mit_digitalen_elementen(k);
+}
+
+pub relation dauerhafte_bereitstellung_vereinbart(k: Kaufvertrag) kind empirical {
+    label de official "beim Kauf einer Ware mit digitalen Elementen ist eine dauerhafte Bereitstellung für die digitalen Elemente vereinbart (§ 475c Abs. 1 Satz 1)";
+    label en unofficial "a continuous provision of the digital elements is agreed on the sale of goods with digital elements (§ 475c (1) sentence 1)";
+}
+pub relation bereitstellungszeitraum_ende(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "letzter Tag des vereinbarten Bereitstellungszeitraums (§ 475c Abs. 2, § 475e Abs. 1)";
+    label en unofficial "last day of the agreed provision period (§ 475c (2), § 475e (1))";
+}
+pub relation mindesthaftung_digitale_elemente_bis(k: Kaufvertrag, tag: Date) kind institutional {
+    label de official "Tag, bis zu dem der Unternehmer mindestens für die Vertragsmäßigkeit der digitalen Elemente haftet: zwei Jahre ab der Ablieferung der Ware (§ 475c Abs. 2)";
+    label en unofficial "day up to which the trader is liable at least for the conformity of the digital elements: two years from delivery of the goods (§ 475c (2))";
+}
+
+@source(BGB_P475c)
+rule Mindesthaftung475cAbs2(k: Kaufvertrag, t: Date) strict {
+    label de official "Der Unternehmer haftet über die §§ 434 und 475b hinaus auch dafür, dass die digitalen Elemente während des Bereitstellungszeitraums, mindestens aber für einen Zeitraum von zwei Jahren ab der Ablieferung der Ware, den Anforderungen des § 475b Abs. 2 entsprechen (§ 475c Abs. 2)";
+    label en unofficial "Beyond §§ 434 and 475b the trader is also liable for the digital elements meeting the requirements of § 475b (2) during the provision period, but at least for two years from delivery of the goods (§ 475c (2))";
+    when dauerhafte_bereitstellung_vereinbart(k) and ablieferung_am(k, t);
+    then mindesthaftung_digitale_elemente_bis(k, add_calendar_period(t, 2 calendar_year));
+}
+
+// --- § 475d Sonderbestimmungen für Rücktritt und Schadensersatz -----------------------------------
+
+pub relation nacherfuellung_trotz_angemessener_frist_nicht_vorgenommen(k: Kaufvertrag) kind empirical {
+    label de official "der Unternehmer hat die Nacherfüllung trotz Ablaufs einer angemessenen Frist ab der Unterrichtung über den Mangel nicht vorgenommen (§ 475d Abs. 1 Nr. 1)";
+    label en unofficial "the trader did not carry out the cure despite the expiry of a reasonable period from being informed of the defect (§ 475d (1) no. 1)";
+}
+pub relation mangel_zeigt_sich_trotz_versuchter_nacherfuellung(k: Kaufvertrag) kind empirical {
+    label de official "trotz der vom Unternehmer versuchten Nacherfüllung zeigt sich ein Mangel (§ 475d Abs. 1 Nr. 2)";
+    label en unofficial "a defect appears despite the cure attempted by the trader (§ 475d (1) no. 2)";
+}
+pub relation nacherfuellung_verweigert(k: Kaufvertrag) kind empirical {
+    label de official "der Unternehmer hat die ordnungsgemäße Nacherfüllung gemäß § 439 Abs. 1 oder 2 oder § 475 Abs. 6 verweigert (§ 475d Abs. 1 Nr. 4)";
+    label en unofficial "the trader refused the proper cure under § 439 (1) or (2) or § 475 (6) (§ 475d (1) no. 4)";
+}
+pub relation offensichtlich_keine_ordnungsgemaesse_nacherfuellung(k: Kaufvertrag) kind empirical {
+    label de official "es ist nach den Umständen offensichtlich, dass der Unternehmer nicht ordnungsgemäß nacherfüllen wird (§ 475d Abs. 1 Nr. 5)";
+    label en unofficial "it is obvious in the circumstances that the trader will not properly carry out the cure (§ 475d (1) no. 5)";
+}
+
+@source(BGB_P475d)
+pub external judgment relation mangel_derart_schwerwiegend(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 475d Abs. 1 Nr. 3. Der Mangel ist derart schwerwiegend, dass der sofortige Rücktritt gerechtfertigt ist";
+    label en unofficial "§ 475d (1) no. 3. The defect is so serious as to justify immediate withdrawal";
+}
+
+pub relation fristsetzung_fuer_ruecktritt_entbehrlich_475d(k: Kaufvertrag) kind institutional {
+    label de official "für einen Rücktritt wegen eines Mangels der Ware bedarf es der Fristsetzung zur Nacherfüllung nicht (§ 475d Abs. 1)";
+    label en unofficial "no period for cure need be fixed for withdrawal because of a defect in the goods (§ 475d (1))";
+}
+pub relation fristsetzung_fuer_schadensersatz_entbehrlich_475d(k: Kaufvertrag) kind institutional {
+    label de official "für einen Anspruch auf Schadensersatz wegen eines Mangels der Ware bedarf es der Fristsetzung nicht (§ 475d Abs. 2)";
+    label en unofficial "no period need be fixed for a claim for damages because of a defect in the goods (§ 475d (2))";
+}
+
+@source(BGB_P475d)
+rule Ruecktritt475dAbs1Nr1(k: Kaufvertrag) strict {
+    label de official "Für einen Rücktritt bedarf es der Fristsetzung nicht, wenn der Unternehmer die Nacherfüllung trotz Ablaufs einer angemessenen Frist ab der Unterrichtung über den Mangel nicht vorgenommen hat (§ 475d Abs. 1 Nr. 1)";
+    label en unofficial "No period need be fixed for withdrawal where the trader did not carry out the cure despite the expiry of a reasonable period (§ 475d (1) no. 1)";
+    when vorschriften_des_untertitels_anwendbar(k) and nacherfuellung_trotz_angemessener_frist_nicht_vorgenommen(k);
+    then fristsetzung_fuer_ruecktritt_entbehrlich_475d(k);
+}
+
+@source(BGB_P475d)
+rule Ruecktritt475dAbs1Nr2(k: Kaufvertrag) strict {
+    label de official "Der Fristsetzung bedarf es nicht, wenn sich trotz der vom Unternehmer versuchten Nacherfüllung ein Mangel zeigt (§ 475d Abs. 1 Nr. 2)";
+    label en unofficial "No period need be fixed where a defect appears despite the cure attempted by the trader (§ 475d (1) no. 2)";
+    when vorschriften_des_untertitels_anwendbar(k) and mangel_zeigt_sich_trotz_versuchter_nacherfuellung(k);
+    then fristsetzung_fuer_ruecktritt_entbehrlich_475d(k);
+}
+
+@source(BGB_P475d)
+rule Ruecktritt475dAbs1Nr3(k: Kaufvertrag) strict {
+    label de official "Der Fristsetzung bedarf es nicht, wenn der Mangel derart schwerwiegend ist, dass der sofortige Rücktritt gerechtfertigt ist (§ 475d Abs. 1 Nr. 3)";
+    label en unofficial "No period need be fixed where the defect is so serious as to justify immediate withdrawal (§ 475d (1) no. 3)";
+    when vorschriften_des_untertitels_anwendbar(k) and mangel_derart_schwerwiegend(k);
+    then fristsetzung_fuer_ruecktritt_entbehrlich_475d(k);
+}
+
+@source(BGB_P475d)
+rule Ruecktritt475dAbs1Nr4(k: Kaufvertrag) strict {
+    label de official "Der Fristsetzung bedarf es nicht, wenn der Unternehmer die ordnungsgemäße Nacherfüllung verweigert hat (§ 475d Abs. 1 Nr. 4)";
+    label en unofficial "No period need be fixed where the trader refused the proper cure (§ 475d (1) no. 4)";
+    when vorschriften_des_untertitels_anwendbar(k) and nacherfuellung_verweigert(k);
+    then fristsetzung_fuer_ruecktritt_entbehrlich_475d(k);
+}
+
+@source(BGB_P475d)
+rule Ruecktritt475dAbs1Nr5(k: Kaufvertrag) strict {
+    label de official "Der Fristsetzung bedarf es nicht, wenn es nach den Umständen offensichtlich ist, dass der Unternehmer nicht ordnungsgemäß nacherfüllen wird (§ 475d Abs. 1 Nr. 5)";
+    label en unofficial "No period need be fixed where it is obvious in the circumstances that the trader will not properly carry out the cure (§ 475d (1) no. 5)";
+    when vorschriften_des_untertitels_anwendbar(k) and offensichtlich_keine_ordnungsgemaesse_nacherfuellung(k);
+    then fristsetzung_fuer_ruecktritt_entbehrlich_475d(k);
+}
+
+@source(BGB_P475d)
+rule Schadensersatz475dAbs2(k: Kaufvertrag) strict {
+    label de official "Für einen Anspruch auf Schadensersatz wegen eines Mangels der Ware bedarf es der in § 281 Abs. 1 bestimmten Fristsetzung in den in Absatz 1 bestimmten Fällen nicht; § 281 Abs. 2 und § 440 sind nicht anzuwenden (§ 475d Abs. 2)";
+    label en unofficial "No period under § 281 (1) need be fixed for a claim for damages in the cases of subsection (1); § 281 (2) and § 440 do not apply (§ 475d (2))";
+    when fristsetzung_fuer_ruecktritt_entbehrlich_475d(k);
+    then fristsetzung_fuer_schadensersatz_entbehrlich_475d(k);
+}
+
+// --- § 475e Sonderbestimmungen für die Verjährung -------------------------------------------------
+
+pub relation aktualisierungszeitraum_ende(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "letzter Tag des Zeitraums der Aktualisierungspflicht (§ 475e Abs. 2)";
+    label en unofficial "last day of the period of the update obligation (§ 475e (2))";
+}
+pub relation mangel_erstmals_gezeigt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem sich der Mangel erstmals gezeigt hat (§ 475e Abs. 3, § 477)";
+    label en unofficial "day on which the defect first appeared (§ 475e (3), § 477)";
+}
+pub relation nachgebesserte_ware_uebergeben_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem die nachgebesserte oder ersetzte Ware dem Verbraucher übergeben wurde (§ 475e Abs. 4)";
+    label en unofficial "day on which the repaired or replaced goods were handed over to the consumer (§ 475e (4))";
+}
+pub relation nachbesserung_geleistet(k: Kaufvertrag) kind empirical {
+    label de official "Nacherfüllung ist gemäß § 439 durch Nachbesserung geleistet worden (§ 475e Abs. 5)";
+    label en unofficial "cure was effected by repair under § 439 (§ 475e (5))";
+}
+pub relation verjaehrung_nicht_vor_475e(a: Anspruch, tag: Date) kind institutional {
+    label de official "Tag, vor dessen Ablauf die Verjährung nach § 475e nicht eintritt";
+    label en unofficial "day before whose expiry limitation does not occur under § 475e";
+}
+pub relation verlaengerte_frist_475e_abs5(a: Anspruch, tag: Date) kind institutional {
+    label de official "um zwölf Monate einmalig verlängerte ursprüngliche Verjährungsfrist (§ 475e Abs. 5)";
+    label en unofficial "original limitation period extended once by twelve months (§ 475e (5))";
+}
+
+@source(BGB_P475e)
+rule Verjaehrung475eAbs1(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Im Fall der dauerhaften Bereitstellung digitaler Elemente verjähren Ansprüche wegen eines Mangels an den digitalen Elementen nicht vor dem Ablauf von zwölf Monaten nach dem Ende des Bereitstellungszeitraums (§ 475e Abs. 1)";
+    label en unofficial "In the case of continuous provision of digital elements, claims for a defect in the digital elements do not become time-barred before the expiry of twelve months after the end of the provision period (§ 475e (1))";
+    when maengelanspruch(a, k) and dauerhafte_bereitstellung_vereinbart(k) and bereitstellungszeitraum_ende(k, t);
+    then verjaehrung_nicht_vor_475e(a, add_calendar_period(t, 12 calendar_month));
+}
+
+@source(BGB_P475e)
+rule Verjaehrung475eAbs2(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Ansprüche wegen einer Verletzung der Aktualisierungspflicht verjähren nicht vor dem Ablauf von zwölf Monaten nach dem Ende des Zeitraums der Aktualisierungspflicht (§ 475e Abs. 2)";
+    label en unofficial "Claims for breach of the update obligation do not become time-barred before the expiry of twelve months after the end of the period of that obligation (§ 475e (2))";
+    when maengelanspruch(a, k) and aktualisierungspflicht_verletzt(k) and aktualisierungszeitraum_ende(k, t);
+    then verjaehrung_nicht_vor_475e(a, add_calendar_period(t, 12 calendar_month));
+}
+
+@source(BGB_P475e)
+rule Verjaehrung475eAbs3(a: Anspruch, k: Kaufvertrag, t: Date, e: Date) strict {
+    label de official "Hat sich ein Mangel innerhalb der Verjährungsfrist gezeigt, so tritt die Verjährung nicht vor dem Ablauf von vier Monaten nach dem Zeitpunkt ein, in dem sich der Mangel erstmals gezeigt hat (§ 475e Abs. 3)";
+    label en unofficial "Where a defect appeared within the limitation period, limitation does not occur before the expiry of four months after the defect first appeared (§ 475e (3))";
+    when maengelanspruch(a, k) and vorschriften_des_untertitels_anwendbar(k)
+     and mangel_erstmals_gezeigt_am(k, t) and frist_ende_438(a, e) and t <= e;
+    then verjaehrung_nicht_vor_475e(a, add_calendar_period(t, 4 calendar_month));
+}
+
+@source(BGB_P475e)
+rule Verjaehrung475eAbs4(a: Anspruch, k: Kaufvertrag, t: Date) strict {
+    label de official "Hat der Verbraucher zur Nacherfüllung oder zur Erfüllung von Garantieansprüchen die Ware übergeben, so tritt die Verjährung nicht vor dem Ablauf von zwei Monaten nach der Übergabe der nachgebesserten oder ersetzten Ware ein (§ 475e Abs. 4)";
+    label en unofficial "Where the consumer handed over the goods for cure or under a guarantee, limitation does not occur before the expiry of two months after the repaired or replaced goods were handed over (§ 475e (4))";
+    when maengelanspruch(a, k) and vorschriften_des_untertitels_anwendbar(k) and nachgebesserte_ware_uebergeben_am(k, t);
+    then verjaehrung_nicht_vor_475e(a, add_calendar_period(t, 2 calendar_month));
+}
+
+@source(BGB_P475e)
+rule Verjaehrung475eAbs5(a: Anspruch, k: Kaufvertrag, e: Date) strict {
+    label de official "Wird Nacherfüllung gemäß § 439 durch Nachbesserung geleistet, verlängert sich die ursprüngliche Verjährungsfrist von Ansprüchen wegen eines Mangels einmalig um zwölf Monate (§ 475e Abs. 5)";
+    label en unofficial "Where cure is effected by repair under § 439 the original limitation period for claims in respect of a defect is extended once by twelve months (§ 475e (5))";
+    when maengelanspruch(a, k) and vorschriften_des_untertitels_anwendbar(k) and nachbesserung_geleistet(k)
+     and regelfrist_ende_438(a, e);
+    then verlaengerte_frist_475e_abs5(a, add_calendar_period(e, 12 calendar_month));
+}
+
+// --- § 476 Abweichende Vereinbarungen -------------------------------------------------------------
+
+pub relation vereinbarung_zum_nachteil_des_verbrauchers(k: Kaufvertrag) kind empirical {
+    label de official "eine vor Mitteilung eines Mangels an den Unternehmer getroffene Vereinbarung, die zum Nachteil des Verbrauchers von den §§ 433 bis 435, 437, 439 bis 441 und 443 sowie von den Vorschriften dieses Untertitels abweicht (§ 476 Abs. 1 Satz 1)";
+    label en unofficial "an agreement made before notification of a defect which derogates, to the consumer's detriment, from §§ 433 to 435, 437, 439 to 441 and 443 and from the provisions of this sub-title (§ 476 (1) sentence 1)";
+}
+pub relation verbraucher_eigens_in_kenntnis_gesetzt(k: Kaufvertrag) kind empirical {
+    label de official "der Verbraucher wurde vor der Abgabe seiner Vertragserklärung eigens davon in Kenntnis gesetzt, dass ein bestimmtes Merkmal der Ware von den objektiven Anforderungen abweicht (§ 476 Abs. 1 Satz 2 Nr. 1)";
+    label en unofficial "before making his contractual declaration the consumer was specifically informed that a particular feature of the goods deviates from the objective requirements (§ 476 (1) sentence 2 no. 1)";
+}
+pub relation abweichung_ausdruecklich_und_gesondert_vereinbart(k: Kaufvertrag) kind empirical {
+    label de official "die Abweichung wurde im Vertrag ausdrücklich und gesondert vereinbart (§ 476 Abs. 1 Satz 2 Nr. 2)";
+    label en unofficial "the deviation was expressly and separately agreed in the contract (§ 476 (1) sentence 2 no. 2)";
+}
+pub relation verjaehrungsverkuerzung_vereinbart(k: Kaufvertrag) kind empirical {
+    label de official "die Verjährung der in § 437 bezeichneten Ansprüche ist vor Mitteilung eines Mangels durch Rechtsgeschäft erleichtert worden (§ 476 Abs. 2 Satz 1)";
+    label en unofficial "limitation of the claims under § 437 was eased by legal transaction before notification of a defect (§ 476 (2) sentence 1)";
+}
+pub relation vereinbarte_verjaehrungsfrist_unter_der_grenze(k: Kaufvertrag) kind empirical {
+    label de official "die Vereinbarung führt zu einer Verjährungsfrist ab dem gesetzlichen Verjährungsbeginn von weniger als zwei Jahren, bei gebrauchten Waren von weniger als einem Jahr (§ 476 Abs. 2 Satz 1)";
+    label en unofficial "the agreement results in a limitation period of less than two years from the statutory start, or less than one year for used goods (§ 476 (2) sentence 1)";
+}
+pub relation verkuerzung_eigens_mitgeteilt_und_gesondert_vereinbart(k: Kaufvertrag) kind empirical {
+    label de official "der Verbraucher wurde von der Verkürzung eigens in Kenntnis gesetzt und die Verkürzung wurde ausdrücklich und gesondert vereinbart (§ 476 Abs. 2 Satz 2 Nr. 1, 2)";
+    label en unofficial "the consumer was specifically informed of the shortening and it was expressly and separately agreed (§ 476 (2) sentence 2 nos. 1, 2)";
+}
+pub relation ausschluss_oder_beschraenkung_des_schadensersatzanspruchs(k: Kaufvertrag) kind empirical {
+    label de official "die Vereinbarung betrifft den Ausschluss oder die Beschränkung des Anspruchs auf Schadensersatz (§ 476 Abs. 3)";
+    label en unofficial "the agreement concerns the exclusion or limitation of the claim for damages (§ 476 (3))";
+}
+pub relation unternehmer_kann_sich_nicht_berufen(k: Kaufvertrag) kind institutional {
+    label de official "der Unternehmer kann sich auf die abweichende Vereinbarung nicht berufen (§ 476 Abs. 1 Satz 1)";
+    label en unofficial "the trader cannot rely on the derogating agreement (§ 476 (1) sentence 1)";
+}
+pub relation abweichung_von_objektiven_anforderungen_wirksam(k: Kaufvertrag) kind institutional {
+    label de official "von den Anforderungen nach § 434 Abs. 3 oder § 475b Abs. 4 kann wirksam abgewichen werden (§ 476 Abs. 1 Satz 2)";
+    label en unofficial "a valid derogation from the requirements of § 434 (3) or § 475b (4) may be made (§ 476 (1) sentence 2)";
+}
+pub relation verjaehrungsverkuerzung_wirksam(k: Kaufvertrag) kind institutional {
+    label de official "die Vereinbarung über die Verkürzung der Verjährungsfrist ist wirksam (§ 476 Abs. 2 Satz 2)";
+    label en unofficial "the agreement on shortening the limitation period is effective (§ 476 (2) sentence 2)";
+}
+
+@source(BGB_P476)
+rule AbweichendeVereinbarung476Abs1Satz1(k: Kaufvertrag) strict {
+    label de official "Auf eine vor Mitteilung eines Mangels getroffene Vereinbarung, die zum Nachteil des Verbrauchers abweicht, kann sich der Unternehmer nicht berufen (§ 476 Abs. 1 Satz 1); dies gilt nicht für den Ausschluss oder die Beschränkung des Schadensersatzanspruchs (Abs. 3)";
+    label en unofficial "The trader cannot rely on an agreement made before notification of a defect which derogates to the consumer's detriment (§ 476 (1) sentence 1); this does not apply to the exclusion or limitation of the claim for damages ((3))";
+    when vorschriften_des_untertitels_anwendbar(k) and vereinbarung_zum_nachteil_des_verbrauchers(k)
+     and not ausschluss_oder_beschraenkung_des_schadensersatzanspruchs(k);
+    then unternehmer_kann_sich_nicht_berufen(k);
+}
+
+@source(BGB_P476)
+rule AbweichendeVereinbarung476Abs1Satz2(k: Kaufvertrag) strict {
+    label de official "Von den Anforderungen nach § 434 Abs. 3 oder § 475b Abs. 4 kann vor Mitteilung eines Mangels abgewichen werden, wenn der Verbraucher eigens in Kenntnis gesetzt wurde und die Abweichung ausdrücklich und gesondert vereinbart wurde (§ 476 Abs. 1 Satz 2)";
+    label en unofficial "Derogation from the requirements of § 434 (3) or § 475b (4) is possible before notification of a defect where the consumer was specifically informed and the deviation was expressly and separately agreed (§ 476 (1) sentence 2)";
+    when vorschriften_des_untertitels_anwendbar(k) and verbraucher_eigens_in_kenntnis_gesetzt(k)
+     and abweichung_ausdruecklich_und_gesondert_vereinbart(k);
+    then abweichung_von_objektiven_anforderungen_wirksam(k);
+}
+
+@source(BGB_P476)
+rule Verjaehrungsverkuerzung476Abs2Zulaessig(k: Kaufvertrag) strict {
+    label de official "Die Verjährung der in § 437 bezeichneten Ansprüche kann vor Mitteilung eines Mangels erleichtert werden, solange die Vereinbarung nicht zu einer Frist unterhalb der Grenzen des Absatzes 2 Satz 1 führt (§ 476 Abs. 2)";
+    label en unofficial "Limitation of the claims under § 437 may be eased before notification of a defect as long as the agreement does not result in a period below the limits of subsection (2) sentence 1 (§ 476 (2))";
+    when vorschriften_des_untertitels_anwendbar(k) and verjaehrungsverkuerzung_vereinbart(k)
+     and not vereinbarte_verjaehrungsfrist_unter_der_grenze(k);
+    then verjaehrungsverkuerzung_wirksam(k);
+}
+
+@source(BGB_P476)
+rule Verjaehrungsverkuerzung476Abs2Satz2(k: Kaufvertrag) strict {
+    label de official "Die Vereinbarung ist nur wirksam, wenn der Verbraucher von der Verkürzung eigens in Kenntnis gesetzt wurde und die Verkürzung ausdrücklich und gesondert vereinbart wurde (§ 476 Abs. 2 Satz 2)";
+    label en unofficial "The agreement is effective only where the consumer was specifically informed of the shortening and it was expressly and separately agreed (§ 476 (2) sentence 2)";
+    when vorschriften_des_untertitels_anwendbar(k) and verjaehrungsverkuerzung_vereinbart(k)
+     and vereinbarte_verjaehrungsfrist_unter_der_grenze(k) and verkuerzung_eigens_mitgeteilt_und_gesondert_vereinbart(k);
+    then verjaehrungsverkuerzung_wirksam(k);
+}
+
+// --- § 477 Beweislastumkehr -----------------------------------------------------------------------
+
+pub relation lebendes_tier(k: Kaufvertrag) kind empirical {
+    label de official "Gegenstand des Kaufs ist ein lebendes Tier (§ 477 Abs. 1 Satz 2)";
+    label en unofficial "the object of the sale is a live animal (§ 477 (1) sentence 2)";
+}
+pub relation abweichender_zustand_gezeigt_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem sich ein von den Anforderungen nach § 434 oder § 475b abweichender Zustand der Ware gezeigt hat (§ 477 Abs. 1 Satz 1)";
+    label en unofficial "day on which a condition of the goods deviating from the requirements of § 434 or § 475b appeared (§ 477 (1) sentence 1)";
+}
+pub relation abweichender_zustand_der_digitalen_elemente_am(k: Kaufvertrag, tag: Date) kind empirical {
+    key(k);
+    label de official "Tag, an dem sich ein abweichender Zustand der digitalen Elemente gezeigt hat (§ 477 Abs. 2)";
+    label en unofficial "day on which a deviating condition of the digital elements appeared (§ 477 (2))";
+}
+relation vermutungsfenster_477_offen(k: Kaufvertrag) kind institutional {
+    label de official "der abweichende Zustand hat sich innerhalb des Vermutungszeitraums des § 477 gezeigt";
+    label en unofficial "the deviating condition appeared within the period of the presumption of § 477";
+}
+relation vermutungsfenster_477_abs2_offen(k: Kaufvertrag) kind institutional {
+    label de official "der abweichende Zustand der digitalen Elemente hat sich innerhalb des Zeitraums des § 477 Abs. 2 gezeigt";
+    label en unofficial "the deviating condition of the digital elements appeared within the period of § 477 (2)";
+}
+pub relation mangel_bei_gefahruebergang_vorhanden(k: Kaufvertrag) kind institutional {
+    label de official "die Ware war bereits bei Gefahrübergang mangelhaft (§ 477 Abs. 1)";
+    label en unofficial "the goods were already defective when the risk passed (§ 477 (1))";
+}
+pub relation digitale_elemente_waehrend_der_bereitstellung_mangelhaft(k: Kaufvertrag) kind institutional {
+    label de official "die digitalen Elemente waren während der bisherigen Dauer der Bereitstellung mangelhaft (§ 477 Abs. 2)";
+    label en unofficial "the digital elements were defective during the provision period up to that point (§ 477 (2))";
+}
+
+@source(BGB_P477)
+pub external judgment relation vermutung_mit_art_der_ware_unvereinbar(k: Kaufvertrag) {
+    authority Court;
+    label de official "§ 477 Abs. 1 Satz 1 letzter Halbsatz. Die Vermutung ist mit der Art der Ware oder des mangelhaften Zustands unvereinbar";
+    label en unofficial "§ 477 (1) sentence 1 final clause. The presumption is incompatible with the kind of the goods or of the defective condition";
+}
+
+@source(BGB_P477)
+rule Vermutungsfenster477Jahr(k: Kaufvertrag, g: Date, z: Date) strict {
+    label de official "Zeigt sich innerhalb eines Jahres seit Gefahrübergang ein abweichender Zustand der Ware, so ist das Fenster des § 477 Abs. 1 Satz 1 offen";
+    label en unofficial "Where a deviating condition of the goods appears within one year of the passing of risk, the window of § 477 (1) sentence 1 is open";
+    when vorschriften_des_untertitels_anwendbar(k) and not lebendes_tier(k) and gefahruebergang_am(k, g)
+     and abweichender_zustand_gezeigt_am(k, z) and z >= g and z <= add_calendar_period(g, 1 calendar_year);
+    then vermutungsfenster_477_offen(k);
+}
+
+@source(BGB_P477)
+rule Vermutungsfenster477Tier(k: Kaufvertrag, g: Date, z: Date) strict {
+    label de official "Beim Kauf eines lebenden Tieres gilt die Vermutung für einen Zeitraum von sechs Monaten seit Gefahrübergang (§ 477 Abs. 1 Satz 2)";
+    label en unofficial "On the purchase of a live animal the presumption applies for a period of six months from the passing of risk (§ 477 (1) sentence 2)";
+    when vorschriften_des_untertitels_anwendbar(k) and lebendes_tier(k) and gefahruebergang_am(k, g)
+     and abweichender_zustand_gezeigt_am(k, z) and z >= g and z <= add_calendar_period(g, 6 calendar_month);
+    then vermutungsfenster_477_offen(k);
+}
+
+@source(BGB_P477)
+presumption Beweislastumkehr477Abs1(k: Kaufvertrag) {
+    label de official "Zeigt sich innerhalb eines Jahres seit Gefahrübergang ein von den Anforderungen nach § 434 oder § 475b abweichender Zustand der Ware, so wird vermutet, dass die Ware bereits bei Gefahrübergang mangelhaft war, es sei denn, diese Vermutung ist mit der Art der Ware oder des mangelhaften Zustands unvereinbar (§ 477 Abs. 1 Satz 1)";
+    label en unofficial "Where a condition of the goods deviating from the requirements of § 434 or § 475b appears within one year of the passing of risk, it is presumed that the goods were already defective at that time, unless this presumption is incompatible with the kind of the goods or of the defective condition (§ 477 (1) sentence 1)";
+    when vermutungsfenster_477_offen(k);
+    presume mangel_bei_gefahruebergang_vorhanden(k);
+    unless vermutung_mit_art_der_ware_unvereinbar(k);
+}
+
+@source(BGB_P477)
+rule Vermutungsfenster477Abs2(k: Kaufvertrag, g: Date, z: Date) strict {
+    label de official "Ist bei Waren mit digitalen Elementen die dauerhafte Bereitstellung vereinbart und zeigt sich ein abweichender Zustand der digitalen Elemente während der Dauer der Bereitstellung oder innerhalb von zwei Jahren seit Gefahrübergang, so ist das Fenster des § 477 Abs. 2 offen";
+    label en unofficial "Where continuous provision is agreed for goods with digital elements and a deviating condition of the digital elements appears during the provision period or within two years of the passing of risk, the window of § 477 (2) is open";
+    when vorschriften_des_untertitels_anwendbar(k) and dauerhafte_bereitstellung_vereinbart(k)
+     and gefahruebergang_am(k, g) and abweichender_zustand_der_digitalen_elemente_am(k, z)
+     and z >= g and z <= add_calendar_period(g, 2 calendar_year);
+    then vermutungsfenster_477_abs2_offen(k);
+}
+
+@source(BGB_P477)
+rule Beweislastumkehr477Abs2(k: Kaufvertrag) strict {
+    label de official "So wird vermutet, dass die digitalen Elemente während der bisherigen Dauer der Bereitstellung mangelhaft waren (§ 477 Abs. 2) — Absatz 2 nennt keinen Ausnahmegrund";
+    label en unofficial "It is then presumed that the digital elements were defective during the provision period up to that point (§ 477 (2)) — subsection (2) names no ground of exception";
+    when vermutungsfenster_477_abs2_offen(k);
+    then digitale_elemente_waehrend_der_bereitstellung_mangelhaft(k);
+}
+
+// --- § 478 Sonderbestimmungen für den Rückgriff des Unternehmers ---------------------------------
+
+pub relation vermutungsfrist_beginnt_mit_gefahruebergang_auf_verbraucher(kl: Kaufvertrag) kind institutional {
+    label de official "im Rückgriff des Unternehmers beginnt die Frist des § 477 mit dem Übergang der Gefahr auf den Verbraucher (§ 478 Abs. 1)";
+    label en unofficial "in the trader's recourse the period of § 477 begins with the passing of the risk to the consumer (§ 478 (1))";
+}
+pub relation vereinbarung_zum_nachteil_des_unternehmers(kl: Kaufvertrag) kind empirical {
+    label de official "eine vor Mitteilung eines Mangels an den Lieferanten getroffene Vereinbarung, die zum Nachteil des Unternehmers von § 478 Abs. 1 und den dort genannten Vorschriften abweicht (§ 478 Abs. 2 Satz 1)";
+    label en unofficial "an agreement made before notification of a defect to the supplier which derogates to the trader's detriment from § 478 (1) and the provisions named there (§ 478 (2) sentence 1)";
+}
+pub relation gleichwertiger_ausgleich_eingeraeumt(kl: Kaufvertrag) kind empirical {
+    label de official "dem Rückgriffsgläubiger ist ein gleichwertiger Ausgleich eingeräumt (§ 478 Abs. 2 Satz 1)";
+    label en unofficial "an equivalent compensation was granted to the recourse creditor (§ 478 (2) sentence 1)";
+}
+pub relation lieferant_kann_sich_nicht_berufen(kl: Kaufvertrag) kind institutional {
+    label de official "der Lieferant kann sich auf die abweichende Vereinbarung nicht berufen (§ 478 Abs. 2 Satz 1)";
+    label en unofficial "the supplier cannot rely on the derogating agreement (§ 478 (2) sentence 1)";
+}
+
+@source(BGB_P478)
+rule Rueckgriff478Abs1(k: Kaufvertrag, kl: Kaufvertrag) strict {
+    label de official "Ist der letzte Vertrag in der Lieferkette ein Verbrauchsgüterkauf, findet § 477 in den Fällen des § 445a Abs. 1 und 2 mit der Maßgabe Anwendung, dass die Frist mit dem Übergang der Gefahr auf den Verbraucher beginnt (§ 478 Abs. 1)";
+    label en unofficial "Where the last contract in the supply chain is a sale of consumer goods, § 477 applies in the cases of § 445a (1) and (2) subject to the proviso that the period begins with the passing of the risk to the consumer (§ 478 (1))";
+    when verbrauchsgueterkauf(k) and lieferkette_vorvertrag(k, kl) and not letzter_vertrag_ueber_digitale_produkte(k);
+    then vermutungsfrist_beginnt_mit_gefahruebergang_auf_verbraucher(kl);
+}
+
+@source(BGB_P478)
+rule Rueckgriff478Abs2(kl: Kaufvertrag) strict {
+    label de official "Auf eine vor Mitteilung eines Mangels an den Lieferanten getroffene Vereinbarung, die zum Nachteil des Unternehmers abweicht, kann sich der Lieferant nicht berufen, wenn dem Rückgriffsgläubiger kein gleichwertiger Ausgleich eingeräumt wird (§ 478 Abs. 2 Satz 1)";
+    label en unofficial "The supplier cannot rely on an agreement made before notification of a defect which derogates to the trader's detriment where no equivalent compensation is granted to the recourse creditor (§ 478 (2) sentence 1)";
+    when vereinbarung_zum_nachteil_des_unternehmers(kl) and not gleichwertiger_ausgleich_eingeraeumt(kl);
+    then lieferant_kann_sich_nicht_berufen(kl);
+}
+
+// --- §§ 443, 479 Garantie -------------------------------------------------------------------------
+
+pub relation garantie_des_vertrags(g: Garantie, k: Kaufvertrag) kind empirical {
+    key(g);
+    label de official "Garantie, die zu diesem Kaufvertrag gegeben wurde (§ 443 Abs. 1)";
+    label en unofficial "guarantee given in respect of this contract of sale (§ 443 (1))";
+}
+pub relation garantiegeber(g: Garantie, p: Person) kind empirical {
+    key(g);
+    label de official "derjenige, der die Garantie gegeben hat (§ 443 Abs. 1)";
+    label en unofficial "the person who gave the guarantee (§ 443 (1))";
+}
+pub relation garantieerklaerung_vor_oder_bei_vertragsschluss_verfuegbar(g: Garantie) kind empirical {
+    label de official "die Erklärung oder einschlägige Werbung war vor oder bei Abschluss des Kaufvertrags verfügbar (§ 443 Abs. 1)";
+    label en unofficial "the declaration or relevant advertising was available before or at the conclusion of the contract (§ 443 (1))";
+}
+pub relation garantiefall_eingetreten(g: Garantie) kind empirical {
+    label de official "der Garantiefall ist eingetreten (§ 443 Abs. 1)";
+    label en unofficial "the guarantee event has occurred (§ 443 (1))";
+}
+pub relation haltbarkeitsgarantie(g: Garantie) kind empirical {
+    label de official "der Garantiegeber hat eine Garantie dafür übernommen, dass die Sache für eine bestimmte Dauer eine bestimmte Beschaffenheit behält (§ 443 Abs. 2)";
+    label en unofficial "the guarantor assumed a guarantee that the thing retains a particular quality for a particular period (§ 443 (2))";
+}
+pub relation sachmangel_waehrend_der_geltungsdauer(g: Garantie) kind empirical {
+    label de official "während der Geltungsdauer der Haltbarkeitsgarantie ist ein Sachmangel aufgetreten (§ 443 Abs. 2)";
+    label en unofficial "a material defect appeared during the term of the durability guarantee (§ 443 (2))";
+}
+pub relation garantiefall_widerlegt(g: Garantie) kind empirical {
+    label de official "die Vermutung des § 443 Abs. 2 ist widerlegt: der Sachmangel begründet die Rechte aus der Garantie nicht";
+    label en unofficial "the presumption of § 443 (2) is rebutted: the material defect does not give rise to rights under the guarantee";
+}
+pub relation garantiefall_vermutet(g: Garantie) kind institutional {
+    label de official "der Garantiefall wird nach § 443 Abs. 2 vermutet";
+    label en unofficial "the guarantee event is presumed under § 443 (2)";
+}
+pub relation garantiefall(g: Garantie) kind institutional {
+    label de official "der Garantiefall liegt vor — festgestellt oder nach § 443 Abs. 2 vermutet";
+    label en unofficial "the guarantee event is present — established or presumed under § 443 (2)";
+}
+pub relation rechte_aus_der_garantie(g: Garantie, ka: Person, gg: Person) kind institutional {
+    label de official "dem Käufer stehen im Garantiefall unbeschadet der gesetzlichen Ansprüche die Rechte aus der Garantie gegenüber dem Garantiegeber zu (§ 443 Abs. 1)";
+    label en unofficial "in the guarantee event the buyer has, without prejudice to his statutory claims, the rights under the guarantee against the guarantor (§ 443 (1))";
+}
+pub relation garantieerklaerung_enthaelt_pflichtangaben(g: Garantie) kind empirical {
+    label de official "die Garantieerklärung ist einfach und verständlich abgefasst und enthält die Angaben des § 479 Abs. 1 Satz 2 Nr. 1 bis 5";
+    label en unofficial "the guarantee statement is drafted plainly and intelligibly and contains the particulars of § 479 (1) sentence 2 nos. 1 to 5";
+}
+pub relation garantieerklaerung_auf_dauerhaftem_datentraeger(g: Garantie) kind empirical {
+    label de official "die Garantieerklärung ist dem Verbraucher spätestens zum Zeitpunkt der Lieferung der Ware auf einem dauerhaften Datenträger zur Verfügung gestellt worden (§ 479 Abs. 2)";
+    label en unofficial "the guarantee statement was made available to the consumer on a durable medium at the latest upon delivery of the goods (§ 479 (2))";
+}
+pub relation haltbarkeitsgarantie_des_herstellers(g: Garantie) kind empirical {
+    label de official "der Hersteller hat gegenüber dem Verbraucher eine Haltbarkeitsgarantie übernommen (§ 479 Abs. 3)";
+    label en unofficial "the manufacturer assumed a durability guarantee towards the consumer (§ 479 (3))";
+}
+pub relation anforderungen_an_die_garantieerklaerung_erfuellt(g: Garantie) kind institutional {
+    label de official "die Anforderungen des § 479 Abs. 1 und 2 an die Garantieerklärung sind erfüllt";
+    label en unofficial "the requirements of § 479 (1) and (2) for the guarantee statement are met";
+}
+pub relation garantieerklaerung_bereitgestellt_am(g: Garantie, tag: Date) kind empirical {
+    label de official "die Garantieerklärung wurde einfach und verständlich abgefasst und rechtzeitig auf dauerhaftem Datenträger bereitgestellt (§ 479 Abs. 1, 2)";
+    label en unofficial "the guarantee statement was drafted plainly and intelligibly and timely provided on a durable medium (§ 479 (1), (2))";
+}
+@source(BGB_P479)
+rule Position479Garantieerklaerung(g: Garantie, k: Kaufvertrag, gg: Person, vb: Person, beginn: Date) strict {
+    label de official "Der Garantiegeber ist verpflichtet, die Garantieerklärung verständlich und auf dauerhaftem Datenträger bereitzustellen (§ 479 Abs. 1, 2)";
+    label en unofficial "The guarantor is obliged to provide the guarantee statement intelligibly on a durable medium (§ 479 (1), (2))";
+    when garantie_des_vertrags(g, k) and garantiegeber(g, gg) and verbraucher(k, vb)
+     and garantieerklaerung_enthaelt_pflichtangaben(g)
+     and garantieerklaerung_auf_dauerhaftem_datentraeger(g)
+     and vertragsschluss_am(k, beginn);
+    then duty Duty479Garantieerklaerung {
+        bearer gg;
+        beneficiary vb;
+        achieve garantieerklaerung_bereitgestellt_am(g, beginn) during [beginn, infinity);
+    };
+}
+pub relation garantieverpflichtung_wirksam(g: Garantie) kind institutional {
+    label de official "die Wirksamkeit der Garantieverpflichtung wird nicht dadurch berührt, dass eine der Anforderungen nicht erfüllt wird (§ 479 Abs. 4)";
+    label en unofficial "the effectiveness of the guarantee obligation is not affected by the fact that one of the requirements is not met (§ 479 (4))";
+}
+pub relation nacherfuellungsanspruch_gegen_den_hersteller(g: Garantie, vb: Person) kind institutional {
+    label de official "der Verbraucher hat gegen den Hersteller während des Zeitraums der Garantie mindestens einen Anspruch auf Nacherfüllung gemäß § 439 Abs. 2, 3, 5 und 6 Satz 2 und § 475 Abs. 3 Satz 1 und Abs. 6 (§ 479 Abs. 3)";
+    label en unofficial "during the term of the guarantee the consumer has against the manufacturer at least a claim to cure under § 439 (2), (3), (5) and (6) sentence 2 and § 475 (3) sentence 1 and (6) (§ 479 (3))";
+}
+
+@source(BGB_P443)
+rule Garantie443Abs1(g: Garantie, k: Kaufvertrag, ka: Person, gg: Person) defeasible {
+    label de official "Geht der Verkäufer, der Hersteller oder ein sonstiger Dritter in einer vor oder bei Abschluss des Kaufvertrags verfügbaren Erklärung oder einschlägigen Werbung zusätzlich zu der gesetzlichen Mängelhaftung eine Verpflichtung ein, so stehen dem Käufer im Garantiefall die Rechte aus der Garantie gegenüber dem Garantiegeber zu (§ 443 Abs. 1)";
+    label en unofficial "Where the seller, the manufacturer or another third party undertakes an obligation in addition to statutory liability for defects in a declaration or relevant advertising available before or at the conclusion of the contract, the buyer has in the guarantee event the rights under the guarantee against the guarantor (§ 443 (1))";
+    when garantie_des_vertrags(g, k) and garantieerklaerung_vor_oder_bei_vertragsschluss_verfuegbar(g)
+     and garantiefall(g) and kaeufer(k, ka) and garantiegeber(g, gg);
+    then rechte_aus_der_garantie(g, ka, gg);
+}
+
+@source(BGB_P443)
+presumption Haltbarkeitsgarantie443Abs2(g: Garantie) {
+    label de official "Soweit der Garantiegeber eine Haltbarkeitsgarantie übernommen hat, wird vermutet, dass ein während ihrer Geltungsdauer auftretender Sachmangel die Rechte aus der Garantie begründet (§ 443 Abs. 2)";
+    label en unofficial "In so far as the guarantor assumed a durability guarantee, it is presumed that a material defect appearing during its term gives rise to the rights under the guarantee (§ 443 (2))";
+    when haltbarkeitsgarantie(g) and sachmangel_waehrend_der_geltungsdauer(g);
+    presume garantiefall_vermutet(g);
+    unless garantiefall_widerlegt(g);
+}
+
+@source(BGB_P443)
+rule Garantiefall443Festgestellt(g: Garantie) defeasible {
+    label de official "Der Garantiefall ist eingetreten (§ 443 Abs. 1) — Angabe des Falls";
+    label en unofficial "The guarantee event has occurred (§ 443 (1)) — statement of the case";
+    when garantiefall_eingetreten(g);
+    then garantiefall(g);
+}
+
+@source(BGB_P443)
+rule Garantiefall443Vermutet(g: Garantie) defeasible {
+    label de official "Der nach § 443 Abs. 2 vermutete Garantiefall steht dem festgestellten gleich";
+    label en unofficial "The guarantee event presumed under § 443 (2) is equivalent to the established one";
+    when garantiefall_vermutet(g);
+    then garantiefall(g);
+}
+
+@source(BGB_P479)
+rule Garantieerklaerung479Abs1Abs2(g: Garantie) strict {
+    label de official "Eine Garantieerklärung muss einfach und verständlich abgefasst sein und die Angaben der Nummern 1 bis 5 enthalten (§ 479 Abs. 1); sie ist dem Verbraucher spätestens zum Zeitpunkt der Lieferung auf einem dauerhaften Datenträger zur Verfügung zu stellen (Abs. 2)";
+    label en unofficial "A guarantee statement must be drafted plainly and intelligibly and contain the particulars of nos. 1 to 5 (§ 479 (1)); it must be made available to the consumer on a durable medium at the latest upon delivery ((2))";
+    when garantieerklaerung_enthaelt_pflichtangaben(g) and garantieerklaerung_auf_dauerhaftem_datentraeger(g);
+    then anforderungen_an_die_garantieerklaerung_erfuellt(g);
+}
+
+@source(BGB_P479)
+rule Garantie479Abs3(g: Garantie, k: Kaufvertrag, vb: Person) strict {
+    label de official "Hat der Hersteller gegenüber dem Verbraucher eine Haltbarkeitsgarantie übernommen, so hat der Verbraucher gegen den Hersteller während des Zeitraums der Garantie mindestens einen Anspruch auf Nacherfüllung (§ 479 Abs. 3)";
+    label en unofficial "Where the manufacturer assumed a durability guarantee towards the consumer, the consumer has against him during the term of the guarantee at least a claim to cure (§ 479 (3))";
+    when garantie_des_vertrags(g, k) and haltbarkeitsgarantie_des_herstellers(g)
+     and vorschriften_des_untertitels_anwendbar(k) and kaeufer(k, vb);
+    then nacherfuellungsanspruch_gegen_den_hersteller(g, vb);
+}
+
+@source(BGB_P479)
+rule Garantie479Abs4(g: Garantie, k: Kaufvertrag) strict {
+    label de official "Die Wirksamkeit der Garantieverpflichtung wird nicht dadurch berührt, dass eine der vorstehenden Anforderungen nicht erfüllt wird (§ 479 Abs. 4)";
+    label en unofficial "The effectiveness of the guarantee obligation is not affected by the fact that one of the preceding requirements is not met (§ 479 (4))";
+    when garantie_des_vertrags(g, k) and not_known(anforderungen_an_die_garantieerklaerung_erfuellt(g));
+    then garantieverpflichtung_wirksam(g);
+}
+
+@source(BGB_P475b)
+rule MangelhaftDurchDigitaleElemente(k: Kaufvertrag) strict {
+    label de official "Der Sachmangel einer Ware mit digitalen Elementen (§ 475b Abs. 2) macht die Ware mangelhaft im Sinne des § 437";
+    label en unofficial "A material defect of goods with digital elements (§ 475b (2)) makes the goods defective within the meaning of § 437";
+    when sachmangel_der_ware_mit_digitalen_elementen(k);
+    then mangel(k);
+}

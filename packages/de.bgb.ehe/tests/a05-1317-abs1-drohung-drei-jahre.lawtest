@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1317 Abs. 1 Satz 1 Halbsatz 2: im Falle der widerrechtlichen Drohung (§ 1314 Abs. 2 Nr. 4) beträgt die Frist DREI JAHRE und beginnt mit dem Aufhören der Zwangslage — hier am 03.06.2024, Ende also am 03.06.2027. Der Vergleich mit a03 zeigt, dass die Dauer vom Aufhebungsgrund abhängt und nicht pauschal ein Jahr ist.
+test "§ 1317 Abs. 1: drei Jahre bei widerrechtlicher Drohung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:a05:E"), entity_ref("urn:de:bgb:ehe:a05:A"), entity_ref("urn:de:bgb:ehe:a05:B")) { origin case_input; }
+        assert "f2": eheschliessung_am(entity_ref("urn:de:bgb:ehe:a05:E"), @2023-01-20) { origin case_input; }
+        assert "f3": widerrechtliche_drohung(entity_ref("urn:de:bgb:ehe:a05:E"), entity_ref("urn:de:bgb:ehe:a05:A")) { origin adjudicated; }
+        assert "f4": entdeckung_oder_aufhoeren_am(entity_ref("urn:de:bgb:ehe:a05:E"), entity_ref("urn:de:bgb:ehe:a05:A"), @2024-06-03) { origin case_input; }
+        assert "f5": antragsfrist_1317(entity_ref("urn:de:bgb:ehe:a05:E"), entity_ref("urn:de:bgb:ehe:a05:A"), Widerrechtliche_Drohung_1314_Abs_2_Nr_4, entity_ref("urn:de:bgb:ehe:a05:F")) { origin case_input; }
+    }
+    evaluate truth(ehe_aufhebbar(entity_ref("urn:de:bgb:ehe:a05:E"), Widerrechtliche_Drohung_1314_Abs_2_Nr_4));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(letzter_tag_der_antragsfrist(entity_ref("urn:de:bgb:ehe:a05:E"), entity_ref("urn:de:bgb:ehe:a05:A"), Widerrechtliche_Drohung_1314_Abs_2_Nr_4, @2027-06-03));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1371 Abs. 2: der Güterstand ist durch den Tod des A beendet, und der überlebende Ehegatte B wird weder Erbe noch Vermächtnisnehmer — das ist ein ausdrücklicher EINGANG des Falls, denn ein Import von `de.bgb.erbfolge` wäre der verbotene Rückimport (Ledger D-12-07). B kann daher den Ausgleich nach den §§ 1373 bis 1383 verlangen, und sein Pflichtteil bestimmt sich nach dem NICHT erhöhten Erbteil. Die Erhöhung des § 1371 Abs. 1 tritt hier gerade nicht an seine Stelle.
+test "§ 1371 Abs. 2: Zugewinnausgleich, wenn der Überlebende nicht Erbe wird" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:z08:E"), entity_ref("urn:de:bgb:ehe:z08:A"), entity_ref("urn:de:bgb:ehe:z08:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:z08:E")) { origin case_input; }
+        assert "f3": gueterstand_durch_tod_beendet(entity_ref("urn:de:bgb:ehe:z08:E"), entity_ref("urn:de:bgb:ehe:z08:A")) { origin case_input; }
+        assert "f4": nicht_erbe_und_kein_vermaechtnis(entity_ref("urn:de:bgb:ehe:z08:E"), entity_ref("urn:de:bgb:ehe:z08:B")) { origin case_input; }
+    }
+    evaluate truth(zugewinnausgleich_nach_1373_bis_1383(entity_ref("urn:de:bgb:ehe:z08:E"), entity_ref("urn:de:bgb:ehe:z08:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(pflichtteil_nach_nicht_erhoehtem_erbteil(entity_ref("urn:de:bgb:ehe:z08:E"), entity_ref("urn:de:bgb:ehe:z08:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erhoehung_des_erbteils_1371(entity_ref("urn:de:bgb:ehe:z08:E"), entity_ref("urn:de:bgb:ehe:z08:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

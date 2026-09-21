@@ -1,0 +1,1386 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 4 ABSCHNITT 3 — VORMUNDSCHAFT, RECHTLICHE
+// BETREUUNG, PFLEGSCHAFT (BG-14)
+//
+// Paket BG-14 der vollständigen Formalisierung des geltenden BGB
+// (docs/foundations/de-bgb/, DECISION-0319). Bereich: §§ 1773–1921 in der
+// Nummerierung ab 1.1.2023 (Reform des Vormundschafts- und Betreuungsrechts) —
+// Titel 1 Vormundschaft, Titel 2 Pflegschaft für Minderjährige, Titel 3
+// Rechtliche Betreuung, Titel 4 Sonstige Pflegschaft.
+//
+// AUFBAU. Diese Datei trägt die Politiken der Fristen §86 und Titel 1
+// (Vormundschaft, §§ 1773–1808) vollständig nach Absätzen. Titel 2 liegt in
+// `titel-02-pflegschaft-minderjaehrige.law`, Titel 3 in drei Dateien
+// (`titel-03-a-…` Person/Voraussetzungen §§ 1814–1834, `titel-03-b-…`
+// Vermögenssorge/Genehmigungen §§ 1835–1860, `titel-03-c-…`
+// Aufsicht/Beendigung/Vergütung §§ 1861–1881), Titel 4 in
+// `titel-04-sonstige-pflegschaft.law`. Umfang und Grenzen dieser Sitzung:
+// DECISION-0319-Ledger `docs/foundations/de-bgb/DECISIONS.md` D-14-01..03.
+//
+// EIN PRÄDIKAT FÜR DREI ÄMTER (D-14-01). Titel 1 verweist mehrfach mit „gilt
+// entsprechend“ auf die Maschinerie des Titel 3 (§ 1798 Abs. 2, § 1799 Abs. 1,
+// § 1800 Abs. 2, § 1801, § 1802 Abs. 2, § 1807, § 1808 Abs. 2); Titel 2 auf
+// Titel 1 (§ 1813); Titel 4 auf Titel 3 (§ 1888). Diese Datei erklärt daher
+// EIN gemeinsames Prädikat `gesetzlicher_vertreter(vertreter, vertretene)`,
+// das Vormund/Mündel, Betreuer/Betreuten und Pfleger/Pflegling gleichermaßen
+// trägt; die Vermögenssorge-, Genehmigungs-, Aufsichts- und
+// Vergütungsmaschinerie ist EINMAL geschrieben (in den Titel-3-Dateien) und
+// wird von den „gilt entsprechend“-Normen der übrigen Titel wiederverwendet,
+// nicht neu gebaut — Muster D-11-07 (eine `Pfandrecht`-Entität für zwei
+// Titel).
+//
+// NUMMERIERUNG NACH DEM REGISTER, NICHT NACH DER PARAPHRASE (D-14-02). Die
+// Absatz- und Paragraphenzuordnung folgt dem gepinnten Text (`sources.law`,
+// generiert aus dem DOKNR-Register, `legal_cutoff` 2026-09-17), nicht der
+// Paraphrase des Sitzungsauftrags — vertragsgemäß „Quelle zuerst pinnen“.
+//
+// BEWERTENDE MERKMALE (DECISION-0194). Die zentralen Maßstäbe dieses Pakets —
+// Kindeswohl/Mündelwohl, Eignung, freier Wille, Erforderlichkeit, Wünsche und
+// mutmaßlicher Wille des Betreuten — sind WERTUNGEN des Gerichts (Kanal
+// §47.3, `external judgment relation … { authority Court; }`) oder
+// FESTGESTELLTE TATSACHEN (Bestellung, Genehmigung, Krankheit/Behinderung —
+// `kind empirical`, im Fall `origin adjudicated`). Ein flacher Fall-Fakt „ist
+// betreuungsbedürftig“ ist verboten.
+//
+// SPRACHE. Nur Deutsch und Englisch (DECISION-0319 Р7).
+
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+import de.bgb.core version "0.1.0";
+import de.bgb.fristen version "0.1.0";
+
+type Person = de.bgb.core::Person;
+type Anspruch = de.bgb.core::Anspruch;
+type Frist = de.bgb.fristen::Frist;
+type Gericht = de.bgb.core::Gericht;
+
+// --- Politiken der Fristen §86 --------------------------------------------------------------------
+//
+// Die Mechanik der Fristen gehört `de.bgb.fristen` (DECISION-0319 Р4); die
+// Politik des Falls muss im ausführenden Paket erklärt sein (§86/§168.2,
+// LDC-E1332). BGB_BETREUUNG_TAG trägt Tagesfristen, in denen eine Erklärung
+// GEGENÜBER dem Gericht geschuldet ist (§ 1781 Abs. 2 Mitteilung binnen zwei
+// Wochen, § 1783 Abs. 1 Nr. 5 Bereiterklärung binnen vier Wochen) — § 187
+// Abs. 1 (Ereignistag nicht mitgerechnet), § 188 Abs. 1, § 193 (Verlegung),
+// wie `de.bgb.fristen::BGB_FRISTEN_TAG`. BGB_BETREUUNG_KALENDER trägt
+// Monats-/Jahresfristen (§ 1781 Abs. 3, § 1856 Abs. 2, § 1863 Abs. 3, § 1877
+// Abs. 4, § 1878 Abs. 4); die Verlegung nach § 193 rechnet dafür die
+// cross-package Regel `de.bgb.fristen::Verlegung193` aus `frist_ende_kalender`.
+// Die reine Wartefrist des § 1830 Abs. 2 Satz 2 (Sterilisation erst nach
+// Ablauf von zwei Wochen — kein Adressat einer Handlung, Ledger D-10-05) ist
+// dieser Sitzung als Regel gepinnt, aber ohne eigenes Szenario (TASKS.json
+// BG-14-TODO-1): sie bräuchte eine dritte, rollfreie Tagespolitik.
+
+deadline policy BGB_BETREUUNG_TAG {
+    start_count next_day;
+    include_end true;
+    roll next_working_day;
+}
+
+deadline policy BGB_BETREUUNG_KALENDER {
+    start_count same_day;
+    include_end true;
+    roll no_roll;
+    month_end last_day_of_month;
+}
+
+// Dritte Politik (D-14-06 Block 7): reine, rollfreie Wartefrist ohne
+// Adressaten einer Erklärung — § 1830 Absatz 2 Satz 2 (Sterilisation frühestens
+// zwei Wochen nach Wirksamkeit der Genehmigung). § 187 Absatz 1 gilt wie bei
+// BGB_BETREUUNG_TAG (Ereignistag nicht mitgerechnet), aber § 193 passt nicht:
+// die Frist ist keine Erklärungsfrist "gegenüber" jemandem, die ein
+// arbeitsfreier letzter Tag verschieben könnte — sie ist ein reines
+// Mindestwarteintervall (Muster D-10-05). Eine Politik pro Fall (§86); Fälle,
+// die diese Frist prüfen, wählen `deadline_policy BGB_BETREUUNG_TAG_ROLLFREI;`
+// statt der beiden anderen.
+deadline policy BGB_BETREUUNG_TAG_ROLLFREI {
+    start_count next_day;
+    include_end true;
+    roll no_roll;
+}
+
+// § 193 verlegt das Fristende auf den nächsten Werktag; welcher Tag Werktag
+// ist, sagt der Kalenderschnappschuss §85. Der Datensatz ist einmal definiert
+// (corpus/gen_kz_clir.py, Ledger D-03) und wird hier — wie in
+// `de.bgb.fristen`, `de.bgb.schuldrecht_at` — durch einen eigenen Knoten
+// gebunden (D-04-03): die Politik des Falls lebt im Paket, dessen Programm
+// der Fall ausführt, und mit ihr der Kalender, den sie liest (ohne Knoten:
+// NON_EXECUTABLE). Die Zeile im Lock schreibt `tools/gen_kalender.py`, nicht
+// `law engine lock --write`.
+
+source FEIERTAGE_BUND {
+    kind statute;
+    jurisdiction DE;
+    number "Feiertagsgesetze der Länder (bundesweit anerkannte Feiertage)";
+    label de official "Gesetzliche Feiertage, die in allen Ländern anerkannt sind (Feiertagsgesetze der Länder)";
+    label en unofficial "Public holidays recognised in every Land (Länder public-holiday acts)";
+}
+
+edition FEIERTAGE_BUND_1991_2070 of FEIERTAGE_BUND {
+    language de;
+    officiality official;
+    materialization_status ABSTRACT_ONLY;
+    in_force [@1991-01-01, @2071-01-01);
+    label de official "Bundesweit anerkannte Feiertage 1991–2070 als Kalenderschnappschuss (Datensatz corpus/clir/de-feiertage-bundesweit.calendar.json, erzeugt von corpus/gen_kz_clir.py); Landesfeiertage nicht enthalten";
+    label en unofficial "Nationwide public holidays 1991–2070 as a calendar snapshot; Land-specific holidays not included";
+}
+
+calendar KALENDER_BUNDESWEIT {
+    timezone "Europe/Berlin";
+    timezone_db "iana-tzdb@2026a";
+    period [@1991-01-01, @2071-01-01);
+    source FEIERTAGE_BUND;
+    resource "artifact:corpus/clir/de-feiertage-bundesweit.calendar.json";
+    format "law.calendar/0.1";
+    content_hash "sha256:aa310583279c7f05aa491307648663f4a7c9f8f90910541876118bfb6d6e3204";
+}
+
+// --- Gemeinsames Prädikat der drei Ämter (D-14-01) -------------------------------------------------
+
+pub relation gesetzlicher_vertreter(vertreter: Person, vertretene: Person) kind institutional {
+    label de official "Gesetzlicher Vertreter (Vormund, Betreuer im Rahmen seines Aufgabenkreises oder Pfleger) und die von ihm vertretene Person";
+    label en unofficial "statutory representative (guardian, custodian within their assigned scope, or curator) and the person represented";
+}
+
+// --- Titel 1: Vormundschaft (§§ 1773–1808) ----------------------------------------------------------
+
+pub enum VormundArt {
+    label de official "Art des Vormunds (§ 1774 Absatz 1)";
+    label en unofficial "type of guardian (§ 1774 (1))";
+    EhrenamtlicherVormund,
+    Berufsvormund,
+    Vereinsvormund,
+    JugendamtAlsVormund
+}
+
+// § 1773: Voraussetzungen der Vormundschaft; Bestellung des Vormunds.
+
+pub relation nicht_unter_elterlicher_sorge(m: Person) kind empirical {
+    label de official "Der Minderjährige steht nicht unter elterlicher Sorge (§ 1773 Absatz 1 Nummer 1)";
+    label en unofficial "the minor is not subject to parental custody (§ 1773 (1) no. 1)";
+}
+pub relation eltern_nicht_vertretungsberechtigt(m: Person) kind empirical {
+    label de official "Die Eltern sind nicht berechtigt, den Minderjährigen in dessen Person und Vermögen betreffenden Angelegenheiten zu vertreten (§ 1773 Absatz 1 Nummer 2)";
+    label en unofficial "the parents are not entitled to represent the minor in matters concerning the minor's person and property (§ 1773 (1) no. 2)";
+}
+pub relation familienstand_nicht_ermittelbar(m: Person) kind empirical {
+    label de official "Der Familienstand des Minderjährigen ist nicht zu ermitteln (§ 1773 Absatz 1 Nummer 3)";
+    label en unofficial "the minor's family status cannot be ascertained (§ 1773 (1) no. 3)";
+}
+pub relation vormundschaft_voraussetzungen_erfuellt(m: Person) kind institutional {
+    label de official "Voraussetzungen der Vormundschaft sind erfüllt: das Familiengericht hat die Vormundschaft anzuordnen und einen Vormund zu bestellen (§ 1773 Absatz 1)";
+    label en unofficial "the requirements for guardianship are met: the family court must order guardianship and appoint a guardian (§ 1773 (1))";
+}
+pub relation vormundschaft_vor_geburt_anzuordnen(kind_erwartet: Person) kind empirical {
+    label de official "Es ist anzunehmen, dass ein Kind mit seiner Geburt einen Vormund benötigt (§ 1773 Absatz 2 Satz 1)";
+    label en unofficial "it is to be assumed that a child will need a guardian upon its birth (§ 1773 (2) sentence 1)";
+}
+pub relation vormund_bestellt(v: Person, m: Person) kind empirical {
+    label de official "Das Familiengericht hat den Vormund bestellt (§ 1773 Absatz 1) — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "the family court has appointed the guardian (§ 1773 (1)) — established fact, in the case origin adjudicated";
+}
+pub relation vormund_art(v: Person, m: Person, art: VormundArt) kind empirical {
+    label de official "Art, in der der Vormund nach § 1774 Absatz 1 bestellt ist";
+    label en unofficial "type under which the guardian is appointed under § 1774 (1)";
+}
+
+@source(BGB_P1773) {
+    rule VormundschaftVoraussetzungNichtUnterSorge(m: Person) strict {
+        label de official "Das Familiengericht hat die Vormundschaft anzuordnen, wenn der Minderjährige nicht unter elterlicher Sorge steht (§ 1773 Absatz 1 Nummer 1)";
+        label en unofficial "the family court must order guardianship if the minor is not subject to parental custody (§ 1773 (1) no. 1)";
+        when nicht_unter_elterlicher_sorge(m);
+        then vormundschaft_voraussetzungen_erfuellt(m);
+    }
+    rule VormundschaftVoraussetzungElternNichtBerechtigt(m: Person) strict {
+        label de official "Das Familiengericht hat die Vormundschaft anzuordnen, wenn die Eltern nicht vertretungsberechtigt sind (§ 1773 Absatz 1 Nummer 2)";
+        label en unofficial "the family court must order guardianship if the parents are not entitled to represent the minor (§ 1773 (1) no. 2)";
+        when eltern_nicht_vertretungsberechtigt(m);
+        then vormundschaft_voraussetzungen_erfuellt(m);
+    }
+    rule VormundschaftVoraussetzungFamilienstandUnbekannt(m: Person) strict {
+        label de official "Das Familiengericht hat die Vormundschaft anzuordnen, wenn der Familienstand des Minderjährigen nicht zu ermitteln ist (§ 1773 Absatz 1 Nummer 3)";
+        label en unofficial "the family court must order guardianship if the minor's family status cannot be ascertained (§ 1773 (1) no. 3)";
+        when familienstand_nicht_ermittelbar(m);
+        then vormundschaft_voraussetzungen_erfuellt(m);
+    }
+    rule GesetzlicherVertreterVormund(v: Person, m: Person) strict {
+        label de official "Mit der Bestellung wird der Vormund gesetzlicher Vertreter des Mündels (§ 1773 Absatz 1, § 1789 Absatz 2 Satz 1)";
+        label en unofficial "upon appointment the guardian becomes the ward's statutory representative (§ 1773 (1), § 1789 (2) sentence 1)";
+        when vormund_bestellt(v, m);
+        then gesetzlicher_vertreter(v, m);
+    }
+}
+
+// § 1774: Vormund — closed list of the four types the court may appoint.
+
+@source(BGB_P1774) {
+    rule VormundArtEhrenamtlich(v: Person, m: Person) strict {
+        label de official "Zum Vormund kann bestellt werden eine natürliche Person, die die Vormundschaft ehrenamtlich führt (§ 1774 Absatz 1 Nummer 1)";
+        label en unofficial "a natural person conducting the guardianship on a voluntary basis may be appointed guardian (§ 1774 (1) no. 1)";
+        when vormund_art(v, m, EhrenamtlicherVormund);
+        then vormund_bestellbar(v, m);
+    }
+    rule VormundArtBeruf(v: Person, m: Person) strict {
+        label de official "Zum Vormund kann bestellt werden eine natürliche Person, die die Vormundschaft beruflich selbständig führt — Berufsvormund (§ 1774 Absatz 1 Nummer 2)";
+        label en unofficial "a natural person conducting the guardianship professionally on a self-employed basis may be appointed guardian — professional guardian (§ 1774 (1) no. 2)";
+        when vormund_art(v, m, Berufsvormund);
+        then vormund_bestellbar(v, m);
+    }
+    rule VormundArtVerein(v: Person, m: Person) strict {
+        label de official "Zum Vormund kann bestellt werden ein Mitarbeiter eines anerkannten Vormundschaftsvereins — Vereinsvormund (§ 1774 Absatz 1 Nummer 3)";
+        label en unofficial "a staff member of a recognised guardianship association may be appointed guardian — association guardian (§ 1774 (1) no. 3)";
+        when vormund_art(v, m, Vereinsvormund);
+        then vormund_bestellbar(v, m);
+    }
+    rule VormundArtJugendamt(v: Person, m: Person) strict {
+        label de official "Zum Vormund kann bestellt werden das Jugendamt (§ 1774 Absatz 1 Nummer 4)";
+        label en unofficial "the youth welfare office may be appointed guardian (§ 1774 (1) no. 4)";
+        when vormund_art(v, m, JugendamtAlsVormund);
+        then vormund_bestellbar(v, m);
+    }
+}
+pub relation vormund_bestellbar(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund erfüllt eine der vier Bestellungsarten des § 1774 Absatz 1";
+    label en unofficial "the guardian meets one of the four appointment types of § 1774 (1)";
+}
+
+// § 1775: Mehrere Vormünder.
+
+pub relation ehegatten_gemeinschaftliche_vormuender(e1: Person, e2: Person, m: Person) kind empirical {
+    label de official "Ehegatten können gemeinschaftlich zu Vormündern bestellt werden (§ 1775 Absatz 1)";
+    label en unofficial "spouses may be jointly appointed as guardians (§ 1775 (1))";
+}
+pub relation geschwister_fuer_vormundschaftszwecke(m1: Person, m2: Person) kind empirical {
+    label de official "Zwei Mündel sind Geschwister im Sinne des § 1775 Absatz 2";
+    label en unofficial "two wards are siblings for the purposes of § 1775 (2)";
+}
+pub relation geschwister_besondere_gruende_fuer_getrennte_vormundschaft(m1: Person, m2: Person) kind empirical {
+    label de official "Besondere Gründe, für Geschwister jeweils einen eigenen Vormund zu bestellen, statt nur einen gemeinsamen (§ 1775 Absatz 2)";
+    label en unofficial "special grounds for appointing a separate guardian for each sibling instead of only one common guardian (§ 1775 (2))";
+}
+pub relation nur_ein_vormund_fuer_geschwister_geboten(m1: Person, m2: Person) kind institutional {
+    label de official "Für Geschwister soll nur ein Vormund bestellt werden (§ 1775 Absatz 2 Halbsatz 1)";
+    label en unofficial "only one guardian should be appointed for siblings (§ 1775 (2) first half-sentence)";
+}
+@source(BGB_P1775)
+rule NurEinVormundFuerGeschwister(m1: Person, m2: Person) defeasible {
+    label de official "Für Geschwister soll nur ein Vormund bestellt werden, es sei denn, es liegen besondere Gründe für eine getrennte Bestellung vor (§ 1775 Absatz 2)";
+    label en unofficial "only one guardian should be appointed for siblings, unless special grounds warrant separate appointment (§ 1775 (2))";
+    when geschwister_fuer_vormundschaftszwecke(m1, m2) and not_known(geschwister_besondere_gruende_fuer_getrennte_vormundschaft(m1, m2));
+    then nur_ein_vormund_fuer_geschwister_geboten(m1, m2);
+}
+
+// § 1776: Zusätzlicher Pfleger neben einem ehrenamtlichen Vormund.
+
+pub relation zusaetzlicher_pfleger_dient_muendelwohl(p: Person, m: Person) kind empirical {
+    label de official "Die Übertragung einzelner Sorgeangelegenheiten auf einen zusätzlichen Pfleger dient dem Wohl des Mündels und der Vormund ist einverstanden (§ 1776 Absatz 1)";
+    label en unofficial "transferring individual custodial matters to an additional curator serves the ward's welfare and the guardian consents (§ 1776 (1))";
+}
+pub relation zusaetzlicher_pfleger_bestellt(p: Person, m: Person) kind institutional {
+    label de official "Zusätzlicher Pfleger nach § 1776 Absatz 1 bestellt";
+    label en unofficial "additional curator appointed under § 1776 (1)";
+}
+@source(BGB_P1776)
+rule ZusaetzlicherPflegerBestellung(p: Person, m: Person) strict {
+    label de official "Das Familiengericht kann bei Bestellung eines ehrenamtlichen Vormunds mit dessen Einverständnis einzelne Sorgeangelegenheiten auf einen Pfleger übertragen, wenn dies dem Wohl des Mündels dient (§ 1776 Absatz 1)";
+    label en unofficial "the family court may, with the honorary guardian's consent, transfer individual custodial matters to a curator where this serves the ward's welfare (§ 1776 (1))";
+    when zusaetzlicher_pfleger_dient_muendelwohl(p, m);
+    then zusaetzlicher_pfleger_bestellt(p, m);
+}
+
+// § 1777: Übertragung von Sorgeangelegenheiten auf die Pflegeperson als Pfleger.
+
+pub relation pflegeperson_voraussetzungen_1777(pp: Person, m: Person) kind empirical {
+    label de official "Voraussetzungen des § 1777 Absatz 1 (langjähriges Zusammenleben oder Bindung, Zustimmung, Mündelwohl) sind erfüllt";
+    label en unofficial "the requirements of § 1777 (1) (long-standing cohabitation or bond, consent, ward's welfare) are met";
+}
+pub relation pflegeperson_als_pfleger_bestellt(pp: Person, m: Person) kind institutional {
+    label de official "Die Pflegeperson ist nach § 1777 Absatz 1 zum Pfleger bestellt";
+    label en unofficial "the carer is appointed curator under § 1777 (1)";
+}
+@source(BGB_P1777)
+rule PflegepersonAlsPflegerBestellung(pp: Person, m: Person) strict {
+    label de official "Das Familiengericht überträgt auf Antrag einzelne Sorgeangelegenheiten auf die Pflegeperson als Pfleger, wenn die Voraussetzungen des § 1777 Absatz 1 vorliegen";
+    label en unofficial "the family court transfers, on application, individual custodial matters to the carer as curator where the requirements of § 1777 (1) are met";
+    when pflegeperson_voraussetzungen_1777(pp, m);
+    then pflegeperson_als_pfleger_bestellt(pp, m);
+}
+
+// § 1778: Auswahl des Vormunds durch das Familiengericht — Wertung.
+
+@source(BGB_P1778)
+pub external judgment relation am_besten_geeigneter_vormund(v: Person, m: Person) {
+    authority Court;
+    label de official "Der Vormund, der am besten geeignet ist, für die Person und das Vermögen des Mündels zu sorgen, unter Berücksichtigung des Willens des Mündels, seiner familiären Beziehungen und Bindungen, seines religiösen Bekenntnisses und kulturellen Hintergrunds, des wirklichen oder mutmaßlichen Willens der Eltern und der Lebensumstände des Mündels (§ 1778)";
+    label en unofficial "the guardian best suited to care for the ward's person and property, having regard to the ward's wishes, family relationships and bonds, religious affiliation and cultural background, the parents' actual or presumed wishes and the ward's circumstances (§ 1778)";
+}
+
+// § 1779: Eignung der Person; Vorrang des ehrenamtlichen Vormunds.
+
+@source(BGB_P1779)
+pub external judgment relation zur_fuehrung_der_vormundschaft_geeignet(v: Person, m: Person) {
+    authority Court;
+    label de official "Eignung nach Kenntnissen, persönlichen Eigenschaften, Verhältnissen und Vermögenslage sowie Zusammenarbeitsfähigkeit, so wie es das Wohl des Mündels erfordert (§ 1779 Absatz 1)";
+    label en unofficial "suitability by knowledge, personal qualities, circumstances and means, and ability to cooperate, as required by the ward's welfare (§ 1779 (1))";
+}
+pub relation ehrenamtlich_geeignet_und_bereit(v: Person, m: Person) kind empirical {
+    label de official "Eine natürliche Person ist geeignet und bereit, die Vormundschaft ehrenamtlich zu führen (§ 1779 Absatz 2 Satz 1)";
+    label en unofficial "a natural person is suitable and willing to conduct the guardianship on a voluntary basis (§ 1779 (2) sentence 1)";
+}
+pub relation vorrang_des_ehrenamtlichen_vormunds(v: Person, m: Person) kind institutional {
+    label de official "Vorrang des ehrenamtlichen Vormunds gegenüber Berufs-, Vereins- und Amtsvormund (§ 1779 Absatz 2 Satz 1)";
+    label en unofficial "priority of the voluntary guardian over the professional, association and official guardian (§ 1779 (2) sentence 1)";
+}
+@source(BGB_P1779)
+rule VorrangEhrenamtlicherVormund(v: Person, m: Person) strict {
+    label de official "Eine geeignete und bereite ehrenamtliche natürliche Person hat gegenüber Berufsvormund, Vereinsvormund und Jugendamt Vorrang (§ 1779 Absatz 2 Satz 1)";
+    label en unofficial "a suitable and willing voluntary natural person takes priority over the professional guardian, association guardian and youth welfare office (§ 1779 (2) sentence 1)";
+    when ehrenamtlich_geeignet_und_bereit(v, m);
+    then vorrang_des_ehrenamtlichen_vormunds(v, m);
+}
+
+// § 1780: Berücksichtigung der beruflichen Belastung des Berufs- und Vereinsvormunds.
+
+@source(BGB_P1780)
+pub relation berufliche_arbeitsbelastung(v: Person, umfang: Quantity) kind empirical {
+    label de official "Anzahl und Umfang der bereits vom Berufs- oder Vereinsvormund geführten Vormundschaften und Pflegschaften, zu deren Auskunft er dem Familiengericht verpflichtet ist (§ 1780)";
+    label en unofficial "number and extent of the guardianships and curatorships already conducted by the professional or association guardian, on which they must inform the family court (§ 1780)";
+}
+
+// § 1781: Bestellung eines vorläufigen Vormunds — mit Fristen.
+
+pub relation ermittlungen_zur_vormundauswahl_nicht_abgeschlossen(m: Person) kind empirical {
+    label de official "Die erforderlichen Ermittlungen zur Auswahl des Vormunds sind bei Anordnung der Vormundschaft noch nicht abgeschlossen, oder es besteht ein vorübergehendes Bestellungshindernis (§ 1781 Absatz 1)";
+    label en unofficial "the investigations required to select the guardian are not yet complete when guardianship is ordered, or a temporary obstacle to appointment exists (§ 1781 (1))";
+}
+pub relation vorlaeufiger_vormund_kandidat(v: Person, m: Person) kind empirical {
+    label de official "Person, die das Familiengericht als vorläufigen Vormund bestellen will (§ 1781 Absatz 1)";
+    label en unofficial "the person the family court intends to appoint provisional guardian (§ 1781 (1))";
+}
+pub relation vorlaeufiger_vormund_bestellt(v: Person, m: Person) kind institutional {
+    label de official "Vorläufiger Vormund bestellt (§ 1781 Absatz 1)";
+    label en unofficial "provisional guardian appointed (§ 1781 (1))";
+}
+@source(BGB_P1781)
+rule VorlaeufigerVormundBestellung(v: Person, m: Person) strict {
+    label de official "Sind die Ermittlungen noch nicht abgeschlossen oder besteht ein vorübergehendes Hindernis, bestellt das Familiengericht einen vorläufigen Vormund (§ 1781 Absatz 1)";
+    label en unofficial "if the investigations are incomplete or a temporary obstacle exists, the family court appoints a provisional guardian (§ 1781 (1))";
+    when ermittlungen_zur_vormundauswahl_nicht_abgeschlossen(m) and vorlaeufiger_vormund_kandidat(v, m);
+    then vorlaeufiger_vormund_bestellt(v, m);
+}
+
+pub relation vormundschaftsverein_mitteilungsfrist_1781(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist des Vormundschaftsvereins, dem Familiengericht mitzuteilen, welchem Mitarbeiter die Ausübung der Aufgaben des vorläufigen Vormunds übertragen wurde: spätestens binnen zwei Wochen nach seiner Bestellung (§ 1781 Absatz 2 Satz 2)";
+    label en unofficial "the guardianship association's deadline to inform the family court which staff member has been given the provisional guardian's tasks: at the latest within two weeks of its own appointment (§ 1781 (2) sentence 2)";
+}
+@source(BGB_P1781) {
+    rule VormundschaftsvereinMitteilungsfristEreignis(f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit der Bestellung des Vormundschaftsvereins zum vorläufigen Vormund (§ 1781 Absatz 2 Satz 2)";
+        label en unofficial "the period begins with the association's appointment as provisional guardian (§ 1781 (2) sentence 2)";
+        when vormundschaftsverein_mitteilungsfrist_1781(f) and vereinsbestellung_zum_vorlaeufigen_vormund_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule VormundschaftsvereinMitteilungsfristDauer(f: Frist) strict {
+        label de official "Die Frist beträgt zwei Wochen (§ 1781 Absatz 2 Satz 2)";
+        label en unofficial "the period is two weeks (§ 1781 (2) sentence 2)";
+        when vormundschaftsverein_mitteilungsfrist_1781(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 14 calendar_day);
+    }
+}
+pub relation vereinsbestellung_zum_vorlaeufigen_vormund_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Bestellung des Vormundschaftsvereins zum vorläufigen Vormund (§ 1781 Absatz 2 Satz 2)";
+    label en unofficial "day on which the guardianship association was appointed provisional guardian (§ 1781 (2) sentence 2)";
+}
+
+pub relation vormundbestellungsfrist_1781(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist des Familiengerichts zur Bestellung des (endgültigen) Vormunds ab Bestellung des vorläufigen Vormunds: alsbald, längstens binnen drei Monaten (§ 1781 Absatz 3 Satz 1)";
+    label en unofficial "the family court's deadline to appoint the (final) guardian from the provisional guardian's appointment: promptly, at latest within three months (§ 1781 (3) sentence 1)";
+}
+@source(BGB_P1781) {
+    rule VormundbestellungsfristEreignis(f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit der Bestellung des vorläufigen Vormunds (§ 1781 Absatz 3 Satz 1)";
+        label en unofficial "the period begins with the appointment of the provisional guardian (§ 1781 (3) sentence 1)";
+        when vormundbestellungsfrist_1781(f) and vorlaeufige_vormundbestellung_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule VormundbestellungsfristDauerRegel(f: Frist) defeasible {
+        label de official "Die Frist beträgt drei Monate (§ 1781 Absatz 3 Satz 1)";
+        label en unofficial "the period is three months (§ 1781 (3) sentence 1)";
+        when vormundbestellungsfrist_1781(f) and not_known(vormundbestellungsfrist_1781_verlaengert(f));
+        then de.bgb.fristen::frist_dauer_kalender(f, 3 calendar_month);
+    }
+    rule VormundbestellungsfristDauerVerlaengert(f: Frist) strict {
+        label de official "Die Frist kann durch Gerichtsbeschluss nach Anhörung der Beteiligten um höchstens weitere drei Monate verlängert werden, wenn der am besten geeignete Vormund trotz eingeleiteter Ermittlungen noch nicht bestellt werden konnte (§ 1781 Absatz 3 Satz 2)";
+        label en unofficial "the period may be extended by court order, after hearing those involved, by at most a further three months where despite investigations already under way the best-suited guardian could not yet be appointed (§ 1781 (3) sentence 2)";
+        when vormundbestellungsfrist_1781(f) and vormundbestellungsfrist_1781_verlaengert(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+}
+pub relation vorlaeufige_vormundbestellung_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Bestellung des vorläufigen Vormunds (§ 1781 Absatz 3 Satz 1)";
+    label en unofficial "day on which the provisional guardian was appointed (§ 1781 (3) sentence 1)";
+}
+pub relation vormundbestellungsfrist_1781_verlaengert(f: Frist) kind empirical {
+    label de official "Verlängerungsbeschluss nach § 1781 Absatz 3 Satz 2 ist ergangen — festgestellte Tatsache, im Fall origin adjudicated";
+    label en unofficial "an extension order under § 1781 (3) sentence 2 has been made — established fact, in the case origin adjudicated";
+}
+
+// § 1782: Benennung und Ausschluss als Vormund durch die Eltern.
+
+pub relation elterliche_benennung_als_vormund(elternteil: Person, benannter: Person, m: Person) kind empirical {
+    label de official "Benennung einer Person als Vormund durch letztwillige Verfügung eines sorgeberechtigten Elternteils (§ 1782 Absatz 1)";
+    label en unofficial "naming of a person as guardian by testamentary disposition of a parent holding custody (§ 1782 (1))";
+}
+pub relation elterlicher_ausschluss_von_vormundschaft(elternteil: Person, ausgeschlossener: Person, m: Person) kind empirical {
+    label de official "Ausschluss einer Person von der Vormundschaft durch letztwillige Verfügung eines sorgeberechtigten Elternteils (§ 1782 Absatz 1)";
+    label en unofficial "exclusion of a person from guardianship by testamentary disposition of a parent holding custody (§ 1782 (1))";
+}
+pub relation zuletzt_verstorbener_elternteil(elternteil: Person, m: Person) kind empirical {
+    label de official "Der Elternteil, dessen letztwillige Verfügung bei widersprüchlichen Verfügungen beider Eltern maßgebend ist (§ 1782 Absatz 2)";
+    label en unofficial "the parent whose testamentary disposition prevails when both parents' dispositions conflict (§ 1782 (2))";
+}
+pub relation massgebliche_elterliche_benennung(benannter: Person, m: Person) kind institutional {
+    label de official "Maßgebliche Benennung eines Vormunds durch die Eltern (§ 1782)";
+    label en unofficial "the parents' controlling nomination of a guardian (§ 1782)";
+}
+@source(BGB_P1782) {
+    rule MassgeblicheBenennungOhneWiderspruch(elternteil: Person, benannter: Person, m: Person) defeasible {
+        label de official "Die Benennung durch einen sorgeberechtigten Elternteil ist maßgebend, solange keine widersprüchliche Verfügung des anderen Elternteils vorliegt (§ 1782 Absatz 1)";
+        label en unofficial "the nomination by a parent with custody controls unless the other parent's disposition conflicts (§ 1782 (1))";
+        when elterliche_benennung_als_vormund(elternteil, benannter, m) and not_known(widersprechende_elterliche_benennung(elternteil, m));
+        then massgebliche_elterliche_benennung(benannter, m);
+    }
+    rule MassgeblicheBenennungZuletztVerstorbener(elternteil: Person, benannter: Person, m: Person) strict {
+        label de official "Bei widersprüchlichen letztwilligen Verfügungen gilt die Verfügung des zuletzt verstorbenen Elternteils (§ 1782 Absatz 2)";
+        label en unofficial "where testamentary dispositions conflict, the disposition of the parent who died last governs (§ 1782 (2))";
+        when elterliche_benennung_als_vormund(elternteil, benannter, m) and zuletzt_verstorbener_elternteil(elternteil, m) and widersprechende_elterliche_benennung(elternteil, m);
+        then massgebliche_elterliche_benennung(benannter, m);
+    }
+}
+pub relation widersprechende_elterliche_benennung(elternteil: Person, m: Person) kind empirical {
+    label de official "Der andere Elternteil hat eine widersprüchliche letztwillige Verfügung zur Benennung oder zum Ausschluss von Vormündern getroffen (§ 1782 Absatz 2)";
+    label en unofficial "the other parent made a conflicting testamentary disposition on naming or excluding guardians (§ 1782 (2))";
+}
+
+// § 1783: Übergehen der benannten Person — Fristen und Wiederbestellung.
+
+pub relation benannte_person_uebergangen(benannter: Person, m: Person) kind institutional {
+    label de official "Die benannte Person darf als Vormund übergangen werden (§ 1783 Absatz 1)";
+    label en unofficial "the named person may be passed over as guardian (§ 1783 (1))";
+}
+@source(BGB_P1783) {
+    rule UebergehenNichtBestellbar(benannter: Person, m: Person) defeasible {
+        label de official "Die benannte Person darf übergangen werden, wenn sie nach § 1784 nicht zum Vormund bestellt werden kann oder soll (§ 1783 Absatz 1 Nummer 1)";
+        label en unofficial "the named person may be passed over if § 1784 bars or disfavours their appointment (§ 1783 (1) no. 1)";
+        when massgebliche_elterliche_benennung(benannter, m) and nicht_zum_vormund_bestellbar(benannter);
+        then benannte_person_uebergangen(benannter, m);
+    }
+    rule UebergehenWiderspruechtMuendelwohl(benannter: Person, m: Person) defeasible {
+        label de official "Die benannte Person darf übergangen werden, wenn ihre Bestellung dem Wohl des Mündels widersprechen würde (§ 1783 Absatz 1 Nummer 2)";
+        label en unofficial "the named person may be passed over if their appointment would conflict with the ward's welfare (§ 1783 (1) no. 2)";
+        when massgebliche_elterliche_benennung(benannter, m) and bestellung_widerspraeche_muendelwohl(benannter, m);
+        then benannte_person_uebergangen(benannter, m);
+    }
+    rule UebergehenMuendelWiderspruch(benannter: Person, m: Person) defeasible {
+        label de official "Die benannte Person darf übergangen werden, wenn der Mündel, der das 14. Lebensjahr vollendet hat, der Bestellung widerspricht (§ 1783 Absatz 1 Nummer 3)";
+        label en unofficial "the named person may be passed over if the ward, having completed the 14th year of life, objects to the appointment (§ 1783 (1) no. 3)";
+        when massgebliche_elterliche_benennung(benannter, m) and muendel_widerspricht_bestellung_ab_14(benannter, m);
+        then benannte_person_uebergangen(benannter, m);
+    }
+    rule UebergehenVerhindert(benannter: Person, m: Person) defeasible {
+        label de official "Die benannte Person darf übergangen werden, wenn sie aus rechtlichen oder tatsächlichen Gründen an der Übernahme verhindert ist (§ 1783 Absatz 1 Nummer 4)";
+        label en unofficial "the named person may be passed over if they are legally or actually prevented from taking on the office (§ 1783 (1) no. 4)";
+        when massgebliche_elterliche_benennung(benannter, m) and an_uebernahme_verhindert(benannter, m);
+        then benannte_person_uebergangen(benannter, m);
+    }
+}
+pub relation nicht_zum_vormund_bestellbar(p: Person) kind institutional {
+    label de official "Person kann nicht zum Vormund bestellt werden (§ 1784 Absatz 1)";
+    label en unofficial "person cannot be appointed guardian (§ 1784 (1))";
+}
+pub relation bestellung_widerspraeche_muendelwohl(benannter: Person, m: Person) kind empirical {
+    label de official "Die Bestellung der benannten Person würde dem Wohl des Mündels widersprechen (§ 1783 Absatz 1 Nummer 2)";
+    label en unofficial "appointing the named person would conflict with the ward's welfare (§ 1783 (1) no. 2)";
+}
+pub relation muendel_widerspricht_bestellung_ab_14(benannter: Person, m: Person) kind empirical {
+    label de official "Der Mündel, der das 14. Lebensjahr vollendet hat, widerspricht der Bestellung (§ 1783 Absatz 1 Nummer 3)";
+    label en unofficial "the ward, having completed the 14th year of life, objects to the appointment (§ 1783 (1) no. 3)";
+}
+pub relation an_uebernahme_verhindert(benannter: Person, m: Person) kind empirical {
+    label de official "Die benannte Person ist aus rechtlichen oder tatsächlichen Gründen an der Übernahme der Vormundschaft verhindert (§ 1783 Absatz 1 Nummer 4)";
+    label en unofficial "the named person is legally or actually prevented from taking on the guardianship (§ 1783 (1) no. 4)";
+}
+
+pub relation aufforderungsfrist_1783(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist von vier Wochen ab Aufforderung des Familiengerichts, sich zur Übernahme der Vormundschaft bereit zu erklären (§ 1783 Absatz 1 Nummer 5)";
+    label en unofficial "four-week period from the family court's request to declare readiness to assume the guardianship (§ 1783 (1) no. 5)";
+}
+@source(BGB_P1783) {
+    rule AufforderungsfristEreignis(f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit der Aufforderung des Familiengerichts (§ 1783 Absatz 1 Nummer 5)";
+        label en unofficial "the period begins with the family court's request (§ 1783 (1) no. 5)";
+        when aufforderungsfrist_1783(f) and aufforderung_durch_familiengericht_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule AufforderungsfristDauer(f: Frist) strict {
+        label de official "Die Frist beträgt vier Wochen (§ 1783 Absatz 1 Nummer 5)";
+        label en unofficial "the period is four weeks (§ 1783 (1) no. 5)";
+        when aufforderungsfrist_1783(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 28 calendar_day);
+    }
+    rule UebergehenOhneBereitschaftsError(f: Frist, benannter: Person, m: Person, e: Date) strict {
+        label de official "Erklärt sich die benannte Person nicht binnen der Frist bereit, so darf sie übergangen werden (§ 1783 Absatz 1 Nummer 5)";
+        label en unofficial "if the named person has not declared readiness within the period, they may be passed over (§ 1783 (1) no. 5)";
+        when aufforderungsfrist_1783(f) and betrifft_person_1783(f, benannter, m) and de.bgb.fristen::frist_ende(f, e) and not_known(bereitschaftserklaerung_vor(f, e));
+        then benannte_person_uebergangen(benannter, m);
+    }
+}
+pub relation aufforderung_durch_familiengericht_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Aufforderung des Familiengerichts nach § 1783 Absatz 1 Nummer 5";
+    label en unofficial "day of the family court's request under § 1783 (1) no. 5";
+}
+pub relation betrifft_person_1783(f: Frist, benannter: Person, m: Person) kind empirical {
+    key(f);
+    label de official "Die Frist des § 1783 Absatz 1 Nummer 5 betrifft diese benannte Person und diesen Mündel";
+    label en unofficial "the period under § 1783 (1) no. 5 concerns this named person and this ward";
+}
+pub relation bereitschaftserklaerung_vor(f: Frist, tag: Date) kind empirical {
+    label de official "Bereitschaftserklärung der benannten Person, eingegangen bis zu diesem Tag";
+    label en unofficial "declaration of readiness by the named person, received by this day";
+}
+
+pub relation nur_voruebergehend_verhindert(benannter: Person, m: Person) kind empirical {
+    label de official "Die nach § 1783 Absatz 1 Nummer 4 übergangene Person war nur vorübergehend verhindert (§ 1783 Absatz 2)";
+    label en unofficial "the person passed over under § 1783 (1) no. 4 was only temporarily prevented (§ 1783 (2))";
+}
+pub relation entlassung_widerspraeche_nicht_muendelwohl(benannter: Person, m: Person) kind empirical {
+    label de official "Die Entlassung des bisherigen Vormunds widerspricht nicht dem Wohl des Mündels (§ 1783 Absatz 2 Nummer 2)";
+    label en unofficial "discharging the previous guardian does not conflict with the ward's welfare (§ 1783 (2) no. 2)";
+}
+pub relation muendel_widerspricht_nicht_entlassung_ab_14(benannter: Person, m: Person) kind empirical {
+    label de official "Der Mündel, der das 14. Lebensjahr vollendet hat, widerspricht der Entlassung des bisherigen Vormunds nicht (§ 1783 Absatz 2 Nummer 3)";
+    label en unofficial "the ward, having completed the 14th year of life, does not object to discharging the previous guardian (§ 1783 (2) no. 3)";
+}
+pub relation neubestellungsantragsfrist_1783(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist von sechs Monaten nach der Bestellung des bisherigen Vormunds, binnen deren die vorübergehend verhinderte benannte Person ihren Antrag auf Bestellung stellen muss (§ 1783 Absatz 2 Nummer 1)";
+    label en unofficial "six-month period from the previous guardian's appointment within which the temporarily prevented named person must apply for appointment (§ 1783 (2) no. 1)";
+}
+@source(BGB_P1783) {
+    rule NeubestellungsantragsfristEreignis(f: Frist, t: Date) strict {
+        label de official "Die Frist beginnt mit der Bestellung des bisherigen Vormunds (§ 1783 Absatz 2 Nummer 1)";
+        label en unofficial "the period begins with the previous guardian's appointment (§ 1783 (2) no. 1)";
+        when neubestellungsantragsfrist_1783(f) and bisheriger_vormund_bestellt_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule NeubestellungsantragsfristDauer(f: Frist) strict {
+        label de official "Die Frist beträgt sechs Monate (§ 1783 Absatz 2 Nummer 1)";
+        label en unofficial "the period is six months (§ 1783 (2) no. 1)";
+        when neubestellungsantragsfrist_1783(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+    rule WiederbestellungAnstelleDesBisherigen(f: Frist, benannter: Person, m: Person, e: Date, antrag: Date) strict {
+        label de official "Anstelle des bisherigen Vormunds ist die nur vorübergehend verhinderte benannte Person auf ihren rechtzeitigen Antrag zum Vormund zu bestellen, wenn die Entlassung des bisherigen Vormunds dem Wohl des Mündels nicht widerspricht und der Mündel ab 14 Jahren nicht widerspricht (§ 1783 Absatz 2)";
+        label en unofficial "in place of the previous guardian, the temporarily prevented named person must be appointed on their timely application, if discharging the previous guardian does not conflict with the ward's welfare and the ward from age 14 does not object (§ 1783 (2))";
+        when neubestellungsantragsfrist_1783(f) and betrifft_person_1783(f, benannter, m) and nur_voruebergehend_verhindert(benannter, m)
+            and de.bgb.fristen::frist_ende(f, e) and antrag_gestellt_am(f, antrag) and antrag <= e
+            and entlassung_widerspraeche_nicht_muendelwohl(benannter, m) and muendel_widerspricht_nicht_entlassung_ab_14(benannter, m);
+        then wiederbestellung_anstelle_des_bisherigen_vormunds(benannter, m);
+    }
+}
+pub relation bisheriger_vormund_bestellt_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Bestellung des bisherigen Vormunds (§ 1783 Absatz 2 Nummer 1)";
+    label en unofficial "day the previous guardian was appointed (§ 1783 (2) no. 1)";
+}
+pub relation antrag_gestellt_am(f: Frist, tag: Date) kind empirical {
+    label de official "Tag, an dem die vorübergehend verhinderte Person ihren Antrag nach § 1783 Absatz 2 gestellt hat";
+    label en unofficial "day the temporarily prevented person filed their application under § 1783 (2)";
+}
+pub relation wiederbestellung_anstelle_des_bisherigen_vormunds(benannter: Person, m: Person) kind institutional {
+    label de official "Wiederbestellung der zunächst übergangenen benannten Person anstelle des bisherigen Vormunds (§ 1783 Absatz 2)";
+    label en unofficial "reappointment of the initially passed-over named person in place of the previous guardian (§ 1783 (2))";
+}
+
+// § 1784: Ausschlussgründe — Absatz 1 zwingend, Absatz 2 Regel mit Ausnahme.
+
+pub relation geschaeftsunfaehig(p: Person) kind empirical {
+    label de official "Die Person ist geschäftsunfähig (§ 1784 Absatz 1)";
+    label en unofficial "the person lacks capacity to contract (§ 1784 (1))";
+}
+@source(BGB_P1784)
+rule NichtBestellbarGeschaeftsunfaehig(p: Person) strict {
+    label de official "Nicht zum Vormund bestellt werden kann, wer geschäftsunfähig ist (§ 1784 Absatz 1)";
+    label en unofficial "a person lacking capacity to contract cannot be appointed guardian (§ 1784 (1))";
+    when geschaeftsunfaehig(p);
+    then nicht_zum_vormund_bestellbar(p);
+}
+
+pub relation minderjaehrig(p: Person) kind empirical {
+    label de official "Die Person ist minderjährig (§ 1784 Absatz 2 Nummer 1)";
+    label en unofficial "the person is a minor (§ 1784 (2) no. 1)";
+}
+pub relation betreuung_umfasst_vormundschaftswesentliche_angelegenheiten(p: Person) kind empirical {
+    label de official "Für die Person ist ein Betreuer bestellt, dessen Betreuung die für die Führung der Vormundschaft wesentlichen Angelegenheiten umfasst, oder ein Einwilligungsvorbehalt nach § 1825 angeordnet (§ 1784 Absatz 2 Nummer 2)";
+    label en unofficial "a custodian has been appointed for the person whose scope covers matters essential to conducting the guardianship, or a consent requirement under § 1825 has been ordered (§ 1784 (2) no. 2)";
+}
+pub relation von_eltern_als_vormund_ausgeschlossen(p: Person) kind empirical {
+    label de official "Die Eltern haben die Person gemäß § 1782 als Vormund ausgeschlossen (§ 1784 Absatz 2 Nummer 3)";
+    label en unofficial "the parents have excluded the person from guardianship under § 1782 (§ 1784 (2) no. 3)";
+}
+pub relation abhaengigkeitsverhaeltnis_zur_einrichtung(p: Person, m: Person) kind empirical {
+    label de official "Die Person steht zu einer Einrichtung, in der der Mündel lebt, in einem Abhängigkeitsverhältnis oder in einer anderen engen Beziehung (§ 1784 Absatz 2 Nummer 4)";
+    label en unofficial "the person is in a relationship of dependency or another close relationship with an institution in which the ward lives (§ 1784 (2) no. 4)";
+}
+pub relation regelmaessig_nicht_zum_vormund_zu_bestellen(p: Person) kind institutional {
+    label de official "Regelausschluss von der Bestellung zum Vormund (§ 1784 Absatz 2) — kein zwingendes Verbot";
+    label en unofficial "regular exclusion from appointment as guardian (§ 1784 (2)) — not a mandatory bar";
+}
+@source(BGB_P1784) {
+    rule RegelausschlussMinderjaehrig(p: Person) strict {
+        label de official "In der Regel nicht zu bestellen: wer minderjährig ist (§ 1784 Absatz 2 Nummer 1)";
+        label en unofficial "as a rule not to be appointed: a minor (§ 1784 (2) no. 1)";
+        when minderjaehrig(p);
+        then regelmaessig_nicht_zum_vormund_zu_bestellen(p);
+    }
+    rule RegelausschlussBetreuungWesentlich(p: Person) strict {
+        label de official "In der Regel nicht zu bestellen: für wen ein Betreuer mit vormundschaftswesentlichem Aufgabenkreis bestellt oder ein Einwilligungsvorbehalt angeordnet ist (§ 1784 Absatz 2 Nummer 2)";
+        label en unofficial "as a rule not to be appointed: a person under custodianship covering matters essential to guardianship, or subject to a consent requirement (§ 1784 (2) no. 2)";
+        when betreuung_umfasst_vormundschaftswesentliche_angelegenheiten(p);
+        then regelmaessig_nicht_zum_vormund_zu_bestellen(p);
+    }
+    rule RegelausschlussElternausschluss(p: Person) strict {
+        label de official "In der Regel nicht zu bestellen: wen die Eltern gemäß § 1782 als Vormund ausgeschlossen haben (§ 1784 Absatz 2 Nummer 3)";
+        label en unofficial "as a rule not to be appointed: a person excluded by the parents under § 1782 (§ 1784 (2) no. 3)";
+        when von_eltern_als_vormund_ausgeschlossen(p);
+        then regelmaessig_nicht_zum_vormund_zu_bestellen(p);
+    }
+    rule RegelausschlussAbhaengigkeit(p: Person, m: Person) strict {
+        label de official "In der Regel nicht zu bestellen: wer zu einer Einrichtung, in der der Mündel lebt, in einem Abhängigkeitsverhältnis oder einer anderen engen Beziehung steht (§ 1784 Absatz 2 Nummer 4)";
+        label en unofficial "as a rule not to be appointed: a person in a relationship of dependency or other close relationship with an institution in which the ward lives (§ 1784 (2) no. 4)";
+        when abhaengigkeitsverhaeltnis_zur_einrichtung(p, m);
+        then regelmaessig_nicht_zum_vormund_zu_bestellen(p);
+    }
+}
+
+// § 1785: Übernahmepflicht; weitere Bestellungsvoraussetzungen.
+
+@source(BGB_P1785)
+pub external judgment relation uebernahme_zumutbar(v: Person, m: Person) {
+    authority Court;
+    label de official "Die Übernahme der Vormundschaft ist der ausgewählten Person unter Berücksichtigung ihrer familiären, beruflichen und sonstigen Verhältnisse zuzumuten (§ 1785 Absatz 1)";
+    label en unofficial "assuming the guardianship can reasonably be expected of the selected person, having regard to their family, professional and other circumstances (§ 1785 (1))";
+}
+pub relation bereiterklaerung_zur_uebernahme(v: Person, m: Person) kind empirical {
+    label de official "Die ausgewählte Person hat sich zur Übernahme der Vormundschaft bereit erklärt (§ 1785 Absatz 2)";
+    label en unofficial "the selected person has declared readiness to assume the guardianship (§ 1785 (2))";
+}
+pub relation bestellung_zulaessig_1785(v: Person, m: Person) kind institutional {
+    label de official "Die ausgewählte Person darf zum Vormund bestellt werden (§ 1785 Absatz 2)";
+    label en unofficial "the selected person may be appointed guardian (§ 1785 (2))";
+}
+@source(BGB_P1785)
+rule BestellungErstNachBereiterklaerung(v: Person, m: Person) strict {
+    label de official "Die ausgewählte Person darf erst dann zum Vormund bestellt werden, wenn sie sich zur Übernahme bereit erklärt hat (§ 1785 Absatz 2)";
+    label en unofficial "the selected person may only be appointed guardian once they have declared readiness to assume the office (§ 1785 (2))";
+    when bereiterklaerung_zur_uebernahme(v, m);
+    then bestellung_zulaessig_1785(v, m);
+}
+
+// §§ 1786, 1787: Amtsvormundschaft kraft Gesetzes.
+
+pub relation eltern_nicht_verheiratet_kind_bedarf_vormunds_im_inland(m: Person) kind empirical {
+    label de official "Kind, dessen Eltern nicht miteinander verheiratet sind, bedarf eines Vormunds und hat seinen gewöhnlichen Aufenthalt im Inland; kein Vormund vor der Geburt bestellt (§ 1786 Satz 1, 2)";
+    label en unofficial "child whose parents are not married to each other needs a guardian and habitually resides domestically; no guardian appointed before birth (§ 1786 sentence 1, 2)";
+}
+pub relation vaterschaftsanfechtung_beseitigt_kind_bedarf_vormunds(m: Person) kind empirical {
+    label de official "Die Vaterschaft nach § 1592 Nummer 1 oder 2 ist durch rechtskräftige Anfechtung beseitigt und das Kind bedarf eines Vormunds (§ 1786 Satz 3)";
+    label en unofficial "paternity under § 1592 no. 1 or 2 has been removed by a final challenge and the child needs a guardian (§ 1786 sentence 3)";
+}
+pub relation vertrauliche_geburt(m: Person) kind empirical {
+    label de official "Das Kind ist vertraulich geboren (§ 25 Absatz 1 Satz 2 Schwangerschaftskonfliktgesetz) (§ 1787)";
+    label en unofficial "the child was born confidentially (§ 25 (1) sentence 2 Pregnancy Conflict Act) (§ 1787)";
+}
+pub relation zustaendiges_jugendamt(m: Person, jugendamt: Person) kind empirical {
+    label de official "Für den Minderjährigen zuständiges Jugendamt (§§ 1786, 1787)";
+    label en unofficial "the youth welfare office competent for the minor (§§ 1786, 1787)";
+}
+pub relation jugendamt_amtsvormund_kraft_gesetzes(jugendamt: Person, m: Person) kind institutional {
+    label de official "Das Jugendamt wird kraft Gesetzes Vormund (§§ 1786, 1787)";
+    label en unofficial "the youth welfare office becomes guardian by operation of law (§§ 1786, 1787)";
+}
+@source(BGB_P1786)
+rule AmtsvormundschaftUnverheirateteEltern(m: Person, jugendamt: Person) strict {
+    label de official "Mit der Geburt eines Kindes, dessen Eltern nicht miteinander verheiratet sind und das eines Vormunds bedarf, wird das Jugendamt Vormund, wenn das Kind seinen gewöhnlichen Aufenthalt im Inland hat (§ 1786 Satz 1)";
+    label en unofficial "on the birth of a child whose parents are not married and who needs a guardian, the youth welfare office becomes guardian if the child habitually resides domestically (§ 1786 sentence 1)";
+    when eltern_nicht_verheiratet_kind_bedarf_vormunds_im_inland(m) and zustaendiges_jugendamt(m, jugendamt);
+    then jugendamt_amtsvormund_kraft_gesetzes(jugendamt, m);
+}
+@source(BGB_P1786)
+rule AmtsvormundschaftNachVaterschaftsanfechtung(m: Person, jugendamt: Person) strict {
+    label de official "Wurde die Vaterschaft durch Anfechtung beseitigt und bedarf das Kind eines Vormunds, wird das Jugendamt Vormund im Zeitpunkt der Rechtskraft der Entscheidung (§ 1786 Satz 3)";
+    label en unofficial "where paternity was removed by a challenge and the child needs a guardian, the youth welfare office becomes guardian when the decision becomes final (§ 1786 sentence 3)";
+    when vaterschaftsanfechtung_beseitigt_kind_bedarf_vormunds(m) and zustaendiges_jugendamt(m, jugendamt);
+    then jugendamt_amtsvormund_kraft_gesetzes(jugendamt, m);
+}
+@source(BGB_P1787)
+rule AmtsvormundschaftVertraulicheGeburt(m: Person, jugendamt: Person) strict {
+    label de official "Wird ein Kind vertraulich geboren, wird das Jugendamt mit der Geburt des Kindes Vormund (§ 1787)";
+    label en unofficial "where a child is born confidentially, the youth welfare office becomes guardian upon the child's birth (§ 1787)";
+    when vertrauliche_geburt(m) and zustaendiges_jugendamt(m, jugendamt);
+    then jugendamt_amtsvormund_kraft_gesetzes(jugendamt, m);
+}
+@source(BGB_P1786)
+rule JugendamtGesetzlicherVertreter(m: Person, jugendamt: Person) strict {
+    label de official "Das kraft Gesetzes zum Vormund gewordene Jugendamt ist gesetzlicher Vertreter des Mündels (§§ 1786, 1787, § 1789 Absatz 2 Satz 1)";
+    label en unofficial "the youth welfare office that became guardian by operation of law is the ward's statutory representative (§§ 1786, 1787, § 1789 (2) sentence 1)";
+    when jugendamt_amtsvormund_kraft_gesetzes(jugendamt, m);
+    then gesetzlicher_vertreter(jugendamt, m);
+}
+
+// § 1788: Rechte des Mündels — closed list.
+
+pub relation muendelrecht_foerderung_der_entwicklung(m: Person) kind institutional {
+    label de official "Recht auf Förderung der Entwicklung und Erziehung zu einer eigenverantwortlichen und gemeinschaftsfähigen Persönlichkeit (§ 1788 Nummer 1)";
+    label en unofficial "right to support for development and upbringing towards a self-reliant, community-minded personality (§ 1788 no. 1)";
+}
+pub relation muendelrecht_gewaltfreie_erziehung(m: Person) kind institutional {
+    label de official "Recht auf Pflege und Erziehung unter Ausschluss von Gewalt, körperlichen Bestrafungen, seelischen Verletzungen und anderen entwürdigenden Maßnahmen (§ 1788 Nummer 2)";
+    label en unofficial "right to care and upbringing free of violence, corporal punishment, psychological harm and other degrading measures (§ 1788 no. 2)";
+}
+pub relation muendelrecht_persoenlicher_kontakt(m: Person) kind institutional {
+    label de official "Recht auf persönlichen Kontakt mit dem Vormund (§ 1788 Nummer 3)";
+    label en unofficial "right to personal contact with the guardian (§ 1788 no. 3)";
+}
+pub relation muendelrecht_achtung_des_willens(m: Person) kind institutional {
+    label de official "Recht auf Achtung seines Willens, seiner persönlichen Bindungen, seines religiösen Bekenntnisses und kulturellen Hintergrunds (§ 1788 Nummer 4)";
+    label en unofficial "right to respect for the ward's wishes, personal bonds, religious affiliation and cultural background (§ 1788 no. 4)";
+}
+pub relation muendelrecht_beteiligung(m: Person) kind institutional {
+    label de official "Recht auf Beteiligung an ihn betreffenden Angelegenheiten, soweit es nach seinem Entwicklungsstand angezeigt ist (§ 1788 Nummer 5)";
+    label en unofficial "right to participation in matters concerning them, so far as indicated by their stage of development (§ 1788 no. 5)";
+}
+@source(BGB_P1788) {
+    rule MuendelrechteBestehenBeiVormundschaft01(m: Person) strict {
+        label de official "Der Mündel hat das Recht auf Förderung seiner Entwicklung (§ 1788 Nummer 1)";
+        label en unofficial "the ward has the right to support for their development (§ 1788 no. 1)";
+        when vormund_bestellt(_, m);
+        then muendelrecht_foerderung_der_entwicklung(m);
+    }
+    rule MuendelrechteBestehenBeiVormundschaft02(m: Person) strict {
+        label de official "Der Mündel hat das Recht auf gewaltfreie Pflege und Erziehung (§ 1788 Nummer 2)";
+        label en unofficial "the ward has the right to non-violent care and upbringing (§ 1788 no. 2)";
+        when vormund_bestellt(_, m);
+        then muendelrecht_gewaltfreie_erziehung(m);
+    }
+    rule MuendelrechteBestehenBeiVormundschaft03(m: Person) strict {
+        label de official "Der Mündel hat das Recht auf persönlichen Kontakt mit dem Vormund (§ 1788 Nummer 3)";
+        label en unofficial "the ward has the right to personal contact with the guardian (§ 1788 no. 3)";
+        when vormund_bestellt(_, m);
+        then muendelrecht_persoenlicher_kontakt(m);
+    }
+    rule MuendelrechteBestehenBeiVormundschaft04(m: Person) strict {
+        label de official "Der Mündel hat das Recht auf Achtung seines Willens (§ 1788 Nummer 4)";
+        label en unofficial "the ward has the right to respect for their wishes (§ 1788 no. 4)";
+        when vormund_bestellt(_, m);
+        then muendelrecht_achtung_des_willens(m);
+    }
+    rule MuendelrechteBestehenBeiVormundschaft05(m: Person) strict {
+        label de official "Der Mündel hat das Recht auf Beteiligung, soweit nach seinem Entwicklungsstand angezeigt (§ 1788 Nummer 5)";
+        label en unofficial "the ward has the right to participation, so far as indicated by their stage of development (§ 1788 no. 5)";
+        when vormund_bestellt(_, m);
+        then muendelrecht_beteiligung(m);
+    }
+}
+
+// § 1789: Sorge des Vormunds; Vertretung und Haftung des Mündels.
+
+pub relation angelegenheit_ausschliesslich_einem_pfleger_uebertragen(v: Person, m: Person) kind empirical {
+    label de official "Für die betreffende Sorgeangelegenheit ist ein Pfleger bestellt, ohne dass sie ihm mit dem Vormund zur gemeinsamen Wahrnehmung übertragen ist (§ 1789 Absatz 1 Satz 2)";
+    label en unofficial "for the matter concerned a curator has been appointed without the matter being assigned to them jointly with the guardian (§ 1789 (1) sentence 2)";
+}
+pub relation vormund_sorgeberechtigt(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund hat die Pflicht und das Recht, für die Person und das Vermögen des Mündels zu sorgen, mit Ausnahme der Angelegenheiten, für die ein Pfleger bestellt ist (§ 1789 Absatz 1)";
+    label en unofficial "the guardian has the duty and right to care for the ward's person and property, except matters assigned to a curator (§ 1789 (1))";
+}
+@source(BGB_P1789)
+rule VormundSorgeberechtigtSoweitKeinPfleger(v: Person, m: Person) strict {
+    label de official "Der Vormund hat die Pflicht und das Recht, für die Person und das Vermögen des Mündels zu sorgen, mit Ausnahme der Angelegenheiten, für die ein Pfleger bestellt ist (§ 1789 Absatz 1)";
+    label en unofficial "the guardian has the duty and right to care for the ward's person and property, except matters assigned to a curator (§ 1789 (1))";
+    when vormund_bestellt(v, m) and not_known(angelegenheit_ausschliesslich_einem_pfleger_uebertragen(v, m));
+    then vormund_sorgeberechtigt(v, m);
+}
+pub relation vertretung_fuer_einzelne_angelegenheiten_entzogen(v: Person, m: Person, angelegenheit: Text) kind empirical {
+    label de official "Das Familiengericht hat dem Vormund die Vertretung für diese Angelegenheit entzogen, weil das Interesse des Mündels zum Interesse des Vormunds, eines von ihm vertretenen Dritten oder einer Person nach § 1824 Absatz 1 Nummer 1 in erheblichem Gegensatz steht (§ 1789 Absatz 2)";
+    label en unofficial "the family court has withdrawn the guardian's power to represent in this matter, because the ward's interest is substantially opposed to that of the guardian, a third party they represent, or a person under § 1824 (1) no. 1 (§ 1789 (2))";
+}
+
+// § 1790: Amtsführung des Vormunds; Auskunftspflicht.
+
+@source(BGB_P1790)
+pub external judgment relation amtsfuehrung_dem_muendelwohl_entsprechend(v: Person, m: Person) {
+    authority Court;
+    label de official "Der Vormund führt die Vormundschaft im Interesse des Mündels zu dessen Wohl, unter Berücksichtigung der wachsenden Fähigkeit und des wachsenden Bedürfnisses des Mündels zu selbständigem Handeln (§ 1790 Absatz 1, 2)";
+    label en unofficial "the guardian conducts the guardianship in the ward's interest for their welfare, having regard to the ward's growing capacity and need for autonomous action (§ 1790 (1), (2))";
+}
+pub relation auskunft_an_vertrauensperson_verlangt(v: Person, m: Person, verlangende: Person) kind empirical {
+    label de official "Eine nahestehende, angehörige oder sonstige Vertrauensperson verlangt bei berechtigtem Interesse Auskunft über die persönlichen Verhältnisse des Mündels (§ 1790 Absatz 4)";
+    label en unofficial "a close relative or other person of trust with a legitimate interest demands information on the ward's personal circumstances (§ 1790 (4))";
+}
+@source(BGB_P1790)
+pub external judgment relation auskunft_widerspricht_muendelwohl_oder_unzumutbar(v: Person, m: Person, verlangende: Person) {
+    authority Court;
+    label de official "Die Auskunft widerspricht dem Wohl des Mündels oder ist dem Vormund nicht zuzumuten (§ 1790 Absatz 4)";
+    label en unofficial "the disclosure conflicts with the ward's welfare or cannot reasonably be expected of the guardian (§ 1790 (4))";
+}
+pub relation auskunftspflicht_1790(v: Person, m: Person, verlangende: Person) kind institutional {
+    label de official "Auskunftspflicht des Vormunds über die persönlichen Verhältnisse des Mündels gegenüber der verlangenden Vertrauensperson (§ 1790 Absatz 4)";
+    label en unofficial "the guardian's duty to disclose the ward's personal circumstances to the requesting person of trust (§ 1790 (4))";
+}
+@source(BGB_P1790)
+rule Auskunftspflicht1790(v: Person, m: Person, verlangende: Person) strict {
+    label de official "Der Vormund hat bei berechtigtem Interesse Auskunft zu erteilen, soweit dies dem Wohl des Mündels nicht widerspricht und dem Vormund zuzumuten ist (§ 1790 Absatz 4)";
+    label en unofficial "the guardian must give information where there is a legitimate interest, so far as it does not conflict with the ward's welfare and can reasonably be expected of them (§ 1790 (4))";
+    when auskunft_an_vertrauensperson_verlangt(v, m, verlangende) and not_known(auskunft_widerspricht_muendelwohl_oder_unzumutbar(v, m, verlangende));
+    then auskunftspflicht_1790(v, m, verlangende);
+}
+
+// § 1791: Aufnahme des Mündels in den Haushalt des Vormunds.
+
+pub relation muendel_in_haushalt_des_vormunds_aufgenommen(v: Person, m: Person) kind empirical {
+    label de official "Der Vormund hat den Mündel zur Pflege und Erziehung in seinen Haushalt aufgenommen (§ 1791 Satz 1)";
+    label en unofficial "the guardian has taken the ward into their household for care and upbringing (§ 1791 sentence 1)";
+}
+pub relation beistand_und_ruecksicht_geschuldet(v: Person, m: Person) kind institutional {
+    label de official "Vormund und Mündel sind einander Beistand und Rücksicht schuldig (§ 1791 Satz 2)";
+    label en unofficial "guardian and ward owe each other support and consideration (§ 1791 sentence 2)";
+}
+@source(BGB_P1791)
+rule BeistandBeiHaushaltsaufnahme(v: Person, m: Person) strict {
+    label de official "Nimmt der Vormund den Mündel in seinen Haushalt auf, sind beide einander Beistand und Rücksicht schuldig (§ 1791)";
+    label en unofficial "if the guardian takes the ward into their household, both owe each other support and consideration (§ 1791)";
+    when muendel_in_haushalt_des_vormunds_aufgenommen(v, m);
+    then beistand_und_ruecksicht_geschuldet(v, m);
+}
+
+// § 1792: Gemeinschaftliche Führung; Zusammenarbeit.
+
+pub relation ehegatten_fuehren_vormundschaft_gemeinschaftlich(e1: Person, e2: Person, m: Person) kind institutional {
+    label de official "Ehegatten führen die ihnen übertragene Vormundschaft gemeinschaftlich (§ 1792 Absatz 1)";
+    label en unofficial "spouses jointly conduct the guardianship entrusted to them (§ 1792 (1))";
+}
+@source(BGB_P1792)
+rule GemeinschaftlicheVormundschaftEhegatten(e1: Person, e2: Person, m: Person) strict {
+    label de official "Ehegatten führen die ihnen übertragene Vormundschaft gemeinschaftlich (§ 1792 Absatz 1)";
+    label en unofficial "spouses conduct the guardianship entrusted to them jointly (§ 1792 (1))";
+    when ehegatten_gemeinschaftliche_vormuender(e1, e2, m) and vormund_bestellt(e1, m) and vormund_bestellt(e2, m);
+    then ehegatten_fuehren_vormundschaft_gemeinschaftlich(e1, e2, m);
+}
+pub relation gegenseitige_information_und_zusammenarbeit_geboten(v: Person, p: Person, m: Person) kind institutional {
+    label de official "Vormünder und Pfleger sind zur gegenseitigen Information und Zusammenarbeit im Interesse des Mündels zu dessen Wohl verpflichtet (§ 1792 Absatz 2)";
+    label en unofficial "guardians and curators must inform and cooperate with each other in the ward's interest for their welfare (§ 1792 (2))";
+}
+@source(BGB_P1792)
+rule ZusammenarbeitVormundPfleger(v: Person, p: Person, m: Person) strict {
+    label de official "Vormund und Pfleger desselben Mündels sind zur gegenseitigen Information und Zusammenarbeit verpflichtet (§ 1792 Absatz 2)";
+    label en unofficial "the guardian and curator of the same ward must inform and cooperate with each other (§ 1792 (2))";
+    when vormund_bestellt(v, m) and (zusaetzlicher_pfleger_bestellt(p, m) or pflegeperson_als_pfleger_bestellt(p, m));
+    then gegenseitige_information_und_zusammenarbeit_geboten(v, p, m);
+}
+
+// § 1793: Entscheidung bei Meinungsverschiedenheiten.
+
+pub relation meinungsverschiedenheit_ueber_sorgeangelegenheit(a: Person, b: Person, m: Person) kind empirical {
+    label de official "Meinungsverschiedenheit über eine Sorgeangelegenheit zwischen gemeinschaftlichen Vormündern, mehreren Vormündern von Geschwistern oder Vormund und Pfleger (§ 1793 Absatz 1)";
+    label en unofficial "disagreement over a custodial matter between joint guardians, several guardians of siblings, or the guardian and curator (§ 1793 (1))";
+}
+pub relation antrag_auf_entscheidung_der_meinungsverschiedenheit(antragsteller: Person, a: Person, b: Person, m: Person) kind empirical {
+    label de official "Antrag des Vormunds, des Pflegers oder des Mündels ab 14 Jahren auf gerichtliche Entscheidung der Meinungsverschiedenheit (§ 1793 Absatz 2)";
+    label en unofficial "application by the guardian, curator, or the ward from age 14 for a court decision on the disagreement (§ 1793 (2))";
+}
+pub relation familiengericht_entscheidet_meinungsverschiedenheit(a: Person, b: Person, m: Person) kind institutional {
+    label de official "Das Familiengericht entscheidet über die Meinungsverschiedenheit (§ 1793)";
+    label en unofficial "the family court decides on the disagreement (§ 1793)";
+}
+@source(BGB_P1793)
+rule EntscheidungBeiMeinungsverschiedenheit(antragsteller: Person, a: Person, b: Person, m: Person) strict {
+    label de official "Das Familiengericht entscheidet auf zulässigen Antrag über die Meinungsverschiedenheit (§ 1793)";
+    label en unofficial "the family court decides on an admissible application concerning the disagreement (§ 1793)";
+    when meinungsverschiedenheit_ueber_sorgeangelegenheit(a, b, m) and antrag_auf_entscheidung_der_meinungsverschiedenheit(antragsteller, a, b, m);
+    then familiengericht_entscheidet_meinungsverschiedenheit(a, b, m);
+}
+
+// § 1794: Haftung des Vormunds.
+
+pub relation pflichtverletzung_des_vormunds(v: Person, m: Person) kind empirical {
+    label de official "Pflichtverletzung des Vormunds, aus der dem Mündel ein Schaden entsteht (§ 1794 Absatz 1 Satz 1)";
+    label en unofficial "the guardian's breach of duty causing the ward a loss (§ 1794 (1) sentence 1)";
+}
+pub relation vormund_hat_pflichtverletzung_zu_vertreten(v: Person, m: Person) kind empirical {
+    label de official "Der Vormund hat die Pflichtverletzung zu vertreten (§ 1794 Absatz 1 Satz 2)";
+    label en unofficial "the guardian is responsible for the breach of duty (§ 1794 (1) sentence 2)";
+}
+pub relation vormund_haftet_fuer_schaden(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund ist dem Mündel für den aus der Pflichtverletzung entstehenden Schaden verantwortlich (§ 1794 Absatz 1)";
+    label en unofficial "the guardian is liable to the ward for the loss arising from the breach of duty (§ 1794 (1))";
+}
+@source(BGB_P1794)
+rule HaftungDesVormunds(v: Person, m: Person) strict {
+    label de official "Der Vormund ist dem Mündel für den aus einer von ihm zu vertretenden Pflichtverletzung entstehenden Schaden verantwortlich (§ 1794 Absatz 1)";
+    label en unofficial "the guardian is liable to the ward for loss arising from a breach of duty for which they are responsible (§ 1794 (1))";
+    when pflichtverletzung_des_vormunds(v, m) and vormund_hat_pflichtverletzung_zu_vertreten(v, m);
+    then vormund_haftet_fuer_schaden(v, m);
+}
+
+// § 1795: Gegenstand der Personensorge; Genehmigungspflichten des Vormunds — eigene Schwellen.
+
+pub relation vormund_ausbildungsvertrag_ueber_ein_jahr(v: Person, m: Person) kind empirical {
+    label de official "Ausbildungsvertrag, der für längere Zeit als ein Jahr geschlossen wird (§ 1795 Absatz 2 Nummer 1)";
+    label en unofficial "training contract concluded for longer than one year (§ 1795 (2) no. 1)";
+}
+pub relation vormund_dienst_oder_arbeitsvertrag_ueber_ein_jahr(v: Person, m: Person) kind empirical {
+    label de official "Dienst- oder Arbeitsvertrag mit persönlichen Leistungen des Mündels für längere Zeit als ein Jahr (§ 1795 Absatz 2 Nummer 2)";
+    label en unofficial "service or employment contract with personal performance by the ward for longer than one year (§ 1795 (2) no. 2)";
+}
+pub relation vormund_aufenthaltswechsel_ins_ausland(v: Person, m: Person) kind empirical {
+    label de official "Wechsel des gewöhnlichen Aufenthalts des Mündels ins Ausland (§ 1795 Absatz 2 Nummer 3)";
+    label en unofficial "change of the ward's habitual residence abroad (§ 1795 (2) no. 3)";
+}
+pub relation vormund_genehmigung_1795_erforderlich(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund bedarf der Genehmigung des Familiengerichts (§ 1795 Absatz 2)";
+    label en unofficial "the guardian requires the family court's approval (§ 1795 (2))";
+}
+@source(BGB_P1795) {
+    rule Genehmigung1795Ausbildungsvertrag(v: Person, m: Person) strict {
+        label de official "Genehmigungspflicht für einen Ausbildungsvertrag über ein Jahr (§ 1795 Absatz 2 Nummer 1)";
+        label en unofficial "approval required for a training contract exceeding one year (§ 1795 (2) no. 1)";
+        when vormund_ausbildungsvertrag_ueber_ein_jahr(v, m);
+        then vormund_genehmigung_1795_erforderlich(v, m);
+    }
+    rule Genehmigung1795Dienstvertrag(v: Person, m: Person) strict {
+        label de official "Genehmigungspflicht für einen Dienst- oder Arbeitsvertrag mit persönlichen Leistungen über ein Jahr (§ 1795 Absatz 2 Nummer 2)";
+        label en unofficial "approval required for a service or employment contract with personal performance exceeding one year (§ 1795 (2) no. 2)";
+        when vormund_dienst_oder_arbeitsvertrag_ueber_ein_jahr(v, m);
+        then vormund_genehmigung_1795_erforderlich(v, m);
+    }
+    rule Genehmigung1795Auslandsaufenthalt(v: Person, m: Person) strict {
+        label de official "Genehmigungspflicht für den Wechsel des gewöhnlichen Aufenthalts des Mündels ins Ausland (§ 1795 Absatz 2 Nummer 3)";
+        label en unofficial "approval required for changing the ward's habitual residence abroad (§ 1795 (2) no. 3)";
+        when vormund_aufenthaltswechsel_ins_ausland(v, m);
+        then vormund_genehmigung_1795_erforderlich(v, m);
+    }
+}
+@source(BGB_P1795)
+pub external judgment relation rechtsgeschaeft_widerspricht_nicht_muendelwohl_1795(v: Person, m: Person) {
+    authority Court;
+    label de official "Das Rechtsgeschäft oder der Aufenthaltswechsel widerspricht unter Berücksichtigung der Rechte des Mündels aus § 1788 nicht dem Wohl des Mündels (§ 1795 Absatz 3)";
+    label en unofficial "the transaction or change of residence, having regard to the ward's rights under § 1788, does not conflict with the ward's welfare (§ 1795 (3))";
+}
+pub relation genehmigung_1795_erteilt(v: Person, m: Person) kind institutional {
+    label de official "Das Familiengericht erteilt die Genehmigung nach § 1795 Absatz 2 (§ 1795 Absatz 3)";
+    label en unofficial "the family court grants the approval under § 1795 (2) (§ 1795 (3))";
+}
+@source(BGB_P1795)
+rule GenehmigungErteilung1795(v: Person, m: Person) strict {
+    label de official "Das Familiengericht erteilt die Genehmigung, wenn das Rechtsgeschäft oder der Aufenthaltswechsel dem Wohl des Mündels nicht widerspricht (§ 1795 Absatz 3)";
+    label en unofficial "the family court grants approval where the transaction or change of residence does not conflict with the ward's welfare (§ 1795 (3))";
+    when vormund_genehmigung_1795_erforderlich(v, m) and rechtsgeschaeft_widerspricht_nicht_muendelwohl_1795(v, m);
+    then genehmigung_1795_erteilt(v, m);
+}
+
+// § 1796: Verhältnis zwischen Vormund und Pflegeperson.
+
+pub relation gleichstellung_der_pflegeperson_1796(pp: Person, m: Person) kind institutional {
+    label de official "Der Pflegeperson steht eine Person gleich, die den Mündel in einer Einrichtung oder sonstigen Wohnform betreut und erzieht, oder die intensive sozialpädagogische Betreuung des Mündels übernommen hat (§ 1796 Absatz 3)";
+    label en unofficial "a person who cares for and raises the ward in an institution or other residential arrangement, or who has taken on intensive socio-educational care of the ward, is treated as equivalent to the carer (§ 1796 (3))";
+}
+pub relation betreut_und_erzieht_in_einrichtung_oder_wohnform(pp: Person, m: Person) kind empirical {
+    label de official "Betreut und erzieht den Mündel in einer Einrichtung über Tag und Nacht oder in sonstigen Wohnformen (§ 1796 Absatz 3 Nummer 1)";
+    label en unofficial "cares for and raises the ward day and night in an institution or other residential arrangement (§ 1796 (3) no. 1)";
+}
+pub relation intensive_sozialpaedagogische_betreuung_uebernommen(pp: Person, m: Person) kind empirical {
+    label de official "Hat die intensive sozialpädagogische Betreuung des Mündels übernommen (§ 1796 Absatz 3 Nummer 2)";
+    label en unofficial "has taken on intensive socio-educational care of the ward (§ 1796 (3) no. 2)";
+}
+@source(BGB_P1796) {
+    rule GleichstellungEinrichtung(pp: Person, m: Person) strict {
+        label de official "Gleichstellung, wenn die Person den Mündel in einer Einrichtung oder sonstigen Wohnform betreut und erzieht (§ 1796 Absatz 3 Nummer 1)";
+        label en unofficial "equivalence where the person cares for and raises the ward in an institution or other residential arrangement (§ 1796 (3) no. 1)";
+        when betreut_und_erzieht_in_einrichtung_oder_wohnform(pp, m);
+        then gleichstellung_der_pflegeperson_1796(pp, m);
+    }
+    rule GleichstellungSozialpaedagogik(pp: Person, m: Person) strict {
+        label de official "Gleichstellung, wenn die Person die intensive sozialpädagogische Betreuung übernommen hat (§ 1796 Absatz 3 Nummer 2)";
+        label en unofficial "equivalence where the person has taken on intensive socio-educational care (§ 1796 (3) no. 2)";
+        when intensive_sozialpaedagogische_betreuung_uebernommen(pp, m);
+        then gleichstellung_der_pflegeperson_1796(pp, m);
+    }
+}
+
+// § 1797: Entscheidungsbefugnis der Pflegeperson in Alltagsangelegenheiten.
+
+pub relation muendel_lebt_fuer_laengere_zeit_bei_pflegeperson(pp: Person, m: Person) kind empirical {
+    label de official "Der Mündel lebt für längere Zeit bei der Pflegeperson (§ 1797 Absatz 1 Satz 1)";
+    label en unofficial "the ward lives with the carer for an extended period (§ 1797 (1) sentence 1)";
+}
+pub relation befugnis_eingeschraenkt_oder_ausgeschlossen_1797(pp: Person, m: Person) kind empirical {
+    label de official "Der Vormund hat die Befugnisse der Pflegeperson zum Wohl des Mündels eingeschränkt oder ausgeschlossen (§ 1797 Absatz 3)";
+    label en unofficial "the guardian has restricted or excluded the carer's powers for the ward's welfare (§ 1797 (3))";
+}
+pub relation pflegeperson_entscheidungsbefugt_im_alltag(pp: Person, m: Person) kind institutional {
+    label de official "Die Pflegeperson ist berechtigt, in Angelegenheiten des täglichen Lebens zu entscheiden und den Vormund insoweit zu vertreten (§ 1797 Absatz 1)";
+    label en unofficial "the carer is entitled to decide on matters of daily life and to represent the guardian to that extent (§ 1797 (1))";
+}
+@source(BGB_P1797)
+rule PflegepersonEntscheidungsbefugnisImAlltag(pp: Person, m: Person) strict {
+    label de official "Lebt der Mündel für längere Zeit bei der Pflegeperson, ist diese berechtigt, in Angelegenheiten des täglichen Lebens zu entscheiden, sofern der Vormund die Befugnis nicht eingeschränkt oder ausgeschlossen hat (§ 1797 Absatz 1, 3)";
+    label en unofficial "where the ward lives with the carer for an extended period, the carer is entitled to decide on matters of daily life unless the guardian has restricted or excluded that power (§ 1797 (1), (3))";
+    when muendel_lebt_fuer_laengere_zeit_bei_pflegeperson(pp, m) and not_known(befugnis_eingeschraenkt_oder_ausgeschlossen_1797(pp, m));
+    then pflegeperson_entscheidungsbefugt_im_alltag(pp, m);
+}
+
+// §§ 1798, 1799, 1800, 1801, 1802, 1807, 1808: Vermögenssorge, Genehmigungen, Aufsicht,
+// Beendigung und Vergütung — entsprechende Anwendung der Titel-3-Maschinerie (D-14-01).
+// Die Regeln stehen in `titel-03-b-vermoegenssorge-und-genehmigungen.law` und
+// `titel-03-c-aufsicht-beendigung-verguetung.law`, die dieselben Prädikate gegen
+// `gesetzlicher_vertreter` schreiben; hier folgen nur die textgebundenen ABWEICHUNGEN,
+// die § 1795 Absatz 2, § 1799 Absatz 2 und § 1801 Absatz 2, 3 ausdrücklich anordnen.
+
+pub relation vormund_schenkungsverbot_1798(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund kann nicht in Vertretung des Mündels Schenkungen machen, außer solchen, die einer sittlichen Pflicht oder dem Anstand entsprechen (§ 1798 Absatz 3)";
+    label en unofficial "the guardian cannot make gifts on the ward's behalf, except those fulfilling a moral duty or in keeping with propriety (§ 1798 (3))";
+}
+@source(BGB_P1798)
+rule Schenkungsverbot1798(v: Person, m: Person) strict {
+    label de official "Der Vormund kann nicht in Vertretung des Mündels Schenkungen machen (§ 1798 Absatz 3 Satz 1)";
+    label en unofficial "the guardian cannot make gifts on the ward's behalf (§ 1798 (3) sentence 1)";
+    when vormund_bestellt(v, m);
+    then vormund_schenkungsverbot_1798(v, m);
+}
+pub relation schenkung_sittliche_pflicht_oder_anstand(v: Person, m: Person) kind empirical {
+    label de official "Die Schenkung entspricht einer sittlichen Pflicht oder einer auf den Anstand zu nehmenden Rücksicht (§ 1798 Absatz 3 Satz 2)";
+    label en unofficial "the gift fulfils a moral duty or is made out of consideration for propriety (§ 1798 (3) sentence 2)";
+}
+
+pub relation vormund_miet_pacht_vertrag_ueber_ein_jahr_nach_volljaehrigkeit(v: Person, m: Person) kind empirical {
+    label de official "Miet- oder Pachtvertrag oder anderer Vertrag über wiederkehrende Leistungen, der länger als ein Jahr nach Eintritt der Volljährigkeit des Mündels fortdauern soll (§ 1799 Absatz 2 Satz 1)";
+    label en unofficial "lease or other contract for recurring performance intended to continue more than one year after the ward attains majority (§ 1799 (2) sentence 1)";
+}
+pub relation vertrag_geringe_wirtschaftliche_bedeutung(v: Person, m: Person) kind empirical {
+    label de official "Der Vertrag hat geringe wirtschaftliche Bedeutung für den Mündel (§ 1799 Absatz 2 Satz 2 Nummer 1)";
+    label en unofficial "the contract is of minor economic significance for the ward (§ 1799 (2) sentence 2 no. 1)";
+}
+pub relation kuendbar_bis_19_ohne_nachteile(v: Person, m: Person) kind empirical {
+    label de official "Das Vertragsverhältnis kann vom Mündel nach Volljährigkeit spätestens zum Ablauf des 19. Lebensjahres ohne eigene Nachteile gekündigt werden (§ 1799 Absatz 2 Satz 2 Nummer 2)";
+    label en unofficial "the contract can be terminated by the ward after majority, at the latest by the end of the 19th year of life, without disadvantage to them (§ 1799 (2) sentence 2 no. 2)";
+}
+pub relation vormund_genehmigung_1799_abs2_erforderlich(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund bedarf abweichend von § 1853 Satz 1 Nummer 1 der Genehmigung des Familiengerichts (§ 1799 Absatz 2 Satz 1)";
+    label en unofficial "by way of derogation from § 1853 sentence 1 no. 1, the guardian requires the family court's approval (§ 1799 (2) sentence 1)";
+}
+@source(BGB_P1799)
+rule Genehmigung1799Abs2Erforderlich(v: Person, m: Person) strict {
+    label de official "Der Vormund bedarf der Genehmigung zum Vertrag über wiederkehrende Leistungen, der über ein Jahr nach Volljährigkeit fortdauern soll, außer bei geringer wirtschaftlicher Bedeutung oder Kündbarkeit ohne Nachteile bis zum 19. Lebensjahr (§ 1799 Absatz 2)";
+    label en unofficial "the guardian requires approval for a contract for recurring performance continuing more than one year after majority, unless of minor economic significance or terminable without disadvantage by age 19 (§ 1799 (2))";
+    when vormund_miet_pacht_vertrag_ueber_ein_jahr_nach_volljaehrigkeit(v, m)
+        and not_known(vertrag_geringe_wirtschaftliche_bedeutung(v, m))
+        and not_known(kuendbar_bis_19_ohne_nachteile(v, m));
+    then vormund_genehmigung_1799_abs2_erforderlich(v, m);
+}
+
+pub relation vormund_befreiung_1801_beantragt(v: Person, m: Person) kind empirical {
+    label de official "Antrag des Vormunds auf Befreiung von den Beschränkungen bei der Vermögenssorge (§ 1801 Absatz 2 Satz 1)";
+    label en unofficial "the guardian's application for release from the restrictions on asset management (§ 1801 (2) sentence 1)";
+}
+@source(BGB_P1801)
+pub external judgment relation gefaehrdung_des_muendelvermoegens_nicht_zu_besorgen(v: Person, m: Person) {
+    authority Court;
+    label de official "Eine Gefährdung des Mündelvermögens ist nicht zu besorgen (§ 1801 Absatz 2 Satz 1)";
+    label en unofficial "no endangerment of the ward's assets is to be feared (§ 1801 (2) sentence 1)";
+}
+pub relation vormund_von_vermoegenssorge_beschraenkungen_befreit(v: Person, m: Person) kind institutional {
+    label de official "Das Familiengericht befreit den Vormund von den Beschränkungen bei der Vermögenssorge (§ 1801 Absatz 2)";
+    label en unofficial "the family court releases the guardian from the restrictions on asset management (§ 1801 (2))";
+}
+@source(BGB_P1801)
+rule Befreiung1801(v: Person, m: Person) strict {
+    label de official "Das Familiengericht kann auf Antrag den Vormund von den Beschränkungen bei der Vermögenssorge befreien, wenn eine Gefährdung des Mündelvermögens nicht zu besorgen ist (§ 1801 Absatz 2)";
+    label en unofficial "on application, the family court may release the guardian from the restrictions on asset management if no endangerment of the ward's assets is to be feared (§ 1801 (2))";
+    when vormund_befreiung_1801_beantragt(v, m) and gefaehrdung_des_muendelvermoegens_nicht_zu_besorgen(v, m);
+    then vormund_von_vermoegenssorge_beschraenkungen_befreit(v, m);
+}
+
+// § 1800: Erteilung der Genehmigung — Absatz 1 ist die allgemeine
+// Erteilungsnorm (der Sonderfall Personensorge nach § 1795 Absatz 4 verweist
+// bereits hierher); „widerspricht den Grundsätzen des § 1798 Absatz 1 nicht"
+// ist eine Wertung (Wohl des Mündels, wirtschaftliche Vermögensverwaltung —
+// Kanal §47.3, D-14-06 Block 6).
+
+@source(BGB_P1800)
+pub external judgment relation rechtsgeschaeft_widerspricht_1798abs1_grundsaetzen_nicht(v: Person, m: Person) {
+    authority Court;
+    label de official "Das Rechtsgeschäft widerspricht den Grundsätzen des § 1798 Absatz 1 (Wohl des Mündels, wirtschaftliche Vermögensverwaltung) nicht (§ 1800 Absatz 1)";
+    label en unofficial "the transaction does not conflict with the principles of § 1798 (1) (the ward's welfare, economical asset management) (§ 1800 (1))";
+}
+pub relation genehmigung_1800_zu_erteilen(v: Person, m: Person) kind institutional {
+    label de official "Das Familiengericht erteilt die Genehmigung (§ 1800 Absatz 1)";
+    label en unofficial "the family court grants the approval (§ 1800 (1))";
+}
+@source(BGB_P1800)
+rule Genehmigung1800Erteilen(v: Person, m: Person) strict {
+    label de official "Widerspricht das Rechtsgeschäft den Grundsätzen des § 1798 Absatz 1 nicht, erteilt das Familiengericht die Genehmigung (§ 1800 Absatz 1)";
+    label en unofficial "where the transaction does not conflict with the principles of § 1798 (1), the family court grants the approval (§ 1800 (1))";
+    when gesetzlicher_vertreter(v, m) and rechtsgeschaeft_widerspricht_1798abs1_grundsaetzen_nicht(v, m);
+    then genehmigung_1800_zu_erteilen(v, m);
+}
+
+// § 1802 Absatz 1 Satz 2, Absatz 2 Satz 2, 3: die "gilt entsprechend"-Verweise
+// auf §§ 1861 Absatz 2, 1862 Absatz 3, 4, 1863–1867 sind bereits automatisch
+// erfüllt, weil jene Regeln generisch gegen `gesetzlicher_vertreter`
+// schreiben (D-14-01 — ein Prädikat für drei Ämter, keine Zwillingsmaschinerie
+// nötig). Absatz 2 Satz 4 ist eine echte VORMUND-EIGENE Ergänzung
+// (Versicherungsauflage), die keine Entsprechung im Betreuungsrecht hat.
+
+pub relation gericht_ordnet_versicherungsauflage_an(v: Person, m: Person) kind empirical {
+    label de official "Das Familiengericht gibt dem Vormund auf, eine Versicherung gegen Schäden einzugehen, die er dem Mündel zufügen kann (§ 1802 Absatz 2 Satz 4)";
+    label en unofficial "the family court directs the guardian to take out insurance against damage they might cause the ward (§ 1802 (2) sentence 4)";
+}
+pub relation vormund_hat_versicherung_abzuschliessen(v: Person, m: Person) kind institutional {
+    label de official "Der Vormund hat die aufgegebene Versicherung abzuschließen (§ 1802 Absatz 2 Satz 4)";
+    label en unofficial "the guardian must take out the required insurance (§ 1802 (2) sentence 4)";
+}
+@source(BGB_P1802)
+rule VersicherungsauflagePflicht1802(v: Person, m: Person) strict {
+    label de official "Gibt das Familiengericht dem Vormund eine Versicherung gegen Schäden auf, hat der Vormund sie abzuschließen (§ 1802 Absatz 2 Satz 4)";
+    label en unofficial "where the family court directs the guardian to take out insurance against damage, the guardian must do so (§ 1802 (2) sentence 4)";
+    when gesetzlicher_vertreter(v, m) and gericht_ordnet_versicherungsauflage_an(v, m);
+    then vormund_hat_versicherung_abzuschliessen(v, m);
+}
+
+// § 1807: entsprechende Anwendung der §§ 1872–1874 auf die beendete
+// Vormundschaft (bereits automatisch, D-14-01) MIT DER MASSGABE, dass für
+// § 1872 Absatz 4 die Befreiung des Vormunds gemäß § 1801 Absatz 1 oder 3
+// (statt § 1859) maßgeblich ist — eigene Prämisse, gleiche Schlussfolgerung
+// `vermoegensuebersicht_statt_schlussrechnung_genuegt_1872` wie in Block 5
+// (`titel-03-c-aufsicht-beendigung-verguetung.law`), keine Zwillingsregel.
+
+pub relation vormund_befreit_gemaess_1801abs1_oder_3(v: Person, m: Person) kind empirical {
+    label de official "Der Vormund war bei Beendigung seines Amtes gemäß § 1801 Absatz 1 oder Absatz 3 befreit (§ 1807, § 1872 Absatz 4)";
+    label en unofficial "the guardian was, on ending their office, exempted under § 1801 (1) or (3) (§ 1807, § 1872 (4))";
+}
+@source(BGB_P1807)
+rule VermoegensuebersichtGenuegtBeiVormundBefreiung1807(v: Person, m: Person, neuer_vormund: Person) strict {
+    label de official "War der Vormund bei Beendigung seines Amtes gemäß § 1801 Absatz 1 oder 3 befreit, genügt statt der Schlussrechnung eine Vermögensübersicht (§ 1807 mit § 1872 Absatz 4)";
+    label en unofficial "where the guardian was, on ending their office, exempted under § 1801 (1) or (3), an asset survey suffices instead of the final account (§ 1807 with § 1872 (4))";
+    when betreuerwechsel_1872(v, m, neuer_vormund) and vormund_befreit_gemaess_1801abs1_oder_3(v, m);
+    then vermoegensuebersicht_statt_schlussrechnung_genuegt_1872(v, m, neuer_vormund);
+}
+
+// § 1803: Persönliche Anhörung; Besprechung mit dem Mündel.
+
+pub relation anhaltspunkte_fuer_pflichtwidrigkeit_des_vormunds(m: Person) kind empirical {
+    label de official "Anhaltspunkte bestehen, dass der Vormund pflichtwidrig die Rechte des Mündels nicht beachtet oder seinen Pflichten nicht nachkommt (§ 1803 Nummer 1)";
+    label en unofficial "there are indications that the guardian, in breach of duty, fails to respect the ward's rights or otherwise fails to meet their duties (§ 1803 no. 1)";
+}
+pub relation familiengericht_hat_muendel_persoenlich_anzuhoeren(m: Person) kind institutional {
+    label de official "Das Familiengericht hat den Mündel persönlich anzuhören (§ 1803 Nummer 1)";
+    label en unofficial "the family court must hear the ward in person (§ 1803 no. 1)";
+}
+@source(BGB_P1803)
+rule PersoenlicheAnhoerungBeiPflichtwidrigkeitsverdacht(m: Person) strict {
+    label de official "Bestehen Anhaltspunkte für eine Pflichtwidrigkeit des Vormunds, hat das Familiengericht den Mündel in geeigneten, seinem Entwicklungsstand angemessenen Fällen persönlich anzuhören (§ 1803 Nummer 1)";
+    label en unofficial "where there are indications of a breach of duty by the guardian, in suitable cases matching the ward's stage of development the family court must hear the ward in person (§ 1803 no. 1)";
+    when anhaltspunkte_fuer_pflichtwidrigkeit_des_vormunds(m);
+    then familiengericht_hat_muendel_persoenlich_anzuhoeren(m);
+}
+
+// § 1804: Entlassung des Vormunds — closed lists Absatz 1 und 2, Regel Absatz 3.
+
+pub relation fortfuehrung_gefaehrdet_muendelwohl(v: Person, m: Person) kind empirical {
+    label de official "Die Fortführung des Amtes durch den Vormund, insbesondere wegen Pflichtverletzung, würde das Interesse oder Wohl des Mündels gefährden (§ 1804 Absatz 1 Nummer 1)";
+    label en unofficial "continuing in office, in particular due to breach of duty, would endanger the ward's interest or welfare (§ 1804 (1) no. 1)";
+}
+pub relation andere_person_ehrenamtlich_geeignet_statt_774(v: Person, m: Person) kind empirical {
+    label de official "Der Vormund wurde nach § 1774 Absatz 1 Nummer 2 bis 4 bestellt und jetzt ist eine andere Person geeignet und bereit, die Vormundschaft ehrenamtlich zu führen (§ 1804 Absatz 1 Nummer 2)";
+    label en unofficial "the guardian was appointed under § 1774 (1) nos. 2 to 4 and another person is now suitable and willing to conduct the guardianship voluntarily (§ 1804 (1) no. 2)";
+}
+pub relation entlassung_widerspraeche_muendelwohl_1804(v: Person, m: Person) kind empirical {
+    label de official "Die Entlassung widerspricht dem Wohl des Mündels (Ausnahme zu § 1804 Absatz 1 Nummer 2)";
+    label en unofficial "the discharge would conflict with the ward's welfare (exception to § 1804 (1) no. 2)";
+}
+pub relation vereinsvormund_scheidet_aus_arbeitsverhaeltnis_aus(v: Person, m: Person) kind empirical {
+    label de official "Der Vereinsvormund scheidet aus dem Arbeitsverhältnis mit dem Verein aus (§ 1804 Absatz 1 Nummer 3)";
+    label en unofficial "the association guardian's employment relationship with the association ends (§ 1804 (1) no. 3)";
+}
+pub relation nachtraeglich_bekannte_ausschlussgruende_1784(v: Person, m: Person) kind empirical {
+    label de official "Nach der Bestellung werden Umstände bekannt oder treten Umstände ein, die der Bestellung gemäß § 1784 entgegenstehen (§ 1804 Absatz 1 Nummer 4)";
+    label en unofficial "circumstances become known or arise after appointment which under § 1784 would have barred it (§ 1804 (1) no. 4)";
+}
+pub relation sonstiger_wichtiger_entlassungsgrund(v: Person, m: Person) kind empirical {
+    label de official "Ein sonstiger wichtiger Grund für die Entlassung liegt vor (§ 1804 Absatz 1 Nummer 5)";
+    label en unofficial "another important ground for discharge exists (§ 1804 (1) no. 5)";
+}
+pub relation vormund_zu_entlassen(v: Person, m: Person) kind institutional {
+    label de official "Das Familiengericht hat den Vormund zu entlassen (§ 1804 Absatz 1, 2)";
+    label en unofficial "the family court must discharge the guardian (§ 1804 (1), (2))";
+}
+@source(BGB_P1804) {
+    rule Entlassung1804Muendelwohlgefaehrdung(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht, wenn die Fortführung des Amtes das Wohl des Mündels gefährden würde (§ 1804 Absatz 1 Nummer 1)";
+        label en unofficial "mandatory discharge where continuing in office would endanger the ward's welfare (§ 1804 (1) no. 1)";
+        when fortfuehrung_gefaehrdet_muendelwohl(v, m);
+        then vormund_zu_entlassen(v, m);
+    }
+    rule Entlassung1804AndereGeeignet(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht bei § 1774 Absatz 1 Nummer 2 bis 4 bestelltem Vormund, wenn nun eine andere Person ehrenamtlich geeignet und bereit ist, außer die Entlassung widerspräche dem Mündelwohl (§ 1804 Absatz 1 Nummer 2)";
+        label en unofficial "mandatory discharge of a guardian appointed under § 1774 (1) nos. 2 to 4 once another person is suitable and willing to serve voluntarily, unless discharge would conflict with the ward's welfare (§ 1804 (1) no. 2)";
+        when andere_person_ehrenamtlich_geeignet_statt_774(v, m) and not_known(entlassung_widerspraeche_muendelwohl_1804(v, m));
+        then vormund_zu_entlassen(v, m);
+    }
+    rule Entlassung1804VereinsvormundAusgeschieden(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht, wenn der Vereinsvormund aus dem Arbeitsverhältnis mit dem Verein ausscheidet (§ 1804 Absatz 1 Nummer 3)";
+        label en unofficial "mandatory discharge where the association guardian's employment with the association ends (§ 1804 (1) no. 3)";
+        when vereinsvormund_scheidet_aus_arbeitsverhaeltnis_aus(v, m);
+        then vormund_zu_entlassen(v, m);
+    }
+    rule Entlassung1804NachtraeglicheAusschlussgruende(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht, wenn nachträglich Ausschlussgründe nach § 1784 bekannt werden oder eintreten (§ 1804 Absatz 1 Nummer 4)";
+        label en unofficial "mandatory discharge where grounds for exclusion under § 1784 become known or arise after appointment (§ 1804 (1) no. 4)";
+        when nachtraeglich_bekannte_ausschlussgruende_1784(v, m);
+        then vormund_zu_entlassen(v, m);
+    }
+    rule Entlassung1804SonstigerWichtigerGrund(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht bei sonstigem wichtigem Grund (§ 1804 Absatz 1 Nummer 5)";
+        label en unofficial "mandatory discharge on another important ground (§ 1804 (1) no. 5)";
+        when sonstiger_wichtiger_entlassungsgrund(v, m);
+        then vormund_zu_entlassen(v, m);
+    }
+}
+pub relation vormund_kann_amtsfuehrung_nicht_mehr_zugemutet_werden(v: Person, m: Person) kind empirical {
+    label de official "Nach der Bestellung eingetretene Umstände, aufgrund derer dem Vormund die Fortführung des Amtes nicht mehr zugemutet werden kann, und der Vormund beantragt seine Entlassung (§ 1804 Absatz 2 Nummer 1)";
+    label en unofficial "circumstances arising after appointment which mean continuing in office can no longer reasonably be expected of the guardian, who applies for discharge (§ 1804 (2) no. 1)";
+}
+pub relation verein_beantragt_entlassung_des_vereinsvormunds(v: Person, m: Person) kind empirical {
+    label de official "Der Verein beantragt die Entlassung des Vereinsvormunds (§ 1804 Absatz 2 Nummer 2)";
+    label en unofficial "the association applies for the discharge of the association guardian (§ 1804 (2) no. 2)";
+}
+@source(BGB_P1804) {
+    rule Entlassung1804AufAntragUnzumutbarkeit(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht auf Verlangen des Vormunds, wenn ihm die Fortführung nicht mehr zugemutet werden kann (§ 1804 Absatz 2 Nummer 1)";
+        label en unofficial "mandatory discharge on the guardian's request where continuing can no longer reasonably be expected of them (§ 1804 (2) no. 1)";
+        when vormund_kann_amtsfuehrung_nicht_mehr_zugemutet_werden(v, m);
+        then vormund_zu_entlassen(v, m);
+    }
+    rule Entlassung1804VereinBeantragt(v: Person, m: Person) strict {
+        label de official "Entlassungspflicht, wenn der Verein die Entlassung des Vereinsvormunds beantragt (§ 1804 Absatz 2 Nummer 2)";
+        label en unofficial "mandatory discharge where the association applies for the association guardian's discharge (§ 1804 (2) no. 2)";
+        when verein_beantragt_entlassung_des_vereinsvormunds(v, m);
+        then vormund_zu_entlassen(v, m);
+    }
+}
+
+pub relation wechsel_dient_muendelwohl(v: Person, m: Person) kind empirical {
+    label de official "Der Wechsel des Vormunds dient dem Wohl des Mündels (§ 1804 Absatz 3 Satz 1)";
+    label en unofficial "the change of guardian serves the ward's welfare (§ 1804 (3) sentence 1)";
+}
+pub relation muendel_widerspricht_wechsel(v: Person, m: Person) kind empirical {
+    label de official "Entgegenstehender Wille des Mündels gegen den Wechsel des Vormunds (§ 1804 Absatz 3 Satz 2)";
+    label en unofficial "the ward's wishes are opposed to the change of guardian (§ 1804 (3) sentence 2)";
+}
+pub relation antrag_auf_entlassung_wegen_wechsel(antragsteller: Person, v: Person, m: Person) kind empirical {
+    label de official "Zulässiger Antrag des Vormunds, eines sich anbietenden neuen Vormunds, des Mündels ab 14 Jahren oder eines Dritten mit berechtigtem Interesse (§ 1804 Absatz 3 Satz 3)";
+    label en unofficial "admissible application by the guardian, a person offering to serve as new guardian, the ward from age 14, or a third party with a legitimate interest (§ 1804 (3) sentence 3)";
+}
+pub relation soll_bisherigen_vormund_auf_antrag_entlassen(v: Person, m: Person) kind institutional {
+    label de official "Das Familiengericht soll auf Antrag den bisherigen Vormund entlassen (§ 1804 Absatz 3)";
+    label en unofficial "on application, the family court should discharge the previous guardian (§ 1804 (3))";
+}
+@source(BGB_P1804)
+rule Entlassung1804WechselSollRegel(antragsteller: Person, v: Person, m: Person) defeasible {
+    label de official "Das Familiengericht soll auf zulässigen Antrag den bisherigen Vormund entlassen, wenn der Wechsel dem Wohl des Mündels dient und der Mündel dem nicht widerspricht (§ 1804 Absatz 3)";
+    label en unofficial "on an admissible application, the family court should discharge the previous guardian where the change serves the ward's welfare and the ward does not object (§ 1804 (3))";
+    when antrag_auf_entlassung_wegen_wechsel(antragsteller, v, m) and wechsel_dient_muendelwohl(v, m) and not_known(muendel_widerspricht_wechsel(v, m));
+    then soll_bisherigen_vormund_auf_antrag_entlassen(v, m);
+}
+
+// § 1805: Bestellung eines neuen Vormunds.
+
+pub relation vormund_verstorben(v: Person, m: Person) kind empirical {
+    label de official "Der Vormund ist verstorben (§ 1805 Absatz 1)";
+    label en unofficial "the guardian has died (§ 1805 (1))";
+}
+pub relation neuer_vormund_unverzueglich_zu_bestellen(m: Person) kind institutional {
+    label de official "Das Familiengericht hat unverzüglich einen neuen Vormund zu bestellen (§ 1805 Absatz 1 Satz 1)";
+    label en unofficial "the family court must promptly appoint a new guardian (§ 1805 (1) sentence 1)";
+}
+@source(BGB_P1805) {
+    rule NeuerVormundNachEntlassung(v: Person, m: Person) strict {
+        label de official "Wird der Vormund entlassen, hat das Familiengericht unverzüglich einen neuen Vormund zu bestellen (§ 1805 Absatz 1 Satz 1)";
+        label en unofficial "if the guardian is discharged, the family court must promptly appoint a new guardian (§ 1805 (1) sentence 1)";
+        when vormund_zu_entlassen(v, m);
+        then neuer_vormund_unverzueglich_zu_bestellen(m);
+    }
+    rule NeuerVormundNachTod(v: Person, m: Person) strict {
+        label de official "Verstirbt der Vormund, hat das Familiengericht unverzüglich einen neuen Vormund zu bestellen (§ 1805 Absatz 1 Satz 1)";
+        label en unofficial "if the guardian dies, the family court must promptly appoint a new guardian (§ 1805 (1) sentence 1)";
+        when vormund_verstorben(v, m);
+        then neuer_vormund_unverzueglich_zu_bestellen(m);
+    }
+}
+
+// § 1806: Ende der Vormundschaft.
+
+pub relation voraussetzungen_1773_weggefallen(m: Person) kind empirical {
+    label de official "Die Voraussetzungen des § 1773 für die Begründung der Vormundschaft sind nicht mehr gegeben (§ 1806) — expliziter Fall-Eingang, kein Schluss aus Schweigen";
+    label en unofficial "the requirements of § 1773 for establishing the guardianship no longer obtain (§ 1806) — explicit case input, not inferred from silence";
+}
+pub relation vormundschaft_endet(m: Person) kind institutional {
+    label de official "Die Vormundschaft endet (§ 1806)";
+    label en unofficial "the guardianship ends (§ 1806)";
+}
+@source(BGB_P1806)
+rule VormundschaftEndetBeiWegfallDerVoraussetzungen(m: Person) strict {
+    label de official "Die Vormundschaft endet, wenn die Voraussetzungen für ihre Begründung gemäß § 1773 nicht mehr gegeben sind (§ 1806)";
+    label en unofficial "the guardianship ends once the requirements for its establishment under § 1773 no longer obtain (§ 1806)";
+    when voraussetzungen_1773_weggefallen(m);
+    then vormundschaft_endet(m);
+}
+
+// § 1807: Vermögensherausgabe, Schlussrechnungslegung — entsprechende Anwendung §§ 1872–1874,
+// befreit nach § 1801 Absatz 1 und 3 statt § 1859: Regel in
+// `titel-03-c-aufsicht-beendigung-verguetung.law` (VormundBeendigungsfolgen1807).
+
+// § 1808: Vergütung und Aufwendungsersatz.
+
+pub relation vormundschaft_grundsaetzlich_unentgeltlich(v: Person, m: Person) kind institutional {
+    label de official "Die Vormundschaft wird grundsätzlich unentgeltlich geführt (§ 1808 Absatz 1)";
+    label en unofficial "guardianship is, in principle, conducted without remuneration (§ 1808 (1))";
+}
+@source(BGB_P1808)
+rule VormundschaftUnentgeltlichkeitsgrundsatz(v: Person, m: Person) strict {
+    label de official "Die Vormundschaft wird grundsätzlich unentgeltlich geführt (§ 1808 Absatz 1)";
+    label en unofficial "guardianship is, in principle, conducted without remuneration (§ 1808 (1))";
+    when vormund_bestellt(v, m);
+    then vormundschaft_grundsaetzlich_unentgeltlich(v, m);
+}
+pub relation vormundschaft_berufsmaessig_gefuehrt(v: Person, m: Person) kind empirical {
+    label de official "Die Vormundschaft wird ausnahmsweise berufsmäßig geführt (§ 1808 Absatz 3 Satz 1)";
+    label en unofficial "the guardianship is exceptionally conducted on a professional basis (§ 1808 (3) sentence 1)";
+}
+pub relation verguetung_nach_vbvg(v: Person, m: Person) kind institutional {
+    label de official "Ansprüche des berufsmäßig tätigen Vormunds auf Vergütung und Aufwendungsersatz bestimmen sich nach dem Vormünder- und Betreuervergütungsgesetz (§ 1808 Absatz 3 Satz 2)";
+    label en unofficial "claims of the professional guardian to remuneration and reimbursement are governed by the Guardians' and Custodians' Remuneration Act (§ 1808 (3) sentence 2)";
+}
+@source(BGB_P1808)
+rule VerguetungNachVBVGBeiBerufsmaessigkeit(v: Person, m: Person) strict {
+    label de official "Wird die Vormundschaft berufsmäßig geführt, bestimmen sich Vergütung und Aufwendungsersatz nach dem Vormünder- und Betreuervergütungsgesetz (§ 1808 Absatz 3)";
+    label en unofficial "where the guardianship is conducted professionally, remuneration and reimbursement are governed by the Guardians' and Custodians' Remuneration Act (§ 1808 (3))";
+    when vormundschaft_berufsmaessig_gefuehrt(v, m);
+    then verguetung_nach_vbvg(v, m);
+}

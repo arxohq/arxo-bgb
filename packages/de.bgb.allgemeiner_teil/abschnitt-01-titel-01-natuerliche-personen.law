@@ -1,0 +1,432 @@
+// BUCH 1 ABSCHNITT 1 TITEL 1 — NATÜRLICHE PERSONEN, VERBRAUCHER, UNTERNEHMER
+// (§§ 1, 2, 7–14; § 10 weggefallen)
+//
+// LEBENSALTER. § 2 und § 106 messen ein Lebensjahr. Gerechnet wird es nicht
+// hier, sondern in `de.bgb.fristen` (§ 187 Abs. 2 Satz 2, § 188 Abs. 2:
+// der Tag der Geburt wird mitgerechnet, die Frist endet mit dem Ablauf des
+// Tages, der dem entsprechenden Tag VORHERGEHT — Ledger D-09). Dieses Paket
+// schreibt nur den Eingang jenes Rechners (`lebensjahr_gefragt`) und liest
+// sein Ergebnis (`lebensjahr_vollendet_am`). Die Volljährigkeit tritt mit der
+// VOLLENDUNG ein, also mit dem Ablauf jenes Tages: volljährig ist die Person
+// vom folgenden Tag an — das ist der 18. Geburtstag selbst.
+//
+// WOHNSITZ. Der Fall gibt den gegenwärtigen Zustand an: entweder die ständige
+// Niederlassung (§ 7 Abs. 1) oder ihre Aufhebung mit Aufgabewillen (§ 7
+// Abs. 3). Das Fehlen einer Angabe ist keine Verneinung; ohne Angabe schweigt
+// das Paket. Mehrere Wohnsitze sind zugelassen (§ 7 Abs. 2): die Relation
+// trägt keinen Schlüssel.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+// --- § 1 Beginn der Rechtsfähigkeit ---------------------------------------------------------------
+
+pub relation rechtsfaehig_seit(p: Person, tag: Date) kind institutional {
+    key(p);
+    label de official "Tag, mit dem die Rechtsfähigkeit beginnt (§ 1: Vollendung der Geburt; bei juristischen Personen §§ 21, 22, 80)";
+    label en unofficial "day on which legal capacity begins (§ 1: completion of birth; for legal persons §§ 21, 22, 80)";
+}
+
+@source(BGB_P1)
+rule RechtsfaehigkeitDesMenschen(p: Person, g: Date) strict {
+    label de official "Die Rechtsfähigkeit des Menschen beginnt mit der Vollendung der Geburt (§ 1) — Tag der Geburt nach § 187 Abs. 2 Satz 2 (de.bgb.fristen)";
+    label en unofficial "The legal capacity of a human being begins on the completion of birth (§ 1)";
+    when de.bgb.fristen::geburtstag(p, g);
+    then rechtsfaehig_seit(p, g);
+}
+
+// --- § 2 Eintritt der Volljährigkeit ---------------------------------------------------------------
+
+pub relation volljaehrig_am(p: Person, tag: Date) kind institutional {
+    label de official "Die Person ist an diesem Tag volljährig (§ 2)";
+    label en unofficial "the person is of full age on this day (§ 2)";
+}
+pub relation minderjaehrig_am(p: Person, tag: Date) kind institutional {
+    label de official "Die Person ist an diesem Tag minderjährig (§ 2 im Umkehrschluss: das 18. Lebensjahr ist noch nicht vollendet)";
+    label en unofficial "the person is a minor on this day (§ 2 a contrario)";
+}
+pub relation volljaehrigkeit_tritt_ein_am(p: Person, tag: Date) kind institutional {
+    key(p);
+    label de official "Tag, mit dem die Volljährigkeit eintritt (§ 2): der Tag nach der Vollendung des 18. Lebensjahres — der 18. Geburtstag";
+    label en unofficial "day on which majority begins (§ 2): the day after completion of the eighteenth year of life — the eighteenth birthday";
+}
+
+// Eingang des Rechners der Fristen: für jede Person mit angegebenem
+// Geburtstag wird die Vollendung des 18. Lebensjahres gefragt.
+@source(BGB_P2)
+rule AchtzehntesLebensjahrGefragt(p: Person, g: Date) strict {
+    label de official "Die Volljährigkeit tritt mit der Vollendung des 18. Lebensjahres ein (§ 2): gefragt ist die Vollendung des 18. Lebensjahres (§ 187 Abs. 2 Satz 2, § 188 Abs. 2)";
+    label en unofficial "Majority begins on completion of the eighteenth year of life (§ 2): the completion of the eighteenth year is asked (§ 187 (2) sentence 2, § 188 (2))";
+    when de.bgb.fristen::geburtstag(p, g);
+    then de.bgb.fristen::lebensjahr_gefragt(p, 18 calendar_year);
+}
+
+@source(BGB_P2)
+rule VolljaehrigkeitTrittEin(p: Person, v: Date) strict {
+    label de official "Die Volljährigkeit tritt mit der VOLLENDUNG des 18. Lebensjahres ein (§ 2); vollendet ist das Lebensjahr mit dem ABLAUF des Vortags des 18. Geburtstags (§ 188 Abs. 2), volljährig ist die Person daher vom folgenden Tag an";
+    label en unofficial "Majority begins on completion of the eighteenth year of life (§ 2); the year is completed at the end of the day before the eighteenth birthday, so the person is of full age from the following day";
+    when de.bgb.fristen::lebensjahr_vollendet_am(p, 18 calendar_year, v);
+    then volljaehrigkeit_tritt_ein_am(p, add_calendar_period(v, 1 calendar_day));
+}
+
+@source(BGB_P2)
+rule VolljaehrigAmPruefungstag(p: Person, t: Date, e: Date) strict {
+    label de official "Am Prüfungstag ist die Person volljährig, wenn der Tag des Eintritts der Volljährigkeit nicht nach ihm liegt (§ 2)";
+    label en unofficial "On the day examined the person is of full age if the day majority begins is not later (§ 2)";
+    when pruefungszeitpunkt(p, t) and volljaehrigkeit_tritt_ein_am(p, e) and t >= e;
+    then volljaehrig_am(p, t);
+}
+
+@source(BGB_P2)
+rule MinderjaehrigAmPruefungstag(p: Person, t: Date, e: Date) strict {
+    label de official "Am Prüfungstag ist die Person minderjährig, wenn der Tag des Eintritts der Volljährigkeit nach ihm liegt (§ 2 im Umkehrschluss)";
+    label en unofficial "On the day examined the person is a minor if the day majority begins is later (§ 2 a contrario)";
+    when pruefungszeitpunkt(p, t) and volljaehrigkeit_tritt_ein_am(p, e) and t < e;
+    then minderjaehrig_am(p, t);
+}
+
+// --- §§ 7–11 Wohnsitz ------------------------------------------------------------------------------
+
+pub relation staendige_niederlassung(p: Person, o: Ort) kind empirical {
+    label de official "die Person hat sich an diesem Orte ständig niedergelassen (§ 7 Abs. 1) — Angabe des Falls";
+    label en unofficial "the person has settled permanently at this place (§ 7 (1)) — case input";
+}
+pub relation niederlassung_mit_aufgabewillen_aufgehoben(p: Person, o: Ort) kind empirical {
+    label de official "die Niederlassung ist mit dem Willen aufgehoben worden, sie aufzugeben (§ 7 Abs. 3) — Angabe des Falls";
+    label en unofficial "the settlement has been given up with the intention of abandoning it (§ 7 (3)) — case input";
+}
+pub relation ohne_willen_des_gesetzlichen_vertreters(p: Person, o: Ort) kind empirical {
+    label de official "die Begründung oder Aufhebung des Wohnsitzes geschieht ohne den Willen des gesetzlichen Vertreters (§ 8)";
+    label en unofficial "the domicile is established or given up without the will of the legal representative (§ 8)";
+}
+pub relation wohnsitzbegruendung_unwirksam(p: Person, o: Ort) kind institutional {
+    label de official "die Begründung des Wohnsitzes ohne den Willen des gesetzlichen Vertreters ist unwirksam (§ 8)";
+    label en unofficial "establishing the domicile without the legal representative's will is ineffective (§ 8)";
+}
+pub relation wohnsitzaufhebung_unwirksam(p: Person, o: Ort) kind institutional {
+    label de official "die Aufhebung des Wohnsitzes ohne den Willen des gesetzlichen Vertreters ist unwirksam (§ 8)";
+    label en unofficial "giving up the domicile without the legal representative's will is ineffective (§ 8)";
+}
+pub relation wohnsitz(p: Person, o: Ort) kind institutional {
+    label de official "Wohnsitz der Person (§§ 7–11); er kann gleichzeitig an mehreren Orten bestehen (§ 7 Abs. 2) — kein Schlüssel";
+    label en unofficial "domicile of the person (§§ 7–11); it may exist at several places at the same time (§ 7 (2))";
+}
+pub relation wohnsitz_aufgehoben(p: Person, o: Ort) kind institutional {
+    label de official "der Wohnsitz an diesem Orte ist aufgehoben (§ 7 Abs. 3)";
+    label en unofficial "the domicile at this place is given up (§ 7 (3))";
+}
+
+@source(BGB_P7)
+rule WohnsitzDurchNiederlassung(p: Person, o: Ort) strict {
+    label de official "Wer sich an einem Orte ständig niederlässt, begründet an diesem Orte seinen Wohnsitz (§ 7 Abs. 1)";
+    label en unofficial "A person who settles permanently at a place establishes their domicile at that place (§ 7 (1))";
+    when staendige_niederlassung(p, o) and not_known(wohnsitzbegruendung_unwirksam(p, o));
+    then wohnsitz(p, o);
+}
+
+@source(BGB_P7)
+rule WohnsitzAufgehoben(p: Person, o: Ort) strict {
+    label de official "Der Wohnsitz wird aufgehoben, wenn die Niederlassung mit dem Willen aufgehoben wird, sie aufzugeben (§ 7 Abs. 3)";
+    label en unofficial "The domicile is given up if the settlement is abandoned with the intention of giving it up (§ 7 (3))";
+    when niederlassung_mit_aufgabewillen_aufgehoben(p, o) and not_known(wohnsitzaufhebung_unwirksam(p, o));
+    then wohnsitz_aufgehoben(p, o);
+}
+
+@source(BGB_P7, BGB_P8)
+rule KeinWohnsitzNachAufhebung(p: Person, o: Ort) strict {
+    label de official "Mit der Aufhebung der Niederlassung besteht an diesem Orte kein Wohnsitz mehr (§ 7 Abs. 3)";
+    label en unofficial "Once the settlement is given up there is no domicile at that place (§ 7 (3))";
+    when wohnsitz_aufgehoben(p, o);
+    then not wohnsitz(p, o);
+}
+
+// § 8: Geschäftsunfähige und beschränkt Geschäftsfähige können ohne den Willen
+// ihres gesetzlichen Vertreters einen Wohnsitz weder begründen noch aufheben.
+// Der Zustand wird am Prüfungstag gemessen (Titel 1 des Abschnitts 3).
+@source(BGB_P8)
+rule WohnsitzbegruendungOhneVertreterUnwirksam(p: Person, o: Ort, t: Date) strict {
+    label de official "Wer geschäftsunfähig oder in der Geschäftsfähigkeit beschränkt ist, kann ohne den Willen seines gesetzlichen Vertreters einen Wohnsitz weder begründen noch aufheben (§ 8) — Begründung";
+    label en unofficial "A person lacking or limited in capacity to contract cannot establish a domicile without the will of their legal representative (§ 8)";
+    when staendige_niederlassung(p, o)
+        and ohne_willen_des_gesetzlichen_vertreters(p, o)
+        and nicht_voll_geschaeftsfaehig_am(p, t);
+    then wohnsitzbegruendung_unwirksam(p, o);
+}
+
+@source(BGB_P8)
+rule WohnsitzaufhebungOhneVertreterUnwirksam(p: Person, o: Ort, t: Date) strict {
+    label de official "Wer geschäftsunfähig oder in der Geschäftsfähigkeit beschränkt ist, kann ohne den Willen seines gesetzlichen Vertreters einen Wohnsitz weder begründen noch aufheben (§ 8) — Aufhebung";
+    label en unofficial "A person lacking or limited in capacity to contract cannot give up a domicile without the will of their legal representative (§ 8)";
+    when niederlassung_mit_aufgabewillen_aufgehoben(p, o)
+        and ohne_willen_des_gesetzlichen_vertreters(p, o)
+        and nicht_voll_geschaeftsfaehig_am(p, t);
+    then wohnsitzaufhebung_unwirksam(p, o);
+}
+
+// § 9 Wohnsitz eines Soldaten.
+pub enum Soldatenstatus {
+    label de official "Art des Wehrdienstverhältnisses (§ 9 Abs. 2)";
+    label en unofficial "kind of military service relationship (§ 9 (2))";
+    BerufsOderZeitsoldat,
+    NurAufGrundDerWehrpflicht
+}
+pub relation soldat(p: Person, status: Soldatenstatus) kind empirical {
+    key(p);
+    label de official "die Person leistet Wehrdienst; Art des Dienstverhältnisses (§ 9)";
+    label en unofficial "the person performs military service; kind of service (§ 9)";
+}
+pub relation standort(p: Person, o: Ort) kind empirical {
+    key(p);
+    label de official "Standort des Soldaten (§ 9 Abs. 1 Satz 1)";
+    label en unofficial "garrison of the soldier (§ 9 (1) sentence 1)";
+}
+pub relation letzter_inlaendischer_standort(p: Person, o: Ort) kind empirical {
+    key(p);
+    label de official "letzter inländischer Standort eines Soldaten, der im Inland keinen Standort hat (§ 9 Abs. 1 Satz 2)";
+    label en unofficial "last domestic garrison of a soldier who has no domestic garrison (§ 9 (1) sentence 2)";
+}
+
+@source(BGB_P9)
+rule WohnsitzDesSoldatenAmStandort(p: Person, o: Ort) strict {
+    label de official "Ein Soldat hat seinen Wohnsitz am Standort (§ 9 Abs. 1 Satz 1); die Vorschrift gilt nicht für Soldaten, die nur auf Grund der Wehrpflicht Wehrdienst leisten (§ 9 Abs. 2)";
+    label en unofficial "A soldier has their domicile at the garrison (§ 9 (1) sentence 1); this does not apply to conscripts (§ 9 (2))";
+    when soldat(p, BerufsOderZeitsoldat) and standort(p, o);
+    then wohnsitz(p, o);
+}
+
+@source(BGB_P9)
+rule WohnsitzDesSoldatenOhneInlandsstandort(p: Person, o: Ort) strict {
+    label de official "Als Wohnsitz eines Soldaten, der im Inland keinen Standort hat, gilt der letzte inländische Standort (§ 9 Abs. 1 Satz 2)";
+    label en unofficial "The domicile of a soldier without a domestic garrison is deemed to be the last domestic garrison (§ 9 (1) sentence 2)";
+    when soldat(p, BerufsOderZeitsoldat) and letzter_inlaendischer_standort(p, o);
+    then wohnsitz(p, o);
+}
+
+// § 11 Wohnsitz des Kindes. Der Elternteil kommt aus dem Graphen der Familie
+// (`calc.kinship`, DECISION-0217): das Paket schreibt die Kante und liest den
+// wirksamen Elternteil. Die Personensorge selbst regelt Buch 4 (BG-13); hier
+// ist sie ein typisierter Eingang des Falls.
+pub relation familie(k: Person, f: Familie) kind empirical {
+    key(k);
+    label de official "Graph der Familie, in dem die Abstammung des Kindes geführt wird (§ 11)";
+    label en unofficial "family graph in which the child's descent is recorded (§ 11)";
+}
+pub relation abstammung(f: Familie, elternteil: Person, kind: Person) kind empirical {
+    label de official "Elternteil und Kind im Graphen der Familie (§ 11)";
+    label en unofficial "parent and child in the family graph (§ 11)";
+}
+pub relation personensorge(elternteil: Person, kind: Person) kind empirical {
+    label de official "dem Elternteil steht das Recht zu, für die Person des Kindes zu sorgen (§ 11 Satz 1, 2) — Eingang aus dem Familienrecht (Buch 4)";
+    label en unofficial "the parent has the right to care for the person of the child (§ 11) — input from family law (Book 4)";
+}
+pub relation personensorge_eines_dritten(sorgeberechtigter: Person, kind: Person) kind empirical {
+    label de official "keinem Elternteil steht das Recht zu, für die Person des Kindes zu sorgen; es steht dieser Person zu (§ 11 Satz 2)";
+    label en unofficial "no parent has the right of care; this person has it (§ 11 sentence 2)";
+}
+pub relation frueherer_wohnsitz_des_kindes(kind: Person, o: Ort) kind empirical {
+    label de official "Wohnsitz, den das Kind erlangt hatte und noch nicht rechtsgültig aufgehoben hat (§ 11 Satz 3)";
+    label en unofficial "domicile the child had acquired and has not yet validly given up (§ 11 sentence 3)";
+}
+pub relation wohnsitz_rechtsgueltig_aufgehoben(kind: Person, o: Ort) kind empirical {
+    label de official "das Kind hat den Wohnsitz rechtsgültig aufgehoben (§ 11 Satz 3, § 8)";
+    label en unofficial "the child has validly given up the domicile (§ 11 sentence 3, § 8)";
+}
+
+@source(BGB_P11)
+rule AbstammungInDenGraphen(f: Familie, e: Person, k: Person) strict {
+    label de official "Die Abstammung des Kindes wird als Kante des Familiengraphen geführt (§ 11)";
+    label en unofficial "The child's descent is recorded as an edge of the family graph (§ 11)";
+    when abstammung(f, e, k);
+    then calc.kinship::parent_edge(f, e, k, calc.kinship::Blood);
+}
+
+// Politik des Rechners: die Annahme als Kind ersetzt die bisherige
+// Verwandtschaft (§ 1755; Buch 4). Sie ist technisch und wird von § 11 nur
+// gelesen.
+@source(BGB_P11)
+rule AdoptionspolitikDesGraphen(k: Person, f: Familie) strict {
+    label de official "Der Familiengraph des § 11 führt die Annahme als Kind nach der Politik „ersetzt“ (§ 1755)";
+    label en unofficial "The family graph of § 11 uses the adoption policy „replaces“ (§ 1755)";
+    when familie(k, f);
+    then calc.kinship::family_adoption_effect(f, calc.kinship::ReplacesBlood);
+}
+
+@source(BGB_P11)
+rule WohnsitzDesKindesBeiSorgeberechtigtemElternteil(k: Person, f: Familie, e: Person, o: Ort, t: Date) strict {
+    label de official "Ein minderjähriges Kind teilt den Wohnsitz der Eltern; es teilt nicht den Wohnsitz eines Elternteils, dem das Recht fehlt, für die Person des Kindes zu sorgen (§ 11 Satz 1)";
+    label en unofficial "A minor child shares the domicile of the parents; not the domicile of a parent who lacks the right of care (§ 11 sentence 1)";
+    when minderjaehrig_am(k, t)
+        and familie(k, f)
+        and calc.kinship::effective_parent(f, e, k)
+        and personensorge(e, k)
+        and monotone(wohnsitz(e, o));
+    then wohnsitz(k, o);
+}
+
+@source(BGB_P11)
+rule WohnsitzDesKindesBeiDrittemSorgeberechtigten(k: Person, d: Person, o: Ort, t: Date) strict {
+    label de official "Steht keinem Elternteil das Recht zu, für die Person des Kindes zu sorgen, so teilt das Kind den Wohnsitz desjenigen, dem dieses Recht zusteht (§ 11 Satz 2)";
+    label en unofficial "If no parent has the right of care, the child shares the domicile of the person who has it (§ 11 sentence 2)";
+    when minderjaehrig_am(k, t) and personensorge_eines_dritten(d, k) and monotone(wohnsitz(d, o));
+    then wohnsitz(k, o);
+}
+
+@source(BGB_P11)
+rule KindBehaeltDenWohnsitz(k: Person, o: Ort) strict {
+    label de official "Das Kind behält den Wohnsitz, bis es ihn rechtsgültig aufhebt (§ 11 Satz 3)";
+    label en unofficial "The child keeps the domicile until it validly gives it up (§ 11 sentence 3)";
+    when frueherer_wohnsitz_des_kindes(k, o) and not wohnsitz_rechtsgueltig_aufgehoben(k, o);
+    then wohnsitz(k, o);
+}
+
+// --- § 12 Namensrecht -------------------------------------------------------------------------------
+
+pub relation namensrecht_bestritten(berechtigter: Person, anderer: Person) kind empirical {
+    label de official "das Recht zum Gebrauch eines Namens wird dem Berechtigten von einem anderen bestritten (§ 12 Satz 1)";
+    label en unofficial "the right to use a name is disputed by another (§ 12 sentence 1)";
+}
+pub relation unbefugter_gebrauch_des_gleichen_namens(anderer: Person, berechtigter: Person) kind empirical {
+    label de official "ein anderer gebraucht unbefugt den gleichen Namen (§ 12 Satz 1) — festgestellte Tatsache";
+    label en unofficial "another person uses the same name without authority (§ 12 sentence 1) — established fact";
+}
+
+@source(BGB_P12)
+pub external judgment relation interesse_des_berechtigten_verletzt(berechtigter: Person, anderer: Person) {
+    authority Court;
+    label de official "§ 12 Satz 1: das Interesse des Berechtigten wird dadurch verletzt, dass ein anderer unbefugt den gleichen Namen gebraucht";
+    label en unofficial "§ 12 sentence 1: the interest of the entitled person is injured by another's unauthorised use of the same name";
+}
+
+@source(BGB_P12)
+pub external judgment relation weitere_beeintraechtigungen_zu_besorgen(berechtigter: Person, anderer: Person) {
+    authority Court;
+    label de official "§ 12 Satz 2: weitere Beeinträchtigungen sind zu besorgen";
+    label en unofficial "§ 12 sentence 2: further infringements are to be apprehended";
+}
+
+pub relation beseitigungsanspruch_namensrecht(berechtigter: Person, anderer: Person) kind institutional {
+    label de official "Anspruch auf Beseitigung der Beeinträchtigung des Namensrechts (§ 12 Satz 1)";
+    label en unofficial "claim to removal of the infringement of the right to a name (§ 12 sentence 1)";
+}
+pub relation unterlassungsklage_namensrecht(berechtigter: Person, anderer: Person) kind institutional {
+    label de official "der Berechtigte kann auf Unterlassung klagen (§ 12 Satz 2)";
+    label en unofficial "the entitled person may sue for an injunction (§ 12 sentence 2)";
+}
+
+@source(BGB_P12)
+rule BeseitigungBeiBestrittenemNamensrecht(b: Person, a: Person) strict {
+    label de official "Wird das Recht zum Gebrauch eines Namens dem Berechtigten von einem anderen bestritten, so kann der Berechtigte von dem anderen Beseitigung der Beeinträchtigung verlangen (§ 12 Satz 1)";
+    label en unofficial "If the right to use a name is disputed, the entitled person may demand removal of the infringement (§ 12 sentence 1)";
+    when namensrecht_bestritten(b, a);
+    then beseitigungsanspruch_namensrecht(b, a);
+}
+
+@source(BGB_P12)
+rule BeseitigungBeiUnbefugtemNamensgebrauch(b: Person, a: Person) strict {
+    label de official "Wird das Interesse des Berechtigten dadurch verletzt, dass ein anderer unbefugt den gleichen Namen gebraucht, so kann der Berechtigte Beseitigung der Beeinträchtigung verlangen (§ 12 Satz 1)";
+    label en unofficial "If the interest of the entitled person is injured by another's unauthorised use of the same name, they may demand removal (§ 12 sentence 1)";
+    when unbefugter_gebrauch_des_gleichen_namens(a, b) and interesse_des_berechtigten_verletzt(b, a);
+    then beseitigungsanspruch_namensrecht(b, a);
+}
+
+@source(BGB_P12)
+rule UnterlassungBeiWiederholungsgefahr(b: Person, a: Person) strict {
+    label de official "Sind weitere Beeinträchtigungen zu besorgen, so kann er auf Unterlassung klagen (§ 12 Satz 2)";
+    label en unofficial "If further infringements are to be apprehended, the entitled person may sue for an injunction (§ 12 sentence 2)";
+    when beseitigungsanspruch_namensrecht(b, a) and weitere_beeintraechtigungen_zu_besorgen(b, a);
+    then unterlassungsklage_namensrecht(b, a);
+}
+
+// --- §§ 13, 14 Verbraucher und Unternehmer ------------------------------------------------------------
+//
+// Beide Vorschriften sind Begriffsbestimmungen; sie stehen daher als
+// `definition` (§145) und nicht als Rechtsfolgenregel. Die Zurechnung des
+// Zwecks („überwiegend“) ist eine Wertung und geht über den Kanal des
+// Urteils (§47.3); ob die Person bei Abschluss in Ausübung ihrer Tätigkeit
+// handelt, ist eine festgestellte Tatsache.
+
+pub enum Rechtssubjektart {
+    label de official "Art des Rechtssubjekts (§§ 13, 14)";
+    label en unofficial "kind of legal subject (§§ 13, 14)";
+    Mensch,
+    JuristischePersonDesPrivatrechts,
+    JuristischePersonDesOeffentlichenRechts,
+    Personengesellschaft
+}
+pub relation rechtssubjektart(p: Person, art: Rechtssubjektart) kind empirical {
+    key(p);
+    label de official "Art des Rechtssubjekts: natürliche Person, juristische Person oder Personengesellschaft (§§ 13, 14)";
+    label en unofficial "kind of legal subject: natural person, legal person or partnership (§§ 13, 14)";
+}
+pub relation faehig_rechte_zu_erwerben_und_verbindlichkeiten_einzugehen(p: Person) kind empirical {
+    label de official "die Personengesellschaft ist mit der Fähigkeit ausgestattet, Rechte zu erwerben und Verbindlichkeiten einzugehen (§ 14 Abs. 2)";
+    label en unofficial "the partnership is endowed with the capacity to acquire rights and incur liabilities (§ 14 (2))";
+}
+pub relation rechtsfaehige_personengesellschaft(p: Person) kind institutional {
+    label de official "rechtsfähige Personengesellschaft (§ 14 Abs. 2)";
+    label en unofficial "partnership with legal capacity (§ 14 (2))";
+}
+pub relation handelt_in_ausuebung_der_taetigkeit(p: Person, r: Rechtsgeschaeft) kind empirical {
+    label de official "die Person handelt bei Abschluss des Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit (§ 14 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "the person acts, when concluding the transaction, in the exercise of their trade or self-employed professional activity (§ 14 (1))";
+}
+
+@source(BGB_P13)
+pub external judgment relation zweck_ueberwiegend_nicht_gewerblich(p: Person, r: Rechtsgeschaeft) {
+    authority Court;
+    label de official "§ 13: das Rechtsgeschäft wird zu Zwecken abgeschlossen, die überwiegend weder der gewerblichen noch der selbständigen beruflichen Tätigkeit der natürlichen Person zugerechnet werden können";
+    label en unofficial "§ 13: the transaction is concluded for purposes predominantly outside the person's trade or self-employed professional activity";
+}
+
+@source(BGB_P14)
+rule RechtsfaehigePersonengesellschaft(p: Person) strict {
+    label de official "Eine rechtsfähige Personengesellschaft ist eine Personengesellschaft, die mit der Fähigkeit ausgestattet ist, Rechte zu erwerben und Verbindlichkeiten einzugehen (§ 14 Abs. 2)";
+    label en unofficial "A partnership with legal capacity is a partnership endowed with the capacity to acquire rights and incur liabilities (§ 14 (2))";
+    when rechtssubjektart(p, Personengesellschaft) and faehig_rechte_zu_erwerben_und_verbindlichkeiten_einzugehen(p);
+    then rechtsfaehige_personengesellschaft(p);
+}
+
+@source(BGB_P13)
+pub definition verbraucher(p: Person, r: Rechtsgeschaeft) exact {
+    label de official "§ 13: Verbraucher ist jede natürliche Person, die ein Rechtsgeschäft zu Zwecken abschließt, die überwiegend weder ihrer gewerblichen noch ihrer selbständigen beruflichen Tätigkeit zugerechnet werden können";
+    label en unofficial "§ 13: a consumer is a natural person who enters into a legal transaction for purposes predominantly outside their trade or self-employed professional activity";
+    when rechtssubjektart(p, Mensch) and zweck_ueberwiegend_nicht_gewerblich(p, r);
+}
+
+pub relation unternehmer(p: Person, r: Rechtsgeschaeft) kind institutional {
+    label de official "Unternehmer bei diesem Rechtsgeschäft (§ 14 Abs. 1)";
+    label en unofficial "entrepreneur in this transaction (§ 14 (1))";
+}
+
+@source(BGB_P14)
+rule UnternehmerNatuerlichePerson(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "§ 14 Abs. 1: natürliche Person, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit handelt";
+    label en unofficial "§ 14 (1): a natural person acting in the exercise of their trade or self-employed professional activity";
+    when rechtssubjektart(p, Mensch) and handelt_in_ausuebung_der_taetigkeit(p, r);
+    then unternehmer(p, r);
+}
+
+@source(BGB_P14)
+rule UnternehmerJuristischePersonPrivatrecht(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "§ 14 Abs. 1: juristische Person, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit handelt";
+    label en unofficial "§ 14 (1): a legal person acting in the exercise of its trade or self-employed professional activity";
+    when rechtssubjektart(p, JuristischePersonDesPrivatrechts) and handelt_in_ausuebung_der_taetigkeit(p, r);
+    then unternehmer(p, r);
+}
+
+@source(BGB_P14)
+rule UnternehmerJuristischePersonOeffentlichenRechts(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "§ 14 Abs. 1: juristische Person des öffentlichen Rechts, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit handelt";
+    label en unofficial "§ 14 (1): a legal person under public law acting in the exercise of its trade or self-employed professional activity";
+    when rechtssubjektart(p, JuristischePersonDesOeffentlichenRechts) and handelt_in_ausuebung_der_taetigkeit(p, r);
+    then unternehmer(p, r);
+}
+
+@source(BGB_P14)
+rule UnternehmerRechtsfaehigePersonengesellschaft(p: Person, r: Rechtsgeschaeft) strict {
+    label de official "§ 14 Abs. 1: rechtsfähige Personengesellschaft, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit handelt";
+    label en unofficial "§ 14 (1): a partnership with legal capacity acting in the exercise of its trade or self-employed professional activity";
+    when rechtsfaehige_personengesellschaft(p) and handelt_in_ausuebung_der_taetigkeit(p, r);
+    then unternehmer(p, r);
+}

@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 556 Abs. 3 Satz 2: die Abrechnung ist spätestens bis zum Ablauf des zwölften Monats nach Ende des Abrechnungszeitraums mitzuteilen. Abrechnungszeitraum endet am 31. Dezember 2024; zwölf Monate nach § 188 Abs. 2 enden mit dem Ablauf des 31. Dezember 2025 — ein Mittwoch, § 193 verlegt nichts. Die Mitteilung an diesem Tag ist rechtzeitig, die Nachforderung bleibt offen (NEITHER: kein Ausschluss).
+test "§ 556 Abs. 3: zwölf Monate — die Abrechnung am letzten Tag hält die Nachforderung offen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:b01"), entity_ref("urn:de:bgb:miete:b01:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:b01"), entity_ref("urn:de:bgb:miete:b01:M")) { origin case_input; }
+        assert "f3": gegenstandsart(entity_ref("urn:de:bgb:miete:b01"), Wohnraum) { origin case_input; }
+        assert "f4": betriebskosten_vereinbart(entity_ref("urn:de:bgb:miete:b01")) { origin case_input; }
+        assert "f5": vorauszahlungen_vereinbart(entity_ref("urn:de:bgb:miete:b01")) { origin case_input; }
+        assert "f6": abrechnung_des(entity_ref("urn:de:bgb:miete:b01:AB"), entity_ref("urn:de:bgb:miete:b01")) { origin case_input; }
+        assert "f7": abrechnungszeitraum_ende(entity_ref("urn:de:bgb:miete:b01:AB"), @2024-12-31) { origin case_input; }
+        assert "f8": abrechnung_mitgeteilt_am(entity_ref("urn:de:bgb:miete:b01:AB"), @2025-12-31) { origin case_input; }
+    }
+    evaluate truth(abrechnungsfrist_ende(entity_ref("urn:de:bgb:miete:b01:AB"), @2025-12-31));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(nachforderung_ausgeschlossen(entity_ref("urn:de:bgb:miete:b01:AB")));
+    expect truth_status == NEITHER;
+    evaluate truth(abrechnungspflicht(entity_ref("urn:de:bgb:miete:b01"), entity_ref("urn:de:bgb:miete:b01:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

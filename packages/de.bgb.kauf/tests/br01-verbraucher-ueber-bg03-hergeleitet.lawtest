@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// Brücke D-05-08: der Fall setzt KEINEN lokalen Eingang `verbraucher(k,p)`,
+// sondern nur die Köpfe des § 13 aus de.bgb.allgemeiner_teil und das
+// Korrelat `rechtsgeschaeft_des_kaufvertrags`.
+test "Brücke § 474: Verbraucher ausschließlich über de.bgb.allgemeiner_teil hergeleitet" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "a1": de.bgb.allgemeiner_teil::rechtssubjektart(entity_ref("urn:de:bgb:kauf:br01:p1"), de.bgb.allgemeiner_teil::Mensch) { origin case_input; }
+        assert "a2": de.bgb.allgemeiner_teil::zweck_ueberwiegend_nicht_gewerblich(entity_ref("urn:de:bgb:kauf:br01:p1"), entity_ref("urn:de:bgb:kauf:br01:r1")) { origin adjudicated; }
+        assert "a3": rechtsgeschaeft_des_kaufvertrags(entity_ref("urn:de:bgb:kauf:br01"), entity_ref("urn:de:bgb:kauf:br01:r1")) { origin case_input; }
+    }
+    evaluate truth(verbraucher(entity_ref("urn:de:bgb:kauf:br01"), entity_ref("urn:de:bgb:kauf:br01:p1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

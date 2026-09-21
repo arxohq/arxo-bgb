@@ -1,0 +1,29 @@
+language "law.core" version "0.2";
+package de.bgb.uebergang version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-uebergang";
+// Sequenz Entstehung → Kenntnis (adjudicated) → Ultimo → zwei sich überschneidende Hemmungsfenster → § 193 → Höchstfrist (die früher endende von beiden ist maßgeblich): Entstehung 15.3.2020, Kenntnis 1.6.2020 (Schluss des Jahres 2020, § 199 Abs. 1); Ultimo-Ende ohne Hemmung 31.12.2023; zwei überschneidende Fenster (61+61-30=92 Tage, § 209) verschieben auf den 1.4.2024; § 199 Abs. 4 Höchstfrist (10 Jahre ab Entstehung) endet erst am 15.3.2030 — die reguläre, früher endende Frist (1.4.2024) ist maßgeblich. § 193 wirkt in dieser Kette bereits innerhalb der Fristenmechanik von de.bgb.fristen (Verlegung193), hier nicht gesondert geprüft. Fund der Sitzung: paketübergreifende Regeln, deren Kopf ein `pub enum`-Argument prüft, feuerten zunächst nicht — Ursache war der UNQUALIFIZIERTE Enum-Wert (`Rechtsverfolgung`, `Andere`) im Fall, der im FREMDEN Paket (uebergang) aufgelöst wurde statt im Paket der Regel (fristen); `de.bgb.fristen::Rechtsverfolgung` usw. behebt es. Neubeginn (§ 212) ist NICHT auf demselben Anspruch verkettet: er ersetzt die reguläre Kette vollständig (verjaehrung_massgeblich_am statt verjaehrung_eingetreten_am_mit_hoechstfrist) und ist bereits einzeln in de.bgb.fristen#neubeginn-212-213 geprüft. Der Korridor 2002 (Art. 229 § 6) wird auf einem zweiten Anspruch gezeigt (w02).
+test "Querschnitt: Entstehung, Kenntnis, Ultimo, überschneidende Hemmung und Höchstfrist auf einem Anspruch" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_UEBERGANG_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2020-03-15) { origin case_input; }
+        assert "k": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2020-06-01) { origin adjudicated; }
+        assert "f": de.bgb.fristen::hemmung_zwei_fenster(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2022-03-01, @2022-04-30, @2022-04-01, @2022-05-31) { origin case_input; }
+        assert "g": de.bgb.fristen::hemmungsgrund(entity_ref("urn:de:bgb:uebergang:pilot:w01"), de.bgb.fristen::Rechtsverfolgung) { origin case_input; }
+        assert "hk": de.bgb.fristen::hoechstfrist_kategorie(entity_ref("urn:de:bgb:uebergang:pilot:w01"), de.bgb.fristen::Andere) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2020-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::regelmaessige_verjaehrungsfrist_ende(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2023-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2024-04-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::hoechstfrist_ende(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2030-03-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am_mit_hoechstfrist(entity_ref("urn:de:bgb:uebergang:pilot:w01"), @2024-04-01));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

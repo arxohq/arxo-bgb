@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1087(n: Niessbrauch, berechtigter: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Erfüllung oder Veräußerung nach § 1087"; label en unofficial "case input for performance or disposal under § 1087"; }
+pub relation leistung_1087_ausuebbar(n: Niessbrauch, berechtigter: Person) kind empirical { label de official "Der Nießbraucher darf zur Befriedigung durch Leistung oder Veräußerung handeln (§ 1087)"; label en unofficial "The usufructuary may act by performance or disposal for satisfaction (§ 1087)"; }
+pub relation position_trigger_1088(n: Niessbrauch, niesser: Person, glaeubiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Haftung für Zinsen (§ 1088)"; label en unofficial "case input for liability for interest (§ 1088)"; }
+pub relation zinsen_1088_geschuldet(n: Niessbrauch, niesser: Person, glaeubiger: Person) kind empirical { label de official "Der Nießbraucher schuldet dem Gläubiger die Zinsen (§ 1088)"; label en unofficial "The usufructuary owes the creditor the interest (§ 1088)"; }
+pub relation position_trigger_1113(h: Grundpfandrecht, schuldner: Person, glaeubiger: Person, betrag: Money, tag: Date) kind empirical { label de official "Eingang des Falls zur Zahlung aus dem Grundstück (§ 1113)"; label en unofficial "case input for payment out of the land (§ 1113)"; }
+pub relation zahlung_1113_geschuldet(h: Grundpfandrecht, glaeubiger: Person, betrag: Money) kind empirical { label de official "Die bestimmte Geldsumme ist aus dem Grundstück zu zahlen (§ 1113)"; label en unofficial "The specified sum is payable out of the land (§ 1113)"; }
+
+@source(BGB_P1087)
+rule PositionLeistung1087(n: Niessbrauch, berechtigter: Person, tag: Date) strict { label de official "Der Nießbraucher darf zur Befriedigung des Gläubigers leisten oder einen Gegenstand veräußern (§ 1087)"; label en unofficial "The usufructuary may perform or dispose of an object to satisfy the creditor (§ 1087)"; when position_trigger_1087(n, berechtigter, tag); then power Leistung1087 { holder berechtigter; over n; exercise leistung_1087_ausuebbar(n, berechtigter); valid_when leistung_1087_ausuebbar(n, berechtigter); effect create(leistung_1087_ausuebbar(n, berechtigter)); window [tag, infinity); }; }
+@source(BGB_P1088)
+rule PositionZinsen1088(n: Niessbrauch, niesser: Person, glaeubiger: Person, tag: Date) strict { label de official "Der Nießbraucher haftet dem Gläubiger für die Zinsen (§ 1088)"; label en unofficial "The usufructuary is liable to the creditor for the interest (§ 1088)"; when position_trigger_1088(n, niesser, glaeubiger, tag); then duty Zinsen1088 { bearer niesser; beneficiary glaeubiger; achieve zinsen_1088_geschuldet(n, niesser, glaeubiger) during [tag, infinity); }; }
+@source(BGB_P1113)
+rule PositionZahlung1113(h: Grundpfandrecht, schuldner: Person, glaeubiger: Person, betrag: Money, tag: Date) strict { label de official "Die bestimmte Geldsumme ist aus dem Grundstück an den Gläubiger zu zahlen (§ 1113)"; label en unofficial "The specified sum is payable out of the land to the creditor (§ 1113)"; when position_trigger_1113(h, schuldner, glaeubiger, betrag, tag); then duty Zahlung1113 { bearer schuldner; beneficiary glaeubiger; achieve zahlung_1113_geschuldet(h, glaeubiger, betrag) during [tag, infinity); }; }

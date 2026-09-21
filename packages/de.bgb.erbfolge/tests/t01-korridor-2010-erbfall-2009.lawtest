@@ -1,0 +1,33 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// EGBGB Art. 229 § 23 Abs. 4 Satz 1: Fuer Erbfaelle VOR dem 1. Januar 2010
+// gelten die Vorschriften des BGB in der vor diesem Tag geltenden Fassung.
+// Connecting factor ist der Tag des Erbfalls: 1. Juni 2009. Die alte Fassung
+// ist in diesem Paket nicht festgeschrieben, deshalb weist der Fall sie AUS und
+// § 2057a in der geltenden Fassung bleibt stumm (README „Korridor 2010“).
+test "Korridor 2010: Erbfall vor dem 1. Januar 2010 — alte Fassung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:t01:E"), entity_ref("urn:de:bgb:e:t01:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:t01:E"), @2009-06-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:t01:E"), entity_ref("urn:de:bgb:e:t01:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:t01:F"), entity_ref("urn:de:bgb:e:t01:D"), entity_ref("urn:de:bgb:e:t01:K1")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:t01:E"), entity_ref("urn:de:bgb:e:t01:K1")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:t01:F"), entity_ref("urn:de:bgb:e:t01:D"), entity_ref("urn:de:bgb:e:t01:K2")) { origin case_input; }
+        assert "f7": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:t01:E"), entity_ref("urn:de:bgb:e:t01:K2")) { origin case_input; }
+        assert "f8": besondere_leistung_des_abkoemmlings(entity_ref("urn:de:bgb:e:t01:E"), entity_ref("urn:de:bgb:e:t01:K1")) { origin case_input; }
+        assert "f9": ausgleichungsbetrag_nach_billigkeit(entity_ref("urn:de:bgb:e:t01:K1"), 5000.00 EUR) { origin adjudicated; }
+    }
+    evaluate truth(alte_fassung_vor_2010_anwendbar(entity_ref("urn:de:bgb:e:t01:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(neue_fassung_ab_2010_anwendbar(entity_ref("urn:de:bgb:e:t01:E")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausgleichung_fuer_besondere_leistungen(entity_ref("urn:de:bgb:e:t01:E"), entity_ref("urn:de:bgb:e:t01:K1"), 5000.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

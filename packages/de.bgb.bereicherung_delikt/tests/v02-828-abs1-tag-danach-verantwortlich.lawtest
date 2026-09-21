@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// Andere Seite der Schwelle des § 828 Abs. 1: dieselbe Person, Handlung einen Tag später (10. Mai 2025). Das siebente Lebensjahr ist vollendet, die Einsicht des Absatzes 3 hat das Gericht bejaht — die Ersatzpflicht besteht.
+test "§ 828 Abs. 1: einen Tag nach Vollendung des siebenten Lebensjahres verantwortlich" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "g1": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:bd:v02:S"), @2018-05-10) { origin case_input; }
+        assert "g2": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v02:S"), 7 calendar_year) { origin case_input; }
+        assert "g3": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v02:S"), 10 calendar_year) { origin case_input; }
+        assert "g4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:bd:v02:S"), 18 calendar_year) { origin case_input; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:v02")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:v02")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:v02")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:v02"), entity_ref("urn:de:bgb:bd:v02:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:v02"), entity_ref("urn:de:bgb:bd:v02:V")) { origin case_input; }
+        assert "f6": handlungstag(entity_ref("urn:de:bgb:bd:v02"), @2025-05-10) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:v02")) { origin adjudicated; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:v02")) { origin adjudicated; }
+        assert "j3": not einsicht_fehlt(entity_ref("urn:de:bgb:bd:v02")) { origin adjudicated; }
+    }
+    evaluate truth(nicht_verantwortlich_828_abs1(entity_ref("urn:de:bgb:bd:v02")));
+    expect truth_status == NEITHER;
+    evaluate truth(schadensersatzpflicht(entity_ref("urn:de:bgb:bd:v02"), entity_ref("urn:de:bgb:bd:v02:S"), entity_ref("urn:de:bgb:bd:v02:V")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

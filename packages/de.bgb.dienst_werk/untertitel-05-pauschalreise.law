@@ -1,0 +1,1824 @@
+// --- Untertitel 5 Pauschalreisevertrag, Reisevermittlung, verbundene Reiseleistungen (§§ 651a–651y) ---
+//
+// KORRIDOR 2018 (Ledger D-07-08). Der Untertitel 5 ist durch das Dritte
+// Gesetz zur Änderung reiserechtlicher Vorschriften vom 17. Juli 2017
+// (BGBl. I S. 2394) neu gefasst worden und gilt nach Art. 229 § 42 EGBGB für
+// Pauschalreiseverträge, die ab dem 1. Juli 2018 geschlossen werden. Jede
+// Regel dieses Untertitels trägt `effective [@2018-07-01, infinity)`; für
+// einen Fall mit früherem `legal_time` schweigt das Paket. Der connecting
+// factor (Vertragsschluss) steht in SOURCES.json.transitions.
+//
+// „VOR DEM EREIGNIS" WIRD VORWÄRTS GERECHNET (Ledger D-07-09, Vorbild
+// D-06-07 und D-13-03). Die Fristen „sieben Tage vor Reisebeginn" (§ 651e
+// Abs. 1 Satz 2), „nicht später als 20 Tage vor Reisebeginn" (§§ 651f Abs. 1
+// Satz 3, 651g Abs. 1 Satz 4, 651h Abs. 4 Satz 1 Nr. 1 Buchst. a) und
+// „spätestens zwei Wochen vor Antritt" (§ 651u Abs. 3) werden NICHT als
+// negativer Kalenderschritt vom Reisebeginn aus gerechnet — ein negativer
+// `calendar_day`-Schritt kompiliert, führt aber nicht aus. Sie werden
+// VORWÄRTS vom Tag der Erklärung an gerechnet und mit dem Reisebeginn
+// verglichen; das ist zugleich die genauere Lesart des Textes.
+//
+// STUNDEN SIND KEINE KALENDEREINHEIT (Ledger D-07-11). „Spätestens 24
+// Stunden nach der Bestätigung" (§§ 651c Abs. 1 Nr. 3, 651w Abs. 1 Satz 1
+// Nr. 2), „weniger als 24 Stunden" (§ 651a Abs. 5 Nr. 2), „48 Stunden vor
+// Reisebeginn" (§§ 651h Abs. 4 Satz 1 Nr. 1 Buchst. c, 651k Abs. 5 Nr. 2)
+// rechnen in Stunden. Die Politik §86 dieses Pakets zählt Tage, Wochen,
+// Monate und Jahre (§ 188); eine Stundenfrist ist damit nicht abbildbar. Die
+// Einhaltung der Stundengrenze ist deshalb eine AUSDRÜCKLICHE Angabe des
+// Falls, keine gerechnete Frist — und als solche in DEADLINES.json mit dem
+// Status BOUNDARY vermerkt.
+//
+// GELD. § 651g Abs. 1 Satz 1 (8 Prozent des Reisepreises), § 651m Abs. 1
+// Satz 2 (Verhältnis der Werte) und § 651p Abs. 1 (dreifacher Reisepreis)
+// rechnen je EINE Division bzw. Multiplikation, gerundet auf den Cent
+// (Ledger D-07-07). Das Wertverhältnis des § 651m wird — wie bei § 638 — als
+// PAAR GANZER ZAHLEN geführt: ein Produkt zweier Money-Größen ist in v1
+// nicht definiert (§58).
+//
+// WAS DIESER UNTERTITEL NICHT TUT (Grenzen aus dem Text):
+// 1. Artikel 250, 251 und 252 EGBGB (Informationspflichten, Sicherungsschein),
+//    die EG-Fahrzeuggenehmigungsverordnung und die Fahrerlaubnis-Verordnung
+//    (§ 651a Abs. 3 Nr. 3), das Reisesicherungsfondsgesetz (§ 651r Abs. 2),
+//    die Gewerbeordnung (§ 651s), die Richtlinie (EU) 2015/2302 (§ 651s) und
+//    die Fahrgastrechteverordnungen (§ 651p Abs. 3) sind fremde Ordnungen —
+//    benannt, nicht formalisiert (SOURCES.json, external).
+// 2. §§ 308 Nr. 4, 309 Nr. 1 (§ 651f Abs. 3), §§ 284, 312 Abs. 6, 346, 347
+//    (§§ 651i Abs. 3 Nr. 7, 651m Abs. 2, 651w Abs. 4) gehören
+//    `de.bgb.schuldrecht_at`.
+// 3. Die Insolvenzsicherung des § 651r Abs. 2 bis 4 und die
+//    Absicherungsverträge der §§ 651s, 651t, 651w Abs. 3 werden in ihrem
+//    institutionellen Kern abgesenkt; die Aufsichts- und Fondsordnung selbst
+//    ist eine benannte Grenze.
+
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// --- Gemeinsamer Träger des Untertitels -------------------------------------------------------------
+
+pub entity Pauschalreisevertrag {
+    label de official "Pauschalreisevertrag, durch den der Reiseveranstalter dem Reisenden eine Pauschalreise zu verschaffen hat (§ 651a Abs. 1)";
+    label en unofficial "package travel contract under which the organiser must provide the traveller with a package (§ 651a (1))";
+}
+
+pub relation reiseveranstalter(r: Pauschalreisevertrag, p: Person) kind empirical {
+    key(r);
+    label de official "der Unternehmer, der dem Reisenden eine Pauschalreise zu verschaffen hat (§ 651a Abs. 1 Satz 1)";
+    label en unofficial "the trader who must provide the traveller with a package (§ 651a (1) sentence 1)";
+}
+pub relation reisender(r: Pauschalreisevertrag, p: Person) kind empirical {
+    key(r);
+    label de official "der zur Zahlung des vereinbarten Reisepreises Verpflichtete (§ 651a Abs. 1 Satz 2)";
+    label en unofficial "the party obliged to pay the agreed travel price (§ 651a (1) sentence 2)";
+}
+pub relation reisevertrag_geschlossen_am(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag des Abschlusses des Pauschalreisevertrags (§§ 651a, 651m Abs. 1 Satz 2)";
+    label en unofficial "day the package travel contract was concluded (§§ 651a, 651m (1) sentence 2)";
+}
+pub relation reisebeginn_am(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag des Reisebeginns (§§ 651e, 651f, 651g, 651h)";
+    label en unofficial "day the travel begins (§§ 651e, 651f, 651g, 651h)";
+}
+pub relation reiseende_geschuldet_am(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag, an dem die Pauschalreise dem Vertrag nach enden sollte (§ 651j Satz 2)";
+    label en unofficial "day on which the package was to end under the contract (§ 651j sentence 2)";
+}
+pub relation reisepreis(r: Pauschalreisevertrag, betrag: Money) kind empirical {
+    key(r);
+    label de official "der vereinbarte Reisepreis (§ 651a Abs. 1 Satz 2)";
+    label en unofficial "the agreed travel price (§ 651a (1) sentence 2)";
+}
+pub relation pauschalreise_verschafft(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden wurde die Pauschalreise verschafft (§ 651a Abs. 1 Satz 1)";
+    label en unofficial "the package has been provided to the traveller (§ 651a (1) sentence 1)";
+}
+pub relation reisepreis_gezahlt(r: Pauschalreisevertrag) kind empirical {
+    label de official "der vereinbarte Reisepreis wurde gezahlt (§ 651a Abs. 1 Satz 2)";
+    label en unofficial "the agreed travel price has been paid (§ 651a (1) sentence 2)";
+}
+
+// --- § 651a Vertragstypische Pflichten beim Pauschalreisevertrag ---------------------------------------
+
+pub relation mindestens_zwei_arten_von_reiseleistungen_651a(r: Pauschalreisevertrag) kind empirical {
+    label de official "eine Gesamtheit von mindestens zwei verschiedenen Arten von Reiseleistungen für den Zweck derselben Reise (§ 651a Abs. 2 Satz 1)";
+    label en unofficial "a combination of at least two different types of travel services for the purpose of the same trip (§ 651a (2) sentence 1)";
+}
+pub relation kein_ausschlussfall_651a_abs4(r: Pauschalreisevertrag) kind empirical {
+    label de official "es liegt kein Fall des § 651a Abs. 4 vor (nur eine Art von Reiseleistung mit touristischen Leistungen von weniger als 25 Prozent des Gesamtwertes oder nachträglicher Auswahl) — ausdrückliche Angabe des Falls";
+    label en unofficial "no case of § 651a (4) applies (only one type of travel service combined with tourist services of less than 25 per cent of the total value, or selected afterwards) — express statement of the case";
+}
+pub relation kein_ausschlussfall_651a_abs5(r: Pauschalreisevertrag) kind empirical {
+    label de official "es liegt kein Fall des § 651a Abs. 5 vor (gelegentliches Angebot ohne Gewinnerzielung, Tagesreise unter 24 Stunden mit einem Reisepreis bis 500 Euro, Rahmenvertrag über Geschäftsreisen) — ausdrückliche Angabe des Falls";
+    label en unofficial "no case of § 651a (5) applies (occasional non-profit offer, day trip of less than 24 hours with a price of up to 500 euros, framework contract for business travel) — express statement of the case";
+}
+pub relation touristische_leistungen_anteil_651a(r: Pauschalreisevertrag, prozent: Integer) kind empirical {
+    key(r);
+    label de official "Anteil der touristischen Leistungen am Gesamtwert der Zusammenstellung in ganzen Prozent (§ 651a Abs. 4 Satz 2)";
+    label en unofficial "share of the tourist services in the total value of the combination, in whole per cent (§ 651a (4) sentence 2)";
+}
+pub relation nur_eine_art_mit_touristischen_leistungen_651a(r: Pauschalreisevertrag) kind empirical {
+    label de official "nur eine Art von Reiseleistung im Sinne des Absatzes 3 Satz 1 Nr. 1 bis 3 ist mit einer oder mehreren touristischen Leistungen zusammengestellt (§ 651a Abs. 4 Satz 1)";
+    label en unofficial "only one type of travel service within (3) sentence 1 nos. 1 to 3 is combined with one or more tourist services (§ 651a (4) sentence 1)";
+}
+pub relation touristische_leistungen_ohne_erheblichen_anteil_651a(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die touristischen Leistungen machen keinen erheblichen Anteil am Gesamtwert aus — auf sie entfallen weniger als 25 Prozent (§ 651a Abs. 4 Satz 2)";
+    label en unofficial "the tourist services do not account for a significant share of the total value — less than 25 per cent falls on them (§ 651a (4) sentence 2)";
+}
+pub relation keine_pauschalreise_651a(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "es liegt keine Pauschalreise vor (§ 651a Abs. 4 Satz 1 Nr. 1)";
+    label en unofficial "there is no package (§ 651a (4) sentence 1 no. 1)";
+}
+pub relation pauschalreise_651a(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "es liegt eine Pauschalreise vor (§ 651a Abs. 2)";
+    label en unofficial "a package exists (§ 651a (2))";
+}
+
+@source(BGB_P651a)
+rule Pauschalreise651aAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Eine Pauschalreise ist eine Gesamtheit von mindestens zwei verschiedenen Arten von Reiseleistungen für den Zweck derselben Reise (§ 651a Abs. 2 Satz 1)";
+    label en unofficial "A package is a combination of at least two different types of travel services for the purpose of the same trip (§ 651a (2) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when mindestens_zwei_arten_von_reiseleistungen_651a(r);
+    when kein_ausschlussfall_651a_abs4(r);
+    when kein_ausschlussfall_651a_abs5(r);
+    then pauschalreise_651a(r);
+}
+
+@source(BGB_P651a)
+rule KeinErheblicherAnteil651aAbs4Satz2(r: Pauschalreisevertrag, prozent: Integer) strict {
+    label de official "Touristische Leistungen machen keinen erheblichen Anteil am Gesamtwert der Zusammenstellung aus, wenn auf sie weniger als 25 Prozent des Gesamtwertes entfallen (§ 651a Abs. 4 Satz 2)";
+    label en unofficial "Tourist services do not account for a significant share of the total value of the combination where less than 25 per cent of the total value falls on them (§ 651a (4) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when touristische_leistungen_anteil_651a(r, prozent);
+    when prozent < 25;
+    then touristische_leistungen_ohne_erheblichen_anteil_651a(r);
+}
+
+@source(BGB_P651a)
+rule KeinePauschalreise651aAbs4Satz1(r: Pauschalreisevertrag) strict {
+    label de official "Keine Pauschalreise liegt vor, wenn nur eine Art von Reiseleistung mit touristischen Leistungen zusammengestellt wird, die keinen erheblichen Anteil am Gesamtwert ausmachen (§ 651a Abs. 4 Satz 1 Nr. 1)";
+    label en unofficial "There is no package where only one type of travel service is combined with tourist services that do not account for a significant share of the total value (§ 651a (4) sentence 1 no. 1)";
+    effective [@2018-07-01, infinity);
+    when nur_eine_art_mit_touristischen_leistungen_651a(r);
+    when touristische_leistungen_ohne_erheblichen_anteil_651a(r);
+    then keine_pauschalreise_651a(r);
+}
+
+@source(BGB_P651a)
+rule Pflichten651aAbs1Veranstalter(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Durch den Pauschalreisevertrag wird der Reiseveranstalter verpflichtet, dem Reisenden eine Pauschalreise zu verschaffen (§ 651a Abs. 1 Satz 1)";
+    label en unofficial "By the package travel contract the organiser is obliged to provide the traveller with a package (§ 651a (1) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty PauschalreiseVerschaffen651a {
+        bearer v;
+        achieve pauschalreise_verschafft(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651a)
+rule Pflichten651aAbs1Reisender(r: Pauschalreisevertrag, p: Person, schluss: Date) strict {
+    label de official "Der Reisende ist verpflichtet, dem Reiseveranstalter den vereinbarten Reisepreis zu zahlen (§ 651a Abs. 1 Satz 2)";
+    label en unofficial "The traveller is obliged to pay the organiser the agreed travel price (§ 651a (1) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reisender(r, p);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty ReisepreisZahlen651a {
+        bearer p;
+        achieve reisepreis_gezahlt(r) during [schluss, infinity);
+    };
+}
+
+// --- § 651b Abgrenzung zur Vermittlung ------------------------------------------------------------------
+
+pub relation zwei_arten_von_leistungen_sollen_erbracht_werden_651b(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden sollen mindestens zwei verschiedene Arten von Reiseleistungen für den Zweck derselben Reise erbracht werden (§ 651b Abs. 1 Satz 2)";
+    label en unofficial "at least two different types of travel services for the purpose of the same trip are to be provided to the traveller (§ 651b (1) sentence 2)";
+}
+pub relation auswahl_in_einer_vertriebsstelle_651b(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende wählt die Reiseleistungen in einer einzigen Vertriebsstelle des Unternehmers im Rahmen desselben Buchungsvorgangs aus, bevor er sich zur Zahlung verpflichtet (§ 651b Abs. 1 Satz 2 Nr. 1)";
+    label en unofficial "the traveller selects the travel services at a single point of sale of the trader in the course of the same booking process before undertaking to pay (§ 651b (1) sentence 2 no. 1)";
+}
+pub relation gesamtpreis_angeboten_651b(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Unternehmer bietet die Reiseleistungen zu einem Gesamtpreis an, verspricht sie zu verschaffen oder stellt sie in Rechnung (§ 651b Abs. 1 Satz 2 Nr. 2)";
+    label en unofficial "the trader offers the travel services at an inclusive price, promises to provide them, or invoices them (§ 651b (1) sentence 2 no. 2)";
+}
+pub relation als_pauschalreise_beworben_651b(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Unternehmer bewirbt die Reiseleistungen unter der Bezeichnung „Pauschalreise\" oder unter einer ähnlichen Bezeichnung (§ 651b Abs. 1 Satz 2 Nr. 3)";
+    label en unofficial "the trader advertises the travel services under the designation 'package' or a similar designation (§ 651b (1) sentence 2 no. 3)";
+}
+pub relation unternehmer_ist_reiseveranstalter_651b(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "in diesen Fällen ist der Unternehmer Reiseveranstalter (§ 651b Abs. 1 Satz 3)";
+    label en unofficial "in these cases the trader is the organiser (§ 651b (1) sentence 3)";
+}
+
+@source(BGB_P651b)
+rule Reiseveranstalter651bNr1(r: Pauschalreisevertrag) strict {
+    label de official "Der Unternehmer kann sich nicht darauf berufen, nur zu vermitteln, wenn der Reisende die Leistungen in einer einzigen Vertriebsstelle im Rahmen desselben Buchungsvorgangs auswählt; er ist Reiseveranstalter (§ 651b Abs. 1 Satz 2 Nr. 1, Satz 3)";
+    label en unofficial "The trader may not rely on merely arranging where the traveller selects the services at a single point of sale in the course of the same booking process; the trader is the organiser (§ 651b (1) sentence 2 no. 1, sentence 3)";
+    effective [@2018-07-01, infinity);
+    when zwei_arten_von_leistungen_sollen_erbracht_werden_651b(r);
+    when auswahl_in_einer_vertriebsstelle_651b(r);
+    then unternehmer_ist_reiseveranstalter_651b(r);
+}
+
+@source(BGB_P651b)
+rule Reiseveranstalter651bNr2(r: Pauschalreisevertrag) strict {
+    label de official "Dasselbe gilt, wenn der Unternehmer die Reiseleistungen zu einem Gesamtpreis anbietet, zu verschaffen verspricht oder in Rechnung stellt (§ 651b Abs. 1 Satz 2 Nr. 2, Satz 3)";
+    label en unofficial "The same applies where the trader offers the travel services at an inclusive price, promises to provide them, or invoices them (§ 651b (1) sentence 2 no. 2, sentence 3)";
+    effective [@2018-07-01, infinity);
+    when zwei_arten_von_leistungen_sollen_erbracht_werden_651b(r);
+    when gesamtpreis_angeboten_651b(r);
+    then unternehmer_ist_reiseveranstalter_651b(r);
+}
+
+@source(BGB_P651b)
+rule Reiseveranstalter651bNr3(r: Pauschalreisevertrag) strict {
+    label de official "Dasselbe gilt, wenn der Unternehmer die Reiseleistungen unter der Bezeichnung „Pauschalreise\" oder einer ähnlichen Bezeichnung bewirbt (§ 651b Abs. 1 Satz 2 Nr. 3, Satz 3)";
+    label en unofficial "The same applies where the trader advertises the travel services under the designation 'package' or a similar designation (§ 651b (1) sentence 2 no. 3, sentence 3)";
+    effective [@2018-07-01, infinity);
+    when zwei_arten_von_leistungen_sollen_erbracht_werden_651b(r);
+    when als_pauschalreise_beworben_651b(r);
+    then unternehmer_ist_reiseveranstalter_651b(r);
+}
+
+// --- § 651c Verbundene Online-Buchungsverfahren -----------------------------------------------------------
+
+pub relation online_buchungsverfahren_vertrag_651c(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Unternehmer hat mittels eines Online-Buchungsverfahrens mit dem Reisenden einen Vertrag über eine Reiseleistung geschlossen oder ihm einen solchen vermittelt (§ 651c Abs. 1)";
+    label en unofficial "the trader concluded, or arranged, a contract on a travel service with the traveller by means of an online booking process (§ 651c (1))";
+}
+pub relation zugriff_auf_fremdes_buchungsverfahren_651c(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Unternehmer vermittelt für den Zweck derselben Reise mindestens einen Vertrag über eine andere Art von Reiseleistung, indem er den Zugriff auf das Online-Buchungsverfahren eines anderen Unternehmers ermöglicht (§ 651c Abs. 1 Nr. 1)";
+    label en unofficial "the trader arranges at least one contract on another type of travel service for the purpose of the same trip by giving access to another trader's online booking process (§ 651c (1) no. 1)";
+}
+pub relation daten_uebermittelt_651c(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Unternehmer übermittelt den Namen, die Zahlungsdaten und die E-Mail-Adresse des Reisenden an den anderen Unternehmer (§ 651c Abs. 1 Nr. 2)";
+    label en unofficial "the trader transmits the traveller's name, payment details and email address to the other trader (§ 651c (1) no. 2)";
+}
+pub relation weiterer_vertrag_binnen_24_stunden_651c(r: Pauschalreisevertrag) kind empirical {
+    label de official "der weitere Vertrag wird spätestens 24 Stunden nach der Bestätigung des Vertragsschlusses über die erste Reiseleistung geschlossen (§ 651c Abs. 1 Nr. 3) — Stundengrenze; ausdrückliche Angabe des Falls, keine gerechnete Frist (Ledger D-07-11)";
+    label en unofficial "the further contract is concluded at the latest 24 hours after confirmation of the conclusion of the contract on the first travel service (§ 651c (1) no. 3) — an hour limit; an express statement of the case, not a computed period (ledger D-07-11)";
+}
+pub relation als_reiseveranstalter_anzusehen_651c(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Unternehmer ist als Reiseveranstalter anzusehen; die vom Reisenden geschlossenen Verträge gelten zusammen als ein Pauschalreisevertrag (§ 651c Abs. 1, 2)";
+    label en unofficial "the trader is to be regarded as the organiser; the contracts concluded by the traveller together constitute one package travel contract (§ 651c (1), (2))";
+}
+
+@source(BGB_P651c)
+rule OnlineBuchungsverfahren651c(r: Pauschalreisevertrag) strict {
+    label de official "Ein Unternehmer, der mittels eines Online-Buchungsverfahrens einen Vertrag über eine Reiseleistung geschlossen oder vermittelt hat, ist als Reiseveranstalter anzusehen, wenn er den Zugriff auf das Buchungsverfahren eines anderen Unternehmers ermöglicht, dessen Daten übermittelt und der weitere Vertrag spätestens 24 Stunden nach der Bestätigung geschlossen wird (§ 651c Abs. 1)";
+    label en unofficial "A trader who has concluded or arranged a contract on a travel service by an online booking process is to be regarded as the organiser where they give access to another trader's booking process, transmit the data and the further contract is concluded at the latest 24 hours after the confirmation (§ 651c (1))";
+    effective [@2018-07-01, infinity);
+    when online_buchungsverfahren_vertrag_651c(r);
+    when zugriff_auf_fremdes_buchungsverfahren_651c(r);
+    when daten_uebermittelt_651c(r);
+    when weiterer_vertrag_binnen_24_stunden_651c(r);
+    then als_reiseveranstalter_anzusehen_651c(r);
+}
+
+@source(BGB_P651c)
+rule EinPauschalreisevertrag651cAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Kommen nach Absatz 1 Verträge über eine andere Art von Reiseleistung zustande, gelten die vom Reisenden geschlossenen Verträge vorbehaltlich des § 651a Abs. 4 zusammen als ein Pauschalreisevertrag im Sinne des § 651a Abs. 1 (§ 651c Abs. 2)";
+    label en unofficial "Where contracts on another type of travel service come about under (1), the contracts concluded by the traveller together constitute one package travel contract within § 651a (1), subject to § 651a (4) (§ 651c (2))";
+    effective [@2018-07-01, infinity);
+    when als_reiseveranstalter_anzusehen_651c(r);
+    when kein_ausschlussfall_651a_abs4(r);
+    then pauschalreise_651a(r);
+}
+
+// --- § 651d Informationspflichten; Vertragsinhalt ----------------------------------------------------------
+
+pub relation vorvertraglich_informiert_651d(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende wurde vor Abgabe seiner Vertragserklärung nach Maßgabe des Artikels 250 §§ 1 bis 3 EGBGB informiert (§ 651d Abs. 1 Satz 1)";
+    label en unofficial "the traveller was informed before making their contractual declaration in accordance with Article 250 §§ 1 to 3 of the Introductory Act to the Civil Code (§ 651d (1) sentence 1)";
+}
+pub relation ueber_zusatzkosten_informiert_651d(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende wurde vor Abgabe seiner Vertragserklärung über zusätzliche Gebühren, Entgelte und sonstige Kosten informiert (§ 651d Abs. 2)";
+    label en unofficial "the traveller was informed of additional fees, charges and other costs before making their contractual declaration (§ 651d (2))";
+}
+pub relation nicht_ueber_zusatzkosten_informiert_651d(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende wurde über die zusätzlichen Kosten nicht informiert (§ 651d Abs. 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the traveller was not informed of the additional costs (§ 651d (2)) — express statement of the case";
+}
+pub relation zusatzkosten_zur_last_651d(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "dem Reisenden fallen die zusätzlichen Gebühren, Entgelte und sonstigen Kosten zur Last (§ 651d Abs. 2)";
+    label en unofficial "the additional fees, charges and other costs are borne by the traveller (§ 651d (2))";
+}
+pub relation zusatzkosten_nicht_zur_last_651d(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "dem Reisenden fallen die zusätzlichen Kosten nicht zur Last, weil er nicht informiert wurde (§ 651d Abs. 2)";
+    label en unofficial "the additional costs are not borne by the traveller because they were not informed (§ 651d (2))";
+}
+pub relation vertragsabschrift_zur_verfuegung_gestellt_651d(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden wurde bei oder unverzüglich nach Vertragsschluss eine Abschrift oder Bestätigung des Vertrags zur Verfügung gestellt (§ 651d Abs. 3 Satz 2)";
+    label en unofficial "a copy or confirmation of the contract was made available to the traveller at, or without undue delay after, the conclusion of the contract (§ 651d (3) sentence 2)";
+}
+pub relation reiseunterlagen_uebermittelt_651d(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden wurden rechtzeitig vor Reisebeginn die notwendigen Reiseunterlagen übermittelt (§ 651d Abs. 3 Satz 3)";
+    label en unofficial "the necessary travel documents were transmitted to the traveller in good time before the start of the trip (§ 651d (3) sentence 3)";
+}
+pub relation beweislast_informationspflichten_beim_veranstalter_651d(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter trägt gegenüber dem Reisenden die Beweislast für die Erfüllung seiner Informationspflichten (§ 651d Abs. 4)";
+    label en unofficial "the organiser bears the burden of proving to the traveller that they fulfilled their information duties (§ 651d (4))";
+}
+
+@source(BGB_P651d)
+rule Informationspflicht651dAbs1(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Der Reiseveranstalter ist verpflichtet, den Reisenden, bevor dieser seine Vertragserklärung abgibt, nach Maßgabe des Artikels 250 §§ 1 bis 3 EGBGB zu informieren (§ 651d Abs. 1 Satz 1)";
+    label en unofficial "The organiser must inform the traveller, before the traveller makes their contractual declaration, in accordance with Article 250 §§ 1 to 3 of the Introductory Act to the Civil Code (§ 651d (1) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty VorvertraglichInformieren651d {
+        bearer v;
+        achieve vorvertraglich_informiert_651d(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651d)
+rule ZusatzkostenZurLast651dAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Dem Reisenden fallen zusätzliche Gebühren, Entgelte und sonstige Kosten nur dann zur Last, wenn er über diese vor Abgabe seiner Vertragserklärung informiert worden ist (§ 651d Abs. 2)";
+    label en unofficial "Additional fees, charges and other costs are borne by the traveller only if they were informed of them before making their contractual declaration (§ 651d (2))";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when ueber_zusatzkosten_informiert_651d(r);
+    then zusatzkosten_zur_last_651d(r);
+}
+
+@source(BGB_P651d)
+rule ZusatzkostenNichtZurLast651dAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Ohne die Information vor Abgabe der Vertragserklärung fallen dem Reisenden die zusätzlichen Kosten nicht zur Last (§ 651d Abs. 2)";
+    label en unofficial "Without the information before the contractual declaration, the additional costs are not borne by the traveller (§ 651d (2))";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when nicht_ueber_zusatzkosten_informiert_651d(r);
+    then zusatzkosten_nicht_zur_last_651d(r);
+}
+
+@source(BGB_P651d)
+rule VertragsabschriftUndUnterlagen651dAbs3(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Der Reiseveranstalter hat dem Reisenden bei oder unverzüglich nach Vertragsschluss eine Abschrift oder Bestätigung des Vertrags zur Verfügung zu stellen (§ 651d Abs. 3 Satz 2)";
+    label en unofficial "The organiser must make a copy or confirmation of the contract available to the traveller at, or without undue delay after, the conclusion of the contract (§ 651d (3) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty VertragsabschriftBereitstellen651d {
+        bearer v;
+        achieve vertragsabschrift_zur_verfuegung_gestellt_651d(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651d)
+rule Beweislast651dAbs4(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter trägt gegenüber dem Reisenden die Beweislast für die Erfüllung seiner Informationspflichten (§ 651d Abs. 4)";
+    label en unofficial "The organiser bears the burden of proving to the traveller that they fulfilled their information duties (§ 651d (4))";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    then beweislast_informationspflichten_beim_veranstalter_651d(r);
+}
+
+// --- § 651e Vertragsübertragung -------------------------------------------------------------------------
+
+pub relation uebertragungserklaerung_zugegangen_am_651e(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag des Zugangs der Erklärung des Reisenden, dass statt seiner ein Dritter in den Vertrag eintritt (§ 651e Abs. 1)";
+    label en unofficial "day the traveller's declaration that a third party is to take their place was received (§ 651e (1))";
+}
+pub relation uebertragungserklaerung_plus_sieben_tage_651e(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "der siebente Tag nach dem Zugang der Übertragungserklärung — die Erklärung ist in jedem Fall rechtzeitig, wenn dieser Tag nicht nach dem Reisebeginn liegt (§ 651e Abs. 1 Satz 2, vorwärts gerechnet, Ledger D-07-09)";
+    label en unofficial "the seventh day after receipt of the transfer declaration — the declaration is in any case in time if that day is not after the start of the trip (§ 651e (1) sentence 2, computed forwards, ledger D-07-09)";
+}
+pub relation uebertragungserklaerung_rechtzeitig_651e(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die Erklärung der Vertragsübertragung ist rechtzeitig (§ 651e Abs. 1 Satz 2)";
+    label en unofficial "the declaration of transfer of the contract is in time (§ 651e (1) sentence 2)";
+}
+pub relation dritter_erfuellt_reiseerfordernisse_nicht_651e(r: Pauschalreisevertrag) kind empirical {
+    label de official "der eintretende Dritte erfüllt die vertraglichen Reiseerfordernisse nicht (§ 651e Abs. 2)";
+    label en unofficial "the third party entering the contract does not meet the contractual travel requirements (§ 651e (2))";
+}
+pub relation widerspruchsrecht_des_veranstalters_651e(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann dem Eintritt des Dritten widersprechen (§ 651e Abs. 2)";
+    label en unofficial "the organiser may object to the third party entering the contract (§ 651e (2))";
+}
+pub relation dritter_eingetreten_651e(r: Pauschalreisevertrag, p: Person) kind empirical {
+    key(r);
+    label de official "ein Dritter ist in die Rechte und Pflichten aus dem Pauschalreisevertrag eingetreten (§ 651e Abs. 3 Satz 1)";
+    label en unofficial "a third party has entered into the rights and duties under the package travel contract (§ 651e (3) sentence 1)";
+}
+pub relation gesamtschuldnerische_haftung_651e(r: Pauschalreisevertrag, p: Person) kind institutional {
+    key(r, p);
+    label de official "der Dritte und der Reisende haften dem Reiseveranstalter als Gesamtschuldner für den Reisepreis und die Mehrkosten (§ 651e Abs. 3 Satz 1)";
+    label en unofficial "the third party and the traveller are jointly and severally liable to the organiser for the travel price and the additional costs (§ 651e (3) sentence 1)";
+}
+pub relation nachweis_der_mehrkosten_erteilt_651e(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter hat dem Reisenden einen Nachweis über die Höhe der Mehrkosten erteilt (§ 651e Abs. 4)";
+    label en unofficial "the organiser has given the traveller evidence of the amount of the additional costs (§ 651e (4))";
+}
+
+@source(BGB_P651e)
+rule UebertragungsfristVorwaerts651eAbs1(r: Pauschalreisevertrag, zugang: Date) strict {
+    label de official "Die Erklärung ist in jedem Fall rechtzeitig, wenn sie dem Reiseveranstalter nicht später als sieben Tage vor Reisebeginn zugeht (§ 651e Abs. 1 Satz 2) — der Abstand wird vom Tag des Zugangs an VORWÄRTS gerechnet (Ledger D-07-09)";
+    label en unofficial "The declaration is in any case in time if the organiser receives it not later than seven days before the start of the trip (§ 651e (1) sentence 2) — the distance is computed FORWARDS from the day of receipt (ledger D-07-09)";
+    effective [@2018-07-01, infinity);
+    when uebertragungserklaerung_zugegangen_am_651e(r, zugang);
+    then uebertragungserklaerung_plus_sieben_tage_651e(r, add_calendar_period(zugang, 7 calendar_day));
+}
+
+@source(BGB_P651e)
+rule UebertragungRechtzeitig651eAbs1(r: Pauschalreisevertrag, grenze: Date, beginn: Date) strict {
+    label de official "Geht die Erklärung so zu, dass der siebente Tag nach dem Zugang nicht nach dem Reisebeginn liegt, so ist sie rechtzeitig (§ 651e Abs. 1 Satz 2)";
+    label en unofficial "Where the declaration is received such that the seventh day after receipt is not after the start of the trip, it is in time (§ 651e (1) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when uebertragungserklaerung_plus_sieben_tage_651e(r, grenze);
+    when reisebeginn_am(r, beginn);
+    when grenze <= beginn;
+    then uebertragungserklaerung_rechtzeitig_651e(r);
+}
+
+@source(BGB_P651e)
+rule WiderspruchsrechtDesVeranstalters651eAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter kann dem Eintritt des Dritten widersprechen, wenn dieser die vertraglichen Reiseerfordernisse nicht erfüllt (§ 651e Abs. 2)";
+    label en unofficial "The organiser may object to the third party entering the contract where the third party does not meet the contractual travel requirements (§ 651e (2))";
+    effective [@2018-07-01, infinity);
+    when dritter_erfuellt_reiseerfordernisse_nicht_651e(r);
+    then widerspruchsrecht_des_veranstalters_651e(r);
+}
+
+@source(BGB_P651e)
+rule GesamtschuldnerischeHaftung651eAbs3(r: Pauschalreisevertrag, dritter: Person) strict {
+    label de official "Tritt ein Dritter in den Vertrag ein, haften er und der Reisende dem Reiseveranstalter als Gesamtschuldner für den Reisepreis und die durch den Eintritt entstehenden Mehrkosten (§ 651e Abs. 3 Satz 1)";
+    label en unofficial "Where a third party enters the contract, that party and the traveller are jointly and severally liable to the organiser for the travel price and the additional costs arising from the entry (§ 651e (3) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when dritter_eingetreten_651e(r, dritter);
+    then gesamtschuldnerische_haftung_651e(r, dritter);
+}
+
+@source(BGB_P651e)
+rule NachweisDerMehrkosten651eAbs4(r: Pauschalreisevertrag, v: Person, dritter: Person, schluss: Date) strict {
+    label de official "Der Reiseveranstalter hat dem Reisenden einen Nachweis darüber zu erteilen, in welcher Höhe durch den Eintritt des Dritten Mehrkosten entstanden sind (§ 651e Abs. 4)";
+    label en unofficial "The organiser must give the traveller evidence of the amount of additional costs arising from the entry of the third party (§ 651e (4))";
+    effective [@2018-07-01, infinity);
+    when dritter_eingetreten_651e(r, dritter);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty MehrkostenNachweisen651e {
+        bearer v;
+        achieve nachweis_der_mehrkosten_erteilt_651e(r) during [schluss, infinity);
+    };
+}
+
+// --- § 651f Änderungsvorbehalte; Preissenkung -------------------------------------------------------------
+
+pub relation preiserhoehungsvorbehalt_im_vertrag_651f(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Vertrag sieht die Möglichkeit der Preiserhöhung vor und enthält den Hinweis auf die Senkungspflicht sowie die Angabe, wie Änderungen zu berechnen sind (§ 651f Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "the contract provides for the possibility of a price increase and contains the reference to the duty to reduce the price and the statement of how changes are to be calculated (§ 651f (1) sentence 1 no. 1)";
+}
+pub relation erhoehungsgrund_651f(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Erhöhung ergibt sich unmittelbar aus einer nach Vertragsschluss erfolgten Erhöhung der Beförderungspreise, der Steuern und Abgaben oder aus einer Änderung der Wechselkurse (§ 651f Abs. 1 Satz 1 Nr. 2)";
+    label en unofficial "the increase results directly from an increase after conclusion of the contract in transport prices, taxes and charges, or from a change in exchange rates (§ 651f (1) sentence 1 no. 2)";
+}
+pub relation unterrichtung_ueber_preiserhoehung_am_651f(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag der Unterrichtung des Reisenden über die Preiserhöhung und deren Gründe auf einem dauerhaften Datenträger (§ 651f Abs. 1 Satz 2, 3)";
+    label en unofficial "day the traveller was informed of the price increase and its reasons on a durable medium (§ 651f (1) sentences 2, 3)";
+}
+pub relation unterrichtung_plus_zwanzig_tage_651f(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "der zwanzigste Tag nach der Unterrichtung über die Preiserhöhung — die Unterrichtung ist rechtzeitig, wenn dieser Tag nicht nach dem Reisebeginn liegt (§ 651f Abs. 1 Satz 3, vorwärts gerechnet, Ledger D-07-09)";
+    label en unofficial "the twentieth day after the notice of the price increase — the notice is in time if that day is not after the start of the trip (§ 651f (1) sentence 3, computed forwards, ledger D-07-09)";
+}
+pub relation preiserhoehung_wirksam_651f(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die Preiserhöhung ist wirksam (§ 651f Abs. 1 Satz 3)";
+    label en unofficial "the price increase is effective (§ 651f (1) sentence 3)";
+}
+pub relation kosten_nach_vertragsschluss_gesunken_651f(r: Pauschalreisevertrag) kind empirical {
+    label de official "die in Absatz 1 Satz 1 Nr. 2 genannten Preise, Abgaben oder Wechselkurse haben sich nach Vertragsschluss und vor Reisebeginn geändert und dies führt zu niedrigeren Kosten für den Reiseveranstalter (§ 651f Abs. 4 Satz 1)";
+    label en unofficial "the prices, charges or exchange rates named in (1) sentence 1 no. 2 changed after the conclusion of the contract and before the start of the trip, resulting in lower costs for the organiser (§ 651f (4) sentence 1)";
+}
+pub relation preissenkungsanspruch_651f(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann eine Senkung des Reisepreises verlangen (§ 651f Abs. 4 Satz 1)";
+    label en unofficial "the traveller may demand a reduction of the travel price (§ 651f (4) sentence 1)";
+}
+
+@source(BGB_P651f)
+rule UnterrichtungsfristVorwaerts651fAbs1(r: Pauschalreisevertrag, tag: Date) strict {
+    label de official "Eine Preiserhöhung ist nur wirksam, wenn die Unterrichtung des Reisenden nicht später als 20 Tage vor Reisebeginn erfolgt (§ 651f Abs. 1 Satz 3) — der Abstand wird vom Tag der Unterrichtung an VORWÄRTS gerechnet (Ledger D-07-09)";
+    label en unofficial "A price increase is effective only if the traveller is informed not later than 20 days before the start of the trip (§ 651f (1) sentence 3) — the distance is computed FORWARDS from the day of the notice (ledger D-07-09)";
+    effective [@2018-07-01, infinity);
+    when unterrichtung_ueber_preiserhoehung_am_651f(r, tag);
+    then unterrichtung_plus_zwanzig_tage_651f(r, add_calendar_period(tag, 20 calendar_day));
+}
+
+@source(BGB_P651f)
+rule PreiserhoehungWirksam651fAbs1(r: Pauschalreisevertrag, grenze: Date, beginn: Date) strict {
+    label de official "Der Reiseveranstalter kann den Reisepreis einseitig erhöhen, wenn der Vertrag dies vorsieht, sich die Erhöhung unmittelbar aus einem der genannten Gründe ergibt und die Unterrichtung nicht später als 20 Tage vor Reisebeginn erfolgt (§ 651f Abs. 1)";
+    label en unofficial "The organiser may unilaterally increase the travel price where the contract so provides, the increase results directly from one of the named grounds, and the traveller is informed not later than 20 days before the start of the trip (§ 651f (1))";
+    effective [@2018-07-01, infinity);
+    when preiserhoehungsvorbehalt_im_vertrag_651f(r);
+    when erhoehungsgrund_651f(r);
+    when unterrichtung_plus_zwanzig_tage_651f(r, grenze);
+    when reisebeginn_am(r, beginn);
+    when grenze <= beginn;
+    then preiserhoehung_wirksam_651f(r);
+}
+
+@source(BGB_P651f)
+rule Preissenkung651fAbs4(r: Pauschalreisevertrag) strict {
+    label de official "Sieht der Vertrag die Möglichkeit einer Erhöhung des Reisepreises vor, kann der Reisende eine Senkung verlangen, wenn und soweit sich die genannten Preise, Abgaben oder Wechselkurse nach Vertragsschluss und vor Reisebeginn geändert haben und dies zu niedrigeren Kosten führt (§ 651f Abs. 4 Satz 1)";
+    label en unofficial "Where the contract provides for the possibility of a price increase, the traveller may demand a reduction if and in so far as the named prices, charges or exchange rates changed after the conclusion of the contract and before the start of the trip, resulting in lower costs (§ 651f (4) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when preiserhoehungsvorbehalt_im_vertrag_651f(r);
+    when kosten_nach_vertragsschluss_gesunken_651f(r);
+    then preissenkungsanspruch_651f(r);
+}
+
+// --- § 651g Erhebliche Vertragsänderungen --------------------------------------------------------------------
+
+pub relation vorbehaltene_preiserhoehung_651g(r: Pauschalreisevertrag, betrag: Money) kind empirical {
+    key(r);
+    label de official "die im Vertrag nach § 651f Abs. 1 vorbehaltene Preiserhöhung (§ 651g Abs. 1 Satz 1)";
+    label en unofficial "the price increase reserved in the contract under § 651f (1) (§ 651g (1) sentence 1)";
+}
+pub relation acht_prozent_grenze_651g(r: Pauschalreisevertrag, betrag: Money) kind institutional {
+    key(r);
+    label de official "acht Prozent des Reisepreises — die Grenze der einseitigen Preiserhöhung (§ 651g Abs. 1 Satz 1); eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "eight per cent of the travel price — the limit of the unilateral price increase (§ 651g (1) sentence 1); one division, rounded to the cent (ledger D-07-07)";
+}
+pub relation einseitige_erhoehung_ausgeschlossen_651g(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann die Preiserhöhung nicht einseitig vornehmen (§ 651g Abs. 1 Satz 1)";
+    label en unofficial "the organiser may not effect the price increase unilaterally (§ 651g (1) sentence 1)";
+}
+@source(BGB_P651g)
+pub external judgment relation erhebliche_aenderung_wesentlicher_eigenschaften_651g(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651g Abs. 1 Satz 3. Der Reiseveranstalter kann die Pauschalreise aus einem nach Vertragsschluss eingetretenen Umstand nur unter erheblicher Änderung einer der wesentlichen Eigenschaften der Reiseleistungen oder nur unter Abweichung von besonderen Vorgaben des Reisenden verschaffen";
+    label en unofficial "§ 651g (1) sentence 3. Owing to a circumstance arising after the conclusion of the contract, the organiser can provide the package only with a significant change to one of the main characteristics of the travel services, or only by departing from the traveller's special requirements";
+}
+@source(BGB_P651g)
+pub external judgment relation vom_veranstalter_bestimmte_frist_angemessen_651g(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651g Abs. 1 Satz 2. Die vom Reiseveranstalter für die Annahme oder den Rücktritt bestimmte Frist ist angemessen";
+    label en unofficial "§ 651g (1) sentence 2. The period set by the organiser for acceptance or withdrawal is appropriate";
+}
+pub relation aenderungsangebot_erforderlich_651g(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann dem Reisenden nur ein Angebot unterbreiten und die Annahme oder den Rücktritt innerhalb einer angemessenen Frist verlangen (§ 651g Abs. 1 Satz 2, 3)";
+    label en unofficial "the organiser may only make an offer to the traveller and require acceptance or withdrawal within an appropriate period (§ 651g (1) sentences 2, 3)";
+}
+pub relation angebotsfrist_verstrichen_651g(r: Pauschalreisevertrag) kind empirical {
+    label de official "die vom Reiseveranstalter bestimmte Frist ist abgelaufen, ohne dass der Reisende erklärt hat (§ 651g Abs. 2 Satz 3)";
+    label en unofficial "the period set by the organiser expired without the traveller making a declaration (§ 651g (2) sentence 3)";
+}
+pub relation angebot_gilt_als_angenommen_651g(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "nach dem Ablauf der bestimmten Frist gilt das Angebot zur Preiserhöhung oder sonstigen Vertragsänderung als angenommen (§ 651g Abs. 2 Satz 3)";
+    label en unofficial "after the expiry of the period set, the offer of a price increase or other change of contract is deemed accepted (§ 651g (2) sentence 3)";
+}
+
+@source(BGB_P651g)
+rule AchtProzentGrenze651gAbs1(r: Pauschalreisevertrag, preis: Money) strict {
+    label de official "Die Grenze der einseitigen Preiserhöhung beträgt 8 Prozent des Reisepreises (§ 651g Abs. 1 Satz 1) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "The limit of the unilateral price increase is 8 per cent of the travel price (§ 651g (1) sentence 1) — one division, rounded to the cent (ledger D-07-07)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reisepreis(r, preis);
+    then acht_prozent_grenze_651g(r, div_round(preis * 8, 100 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P651g)
+rule EinseitigeErhoehungAusgeschlossen651gAbs1(r: Pauschalreisevertrag, erhoehung: Money, grenze: Money) strict {
+    label de official "Übersteigt die vorbehaltene Preiserhöhung 8 Prozent des Reisepreises, kann der Reiseveranstalter sie nicht einseitig vornehmen (§ 651g Abs. 1 Satz 1)";
+    label en unofficial "Where the reserved price increase exceeds 8 per cent of the travel price, the organiser may not effect it unilaterally (§ 651g (1) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when vorbehaltene_preiserhoehung_651g(r, erhoehung);
+    when acht_prozent_grenze_651g(r, grenze);
+    when erhoehung > grenze;
+    then einseitige_erhoehung_ausgeschlossen_651g(r);
+}
+
+@source(BGB_P651g)
+rule Aenderungsangebot651gAbs1Satz2(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter kann dem Reisenden eine entsprechende Preiserhöhung anbieten und verlangen, dass er innerhalb einer angemessenen Frist das Angebot annimmt oder seinen Rücktritt erklärt (§ 651g Abs. 1 Satz 2)";
+    label en unofficial "The organiser may offer the traveller a corresponding price increase and require that, within an appropriate period, the traveller accepts the offer or declares withdrawal (§ 651g (1) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when einseitige_erhoehung_ausgeschlossen_651g(r);
+    when vom_veranstalter_bestimmte_frist_angemessen_651g(r);
+    then aenderungsangebot_erforderlich_651g(r);
+}
+
+@source(BGB_P651g)
+rule Aenderungsangebot651gAbs1Satz3(r: Pauschalreisevertrag) strict {
+    label de official "Satz 2 gilt für andere Vertragsänderungen als Preiserhöhungen entsprechend, wenn der Reiseveranstalter die Pauschalreise nur unter erheblicher Änderung einer wesentlichen Eigenschaft verschaffen kann (§ 651g Abs. 1 Satz 3)";
+    label en unofficial "Sentence 2 applies accordingly to changes of contract other than price increases where the organiser can provide the package only with a significant change to a main characteristic (§ 651g (1) sentence 3)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when erhebliche_aenderung_wesentlicher_eigenschaften_651g(r);
+    when vom_veranstalter_bestimmte_frist_angemessen_651g(r);
+    then aenderungsangebot_erforderlich_651g(r);
+}
+
+@source(BGB_P651g)
+rule AngebotGiltAlsAngenommen651gAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Nach dem Ablauf der vom Reiseveranstalter bestimmten Frist gilt das Angebot zur Preiserhöhung oder sonstigen Vertragsänderung als angenommen (§ 651g Abs. 2 Satz 3)";
+    label en unofficial "After the expiry of the period set by the organiser, the offer of a price increase or other change of contract is deemed accepted (§ 651g (2) sentence 3)";
+    effective [@2018-07-01, infinity);
+    when aenderungsangebot_erforderlich_651g(r);
+    when angebotsfrist_verstrichen_651g(r);
+    then angebot_gilt_als_angenommen_651g(r);
+}
+
+// --- § 651h Rücktritt vor Reisebeginn -------------------------------------------------------------------------
+
+pub relation ruecktritt_des_reisenden_am_651h(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag der Rücktrittserklärung des Reisenden vor Reisebeginn (§ 651h Abs. 1 Satz 1)";
+    label en unofficial "day the traveller declared withdrawal before the start of the trip (§ 651h (1) sentence 1)";
+}
+pub relation anspruch_auf_reisepreis_entfallen_651h(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter verliert den Anspruch auf den vereinbarten Reisepreis (§ 651h Abs. 1 Satz 2, Abs. 4 Satz 2)";
+    label en unofficial "the organiser loses the claim to the agreed travel price (§ 651h (1) sentence 2, (4) sentence 2)";
+}
+@source(BGB_P651h)
+pub external judgment relation entschaedigung_angemessen_651h(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651h Abs. 1 Satz 3, Abs. 2. Die vom Reiseveranstalter verlangte Entschädigung ist angemessen; ohne vereinbarte Pauschalen bemisst sie sich nach dem Reisepreis abzüglich ersparter Aufwendungen und anderweitigen Erwerbs";
+    label en unofficial "§ 651h (1) sentence 3, (2). The compensation claimed by the organiser is appropriate; absent agreed flat rates it is measured by the travel price less saved expenses and what is otherwise earned";
+}
+@source(BGB_P651h)
+pub external judgment relation unvermeidbare_aussergewoehnliche_umstaende_651h(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651h Abs. 3. Am Bestimmungsort oder in dessen unmittelbarer Nähe treten unvermeidbare, außergewöhnliche Umstände auf, die die Durchführung der Pauschalreise oder die Beförderung erheblich beeinträchtigen; unvermeidbar und außergewöhnlich sind Umstände, die nicht der Kontrolle der sich hierauf berufenden Partei unterliegen und deren Folgen auch bei allen zumutbaren Vorkehrungen nicht hätten vermieden werden können";
+    label en unofficial "§ 651h (3). Unavoidable, extraordinary circumstances occur at or in the immediate vicinity of the destination which significantly affect the performance of the package or the carriage of persons; circumstances are unavoidable and extraordinary where they are beyond the control of the party relying on them and their consequences could not have been avoided even if all reasonable precautions had been taken";
+}
+pub relation entschaedigungsanspruch_651h(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann eine angemessene Entschädigung verlangen (§ 651h Abs. 1 Satz 3)";
+    label en unofficial "the organiser may claim appropriate compensation (§ 651h (1) sentence 3)";
+}
+pub relation kein_entschaedigungsanspruch_651h(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann keine Entschädigung verlangen (§ 651h Abs. 3 Satz 1)";
+    label en unofficial "the organiser may not claim compensation (§ 651h (3) sentence 1)";
+}
+pub relation ruecktritt_vor_reisebeginn_651h(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Rücktritt des Reisenden ist vor Reisebeginn erklärt (§ 651h Abs. 1 Satz 1)";
+    label en unofficial "the traveller's withdrawal was declared before the start of the trip (§ 651h (1) sentence 1)";
+}
+
+@source(BGB_P651h)
+rule RuecktrittVorReisebeginn651hAbs1(r: Pauschalreisevertrag, tag: Date, beginn: Date) strict {
+    label de official "Vor Reisebeginn kann der Reisende jederzeit vom Vertrag zurücktreten; tritt er zurück, verliert der Reiseveranstalter den Anspruch auf den vereinbarten Reisepreis (§ 651h Abs. 1 Satz 1, 2)";
+    label en unofficial "Before the start of the trip the traveller may withdraw from the contract at any time; on withdrawal the organiser loses the claim to the agreed travel price (§ 651h (1) sentences 1, 2)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when ruecktritt_des_reisenden_am_651h(r, tag);
+    when reisebeginn_am(r, beginn);
+    when tag < beginn;
+    then ruecktritt_vor_reisebeginn_651h(r);
+}
+
+pub relation ruecktritt_vor_reisebeginn_erklaert_651h(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    label de official "der Reisende hat den Rücktritt vor Reisebeginn erklärt (§ 651h Abs. 1 Satz 1)";
+    label en unofficial "the traveller declared withdrawal before the start of the trip (§ 651h (1) sentence 1)";
+}
+
+@source(BGB_P651h)
+rule PositionRuecktrittVorReisebeginn651hAbs1(r: Pauschalreisevertrag, reisender_person: Person, tag: Date, beginn: Date) strict {
+    label de official "Der Reisende kann vor Reisebeginn zurücktreten (§ 651h Abs. 1 Satz 1) — normative Position";
+    label en unofficial "the traveller may withdraw before the start of the trip (§ 651h (1) sentence 1) — normative position";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reisender(r, reisender_person);
+    when ruecktritt_des_reisenden_am_651h(r, tag);
+    when reisebeginn_am(r, beginn);
+    when tag < beginn;
+    then liberty RuecktrittVorReisebeginn651hAbs1Position {
+        holder reisender_person;
+        action ruecktritt_vor_reisebeginn_erklaert_651h(r, tag);
+        window [tag, infinity);
+    };
+}
+
+@source(BGB_P651h)
+rule AnspruchAufReisepreisEntfaellt651hAbs1(r: Pauschalreisevertrag) strict {
+    label de official "Tritt der Reisende vom Vertrag zurück, verliert der Reiseveranstalter den Anspruch auf den vereinbarten Reisepreis (§ 651h Abs. 1 Satz 2)";
+    label en unofficial "Where the traveller withdraws from the contract, the organiser loses the claim to the agreed travel price (§ 651h (1) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when ruecktritt_vor_reisebeginn_651h(r);
+    then anspruch_auf_reisepreis_entfallen_651h(r);
+}
+
+@source(BGB_P651h)
+rule Entschaedigung651hAbs1Satz3(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter kann jedoch eine angemessene Entschädigung verlangen (§ 651h Abs. 1 Satz 3)";
+    label en unofficial "The organiser may, however, claim appropriate compensation (§ 651h (1) sentence 3)";
+    effective [@2018-07-01, infinity);
+    when ruecktritt_vor_reisebeginn_651h(r);
+    when entschaedigung_angemessen_651h(r);
+    when not unvermeidbare_aussergewoehnliche_umstaende_651h(r);
+    then entschaedigungsanspruch_651h(r);
+}
+
+@source(BGB_P651h)
+rule KeineEntschaedigung651hAbs3(r: Pauschalreisevertrag) strict {
+    label de official "Abweichend von Absatz 1 Satz 3 kann der Reiseveranstalter keine Entschädigung verlangen, wenn am Bestimmungsort oder in dessen unmittelbarer Nähe unvermeidbare, außergewöhnliche Umstände auftreten, die die Durchführung der Pauschalreise oder die Beförderung erheblich beeinträchtigen (§ 651h Abs. 3 Satz 1)";
+    label en unofficial "By derogation from (1) sentence 3, the organiser may not claim compensation where unavoidable, extraordinary circumstances occur at or in the immediate vicinity of the destination which significantly affect the performance of the package or the carriage (§ 651h (3) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when ruecktritt_vor_reisebeginn_651h(r);
+    when unvermeidbare_aussergewoehnliche_umstaende_651h(r);
+    then kein_entschaedigungsanspruch_651h(r);
+}
+
+pub relation mindestteilnehmerzahl_nicht_erreicht_651h(r: Pauschalreisevertrag) kind empirical {
+    label de official "für die Pauschalreise haben sich weniger Personen als die im Vertrag angegebene Mindestteilnehmerzahl angemeldet (§ 651h Abs. 4 Satz 1 Nr. 1)";
+    label en unofficial "fewer persons registered for the package than the minimum number of participants stated in the contract (§ 651h (4) sentence 1 no. 1)";
+}
+pub relation reisedauer_mehr_als_sechs_tage_651h(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Reisedauer beträgt mehr als sechs Tage (§ 651h Abs. 4 Satz 1 Nr. 1 Buchst. a)";
+    label en unofficial "the duration of the trip is more than six days (§ 651h (4) sentence 1 no. 1 letter a)";
+}
+pub relation veranstalterruecktritt_erklaert_am_651h(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag der Rücktrittserklärung des Reiseveranstalters (§ 651h Abs. 4)";
+    label en unofficial "day the organiser declared withdrawal (§ 651h (4))";
+}
+pub relation veranstalterruecktritt_plus_zwanzig_tage_651h(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "der zwanzigste Tag nach der Rücktrittserklärung des Reiseveranstalters — der Rücktritt wegen der Mindestteilnehmerzahl ist rechtzeitig, wenn dieser Tag nicht nach dem Reisebeginn liegt (§ 651h Abs. 4 Satz 1 Nr. 1 Buchst. a, vorwärts gerechnet)";
+    label en unofficial "the twentieth day after the organiser's declaration of withdrawal — the withdrawal for want of the minimum number of participants is in time if that day is not after the start of the trip (§ 651h (4) sentence 1 no. 1 letter a, computed forwards)";
+}
+pub relation veranstalterruecktritt_rechtzeitig_651h(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Rücktritt des Reiseveranstalters wegen der nicht erreichten Mindestteilnehmerzahl ist rechtzeitig erklärt (§ 651h Abs. 4 Satz 1 Nr. 1)";
+    label en unofficial "the organiser's withdrawal for want of the minimum number of participants was declared in time (§ 651h (4) sentence 1 no. 1)";
+}
+
+@source(BGB_P651h)
+rule VeranstalterruecktrittFristVorwaerts651hAbs4(r: Pauschalreisevertrag, tag: Date) strict {
+    label de official "Bei einer Reisedauer von mehr als sechs Tagen hat der Reiseveranstalter den Rücktritt spätestens 20 Tage vor Reisebeginn zu erklären (§ 651h Abs. 4 Satz 1 Nr. 1 Buchst. a) — der Abstand wird vom Tag der Erklärung an VORWÄRTS gerechnet (Ledger D-07-09)";
+    label en unofficial "Where the trip lasts more than six days, the organiser must declare the withdrawal at the latest 20 days before the start of the trip (§ 651h (4) sentence 1 no. 1 letter a) — the distance is computed FORWARDS from the day of the declaration (ledger D-07-09)";
+    effective [@2018-07-01, infinity);
+    when veranstalterruecktritt_erklaert_am_651h(r, tag);
+    then veranstalterruecktritt_plus_zwanzig_tage_651h(r, add_calendar_period(tag, 20 calendar_day));
+}
+
+@source(BGB_P651h)
+rule VeranstalterruecktrittRechtzeitig651hAbs4(r: Pauschalreisevertrag, grenze: Date, beginn: Date) strict {
+    label de official "Der Rücktritt wegen der nicht erreichten Mindestteilnehmerzahl ist bei einer Reisedauer von mehr als sechs Tagen rechtzeitig, wenn der zwanzigste Tag nach der Erklärung nicht nach dem Reisebeginn liegt (§ 651h Abs. 4 Satz 1 Nr. 1 Buchst. a)";
+    label en unofficial "The withdrawal for want of the minimum number of participants is, for a trip of more than six days, in time if the twentieth day after the declaration is not after the start of the trip (§ 651h (4) sentence 1 no. 1 letter a)";
+    effective [@2018-07-01, infinity);
+    when mindestteilnehmerzahl_nicht_erreicht_651h(r);
+    when reisedauer_mehr_als_sechs_tage_651h(r);
+    when veranstalterruecktritt_plus_zwanzig_tage_651h(r, grenze);
+    when reisebeginn_am(r, beginn);
+    when grenze <= beginn;
+    then veranstalterruecktritt_rechtzeitig_651h(r);
+}
+
+@source(BGB_P651h)
+rule AnspruchAufReisepreisEntfaellt651hAbs4(r: Pauschalreisevertrag) strict {
+    label de official "Tritt der Reiseveranstalter vom Vertrag zurück, verliert er den Anspruch auf den vereinbarten Reisepreis (§ 651h Abs. 4 Satz 2)";
+    label en unofficial "Where the organiser withdraws from the contract, they lose the claim to the agreed travel price (§ 651h (4) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when veranstalterruecktritt_rechtzeitig_651h(r);
+    then anspruch_auf_reisepreis_entfallen_651h(r);
+}
+
+pub relation rueckerstattungspflicht_entstanden_am_651h(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "Tag des Rücktritts, der die Pflicht zur Rückerstattung des Reisepreises auslöst (§ 651h Abs. 5)";
+    label en unofficial "day of the withdrawal that triggers the duty to refund the travel price (§ 651h (5))";
+}
+pub relation rueckerstattungsfrist_ende_651h(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "letzter Tag der Vierzehntagefrist für die Rückerstattung des Reisepreises (§ 651h Abs. 5) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "last day of the fourteen-day period for refunding the travel price (§ 651h (5)) — policy BGB_DIENST_WERK_KALENDER";
+}
+
+@source(BGB_P651h)
+rule Rueckerstattungsanlass651hAbs5(r: Pauschalreisevertrag, tag: Date) strict {
+    label de official "Der Rücktritt des Reisenden löst die Pflicht des Reiseveranstalters zur Rückerstattung aus (§ 651h Abs. 1 Satz 2, Abs. 5)";
+    label en unofficial "The traveller's withdrawal triggers the organiser's duty to refund (§ 651h (1) sentence 2, (5))";
+    effective [@2018-07-01, infinity);
+    when ruecktritt_vor_reisebeginn_651h(r);
+    when ruecktritt_des_reisenden_am_651h(r, tag);
+    then rueckerstattungspflicht_entstanden_am_651h(r, tag);
+}
+
+@source(BGB_P651h)
+rule Rueckerstattungsfrist651hAbs5(r: Pauschalreisevertrag, tag: Date) strict {
+    label de official "Wenn der Reiseveranstalter infolge eines Rücktritts zur Rückerstattung des Reisepreises verpflichtet ist, hat er unverzüglich, auf jeden Fall aber innerhalb von 14 Tagen nach dem Rücktritt zu leisten (§ 651h Abs. 5) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "Where the organiser must refund the travel price on account of a withdrawal, they must do so without undue delay and in any case within 14 days of the withdrawal (§ 651h (5)) — policy BGB_DIENST_WERK_KALENDER";
+    effective [@2018-07-01, infinity);
+    when rueckerstattungspflicht_entstanden_am_651h(r, tag);
+    then rueckerstattungsfrist_ende_651h(r, add_calendar_period(tag, 14 calendar_day));
+}
+
+// --- § 651i Rechte des Reisenden bei Reisemängeln ----------------------------------------------------------------
+
+pub relation vereinbarte_beschaffenheit_der_reise_651i(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Pauschalreise hat die vereinbarte Beschaffenheit (§ 651i Abs. 2 Satz 1)";
+    label en unofficial "the package has the agreed quality (§ 651i (2) sentence 1)";
+}
+pub relation beschaffenheit_der_reise_nicht_vereinbart_651i(r: Pauschalreisevertrag) kind empirical {
+    label de official "über die Beschaffenheit der Pauschalreise ist nichts vereinbart (§ 651i Abs. 2 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "nothing is agreed on the quality of the package (§ 651i (2) sentence 2) — express statement of the case";
+}
+pub relation eignung_fuer_vorausgesetzten_nutzen_651i(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Pauschalreise eignet sich für den nach dem Vertrag vorausgesetzten Nutzen (§ 651i Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "the package is suitable for the use presupposed under the contract (§ 651i (2) sentence 2 no. 1)";
+}
+pub relation leistungen_nicht_oder_verspaetet_verschafft_651i(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter verschafft Reiseleistungen nicht oder mit unangemessener Verspätung (§ 651i Abs. 2 Satz 3)";
+    label en unofficial "the organiser does not provide travel services, or provides them with unreasonable delay (§ 651i (2) sentence 3)";
+}
+pub relation reise_frei_von_reisemaengeln_651i(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die Pauschalreise ist frei von Reisemängeln (§ 651i Abs. 2)";
+    label en unofficial "the package is free of travel defects (§ 651i (2))";
+}
+pub relation reisemangel_651i(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die Pauschalreise ist mangelhaft (§ 651i Abs. 2, 3)";
+    label en unofficial "the package is defective (§ 651i (2), (3))";
+}
+pub relation recht_auf_abhilfe_651i(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann nach § 651k Abs. 1 Abhilfe verlangen (§ 651i Abs. 3 Nr. 1)";
+    label en unofficial "the traveller may demand remedy under § 651k (1) (§ 651i (3) no. 1)";
+}
+pub relation recht_auf_minderung_651i(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann die sich aus einer Minderung des Reisepreises ergebenden Rechte geltend machen (§ 651i Abs. 3 Nr. 6)";
+    label en unofficial "the traveller may assert the rights arising from a reduction of the travel price (§ 651i (3) no. 6)";
+}
+pub relation recht_auf_schadensersatz_651i(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann nach § 651n Schadensersatz oder nach § 284 Ersatz vergeblicher Aufwendungen verlangen (§ 651i Abs. 3 Nr. 7)";
+    label en unofficial "the traveller may claim damages under § 651n or reimbursement of futile expenses under § 284 (§ 651i (3) no. 7)";
+}
+pub relation recht_auf_kuendigung_651i(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann den Vertrag nach § 651l kündigen (§ 651i Abs. 3 Nr. 5)";
+    label en unofficial "the traveller may terminate the contract under § 651l (§ 651i (3) no. 5)";
+}
+
+@source(BGB_P651i)
+rule Verschaffungspflicht651iAbs1(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Der Reiseveranstalter hat dem Reisenden die Pauschalreise frei von Reisemängeln zu verschaffen (§ 651i Abs. 1)";
+    label en unofficial "The organiser must provide the traveller with the package free of travel defects (§ 651i (1))";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty MangelfreieReiseVerschaffen651i {
+        bearer v;
+        achieve reise_frei_von_reisemaengeln_651i(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651i)
+rule Mangelfreiheit651iAbs2Satz1(r: Pauschalreisevertrag) strict {
+    label de official "Die Pauschalreise ist frei von Reisemängeln, wenn sie die vereinbarte Beschaffenheit hat (§ 651i Abs. 2 Satz 1)";
+    label en unofficial "The package is free of travel defects if it has the agreed quality (§ 651i (2) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when vereinbarte_beschaffenheit_der_reise_651i(r);
+    then reise_frei_von_reisemaengeln_651i(r);
+}
+
+@source(BGB_P651i)
+rule Mangelfreiheit651iAbs2Nr1(r: Pauschalreisevertrag) strict {
+    label de official "Soweit die Beschaffenheit nicht vereinbart ist, ist die Pauschalreise frei von Reisemängeln, wenn sie sich für den nach dem Vertrag vorausgesetzten Nutzen eignet (§ 651i Abs. 2 Satz 2 Nr. 1)";
+    label en unofficial "Where the quality is not agreed, the package is free of travel defects if it is suitable for the use presupposed under the contract (§ 651i (2) sentence 2 no. 1)";
+    effective [@2018-07-01, infinity);
+    when beschaffenheit_der_reise_nicht_vereinbart_651i(r);
+    when eignung_fuer_vorausgesetzten_nutzen_651i(r);
+    then reise_frei_von_reisemaengeln_651i(r);
+}
+
+@source(BGB_P651i)
+rule Reisemangel651iAbs2Satz1(r: Pauschalreisevertrag) strict {
+    label de official "Hat die Pauschalreise die vereinbarte Beschaffenheit nicht, so liegt ein Reisemangel vor (§ 651i Abs. 2 Satz 1)";
+    label en unofficial "Where the package does not have the agreed quality, a travel defect exists (§ 651i (2) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when not vereinbarte_beschaffenheit_der_reise_651i(r);
+    then reisemangel_651i(r);
+}
+
+@source(BGB_P651i)
+rule Reisemangel651iAbs2Satz3(r: Pauschalreisevertrag) strict {
+    label de official "Ein Reisemangel liegt auch vor, wenn der Reiseveranstalter Reiseleistungen nicht oder mit unangemessener Verspätung verschafft (§ 651i Abs. 2 Satz 3)";
+    label en unofficial "A travel defect also exists where the organiser does not provide travel services, or provides them with unreasonable delay (§ 651i (2) sentence 3)";
+    effective [@2018-07-01, infinity);
+    when leistungen_nicht_oder_verspaetet_verschafft_651i(r);
+    then reisemangel_651i(r);
+}
+
+@source(BGB_P651i)
+rule Maengelrechte651iAbs3Nr1(r: Pauschalreisevertrag) strict {
+    label de official "Ist die Pauschalreise mangelhaft, kann der Reisende nach § 651k Abs. 1 Abhilfe verlangen (§ 651i Abs. 3 Nr. 1)";
+    label en unofficial "Where the package is defective, the traveller may demand remedy under § 651k (1) (§ 651i (3) no. 1)";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    then recht_auf_abhilfe_651i(r);
+}
+
+@source(BGB_P651i)
+rule Maengelrechte651iAbs3Nr5(r: Pauschalreisevertrag) strict {
+    label de official "Ist die Pauschalreise mangelhaft, kann der Reisende den Vertrag nach § 651l kündigen (§ 651i Abs. 3 Nr. 5)";
+    label en unofficial "Where the package is defective, the traveller may terminate the contract under § 651l (§ 651i (3) no. 5)";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    then recht_auf_kuendigung_651i(r);
+}
+
+@source(BGB_P651i)
+rule Maengelrechte651iAbs3Nr6(r: Pauschalreisevertrag) strict {
+    label de official "Ist die Pauschalreise mangelhaft, kann der Reisende die sich aus einer Minderung des Reisepreises ergebenden Rechte geltend machen (§ 651i Abs. 3 Nr. 6)";
+    label en unofficial "Where the package is defective, the traveller may assert the rights arising from a reduction of the travel price (§ 651i (3) no. 6)";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    then recht_auf_minderung_651i(r);
+}
+
+@source(BGB_P651i)
+rule Maengelrechte651iAbs3Nr7(r: Pauschalreisevertrag) strict {
+    label de official "Ist die Pauschalreise mangelhaft, kann der Reisende nach § 651n Schadensersatz oder nach § 284 Ersatz vergeblicher Aufwendungen verlangen (§ 651i Abs. 3 Nr. 7)";
+    label en unofficial "Where the package is defective, the traveller may claim damages under § 651n or reimbursement of futile expenses under § 284 (§ 651i (3) no. 7)";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    then recht_auf_schadensersatz_651i(r);
+}
+
+// --- § 651j Verjährung ----------------------------------------------------------------------------------------
+
+pub relation verjaehrungsfrist_ende_651j(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "Tag, mit dessen Ablauf die in § 651i Abs. 3 bezeichneten Ansprüche verjähren — zwei Jahre ab dem Tag, an dem die Pauschalreise dem Vertrag nach enden sollte (§ 651j)";
+    label en unofficial "day at whose end the claims designated in § 651i (3) become time-barred — two years from the day on which the package was to end under the contract (§ 651j)";
+}
+
+@source(BGB_P651j)
+rule Verjaehrung651j(r: Pauschalreisevertrag, ende: Date) strict {
+    label de official "Die in § 651i Abs. 3 bezeichneten Ansprüche des Reisenden verjähren in zwei Jahren; die Frist beginnt mit dem Tag, an dem die Pauschalreise dem Vertrag nach enden sollte (§ 651j) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "The traveller's claims designated in § 651i (3) become time-barred in two years; the period begins on the day on which the package was to end under the contract (§ 651j) — policy BGB_DIENST_WERK_KALENDER";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reiseende_geschuldet_am(r, ende);
+    then verjaehrungsfrist_ende_651j(r, add_calendar_period(ende, 2 calendar_year));
+}
+
+// --- § 651k Abhilfe -------------------------------------------------------------------------------------------
+
+pub relation abhilfe_verlangt_651k(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende verlangt Abhilfe (§ 651k Abs. 1 Satz 1)";
+    label en unofficial "the traveller demands a remedy (§ 651k (1) sentence 1)";
+}
+pub relation abhilfe_unmoeglich_651k(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Abhilfe ist unmöglich (§ 651k Abs. 1 Satz 2 Nr. 1)";
+    label en unofficial "the remedy is impossible (§ 651k (1) sentence 2 no. 1)";
+}
+@source(BGB_P651k)
+pub external judgment relation abhilfe_mit_unverhaeltnismaessigen_kosten_651k(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651k Abs. 1 Satz 2 Nr. 2. Die Abhilfe ist unter Berücksichtigung des Ausmaßes des Reisemangels und des Werts der betroffenen Reiseleistung mit unverhältnismäßigen Kosten verbunden";
+    label en unofficial "§ 651k (1) sentence 2 no. 2. Having regard to the extent of the travel defect and the value of the travel service concerned, the remedy involves disproportionate costs";
+}
+pub relation abhilfe_nicht_verweigerbar_651k(r: Pauschalreisevertrag) kind empirical {
+    label de official "keiner der Verweigerungsgründe des § 651k Abs. 1 Satz 2 liegt vor — ausdrückliche Angabe des Falls; die Abwesenheit einer Antwort auf die Wertung verneint sie nicht (Ledger D-07-06)";
+    label en unofficial "none of the grounds for refusal in § 651k (1) sentence 2 applies — express statement of the case; the absence of an answer to the judgment is not its denial (ledger D-07-06)";
+}
+pub relation abhilfe_verweigerbar_651k(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann die Abhilfe verweigern (§ 651k Abs. 1 Satz 2)";
+    label en unofficial "the organiser may refuse the remedy (§ 651k (1) sentence 2)";
+}
+pub relation abhilfefrist_ablauf_651k(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "letzter Tag der vom Reisenden bestimmten angemessenen Frist zur Abhilfe (§ 651k Abs. 2 Satz 1)";
+    label en unofficial "last day of the appropriate period set by the traveller for the remedy (§ 651k (2) sentence 1)";
+}
+@source(BGB_P651k)
+pub external judgment relation abhilfefrist_angemessen_651k(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651k Abs. 2 Satz 1. Die vom Reisenden bestimmte Frist zur Abhilfe ist angemessen";
+    label en unofficial "§ 651k (2) sentence 1. The period set by the traveller for the remedy is appropriate";
+}
+pub relation abhilfe_bis_fristablauf_ausgeblieben_651k(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter hat bis zum Ablauf der Frist keine Abhilfe geleistet (§ 651k Abs. 2 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the organiser did not remedy before the period expired (§ 651k (2) sentence 1) — express statement of the case";
+}
+pub relation selbstabhilferecht_651k(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann selbst Abhilfe schaffen und Ersatz der erforderlichen Aufwendungen verlangen (§ 651k Abs. 2 Satz 1)";
+    label en unofficial "the traveller may remedy the defect themselves and demand reimbursement of the necessary expenses (§ 651k (2) sentence 1)";
+}
+pub relation rueckbefoerderung_wegen_umstaenden_unmoeglich_651k(r: Pauschalreisevertrag) kind empirical {
+    label de official "die vom Vertrag umfasste Rückbeförderung ist aufgrund unvermeidbarer, außergewöhnlicher Umstände nicht möglich (§ 651k Abs. 4)";
+    label en unofficial "the return carriage covered by the contract is impossible owing to unavoidable, extraordinary circumstances (§ 651k (4))";
+}
+pub relation kein_fall_des_651k_abs5(r: Pauschalreisevertrag) kind empirical {
+    label de official "es liegt kein Fall des § 651k Abs. 5 vor (unionsrechtliche Pflicht des Leistungserbringers, besonderer Personenkreis mit rechtzeitiger Kenntnisgabe) — ausdrückliche Angabe des Falls";
+    label en unofficial "no case of § 651k (5) applies (obligation of the service provider under Union law, special group of persons notified in good time) — express statement of the case";
+}
+pub relation kostentragung_beherbergung_drei_naechte_651k(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter hat die Kosten für eine notwendige Beherbergung für einen höchstens drei Nächte umfassenden Zeitraum zu tragen (§ 651k Abs. 4)";
+    label en unofficial "the organiser must bear the costs of necessary accommodation for a period of at most three nights (§ 651k (4))";
+}
+
+@source(BGB_P651k)
+rule Abhilfepflicht651kAbs1(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Verlangt der Reisende Abhilfe, hat der Reiseveranstalter den Reisemangel zu beseitigen (§ 651k Abs. 1 Satz 1)";
+    label en unofficial "Where the traveller demands a remedy, the organiser must cure the travel defect (§ 651k (1) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when recht_auf_abhilfe_651i(r);
+    when abhilfe_verlangt_651k(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty ReisemangelBeseitigen651k {
+        bearer v;
+        achieve reise_frei_von_reisemaengeln_651i(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651k)
+rule AbhilfeverweigerungUnmoeglich651kAbs1(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter kann die Abhilfe verweigern, wenn sie unmöglich ist (§ 651k Abs. 1 Satz 2 Nr. 1)";
+    label en unofficial "The organiser may refuse the remedy where it is impossible (§ 651k (1) sentence 2 no. 1)";
+    effective [@2018-07-01, infinity);
+    when abhilfe_unmoeglich_651k(r);
+    then abhilfe_verweigerbar_651k(r);
+}
+
+@source(BGB_P651k)
+rule AbhilfeverweigerungKosten651kAbs1(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter kann die Abhilfe verweigern, wenn sie unter Berücksichtigung des Ausmaßes des Reisemangels und des Werts der betroffenen Reiseleistung mit unverhältnismäßigen Kosten verbunden ist (§ 651k Abs. 1 Satz 2 Nr. 2)";
+    label en unofficial "The organiser may refuse the remedy where, having regard to the extent of the travel defect and the value of the travel service concerned, it involves disproportionate costs (§ 651k (1) sentence 2 no. 2)";
+    effective [@2018-07-01, infinity);
+    when abhilfe_mit_unverhaeltnismaessigen_kosten_651k(r);
+    then abhilfe_verweigerbar_651k(r);
+}
+
+@source(BGB_P651k)
+rule Selbstabhilfe651kAbs2(r: Pauschalreisevertrag, ablauf: Date) strict {
+    label de official "Leistet der Reiseveranstalter nicht innerhalb einer vom Reisenden bestimmten angemessenen Frist Abhilfe, kann der Reisende selbst Abhilfe schaffen und Ersatz der erforderlichen Aufwendungen verlangen (§ 651k Abs. 2 Satz 1)";
+    label en unofficial "Where the organiser does not remedy within an appropriate period set by the traveller, the traveller may remedy the defect themselves and demand reimbursement of the necessary expenses (§ 651k (2) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    when abhilfefrist_ablauf_651k(r, ablauf);
+    when abhilfefrist_angemessen_651k(r);
+    when abhilfe_bis_fristablauf_ausgeblieben_651k(r);
+    when abhilfe_nicht_verweigerbar_651k(r);
+    then selbstabhilferecht_651k(r);
+}
+
+@source(BGB_P651k)
+rule BeherbergungDreiNaechte651kAbs4(r: Pauschalreisevertrag) strict {
+    label de official "Ist die vom Vertrag umfasste Rückbeförderung aufgrund unvermeidbarer, außergewöhnlicher Umstände nicht möglich, hat der Reiseveranstalter die Kosten für eine notwendige Beherbergung für einen höchstens drei Nächte umfassenden Zeitraum zu tragen (§ 651k Abs. 4)";
+    label en unofficial "Where the return carriage covered by the contract is impossible owing to unavoidable, extraordinary circumstances, the organiser must bear the costs of necessary accommodation for a period of at most three nights (§ 651k (4))";
+    effective [@2018-07-01, infinity);
+    when rueckbefoerderung_wegen_umstaenden_unmoeglich_651k(r);
+    when kein_fall_des_651k_abs5(r);
+    then kostentragung_beherbergung_drei_naechte_651k(r);
+}
+
+// --- § 651l Kündigung -------------------------------------------------------------------------------------------
+
+@source(BGB_P651l)
+pub external judgment relation reise_erheblich_beeintraechtigt_651l(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651l Abs. 1 Satz 1. Die Pauschalreise wird durch den Reisemangel erheblich beeinträchtigt";
+    label en unofficial "§ 651l (1) sentence 1. The package is significantly impaired by the travel defect";
+}
+pub relation kuendigung_651l_zulaessig(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann den Vertrag kündigen (§ 651l Abs. 1)";
+    label en unofficial "the traveller may terminate the contract (§ 651l (1))";
+}
+pub relation rueckbefoerderung_besorgt_651l(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter hat unverzüglich für die Rückbeförderung des Reisenden gesorgt (§ 651l Abs. 3 Satz 1)";
+    label en unofficial "the organiser has arranged the traveller's return carriage without undue delay (§ 651l (3) sentence 1)";
+}
+pub relation reisevertrag_gekuendigt_651l(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende hat den Pauschalreisevertrag gekündigt (§ 651l Abs. 2)";
+    label en unofficial "the traveller has terminated the package travel contract (§ 651l (2))";
+}
+pub relation mehrkosten_der_rueckbefoerderung_beim_veranstalter_651l(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die Mehrkosten für die Rückbeförderung fallen dem Reiseveranstalter zur Last (§ 651l Abs. 3 Satz 2)";
+    label en unofficial "the additional costs of the return carriage are borne by the organiser (§ 651l (3) sentence 2)";
+}
+
+@source(BGB_P651l)
+rule Kuendigung651lAbs1(r: Pauschalreisevertrag, ablauf: Date) strict {
+    label de official "Wird die Pauschalreise durch den Reisemangel erheblich beeinträchtigt, kann der Reisende den Vertrag kündigen; die Kündigung ist erst zulässig, wenn der Reiseveranstalter eine ihm bestimmte angemessene Frist hat verstreichen lassen, ohne Abhilfe zu leisten (§ 651l Abs. 1)";
+    label en unofficial "Where the package is significantly impaired by the travel defect, the traveller may terminate the contract; termination is permitted only once the organiser has allowed an appropriate period set for them to expire without remedying (§ 651l (1))";
+    effective [@2018-07-01, infinity);
+    when recht_auf_kuendigung_651i(r);
+    when reise_erheblich_beeintraechtigt_651l(r);
+    when abhilfefrist_ablauf_651k(r, ablauf);
+    when abhilfefrist_angemessen_651k(r);
+    when abhilfe_bis_fristablauf_ausgeblieben_651k(r);
+    then kuendigung_651l_zulaessig(r);
+}
+
+@source(BGB_P651l)
+rule Rueckbefoerderungspflicht651lAbs3(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Der Reiseveranstalter ist verpflichtet, die infolge der Aufhebung des Vertrags notwendigen Maßnahmen zu treffen, insbesondere unverzüglich für die Rückbeförderung des Reisenden zu sorgen (§ 651l Abs. 3 Satz 1)";
+    label en unofficial "The organiser must take the measures necessary as a result of the termination of the contract, in particular arrange the traveller's return carriage without undue delay (§ 651l (3) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when reisevertrag_gekuendigt_651l(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty RueckbefoerderungBesorgen651l {
+        bearer v;
+        achieve rueckbefoerderung_besorgt_651l(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651l)
+rule MehrkostenRueckbefoerderung651lAbs3Satz2(r: Pauschalreisevertrag) strict {
+    label de official "Die Mehrkosten für die Rückbeförderung fallen dem Reiseveranstalter zur Last (§ 651l Abs. 3 Satz 2)";
+    label en unofficial "The additional costs of the return carriage are borne by the organiser (§ 651l (3) sentence 2)";
+    effective [@2018-07-01, infinity);
+    when reisevertrag_gekuendigt_651l(r);
+    then mehrkosten_der_rueckbefoerderung_beim_veranstalter_651l(r);
+}
+
+// --- § 651m Minderung ----------------------------------------------------------------------------------------------
+//
+// Das Verhältnis des Absatzes 1 Satz 2 wird — wie bei § 638 Abs. 3 — als PAAR
+// GANZER ZAHLEN geführt: ein Produkt zweier Money-Größen ist in v1 nicht
+// definiert (§58, LDC-E2108).
+
+pub relation wert_der_reise_ohne_mangel_651m(r: Pauschalreisevertrag, wert: Integer) kind empirical {
+    key(r);
+    label de official "Wert der Pauschalreise in mangelfreiem Zustand zur Zeit des Vertragsschlusses, als ganze Zahl geführter Nenner des Verhältnisses (§ 651m Abs. 1 Satz 2)";
+    label en unofficial "value of the package in a defect-free state at the time the contract was concluded, carried as the integer denominator of the ratio (§ 651m (1) sentence 2)";
+}
+pub relation wirklicher_wert_der_reise_651m(r: Pauschalreisevertrag, wert: Integer) kind empirical {
+    key(r);
+    label de official "wirklicher Wert der Pauschalreise zur Zeit des Vertragsschlusses, als ganze Zahl geführter Zähler des Verhältnisses (§ 651m Abs. 1 Satz 2); soweit erforderlich, durch Schätzung ermittelt (Satz 3)";
+    label en unofficial "actual value of the package at the time the contract was concluded, carried as the integer numerator of the ratio (§ 651m (1) sentence 2); determined by estimation where necessary (sentence 3)";
+}
+pub relation geminderter_reisepreis_651m(r: Pauschalreisevertrag, betrag: Money) kind institutional {
+    key(r);
+    label de official "der nach § 651m Abs. 1 herabgesetzte Reisepreis — ein `div_round` auf den Cent (Ledger D-07-07)";
+    label en unofficial "the travel price reduced under § 651m (1) — one `div_round` to the cent (ledger D-07-07)";
+}
+pub relation mehr_als_geminderten_reisepreis_gezahlt_651m(r: Pauschalreisevertrag, betrag: Money) kind empirical {
+    key(r);
+    label de official "der vom Reisenden gezahlte Reisepreis (§ 651m Abs. 2 Satz 1)";
+    label en unofficial "the travel price paid by the traveller (§ 651m (2) sentence 1)";
+}
+pub relation erstattungsanspruch_651m(r: Pauschalreisevertrag, betrag: Money) kind institutional {
+    key(r);
+    label de official "Anspruch des Reisenden auf Erstattung des Mehrbetrags (§ 651m Abs. 2 Satz 1)";
+    label en unofficial "the traveller's claim to reimbursement of the excess amount (§ 651m (2) sentence 1)";
+}
+
+@source(BGB_P651m)
+rule Minderung651mAbs1(r: Pauschalreisevertrag, preis: Money, ohne: Integer, wirklich: Integer) strict {
+    label de official "Für die Dauer des Reisemangels mindert sich der Reisepreis; bei der Minderung ist er in dem Verhältnis herabzusetzen, in welchem zur Zeit des Vertragsschlusses der Wert der Pauschalreise in mangelfreiem Zustand zu dem wirklichen Wert gestanden haben würde (§ 651m Abs. 1 Satz 1, 2) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "For the duration of the travel defect the travel price is reduced; on reduction it is to be lowered in the ratio in which, at the time the contract was concluded, the value of the package in a defect-free state would have stood to its actual value (§ 651m (1) sentences 1, 2) — one division, rounded to the cent (ledger D-07-07)";
+    effective [@2018-07-01, infinity);
+    when recht_auf_minderung_651i(r);
+    when reisepreis(r, preis);
+    when wert_der_reise_ohne_mangel_651m(r, ohne);
+    when wirklicher_wert_der_reise_651m(r, wirklich);
+    then geminderter_reisepreis_651m(r, div_round(preis * wirklich, ohne * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P651m)
+rule Erstattung651mAbs2(r: Pauschalreisevertrag, gezahlt: Money, gemindert: Money) strict {
+    label de official "Hat der Reisende mehr als den geminderten Reisepreis gezahlt, so ist der Mehrbetrag vom Reiseveranstalter zu erstatten (§ 651m Abs. 2 Satz 1)";
+    label en unofficial "Where the traveller has paid more than the reduced travel price, the excess must be refunded by the organiser (§ 651m (2) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when mehr_als_geminderten_reisepreis_gezahlt_651m(r, gezahlt);
+    when geminderter_reisepreis_651m(r, gemindert);
+    when gezahlt > gemindert;
+    then erstattungsanspruch_651m(r, gezahlt - gemindert);
+}
+
+// --- § 651n Schadensersatz -------------------------------------------------------------------------------------------
+
+pub relation reisemangel_vom_reisenden_verschuldet_651n(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisemangel ist vom Reisenden verschuldet (§ 651n Abs. 1 Nr. 1)";
+    label en unofficial "the travel defect is the traveller's fault (§ 651n (1) no. 1)";
+}
+pub relation kein_haftungsausschluss_651n(r: Pauschalreisevertrag) kind empirical {
+    label de official "keiner der Ausschlussgründe des § 651n Abs. 1 Nr. 1 bis 3 liegt vor — ausdrückliche Angabe des Falls";
+    label en unofficial "none of the grounds of exclusion in § 651n (1) nos. 1 to 3 applies — express statement of the case";
+}
+pub relation schadensersatzanspruch_651n(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann unbeschadet der Minderung oder der Kündigung Schadensersatz verlangen (§ 651n Abs. 1)";
+    label en unofficial "the traveller may claim damages without prejudice to the reduction or the termination (§ 651n (1))";
+}
+@source(BGB_P651n)
+pub external judgment relation reise_vereitelt_oder_erheblich_beeintraechtigt_651n(r: Pauschalreisevertrag) {
+    authority Court;
+    label de official "§ 651n Abs. 2. Die Pauschalreise ist vereitelt oder erheblich beeinträchtigt";
+    label en unofficial "§ 651n (2). The package has been frustrated or significantly impaired";
+}
+pub relation entschaedigung_fuer_urlaubszeit_651n(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende kann auch wegen nutzlos aufgewendeter Urlaubszeit eine angemessene Entschädigung in Geld verlangen (§ 651n Abs. 2)";
+    label en unofficial "the traveller may also claim appropriate compensation in money for holiday time spent to no purpose (§ 651n (2))";
+}
+
+@source(BGB_P651n)
+rule Schadensersatz651nAbs1(r: Pauschalreisevertrag) strict {
+    label de official "Der Reisende kann unbeschadet der Minderung oder der Kündigung Schadensersatz verlangen, es sei denn, der Reisemangel ist vom Reisenden oder einem nicht beteiligten Dritten verschuldet oder wurde durch unvermeidbare, außergewöhnliche Umstände verursacht (§ 651n Abs. 1)";
+    label en unofficial "The traveller may claim damages without prejudice to reduction or termination, unless the travel defect is the fault of the traveller or of an uninvolved third party, or was caused by unavoidable, extraordinary circumstances (§ 651n (1))";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    when kein_haftungsausschluss_651n(r);
+    then schadensersatzanspruch_651n(r);
+}
+
+@source(BGB_P651n)
+rule UrlaubszeitEntschaedigung651nAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Wird die Pauschalreise vereitelt oder erheblich beeinträchtigt, kann der Reisende auch wegen nutzlos aufgewendeter Urlaubszeit eine angemessene Entschädigung in Geld verlangen (§ 651n Abs. 2)";
+    label en unofficial "Where the package is frustrated or significantly impaired, the traveller may also claim appropriate compensation in money for holiday time spent to no purpose (§ 651n (2))";
+    effective [@2018-07-01, infinity);
+    when schadensersatzanspruch_651n(r);
+    when reise_vereitelt_oder_erheblich_beeintraechtigt_651n(r);
+    then entschaedigung_fuer_urlaubszeit_651n(r);
+}
+
+pub relation entschaedigung_fuer_urlaubszeit_verlangt_651n(r: Pauschalreisevertrag, reisender_person: Person) kind empirical {
+    label de official "der Reisende hat Entschädigung wegen nutzlos aufgewendeter Urlaubszeit verlangt (§ 651n Abs. 2)";
+    label en unofficial "the traveller claimed compensation for holiday time spent to no purpose (§ 651n (2))";
+}
+
+@source(BGB_P651n)
+rule PositionUrlaubszeitEntschaedigung651nAbs2(r: Pauschalreisevertrag, reisender_person: Person, beginn: Date) strict {
+    label de official "Der Reisende kann Entschädigung für nutzlos aufgewendete Urlaubszeit verlangen (§ 651n Abs. 2) — normative Position";
+    label en unofficial "the traveller may claim compensation for holiday time spent to no purpose (§ 651n (2)) — normative position";
+    effective [@2018-07-01, infinity);
+    when reisender(r, reisender_person);
+    when schadensersatzanspruch_651n(r);
+    when reise_vereitelt_oder_erheblich_beeintraechtigt_651n(r);
+    when reisebeginn_am(r, beginn);
+    then power UrlaubszeitEntschaedigung651nAbs2Position {
+        holder reisender_person;
+        over r;
+        exercise entschaedigung_fuer_urlaubszeit_verlangt_651n(r, reisender_person);
+        effect entschaedigung_fuer_urlaubszeit_verlangt_651n(r, reisender_person);
+        valid_when reise_vereitelt_oder_erheblich_beeintraechtigt_651n(r);
+        window [beginn, infinity);
+    };
+}
+
+// --- § 651o Mängelanzeige durch den Reisenden --------------------------------------------------------------------------
+
+pub relation mangel_angezeigt_651o(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende hat dem Reiseveranstalter den Reisemangel angezeigt (§ 651o Abs. 1)";
+    label en unofficial "the traveller has notified the organiser of the travel defect (§ 651o (1))";
+}
+pub relation schuldhaft_unterlassene_anzeige_651o(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter konnte infolge einer schuldhaften Unterlassung der Anzeige keine Abhilfe schaffen (§ 651o Abs. 2)";
+    label en unofficial "as a result of a culpable failure to notify, the organiser could not remedy the defect (§ 651o (2))";
+}
+pub relation maengelrechte_651o_gesperrt(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende ist nicht berechtigt, die Rechte aus § 651m geltend zu machen oder nach § 651n Schadensersatz zu verlangen (§ 651o Abs. 2)";
+    label en unofficial "the traveller is not entitled to assert the rights under § 651m or to claim damages under § 651n (§ 651o (2))";
+}
+
+@source(BGB_P651o)
+rule Anzeigepflicht651oAbs1(r: Pauschalreisevertrag, p: Person, schluss: Date) strict {
+    label de official "Der Reisende hat dem Reiseveranstalter einen Reisemangel unverzüglich anzuzeigen (§ 651o Abs. 1)";
+    label en unofficial "The traveller must notify the organiser of a travel defect without undue delay (§ 651o (1))";
+    effective [@2018-07-01, infinity);
+    when reisemangel_651i(r);
+    when reisender(r, p);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty ReisemangelAnzeigen651o {
+        bearer p;
+        achieve mangel_angezeigt_651o(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651o)
+rule Sperre651oAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Soweit der Reiseveranstalter infolge einer schuldhaften Unterlassung der Anzeige nicht Abhilfe schaffen konnte, ist der Reisende nicht berechtigt, die in § 651m bestimmten Rechte geltend zu machen oder nach § 651n Schadensersatz zu verlangen (§ 651o Abs. 2)";
+    label en unofficial "In so far as the organiser could not remedy the defect as a result of a culpable failure to notify, the traveller is not entitled to assert the rights determined in § 651m or to claim damages under § 651n (§ 651o (2))";
+    effective [@2018-07-01, infinity);
+    when schuldhaft_unterlassene_anzeige_651o(r);
+    then maengelrechte_651o_gesperrt(r);
+}
+
+// --- § 651p Zulässige Haftungsbeschränkung -------------------------------------------------------------------------------
+
+pub relation haftungsbeschraenkung_vereinbart_651p(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter hat mit dem Reisenden eine Beschränkung seiner Haftung vereinbart (§ 651p Abs. 1)";
+    label en unofficial "the organiser has agreed with the traveller on a limitation of liability (§ 651p (1))";
+}
+pub relation schaden_ohne_koerperschaden_und_ohne_verschulden_651p(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Schaden ist kein Körperschaden und wurde nicht schuldhaft herbeigeführt (§ 651p Abs. 1 Nr. 1, 2)";
+    label en unofficial "the damage is not personal injury and was not caused culpably (§ 651p (1) nos. 1, 2)";
+}
+pub relation haftungshoechstbetrag_651p(r: Pauschalreisevertrag, betrag: Money) kind institutional {
+    key(r);
+    label de official "Höchstbetrag der zulässigerweise beschränkten Haftung — der dreifache Reisepreis (§ 651p Abs. 1)";
+    label en unofficial "maximum amount of the permissibly limited liability — three times the travel price (§ 651p (1))";
+}
+
+@source(BGB_P651p)
+rule Haftungsbeschraenkung651pAbs1(r: Pauschalreisevertrag, preis: Money) strict {
+    label de official "Der Reiseveranstalter kann durch Vereinbarung mit dem Reisenden seine Haftung für Schäden, die keine Körperschäden sind und nicht schuldhaft herbeigeführt werden, auf den dreifachen Reisepreis beschränken (§ 651p Abs. 1)";
+    label en unofficial "By agreement with the traveller the organiser may limit their liability for damage that is not personal injury and was not caused culpably to three times the travel price (§ 651p (1))";
+    effective [@2018-07-01, infinity);
+    when haftungsbeschraenkung_vereinbart_651p(r);
+    when schaden_ohne_koerperschaden_und_ohne_verschulden_651p(r);
+    when reisepreis(r, preis);
+    then haftungshoechstbetrag_651p(r, preis * 3);
+}
+
+// --- § 651q Beistandspflicht des Reiseveranstalters ------------------------------------------------------------------------
+
+pub relation reisender_in_schwierigkeiten_651q(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende befindet sich im Fall des § 651k Abs. 4 oder aus anderen Gründen in Schwierigkeiten (§ 651q Abs. 1)";
+    label en unofficial "the traveller is in difficulty in the case of § 651k (4) or for other reasons (§ 651q (1))";
+}
+pub relation beistand_gewaehrt_651q(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden wurde unverzüglich in angemessener Weise Beistand gewährt (§ 651q Abs. 1)";
+    label en unofficial "assistance has been given to the traveller without undue delay and in an appropriate manner (§ 651q (1))";
+}
+pub relation schwierigkeiten_selbst_herbeigefuehrt_651q(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende hat die den Beistand erfordernden Umstände schuldhaft selbst herbeigeführt (§ 651q Abs. 2)";
+    label en unofficial "the traveller culpably brought about the circumstances requiring assistance (§ 651q (2))";
+}
+pub relation aufwendungsersatzanspruch_651q(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann Ersatz seiner Aufwendungen verlangen, wenn und soweit diese angemessen und ihm tatsächlich entstanden sind (§ 651q Abs. 2)";
+    label en unofficial "the organiser may claim reimbursement of their expenses if and in so far as these are appropriate and actually incurred (§ 651q (2))";
+}
+
+@source(BGB_P651q)
+rule Beistandspflicht651qAbs1(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Befindet sich der Reisende in Schwierigkeiten, hat der Reiseveranstalter ihm unverzüglich in angemessener Weise Beistand zu gewähren (§ 651q Abs. 1)";
+    label en unofficial "Where the traveller is in difficulty, the organiser must give them assistance without undue delay and in an appropriate manner (§ 651q (1))";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when reisender_in_schwierigkeiten_651q(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty BeistandGewaehren651q {
+        bearer v;
+        achieve beistand_gewaehrt_651q(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651q)
+rule Aufwendungsersatz651qAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Hat der Reisende die den Beistand erfordernden Umstände schuldhaft selbst herbeigeführt, kann der Reiseveranstalter Ersatz seiner Aufwendungen verlangen (§ 651q Abs. 2)";
+    label en unofficial "Where the traveller culpably brought about the circumstances requiring assistance, the organiser may claim reimbursement of their expenses (§ 651q (2))";
+    effective [@2018-07-01, infinity);
+    when reisender_in_schwierigkeiten_651q(r);
+    when schwierigkeiten_selbst_herbeigefuehrt_651q(r);
+    then aufwendungsersatzanspruch_651q(r);
+}
+
+// --- §§ 651r, 651s Insolvenzsicherung -----------------------------------------------------------------------------------
+
+pub relation zahlungsunfaehigkeit_des_veranstalters_651r(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter ist zahlungsunfähig; dem stehen die Eröffnung des Insolvenzverfahrens und die Abweisung eines Eröffnungsantrags mangels Masse gleich (§ 651r Abs. 1 Satz 1, 3)";
+    label en unofficial "the organiser is insolvent; the opening of insolvency proceedings and the dismissal of a petition for want of assets are equivalent (§ 651r (1) sentences 1, 3)";
+}
+pub relation reiseleistungen_fallen_aus_651r(r: Pauschalreisevertrag) kind empirical {
+    label de official "Reiseleistungen fallen aus oder der Reisende kommt Zahlungsaufforderungen von Leistungserbringern nach, deren Entgeltforderungen der Reiseveranstalter nicht erfüllt hat (§ 651r Abs. 1 Satz 1 Nr. 1, 2)";
+    label en unofficial "travel services are not provided, or the traveller meets payment demands of service providers whose remuneration claims the organiser has not satisfied (§ 651r (1) sentence 1 nos. 1, 2)";
+}
+pub relation absicherungsvertrag_besteht_651r(r: Pauschalreisevertrag) kind empirical {
+    label de official "es besteht ein wirksamer Absicherungsvertrag mit einem Reisesicherungsfonds, einem Versicherer oder einem Kreditinstitut (§ 651r Abs. 2, § 651t Nr. 1) — die Fonds- und Aufsichtsordnung selbst ist eine benannte Grenze";
+    label en unofficial "a valid protection contract exists with a travel security fund, an insurer or a credit institution (§ 651r (2), § 651t no. 1) — the fund and supervisory regime itself is a named boundary";
+}
+pub relation erstattungsanspruch_gegen_absicherer_651r(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "dem Reisenden steht ein unmittelbarer Anspruch gegen den Absicherer auf Erstattung des gezahlten Reisepreises zu (§ 651r Abs. 1, 4 Satz 1)";
+    label en unofficial "the traveller has a direct claim against the security provider for reimbursement of the travel price paid (§ 651r (1), (4) sentence 1)";
+}
+pub relation sicherungsschein_erteilt_651r(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden wurde eine Bestätigung des Absicherers (Sicherungsschein) erteilt (§ 651r Abs. 4 Satz 1)";
+    label en unofficial "the traveller has been given a confirmation from the security provider (security certificate) (§ 651r (4) sentence 1)";
+}
+pub relation niederlassung_im_ewr_651s(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter hatte im Zeitpunkt des Vertragsschlusses seine Niederlassung in einem anderen Mitgliedstaat der Europäischen Union oder in einem sonstigen Vertragsstaat des EWR-Abkommens und leistet dort Sicherheit (§ 651s)";
+    label en unofficial "at the time the contract was concluded the organiser was established in another Member State of the European Union or in another contracting state of the EEA Agreement and provides security there (§ 651s)";
+}
+pub relation insolvenzsicherung_genuegt_651s(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter genügt seiner Verpflichtung zur Insolvenzsicherung (§§ 651r Abs. 1, 651s)";
+    label en unofficial "the organiser satisfies their duty to provide insolvency protection (§§ 651r (1), 651s)";
+}
+
+@source(BGB_P651r)
+rule ErstattungsanspruchGegenAbsicherer651r(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter hat sicherzustellen, dass dem Reisenden der gezahlte Reisepreis erstattet wird, soweit im Fall seiner Zahlungsunfähigkeit Reiseleistungen ausfallen; hierzu hat er dem Reisenden einen unmittelbaren Anspruch gegen den Absicherer zu verschaffen (§ 651r Abs. 1 Satz 1, Abs. 4 Satz 1)";
+    label en unofficial "The organiser must ensure that the travel price paid is refunded to the traveller in so far as travel services are not provided in the event of the organiser's insolvency; to that end the organiser must procure the traveller a direct claim against the security provider (§ 651r (1) sentence 1, (4) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when zahlungsunfaehigkeit_des_veranstalters_651r(r);
+    when reiseleistungen_fallen_aus_651r(r);
+    when absicherungsvertrag_besteht_651r(r);
+    then erstattungsanspruch_gegen_absicherer_651r(r);
+}
+
+@source(BGB_P651r)
+rule Insolvenzsicherung651rAbs2(r: Pauschalreisevertrag) strict {
+    label de official "Die Verpflichtungen nach Absatz 1 erfüllt der Reiseveranstalter durch einen Absicherungsvertrag mit einem Reisesicherungsfonds, einem Versicherer oder einem Kreditinstitut (§ 651r Abs. 2)";
+    label en unofficial "The organiser fulfils the duties under (1) by a protection contract with a travel security fund, an insurer or a credit institution (§ 651r (2))";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when absicherungsvertrag_besteht_651r(r);
+    then insolvenzsicherung_genuegt_651s(r);
+}
+
+@source(BGB_P651s)
+rule InsolvenzsicherungImEwr651s(r: Pauschalreisevertrag) strict {
+    label de official "Hat der Reiseveranstalter im Zeitpunkt des Vertragsschlusses seine Niederlassung in einem anderen Mitgliedstaat der Europäischen Union oder in einem sonstigen Vertragsstaat des EWR-Abkommens, so genügt er seiner Verpflichtung zur Insolvenzsicherung auch dann, wenn er dort Sicherheit leistet (§ 651s)";
+    label en unofficial "Where at the time the contract was concluded the organiser was established in another Member State of the European Union or another contracting state of the EEA Agreement, they also satisfy their duty of insolvency protection by providing security there (§ 651s)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when niederlassung_im_ewr_651s(r);
+    then insolvenzsicherung_genuegt_651s(r);
+}
+
+// --- § 651t Rückbeförderung; Vorauszahlungen -----------------------------------------------------------------------------
+
+pub relation absicherer_benannt_651t(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden wurden klar, verständlich und in hervorgehobener Weise Name und Kontaktdaten des Absicherers zur Verfügung gestellt (§ 651t Nr. 2)";
+    label en unofficial "the name and contact details of the security provider have been made available to the traveller clearly, comprehensibly and prominently (§ 651t no. 2)";
+}
+pub relation vorauszahlung_zulaessig_651t(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter darf eine Rückbeförderung vereinbaren und Zahlungen auf den Reisepreis vor Beendigung der Pauschalreise fordern oder annehmen (§ 651t)";
+    label en unofficial "the organiser may agree on return carriage and demand or accept payments towards the travel price before the end of the package (§ 651t)";
+}
+
+@source(BGB_P651t)
+rule Vorauszahlung651t(r: Pauschalreisevertrag) strict {
+    label de official "Der Reiseveranstalter darf eine Rückbeförderung des Reisenden nur vereinbaren und Zahlungen auf den Reisepreis vor Beendigung der Pauschalreise nur fordern oder annehmen, wenn ein wirksamer Absicherungsvertrag besteht und dem Reisenden Name und Kontaktdaten des Absicherers zur Verfügung gestellt wurden (§ 651t)";
+    label en unofficial "The organiser may agree on the traveller's return carriage and demand or accept payments towards the travel price before the end of the package only where a valid protection contract exists and the name and contact details of the security provider have been made available to the traveller (§ 651t)";
+    effective [@2018-07-01, infinity);
+    when insolvenzsicherung_genuegt_651s(r);
+    when absicherer_benannt_651t(r);
+    then vorauszahlung_zulaessig_651t(r);
+}
+
+// --- § 651u Gastschulaufenthalte -------------------------------------------------------------------------------------------
+
+pub relation gastschulaufenthalt_mindestens_drei_monate_651u(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Vertrag hat einen mindestens drei Monate andauernden und mit dem geregelten Besuch einer Schule verbundenen Aufenthalt des Gastschülers bei einer Gastfamilie in einem anderen Staat zum Gegenstand (§ 651u Abs. 1 Satz 1)";
+    label en unofficial "the contract has as its object a stay of at least three months by the guest pupil with a host family in another state, linked to regular school attendance (§ 651u (1) sentence 1)";
+}
+pub relation gastschulvertrag_651u(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "für den Vertrag gelten § 651a Abs. 1, 2 und 5, die §§ 651b, 651d Abs. 1 bis 4 und die §§ 651e bis 651t entsprechend (§ 651u Abs. 1 Satz 1)";
+    label en unofficial "§ 651a (1), (2) and (5), §§ 651b, 651d (1) to (4) and §§ 651e to 651t apply accordingly to the contract (§ 651u (1) sentence 1)";
+}
+pub relation unterkunft_und_betreuung_gesorgt_651u(r: Pauschalreisevertrag) kind empirical {
+    label de official "für eine nach den Verhältnissen des Aufnahmelands angemessene Unterkunft, Beaufsichtigung und Betreuung des Gastschülers in einer Gastfamilie ist gesorgt (§ 651u Abs. 2 Nr. 1)";
+    label en unofficial "appropriate accommodation, supervision and care of the guest pupil with a host family, according to the conditions of the host country, have been arranged (§ 651u (2) no. 1)";
+}
+pub relation voraussetzungen_fuer_schulbesuch_geschaffen_651u(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Voraussetzungen für einen geregelten Schulbesuch des Gastschülers im Aufnahmeland sind geschaffen (§ 651u Abs. 2 Nr. 2)";
+    label en unofficial "the conditions for regular school attendance by the guest pupil in the host country have been created (§ 651u (2) no. 2)";
+}
+pub relation unterrichtung_ueber_gastfamilie_am_651u(r: Pauschalreisevertrag, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag der Information über Name und Anschrift der Gastfamilie und über den Ansprechpartner im Aufnahmeland (§ 651u Abs. 3)";
+    label en unofficial "day of the information on the name and address of the host family and on the contact person in the host country (§ 651u (3))";
+}
+pub relation unterrichtung_plus_zwei_wochen_651u(r: Pauschalreisevertrag, tag: Date) kind institutional {
+    key(r);
+    label de official "der Tag zwei Wochen nach der Unterrichtung über die Gastfamilie — die Unterrichtung ist rechtzeitig, wenn dieser Tag nicht nach dem Reisebeginn liegt (§ 651u Abs. 3, vorwärts gerechnet, Ledger D-07-09)";
+    label en unofficial "the day two weeks after the information on the host family — the information is in time if that day is not after the start of the trip (§ 651u (3), computed forwards, ledger D-07-09)";
+}
+pub relation entschaedigungsregeln_651h_anwendbar_651u(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "§ 651h Abs. 1 Satz 3 und Abs. 2 finden Anwendung, weil der Reiseveranstalter rechtzeitig und angemessen vorbereitet und unterrichtet hat (§ 651u Abs. 3)";
+    label en unofficial "§ 651h (1) sentence 3 and (2) apply because the organiser prepared and informed in good time and appropriately (§ 651u (3))";
+}
+pub relation gastschulkuendigung_erklaert_651u(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisende hat den Gastschulvertrag bis zur Beendigung der Reise gekündigt (§ 651u Abs. 4 Satz 1)";
+    label en unofficial "the traveller terminated the guest-pupil contract before the end of the trip (§ 651u (4) sentence 1)";
+}
+pub relation ersparte_aufwendungen_651u(r: Pauschalreisevertrag, betrag: Money) kind empirical {
+    key(r);
+    label de official "die infolge der Kündigung ersparten Aufwendungen des Reiseveranstalters (§ 651u Abs. 4 Satz 2)";
+    label en unofficial "the expenses saved by the organiser as a result of the termination (§ 651u (4) sentence 2)";
+}
+pub relation verguetungsanspruch_nach_gastschulkuendigung_651u(r: Pauschalreisevertrag, betrag: Money) kind institutional {
+    key(r);
+    label de official "der Reiseveranstalter kann den vereinbarten Reisepreis abzüglich der ersparten Aufwendungen verlangen (§ 651u Abs. 4 Satz 2)";
+    label en unofficial "the organiser may claim the agreed travel price less the expenses saved (§ 651u (4) sentence 2)";
+}
+
+@source(BGB_P651u)
+rule Gastschulvertrag651uAbs1(r: Pauschalreisevertrag) strict {
+    label de official "Für einen Vertrag über einen mindestens drei Monate andauernden Gastschulaufenthalt gelten § 651a Abs. 1, 2 und 5, die §§ 651b, 651d Abs. 1 bis 4 und die §§ 651e bis 651t entsprechend (§ 651u Abs. 1 Satz 1)";
+    label en unofficial "§ 651a (1), (2) and (5), §§ 651b, 651d (1) to (4) and §§ 651e to 651t apply accordingly to a contract on a guest-pupil stay of at least three months (§ 651u (1) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when gastschulaufenthalt_mindestens_drei_monate_651u(r);
+    then gastschulvertrag_651u(r);
+}
+
+@source(BGB_P651u)
+rule PflichtenDesAnbieters651uAbs2(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Der Anbieter des Gastschulaufenthalts ist als Reiseveranstalter verpflichtet, für eine angemessene Unterkunft, Beaufsichtigung und Betreuung des Gastschülers zu sorgen und die Voraussetzungen für einen geregelten Schulbesuch zu schaffen (§ 651u Abs. 2)";
+    label en unofficial "As organiser, the provider of the guest-pupil stay must arrange appropriate accommodation, supervision and care for the guest pupil and create the conditions for regular school attendance (§ 651u (2))";
+    effective [@2018-07-01, infinity);
+    when gastschulvertrag_651u(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty UnterkunftUndBetreuung651u {
+        bearer v;
+        achieve unterkunft_und_betreuung_gesorgt_651u(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651u)
+rule SchulbesuchErmoeglichen651uAbs2(r: Pauschalreisevertrag, v: Person, schluss: Date) strict {
+    label de official "Der Anbieter hat die Voraussetzungen für einen geregelten Schulbesuch des Gastschülers im Aufnahmeland zu schaffen (§ 651u Abs. 2 Nr. 2)";
+    label en unofficial "The provider must create the conditions for regular school attendance by the guest pupil in the host country (§ 651u (2) no. 2)";
+    effective [@2018-07-01, infinity);
+    when gastschulvertrag_651u(r);
+    when reiseveranstalter(r, v);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty SchulbesuchErmoeglichen651u {
+        bearer v;
+        achieve voraussetzungen_fuer_schulbesuch_geschaffen_651u(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651u)
+rule UnterrichtungsfristVorwaerts651uAbs3(r: Pauschalreisevertrag, tag: Date) strict {
+    label de official "Der Reiseveranstalter hat spätestens zwei Wochen vor Antritt der Reise über Name und Anschrift der Gastfamilie und über den Ansprechpartner zu informieren (§ 651u Abs. 3) — der Abstand wird vom Tag der Unterrichtung an VORWÄRTS gerechnet (Ledger D-07-09)";
+    label en unofficial "The organiser must inform of the name and address of the host family and of the contact person at the latest two weeks before the start of the trip (§ 651u (3)) — the distance is computed FORWARDS from the day of the notice (ledger D-07-09)";
+    effective [@2018-07-01, infinity);
+    when unterrichtung_ueber_gastfamilie_am_651u(r, tag);
+    then unterrichtung_plus_zwei_wochen_651u(r, add_calendar_period(tag, 2 calendar_week));
+}
+
+@source(BGB_P651u)
+rule Entschaedigungsregeln651uAbs3(r: Pauschalreisevertrag, grenze: Date, beginn: Date) strict {
+    label de official "Tritt der Reisende vor Reisebeginn zurück, finden § 651h Abs. 1 Satz 3 und Abs. 2 nur Anwendung, wenn der Reiseveranstalter angemessen vorbereitet und spätestens zwei Wochen vor Antritt über Gastfamilie und Ansprechpartner informiert hat (§ 651u Abs. 3)";
+    label en unofficial "Where the traveller withdraws before the start of the trip, § 651h (1) sentence 3 and (2) apply only if the organiser prepared them appropriately and informed them of the host family and contact person at the latest two weeks before departure (§ 651u (3))";
+    effective [@2018-07-01, infinity);
+    when gastschulvertrag_651u(r);
+    when unterrichtung_plus_zwei_wochen_651u(r, grenze);
+    when reisebeginn_am(r, beginn);
+    when grenze <= beginn;
+    then entschaedigungsregeln_651h_anwendbar_651u(r);
+}
+
+@source(BGB_P651u)
+rule VerguetungNachGastschulkuendigung651uAbs4(r: Pauschalreisevertrag, preis: Money, erspart: Money) strict {
+    label de official "Der Reisende kann den Vertrag bis zur Beendigung der Reise jederzeit kündigen; kündigt er, ist der Reiseveranstalter berechtigt, den vereinbarten Reisepreis abzüglich der ersparten Aufwendungen zu verlangen (§ 651u Abs. 4 Satz 1, 2)";
+    label en unofficial "The traveller may terminate the contract at any time until the end of the trip; on termination the organiser is entitled to the agreed travel price less the expenses saved (§ 651u (4) sentences 1, 2)";
+    effective [@2018-07-01, infinity);
+    when gastschulvertrag_651u(r);
+    when gastschulkuendigung_erklaert_651u(r);
+    when reisepreis(r, preis);
+    when ersparte_aufwendungen_651u(r, erspart);
+    then verguetungsanspruch_nach_gastschulkuendigung_651u(r, preis - erspart);
+}
+
+// --- § 651v Reisevermittlung ---------------------------------------------------------------------------------------------
+
+pub relation reisevermittler_651v(r: Pauschalreisevertrag, p: Person) kind empirical {
+    key(r);
+    label de official "der Unternehmer, der dem Reisenden einen Pauschalreisevertrag vermittelt (§ 651v Abs. 1 Satz 1)";
+    label en unofficial "the trader who arranges a package travel contract for the traveller (§ 651v (1) sentence 1)";
+}
+pub relation vermittler_informiert_651v(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisevermittler hat den Reisenden nach Maßgabe des Artikels 250 §§ 1 bis 3 EGBGB informiert (§ 651v Abs. 1 Satz 1)";
+    label en unofficial "the travel agent has informed the traveller in accordance with Article 250 §§ 1 to 3 of the Introductory Act to the Civil Code (§ 651v (1) sentence 1)";
+}
+pub relation veranstalter_ohne_sitz_im_ewr_651v(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reiseveranstalter hatte im Zeitpunkt des Vertragsschlusses seinen Sitz nicht in einem Mitgliedstaat der Europäischen Union oder einem anderen Vertragsstaat des EWR-Abkommens (§ 651v Abs. 3)";
+    label en unofficial "at the time the contract was concluded the organiser was not established in a Member State of the European Union or another contracting state of the EEA Agreement (§ 651v (3))";
+}
+pub relation nachweis_der_pflichterfuellung_durch_veranstalter_651v(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Reisevermittler weist nach, dass der Reiseveranstalter seine Pflichten nach den §§ 651i bis 651t erfüllt (§ 651v Abs. 3 Halbsatz 2)";
+    label en unofficial "the travel agent proves that the organiser fulfils their duties under §§ 651i to 651t (§ 651v (3) second half-sentence)";
+}
+pub relation veranstalterpflichten_beim_vermittler_651v(r: Pauschalreisevertrag, p: Person) kind institutional {
+    key(r);
+    label de official "den Reisevermittler treffen die sich aus den §§ 651i bis 651t ergebenden Pflichten des Reiseveranstalters (§ 651v Abs. 3)";
+    label en unofficial "the travel agent bears the organiser's duties arising from §§ 651i to 651t (§ 651v (3))";
+}
+pub relation vermittler_zur_entgegennahme_bevollmaechtigt_651v(r: Pauschalreisevertrag, p: Person) kind institutional {
+    key(r);
+    label de official "der Reisevermittler gilt als vom Reiseveranstalter bevollmächtigt, Mängelanzeigen und andere Erklärungen des Reisenden entgegenzunehmen (§ 651v Abs. 4 Satz 1)";
+    label en unofficial "the travel agent is deemed authorised by the organiser to receive notifications of defects and other declarations of the traveller (§ 651v (4) sentence 1)";
+}
+
+@source(BGB_P651v)
+rule Informationspflicht651vAbs1(r: Pauschalreisevertrag, m: Person, schluss: Date) strict {
+    label de official "Ein Unternehmer, der einem Reisenden einen Pauschalreisevertrag vermittelt, ist verpflichtet, den Reisenden nach Maßgabe des Artikels 250 §§ 1 bis 3 EGBGB zu informieren (§ 651v Abs. 1 Satz 1)";
+    label en unofficial "A trader who arranges a package travel contract for a traveller must inform the traveller in accordance with Article 250 §§ 1 to 3 of the Introductory Act to the Civil Code (§ 651v (1) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when reisevermittler_651v(r, m);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty VermittlerInformieren651v {
+        bearer m;
+        achieve vermittler_informiert_651v(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651v)
+rule VeranstalterpflichtenBeimVermittler651vAbs3(r: Pauschalreisevertrag, m: Person) strict {
+    label de official "Hat der Reiseveranstalter im Zeitpunkt des Vertragsschlusses seinen Sitz nicht in der Europäischen Union oder im EWR, treffen den Reisevermittler die Pflichten des Reiseveranstalters aus den §§ 651i bis 651t, es sei denn, er weist deren Erfüllung nach (§ 651v Abs. 3)";
+    label en unofficial "Where at the time the contract was concluded the organiser was not established in the European Union or the EEA, the travel agent bears the organiser's duties under §§ 651i to 651t unless they prove that those duties are fulfilled (§ 651v (3))";
+    effective [@2018-07-01, infinity);
+    when reisevermittler_651v(r, m);
+    when veranstalter_ohne_sitz_im_ewr_651v(r);
+    when not nachweis_der_pflichterfuellung_durch_veranstalter_651v(r);
+    then veranstalterpflichten_beim_vermittler_651v(r, m);
+}
+
+@source(BGB_P651v)
+rule Empfangsvollmacht651vAbs4(r: Pauschalreisevertrag, m: Person) strict {
+    label de official "Der Reisevermittler gilt als vom Reiseveranstalter bevollmächtigt, Mängelanzeigen sowie andere Erklärungen des Reisenden bezüglich der Erbringung der Reiseleistungen entgegenzunehmen (§ 651v Abs. 4 Satz 1)";
+    label en unofficial "The travel agent is deemed authorised by the organiser to receive notifications of defects and other declarations of the traveller concerning the provision of the travel services (§ 651v (4) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when reisevermittler_651v(r, m);
+    then vermittler_zur_entgegennahme_bevollmaechtigt_651v(r, m);
+}
+
+// --- § 651w Vermittlung verbundener Reiseleistungen -----------------------------------------------------------------------
+
+pub relation getrennte_auswahl_und_zahlung_651w(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Unternehmer vermittelt dem Reisenden anlässlich eines einzigen Besuchs oder Kontakts Verträge über mindestens zwei verschiedene Arten von Reiseleistungen, die der Reisende getrennt auswählt und getrennt bezahlt oder für die er sich getrennt zur Zahlung verpflichtet (§ 651w Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "on the occasion of a single visit or contact the trader arranges contracts on at least two different types of travel services which the traveller selects separately and pays for separately, or undertakes to pay for separately (§ 651w (1) sentence 1 no. 1)";
+}
+pub relation keine_pauschalreise_bei_verbundenen_leistungen_651w(r: Pauschalreisevertrag) kind empirical {
+    label de official "die Reise ist keine Pauschalreise (§ 651w Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the trip is not a package (§ 651w (1) sentence 1) — express statement of the case";
+}
+pub relation vermittler_verbundener_reiseleistungen_651w(r: Pauschalreisevertrag, p: Person) kind institutional {
+    key(r);
+    label de official "der Unternehmer ist Vermittler verbundener Reiseleistungen (§ 651w Abs. 1)";
+    label en unofficial "the trader is an arranger of linked travel services (§ 651w (1))";
+}
+pub relation verbundene_leistungen_information_erteilt_651w(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Vermittler verbundener Reiseleistungen hat den Reisenden nach Maßgabe des Artikels 251 EGBGB informiert (§ 651w Abs. 2)";
+    label en unofficial "the arranger of linked travel services has informed the traveller in accordance with Article 251 of the Introductory Act to the Civil Code (§ 651w (2))";
+}
+pub relation absicherung_der_zahlungen_651w(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Vermittler verbundener Reiseleistungen hat sichergestellt, dass die entgegengenommenen Zahlungen dem Reisenden im Fall seiner Zahlungsunfähigkeit erstattet werden (§ 651w Abs. 3 Satz 1)";
+    label en unofficial "the arranger of linked travel services has ensured that payments received are refunded to the traveller in the event of their insolvency (§ 651w (3) sentence 1)";
+}
+pub relation pflichten_651w_nicht_erfuellt(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Vermittler verbundener Reiseleistungen erfüllt seine Pflichten aus den Absätzen 2 und 3 nicht (§ 651w Abs. 4)";
+    label en unofficial "the arranger of linked travel services does not fulfil their duties under (2) and (3) (§ 651w (4))";
+}
+pub relation reisevertragsrecht_anwendbar_651w(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "auf das Rechtsverhältnis finden § 312 Abs. 6 Satz 2 sowie die §§ 651e, 651h bis 651q und 651v Abs. 4 entsprechende Anwendung (§ 651w Abs. 4)";
+    label en unofficial "§ 312 (6) sentence 2 and §§ 651e, 651h to 651q and 651v (4) apply accordingly to the legal relationship (§ 651w (4))";
+}
+
+@source(BGB_P651w)
+rule VermittlerVerbundenerReiseleistungen651wAbs1(r: Pauschalreisevertrag, m: Person) strict {
+    label de official "Ein Unternehmer ist Vermittler verbundener Reiseleistungen, wenn er für den Zweck derselben Reise, die keine Pauschalreise ist, dem Reisenden anlässlich eines einzigen Besuchs oder Kontakts Verträge über mindestens zwei verschiedene Arten von Reiseleistungen vermittelt, die der Reisende getrennt auswählt und getrennt bezahlt (§ 651w Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "A trader is an arranger of linked travel services where, for the purpose of the same trip which is not a package, they arrange for the traveller, on the occasion of a single visit or contact, contracts on at least two different types of travel services which the traveller selects and pays for separately (§ 651w (1) sentence 1 no. 1)";
+    effective [@2018-07-01, infinity);
+    when reisevermittler_651v(r, m);
+    when keine_pauschalreise_bei_verbundenen_leistungen_651w(r);
+    when getrennte_auswahl_und_zahlung_651w(r);
+    then vermittler_verbundener_reiseleistungen_651w(r, m);
+}
+
+@source(BGB_P651w)
+rule Informationspflicht651wAbs2(r: Pauschalreisevertrag, m: Person, schluss: Date) strict {
+    label de official "Der Vermittler verbundener Reiseleistungen ist verpflichtet, den Reisenden nach Maßgabe des Artikels 251 EGBGB zu informieren (§ 651w Abs. 2)";
+    label en unofficial "The arranger of linked travel services must inform the traveller in accordance with Article 251 of the Introductory Act to the Civil Code (§ 651w (2))";
+    effective [@2018-07-01, infinity);
+    when vermittler_verbundener_reiseleistungen_651w(r, m);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty VerbundeneLeistungenInformieren651w {
+        bearer m;
+        achieve verbundene_leistungen_information_erteilt_651w(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651w)
+rule AbsicherungDerZahlungen651wAbs3(r: Pauschalreisevertrag, m: Person, schluss: Date) strict {
+    label de official "Nimmt der Vermittler verbundener Reiseleistungen Zahlungen des Reisenden entgegen, hat er sicherzustellen, dass diese im Fall seiner Zahlungsunfähigkeit erstattet werden (§ 651w Abs. 3 Satz 1)";
+    label en unofficial "Where the arranger of linked travel services receives payments from the traveller, they must ensure that these are refunded in the event of their insolvency (§ 651w (3) sentence 1)";
+    effective [@2018-07-01, infinity);
+    when vermittler_verbundener_reiseleistungen_651w(r, m);
+    when reisevertrag_geschlossen_am(r, schluss);
+    then duty ZahlungenAbsichern651w {
+        bearer m;
+        achieve absicherung_der_zahlungen_651w(r) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P651w)
+rule Rechtsfolge651wAbs4(r: Pauschalreisevertrag, m: Person) strict {
+    label de official "Erfüllt der Vermittler verbundener Reiseleistungen seine Pflichten aus den Absätzen 2 und 3 nicht, finden auf das Rechtsverhältnis zwischen ihm und dem Reisenden § 312 Abs. 6 Satz 2 sowie die §§ 651e, 651h bis 651q und 651v Abs. 4 entsprechende Anwendung (§ 651w Abs. 4)";
+    label en unofficial "Where the arranger of linked travel services does not fulfil their duties under (2) and (3), § 312 (6) sentence 2 and §§ 651e, 651h to 651q and 651v (4) apply accordingly to the legal relationship between them and the traveller (§ 651w (4))";
+    effective [@2018-07-01, infinity);
+    when vermittler_verbundener_reiseleistungen_651w(r, m);
+    when pflichten_651w_nicht_erfuellt(r);
+    then reisevertragsrecht_anwendbar_651w(r);
+}
+
+// --- § 651x Haftung für Buchungsfehler ----------------------------------------------------------------------------------------
+
+pub relation technischer_fehler_im_buchungssystem_651x(r: Pauschalreisevertrag) kind empirical {
+    label de official "dem Reisenden entsteht ein Schaden durch einen technischen Fehler im Buchungssystem (§ 651x Nr. 1)";
+    label en unofficial "the traveller suffers damage through a technical fault in the booking system (§ 651x no. 1)";
+}
+pub relation technischen_fehler_nicht_zu_vertreten_651x(r: Pauschalreisevertrag) kind empirical {
+    label de official "der jeweilige Unternehmer hat den technischen Fehler nicht zu vertreten (§ 651x Nr. 1 Halbsatz 2)";
+    label en unofficial "the trader concerned is not responsible for the technical fault (§ 651x no. 1 second half-sentence)";
+}
+pub relation fehler_waehrend_des_buchungsvorgangs_651x(r: Pauschalreisevertrag) kind empirical {
+    label de official "einer der genannten Unternehmer hat durch einen Fehler während des Buchungsvorgangs einen Schaden verursacht (§ 651x Nr. 2)";
+    label en unofficial "one of the named traders caused damage by an error during the booking process (§ 651x no. 2)";
+}
+pub relation kein_ausschluss_651x_nr2(r: Pauschalreisevertrag) kind empirical {
+    label de official "der Fehler während des Buchungsvorgangs ist weder vom Reisenden verschuldet noch durch unvermeidbare, außergewöhnliche Umstände verursacht (§ 651x Nr. 2 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the error during the booking process is neither the traveller's fault nor caused by unavoidable, extraordinary circumstances (§ 651x no. 2 second half-sentence) — express statement of the case";
+}
+pub relation schadensersatzanspruch_651x(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "der Reisende hat Anspruch auf Ersatz des Schadens aus dem Buchungsfehler (§ 651x)";
+    label en unofficial "the traveller has a claim to compensation for the damage from the booking error (§ 651x)";
+}
+
+@source(BGB_P651x)
+rule Buchungsfehler651xNr1(r: Pauschalreisevertrag) strict {
+    label de official "Der Reisende hat Anspruch auf Ersatz des Schadens, der ihm durch einen technischen Fehler im Buchungssystem entsteht, es sei denn, der jeweilige Unternehmer hat den technischen Fehler nicht zu vertreten (§ 651x Nr. 1)";
+    label en unofficial "The traveller has a claim to compensation for damage caused by a technical fault in the booking system, unless the trader concerned is not responsible for the fault (§ 651x no. 1)";
+    effective [@2018-07-01, infinity);
+    when technischer_fehler_im_buchungssystem_651x(r);
+    when not technischen_fehler_nicht_zu_vertreten_651x(r);
+    then schadensersatzanspruch_651x(r);
+}
+
+@source(BGB_P651x)
+rule Buchungsfehler651xNr2(r: Pauschalreisevertrag) strict {
+    label de official "Der Reisende hat Anspruch auf Ersatz des Schadens, den einer der genannten Unternehmer durch einen Fehler während des Buchungsvorgangs verursacht hat, es sei denn, der Fehler ist vom Reisenden verschuldet oder wurde durch unvermeidbare, außergewöhnliche Umstände verursacht (§ 651x Nr. 2)";
+    label en unofficial "The traveller has a claim to compensation for damage caused by one of the named traders through an error during the booking process, unless the error is the traveller's fault or was caused by unavoidable, extraordinary circumstances (§ 651x no. 2)";
+    effective [@2018-07-01, infinity);
+    when fehler_waehrend_des_buchungsvorgangs_651x(r);
+    when kein_ausschluss_651x_nr2(r);
+    then schadensersatzanspruch_651x(r);
+}
+
+// --- § 651y Abweichende Vereinbarungen ------------------------------------------------------------------------------------------
+
+pub relation abweichung_zum_nachteil_des_reisenden_651y(r: Pauschalreisevertrag) kind empirical {
+    label de official "von den Vorschriften dieses Untertitels ist zum Nachteil des Reisenden abgewichen worden, auch durch anderweitige Gestaltungen (§ 651y)";
+    label en unofficial "there is a deviation to the traveller's detriment from the provisions of this sub-title, including by other arrangements (§ 651y)";
+}
+pub relation abweichung_651y_unwirksam(r: Pauschalreisevertrag) kind institutional {
+    key(r);
+    label de official "die Abweichung zum Nachteil des Reisenden ist unbeachtlich (§ 651y)";
+    label en unofficial "the deviation to the traveller's detriment is of no effect (§ 651y)";
+}
+
+@source(BGB_P651y)
+rule AbweichendeVereinbarungen651y(r: Pauschalreisevertrag) strict {
+    label de official "Von den Vorschriften dieses Untertitels darf, soweit nichts anderes bestimmt ist, nicht zum Nachteil des Reisenden abgewichen werden; sie finden auch Anwendung, wenn sie durch anderweitige Gestaltungen umgangen werden (§ 651y)";
+    label en unofficial "Unless otherwise provided, there may be no deviation to the traveller's detriment from the provisions of this sub-title; they also apply where they are circumvented by other arrangements (§ 651y)";
+    effective [@2018-07-01, infinity);
+    when pauschalreise_651a(r);
+    when abweichung_zum_nachteil_des_reisenden_651y(r);
+    then abweichung_651y_unwirksam(r);
+}

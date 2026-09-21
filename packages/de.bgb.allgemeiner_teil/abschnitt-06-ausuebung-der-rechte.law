@@ -1,0 +1,249 @@
+// BUCH 1 ABSCHNITT 6 — AUSÜBUNG DER RECHTE, SELBSTVERTEIDIGUNG, SELBSTHILFE
+// (§§ 226–231)
+//
+// KANÄLE (DECISION-0194). Die Schikane des § 226 („nur den Zweck haben kann“),
+// die Erforderlichkeit der Verteidigung (§ 227 Abs. 2), der Beschädigung
+// (§ 228 Satz 1) und der Selbsthilfe (§ 229, § 230 Abs. 1) sowie das
+// Verhältnis von Schaden und Gefahr (§ 228 Satz 1 Halbsatz 2) sind WERTUNGEN
+// des Gerichts; der Angriff, die Gefahr, die Wegnahme und die Festnahme sind
+// festgestellte Tatsachen. § 231 knüpft an den IRRTUM des Handelnden an und
+// legt ihm den Schaden ohne Rücksicht auf Fahrlässigkeit auf.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+pub entity Handlung {
+    label de official "Handlung, deren Widerrechtlichkeit zu beurteilen ist (§§ 226–231)";
+    label en unofficial "act whose unlawfulness is to be assessed (§§ 226–231)";
+}
+
+pub relation handelnder(h: Handlung, p: Person) kind empirical {
+    key(h);
+    label de official "die handelnde Person (§§ 227–231)";
+    label en unofficial "the person acting (§§ 227–231)";
+}
+pub relation betroffener(h: Handlung, p: Person) kind empirical {
+    label de official "die Person, gegen die sich die Handlung richtet (§§ 227–231)";
+    label en unofficial "the person against whom the act is directed (§§ 227–231)";
+}
+pub relation ausuebung_eines_rechts(h: Handlung, p: Person) kind empirical {
+    label de official "die Handlung ist die Ausübung eines Rechts (§ 226)";
+    label en unofficial "the act is the exercise of a right (§ 226)";
+}
+pub relation widerrechtlich(h: Handlung) kind institutional {
+    label de official "die Handlung ist widerrechtlich";
+    label en unofficial "the act is unlawful";
+}
+pub relation nicht_widerrechtlich(h: Handlung) kind institutional {
+    label de official "die Handlung ist nicht widerrechtlich (§§ 227–229)";
+    label en unofficial "the act is not unlawful (§§ 227–229)";
+}
+pub relation unzulaessige_rechtsausuebung(h: Handlung) kind institutional {
+    label de official "die Ausübung des Rechts ist unzulässig (§ 226)";
+    label en unofficial "the exercise of the right is not permitted (§ 226)";
+}
+
+@source(BGB_P226)
+pub external judgment relation ausuebung_kann_nur_schaden_zufuegen(h: Handlung) {
+    authority Court;
+    label de official "§ 226: die Ausübung des Rechts kann nur den Zweck haben, einem anderen Schaden zuzufügen";
+    label en unofficial "§ 226: the exercise of the right can only have the purpose of causing damage to another";
+}
+
+@source(BGB_P226)
+rule Schikaneverbot(h: Handlung, p: Person) strict {
+    label de official "Die Ausübung eines Rechts ist unzulässig, wenn sie nur den Zweck haben kann, einem anderen Schaden zuzufügen (§ 226)";
+    label en unofficial "The exercise of a right is not permitted if it can only have the purpose of causing damage to another (§ 226)";
+    when ausuebung_eines_rechts(h, p) and ausuebung_kann_nur_schaden_zufuegen(h);
+    then unzulaessige_rechtsausuebung(h);
+}
+
+// § 227 Notwehr.
+pub relation gegenwaertiger_rechtswidriger_angriff(h: Handlung) kind empirical {
+    label de official "gegen den Handelnden oder einen anderen richtet sich ein gegenwärtiger rechtswidriger Angriff (§ 227 Abs. 2) — festgestellte Tatsache";
+    label en unofficial "a present unlawful attack is directed against the actor or another (§ 227 (2)) — established fact";
+}
+
+@source(BGB_P227)
+pub external judgment relation verteidigung_erforderlich(h: Handlung) {
+    authority Court;
+    label de official "§ 227 Abs. 2: die Verteidigung ist erforderlich, um den gegenwärtigen rechtswidrigen Angriff von sich oder einem anderen abzuwenden";
+    label en unofficial "§ 227 (2): the defence is necessary to avert the present unlawful attack from oneself or another";
+}
+
+pub relation notwehr(h: Handlung) kind institutional {
+    label de official "die Handlung ist durch Notwehr geboten (§ 227)";
+    label en unofficial "the act is required by self-defence (§ 227)";
+}
+
+@source(BGB_P227)
+rule NotwehrIstNichtWiderrechtlich(h: Handlung) strict {
+    label de official "Eine durch Notwehr gebotene Handlung ist nicht widerrechtlich; Notwehr ist diejenige Verteidigung, welche erforderlich ist, um einen gegenwärtigen rechtswidrigen Angriff von sich oder einem anderen abzuwenden (§ 227)";
+    label en unofficial "An act required by self-defence is not unlawful; self-defence is the defence necessary to avert a present unlawful attack (§ 227)";
+    when gegenwaertiger_rechtswidriger_angriff(h) and verteidigung_erforderlich(h);
+    then notwehr(h);
+}
+
+@source(BGB_P227)
+rule NotwehrSchliesstWiderrechtlichkeitAus(h: Handlung) strict {
+    label de official "Die durch Notwehr gebotene Handlung ist nicht widerrechtlich (§ 227 Abs. 1)";
+    label en unofficial "An act required by self-defence is not unlawful (§ 227 (1))";
+    when notwehr(h);
+    then nicht_widerrechtlich(h);
+}
+
+// § 228 Notstand.
+pub relation fremde_sache_beschaedigt_oder_zerstoert(h: Handlung, s: Sache) kind empirical {
+    label de official "der Handelnde beschädigt oder zerstört eine fremde Sache, um eine durch sie drohende Gefahr von sich oder einem anderen abzuwenden (§ 228 Satz 1)";
+    label en unofficial "the actor damages or destroys another's thing to avert a danger threatened by it (§ 228 sentence 1)";
+}
+pub relation gefahr_verschuldet(h: Handlung) kind empirical {
+    label de official "der Handelnde hat die Gefahr verschuldet (§ 228 Satz 2) — festgestellte Tatsache";
+    label en unofficial "the actor is responsible for the danger (§ 228 sentence 2) — established fact";
+}
+
+@source(BGB_P228)
+pub external judgment relation beschaedigung_erforderlich_und_verhaeltnismaessig(h: Handlung) {
+    authority Court;
+    label de official "§ 228 Satz 1: die Beschädigung oder die Zerstörung ist zur Abwendung der Gefahr erforderlich und der Schaden steht nicht außer Verhältnis zu der Gefahr";
+    label en unofficial "§ 228 sentence 1: the damage or destruction is necessary to avert the danger and is not disproportionate to it";
+}
+
+pub relation schadensersatzpflicht(h: Handlung, p: Person) kind institutional {
+    label de official "der Handelnde ist zum Schadensersatz verpflichtet (§ 228 Satz 2, § 231)";
+    label en unofficial "the actor is liable in damages (§ 228 sentence 2, § 231)";
+}
+
+@source(BGB_P228)
+rule NotstandIstNichtWiderrechtlich(h: Handlung, s: Sache) strict {
+    label de official "Wer eine fremde Sache beschädigt oder zerstört, um eine durch sie drohende Gefahr von sich oder einem anderen abzuwenden, handelt nicht widerrechtlich, wenn die Beschädigung oder die Zerstörung zur Abwendung der Gefahr erforderlich ist und der Schaden nicht außer Verhältnis zu der Gefahr steht (§ 228 Satz 1)";
+    label en unofficial "A person who damages another's thing to avert a danger threatened by it does not act unlawfully if this is necessary and not disproportionate (§ 228 sentence 1)";
+    when fremde_sache_beschaedigt_oder_zerstoert(h, s) and beschaedigung_erforderlich_und_verhaeltnismaessig(h);
+    then nicht_widerrechtlich(h);
+}
+
+@source(BGB_P228)
+rule SchadensersatzBeiVerschuldeterGefahr(h: Handlung, s: Sache, p: Person) strict {
+    label de official "Hat der Handelnde die Gefahr verschuldet, so ist er zum Schadensersatz verpflichtet (§ 228 Satz 2)";
+    label en unofficial "If the actor is responsible for the danger, they are liable in damages (§ 228 sentence 2)";
+    when fremde_sache_beschaedigt_oder_zerstoert(h, s) and handelnder(h, p) and gefahr_verschuldet(h);
+    then schadensersatzpflicht(h, p);
+}
+
+// §§ 229–231 Selbsthilfe.
+pub enum Selbsthilfehandlung {
+    label de official "Art der Selbsthilfehandlung (§ 229)";
+    label en unofficial "kind of act of self-help (§ 229)";
+    SacheWeggenommen,
+    SacheZerstoertOderBeschaedigt,
+    VerpflichteterFestgenommen,
+    WiderstandBeseitigt
+}
+pub relation selbsthilfehandlung(h: Handlung, art: Selbsthilfehandlung) kind empirical {
+    key(h);
+    label de official "der Handelnde nimmt zum Zwecke der Selbsthilfe eine Sache weg, zerstört oder beschädigt sie, nimmt den der Flucht verdächtigen Verpflichteten fest oder beseitigt dessen Widerstand (§ 229)";
+    label en unofficial "for the purpose of self-help the actor takes, destroys or damages a thing, arrests an obligor suspected of flight, or removes their resistance (§ 229)";
+}
+pub relation obrigkeitliche_hilfe_nicht_rechtzeitig(h: Handlung) kind empirical {
+    label de official "obrigkeitliche Hilfe ist nicht rechtzeitig zu erlangen (§ 229)";
+    label en unofficial "the assistance of the authorities cannot be obtained in time (§ 229)";
+}
+
+@source(BGB_P229)
+pub external judgment relation gefahr_der_vereitelung_des_anspruchs(h: Handlung) {
+    authority Court;
+    label de official "§ 229: ohne sofortiges Eingreifen besteht die Gefahr, dass die Verwirklichung des Anspruchs vereitelt oder wesentlich erschwert werde";
+    label en unofficial "§ 229: without immediate intervention there is a danger that the realisation of the claim would be frustrated or substantially impeded";
+}
+
+@source(BGB_P230)
+pub external judgment relation selbsthilfe_nicht_weiter_als_erforderlich(h: Handlung) {
+    authority Court;
+    label de official "§ 230 Abs. 1: die Selbsthilfe geht nicht weiter, als zur Abwendung der Gefahr erforderlich ist";
+    label en unofficial "§ 230 (1): the self-help goes no further than is necessary to avert the danger";
+}
+
+pub relation selbsthilfe_rechtmaessig(h: Handlung) kind institutional {
+    label de official "die Selbsthilfe ist rechtmäßig; der Handelnde handelt nicht widerrechtlich (§§ 229, 230 Abs. 1)";
+    label en unofficial "the self-help is lawful; the actor does not act unlawfully (§§ 229, 230 (1))";
+}
+pub relation dinglicher_arrest_zu_beantragen(h: Handlung) kind institutional {
+    label de official "im Falle der Wegnahme von Sachen ist, sofern nicht Zwangsvollstreckung erwirkt wird, der dingliche Arrest zu beantragen (§ 230 Abs. 2)";
+    label en unofficial "where things are taken, unless execution is obtained, an attachment order must be applied for (§ 230 (2))";
+}
+pub relation persoenlicher_sicherheitsarrest_zu_beantragen(h: Handlung) kind institutional {
+    label de official "im Falle der Festnahme ist, sofern der Verpflichtete nicht wieder in Freiheit gesetzt wird, der persönliche Sicherheitsarrest bei dem Amtsgericht zu beantragen, in dessen Bezirk die Festnahme erfolgt ist (§ 230 Abs. 3)";
+    label en unofficial "where a person is arrested, unless released, personal security detention must be applied for at the local court of the place of arrest (§ 230 (3))";
+}
+pub relation zwangsvollstreckung_erwirkt(h: Handlung) kind empirical {
+    label de official "Zwangsvollstreckung ist erwirkt worden (§ 230 Abs. 2)";
+    label en unofficial "execution has been obtained (§ 230 (2))";
+}
+pub relation verpflichteter_wieder_in_freiheit(h: Handlung) kind empirical {
+    label de official "der Verpflichtete ist wieder in Freiheit gesetzt worden (§ 230 Abs. 3)";
+    label en unofficial "the obligor has been released (§ 230 (3))";
+}
+pub relation arrestantrag_verzoegert_oder_abgelehnt(h: Handlung) kind empirical {
+    label de official "der Arrestantrag ist verzögert oder abgelehnt worden (§ 230 Abs. 4)";
+    label en unofficial "the application for attachment was delayed or refused (§ 230 (4))";
+}
+pub relation rueckgabe_und_freilassung_geboten(h: Handlung) kind institutional {
+    label de official "die Rückgabe der weggenommenen Sachen und die Freilassung des Festgenommenen hat unverzüglich zu erfolgen (§ 230 Abs. 4)";
+    label en unofficial "the things taken must be returned and the arrested person released without undue delay (§ 230 (4))";
+}
+pub relation irrige_annahme_der_voraussetzungen(h: Handlung) kind empirical {
+    label de official "der Handelnde nimmt die Handlung in der irrigen Annahme vor, dass die für den Ausschluss der Widerrechtlichkeit erforderlichen Voraussetzungen vorhanden seien (§ 231)";
+    label en unofficial "the actor acts in the mistaken assumption that the conditions excluding unlawfulness exist (§ 231)";
+}
+
+@source(BGB_P229)
+rule SelbsthilfeIstRechtmaessig(h: Handlung, art: Selbsthilfehandlung) strict {
+    label de official "Wer zum Zwecke der Selbsthilfe eine Sache wegnimmt, zerstört oder beschädigt oder wer einen der Flucht verdächtigen Verpflichteten festnimmt oder dessen Widerstand beseitigt, handelt nicht widerrechtlich, wenn obrigkeitliche Hilfe nicht rechtzeitig zu erlangen ist und ohne sofortiges Eingreifen die Gefahr besteht, dass die Verwirklichung des Anspruchs vereitelt oder wesentlich erschwert werde (§ 229); die Selbsthilfe darf nicht weiter gehen, als zur Abwendung der Gefahr erforderlich ist (§ 230 Abs. 1)";
+    label en unofficial "Self-help is lawful where official assistance cannot be obtained in time, the claim would otherwise be frustrated, and it goes no further than necessary (§§ 229, 230 (1))";
+    when selbsthilfehandlung(h, art)
+        and obrigkeitliche_hilfe_nicht_rechtzeitig(h)
+        and gefahr_der_vereitelung_des_anspruchs(h)
+        and selbsthilfe_nicht_weiter_als_erforderlich(h);
+    then selbsthilfe_rechtmaessig(h);
+}
+
+@source(BGB_P229)
+rule RechtmaessigeSelbsthilfeIstNichtWiderrechtlich(h: Handlung) strict {
+    label de official "Die rechtmäßige Selbsthilfe ist nicht widerrechtlich (§ 229)";
+    label en unofficial "Lawful self-help is not unlawful (§ 229)";
+    when selbsthilfe_rechtmaessig(h);
+    then nicht_widerrechtlich(h);
+}
+
+@source(BGB_P230)
+rule ArrestNachWegnahme(h: Handlung) strict {
+    label de official "Im Falle der Wegnahme von Sachen ist, sofern nicht Zwangsvollstreckung erwirkt wird, der dingliche Arrest zu beantragen (§ 230 Abs. 2)";
+    label en unofficial "Where things are taken, unless execution is obtained, an attachment order must be applied for (§ 230 (2))";
+    when selbsthilfehandlung(h, SacheWeggenommen) and not zwangsvollstreckung_erwirkt(h);
+    then dinglicher_arrest_zu_beantragen(h);
+}
+
+@source(BGB_P230)
+rule SicherheitsarrestNachFestnahme(h: Handlung) strict {
+    label de official "Im Falle der Festnahme des Verpflichteten ist, sofern er nicht wieder in Freiheit gesetzt wird, der persönliche Sicherheitsarrest bei dem Amtsgericht zu beantragen, in dessen Bezirk die Festnahme erfolgt ist (§ 230 Abs. 3)";
+    label en unofficial "Where the obligor is arrested and not released, personal security detention must be applied for at the local court of the place of arrest (§ 230 (3))";
+    when selbsthilfehandlung(h, VerpflichteterFestgenommen) and not verpflichteter_wieder_in_freiheit(h);
+    then persoenlicher_sicherheitsarrest_zu_beantragen(h);
+}
+
+@source(BGB_P230)
+rule RueckgabeNachVerzoegertemArrestantrag(h: Handlung) strict {
+    label de official "Wird der Arrestantrag verzögert oder abgelehnt, so hat die Rückgabe der weggenommenen Sachen und die Freilassung des Festgenommenen unverzüglich zu erfolgen (§ 230 Abs. 4)";
+    label en unofficial "If the application for attachment is delayed or refused, the things must be returned and the person released without undue delay (§ 230 (4))";
+    when arrestantrag_verzoegert_oder_abgelehnt(h);
+    then rueckgabe_und_freilassung_geboten(h);
+}
+
+@source(BGB_P231)
+rule IrrtuemlicheSelbsthilfe(h: Handlung, p: Person) strict {
+    label de official "Wer eine der in § 229 bezeichneten Handlungen in der irrigen Annahme vornimmt, dass die für den Ausschluss der Widerrechtlichkeit erforderlichen Voraussetzungen vorhanden seien, ist dem anderen Teil zum Schadensersatz verpflichtet, auch wenn der Irrtum nicht auf Fahrlässigkeit beruht (§ 231)";
+    label en unofficial "A person who performs an act under § 229 in the mistaken assumption that the conditions excluding unlawfulness exist is liable in damages even if the mistake was not negligent (§ 231)";
+    when irrige_annahme_der_voraussetzungen(h) and handelnder(h, p);
+    then schadensersatzpflicht(h, p);
+}

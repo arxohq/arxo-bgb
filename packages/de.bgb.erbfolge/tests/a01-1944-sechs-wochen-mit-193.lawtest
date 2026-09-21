@@ -1,0 +1,38 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1944 Abs. 1, 2 Satz 1 mit § 188 Abs. 2 und § 193. Kenntnis von Anfall und
+// Berufungsgrund am Sonnabend, dem 7. Maerz 2026. Sechs Wochen enden mit dem Tag,
+// der durch seine Zahl dem Beginn entspricht: Sonnabend, der 18. April 2026.
+// Innerhalb der Frist ist die Ausschlagung gegenueber dem Nachlassgericht zu
+// ERKLAEREN, deshalb tritt nach § 193 der naechste Werktag an die Stelle des
+// Sonnabends: Montag, der 20. April 2026 (Ostermontag 2026 ist der 6. April).
+// Die am 20. April erklaerte Ausschlagung ist rechtzeitig.
+test "§ 1944 Abs. 1 mit § 193: sechs Wochen enden am naechsten Werktag" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:a01:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:a01:F"), entity_ref("urn:de:bgb:e:a01:D"), entity_ref("urn:de:bgb:e:a01:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K")) { origin case_input; }
+        assert "f6": kenntnis_von_anfall_und_grund_am(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K"), @2026-03-07) { origin case_input; }
+        assert "f7": keine_hemmung_der_ausschlagungsfrist(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K")) { origin case_input; }
+        assert "f8": erklaerung_zur_niederschrift_des_nachlassgerichts(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K")) { origin case_input; }
+        assert "f9": ausschlagung_erklaert_am(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K"), @2026-04-20) { origin case_input; }
+    }
+    evaluate truth(ausschlagungsfrist_ende_kalender(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K"), @2026-04-18));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausschlagungsfrist_ende(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K"), @2026-04-20));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ausgeschlagen(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anfall_gilt_als_nicht_erfolgt(entity_ref("urn:de:bgb:e:a01:E"), entity_ref("urn:de:bgb:e:a01:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

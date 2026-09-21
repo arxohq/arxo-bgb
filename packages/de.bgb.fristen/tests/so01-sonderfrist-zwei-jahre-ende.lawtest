@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// Brücke § 200 Satz 1: eine Sondernorm (hier das Muster des § 438 Abs. 1 Nr. 3,
+// Abs. 2: zwei Jahre ab Ablieferung) beschreibt Beginn und Dauer; dieses Paket
+// rechnet das Ende (§ 188 Abs. 2: der Tag, der durch seine Zahl dem Beginn
+// entspricht — 10. April 2025) und führt es ohne Hemmung durch § 209 in
+// `verjaehrungsfrist_ende` und weiter in `verjaehrung_eingetreten_am`.
+test "§§ 200, 188 Abs. 2, 209: Sonderfrist von zwei Jahren ab dem 10. April 2023 endet mit dem 10. April 2025" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "b": sonderverjaehrung_beginn(entity_ref("urn:de:bgb:fristen:so01"), @2023-04-10) { origin case_input; }
+        assert "d": sonderverjaehrung_dauer(entity_ref("urn:de:bgb:fristen:so01"), 2 calendar_year) { origin case_input; }
+        assert "h": keine_hemmung(entity_ref("urn:de:bgb:fristen:so01")) { origin case_input; }
+    }
+    evaluate truth(sonderverjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:so01"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrungsfrist_ende(entity_ref("urn:de:bgb:fristen:so01"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:so01"), @2025-04-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:so01"), @2025-04-09));
+    expect truth_status == NEITHER;
+}

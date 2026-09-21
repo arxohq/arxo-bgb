@@ -1,0 +1,437 @@
+// --- Buch 2 Abschnitt 8 Titel 26: Ungerechtfertigte Bereicherung (§§ 812–822)
+//
+// BAU DES TITELS. § 812 gibt VIER Kondiktionen (Leistung ohne Rechtsgrund,
+// Erlangung in sonstiger Weise, Wegfall des Rechtsgrundes, Verfehlung des
+// bezweckten Erfolgs), § 817 Satz 1 eine fünfte. Die Ausschlüsse der §§ 813
+// Abs. 2, 814, 815, 817 Satz 2 treffen NICHT alle Kondiktionen: § 815 schließt
+// nur die Rückforderung „wegen Nichteintritts des bezweckten Erfolgs“ aus,
+// § 814 nur die des zur Erfüllung einer Verbindlichkeit Geleisteten. Deshalb
+// trägt jede Kondiktion ihren eigenen Anspruchskopf: ein gemeinsamer Kopf mit
+// gesammelten Ausschlüssen würde jeden Grund verzeihen, den der Text stehen
+// lässt. Je Kopf steht GENAU EINE defeasible Regel; die Gründe werden strikt
+// gesammelt, die Ausschlüsse hängen als `unless` an dieser einen Regel.
+
+// --- Eingaben des Falls (§ 812) ----------------------------------------------------------------
+
+pub relation empfaenger(b: Bereicherung, p: Person) kind empirical {
+    key(b);
+    label de official "Empfänger: wer etwas erlangt hat (§ 812 Abs. 1 Satz 1)";
+    label en unofficial "recipient: the person who obtained something (§ 812 (1) sentence 1)";
+}
+pub relation entreicherter(b: Bereicherung, p: Person) kind empirical {
+    key(b);
+    label de official "der andere, durch dessen Leistung oder auf dessen Kosten erlangt wurde (§ 812 Abs. 1 Satz 1)";
+    label en unofficial "the other person by whose performance or at whose expense the benefit was obtained (§ 812 (1) sentence 1)";
+}
+pub relation etwas_erlangt(b: Bereicherung) kind empirical {
+    label de official "der Empfänger hat etwas erlangt (§ 812 Abs. 1 Satz 1)";
+    label en unofficial "the recipient obtained something (§ 812 (1) sentence 1)";
+}
+pub relation leistung_erbracht(b: Bereicherung) kind empirical {
+    label de official "das Erlangte beruht auf der Leistung eines anderen (§ 812 Abs. 1 Satz 1 Alternative 1)";
+    label en unofficial "the benefit rests on another person's performance (§ 812 (1) sentence 1 alternative 1)";
+}
+pub relation anerkenntnis_durch_vertrag(b: Bereicherung) kind empirical {
+    label de official "durch Vertrag erfolgte Anerkennung des Bestehens oder des Nichtbestehens eines Schuldverhältnisses (§ 812 Abs. 2)";
+    label en unofficial "contractual acknowledgement of the existence or non-existence of an obligation (§ 812 (2))";
+}
+pub relation in_sonstiger_weise_auf_kosten(b: Bereicherung) kind empirical {
+    label de official "das Erlangte ist in sonstiger Weise auf Kosten eines anderen erlangt (§ 812 Abs. 1 Satz 1 Alternative 2)";
+    label en unofficial "the benefit was obtained in another way at another person's expense (§ 812 (1) sentence 1 alternative 2)";
+}
+pub relation ohne_rechtlichen_grund(b: Bereicherung) kind empirical {
+    label de official "das Erlangte ist ohne rechtlichen Grund erlangt (§ 812 Abs. 1 Satz 1)";
+    label en unofficial "the benefit was obtained without legal ground (§ 812 (1) sentence 1)";
+}
+pub relation rechtlicher_grund_spaeter_weggefallen(b: Bereicherung) kind empirical {
+    label de official "der rechtliche Grund ist später weggefallen (§ 812 Abs. 1 Satz 2 Alternative 1)";
+    label en unofficial "the legal ground later ceased to exist (§ 812 (1) sentence 2 alternative 1)";
+}
+pub relation bezweckter_erfolg_nicht_eingetreten(b: Bereicherung) kind empirical {
+    label de official "der mit der Leistung nach dem Inhalt des Rechtsgeschäfts bezweckte Erfolg ist nicht eingetreten (§ 812 Abs. 1 Satz 2 Alternative 2)";
+    label en unofficial "the result intended by the performance under the terms of the transaction did not occur (§ 812 (1) sentence 2 alternative 2)";
+}
+pub relation leistungstag(b: Bereicherung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag, an dem geleistet wurde";
+    label en unofficial "day on which the performance was rendered";
+}
+pub relation empfangstag(b: Bereicherung, tag: Date) kind empirical {
+    key(b);
+    label de official "Tag des Empfangs des Erlangten (§ 819 Abs. 1, § 820 Abs. 1)";
+    label en unofficial "day of receipt of the benefit (§ 819 (1), § 820 (1))";
+}
+
+pub relation leistung(b: Bereicherung) kind institutional {
+    label de official "Leistung im Sinne des Titels 26 (§ 812 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "performance within the meaning of Title 26 (§ 812 (1) sentence 1, (2))";
+}
+
+@source(BGB_P812)
+rule LeistungIstLeistung(b: Bereicherung) strict {
+    label de official "Wer durch die Leistung eines anderen etwas erlangt (§ 812 Abs. 1 Satz 1): die erbrachte Leistung ist Leistung im Sinne des Titels";
+    label en unofficial "A person who obtains something through another's performance (§ 812 (1) sentence 1): the performance rendered is a performance within the Title";
+    when leistung_erbracht(b);
+    then leistung(b);
+}
+
+@source(BGB_P812)
+rule AnerkenntnisGiltAlsLeistung(b: Bereicherung) strict {
+    label de official "Als Leistung gilt auch die durch Vertrag erfolgte Anerkennung des Bestehens oder des Nichtbestehens eines Schuldverhältnisses (§ 812 Abs. 2)";
+    label en unofficial "A contractual acknowledgement of the existence or non-existence of an obligation also counts as performance (§ 812 (2))";
+    when anerkenntnis_durch_vertrag(b);
+    then leistung(b);
+}
+
+// --- Die vier Kondiktionen des § 812 und ihre Köpfe --------------------------------------------
+
+pub relation herausgabepflicht_leistung(b: Bereicherung) kind institutional {
+    label de official "Herausgabepflicht aus Leistungskondiktion (§ 812 Abs. 1 Satz 1 Alternative 1, Satz 2 Alternative 1)";
+    label en unofficial "duty to hand over from performance-based enrichment (§ 812 (1) sentence 1 alternative 1, sentence 2 alternative 1)";
+}
+pub relation herausgabepflicht_sonstige(b: Bereicherung) kind institutional {
+    label de official "Herausgabepflicht aus Erlangung in sonstiger Weise (§ 812 Abs. 1 Satz 1 Alternative 2)";
+    label en unofficial "duty to hand over from a benefit obtained in another way (§ 812 (1) sentence 1 alternative 2)";
+}
+pub relation herausgabepflicht_zweckverfehlung(b: Bereicherung) kind institutional {
+    label de official "Herausgabepflicht wegen Nichteintritts des bezweckten Erfolgs (§ 812 Abs. 1 Satz 2 Alternative 2)";
+    label en unofficial "duty to hand over because the intended result did not occur (§ 812 (1) sentence 2 alternative 2)";
+}
+pub relation herausgabepflicht_sittenverstoss(b: Bereicherung) kind institutional {
+    label de official "Herausgabepflicht wegen Verstoßes des Empfängers gegen ein gesetzliches Verbot oder die guten Sitten (§ 817 Satz 1)";
+    label en unofficial "duty to hand over because the recipient's acceptance breached a statutory prohibition or public policy (§ 817 sentence 1)";
+}
+pub relation herausgabepflicht(b: Bereicherung) kind institutional {
+    label de official "Verpflichtung zur Herausgabe des ohne rechtlichen Grund Erlangten (§ 812 Abs. 1, § 817 Satz 1)";
+    label en unofficial "obligation to hand over what was obtained without legal ground (§ 812 (1), § 817 sentence 1)";
+}
+
+@source(BGB_P812)
+rule LeistungskondiktionOhneRechtsgrund(b: Bereicherung) strict {
+    label de official "Wer durch die Leistung eines anderen etwas ohne rechtlichen Grund erlangt, ist ihm zur Herausgabe verpflichtet (§ 812 Abs. 1 Satz 1 Alternative 1)";
+    label en unofficial "A person who through another's performance obtains something without legal ground is obliged to hand it over (§ 812 (1) sentence 1 alternative 1)";
+    when leistung(b) and etwas_erlangt(b) and ohne_rechtlichen_grund(b);
+    then herausgabepflicht_leistung(b);
+}
+
+@source(BGB_P812)
+rule KondiktionWegenWegfalls(b: Bereicherung) strict {
+    label de official "Die Verpflichtung besteht auch dann, wenn der rechtliche Grund später wegfällt (§ 812 Abs. 1 Satz 2 Alternative 1)";
+    label en unofficial "The obligation also exists if the legal ground later ceases to exist (§ 812 (1) sentence 2 alternative 1)";
+    when leistung(b) and etwas_erlangt(b) and rechtlicher_grund_spaeter_weggefallen(b);
+    then herausgabepflicht_leistung(b);
+}
+
+@source(BGB_P812)
+rule NichtleistungskondiktionOhneRechtsgrund(b: Bereicherung) strict {
+    label de official "Wer in sonstiger Weise auf Kosten eines anderen etwas ohne rechtlichen Grund erlangt, ist ihm zur Herausgabe verpflichtet (§ 812 Abs. 1 Satz 1 Alternative 2)";
+    label en unofficial "A person who in another way at another's expense obtains something without legal ground is obliged to hand it over (§ 812 (1) sentence 1 alternative 2)";
+    when in_sonstiger_weise_auf_kosten(b) and etwas_erlangt(b) and ohne_rechtlichen_grund(b);
+    then herausgabepflicht_sonstige(b);
+}
+
+@source(BGB_P812)
+rule KondiktionWegenZweckverfehlung(b: Bereicherung) strict {
+    label de official "Die Verpflichtung besteht auch dann, wenn der mit einer Leistung nach dem Inhalt des Rechtsgeschäfts bezweckte Erfolg nicht eintritt (§ 812 Abs. 1 Satz 2 Alternative 2)";
+    label en unofficial "The obligation also exists if the result intended by the performance under the terms of the transaction does not occur (§ 812 (1) sentence 2 alternative 2)";
+    when leistung(b) and etwas_erlangt(b) and bezweckter_erfolg_nicht_eingetreten(b);
+    then herausgabepflicht_zweckverfehlung(b);
+}
+
+@source(BGB_P812)
+rule HerausgabepflichtAusLeistungskondiktion(b: Bereicherung) strict {
+    label de official "Die Leistungskondiktion begründet die Verpflichtung zur Herausgabe (§ 812 Abs. 1)";
+    label en unofficial "The performance-based claim founds the obligation to hand over (§ 812 (1))";
+    when herausgabepflicht_leistung(b);
+    then herausgabepflicht(b);
+}
+@source(BGB_P812)
+rule HerausgabepflichtAusNichtleistungskondiktion(b: Bereicherung) strict {
+    label de official "Die Erlangung in sonstiger Weise begründet die Verpflichtung zur Herausgabe (§ 812 Abs. 1)";
+    label en unofficial "A benefit obtained in another way founds the obligation to hand over (§ 812 (1))";
+    when herausgabepflicht_sonstige(b);
+    then herausgabepflicht(b);
+}
+@source(BGB_P812)
+rule HerausgabepflichtAusZweckverfehlung(b: Bereicherung) strict {
+    label de official "Die Verfehlung des bezweckten Erfolgs begründet die Verpflichtung zur Herausgabe (§ 812 Abs. 1 Satz 2)";
+    label en unofficial "Failure of the intended result founds the obligation to hand over (§ 812 (1) sentence 2)";
+    when herausgabepflicht_zweckverfehlung(b);
+    then herausgabepflicht(b);
+}
+@source(BGB_P817)
+rule HerausgabepflichtAusSittenverstoss(b: Bereicherung) strict {
+    label de official "Der Verstoß des Empfängers begründet die Verpflichtung zur Herausgabe (§ 817 Satz 1)";
+    label en unofficial "The recipient's breach founds the obligation to hand over (§ 817 sentence 1)";
+    when herausgabepflicht_sittenverstoss(b);
+    then herausgabepflicht(b);
+}
+
+// --- § 813 Erfüllung trotz Einrede -------------------------------------------------------------
+//
+// Abs. 1 Satz 1 gibt einen eigenen Rückforderungsgrund; Satz 2 lässt § 214
+// Abs. 2 unberührt — die dauernde Einrede der VERJÄHRUNG trägt ihn also nicht.
+// Ob die Forderung am Leistungstag verjährt war, rechnet de.bgb.fristen.
+
+pub relation zur_erfuellung_geleistet(b: Bereicherung, a: Anspruch) kind empirical {
+    key(b);
+    label de official "das Geleistete diente der Erfüllung einer Verbindlichkeit (§ 813 Abs. 1 Satz 1, § 814)";
+    label en unofficial "the performance served to discharge an obligation (§ 813 (1) sentence 1, § 814)";
+}
+pub relation dauernde_einrede_bestand(b: Bereicherung) kind empirical {
+    label de official "dem Anspruch stand eine Einrede entgegen, durch welche die Geltendmachung des Anspruchs dauernd ausgeschlossen wurde (§ 813 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "a defence permanently barring the claim stood against it (§ 813 (1) sentence 1) — established fact";
+}
+pub relation betagte_verbindlichkeit_vorzeitig_erfuellt(b: Bereicherung) kind empirical {
+    label de official "eine betagte Verbindlichkeit wurde vorzeitig erfüllt (§ 813 Abs. 2)";
+    label en unofficial "an obligation not yet due was discharged early (§ 813 (2))";
+}
+
+pub relation rueckforderungsgrund_813(b: Bereicherung) kind institutional {
+    label de official "Rückforderungsgrund wegen Leistung trotz dauernder Einrede (§ 813 Abs. 1 Satz 1)";
+    label en unofficial "ground for recovery because performance was rendered despite a permanent defence (§ 813 (1) sentence 1)";
+}
+pub relation einrede_war_verjaehrung(b: Bereicherung) kind institutional {
+    label de official "die dauernde Einrede war die Verjährung: § 214 Abs. 2 bleibt unberührt, das Geleistete kann nicht zurückgefordert werden (§ 813 Abs. 1 Satz 2)";
+    label en unofficial "the permanent defence was limitation: § 214 (2) remains unaffected and what was performed cannot be recovered (§ 813 (1) sentence 2)";
+}
+pub relation rueckforderung_813(b: Bereicherung) kind institutional {
+    label de official "das zum Zwecke der Erfüllung Geleistete kann zurückgefordert werden (§ 813 Abs. 1)";
+    label en unofficial "what was performed to discharge an obligation may be recovered (§ 813 (1))";
+}
+
+@source(BGB_P813)
+rule Rueckforderungsgrund813(b: Bereicherung, a: Anspruch) strict {
+    label de official "Das zum Zwecke der Erfüllung einer Verbindlichkeit Geleistete kann auch dann zurückgefordert werden, wenn dem Anspruch eine Einrede entgegenstand, durch welche die Geltendmachung des Anspruchs dauernd ausgeschlossen wurde (§ 813 Abs. 1 Satz 1)";
+    label en unofficial "What was performed to discharge an obligation may be recovered even if a defence permanently barring the claim stood against it (§ 813 (1) sentence 1)";
+    when zur_erfuellung_geleistet(b, a) and dauernde_einrede_bestand(b);
+    then rueckforderungsgrund_813(b);
+}
+
+@source(BGB_P813)
+rule EinredeWarVerjaehrung(b: Bereicherung, a: Anspruch, l: Date, v: Date) strict {
+    label de official "Die Vorschrift des § 214 Abs. 2 bleibt unberührt (§ 813 Abs. 1 Satz 2): war die Verjährung des Anspruchs am Tag der Leistung bereits eingetreten, trägt sie den Rückforderungsgrund nicht";
+    label en unofficial "§ 214 (2) remains unaffected (§ 813 (1) sentence 2): if the claim was already time-barred on the day of performance, limitation does not carry the ground for recovery";
+    when zur_erfuellung_geleistet(b, a) and leistungstag(b, l)
+     and de.bgb.fristen::verjaehrung_eingetreten_am(a, v) and v <= l;
+    then einrede_war_verjaehrung(b);
+}
+
+@source(BGB_P813)
+rule Rueckforderung813(b: Bereicherung) defeasible {
+    label de official "Das trotz dauernder Einrede Geleistete kann zurückgefordert werden (§ 813 Abs. 1 Satz 1), es sei denn, die Einrede war die Verjährung (§ 813 Abs. 1 Satz 2, § 214 Abs. 2) oder eine betagte Verbindlichkeit wurde vorzeitig erfüllt (§ 813 Abs. 2)";
+    label en unofficial "What was performed despite a permanent defence may be recovered (§ 813 (1) sentence 1), unless the defence was limitation (§ 813 (1) sentence 2, § 214 (2)) or an obligation not yet due was discharged early (§ 813 (2))";
+    when rueckforderungsgrund_813(b);
+    unless einrede_war_verjaehrung(b);
+    unless betagte_verbindlichkeit_vorzeitig_erfuellt(b);
+    then rueckforderung_813(b);
+}
+
+// --- §§ 814, 815, 817 Satz 2: Ausschlüsse je Kondiktion -----------------------------------------
+//
+// § 814 trifft NUR das zur Erfüllung einer Verbindlichkeit Geleistete, § 815
+// NUR die Rückforderung wegen Nichteintritts des bezweckten Erfolgs, § 817
+// Satz 2 die Leistung, bei der auch dem Leistenden ein Verstoß zur Last fällt.
+// Die Kenntnis des § 814 ist eine FESTGESTELLTE TATSACHE (im Fall origin
+// adjudicated); „einer sittlichen Pflicht oder einer auf den Anstand zu
+// nehmenden Rücksicht entsprach“ und „wider Treu und Glauben“ sind WERTUNGEN
+// des Gerichts (§47.3).
+
+pub relation gewusst_nicht_verpflichtet(b: Bereicherung) kind empirical {
+    label de official "der Leistende hat gewusst, dass er zur Leistung nicht verpflichtet war (§ 814) — festgestellte Tatsache";
+    label en unofficial "the performing party knew that he was not obliged to perform (§ 814) — established fact";
+}
+@source(BGB_P814)
+pub external judgment relation leistung_entsprach_sittlicher_pflicht(b: Bereicherung) {
+    authority Court;
+    label de official "§ 814. Die Leistung entsprach einer sittlichen Pflicht oder einer auf den Anstand zu nehmenden Rücksicht";
+    label en unofficial "§ 814. The performance conformed to a moral duty or to considerations of decency";
+}
+pub relation erfolgseintritt_von_anfang_an_unmoeglich_und_gewusst(b: Bereicherung) kind empirical {
+    label de official "der Eintritt des Erfolgs war von Anfang an unmöglich und der Leistende hat dies gewusst (§ 815 Alternative 1) — festgestellte Tatsache";
+    label en unofficial "the occurrence of the result was impossible from the outset and the performing party knew it (§ 815 alternative 1) — established fact";
+}
+@source(BGB_P815)
+pub external judgment relation erfolgseintritt_wider_treu_und_glauben_verhindert(b: Bereicherung) {
+    authority Court;
+    label de official "§ 815. Der Leistende hat den Eintritt des Erfolgs wider Treu und Glauben verhindert";
+    label en unofficial "§ 815. The performing party prevented the occurrence of the result contrary to good faith";
+}
+@source(BGB_P817)
+pub external judgment relation verstoss_des_empfaengers(b: Bereicherung) {
+    authority Court;
+    label de official "§ 817 Satz 1. Der Zweck der Leistung war in der Art bestimmt, dass der Empfänger durch die Annahme gegen ein gesetzliches Verbot oder gegen die guten Sitten verstoßen hat";
+    label en unofficial "§ 817 sentence 1. The purpose of the performance was such that by accepting it the recipient breached a statutory prohibition or public policy";
+}
+@source(BGB_P817)
+pub external judgment relation verstoss_des_leistenden(b: Bereicherung) {
+    authority Court;
+    label de official "§ 817 Satz 2. Auch dem Leistenden fällt ein solcher Verstoß gegen ein gesetzliches Verbot oder gegen die guten Sitten zur Last";
+    label en unofficial "§ 817 sentence 2. The performing party is likewise chargeable with such a breach of a statutory prohibition or of public policy";
+}
+pub relation leistung_bestand_in_eingehung_einer_verbindlichkeit(b: Bereicherung) kind empirical {
+    label de official "die Leistung bestand in der Eingehung einer Verbindlichkeit (§ 817 Satz 2 Halbsatz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the performance consisted in incurring an obligation (§ 817 sentence 2 half-sentence 2) — express statement of the case";
+}
+// Die Ausnahme des § 817 Satz 2 („es sei denn, dass die Leistung in der
+// Eingehung einer Verbindlichkeit bestand“) braucht ihre eigene AUSDRÜCKLICHE
+// Gegenangabe: das Schweigen des Falls verneint nichts, und ein klassisches
+// `not` ohne negativen Erzeuger feuert nie.
+pub relation leistung_bestand_nicht_in_eingehung(b: Bereicherung) kind empirical {
+    label de official "die Leistung bestand nicht in der Eingehung einer Verbindlichkeit (§ 817 Satz 2 Halbsatz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the performance did not consist in incurring an obligation (§ 817 sentence 2 half-sentence 1) — express statement of the case";
+}
+pub relation zur_erfuellung_einer_solchen_verbindlichkeit_geleistet(b: Bereicherung) kind empirical {
+    label de official "geleistet wurde zur Erfüllung einer solchen (unter Verstoß eingegangenen) Verbindlichkeit (§ 817 Satz 2 Halbsatz 2)";
+    label en unofficial "performance was rendered to discharge such an obligation incurred in breach (§ 817 sentence 2 half-sentence 2)";
+}
+
+pub relation ausschluss_814(b: Bereicherung) kind institutional {
+    label de official "Ausschluss der Rückforderung wegen Kenntnis der Nichtschuld oder sittlicher Pflicht (§ 814)";
+    label en unofficial "exclusion of recovery because of knowledge of the absence of a debt or of a moral duty (§ 814)";
+}
+pub relation ausschluss_815(b: Bereicherung) kind institutional {
+    label de official "Ausschluss der Rückforderung wegen Nichteintritts des bezweckten Erfolgs (§ 815)";
+    label en unofficial "exclusion of recovery because the intended result did not occur (§ 815)";
+}
+pub relation ausschluss_817(b: Bereicherung) kind institutional {
+    label de official "Ausschluss der Rückforderung, weil dem Leistenden gleichfalls ein Verstoß zur Last fällt (§ 817 Satz 2)";
+    label en unofficial "exclusion of recovery because the performing party is likewise chargeable with a breach (§ 817 sentence 2)";
+}
+
+@source(BGB_P814)
+rule Ausschluss814Kenntnis(b: Bereicherung, a: Anspruch) strict {
+    label de official "Das zum Zwecke der Erfüllung einer Verbindlichkeit Geleistete kann nicht zurückgefordert werden, wenn der Leistende gewusst hat, dass er zur Leistung nicht verpflichtet war (§ 814 Alternative 1)";
+    label en unofficial "What was performed to discharge an obligation cannot be recovered if the performing party knew that he was not obliged to perform (§ 814 alternative 1)";
+    when zur_erfuellung_geleistet(b, a) and gewusst_nicht_verpflichtet(b);
+    then ausschluss_814(b);
+}
+@source(BGB_P814)
+rule Ausschluss814SittlichePflicht(b: Bereicherung, a: Anspruch) strict {
+    label de official "Das Geleistete kann nicht zurückgefordert werden, wenn die Leistung einer sittlichen Pflicht oder einer auf den Anstand zu nehmenden Rücksicht entsprach (§ 814 Alternative 2)";
+    label en unofficial "What was performed cannot be recovered if the performance conformed to a moral duty or to considerations of decency (§ 814 alternative 2)";
+    when zur_erfuellung_geleistet(b, a) and leistung_entsprach_sittlicher_pflicht(b);
+    then ausschluss_814(b);
+}
+@source(BGB_P815)
+rule Ausschluss815Unmoeglichkeit(b: Bereicherung) strict {
+    label de official "Die Rückforderung wegen Nichteintritts des bezweckten Erfolgs ist ausgeschlossen, wenn der Eintritt des Erfolgs von Anfang an unmöglich war und der Leistende dies gewusst hat (§ 815 Alternative 1)";
+    label en unofficial "Recovery because the intended result did not occur is excluded if that result was impossible from the outset and the performing party knew it (§ 815 alternative 1)";
+    when erfolgseintritt_von_anfang_an_unmoeglich_und_gewusst(b);
+    then ausschluss_815(b);
+}
+@source(BGB_P815)
+rule Ausschluss815TreuUndGlauben(b: Bereicherung) strict {
+    label de official "Die Rückforderung ist ausgeschlossen, wenn der Leistende den Eintritt des Erfolgs wider Treu und Glauben verhindert hat (§ 815 Alternative 2)";
+    label en unofficial "Recovery is excluded if the performing party prevented the occurrence of the result contrary to good faith (§ 815 alternative 2)";
+    when erfolgseintritt_wider_treu_und_glauben_verhindert(b);
+    then ausschluss_815(b);
+}
+@source(BGB_P817)
+rule Ausschluss817(b: Bereicherung) strict {
+    label de official "Die Rückforderung ist ausgeschlossen, wenn dem Leistenden gleichfalls ein solcher Verstoß zur Last fällt (§ 817 Satz 2 Halbsatz 1), es sei denn, dass die Leistung in der Eingehung einer Verbindlichkeit bestand";
+    label en unofficial "Recovery is excluded if the performing party is likewise chargeable with such a breach (§ 817 sentence 2 half-sentence 1), unless the performance consisted in incurring an obligation";
+    when verstoss_des_leistenden(b) and leistung_bestand_nicht_in_eingehung(b);
+    then ausschluss_817(b);
+}
+@source(BGB_P817)
+rule Ausschluss817Erfuellungsleistung(b: Bereicherung) strict {
+    label de official "Das zur Erfüllung einer solchen Verbindlichkeit Geleistete kann nicht zurückgefordert werden (§ 817 Satz 2 Halbsatz 2)";
+    label en unofficial "What was performed to discharge such an obligation cannot be recovered (§ 817 sentence 2 half-sentence 2)";
+    when verstoss_des_leistenden(b) and zur_erfuellung_einer_solchen_verbindlichkeit_geleistet(b);
+    then ausschluss_817(b);
+}
+
+@source(BGB_P817)
+rule Herausgabepflicht817Satz1(b: Bereicherung) strict {
+    label de official "War der Zweck einer Leistung in der Art bestimmt, dass der Empfänger durch die Annahme gegen ein gesetzliches Verbot oder gegen die guten Sitten verstoßen hat, so ist der Empfänger zur Herausgabe verpflichtet (§ 817 Satz 1)";
+    label en unofficial "If the purpose of a performance was such that by accepting it the recipient breached a statutory prohibition or public policy, the recipient is obliged to hand it over (§ 817 sentence 1)";
+    when verstoss_des_empfaengers(b) and etwas_erlangt(b);
+    then herausgabepflicht_sittenverstoss(b);
+}
+
+// --- Die Ansprüche: eine defeasible Regel je Kondiktion ------------------------------------------
+
+pub relation bereicherungsanspruch_leistung(b: Bereicherung) kind institutional {
+    label de official "durchsetzbarer Bereicherungsanspruch aus Leistungskondiktion (§ 812 Abs. 1, §§ 814, 817 Satz 2)";
+    label en unofficial "enforceable enrichment claim from performance (§ 812 (1), §§ 814, 817 sentence 2)";
+}
+pub relation bereicherungsanspruch_sonstige(b: Bereicherung) kind institutional {
+    label de official "durchsetzbarer Bereicherungsanspruch aus Erlangung in sonstiger Weise (§ 812 Abs. 1 Satz 1 Alternative 2)";
+    label en unofficial "enforceable enrichment claim from a benefit obtained in another way (§ 812 (1) sentence 1 alternative 2)";
+}
+pub relation bereicherungsanspruch_zweckverfehlung(b: Bereicherung) kind institutional {
+    label de official "durchsetzbarer Bereicherungsanspruch wegen Nichteintritts des bezweckten Erfolgs (§ 812 Abs. 1 Satz 2, § 815)";
+    label en unofficial "enforceable enrichment claim because the intended result did not occur (§ 812 (1) sentence 2, § 815)";
+}
+pub relation bereicherungsanspruch_sittenverstoss(b: Bereicherung) kind institutional {
+    label de official "durchsetzbarer Bereicherungsanspruch wegen Verstoßes des Empfängers (§ 817)";
+    label en unofficial "enforceable enrichment claim because of the recipient's breach (§ 817)";
+}
+pub relation bereicherungsanspruch(b: Bereicherung) kind institutional {
+    label de official "Bereicherungsanspruch des Titels 26, soweit kein Ausschluss eingreift";
+    label en unofficial "enrichment claim of Title 26, so far as no exclusion applies";
+}
+
+@source(BGB_P812)
+rule AnspruchAusLeistungskondiktion(b: Bereicherung) defeasible {
+    label de official "Die Leistungskondiktion des § 812 Abs. 1 ist durchsetzbar, soweit nicht § 814 (Kenntnis der Nichtschuld, sittliche Pflicht) oder § 817 Satz 2 (Verstoß auch des Leistenden) sie ausschließt";
+    label en unofficial "The performance-based claim of § 812 (1) is enforceable so far as neither § 814 nor § 817 sentence 2 excludes it";
+    when herausgabepflicht_leistung(b);
+    unless ausschluss_814(b);
+    unless ausschluss_817(b);
+    then bereicherungsanspruch_leistung(b);
+}
+@source(BGB_P812)
+rule AnspruchAusNichtleistungskondiktion(b: Bereicherung) defeasible {
+    label de official "Die Kondiktion wegen Erlangung in sonstiger Weise ist durchsetzbar; die Ausschlüsse der §§ 814, 815, 817 Satz 2 knüpfen an eine Leistung an und greifen hier nicht";
+    label en unofficial "The claim for a benefit obtained in another way is enforceable; the exclusions of §§ 814, 815, 817 sentence 2 presuppose a performance and do not apply here";
+    when herausgabepflicht_sonstige(b);
+    then bereicherungsanspruch_sonstige(b);
+}
+@source(BGB_P815)
+rule AnspruchAusZweckverfehlung(b: Bereicherung) defeasible {
+    label de official "Die Kondiktion wegen Nichteintritts des bezweckten Erfolgs ist durchsetzbar, soweit nicht § 815 oder § 817 Satz 2 sie ausschließt";
+    label en unofficial "The claim because the intended result did not occur is enforceable so far as neither § 815 nor § 817 sentence 2 excludes it";
+    when herausgabepflicht_zweckverfehlung(b);
+    unless ausschluss_815(b);
+    unless ausschluss_817(b);
+    then bereicherungsanspruch_zweckverfehlung(b);
+}
+@source(BGB_P817)
+rule AnspruchAusSittenverstoss(b: Bereicherung) defeasible {
+    label de official "Der Anspruch aus § 817 Satz 1 ist durchsetzbar, soweit nicht § 817 Satz 2 die Rückforderung ausschließt";
+    label en unofficial "The claim under § 817 sentence 1 is enforceable so far as § 817 sentence 2 does not exclude recovery";
+    when herausgabepflicht_sittenverstoss(b);
+    unless ausschluss_817(b);
+    then bereicherungsanspruch_sittenverstoss(b);
+}
+
+@source(BGB_P812)
+rule BereicherungsanspruchAusLeistung(b: Bereicherung) defeasible {
+    label de official "Der durchsetzbare Anspruch aus Leistungskondiktion ist ein Bereicherungsanspruch des Titels 26";
+    label en unofficial "The enforceable performance-based claim is an enrichment claim of Title 26";
+    when bereicherungsanspruch_leistung(b);
+    then bereicherungsanspruch(b);
+}
+@source(BGB_P812)
+rule BereicherungsanspruchAusSonstiger(b: Bereicherung) defeasible {
+    label de official "Der durchsetzbare Anspruch aus Erlangung in sonstiger Weise ist ein Bereicherungsanspruch des Titels 26";
+    label en unofficial "The enforceable claim for a benefit obtained in another way is an enrichment claim of Title 26";
+    when bereicherungsanspruch_sonstige(b);
+    then bereicherungsanspruch(b);
+}
+@source(BGB_P812)
+rule BereicherungsanspruchAusZweckverfehlung(b: Bereicherung) defeasible {
+    label de official "Der durchsetzbare Anspruch wegen Zweckverfehlung ist ein Bereicherungsanspruch des Titels 26";
+    label en unofficial "The enforceable claim for failure of the intended result is an enrichment claim of Title 26";
+    when bereicherungsanspruch_zweckverfehlung(b);
+    then bereicherungsanspruch(b);
+}
+@source(BGB_P817)
+rule BereicherungsanspruchAusSittenverstoss(b: Bereicherung) defeasible {
+    label de official "Der durchsetzbare Anspruch aus § 817 Satz 1 ist ein Bereicherungsanspruch des Titels 26";
+    label en unofficial "The enforceable claim under § 817 sentence 1 is an enrichment claim of Title 26";
+    when bereicherungsanspruch_sittenverstoss(b);
+    then bereicherungsanspruch(b);
+}

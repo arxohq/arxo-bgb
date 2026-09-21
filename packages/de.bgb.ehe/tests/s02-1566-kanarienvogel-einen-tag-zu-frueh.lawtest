@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// Kanarienvogel zu s01: derselbe Sachverhalt am letzten Tag der Frist selbst (01.03.2025). Das Jahr ist noch nicht verstrichen — die unwiderlegbare Vermutung des § 1566 Abs. 1 greift nicht, und die Sperre des § 1565 Abs. 2 steht der Scheidung entgegen. Ob die Fortsetzung der Ehe eine unzumutbare Härte darstellt, ist eine WERTUNG: solange das Gericht nicht geantwortet hat, bleibt die Frage nach der Scheidbarkeit NEITHER mit dem evaluation status REQUIRES_JUDGMENT (§47.3, DECISION-0024) — das Dokument sagt also nicht „nein“, sondern „das Gericht ist gefragt“.
+test "§ 1566 Abs. 1: am letzten Tag der Jahresfrist greift die Vermutung noch nicht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:s02:E"), entity_ref("urn:de:bgb:ehe:s02:A"), entity_ref("urn:de:bgb:ehe:s02:B")) { origin case_input; }
+        assert "f2": kein_ehevertrag(entity_ref("urn:de:bgb:ehe:s02:E")) { origin case_input; }
+        assert "f3": trennung_am(entity_ref("urn:de:bgb:ehe:s02:E"), @2024-03-01) { origin case_input; }
+        assert "f4": trennungsfrist_ein_jahr(entity_ref("urn:de:bgb:ehe:s02:E"), entity_ref("urn:de:bgb:ehe:s02:F")) { origin case_input; }
+        assert "f5": bewertungstag(entity_ref("urn:de:bgb:ehe:s02:E"), @2025-03-01) { origin case_input; }
+        assert "f6": beide_beantragen_die_scheidung(entity_ref("urn:de:bgb:ehe:s02:E")) { origin case_input; }
+        assert "f7": scheidungsantrag_gestellt(entity_ref("urn:de:bgb:ehe:s02:E"), entity_ref("urn:de:bgb:ehe:s02:A")) { origin case_input; }
+        assert "f8": ehe_gescheitert(entity_ref("urn:de:bgb:ehe:s02:E")) { origin adjudicated; }
+    }
+    evaluate truth(scheitern_unwiderleglich_vermutet(entity_ref("urn:de:bgb:ehe:s02:E"), "§ 1566 Abs. 1: ein Jahr Getrenntleben und Antrag beider Ehegatten"));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(scheidung_vor_ablauf_eines_jahres_gesperrt(entity_ref("urn:de:bgb:ehe:s02:E"), entity_ref("urn:de:bgb:ehe:s02:A")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ehe_kann_geschieden_werden(entity_ref("urn:de:bgb:ehe:s02:E")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == REQUIRES_JUDGMENT;
+}

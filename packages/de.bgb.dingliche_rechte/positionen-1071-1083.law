@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+
+pub relation position_trigger_1071(n: Niessbrauch, niesser: Person, gegenpartei: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Zustimmung des Nießbrauchers (§ 1071)"; label en unofficial "case input for the usufructuary's consent (§ 1071)"; }
+pub relation aufhebung_1071_unwirksam(n: Niessbrauch) kind empirical { label de official "Die Aufhebung des belasteten Rechts ist ohne Zustimmung unwirksam (§ 1071)"; label en unofficial "Termination of the encumbered right is ineffective without consent (§ 1071)"; }
+pub relation position_trigger_1082(n: Niessbrauch, p: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Hinterlegung des Wertpapiers (§ 1082)"; label en unofficial "case input for deposit of the instrument (§ 1082)"; }
+pub relation hinterlegung_1082_geschuldet(n: Niessbrauch) kind empirical { label de official "Das Wertpapier ist gemeinschaftlich gebunden zu hinterlegen (§ 1082)"; label en unofficial "The instrument must be deposited with joint release control (§ 1082)"; }
+pub relation position_trigger_1083(n: Niessbrauch, niesser: Person, eigentuemer: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Mitwirkung bei der Vermögensverwaltung (§ 1083)"; label en unofficial "case input for cooperation in asset management (§ 1083)"; }
+pub relation mitwirkung_1083_geschuldet(n: Niessbrauch, niesser: Person, eigentuemer: Person) kind empirical { label de official "Nießbraucher und Eigentümer müssen zusammenwirken (§ 1083)"; label en unofficial "The usufructuary and owner must cooperate (§ 1083)"; }
+
+@source(BGB_P1071)
+rule PositionZustimmung1071(n: Niessbrauch, niesser: Person, gegenpartei: Person, tag: Date) strict { label de official "Die Aufhebung des belasteten Rechts bedarf der Zustimmung des Nießbrauchers (§ 1071)"; label en unofficial "Termination of the encumbered right requires the usufructuary's consent (§ 1071)"; when position_trigger_1071(n, niesser, gegenpartei, tag); then immunity Zustimmung1071 { holder niesser; against gegenpartei; protected_effect aufhebung_1071_unwirksam(n); window [tag, infinity); }; }
+@source(BGB_P1082)
+rule PositionHinterlegung1082(n: Niessbrauch, p: Person, tag: Date) strict { label de official "Das Wertpapier ist auf Verlangen gemeinschaftlich gebunden zu hinterlegen (§ 1082)"; label en unofficial "The instrument must be deposited with joint release control on demand (§ 1082)"; when position_trigger_1082(n, p, tag); then duty Hinterlegung1082 { bearer p; achieve hinterlegung_1082_geschuldet(n) during [tag, infinity); }; }
+@source(BGB_P1083)
+rule PositionMitwirkung1083(n: Niessbrauch, niesser: Person, eigentuemer: Person, tag: Date) strict { label de official "Nießbraucher und Eigentümer sind zur Mitwirkung verpflichtet (§ 1083)"; label en unofficial "The usufructuary and owner must cooperate (§ 1083)"; when position_trigger_1083(n, niesser, eigentuemer, tag); then duty Mitwirkung1083 { bearer niesser; beneficiary eigentuemer; achieve mitwirkung_1083_geschuldet(n, niesser, eigentuemer) during [tag, infinity); }; }

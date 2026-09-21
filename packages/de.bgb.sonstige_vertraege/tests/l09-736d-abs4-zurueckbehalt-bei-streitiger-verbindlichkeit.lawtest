@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.sonstige_vertraege version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-sonstige-vertraege";
+// Kanarei zu l08: ist die Verbindlichkeit noch nicht fällig oder streitig, wird das Erforderliche zurückbehalten statt sofort befriedigt (§ 736d Absatz 4 Satz 2).
+test "§ 736d Absatz 4 Satz 2: Rückbehalt bei streitiger Verbindlichkeit" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_SONSTIGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": gesellschaft_in_liquidation(entity_ref("urn:de:bgb:sv:l09:G")) { origin case_input; }
+        assert "f2": glaeubiger_der_gesellschaft_736d(entity_ref("urn:de:bgb:sv:l09:G"), "Streitige Schadensersatzforderung", 1500.00 EUR) { origin case_input; }
+        assert "f3": verbindlichkeit_noch_nicht_faellig_oder_streitig_736d(entity_ref("urn:de:bgb:sv:l09:G"), "Streitige Schadensersatzforderung") { origin case_input; }
+    }
+    evaluate truth(zurueckbehalt_fuer_verbindlichkeit_736d(entity_ref("urn:de:bgb:sv:l09:G"), "Streitige Schadensersatzforderung", 1500.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(glaeubiger_zu_befriedigen_736d(entity_ref("urn:de:bgb:sv:l09:G"), "Streitige Schadensersatzforderung", 1500.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

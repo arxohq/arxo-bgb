@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1193 Abs. 2 — andere Seite: Sichert die Grundschuld keine Geldforderung, so ist die abweichende Bestimmung zulässig und gilt: drei Monate ab der Kündigung vom 15.03.2026 enden mit dem Ablauf des 15.06.2026.
+test "§ 1193 Abs. 2 Satz 1: abweichende Kündigungsfrist ohne Sicherung einer Geldforderung gilt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:g03:gs"), entity_ref("urn:de:bgb:dr:g03:grundstueck")) { origin case_input; }
+        assert "f2": art_des_grundpfandrechts(entity_ref("urn:de:bgb:dr:g03:gs"), Grundschuld) { origin case_input; }
+        assert "f3": kuendigungsfrist_der_grundschuld(entity_ref("urn:de:bgb:dr:g03:gs"), entity_ref("urn:de:bgb:dr:g03:frist")) { origin case_input; }
+        assert "f4": kuendigung_des_eigentuemers_dem_glaeubiger_gegenueber_am(entity_ref("urn:de:bgb:dr:g03:gs"), @2026-03-15) { origin adjudicated; }
+        assert "f5": abweichende_bestimmung_ueber_die_kuendigungsfrist(entity_ref("urn:de:bgb:dr:g03:gs"), 3 calendar_month) { origin case_input; }
+        assert "f6": not grundschuld_sichert_eine_geldforderung(entity_ref("urn:de:bgb:dr:g03:gs")) { origin adjudicated; }
+    }
+    evaluate truth(abweichende_bestimmung_zulaessig(entity_ref("urn:de:bgb:dr:g03:gs")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(kapital_faellig_am(entity_ref("urn:de:bgb:dr:g03:gs"), @2026-06-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

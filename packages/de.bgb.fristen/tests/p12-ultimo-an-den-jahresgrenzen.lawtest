@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// Jahresgrenzen: Entstehung und Kenntnis am 31. Dezember 2020 — Schluss desselben Jahres; am 1. Januar 2021 — Schluss des Jahres 2021. Kein Kandidat eines anderen Jahres darf durchkommen.
+test "§ 199 Abs. 1: Schluss des Jahres am 31. Dezember und am 1. Januar" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e1": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:a12a"), @2020-12-31) { origin case_input; }
+        assert "k1": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:a12a"), @2020-12-31) { origin adjudicated; }
+        assert "e2": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:a12b"), @2021-01-01) { origin case_input; }
+        assert "k2": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:a12b"), @2021-01-01) { origin adjudicated; }
+    }
+    evaluate truth(regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:fristen:pilot:a12a"), @2020-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:fristen:pilot:a12a"), @2021-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:fristen:pilot:a12b"), @2021-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:fristen:pilot:a12b"), @2020-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

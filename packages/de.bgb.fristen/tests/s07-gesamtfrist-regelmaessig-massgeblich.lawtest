@@ -1,0 +1,22 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// Zusammenspiel: die regelmäßige Verjährung (Ende 31. Dezember 2029) endet früher als die Höchstfrist des § 199 Abs. 4 (10 Jahre ab Entstehung 15. März 2020 = 15. März 2030) — die regelmäßige Frist ist maßgeblich.
+test "Gesamtfrist: die früher endende regelmäßige Frist ist maßgeblich" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:s07"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:s07"), @2026-01-01) { origin adjudicated; }
+        assert "h": keine_hemmung(entity_ref("urn:de:bgb:fristen:pilot:s07")) { origin case_input; }
+        assert "kat": hoechstfrist_kategorie(entity_ref("urn:de:bgb:fristen:pilot:s07"), Andere) { origin case_input; }
+    }
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:s07"), @2029-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(hoechstfrist_ende(entity_ref("urn:de:bgb:fristen:pilot:s07"), @2030-03-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am_mit_hoechstfrist(entity_ref("urn:de:bgb:fristen:pilot:s07"), @2029-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

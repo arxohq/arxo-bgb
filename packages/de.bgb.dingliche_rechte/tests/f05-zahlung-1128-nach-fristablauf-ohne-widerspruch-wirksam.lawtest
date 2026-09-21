@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1128 Abs. 1 — andere Seite der Grenze: Zahlt der Versicherer am 17.03.2026, also nach dem verlegten Fristende, und ist der Zahlung nicht widersprochen worden, so wirkt sie auch gegen den Hypothekengläubiger.
+test "§ 1128 Abs. 1: Zahlung einen Tag nach dem verlegten Fristende ohne Widerspruch ist wirksam" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": gebaeude_versichert(entity_ref("urn:de:bgb:dr:f05:vers")) { origin case_input; }
+        assert "f2": versicherungsforderung(entity_ref("urn:de:bgb:dr:f05:vers")) { origin case_input; }
+        assert "f3": schadensanzeige_empfangen_am(entity_ref("urn:de:bgb:dr:f05:vers"), @2026-02-15) { origin adjudicated; }
+        assert "f4": widerspruchsfrist(entity_ref("urn:de:bgb:dr:f05:vers"), entity_ref("urn:de:bgb:dr:f05:frist")) { origin case_input; }
+        assert "f5": zahlungstag(entity_ref("urn:de:bgb:dr:f05:vers"), @2026-03-17) { origin case_input; }
+        assert "f6": not widerspruch_erhoben(entity_ref("urn:de:bgb:dr:f05:vers")) { origin adjudicated; }
+    }
+    evaluate truth(zahlung_an_den_versicherten_wirksam(entity_ref("urn:de:bgb:dr:f05:vers")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

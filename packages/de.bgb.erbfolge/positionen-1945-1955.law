@@ -1,0 +1,14 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+pub relation position_trigger_1945(e: Erbfall, p: Person, tag: Date) kind empirical { label de official "Ausschlagungserklärung nach § 1945"; label en unofficial "disclaimer declaration under § 1945"; }
+pub relation position_trigger_1954(e: Erbfall, p: Person, tag: Date) kind empirical { label de official "Anfechtung nach § 1954"; label en unofficial "avoidance under § 1954"; }
+pub relation position_trigger_1955(e: Erbfall, p: Person, tag: Date) kind empirical { label de official "Formgerechte Anfechtung nach § 1955"; label en unofficial "form-compliant avoidance under § 1955"; }
+
+@source(BGB_P1945)
+rule PositionAusschlagungForm1945(e: Erbfall, p: Person, tag: Date) strict { label de official "Der Erbe darf die Ausschlagung formgerecht erklären (§ 1945)"; label en unofficial "The heir may declare the disclaimer in due form (§ 1945)"; when position_trigger_1945(e, p, tag); then liberty AusschlagungForm1945 { holder p; action ausschlagung_formgerecht(e, p); window [tag, infinity); }; }
+@source(BGB_P1954)
+rule PositionAnfechtung1954(e: Erbfall, p: Person, tag: Date) strict { label de official "Der Berechtigte darf die Annahme oder Ausschlagung anfechten (§ 1954)"; label en unofficial "The entitled person may avoid acceptance or disclaimer (§ 1954)"; when position_trigger_1954(e, p, tag); then liberty Anfechtung1954 { holder p; action annahme_oder_ausschlagung_anfechtbar(e, p); window [tag, infinity); }; }
+@source(BGB_P1955)
+rule PositionAnfechtungForm1955(e: Erbfall, p: Person, tag: Date) strict { label de official "Die Anfechtung ist gegenüber dem Nachlassgericht formgerecht zu erklären (§ 1955)"; label en unofficial "Avoidance must be declared to the probate court in due form (§ 1955)"; when position_trigger_1955(e, p, tag); then duty AnfechtungForm1955 { bearer p; achieve anfechtung_formgerecht(e, p) during [tag, infinity); }; }

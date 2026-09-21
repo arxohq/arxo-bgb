@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1954 Abs. 4: Die Anfechtung ist ausgeschlossen, wenn seit der Annahme oder
+// der Ausschlagung 30 Jahre verstrichen sind. Annahme am 10. Januar 1990; die
+// dreissig Jahre enden nach § 188 Abs. 2 am 10. Januar 2020. Die am 4. Mai 2026
+// erklaerte Anfechtung liegt danach.
+test "§ 1954 Abs. 4: nach dreissig Jahren ist die Anfechtung ausgeschlossen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:a03:E"), @1989-12-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:a03:F"), entity_ref("urn:de:bgb:e:a03:D"), entity_ref("urn:de:bgb:e:a03:K")) { origin case_input; }
+        assert "f5": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:K")) { origin case_input; }
+        assert "f6": annahme_oder_ausschlagung_am(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:K"), @1990-01-10) { origin case_input; }
+        assert "f7": anfechtung_erklaert_am(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:K"), @2026-05-04) { origin case_input; }
+    }
+    evaluate truth(dreissigjahresfrist_ende(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:K"), @2020-01-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(anfechtung_ausgeschlossen(entity_ref("urn:de:bgb:e:a03:E"), entity_ref("urn:de:bgb:e:a03:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

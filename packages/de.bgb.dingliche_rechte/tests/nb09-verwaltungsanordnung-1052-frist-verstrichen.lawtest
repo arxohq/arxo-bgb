@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1052 Abs. 1: der Nießbraucher ist rechtskräftig zur Sicherheitsleistung verurteilt; die vom Gericht bestimmte Frist (Ereignis 01.02.2026, ein Monat) ist am Prüfungstag 10.03.2026 bereits verstrichen.
+test "§ 1052 Abs. 1: Anordnung der gerichtlichen Verwaltung nach Fristablauf" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": rechtskraeftig_zur_sicherheitsleistung_verurteilt(entity_ref("urn:de:bgb:dr:nb09:nb")) { origin adjudicated; }
+        assert "f2": besteller(entity_ref("urn:de:bgb:dr:nb09:nb"), entity_ref("urn:de:bgb:dr:nb09:eigentuemer")) { origin case_input; }
+        assert "f3": sicherheitsleistungsfrist(entity_ref("urn:de:bgb:dr:nb09:nb"), entity_ref("urn:de:bgb:dr:nb09:frist")) { origin case_input; }
+        assert "f4": de.bgb.fristen::frist_ereignis(entity_ref("urn:de:bgb:dr:nb09:frist"), @2026-02-01) { origin adjudicated; }
+        assert "f5": de.bgb.fristen::frist_dauer_kalender(entity_ref("urn:de:bgb:dr:nb09:frist"), 1 calendar_month) { origin adjudicated; }
+        assert "f6": pruefungstag_der_sicherheitsleistung(entity_ref("urn:de:bgb:dr:nb09:nb"), @2026-03-10) { origin adjudicated; }
+    }
+    evaluate truth(anordnung_der_verwaltung_zulaessig(entity_ref("urn:de:bgb:dr:nb09:nb"), entity_ref("urn:de:bgb:dr:nb09:eigentuemer")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

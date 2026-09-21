@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 199 Abs. 2: Körperverletzung am 15.06.1990 (Begehung); der Verletzte erlangt erst am 10.01.2020 Kenntnis. Die regelmäßige Verjährung (§§ 195, 199 Abs. 1) begänne mit Schluss 2020 und endete erst mit Ablauf des 31.12.2023 — später als die dreißigjährige Höchstfrist ohne Rücksicht auf Kenntnis, die mit Ablauf des 15.06.2020 endet (§ 199 Abs. 2). Die frühere Höchstfrist ist maßgeblich (de.bgb.fristen::GesamtfristHoechstfristMassgeblich).
+test "§ 199 Abs. 2: die dreißigjährige Höchstfrist für Körperverletzung endet früher als die regelmäßige Verjährung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": schadensersatzanspruch(entity_ref("urn:de:bgb:bd:q05"), entity_ref("urn:de:bgb:bd:q05:A")) { origin case_input; }
+        assert "f2": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:bd:q05:A"), @1990-06-15) { origin case_input; }
+        assert "j1": de.bgb.fristen::kenntnis_erlangt_am(entity_ref("urn:de:bgb:bd:q05:A"), @2020-01-10) { origin adjudicated; }
+        assert "f3": de.bgb.fristen::keine_hemmung(entity_ref("urn:de:bgb:bd:q05:A")) { origin case_input; }
+        assert "f4": de.bgb.fristen::hoechstfrist_kategorie(entity_ref("urn:de:bgb:bd:q05:A"), de.bgb.fristen::LebenKoerperGesundheitFreiheit) { origin case_input; }
+        assert "f5": de.bgb.fristen::begehung_pflichtverletzung_oder_ereignis_am(entity_ref("urn:de:bgb:bd:q05:A"), @1990-06-15) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:bd:q05:A"), @2023-12-31));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(de.bgb.fristen::hoechstfrist_ende(entity_ref("urn:de:bgb:bd:q05:A"), @2020-06-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am_mit_hoechstfrist(entity_ref("urn:de:bgb:bd:q05:A"), @2020-06-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(de.bgb.fristen::verjaehrung_eingetreten_am_mit_hoechstfrist(entity_ref("urn:de:bgb:bd:q05:A"), @2023-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

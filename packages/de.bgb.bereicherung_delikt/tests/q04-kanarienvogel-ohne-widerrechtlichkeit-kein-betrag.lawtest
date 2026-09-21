@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// Kanarienvogel zu q01: minus ein Merkmal. Ohne die ausdrückliche Angabe, dass kein Rechtfertigungsgrund vorliegt (wie h06), entsteht kein Haftungsgrund und damit auch kein Betrag nach der Querschnittsregel — obwohl Schaden und Mitverschuldensquote des § 254 bereits vorliegen.
+test "Querschnitt: ohne Angabe zur Widerrechtlichkeit kein Betrag nach § 823/§ 254/§ 249" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:q04")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:q04")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:q04"), entity_ref("urn:de:bgb:bd:q04:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:q04"), entity_ref("urn:de:bgb:bd:q04:V")) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:q04")) { origin adjudicated; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:q04")) { origin adjudicated; }
+        assert "f6": schaden_fuer_249(entity_ref("urn:de:bgb:bd:q04"), entity_ref("urn:de:bgb:bd:q04:Sch")) { origin case_input; }
+        assert "f7": de.bgb.schuldrecht_at::zum_schadensersatz_verpflichtet(entity_ref("urn:de:bgb:bd:q04:Sch"), entity_ref("urn:de:bgb:bd:q04:S")) { origin case_input; }
+        assert "f8": de.bgb.schuldrecht_at::geschaedigter(entity_ref("urn:de:bgb:bd:q04:Sch"), entity_ref("urn:de:bgb:bd:q04:V")) { origin case_input; }
+        assert "f9": de.bgb.schuldrecht_at::schadensbetrag(entity_ref("urn:de:bgb:bd:q04:Sch"), 10000.00 EUR) { origin case_input; }
+        assert "f10": de.bgb.schuldrecht_at::kein_entgangener_gewinn_geltend_gemacht(entity_ref("urn:de:bgb:bd:q04:Sch")) { origin case_input; }
+        assert "j3": de.bgb.schuldrecht_at::mitverschulden_anteil(entity_ref("urn:de:bgb:bd:q04:Sch"), entity_ref("urn:de:bgb:bd:q04:V"), 1, 4) { origin adjudicated; }
+    }
+    evaluate truth(haftungsgrund_823_abs1(entity_ref("urn:de:bgb:bd:q04")));
+    expect truth_status == NEITHER;
+    evaluate truth(deliktischer_schadensersatz(entity_ref("urn:de:bgb:bd:q04"), 7500.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

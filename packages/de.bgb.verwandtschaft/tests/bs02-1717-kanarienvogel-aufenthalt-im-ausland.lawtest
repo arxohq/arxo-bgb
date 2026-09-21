@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// Kanarienvogel zu bs01 („minus ein Merkmal“): derselbe Antrag, aber das Kind begründet seinen gewöhnlichen Aufenthalt im Ausland. Nach § 1717 Satz 1 Halbsatz 2 endet die Beistandschaft; die Wirkung des § 1716 tritt nicht ein.
+test "§ 1717: mit dem gewöhnlichen Aufenthalt im Ausland endet die Beistandschaft" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": antrag_auf_beistandschaft(entity_ref("urn:de:bgb:vw:bs02:K"), entity_ref("urn:de:bgb:vw:bs02:M")) { origin case_input; }
+        assert "f2": antragsteller_hat_alleinsorge_oder_obhut(entity_ref("urn:de:bgb:vw:bs02:K"), entity_ref("urn:de:bgb:vw:bs02:M")) { origin case_input; }
+        assert "f3": antrag_dem_jugendamt_zugegangen_am(entity_ref("urn:de:bgb:vw:bs02:K"), entity_ref("urn:de:bgb:vw:bs02:M"), @2026-04-01) { origin case_input; }
+        assert "f4": gewoehnlicher_aufenthalt_im_ausland_begruendet(entity_ref("urn:de:bgb:vw:bs02:K")) { origin case_input; }
+    }
+    evaluate truth(beistandschaft_endet_bei_aufenthalt_im_ausland(entity_ref("urn:de:bgb:vw:bs02:K"), entity_ref("urn:de:bgb:vw:bs02:M")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(elterliche_sorge_nicht_eingeschraenkt(entity_ref("urn:de:bgb:vw:bs02:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

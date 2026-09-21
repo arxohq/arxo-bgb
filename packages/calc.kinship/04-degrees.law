@@ -1,0 +1,61 @@
+// Степень и линия родства.
+//
+// Степень считается через каждого общего предка по политике: римский счёт —
+// сумма глубин (число рождений по обеим ветвям), канонический — большая из
+// глубин. Итог — НАИМЕНЬШАЯ из кандидатов: у братьев общие и родители, и
+// деды, а степень их — вторая, не четвёртая.
+
+language "law.core" version "0.2";
+package calc.kinship version "0.1.0";
+namespace "urn:law:calc:kinship";
+
+rule RomanCandidate(f: Family, a: Actor, b: Actor, c: Actor, da: Integer, db: Integer) strict {
+    label ru official "римский счёт: степень через общего предка — сумма глубин";
+    when family_wellformed(f) and family_degree_count(f, Roman)
+        and ancestor_or_self(f, c, a, da) and ancestor_or_self(f, c, b, db);
+    then degree_candidate(f, a, b, da + db);
+}
+
+rule CanonicalCandidateFirstLonger(f: Family, a: Actor, b: Actor, c: Actor, da: Integer, db: Integer) strict {
+    label ru official "канонический счёт: степень через общего предка — большая глубина";
+    when family_wellformed(f) and family_degree_count(f, Canonical)
+        and ancestor_or_self(f, c, a, da) and ancestor_or_self(f, c, b, db) and da >= db;
+    then degree_candidate(f, a, b, da);
+}
+
+rule CanonicalCandidateSecondLonger(f: Family, a: Actor, b: Actor, c: Actor, da: Integer, db: Integer) strict {
+    label ru official "канонический счёт: степень через общего предка — большая глубина";
+    when family_wellformed(f) and family_degree_count(f, Canonical)
+        and ancestor_or_self(f, c, a, da) and ancestor_or_self(f, c, b, db) and db > da;
+    then degree_candidate(f, a, b, db);
+}
+
+rule KinDegree(f: Family, a: Actor, b: Actor, n: Integer) strict {
+    label ru official "степень родства — наименьший кандидат";
+    when degree_candidate(f, a, b, n)
+        and (count all m: Integer where degree_candidate(f, a, b, m) and m < n) == 0;
+    then kin_degree(f, a, b, n);
+}
+
+// --- Линия ---------------------------------------------------------------------------------
+
+rule LineAscending(f: Family, a: Actor, b: Actor, d: Integer) strict {
+    label ru official "восходящая линия: второе лицо — предок первого";
+    when family_wellformed(f) and ancestor_or_self(f, b, a, d) and d >= 1;
+    then kin_line(f, a, b, Ascending);
+}
+
+rule LineDescending(f: Family, a: Actor, b: Actor, d: Integer) strict {
+    label ru official "нисходящая линия: второе лицо — потомок первого";
+    when family_wellformed(f) and ancestor_or_self(f, a, b, d) and d >= 1;
+    then kin_line(f, a, b, Descending);
+}
+
+rule LineCollateral(f: Family, a: Actor, b: Actor, c: Actor, da: Integer, db: Integer) strict {
+    label ru official "боковая линия: общий предок есть, но ни одно лицо не предок другого";
+    when family_wellformed(f) and ancestor_or_self(f, c, a, da) and ancestor_or_self(f, c, b, db)
+        and da >= 1 and db >= 1
+        and (count all d: Integer where ancestor_or_self(f, b, a, d)) == 0
+        and (count all d: Integer where ancestor_or_self(f, a, b, d)) == 0;
+    then kin_line(f, a, b, Collateral);
+}

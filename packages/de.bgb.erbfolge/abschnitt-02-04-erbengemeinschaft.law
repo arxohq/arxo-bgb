@@ -1,0 +1,1189 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 2 TITEL 4 — MEHRHEIT VON ERBEN
+// (§§ 2032–2063: Erbengemeinschaft, Verfügung über den Anteil, Vorkaufsrecht,
+// Verwaltung, Auseinandersetzung, Ausgleichung, Haftung der Miterben).
+//
+// GELD UND BRÜCHE. Der Titel ist der einzige Ort des Pakets, an dem Brüche
+// in Geld umgerechnet werden. Die Regel ist die des Ledgers D-07: die Quote
+// bleibt ein Paar ganzer Zahlen, und JE MITERBE UND ANSPRUCH wird EINMAL
+// gerundet, kaufmännisch auf den Cent:
+//   `div_round(Betrag × Zähler, Nenner × 1.0, 2, "HALF_UP")`.
+// Das Gesetz nennt weder eine Rundung noch die Behandlung des Restcents
+// (§ 2047 Abs. 1: „nach dem Verhältnis der Erbteile“). Deshalb wird der
+// Restcent NICHT verteilt: die Summe der gerundeten Anteile kann um wenige
+// Cent vom Überschuss abweichen, und die Rechenwache
+// `ueberschuss_vollstaendig_verteilt` zeigt das an, statt es zu verbergen
+// (Ledger D-15-02).
+//
+// AUSGLEICHUNG (§§ 2050–2057a) rechnet in drei Schritten, jeder mit einer
+// einzigen Rundung: Hinzurechnung der auszugleichenden Zuwendungen zum
+// Nachlass (§ 2055 Abs. 1 Satz 2), Teilung nach der Quote, Abzug des Wertes
+// der eigenen Zuwendung (Satz 1). § 2056 rechnet ein ZWEITES Mal, ohne den
+// Mehrempfänger und ohne seine Zuwendung.
+//
+// MEHRHEIT DER VERWALTUNG (§ 2038 Abs. 2 mit § 745 Abs. 1): die Stimmen
+// zählen nach der Größe der Erbteile. Die Summe läuft über den exakten
+// `Rational` (`gesamterbteil`), nicht über die Paare: eine Summe von Paaren
+// mit verschiedenen Nennern ist in v1 kein Term.
+
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+pub entity Zuwendung {
+    label de official "Zuwendung des Erblassers unter Lebenden, die zur Ausgleichung zu bringen ist (§§ 2050–2055)";
+    label en unofficial "inter vivos gift of the decedent subject to equalisation (§§ 2050–2055)";
+}
+pub entity Anteilsverkauf {
+    label de official "Verkauf des Anteils eines Miterben an einen Dritten (§ 2034 Abs. 1)";
+    label en unofficial "sale of a co-heir's share to a third party (§ 2034 (1))";
+}
+pub entity Massregel {
+    label de official "Maßregel der Verwaltung des Nachlasses (§ 2038)";
+    label en unofficial "measure of administration of the estate (§ 2038)";
+}
+
+// --- §§ 2032, 2033 Erbengemeinschaft und Verfügung über den Anteil ------------------------------------
+
+pub relation miterbe(e: Erbfall, p: Person) kind derived {
+    label de official "Miterbe: einer von mehreren Erben, deren gemeinschaftliches Vermögen der Nachlass wird (§ 2032 Abs. 1)";
+    label en unofficial "co-heir: one of several heirs whose joint property the estate becomes (§ 2032 (1))";
+}
+pub relation mehrere_erben(e: Erbfall) kind derived {
+    label de official "Der Erblasser hinterlässt mehrere Erben (§ 2032 Abs. 1)";
+    label en unofficial "The decedent leaves several heirs (§ 2032 (1))";
+}
+pub relation nachlass_ist_gemeinschaftliches_vermoegen(e: Erbfall) kind institutional {
+    label de official "Hinterlässt der Erblasser mehrere Erben, so wird der Nachlass gemeinschaftliches Vermögen der Erben (§ 2032 Abs. 1)";
+    label en unofficial "If the decedent leaves several heirs, the estate becomes their joint property (§ 2032 (1))";
+}
+pub relation vorschriften_2033_bis_2041_gelten(e: Erbfall) kind institutional {
+    label de official "Bis zur Auseinandersetzung gelten die Vorschriften der §§ 2033 bis 2041 (§ 2032 Abs. 2)";
+    label en unofficial "Until partition §§ 2033 to 2041 apply (§ 2032 (2))";
+}
+pub relation verfuegung_ueber_den_anteil_notariell(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Vertrag, durch den ein Miterbe über seinen Anteil am Nachlass verfügt, ist notariell beurkundet (§ 2033 Abs. 1 Satz 2)";
+    label en unofficial "The contract by which a co-heir disposes of his share in the estate is notarially recorded (§ 2033 (1) sentence 2)";
+}
+pub relation verfuegung_ueber_den_anteil_wirksam(e: Erbfall, p: Person) kind institutional {
+    label de official "Jeder Miterbe kann über seinen Anteil an dem Nachlass verfügen (§ 2033 Abs. 1 Satz 1)";
+    label en unofficial "Each co-heir may dispose of his share in the estate (§ 2033 (1) sentence 1)";
+}
+pub relation verfuegung_ueber_einzelgegenstand_ausgeschlossen(e: Erbfall, p: Person, g: Nachlassgegenstand) kind institutional {
+    label de official "Über seinen Anteil an den einzelnen Nachlassgegenständen kann ein Miterbe nicht verfügen (§ 2033 Abs. 2)";
+    label en unofficial "A co-heir cannot dispose of his share in individual objects of the estate (§ 2033 (2))";
+}
+pub relation nachlassgegenstand_des_erbfalls(g: Nachlassgegenstand, e: Erbfall) kind empirical {
+    key(g);
+    label de official "Der Erbfall, zu dessen Nachlass der Gegenstand gehört (§ 2033 Abs. 2, § 2040 Abs. 1)";
+    label en unofficial "the devolution to whose estate the object belongs (§ 2033 (2), § 2040 (1))";
+}
+
+@source(BGB_P2032) {
+    rule Miterbe(e: Erbfall, p: Person, z: Integer, n: Integer, q: Person, z2: Integer, n2: Integer) strict {
+        label de official "Hinterlässt der Erblasser mehrere Erben, so ist jeder von ihnen Miterbe (§ 2032 Abs. 1)";
+        label en unofficial "If the decedent leaves several heirs, each of them is a co-heir (§ 2032 (1))";
+        when gesamterbteil_bruch(e, p, z, n) and gesamterbteil_bruch(e, q, z2, n2) and p != q;
+        then miterbe(e, p);
+    }
+    rule MehrereErben(e: Erbfall, p: Person) strict {
+        label de official "Der Erblasser hinterlässt mehrere Erben (§ 2032 Abs. 1)";
+        label en unofficial "The decedent leaves several heirs (§ 2032 (1))";
+        when miterbe(e, p);
+        then mehrere_erben(e);
+    }
+    rule GemeinschaftlichesVermoegen(e: Erbfall) strict {
+        label de official "Hinterlässt der Erblasser mehrere Erben, so wird der Nachlass gemeinschaftliches Vermögen der Erben (§ 2032 Abs. 1)";
+        label en unofficial "If the decedent leaves several heirs, the estate becomes their joint property (§ 2032 (1))";
+        when mehrere_erben(e);
+        then nachlass_ist_gemeinschaftliches_vermoegen(e);
+    }
+    rule BisZurAuseinandersetzung(e: Erbfall) strict {
+        label de official "Bis zur Auseinandersetzung gelten die Vorschriften der §§ 2033 bis 2041 (§ 2032 Abs. 2)";
+        label en unofficial "Until partition §§ 2033 to 2041 apply (§ 2032 (2))";
+        when nachlass_ist_gemeinschaftliches_vermoegen(e) and not_known(auseinandersetzung_erfolgt(e));
+        then vorschriften_2033_bis_2041_gelten(e);
+    }
+}
+
+@source(BGB_P2033) {
+    rule VerfuegungUeberDenAnteil(e: Erbfall, p: Person) strict {
+        label de official "Jeder Miterbe kann über seinen Anteil an dem Nachlass verfügen; der Vertrag bedarf der notariellen Beurkundung (§ 2033 Abs. 1)";
+        label en unofficial "Each co-heir may dispose of his share in the estate; the contract requires notarial recording (§ 2033 (1))";
+        when miterbe(e, p) and verfuegung_ueber_den_anteil_notariell(e, p);
+        then verfuegung_ueber_den_anteil_wirksam(e, p);
+    }
+    rule KeineVerfuegungUeberEinzelgegenstaende(e: Erbfall, p: Person, g: Nachlassgegenstand) strict {
+        label de official "Über seinen Anteil an den einzelnen Nachlassgegenständen kann ein Miterbe nicht verfügen (§ 2033 Abs. 2)";
+        label en unofficial "A co-heir cannot dispose of his share in individual objects of the estate (§ 2033 (2))";
+        when miterbe(e, p) and nachlassgegenstand_des_erbfalls(g, e);
+        then verfuegung_ueber_einzelgegenstand_ausgeschlossen(e, p, g);
+    }
+}
+
+// --- §§ 2034–2037 Vorkaufsrecht der Miterben --------------------------------------------------------
+
+pub relation anteil_verkauft(v: Anteilsverkauf, e: Erbfall, verkaeufer: Person, kaeufer: Person) kind empirical {
+    key(v);
+    label de official "Ein Miterbe verkauft seinen Anteil an einen Dritten (§ 2034 Abs. 1)";
+    label en unofficial "A co-heir sells his share to a third party (§ 2034 (1))";
+}
+pub relation kaufvertrag_mitgeteilt_am(v: Anteilsverkauf, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, an dem den übrigen Miterben der Inhalt des Kaufvertrags mitgeteilt worden ist (§ 2034 Abs. 2 Satz 1 mit § 469 Abs. 2)";
+    label en unofficial "day on which the content of the contract of sale was communicated to the other co-heirs (§ 2034 (2) sentence 1 with § 469 (2))";
+}
+pub relation vorkaufsberechtigt(v: Anteilsverkauf, p: Person) kind institutional {
+    label de official "Die übrigen Miterben sind zum Vorkauf berechtigt (§ 2034 Abs. 1)";
+    label en unofficial "The other co-heirs have a right of pre-emption (§ 2034 (1))";
+}
+pub relation vorkaufsfrist_ende(v: Anteilsverkauf, tag: Date) kind derived {
+    key(v);
+    label de official "Die Frist für die Ausübung des Vorkaufsrechts beträgt zwei Monate (§ 2034 Abs. 2 Satz 1); § 193, denn innerhalb der Frist ist die Ausübung zu erklären";
+    label en unofficial "The period for exercising the pre-emption right is two months (§ 2034 (2) sentence 1); § 193 applies, as the exercise is declared within the period";
+}
+pub relation vorkaufsrecht_vererblich(v: Anteilsverkauf, p: Person) kind institutional {
+    label de official "Das Vorkaufsrecht ist vererblich (§ 2034 Abs. 2 Satz 2)";
+    label en unofficial "The right of pre-emption is inheritable (§ 2034 (2) sentence 2)";
+}
+pub relation anteil_auf_kaeufer_uebertragen(v: Anteilsverkauf) kind empirical {
+    label de official "Der verkaufte Anteil ist auf den Käufer übertragen (§ 2035 Abs. 1 Satz 1)";
+    label en unofficial "The sold share has been transferred to the buyer (§ 2035 (1) sentence 1)";
+}
+pub relation vorkaufsrecht_gegen_den_kaeufer(v: Anteilsverkauf, p: Person) kind institutional {
+    label de official "Ist der verkaufte Anteil auf den Käufer übertragen, so können die Miterben das Vorkaufsrecht dem Käufer gegenüber ausüben (§ 2035 Abs. 1 Satz 1)";
+    label en unofficial "Where the sold share has been transferred to the buyer, the co-heirs may exercise the pre-emption right against him (§ 2035 (1) sentence 1)";
+}
+pub relation vorkaufsrecht_gegen_den_verkaeufer_erloschen(v: Anteilsverkauf) kind institutional {
+    label de official "Dem Verkäufer gegenüber erlischt das Vorkaufsrecht mit der Übertragung des Anteils (§ 2035 Abs. 1 Satz 2)";
+    label en unofficial "Against the seller the pre-emption right expires with the transfer of the share (§ 2035 (1) sentence 2)";
+}
+pub relation benachrichtigung_der_miterben_geschuldet(v: Anteilsverkauf) kind institutional {
+    label de official "Der Verkäufer hat die Miterben von der Übertragung unverzüglich zu benachrichtigen (§ 2035 Abs. 2)";
+    label en unofficial "The seller must notify the co-heirs of the transfer without undue delay (§ 2035 (2))";
+}
+pub relation anteil_auf_miterben_uebertragen(v: Anteilsverkauf) kind empirical {
+    label de official "Der Anteil ist auf die Miterben übertragen (§ 2036 Satz 1)";
+    label en unofficial "The share has been transferred to the co-heirs (§ 2036 sentence 1)";
+}
+pub relation kaeufer_von_der_haftung_frei(v: Anteilsverkauf, kaeufer: Person) kind institutional {
+    label de official "Mit der Übertragung des Anteils auf die Miterben wird der Käufer von der Haftung für die Nachlassverbindlichkeiten frei (§ 2036 Satz 1)";
+    label en unofficial "With the transfer of the share to the co-heirs the buyer is released from liability for the estate's liabilities (§ 2036 sentence 1)";
+}
+pub relation kaeufer_haftet_nach_1978_bis_1980(v: Anteilsverkauf, kaeufer: Person) kind empirical {
+    label de official "Der Käufer ist den Nachlassgläubigern nach den §§ 1978 bis 1980 verantwortlich (§ 2036 Satz 2)";
+    label en unofficial "The buyer is answerable to the creditors under §§ 1978 to 1980 (§ 2036 sentence 2)";
+}
+pub relation haftung_des_kaeufers_bleibt(v: Anteilsverkauf, kaeufer: Person) kind institutional {
+    label de official "Die Haftung des Käufers bleibt bestehen, soweit er den Nachlassgläubigern nach den §§ 1978 bis 1980 verantwortlich ist (§ 2036 Satz 2)";
+    label en unofficial "The buyer's liability remains to the extent he is answerable under §§ 1978 to 1980 (§ 2036 sentence 2)";
+}
+pub relation anteil_weiterveraeussert(v: Anteilsverkauf) kind empirical {
+    label de official "Der Käufer überträgt den Anteil auf einen anderen (§ 2037)";
+    label en unofficial "The buyer transfers the share to another person (§ 2037)";
+}
+pub relation vorschriften_2033_2035_2036_gelten_entsprechend(v: Anteilsverkauf) kind institutional {
+    label de official "Überträgt der Käufer den Anteil auf einen anderen, so finden die Vorschriften der §§ 2033, 2035, 2036 entsprechende Anwendung (§ 2037)";
+    label en unofficial "Where the buyer transfers the share to another, §§ 2033, 2035, 2036 apply accordingly (§ 2037)";
+}
+
+@source(BGB_P2034) {
+    rule Vorkaufsberechtigt(v: Anteilsverkauf, e: Erbfall, verkaeufer: Person, kaeufer: Person, p: Person) strict {
+        label de official "Verkauft ein Miterbe seinen Anteil an einen Dritten, so sind die übrigen Miterben zum Vorkauf berechtigt (§ 2034 Abs. 1)";
+        label en unofficial "If a co-heir sells his share to a third party, the other co-heirs have a right of pre-emption (§ 2034 (1))";
+        when anteil_verkauft(v, e, verkaeufer, kaeufer) and miterbe(e, p) and p != verkaeufer;
+        then vorkaufsberechtigt(v, p);
+    }
+    rule VorkaufsfristZweiMonate(v: Anteilsverkauf, tag: Date) strict {
+        label de official "Die Frist für die Ausübung des Vorkaufsrechts beträgt zwei Monate (§ 2034 Abs. 2 Satz 1); fällt der letzte Tag auf einen Sonntag, Feiertag oder Sonnabend, so tritt der nächste Werktag an seine Stelle (§ 193)";
+        label en unofficial "The period for exercising the pre-emption right is two months (§ 2034 (2) sentence 1); if the last day falls on a Sunday, holiday or Saturday, the next working day takes its place (§ 193)";
+        when kaufvertrag_mitgeteilt_am(v, tag);
+        then vorkaufsfrist_ende(v, add_business_days(add_calendar_period(tag, 2 calendar_month), 1 business_day));
+    }
+    rule VorkaufsrechtVererblich(v: Anteilsverkauf, p: Person) strict {
+        label de official "Das Vorkaufsrecht ist vererblich (§ 2034 Abs. 2 Satz 2)";
+        label en unofficial "The right of pre-emption is inheritable (§ 2034 (2) sentence 2)";
+        when vorkaufsberechtigt(v, p);
+        then vorkaufsrecht_vererblich(v, p);
+    }
+}
+
+@source(BGB_P2035) {
+    rule VorkaufsrechtGegenDenKaeufer(v: Anteilsverkauf, p: Person) strict {
+        label de official "Ist der verkaufte Anteil auf den Käufer übertragen, so können die Miterben das ihnen nach § 2034 zustehende Vorkaufsrecht dem Käufer gegenüber ausüben (§ 2035 Abs. 1 Satz 1)";
+        label en unofficial "Where the share has been transferred to the buyer, the co-heirs may exercise the right against him (§ 2035 (1) sentence 1)";
+        when vorkaufsberechtigt(v, p) and anteil_auf_kaeufer_uebertragen(v);
+        then vorkaufsrecht_gegen_den_kaeufer(v, p);
+    }
+    rule VorkaufsrechtGegenVerkaeuferErloschen(v: Anteilsverkauf) strict {
+        label de official "Dem Verkäufer gegenüber erlischt das Vorkaufsrecht mit der Übertragung des Anteils (§ 2035 Abs. 1 Satz 2)";
+        label en unofficial "Against the seller the right expires with the transfer of the share (§ 2035 (1) sentence 2)";
+        when anteil_auf_kaeufer_uebertragen(v);
+        then vorkaufsrecht_gegen_den_verkaeufer_erloschen(v);
+    }
+    rule BenachrichtigungDerMiterben(v: Anteilsverkauf) strict {
+        label de official "Der Verkäufer hat die Miterben von der Übertragung unverzüglich zu benachrichtigen (§ 2035 Abs. 2)";
+        label en unofficial "The seller must notify the co-heirs of the transfer without undue delay (§ 2035 (2))";
+        when anteil_auf_kaeufer_uebertragen(v);
+        then benachrichtigung_der_miterben_geschuldet(v);
+    }
+}
+
+@source(BGB_P2036) {
+    rule KaeuferWirdFrei(v: Anteilsverkauf, e: Erbfall, verkaeufer: Person, kaeufer: Person) strict {
+        label de official "Mit der Übertragung des Anteils auf die Miterben wird der Käufer von der Haftung für die Nachlassverbindlichkeiten frei (§ 2036 Satz 1)";
+        label en unofficial "With the transfer of the share to the co-heirs the buyer is released from liability (§ 2036 sentence 1)";
+        when anteil_verkauft(v, e, verkaeufer, kaeufer) and anteil_auf_miterben_uebertragen(v)
+            and not_known(kaeufer_haftet_nach_1978_bis_1980(v, kaeufer));
+        then kaeufer_von_der_haftung_frei(v, kaeufer);
+    }
+    rule HaftungDesKaeufersBleibt(v: Anteilsverkauf, kaeufer: Person) strict {
+        label de official "Seine Haftung bleibt jedoch bestehen, soweit er den Nachlassgläubigern nach den §§ 1978 bis 1980 verantwortlich ist; die §§ 1990, 1991 finden entsprechende Anwendung (§ 2036 Satz 2)";
+        label en unofficial "His liability remains to the extent he is answerable under §§ 1978 to 1980; §§ 1990, 1991 apply accordingly (§ 2036 sentence 2)";
+        when kaeufer_haftet_nach_1978_bis_1980(v, kaeufer);
+        then haftung_des_kaeufers_bleibt(v, kaeufer);
+    }
+}
+
+@source(BGB_P2037)
+rule Weiterveraeusserung(v: Anteilsverkauf) strict {
+    label de official "Überträgt der Käufer den Anteil auf einen anderen, so finden die Vorschriften der §§ 2033, 2035, 2036 entsprechende Anwendung (§ 2037)";
+    label en unofficial "Where the buyer transfers the share to another, §§ 2033, 2035, 2036 apply accordingly (§ 2037)";
+    when anteil_weiterveraeussert(v);
+    then vorschriften_2033_2035_2036_gelten_entsprechend(v);
+}
+
+// --- §§ 2038–2041 Verwaltung, Forderungen, Verfügung, Surrogation -------------------------------------
+
+pub relation massregel_des_erbfalls(m: Massregel, e: Erbfall) kind empirical {
+    key(m);
+    label de official "Der Erbfall, dessen Nachlass die Maßregel betrifft (§ 2038)";
+    label en unofficial "the devolution whose estate the measure concerns (§ 2038)";
+}
+pub relation zur_erhaltung_notwendig(m: Massregel) kind empirical {
+    label de official "Die Maßregel ist zur Erhaltung des Nachlasses notwendig (§ 2038 Abs. 1 Satz 2 Halbsatz 2)";
+    label en unofficial "The measure is necessary for the preservation of the estate (§ 2038 (1) sentence 2 second half)";
+}
+pub relation zur_ordnungsmaessigen_verwaltung_erforderlich(m: Massregel) kind empirical {
+    label de official "Die Maßregel ist zur ordnungsmäßigen Verwaltung erforderlich (§ 2038 Abs. 1 Satz 2 Halbsatz 1) — festgestellte Tatsache";
+    label en unofficial "The measure is required for proper administration (§ 2038 (1) sentence 2 first half) — established fact";
+}
+pub relation zustimmung_zur_massregel(m: Massregel, p: Person) kind empirical {
+    label de official "Der Miterbe stimmt der Maßregel zu (§ 2038 Abs. 2 mit § 745 Abs. 1)";
+    label en unofficial "The co-heir consents to the measure (§ 2038 (2) with § 745 (1))";
+}
+pub relation verwaltung_steht_gemeinschaftlich_zu(e: Erbfall) kind institutional {
+    label de official "Die Verwaltung des Nachlasses steht den Erben gemeinschaftlich zu (§ 2038 Abs. 1 Satz 1)";
+    label en unofficial "The administration of the estate belongs to the heirs jointly (§ 2038 (1) sentence 1)";
+}
+pub relation mitwirkungspflicht(e: Erbfall, p: Person, m: Massregel) kind institutional {
+    label de official "Jeder Miterbe ist den anderen gegenüber verpflichtet, zu Maßregeln mitzuwirken, die zur ordnungsmäßigen Verwaltung erforderlich sind (§ 2038 Abs. 1 Satz 2 Halbsatz 1)";
+    label en unofficial "Each co-heir must cooperate in measures required for proper administration (§ 2038 (1) sentence 2 first half)";
+}
+pub relation alleinmassregel_zulaessig(e: Erbfall, p: Person, m: Massregel) kind institutional {
+    label de official "Die zur Erhaltung notwendigen Maßregeln kann jeder Miterbe ohne Mitwirkung der anderen treffen (§ 2038 Abs. 1 Satz 2 Halbsatz 2)";
+    label en unofficial "Each co-heir may take measures necessary for preservation without the others' cooperation (§ 2038 (1) sentence 2 second half)";
+}
+pub relation stimmenmehrheit_fuer_massregel(m: Massregel) kind derived {
+    label de official "Die Mehrheit der Stimmen nach der Größe der Erbteile ist für die Maßregel (§ 2038 Abs. 2 Satz 1 mit § 745 Abs. 1)";
+    label en unofficial "The majority of votes according to the size of the shares is in favour of the measure (§ 2038 (2) sentence 1 with § 745 (1))";
+}
+pub relation teilung_der_fruechte_erst_bei_auseinandersetzung(e: Erbfall) kind institutional {
+    label de official "Die Teilung der Früchte erfolgt erst bei der Auseinandersetzung (§ 2038 Abs. 2 Satz 2)";
+    label en unofficial "The division of the fruits takes place only on partition (§ 2038 (2) sentence 2)";
+}
+pub relation auseinandersetzung_laenger_als_ein_jahr_ausgeschlossen(e: Erbfall) kind derived {
+    label de official "Die Auseinandersetzung ist auf längere Zeit als ein Jahr ausgeschlossen (§ 2038 Abs. 2 Satz 3)";
+    label en unofficial "Partition is excluded for longer than one year (§ 2038 (2) sentence 3)";
+}
+pub relation teilung_des_reinertrags_verlangbar(e: Erbfall, p: Person) kind institutional {
+    label de official "Ist die Auseinandersetzung auf längere Zeit als ein Jahr ausgeschlossen, so kann jeder Miterbe am Schluss jedes Jahres die Teilung des Reinertrags verlangen (§ 2038 Abs. 2 Satz 3)";
+    label en unofficial "Where partition is excluded for more than one year, each co-heir may demand division of the net proceeds at the end of each year (§ 2038 (2) sentence 3)";
+}
+pub relation nachlassforderung(e: Erbfall, schuldner: Person) kind empirical {
+    label de official "Ein Anspruch gegen diesen Schuldner gehört zum Nachlass (§ 2039 Satz 1)";
+    label en unofficial "A claim against this debtor belongs to the estate (§ 2039 sentence 1)";
+}
+pub relation leistung_nur_an_alle_erben(e: Erbfall, schuldner: Person) kind institutional {
+    label de official "Der Verpflichtete kann nur an alle Erben gemeinschaftlich leisten, und jeder Miterbe kann nur die Leistung an alle Erben fordern (§ 2039 Satz 1)";
+    label en unofficial "The debtor may render performance only to all heirs jointly, and each co-heir may demand performance only to all heirs (§ 2039 sentence 1)";
+}
+pub relation hinterlegung_verlangbar(e: Erbfall, p: Person, schuldner: Person) kind institutional {
+    label de official "Jeder Miterbe kann verlangen, dass der Verpflichtete die zu leistende Sache für alle Erben hinterlegt oder an einen gerichtlich zu bestellenden Verwahrer abliefert (§ 2039 Satz 2)";
+    label en unofficial "Each co-heir may demand that the debtor deposit the thing for all heirs or deliver it to a custodian appointed by the court (§ 2039 sentence 2)";
+}
+pub relation verfuegung_nur_gemeinschaftlich(e: Erbfall, g: Nachlassgegenstand) kind institutional {
+    label de official "Die Erben können über einen Nachlassgegenstand nur gemeinschaftlich verfügen (§ 2040 Abs. 1)";
+    label en unofficial "The heirs may dispose of an object of the estate only jointly (§ 2040 (1))";
+}
+pub relation aufrechnung_gegen_nachlassforderung_ausgeschlossen(e: Erbfall, schuldner: Person) kind institutional {
+    label de official "Gegen eine zum Nachlass gehörende Forderung kann der Schuldner nicht eine ihm gegen einen einzelnen Miterben zustehende Forderung aufrechnen (§ 2040 Abs. 2)";
+    label en unofficial "Against a claim belonging to the estate the debtor cannot set off a claim he has against a single co-heir (§ 2040 (2))";
+}
+pub relation als_ersatz_oder_durch_rechtsgeschaeft_erworben(e: Erbfall, g: Nachlassgegenstand) kind empirical {
+    label de official "Der Gegenstand ist auf Grund eines zum Nachlass gehörenden Rechts, als Ersatz für Zerstörung, Beschädigung oder Entziehung eines Nachlassgegenstands oder durch ein auf den Nachlass bezogenes Rechtsgeschäft erworben worden (§ 2041 Satz 1)";
+    label en unofficial "The object was acquired on the basis of a right belonging to the estate, as compensation for destruction, damage or deprivation of an object of the estate, or by a transaction relating to the estate (§ 2041 sentence 1)";
+}
+pub relation gehoert_zum_nachlass(e: Erbfall, g: Nachlassgegenstand) kind institutional {
+    label de official "Was auf Grund eines zum Nachlass gehörenden Rechts oder als Ersatz oder durch ein auf den Nachlass bezogenes Rechtsgeschäft erworben wird, gehört zum Nachlass (§ 2041 Satz 1)";
+    label en unofficial "What is acquired on the basis of a right belonging to the estate, as compensation, or by a transaction relating to it belongs to the estate (§ 2041 sentence 1)";
+}
+
+@source(BGB_P2038) {
+    rule VerwaltungGemeinschaftlich(e: Erbfall) strict {
+        label de official "Die Verwaltung des Nachlasses steht den Erben gemeinschaftlich zu (§ 2038 Abs. 1 Satz 1)";
+        label en unofficial "The administration of the estate belongs to the heirs jointly (§ 2038 (1) sentence 1)";
+        when mehrere_erben(e);
+        then verwaltung_steht_gemeinschaftlich_zu(e);
+    }
+    rule Mitwirkungspflicht(e: Erbfall, p: Person, m: Massregel) strict {
+        label de official "Jeder Miterbe ist den anderen gegenüber verpflichtet, zu Maßregeln mitzuwirken, die zur ordnungsmäßigen Verwaltung erforderlich sind (§ 2038 Abs. 1 Satz 2 Halbsatz 1)";
+        label en unofficial "Each co-heir must cooperate in measures required for proper administration (§ 2038 (1) sentence 2 first half)";
+        when miterbe(e, p) and massregel_des_erbfalls(m, e) and zur_ordnungsmaessigen_verwaltung_erforderlich(m);
+        then mitwirkungspflicht(e, p, m);
+    }
+    rule ErhaltungsmassregelAllein(e: Erbfall, p: Person, m: Massregel) strict {
+        label de official "Die zur Erhaltung notwendigen Maßregeln kann jeder Miterbe ohne Mitwirkung der anderen treffen (§ 2038 Abs. 1 Satz 2 Halbsatz 2)";
+        label en unofficial "Each co-heir may take measures necessary for preservation without the others' cooperation (§ 2038 (1) sentence 2 second half)";
+        when miterbe(e, p) and massregel_des_erbfalls(m, e) and zur_erhaltung_notwendig(m);
+        then alleinmassregel_zulaessig(e, p, m);
+    }
+    rule StimmenmehrheitNachErbteilen(m: Massregel, e: Erbfall, p: Person, x: Rational) strict {
+        label de official "Die Vorschrift des § 745 findet Anwendung (§ 2038 Abs. 2 Satz 1): die Stimmen zählen nach der Größe der Erbteile, und die Mehrheit ist erreicht, wenn die Summe der Erbteile der Zustimmenden größer als die Hälfte ist";
+        label en unofficial "§ 745 applies (§ 2038 (2) sentence 1): votes count by the size of the shares, and a majority is reached where the sum of the consenting shares exceeds one half";
+        when massregel_des_erbfalls(m, e) and zustimmung_zur_massregel(m, p) and gesamterbteil(e, p, x)
+            and (sum all y: Rational for q: Person where zustimmung_zur_massregel(m, q) and gesamterbteil(e, q, y)) > 1 / 2;
+        then stimmenmehrheit_fuer_massregel(m);
+    }
+    rule TeilungDerFruechte(e: Erbfall) strict {
+        label de official "Die Teilung der Früchte erfolgt erst bei der Auseinandersetzung (§ 2038 Abs. 2 Satz 2)";
+        label en unofficial "The division of the fruits takes place only on partition (§ 2038 (2) sentence 2)";
+        when mehrere_erben(e) and not_known(auseinandersetzung_erfolgt(e));
+        then teilung_der_fruechte_erst_bei_auseinandersetzung(e);
+    }
+    rule TeilungDesReinertrags(e: Erbfall, p: Person) strict {
+        label de official "Ist die Auseinandersetzung auf längere Zeit als ein Jahr ausgeschlossen, so kann jeder Miterbe am Schluss jedes Jahres die Teilung des Reinertrags verlangen (§ 2038 Abs. 2 Satz 3)";
+        label en unofficial "Where partition is excluded for longer than one year, each co-heir may demand division of the net proceeds at the end of each year (§ 2038 (2) sentence 3)";
+        when miterbe(e, p) and auseinandersetzung_laenger_als_ein_jahr_ausgeschlossen(e);
+        then teilung_des_reinertrags_verlangbar(e, p);
+    }
+}
+
+@source(BGB_P2039) {
+    rule LeistungNurAnAlle(e: Erbfall, schuldner: Person) strict {
+        label de official "Gehört ein Anspruch zum Nachlass, so kann der Verpflichtete nur an alle Erben gemeinschaftlich leisten und jeder Miterbe nur die Leistung an alle Erben fordern (§ 2039 Satz 1)";
+        label en unofficial "Where a claim belongs to the estate, the debtor may render performance only to all heirs jointly and each co-heir may demand performance only to all (§ 2039 sentence 1)";
+        when mehrere_erben(e) and nachlassforderung(e, schuldner);
+        then leistung_nur_an_alle_erben(e, schuldner);
+    }
+    rule HinterlegungVerlangbar(e: Erbfall, p: Person, schuldner: Person) strict {
+        label de official "Jeder Miterbe kann verlangen, dass der Verpflichtete die zu leistende Sache für alle Erben hinterlegt oder an einen gerichtlich zu bestellenden Verwahrer abliefert (§ 2039 Satz 2)";
+        label en unofficial "Each co-heir may demand deposit for all heirs or delivery to a custodian appointed by the court (§ 2039 sentence 2)";
+        when miterbe(e, p) and nachlassforderung(e, schuldner);
+        then hinterlegung_verlangbar(e, p, schuldner);
+    }
+}
+
+@source(BGB_P2040) {
+    rule VerfuegungGemeinschaftlich(e: Erbfall, g: Nachlassgegenstand) strict {
+        label de official "Die Erben können über einen Nachlassgegenstand nur gemeinschaftlich verfügen (§ 2040 Abs. 1)";
+        label en unofficial "The heirs may dispose of an object of the estate only jointly (§ 2040 (1))";
+        when mehrere_erben(e) and nachlassgegenstand_des_erbfalls(g, e);
+        then verfuegung_nur_gemeinschaftlich(e, g);
+    }
+    rule KeineAufrechnungGegenNachlassforderung(e: Erbfall, schuldner: Person) strict {
+        label de official "Gegen eine zum Nachlass gehörende Forderung kann der Schuldner nicht eine ihm gegen einen einzelnen Miterben zustehende Forderung aufrechnen (§ 2040 Abs. 2)";
+        label en unofficial "Against a claim belonging to the estate the debtor cannot set off a claim against a single co-heir (§ 2040 (2))";
+        when mehrere_erben(e) and nachlassforderung(e, schuldner);
+        then aufrechnung_gegen_nachlassforderung_ausgeschlossen(e, schuldner);
+    }
+}
+
+@source(BGB_P2041)
+rule UnmittelbareErsetzungImNachlass(e: Erbfall, g: Nachlassgegenstand) strict {
+    label de official "Was auf Grund eines zum Nachlass gehörenden Rechts oder als Ersatz für die Zerstörung, Beschädigung oder Entziehung eines Nachlassgegenstands oder durch ein Rechtsgeschäft erworben wird, das sich auf den Nachlass bezieht, gehört zum Nachlass (§ 2041 Satz 1)";
+    label en unofficial "What is acquired on the basis of a right of the estate, as compensation for destruction, damage or deprivation, or by a transaction relating to the estate belongs to the estate (§ 2041 sentence 1)";
+    when mehrere_erben(e) and als_ersatz_oder_durch_rechtsgeschaeft_erworben(e, g);
+    then gehoert_zum_nachlass(e, g);
+}
+
+// --- §§ 2042–2045 Auseinandersetzung und ihr Aufschub ------------------------------------------------
+
+pub relation auseinandersetzung_erfolgt(e: Erbfall) kind empirical {
+    label de official "Der Nachlass ist geteilt (§ 2042, § 2059 Abs. 1, § 2060, § 2062)";
+    label en unofficial "The estate has been partitioned (§ 2042, § 2059 (1), § 2060, § 2062)";
+}
+pub relation auseinandersetzung_verlangbar(e: Erbfall, p: Person) kind institutional {
+    label de official "Jeder Miterbe kann jederzeit die Auseinandersetzung verlangen, soweit sich nicht aus den §§ 2043 bis 2045 ein anderes ergibt (§ 2042 Abs. 1)";
+    label en unofficial "Each co-heir may demand partition at any time, unless §§ 2043 to 2045 provide otherwise (§ 2042 (1))";
+}
+pub relation erbteile_wegen_erwarteter_geburt_unbestimmt(e: Erbfall) kind empirical {
+    label de official "Die Erbteile sind wegen der zu erwartenden Geburt eines Miterben noch unbestimmt (§ 2043 Abs. 1)";
+    label en unofficial "The shares are still undetermined because the birth of a co-heir is expected (§ 2043 (1))";
+}
+pub relation erbteile_wegen_anhaengiger_entscheidung_unbestimmt(e: Erbfall) kind empirical {
+    label de official "Die Erbteile sind unbestimmt, weil die Entscheidung über einen Antrag auf Annahme als Kind, über die Aufhebung des Annahmeverhältnisses oder über die Anerkennung einer Stiftung noch aussteht (§ 2043 Abs. 2)";
+    label en unofficial "The shares are undetermined because a decision on adoption, on its revocation or on the recognition of a foundation is pending (§ 2043 (2))";
+}
+pub relation auseinandersetzung_ausgeschlossen(e: Erbfall) kind institutional {
+    label de official "Die Auseinandersetzung ist ausgeschlossen (§ 2043, § 2044 Abs. 1)";
+    label en unofficial "Partition is excluded (§ 2043, § 2044 (1))";
+}
+pub relation letztwilliger_ausschluss_der_auseinandersetzung(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hat durch letztwillige Verfügung die Auseinandersetzung ausgeschlossen oder von der Einhaltung einer Kündigungsfrist abhängig gemacht (§ 2044 Abs. 1 Satz 1)";
+    label en unofficial "The decedent excluded partition by will or made it dependent on observing a notice period (§ 2044 (1) sentence 1)";
+}
+pub relation ausschlussfrist_2044_ende(e: Erbfall, tag: Date) kind derived {
+    key(e);
+    label de official "Ablauf der dreißig Jahre seit dem Eintritt des Erbfalls, mit dem die Verfügung unwirksam wird (§ 2044 Abs. 2 Satz 1)";
+    label en unofficial "expiry of the thirty years since the devolution, upon which the provision becomes ineffective (§ 2044 (2) sentence 1)";
+}
+pub relation verfuegung_nach_dreissig_jahren_unwirksam(e: Erbfall) kind institutional {
+    label de official "Die Verfügung wird unwirksam, wenn 30 Jahre seit dem Eintritt des Erbfalls verstrichen sind (§ 2044 Abs. 2 Satz 1)";
+    label en unofficial "The provision becomes ineffective once thirty years have elapsed since the devolution (§ 2044 (2) sentence 1)";
+}
+pub relation aufschub_bis_aufgebot_verlangbar(e: Erbfall, p: Person) kind institutional {
+    label de official "Jeder Miterbe kann verlangen, dass die Auseinandersetzung bis zur Beendigung des nach § 1970 zulässigen Aufgebotsverfahrens oder bis zum Ablauf der in § 2061 bestimmten Anmeldungsfrist aufgeschoben wird (§ 2045 Satz 1)";
+    label en unofficial "Each co-heir may demand that partition be postponed until the public notice proceedings end or the registration period of § 2061 expires (§ 2045 sentence 1)";
+}
+
+@source(BGB_P2042)
+rule AuseinandersetzungJederzeit(e: Erbfall, p: Person) strict {
+    label de official "Jeder Miterbe kann jederzeit die Auseinandersetzung verlangen, soweit sich nicht aus den §§ 2043 bis 2045 ein anderes ergibt (§ 2042 Abs. 1)";
+    label en unofficial "Each co-heir may demand partition at any time unless §§ 2043 to 2045 provide otherwise (§ 2042 (1))";
+    when miterbe(e, p) and not_known(auseinandersetzung_ausgeschlossen(e));
+    then auseinandersetzung_verlangbar(e, p);
+}
+
+@source(BGB_P2043) {
+    rule AufschubWegenErwarteterGeburt(e: Erbfall) strict {
+        label de official "Soweit die Erbteile wegen der zu erwartenden Geburt eines Miterben noch unbestimmt sind, ist die Auseinandersetzung bis zur Hebung der Unbestimmtheit ausgeschlossen (§ 2043 Abs. 1)";
+        label en unofficial "To the extent the shares are undetermined because the birth of a co-heir is expected, partition is excluded until the uncertainty is removed (§ 2043 (1))";
+        when erbteile_wegen_erwarteter_geburt_unbestimmt(e);
+        then auseinandersetzung_ausgeschlossen(e);
+    }
+    rule AufschubWegenAnhaengigerEntscheidung(e: Erbfall) strict {
+        label de official "Das Gleiche gilt, soweit die Erbteile wegen einer noch ausstehenden Entscheidung über Annahme als Kind, Aufhebung des Annahmeverhältnisses oder Anerkennung einer Stiftung unbestimmt sind (§ 2043 Abs. 2)";
+        label en unofficial "The same applies where the shares are undetermined pending a decision on adoption, its revocation or the recognition of a foundation (§ 2043 (2))";
+        when erbteile_wegen_anhaengiger_entscheidung_unbestimmt(e);
+        then auseinandersetzung_ausgeschlossen(e);
+    }
+}
+
+@source(BGB_P2044) {
+    rule LetztwilligerAusschluss(e: Erbfall) strict {
+        label de official "Der Erblasser kann durch letztwillige Verfügung die Auseinandersetzung ausschließen oder von der Einhaltung einer Kündigungsfrist abhängig machen (§ 2044 Abs. 1 Satz 1)";
+        label en unofficial "The decedent may by will exclude partition or make it dependent on observing a notice period (§ 2044 (1) sentence 1)";
+        when letztwilliger_ausschluss_der_auseinandersetzung(e) and not_known(verfuegung_nach_dreissig_jahren_unwirksam(e));
+        then auseinandersetzung_ausgeschlossen(e);
+    }
+    rule DreissigJahresfrist2044(e: Erbfall, tag: Date) strict {
+        label de official "Die Verfügung wird unwirksam, wenn 30 Jahre seit dem Eintritt des Erbfalls verstrichen sind (§ 2044 Abs. 2 Satz 1)";
+        label en unofficial "The provision becomes ineffective once thirty years have elapsed since the devolution (§ 2044 (2) sentence 1)";
+        when erbfall_am(e, tag) and letztwilliger_ausschluss_der_auseinandersetzung(e);
+        then ausschlussfrist_2044_ende(e, add_calendar_period(tag, 30 calendar_year));
+    }
+}
+
+@source(BGB_P2045)
+rule AufschubBisAufgebot(e: Erbfall, p: Person, tag: Date) strict {
+    label de official "Jeder Miterbe kann verlangen, dass die Auseinandersetzung bis zur Beendigung des nach § 1970 zulässigen Aufgebotsverfahrens oder bis zum Ablauf der in § 2061 bestimmten Anmeldungsfrist aufgeschoben wird (§ 2045 Satz 1)";
+    label en unofficial "Each co-heir may demand postponement of partition until the public notice proceedings end or the registration period of § 2061 expires (§ 2045 sentence 1)";
+    when miterbe(e, p) and aufgebot_beantragt_am(e, tag) and not_known(aufgebotsverfahren_beendet(e));
+    then aufschub_bis_aufgebot_verlangbar(e, p);
+}
+
+// --- §§ 2046–2049 Berichtigung, Verteilung, Anordnungen ----------------------------------------------
+
+pub relation verbindlichkeit_faellig_und_unstreitig(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Die Nachlassverbindlichkeit ist fällig und nicht streitig (§ 2046 Abs. 1 Satz 2 im Umkehrschluss)";
+    label en unofficial "The liability of the estate is due and undisputed (§ 2046 (1) sentence 2 by converse)";
+}
+pub relation zuerst_zu_berichtigen(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Aus dem Nachlass sind zunächst die Nachlassverbindlichkeiten zu berichtigen (§ 2046 Abs. 1 Satz 1)";
+    label en unofficial "The liabilities of the estate are to be discharged from it first (§ 2046 (1) sentence 1)";
+}
+pub relation zurueckzubehalten(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Ist eine Nachlassverbindlichkeit noch nicht fällig oder ist sie streitig, so ist das zur Berichtigung Erforderliche zurückzubehalten (§ 2046 Abs. 1 Satz 2)";
+    label en unofficial "Where a liability is not yet due or is disputed, what is needed for its discharge is to be retained (§ 2046 (1) sentence 2)";
+}
+pub relation umsetzung_in_geld_geschuldet(e: Erbfall) kind institutional {
+    label de official "Zur Berichtigung ist der Nachlass, soweit erforderlich, in Geld umzusetzen (§ 2046 Abs. 3)";
+    label en unofficial "For the discharge the estate is, so far as necessary, to be converted into money (§ 2046 (3))";
+}
+pub relation ueberschuss(e: Erbfall, betrag: Money) kind empirical {
+    key(e);
+    label de official "Der nach der Berichtigung der Nachlassverbindlichkeiten verbleibende Überschuss (§ 2047 Abs. 1)";
+    label en unofficial "the surplus remaining after discharge of the liabilities of the estate (§ 2047 (1))";
+}
+pub relation anteil_am_ueberschuss(e: Erbfall, p: Person, betrag: Money) kind derived {
+    key(e, p);
+    label de official "Der nach der Berichtigung verbleibende Überschuss gebührt den Erben nach dem Verhältnis der Erbteile (§ 2047 Abs. 1) — einmal auf den Cent gerundet (Politik des Pakets, README „Rundung“)";
+    label en unofficial "the surplus remaining after discharge belongs to the heirs in proportion to their shares (§ 2047 (1)) — rounded once to the cent (package policy, README \"Rundung\")";
+}
+pub relation schriftstuecke_bleiben_gemeinschaftlich(e: Erbfall) kind institutional {
+    label de official "Schriftstücke, die sich auf die persönlichen Verhältnisse des Erblassers, auf dessen Familie oder auf den ganzen Nachlass beziehen, bleiben gemeinschaftlich (§ 2047 Abs. 2)";
+    label en unofficial "Documents relating to the decedent's personal circumstances, his family or the whole estate remain joint property (§ 2047 (2))";
+}
+pub relation ueberschuss_vollstaendig_verteilt(e: Erbfall) kind derived {
+    label de official "Die Summe der gerundeten Anteile am Überschuss ergibt den Überschuss (§ 2047 Abs. 1) — Rechenwache, keine Norm: bleibt ein Restcent, so meldet sie das";
+    label en unofficial "The sum of the rounded shares of the surplus equals the surplus (§ 2047 (1)) — arithmetic guard, not a norm: a remaining cent is reported";
+}
+pub relation teilungsanordnung_getroffen(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hat durch letztwillige Verfügung Anordnungen für die Auseinandersetzung getroffen (§ 2048 Satz 1)";
+    label en unofficial "The decedent made provisions for the partition by will (§ 2048 sentence 1)";
+}
+pub relation bestimmung_durch_dritten(e: Erbfall, dritter: Person) kind empirical {
+    label de official "Der Erblasser hat angeordnet, dass die Auseinandersetzung nach dem billigen Ermessen eines Dritten erfolgen soll, und der Dritte hat die Bestimmung getroffen (§ 2048 Satz 2)";
+    label en unofficial "The decedent ordered that partition be made at a third party's equitable discretion, and the third party made the determination (§ 2048 sentence 2)";
+}
+pub external judgment relation bestimmung_offenbar_unbillig(dritter: Person, e: Erbfall) {
+    authority Court;
+    label de official "Die von dem Dritten getroffene Bestimmung ist offenbar unbillig (§ 2048 Satz 3) — Wertung, Kanal §47.3; die Bestimmung erfolgt in diesem Falle durch Urteil";
+    label en unofficial "The third party's determination is manifestly inequitable (§ 2048 sentence 3) — evaluative standard, channel §47.3; in that case the determination is made by judgment";
+}
+pub relation teilungsanordnung_bindend(e: Erbfall) kind institutional {
+    label de official "Die von dem Dritten auf Grund der Anordnung getroffene Bestimmung ist für die Erben verbindlich, wenn sie nicht offenbar unbillig ist (§ 2048 Satz 3)";
+    label en unofficial "The third party's determination binds the heirs unless it is manifestly inequitable (§ 2048 sentence 3)";
+}
+pub relation landgut_uebernahmerecht_angeordnet(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat angeordnet, dass einer der Miterben das Recht haben soll, ein zum Nachlass gehörendes Landgut zu übernehmen (§ 2049 Abs. 1)";
+    label en unofficial "The decedent ordered that one co-heir shall have the right to take over a farm belonging to the estate (§ 2049 (1))";
+}
+pub relation abweichender_wert_angeordnet(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erblasser hat einen vom Ertragswert abweichenden Ansatz angeordnet (§ 2049 Abs. 1, „im Zweifel“)";
+    label en unofficial "The decedent ordered a valuation other than the yield value (§ 2049 (1), \"in case of doubt\")";
+}
+pub relation landgut_zum_ertragswert_anzusetzen(e: Erbfall, p: Person) kind institutional {
+    label de official "Im Zweifel ist anzunehmen, dass das Landgut zu dem Ertragswert angesetzt werden soll; der Ertragswert bestimmt sich nach dem nachhaltig erzielbaren Reinertrag (§ 2049 Abs. 1, 2)";
+    label en unofficial "In case of doubt the farm is to be valued at its yield value; the yield value follows the sustainably attainable net proceeds (§ 2049 (1), (2))";
+}
+
+@source(BGB_P2046) {
+    rule ZuerstBerichtigen(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Aus dem Nachlass sind zunächst die Nachlassverbindlichkeiten zu berichtigen (§ 2046 Abs. 1 Satz 1)";
+        label en unofficial "The liabilities of the estate are to be discharged from it first (§ 2046 (1) sentence 1)";
+        when mehrere_erben(e) and verbindlichkeit_des_erbfalls(v, e) and verbindlichkeit_faellig_und_unstreitig(v);
+        then zuerst_zu_berichtigen(e, v);
+    }
+    rule ErforderlichesZurueckbehalten(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Ist eine Nachlassverbindlichkeit noch nicht fällig oder ist sie streitig, so ist das zur Berichtigung Erforderliche zurückzubehalten (§ 2046 Abs. 1 Satz 2)";
+        label en unofficial "Where a liability is not yet due or is disputed, what is needed for its discharge is to be retained (§ 2046 (1) sentence 2)";
+        when mehrere_erben(e) and verbindlichkeit_des_erbfalls(v, e) and not_known(verbindlichkeit_faellig_und_unstreitig(v));
+        then zurueckzubehalten(e, v);
+    }
+    rule UmsetzungInGeld(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Zur Berichtigung ist der Nachlass, soweit erforderlich, in Geld umzusetzen (§ 2046 Abs. 3)";
+        label en unofficial "For the discharge the estate is, so far as necessary, to be converted into money (§ 2046 (3))";
+        when zuerst_zu_berichtigen(e, v);
+        then umsetzung_in_geld_geschuldet(e);
+    }
+}
+
+@source(BGB_P2047) {
+    rule AnteilAmUeberschuss(e: Erbfall, p: Person, betrag: Money, z: Integer, n: Integer) strict {
+        label de official "Der nach der Berichtigung der Nachlassverbindlichkeiten verbleibende Überschuss gebührt den Erben nach dem Verhältnis der Erbteile (§ 2047 Abs. 1); der Betrag wird einmal kaufmännisch auf den Cent gerundet (Politik des Pakets)";
+        label en unofficial "The surplus remaining after discharge belongs to the heirs in proportion to their shares (§ 2047 (1)); the amount is rounded once commercially to the cent (package policy)";
+        when miterbe(e, p) and gesamterbteil_bruch(e, p, z, n) and ueberschuss(e, betrag);
+        then anteil_am_ueberschuss(e, p, div_round(betrag * z, n * 1.0, 2, "HALF_UP"));
+    }
+    rule SchriftstueckeGemeinschaftlich(e: Erbfall) strict {
+        label de official "Schriftstücke, die sich auf die persönlichen Verhältnisse des Erblassers, auf dessen Familie oder auf den ganzen Nachlass beziehen, bleiben gemeinschaftlich (§ 2047 Abs. 2)";
+        label en unofficial "Documents relating to the decedent's personal circumstances, his family or the whole estate remain joint property (§ 2047 (2))";
+        when mehrere_erben(e);
+        then schriftstuecke_bleiben_gemeinschaftlich(e);
+    }
+    rule UeberschussVollstaendigVerteilt(e: Erbfall, betrag: Money, p: Person, teil: Money) strict {
+        label de official "Rechenwache, keine Norm: die Summe der gerundeten Anteile ergibt den Überschuss (§ 2047 Abs. 1); bleibt ein Restcent, so feuert die Regel nicht und der Fall zeigt die Lücke";
+        label en unofficial "Arithmetic guard, not a norm: the rounded shares sum to the surplus (§ 2047 (1)); if a cent remains the rule does not fire and the case shows the gap";
+        when ueberschuss(e, betrag) and anteil_am_ueberschuss(e, p, teil)
+            and (sum all y: Money for q: Person where anteil_am_ueberschuss(e, q, y)) == betrag;
+        then ueberschuss_vollstaendig_verteilt(e);
+    }
+}
+
+@source(BGB_P2048) {
+    rule TeilungsanordnungBindend(e: Erbfall, dritter: Person) strict {
+        label de official "Die von dem Dritten auf Grund der Anordnung getroffene Bestimmung ist für die Erben verbindlich, wenn sie nicht offenbar unbillig ist; die Bestimmung erfolgt in diesem Falle durch Urteil (§ 2048 Satz 2, 3)";
+        label en unofficial "The third party's determination binds the heirs unless manifestly inequitable; in that case the determination is made by judgment (§ 2048 sentences 2, 3)";
+        when teilungsanordnung_getroffen(e) and bestimmung_durch_dritten(e, dritter)
+            and not bestimmung_offenbar_unbillig(dritter, e);
+        then teilungsanordnung_bindend(e);
+    }
+    rule AnordnungOhneDritten(e: Erbfall) strict {
+        label de official "Der Erblasser kann durch letztwillige Verfügung Anordnungen für die Auseinandersetzung treffen (§ 2048 Satz 1)";
+        label en unofficial "The decedent may make provisions for the partition by will (§ 2048 sentence 1)";
+        when teilungsanordnung_getroffen(e) and not_known(dritter_bestimmt(e));
+        then teilungsanordnung_bindend(e);
+    }
+}
+
+pub relation dritter_bestimmt(e: Erbfall) kind derived {
+    label de official "Die Auseinandersetzung soll nach dem billigen Ermessen eines Dritten erfolgen (§ 2048 Satz 2)";
+    label en unofficial "The partition is to be made at a third party's equitable discretion (§ 2048 sentence 2)";
+}
+
+@source(BGB_P2048)
+rule DritterBestimmt(e: Erbfall, dritter: Person) strict {
+    label de official "Der Erblasser hat angeordnet, dass die Auseinandersetzung nach dem billigen Ermessen eines Dritten erfolgen soll (§ 2048 Satz 2)";
+    label en unofficial "The decedent ordered that the partition be made at a third party's equitable discretion (§ 2048 sentence 2)";
+    when bestimmung_durch_dritten(e, dritter);
+    then dritter_bestimmt(e);
+}
+
+@source(BGB_P2049)
+presumption LandgutZumErtragswert(e: Erbfall, p: Person) {
+    label de official "Hat der Erblasser angeordnet, dass einer der Miterben ein Landgut übernehmen darf, so ist IM ZWEIFEL anzunehmen, dass das Landgut zu dem Ertragswert angesetzt werden soll (§ 2049 Abs. 1); der Ertragswert bestimmt sich nach dem nachhaltig erzielbaren Reinertrag (Abs. 2)";
+    label en unofficial "Where the decedent ordered that a co-heir may take over a farm, it is IN CASE OF DOUBT to be assumed that the farm is valued at its yield value (§ 2049 (1)); the yield value follows the sustainably attainable net proceeds ((2))";
+    when landgut_uebernahmerecht_angeordnet(e, p);
+    presume landgut_zum_ertragswert_anzusetzen(e, p);
+    unless abweichender_wert_angeordnet(e, p);
+}
+
+// --- §§ 2050–2057a Ausgleichung ----------------------------------------------------------------------
+
+pub relation zuwendung_des_erblassers(z: Zuwendung, e: Erbfall, empfaenger: Person) kind empirical {
+    key(z);
+    label de official "Zuwendung des Erblassers unter Lebenden an einen Abkömmling (§§ 2050–2053)";
+    label en unofficial "inter vivos gift of the decedent to a descendant (§§ 2050–2053)";
+}
+pub relation wert_der_zuwendung(z: Zuwendung, wert: Money) kind empirical {
+    key(z);
+    label de official "Wert der Zuwendung; er bestimmt sich nach der Zeit, zu der die Zuwendung erfolgt ist (§ 2055 Abs. 2)";
+    label en unofficial "value of the gift; it is determined as at the time the gift was made (§ 2055 (2))";
+}
+pub relation ausstattung(z: Zuwendung) kind empirical {
+    label de official "Die Zuwendung ist eine Ausstattung (§ 2050 Abs. 1, § 1624)";
+    label en unofficial "The gift is an endowment (§ 2050 (1), § 1624)";
+}
+pub relation abweichende_anordnung_des_erblassers(z: Zuwendung) kind empirical {
+    label de official "Der Erblasser hat bei der Zuwendung ein anderes angeordnet (§ 2050 Abs. 1)";
+    label en unofficial "The decedent ordered otherwise when making the gift (§ 2050 (1))";
+}
+pub relation zuschuss_oder_vorbildungsaufwand(z: Zuwendung) kind empirical {
+    label de official "Zuschüsse, die zu dem Zwecke gegeben worden sind, als Einkünfte verwendet zu werden, sowie Aufwendungen für die Vorbildung zu einem Beruf (§ 2050 Abs. 2)";
+    label en unofficial "subsidies given to be used as income, and expenses for vocational training (§ 2050 (2))";
+}
+pub external judgment relation uebersteigt_das_angemessene_mass(z: Zuwendung, e: Erbfall) {
+    authority Court;
+    label de official "Der Zuschuss oder die Aufwendung hat das den Vermögensverhältnissen des Erblassers entsprechende Maß überstiegen (§ 2050 Abs. 2) — Wertung, Kanal §47.3";
+    label en unofficial "The subsidy or expense exceeded the measure appropriate to the decedent's means (§ 2050 (2)) — evaluative standard, channel §47.3";
+}
+pub relation ausgleichung_angeordnet(z: Zuwendung) kind empirical {
+    label de official "Der Erblasser hat bei der Zuwendung die Ausgleichung angeordnet (§ 2050 Abs. 3, § 2053 Abs. 1)";
+    label en unofficial "The decedent ordered equalisation when making the gift (§ 2050 (3), § 2053 (1))";
+}
+pub relation zur_ausgleichung_zu_bringen(e: Erbfall, p: Person, z: Zuwendung) kind institutional {
+    label de official "Die Zuwendung ist bei der Auseinandersetzung zur Ausgleichung zu bringen (§§ 2050–2053)";
+    label en unofficial "The gift is to be brought into account on partition (§§ 2050–2053)";
+}
+pub relation abkoemmling_als_gesetzlicher_erbe(e: Erbfall, p: Person) kind derived {
+    label de official "Abkömmling, der als gesetzlicher Erbe zur Erbfolge gelangt (§ 2050 Abs. 1)";
+    label en unofficial "descendant who succeeds as statutory heir (§ 2050 (1))";
+}
+pub relation an_die_stelle_tretender_abkoemmling(e: Erbfall, nachfolger: Person, weggefallener: Person) kind derived {
+    label de official "Der an die Stelle des weggefallenen Abkömmlings tretende Abkömmling (§ 2051 Abs. 1)";
+    label en unofficial "the descendant taking the place of the descendant who fell away (§ 2051 (1))";
+}
+pub relation ersatzerbe_eingesetzt(e: Erbfall, ersatz: Person, weggefallener: Person) kind empirical {
+    label de official "Der Erblasser hat für den wegfallenden Abkömmling einen Ersatzerben eingesetzt (§ 2051 Abs. 2)";
+    label en unofficial "The decedent appointed a substitute heir for the descendant falling away (§ 2051 (2))";
+}
+pub relation ersatzerbe_erhaelt_nicht_mehr(e: Erbfall, ersatz: Person) kind institutional {
+    label de official "Im Zweifel ist anzunehmen, dass der Ersatzerbe nicht mehr erhalten soll, als der Abkömmling unter Berücksichtigung der Ausgleichungspflicht erhalten würde (§ 2051 Abs. 2)";
+    label en unofficial "In case of doubt the substitute heir shall not receive more than the descendant would receive taking equalisation into account (§ 2051 (2))";
+}
+pub relation abweichender_wille_zum_ersatzerben(e: Erbfall, ersatz: Person) kind empirical {
+    label de official "Der Erblasser hat einen abweichenden Willen erklärt (§ 2051 Abs. 2, „im Zweifel“)";
+    label en unofficial "The decedent declared a divergent intention (§ 2051 (2), \"in case of doubt\")";
+}
+pub relation abkoemmlinge_auf_gesetzliche_quote_eingesetzt(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hat die Abkömmlinge auf dasjenige als Erben eingesetzt, was sie als gesetzliche Erben erhalten würden, oder ihre Erbteile im Verhältnis der gesetzlichen Erbteile bestimmt (§ 2052)";
+    label en unofficial "The decedent appointed the descendants to what they would receive as statutory heirs, or fixed their shares in the proportion of the statutory shares (§ 2052)";
+}
+pub relation abweichender_wille_zur_ausgleichung_2052(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hat einen abweichenden Willen erklärt (§ 2052, „im Zweifel“)";
+    label en unofficial "The decedent declared a divergent intention (§ 2052, \"in case of doubt\")";
+}
+pub relation ausgleichungspflicht_nach_2050_2051(e: Erbfall) kind institutional {
+    label de official "Im Zweifel ist anzunehmen, dass die Abkömmlinge nach den §§ 2050, 2051 zur Ausgleichung verpflichtet sein sollen (§ 2052)";
+    label en unofficial "In case of doubt the descendants are to be obliged to equalise under §§ 2050, 2051 (§ 2052)";
+}
+pub relation zuwendung_an_entfernteren_abkoemmling(z: Zuwendung) kind empirical {
+    label de official "Die Zuwendung ist an einen entfernteren Abkömmling vor dem Wegfall des ihn ausschließenden näheren Abkömmlings, an einen als Ersatzerbe eintretenden Abkömmling oder vor Erlangung der rechtlichen Stellung eines Abkömmlings erfolgt (§ 2053 Abs. 1, 2)";
+    label en unofficial "The gift was made to a more remote descendant before the nearer descendant excluding him fell away, to a descendant entering as substitute heir, or before he acquired the legal status of a descendant (§ 2053 (1), (2))";
+}
+pub relation nicht_zur_ausgleichung_zu_bringen(e: Erbfall, p: Person, z: Zuwendung) kind institutional {
+    label de official "Die Zuwendung ist nicht zur Ausgleichung zu bringen, es sei denn, dass der Erblasser bei der Zuwendung die Ausgleichung angeordnet hat (§ 2053 Abs. 1, 2)";
+    label en unofficial "The gift is not to be brought into account unless the decedent ordered equalisation when making it (§ 2053 (1), (2))";
+}
+pub relation zuwendung_aus_dem_gesamtgut(z: Zuwendung) kind empirical {
+    label de official "Die Zuwendung erfolgt aus dem Gesamtgut der Gütergemeinschaft (§ 2054 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "The gift is made from the joint property of the community of property (§ 2054 (1) sentence 1, (2))";
+}
+pub relation abkoemmling_nur_eines_ehegatten_oder_ersatzpflicht(z: Zuwendung) kind empirical {
+    label de official "Die Zuwendung erfolgt an einen Abkömmling, der nur von einem der Ehegatten abstammt, oder einer der Ehegatten hat wegen der Zuwendung zum Gesamtgut Ersatz zu leisten (§ 2054 Abs. 1 Satz 2)";
+    label en unofficial "The gift is made to a descendant of only one spouse, or one spouse must compensate the joint property for it (§ 2054 (1) sentence 2)";
+}
+pub relation gilt_als_von_jedem_ehegatten_zur_haelfte(z: Zuwendung) kind institutional {
+    label de official "Eine Zuwendung aus dem Gesamtgut der Gütergemeinschaft gilt als von jedem der Ehegatten zur Hälfte gemacht (§ 2054 Abs. 1 Satz 1)";
+    label en unofficial "A gift from the joint property counts as made by each spouse to one half (§ 2054 (1) sentence 1)";
+}
+pub relation gilt_als_von_einem_ehegatten_gemacht(z: Zuwendung) kind institutional {
+    label de official "Die Zuwendung gilt als von diesem Ehegatten gemacht (§ 2054 Abs. 1 Satz 2)";
+    label en unofficial "The gift counts as made by that spouse (§ 2054 (1) sentence 2)";
+}
+pub relation summe_der_auszugleichenden_zuwendungen(e: Erbfall, betrag: Money) kind derived {
+    key(e);
+    label de official "Der Wert der sämtlichen Zuwendungen, die zur Ausgleichung zu bringen sind (§ 2055 Abs. 1 Satz 2)";
+    label en unofficial "the value of all gifts to be brought into account (§ 2055 (1) sentence 2)";
+}
+pub relation ausgleichungsmasse(e: Erbfall, betrag: Money) kind derived {
+    key(e);
+    label de official "Der Wert der sämtlichen auszugleichenden Zuwendungen wird dem Nachlass hinzugerechnet (§ 2055 Abs. 1 Satz 2): Überschuss zuzüglich der Zuwendungen";
+    label en unofficial "The value of all gifts to be equalised is added to the estate (§ 2055 (1) sentence 2): surplus plus the gifts";
+}
+pub relation rechnerischer_erbteil_2055(e: Erbfall, p: Person, betrag: Money) kind derived {
+    key(e, p);
+    label de official "Anteil des Miterben an der Ausgleichungsmasse nach der Quote seines Erbteils (§ 2055 Abs. 1) — einmal auf den Cent gerundet";
+    label en unofficial "the co-heir's share of the equalisation mass according to his quota (§ 2055 (1)) — rounded once to the cent";
+}
+pub relation eigene_zuwendungen(e: Erbfall, p: Person, betrag: Money) kind derived {
+    key(e, p);
+    label de official "Wert der Zuwendungen, die dieser Miterbe zur Ausgleichung zu bringen hat (§ 2055 Abs. 1 Satz 1)";
+    label en unofficial "value of the gifts this co-heir must bring into account (§ 2055 (1) sentence 1)";
+}
+pub relation ausgleichungsanteil(e: Erbfall, p: Person, betrag: Money) kind derived {
+    key(e, p);
+    label de official "Bei der Auseinandersetzung wird jedem Miterben der Wert der Zuwendung, die er zur Ausgleichung zu bringen hat, auf seinen Erbteil angerechnet (§ 2055 Abs. 1 Satz 1)";
+    label en unofficial "On partition each co-heir has the value of the gift he must bring into account set off against his share (§ 2055 (1) sentence 1)";
+}
+pub relation mehrempfang(e: Erbfall, p: Person) kind derived {
+    label de official "Der Miterbe hat durch die Zuwendung mehr erhalten, als ihm bei der Auseinandersetzung zukommen würde (§ 2056 Satz 1)";
+    label en unofficial "The co-heir received more by the gift than he would receive on partition (§ 2056 sentence 1)";
+}
+pub relation keine_herauszahlung_des_mehrbetrags(e: Erbfall, p: Person) kind institutional {
+    label de official "Hat ein Miterbe durch die Zuwendung mehr erhalten, als ihm zukommen würde, so ist er zur Herauszahlung des Mehrbetrags nicht verpflichtet (§ 2056 Satz 1)";
+    label en unofficial "Where a co-heir received more by the gift than would be due to him, he need not pay out the excess (§ 2056 sentence 1)";
+}
+pub relation ausser_ansatz_bei_der_teilung(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Nachlass wird in einem solchen Falle unter den übrigen Erben in der Weise geteilt, dass der Wert der Zuwendung und der Erbteil des Miterben außer Ansatz bleiben (§ 2056 Satz 2)";
+    label en unofficial "In such a case the estate is divided among the other heirs so that the value of the gift and that co-heir's share are left out of account (§ 2056 sentence 2)";
+}
+pub relation auskunftspflicht_ueber_zuwendungen(e: Erbfall, p: Person) kind institutional {
+    label de official "Jeder Miterbe ist verpflichtet, den übrigen Erben auf Verlangen Auskunft über die Zuwendungen zu erteilen, die er nach den §§ 2050 bis 2053 zur Ausgleichung zu bringen hat (§ 2057 Satz 1)";
+    label en unofficial "Each co-heir must on demand inform the others of the gifts he must bring into account under §§ 2050 to 2053 (§ 2057 sentence 1)";
+}
+pub relation besondere_leistung_des_abkoemmlings(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Abkömmling hat durch Mitarbeit im Haushalt, Beruf oder Geschäft des Erblassers während längerer Zeit, durch erhebliche Geldleistungen oder in anderer Weise in besonderem Maße dazu beigetragen, dass das Vermögen des Erblassers erhalten oder vermehrt wurde, oder hat den Erblasser während längerer Zeit gepflegt (§ 2057a Abs. 1)";
+    label en unofficial "The descendant contributed to a special degree to preserving or increasing the decedent's property by long cooperation, substantial payments or otherwise, or nursed the decedent for a long time (§ 2057a (1))";
+}
+pub relation angemessenes_entgelt_gewaehrt_oder_vereinbart(e: Erbfall, p: Person) kind empirical {
+    label de official "Für die Leistungen ist ein angemessenes Entgelt gewährt oder vereinbart worden oder dem Abkömmling steht wegen seiner Leistungen ein Anspruch aus anderem Rechtsgrund zu (§ 2057a Abs. 2 Satz 1)";
+    label en unofficial "Appropriate remuneration was granted or agreed, or the descendant has a claim on another legal ground (§ 2057a (2) sentence 1)";
+}
+pub external judgment relation ausgleichungsbetrag_nach_billigkeit(p: Person, betrag: Money) {
+    authority Court;
+    label de official "Die Ausgleichung ist so zu bemessen, wie es mit Rücksicht auf die Dauer und den Umfang der Leistungen und auf den Wert des Nachlasses der BILLIGKEIT entspricht (§ 2057a Abs. 3) — Wertung, Kanal §47.3";
+    label en unofficial "The equalisation is to be assessed as EQUITY requires, having regard to the duration and extent of the services and the value of the estate (§ 2057a (3)) — evaluative standard, channel §47.3";
+}
+pub relation ausgleichung_fuer_besondere_leistungen(e: Erbfall, p: Person, betrag: Money) kind institutional {
+    key(e, p);
+    label de official "Der Abkömmling kann bei der Auseinandersetzung eine Ausgleichung unter den Abkömmlingen verlangen, die mit ihm als gesetzliche Erben zur Erbfolge gelangen (§ 2057a Abs. 1 Satz 1); der Betrag wird dem Erbteil hinzugerechnet (Abs. 4)";
+    label en unofficial "The descendant may demand equalisation among the descendants succeeding with him as statutory heirs (§ 2057a (1) sentence 1); the amount is added to his share ((4))";
+}
+
+@source(BGB_P2050) {
+    rule AbkoemmlingAlsGesetzlicherErbe(e: Erbfall, p: Person, n: Integer, st: Person, z: Integer, n2: Integer) strict {
+        label de official "Abkömmlinge, die als gesetzliche Erben zur Erbfolge gelangen (§ 2050 Abs. 1)";
+        label en unofficial "Descendants who succeed as statutory heirs (§ 2050 (1))";
+        when abkoemmling(e, p, n) and erbteil_aus_stamm(e, p, st, z, n2);
+        then abkoemmling_als_gesetzlicher_erbe(e, p);
+    }
+    rule AusstattungAuszugleichen(e: Erbfall, p: Person, z: Zuwendung) strict {
+        label de official "Abkömmlinge, die als gesetzliche Erben zur Erbfolge gelangen, sind verpflichtet, dasjenige, was sie von dem Erblasser bei dessen Lebzeiten als Ausstattung erhalten haben, bei der Auseinandersetzung untereinander zur Ausgleichung zu bringen, soweit nicht der Erblasser bei der Zuwendung ein anderes angeordnet hat (§ 2050 Abs. 1)";
+        label en unofficial "Descendants succeeding as statutory heirs must bring into account what they received from the decedent as an endowment, unless he ordered otherwise (§ 2050 (1))";
+        when abkoemmling_als_gesetzlicher_erbe(e, p) and zuwendung_des_erblassers(z, e, p) and ausstattung(z)
+            and not_known(abweichende_anordnung_des_erblassers(z)) and not_known(zuwendung_an_entfernteren_abkoemmling(z));
+        then zur_ausgleichung_zu_bringen(e, p, z);
+    }
+    rule UebermaessigerZuschussAuszugleichen(e: Erbfall, p: Person, z: Zuwendung) strict {
+        label de official "Zuschüsse, die als Einkünfte verwendet werden sollten, sowie Aufwendungen für die Vorbildung zu einem Beruf sind insoweit zur Ausgleichung zu bringen, als sie das den Vermögensverhältnissen des Erblassers entsprechende Maß überstiegen haben (§ 2050 Abs. 2)";
+        label en unofficial "Subsidies to be used as income and expenses for vocational training must be brought into account to the extent they exceeded the measure appropriate to the decedent's means (§ 2050 (2))";
+        when abkoemmling_als_gesetzlicher_erbe(e, p) and zuwendung_des_erblassers(z, e, p)
+            and zuschuss_oder_vorbildungsaufwand(z) and uebersteigt_das_angemessene_mass(z, e)
+            and not_known(zuwendung_an_entfernteren_abkoemmling(z));
+        then zur_ausgleichung_zu_bringen(e, p, z);
+    }
+    rule AngeordneteAusgleichung(e: Erbfall, p: Person, z: Zuwendung) strict {
+        label de official "Andere Zuwendungen unter Lebenden sind zur Ausgleichung zu bringen, wenn der Erblasser bei der Zuwendung die Ausgleichung angeordnet hat (§ 2050 Abs. 3)";
+        label en unofficial "Other inter vivos gifts must be brought into account where the decedent ordered equalisation when making them (§ 2050 (3))";
+        when abkoemmling_als_gesetzlicher_erbe(e, p) and zuwendung_des_erblassers(z, e, p) and ausgleichung_angeordnet(z);
+        then zur_ausgleichung_zu_bringen(e, p, z);
+    }
+}
+
+@source(BGB_P2051) {
+    rule NachfolgerTraegtDieAusgleichungspflicht(e: Erbfall, nachfolger: Person, weggefallener: Person, z: Zuwendung, o: Integer) strict {
+        label de official "Fällt ein Abkömmling, der als Erbe zur Ausgleichung verpflichtet sein würde, vor oder nach dem Erbfall weg, so ist wegen der ihm gemachten Zuwendungen der an seine Stelle tretende Abkömmling zur Ausgleichung verpflichtet (§ 2051 Abs. 1)";
+        label en unofficial "If a descendant who would be obliged to equalise falls away before or after the devolution, the descendant taking his place must equalise for the gifts made to him (§ 2051 (1))";
+        when unterknoten(e, weggefallener, nachfolger, o) and zuwendung_des_erblassers(z, e, weggefallener)
+            and abkoemmling_als_gesetzlicher_erbe(e, nachfolger);
+        then zur_ausgleichung_zu_bringen(e, nachfolger, z);
+    }
+    rule AnDieStelleTretenderAbkoemmling(e: Erbfall, nachfolger: Person, weggefallener: Person, o: Integer) strict {
+        label de official "Der an die Stelle des weggefallenen Abkömmlings tretende Abkömmling (§ 2051 Abs. 1)";
+        label en unofficial "the descendant taking the place of the one who fell away (§ 2051 (1))";
+        when unterknoten(e, weggefallener, nachfolger, o);
+        then an_die_stelle_tretender_abkoemmling(e, nachfolger, weggefallener);
+    }
+    presumption ErsatzerbeNichtMehr(e: Erbfall, ersatz: Person, weggefallener: Person) {
+        label de official "Hat der Erblasser für den wegfallenden Abkömmling einen Ersatzerben eingesetzt, so ist IM ZWEIFEL anzunehmen, dass dieser nicht mehr erhalten soll, als der Abkömmling unter Berücksichtigung der Ausgleichungspflicht erhalten würde (§ 2051 Abs. 2)";
+        label en unofficial "Where the decedent appointed a substitute heir, it is IN CASE OF DOUBT assumed that he shall not receive more than the descendant would receive taking equalisation into account (§ 2051 (2))";
+        when ersatzerbe_eingesetzt(e, ersatz, weggefallener);
+        presume ersatzerbe_erhaelt_nicht_mehr(e, ersatz);
+        unless abweichender_wille_zum_ersatzerben(e, ersatz);
+    }
+}
+
+@source(BGB_P2052)
+presumption AusgleichungBeiGewillkuertenErben(e: Erbfall) {
+    label de official "Hat der Erblasser die Abkömmlinge auf dasjenige als Erben eingesetzt, was sie als gesetzliche Erben erhalten würden, oder ihre Erbteile im Verhältnis der gesetzlichen Erbteile bestimmt, so ist IM ZWEIFEL anzunehmen, dass sie nach den §§ 2050, 2051 zur Ausgleichung verpflichtet sein sollen (§ 2052)";
+    label en unofficial "Where the decedent appointed the descendants to what they would receive as statutory heirs, or fixed their shares in that proportion, it is IN CASE OF DOUBT assumed that they shall equalise under §§ 2050, 2051 (§ 2052)";
+    when abkoemmlinge_auf_gesetzliche_quote_eingesetzt(e);
+    presume ausgleichungspflicht_nach_2050_2051(e);
+    unless abweichender_wille_zur_ausgleichung_2052(e);
+}
+
+@source(BGB_P2053)
+rule ZuwendungAnEntfernterenAbkoemmling(e: Erbfall, p: Person, z: Zuwendung) strict {
+    label de official "Eine Zuwendung an einen entfernteren Abkömmling vor dem Wegfall des ihn ausschließenden näheren Abkömmlings oder an einen als Ersatzerbe tretenden Abkömmling ist nicht zur Ausgleichung zu bringen, es sei denn, dass der Erblasser die Ausgleichung angeordnet hat; das Gleiche gilt für eine Zuwendung vor Erlangung der rechtlichen Stellung eines Abkömmlings (§ 2053 Abs. 1, 2)";
+    label en unofficial "A gift to a more remote descendant before the nearer one fell away, or to a substitute-heir descendant, is not brought into account unless the decedent ordered equalisation; the same applies to a gift before acquiring the status of descendant (§ 2053 (1), (2))";
+    when zuwendung_des_erblassers(z, e, p) and zuwendung_an_entfernteren_abkoemmling(z)
+        and not_known(ausgleichung_angeordnet(z));
+    then nicht_zur_ausgleichung_zu_bringen(e, p, z);
+}
+
+@source(BGB_P2054) {
+    rule ZuwendungAusGesamtgutHaelftig(z: Zuwendung) strict {
+        label de official "Eine Zuwendung, die aus dem Gesamtgut der Gütergemeinschaft erfolgt, gilt als von jedem der Ehegatten zur Hälfte gemacht (§ 2054 Abs. 1 Satz 1, Abs. 2)";
+        label en unofficial "A gift made from the joint property counts as made by each spouse to one half (§ 2054 (1) sentence 1, (2))";
+        when zuwendung_aus_dem_gesamtgut(z) and not_known(abkoemmling_nur_eines_ehegatten_oder_ersatzpflicht(z));
+        then gilt_als_von_jedem_ehegatten_zur_haelfte(z);
+    }
+    rule ZuwendungAusGesamtgutEinseitig(z: Zuwendung) strict {
+        label de official "Die Zuwendung gilt jedoch, wenn sie an einen Abkömmling erfolgt, der nur von einem der Ehegatten abstammt, oder wenn einer der Ehegatten wegen der Zuwendung Ersatz zu leisten hat, als von diesem Ehegatten gemacht (§ 2054 Abs. 1 Satz 2)";
+        label en unofficial "However, where made to a descendant of only one spouse, or where one spouse must compensate for it, the gift counts as made by that spouse (§ 2054 (1) sentence 2)";
+        when zuwendung_aus_dem_gesamtgut(z) and abkoemmling_nur_eines_ehegatten_oder_ersatzpflicht(z);
+        then gilt_als_von_einem_ehegatten_gemacht(z);
+    }
+}
+
+@source(BGB_P2055) {
+    rule SummeDerAuszugleichendenZuwendungen(e: Erbfall, p: Person, z: Zuwendung, wert: Money) strict {
+        label de official "Der Wert der sämtlichen Zuwendungen, die zur Ausgleichung zu bringen sind, wird dem Nachlass hinzugerechnet (§ 2055 Abs. 1 Satz 2); der Wert bestimmt sich nach der Zeit, zu der die Zuwendung erfolgt ist (Abs. 2)";
+        label en unofficial "The value of all gifts to be brought into account is added to the estate (§ 2055 (1) sentence 2); the value is as at the time of the gift ((2))";
+        when zur_ausgleichung_zu_bringen(e, p, z) and wert_der_zuwendung(z, wert);
+        then summe_der_auszugleichenden_zuwendungen(e,
+            (sum all w: Money for x: Zuwendung, q: Person where zur_ausgleichung_zu_bringen(e, q, x) and wert_der_zuwendung(x, w)));
+    }
+    rule Ausgleichungsmasse(e: Erbfall, ueber: Money, zuw: Money) strict {
+        label de official "Hinzurechnung: Überschuss des Nachlasses zuzüglich des Wertes der auszugleichenden Zuwendungen (§ 2055 Abs. 1 Satz 2)";
+        label en unofficial "Addition: the estate's surplus plus the value of the gifts to be equalised (§ 2055 (1) sentence 2)";
+        when ueberschuss(e, ueber) and summe_der_auszugleichenden_zuwendungen(e, zuw);
+        then ausgleichungsmasse(e, ueber + zuw);
+    }
+    rule RechnerischerErbteil(e: Erbfall, p: Person, masse: Money, z: Integer, n: Integer) strict {
+        label de official "Teilung: Anteil des Miterben an der Ausgleichungsmasse nach der Quote seines Erbteils (§ 2055 Abs. 1) — eine Rundung auf den Cent";
+        label en unofficial "Division: the co-heir's share of the equalisation mass by his quota (§ 2055 (1)) — one rounding to the cent";
+        when miterbe(e, p) and ausgleichungsmasse(e, masse) and gesamterbteil_bruch(e, p, z, n)
+            and not_known(mehrempfang(e, p));
+        then rechnerischer_erbteil_2055(e, p, div_round(masse * z, n * 1.0, 2, "HALF_UP"));
+    }
+    rule EigeneZuwendungen(e: Erbfall, p: Person, z: Zuwendung, wert: Money) strict {
+        label de official "Wert der Zuwendungen, die dieser Miterbe zur Ausgleichung zu bringen hat (§ 2055 Abs. 1 Satz 1)";
+        label en unofficial "value of the gifts this co-heir must bring into account (§ 2055 (1) sentence 1)";
+        when zur_ausgleichung_zu_bringen(e, p, z) and wert_der_zuwendung(z, wert);
+        then eigene_zuwendungen(e, p,
+            (sum all w: Money for x: Zuwendung where zur_ausgleichung_zu_bringen(e, p, x) and wert_der_zuwendung(x, w)));
+    }
+    rule Ausgleichungsanteil(e: Erbfall, p: Person, anteil: Money, eigen: Money) strict {
+        label de official "Abzug: bei der Auseinandersetzung wird jedem Miterben der Wert der Zuwendung, die er zur Ausgleichung zu bringen hat, auf seinen Erbteil angerechnet (§ 2055 Abs. 1 Satz 1)";
+        label en unofficial "Deduction: on partition the value of the gift each co-heir must bring into account is set off against his share (§ 2055 (1) sentence 1)";
+        when rechnerischer_erbteil_2055(e, p, anteil) and eigene_zuwendungen(e, p, eigen);
+        then ausgleichungsanteil(e, p, anteil - eigen);
+    }
+    rule AusgleichungsanteilOhneZuwendung(e: Erbfall, p: Person, anteil: Money) strict {
+        label de official "Wer nichts zur Ausgleichung zu bringen hat, erhält den vollen rechnerischen Erbteil (§ 2055 Abs. 1)";
+        label en unofficial "A co-heir with nothing to bring into account receives the full computed share (§ 2055 (1))";
+        when rechnerischer_erbteil_2055(e, p, anteil) and not_known(hat_eigene_zuwendungen(e, p));
+        then ausgleichungsanteil(e, p, anteil);
+    }
+}
+
+pub relation hat_eigene_zuwendungen(e: Erbfall, p: Person) kind derived {
+    label de official "Dieser Miterbe hat Zuwendungen zur Ausgleichung zu bringen (§ 2055 Abs. 1 Satz 1)";
+    label en unofficial "This co-heir has gifts to bring into account (§ 2055 (1) sentence 1)";
+}
+
+@source(BGB_P2055)
+rule HatEigeneZuwendungen(e: Erbfall, p: Person, z: Zuwendung) strict {
+    label de official "Dieser Miterbe hat Zuwendungen zur Ausgleichung zu bringen (§ 2055 Abs. 1 Satz 1)";
+    label en unofficial "This co-heir has gifts to bring into account (§ 2055 (1) sentence 1)";
+    when zur_ausgleichung_zu_bringen(e, p, z);
+    then hat_eigene_zuwendungen(e, p);
+}
+
+pub relation rechnerischer_anteil_brutto(e: Erbfall, p: Person, betrag: Money) kind derived {
+    key(e, p);
+    label de official "Anteil des Miterben an der Ausgleichungsmasse vor dem Abzug seiner eigenen Zuwendungen (§ 2055 Abs. 1, § 2056 Satz 1)";
+    label en unofficial "the co-heir's share of the equalisation mass before deducting his own gifts (§ 2055 (1), § 2056 sentence 1)";
+}
+
+@source(BGB_P2056)
+rule RechnerischerAnteilBrutto(e: Erbfall, p: Person, masse: Money, z: Integer, n: Integer) strict {
+    label de official "Der Anteil des Miterben an der Ausgleichungsmasse vor dem Abzug (§ 2055 Abs. 1, § 2056 Satz 1) — eine Rundung auf den Cent";
+    label en unofficial "the co-heir's share of the equalisation mass before deduction (§ 2055 (1), § 2056 sentence 1) — one rounding to the cent";
+    when miterbe(e, p) and ausgleichungsmasse(e, masse) and gesamterbteil_bruch(e, p, z, n);
+    then rechnerischer_anteil_brutto(e, p, div_round(masse * z, n * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P2056) {
+    rule Mehrempfang(e: Erbfall, p: Person, masse: Money, eigen: Money, z: Integer, n: Integer, brutto: Money) strict {
+        label de official "Hat ein Miterbe durch die Zuwendung mehr erhalten, als ihm bei der Auseinandersetzung zukommen würde (§ 2056 Satz 1): der Wert seiner Zuwendungen übersteigt seinen rechnerischen Erbteil";
+        label en unofficial "Where a co-heir received more by the gift than would be due to him on partition (§ 2056 sentence 1): the value of his gifts exceeds his computed share";
+        when miterbe(e, p) and ausgleichungsmasse(e, masse) and eigene_zuwendungen(e, p, eigen)
+            and gesamterbteil_bruch(e, p, z, n)
+            and rechnerischer_anteil_brutto(e, p, brutto) and eigen > brutto;
+        then mehrempfang(e, p);
+    }
+    rule KeineHerauszahlung(e: Erbfall, p: Person) strict {
+        label de official "Hat ein Miterbe durch die Zuwendung mehr erhalten, als ihm zukommen würde, so ist er zur Herauszahlung des Mehrbetrags nicht verpflichtet (§ 2056 Satz 1)";
+        label en unofficial "Where a co-heir received more than would be due to him, he need not pay out the excess (§ 2056 sentence 1)";
+        when mehrempfang(e, p);
+        then keine_herauszahlung_des_mehrbetrags(e, p);
+    }
+    rule AusserAnsatz(e: Erbfall, p: Person) strict {
+        label de official "Der Nachlass wird in einem solchen Falle unter den übrigen Erben in der Weise geteilt, dass der Wert der Zuwendung und der Erbteil des Miterben außer Ansatz bleiben (§ 2056 Satz 2)";
+        label en unofficial "In such a case the estate is divided among the other heirs leaving the gift's value and that co-heir's share out of account (§ 2056 sentence 2)";
+        when mehrempfang(e, p);
+        then ausser_ansatz_bei_der_teilung(e, p);
+    }
+}
+
+@source(BGB_P2057)
+rule AuskunftUeberZuwendungen(e: Erbfall, p: Person) strict {
+    label de official "Jeder Miterbe ist verpflichtet, den übrigen Erben auf Verlangen Auskunft über die Zuwendungen zu erteilen, die er nach den §§ 2050 bis 2053 zur Ausgleichung zu bringen hat; die §§ 260, 261 finden entsprechende Anwendung (§ 2057)";
+    label en unofficial "Each co-heir must on demand inform the others of the gifts he must bring into account under §§ 2050 to 2053; §§ 260, 261 apply accordingly (§ 2057)";
+    when miterbe(e, p);
+    then auskunftspflicht_ueber_zuwendungen(e, p);
+}
+
+// KORRIDOR 2010 (EGBGB Art. 229 § 23 Abs. 4). „Im Übrigen gelten für Erbfälle
+// vor dem 1. Januar 2010 die Vorschriften des Bürgerlichen Gesetzbuchs in der
+// vor dem 1. Januar 2010 geltenden Fassung.“ Der connecting factor ist der
+// TAG DES ERBFALLS. Die Fassung vor 2010 ist in diesem Paket NICHT
+// festgeschrieben (`sources.law` trägt allein die konsolidierte Fassung auf
+// den 17.09.2026), deshalb rechnet das Paket sie nicht: der Fall wird als
+// Erbfall der alten Fassung AUSGEWIESEN und § 2057a bleibt stumm
+// (Ledger D-15-04, README „Korridor 2010“).
+
+pub relation alte_fassung_vor_2010_anwendbar(e: Erbfall) kind institutional {
+    label de official "Für Erbfälle vor dem 1. Januar 2010 gelten die Vorschriften des BGB in der vor diesem Tag geltenden Fassung (EGBGB Art. 229 § 23 Abs. 4 Satz 1) — in diesem Paket Grenze: die alte Fassung ist nicht festgeschrieben";
+    label en unofficial "For devolutions before 1 January 2010 the Civil Code in its pre-2010 version applies (EGBGB Art. 229 § 23 (4) sentence 1) — a boundary here: the old version is not pinned";
+}
+pub relation neue_fassung_ab_2010_anwendbar(e: Erbfall) kind institutional {
+    label de official "Für Erbfälle seit dem 1. Januar 2010 gelten die Vorschriften des BGB in der seit diesem Tag geltenden Fassung, unabhängig davon, ob an frühere Ereignisse angeknüpft wird (EGBGB Art. 229 § 23 Abs. 4 Satz 2)";
+    label en unofficial "For devolutions since 1 January 2010 the Civil Code in its post-2010 version applies, regardless of earlier events (EGBGB Art. 229 § 23 (4) sentence 2)";
+}
+
+@source(BGB_P2057a) {
+    rule ErbfallVor2010(e: Erbfall, tag: Date) strict {
+        label de official "Erbfall vor dem 1. Januar 2010: die Vorschriften der alten Fassung gelten (EGBGB Art. 229 § 23 Abs. 4 Satz 1)";
+        label en unofficial "Devolution before 1 January 2010: the pre-2010 provisions apply (EGBGB Art. 229 § 23 (4) sentence 1)";
+        when erbfall_am(e, tag) and tag < @2010-01-01;
+        then alte_fassung_vor_2010_anwendbar(e);
+    }
+    rule ErbfallAb2010(e: Erbfall, tag: Date) strict {
+        label de official "Erbfall seit dem 1. Januar 2010: die Vorschriften der seit diesem Tag geltenden Fassung gelten (EGBGB Art. 229 § 23 Abs. 4 Satz 2)";
+        label en unofficial "Devolution since 1 January 2010: the post-2010 provisions apply (EGBGB Art. 229 § 23 (4) sentence 2)";
+        when erbfall_am(e, tag) and tag >= @2010-01-01;
+        then neue_fassung_ab_2010_anwendbar(e);
+    }
+}
+
+@source(BGB_P2057a)
+rule AusgleichungFuerBesondereLeistungen(e: Erbfall, p: Person, betrag: Money) strict {
+    label de official "Ein Abkömmling, der in besonderem Maße zur Erhaltung oder Vermehrung des Vermögens des Erblassers beigetragen oder ihn während längerer Zeit gepflegt hat, kann bei der Auseinandersetzung eine Ausgleichung unter den Abkömmlingen verlangen, die mit ihm als gesetzliche Erben zur Erbfolge gelangen; eine Ausgleichung kann nicht verlangt werden, wenn ein angemessenes Entgelt gewährt oder vereinbart worden ist (§ 2057a Abs. 1, 2)";
+    label en unofficial "A descendant who contributed to a special degree to preserving or increasing the decedent's property, or nursed him for a long time, may demand equalisation among the descendants succeeding with him; none may be demanded where appropriate remuneration was granted or agreed (§ 2057a (1), (2))";
+    when abkoemmling_als_gesetzlicher_erbe(e, p) and besondere_leistung_des_abkoemmlings(e, p)
+        and neue_fassung_ab_2010_anwendbar(e)
+        and not_known(angemessenes_entgelt_gewaehrt_oder_vereinbart(e, p))
+        and ausgleichungsbetrag_nach_billigkeit(p, betrag);
+    then ausgleichung_fuer_besondere_leistungen(e, p, betrag);
+}
+
+// --- §§ 2058–2063 Haftung der Miterben ----------------------------------------------------------------
+
+pub relation gemeinschaftliche_nachlassverbindlichkeit(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Die Nachlassverbindlichkeit ist eine gemeinschaftliche (§ 2058)";
+    label en unofficial "The liability of the estate is a common one (§ 2058)";
+}
+pub relation haften_als_gesamtschuldner(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Die Erben haften für die gemeinschaftlichen Nachlassverbindlichkeiten als Gesamtschuldner (§ 2058)";
+    label en unofficial "The heirs are liable for the common liabilities of the estate as joint and several debtors (§ 2058)";
+}
+pub relation berichtigung_aus_eigenvermoegen_verweigerbar(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Bis zur Teilung des Nachlasses kann jeder Miterbe die Berichtigung der Nachlassverbindlichkeiten aus dem Vermögen, das er außer seinem Anteil an dem Nachlass hat, verweigern (§ 2059 Abs. 1 Satz 1)";
+    label en unofficial "Until partition each co-heir may refuse discharge from the property he has besides his share in the estate (§ 2059 (1) sentence 1)";
+}
+pub relation befriedigung_aus_ungeteiltem_nachlass(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Das Recht der Nachlassgläubiger, die Befriedigung aus dem ungeteilten Nachlass von sämtlichen Miterben zu verlangen, bleibt unberührt (§ 2059 Abs. 2)";
+    label en unofficial "The creditors' right to demand satisfaction from the undivided estate from all co-heirs is unaffected (§ 2059 (2))";
+}
+pub relation haftet_nur_fuer_den_anteil(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Nach der Teilung des Nachlasses haftet jeder Miterbe nur für den seinem Erbteil entsprechenden Teil einer Nachlassverbindlichkeit (§ 2060, § 2061 Abs. 1 Satz 2)";
+    label en unofficial "After partition each co-heir is liable only for the part of a liability corresponding to his share (§ 2060, § 2061 (1) sentence 2)";
+}
+pub relation forderung_dem_miterben_bekannt(v: Nachlassverbindlichkeit, p: Person) kind empirical {
+    label de official "Die Forderung ist dem Miterben vor dem Ablauf der fünf Jahre bekannt geworden oder ihm zur Zeit der Teilung bekannt (§ 2060 Nr. 2, § 2061 Abs. 1 Satz 2)";
+    label en unofficial "The claim became known to the co-heir before the five years elapsed or was known to him at the time of partition (§ 2060 no. 2, § 2061 (1) sentence 2)";
+}
+pub relation aufforderung_2061_erlassen_am(e: Erbfall, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag der letzten Einrückung der öffentlichen Aufforderung eines Miterben an die Nachlassgläubiger (§ 2061 Abs. 1 Satz 1, Abs. 2 Satz 2)";
+    label en unofficial "day of the last publication of a co-heir's public summons to the creditors (§ 2061 (1) sentence 1, (2) sentence 2)";
+}
+pub relation anmeldefrist_2061_ende(e: Erbfall, tag: Date) kind derived {
+    key(e);
+    label de official "Ablauf der sechs Monate, binnen deren die Nachlassgläubiger ihre Forderungen anzumelden haben (§ 2061 Abs. 1 Satz 1)";
+    label en unofficial "expiry of the six months within which the creditors must register their claims (§ 2061 (1) sentence 1)";
+}
+pub relation forderung_bei_dem_miterben_angemeldet(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Die Forderung ist vor dem Ablauf der Frist bei dem Miterben oder bei dem Nachlassgericht angemeldet worden (§ 2061 Abs. 1 Satz 2)";
+    label en unofficial "The claim was registered with the co-heir or the probate court before the period expired (§ 2061 (1) sentence 2)";
+}
+pub relation kosten_der_aufforderung_treffen_den_erben(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Kosten fallen dem Erben zur Last, der die Aufforderung erlässt (§ 2061 Abs. 2 Satz 3)";
+    label en unofficial "The costs fall on the heir who issues the summons (§ 2061 (2) sentence 3)";
+}
+pub relation nachlassverwaltung_nur_gemeinschaftlich_beantragbar(e: Erbfall) kind institutional {
+    label de official "Die Anordnung einer Nachlassverwaltung kann von den Erben nur gemeinschaftlich beantragt werden; sie ist ausgeschlossen, wenn der Nachlass geteilt ist (§ 2062)";
+    label en unofficial "The administration of the estate may be applied for by the heirs only jointly; it is excluded once the estate is divided (§ 2062)";
+}
+pub relation nachlassverwaltung_nach_teilung_ausgeschlossen(e: Erbfall) kind institutional {
+    label de official "Die Anordnung einer Nachlassverwaltung ist ausgeschlossen, wenn der Nachlass geteilt ist (§ 2062 Halbsatz 2)";
+    label en unofficial "The administration of the estate is excluded once it is divided (§ 2062 second half-sentence)";
+}
+pub relation inventar_eines_miterben_kommt_allen_zugute(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Errichtung des Inventars durch einen Miterben kommt auch den übrigen Erben zustatten, soweit nicht ihre Haftung unbeschränkt ist (§ 2063 Abs. 1)";
+    label en unofficial "The drawing up of the inventory by one co-heir also benefits the others, unless their liability is unlimited (§ 2063 (1))";
+}
+pub relation berufung_auf_haftungsbeschraenkung_unter_miterben(e: Erbfall, p: Person) kind institutional {
+    label de official "Ein Miterbe kann sich den übrigen Erben gegenüber auf die Beschränkung seiner Haftung auch dann berufen, wenn er den anderen Nachlassgläubigern gegenüber unbeschränkt haftet (§ 2063 Abs. 2)";
+    label en unofficial "A co-heir may rely on the limitation of his liability towards the other heirs even if he is unlimitedly liable to the other creditors (§ 2063 (2))";
+}
+
+@source(BGB_P2058)
+rule GesamtschuldnerischeHaftung(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+    label de official "Die Erben haften für die gemeinschaftlichen Nachlassverbindlichkeiten als Gesamtschuldner (§ 2058)";
+    label en unofficial "The heirs are liable for the common liabilities of the estate as joint and several debtors (§ 2058)";
+    when miterbe(e, p) and verbindlichkeit_des_erbfalls(v, e) and gemeinschaftliche_nachlassverbindlichkeit(v)
+        and not_known(auseinandersetzung_erfolgt(e));
+    then haften_als_gesamtschuldner(e, p, v);
+}
+
+@source(BGB_P2059) {
+    rule HaftungBisZurTeilung(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+        label de official "Bis zur Teilung des Nachlasses kann jeder Miterbe die Berichtigung der Nachlassverbindlichkeiten aus dem Vermögen, das er außer seinem Anteil an dem Nachlass hat, verweigern; haftet er unbeschränkt, so steht ihm dieses Recht in Ansehung des seinem Erbteil entsprechenden Teils nicht zu (§ 2059 Abs. 1)";
+        label en unofficial "Until partition each co-heir may refuse discharge from his other property; where he is unlimitedly liable he has no such right for the part corresponding to his share (§ 2059 (1))";
+        when miterbe(e, p) and verbindlichkeit_des_erbfalls(v, e) and not_known(auseinandersetzung_erfolgt(e))
+            and not_known(unbeschraenkte_haftung(e, p));
+        then berichtigung_aus_eigenvermoegen_verweigerbar(e, p, v);
+    }
+    rule BefriedigungAusUngeteiltemNachlass(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Das Recht der Nachlassgläubiger, die Befriedigung aus dem ungeteilten Nachlass von sämtlichen Miterben zu verlangen, bleibt unberührt (§ 2059 Abs. 2)";
+        label en unofficial "The creditors' right to demand satisfaction from the undivided estate from all co-heirs is unaffected (§ 2059 (2))";
+        when mehrere_erben(e) and verbindlichkeit_des_erbfalls(v, e) and not_known(auseinandersetzung_erfolgt(e));
+        then befriedigung_aus_ungeteiltem_nachlass(e, v);
+    }
+}
+
+@source(BGB_P2060) {
+    rule TeilhaftungNachAusschluss(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+        label de official "Nach der Teilung des Nachlasses haftet jeder Miterbe nur für den seinem Erbteil entsprechenden Teil einer Nachlassverbindlichkeit, wenn der Gläubiger im Aufgebotsverfahren ausgeschlossen ist (§ 2060 Nr. 1)";
+        label en unofficial "After partition each co-heir is liable only for the part corresponding to his share where the creditor is excluded in the public notice proceedings (§ 2060 no. 1)";
+        when miterbe(e, p) and auseinandersetzung_erfolgt(e) and verbindlichkeit_des_erbfalls(v, e)
+            and im_aufgebotsverfahren_ausgeschlossen(v);
+        then haftet_nur_fuer_den_anteil(e, p, v);
+    }
+    rule TeilhaftungNachFuenfJahren(e: Erbfall, p: Person, v: Nachlassverbindlichkeit, geltend: Date, ende: Date) strict {
+        label de official "Nach der Teilung haftet jeder Miterbe nur für den seinem Erbteil entsprechenden Teil, wenn der Gläubiger seine Forderung später als fünf Jahre nach dem in § 1974 Abs. 1 bestimmten Zeitpunkt geltend macht, es sei denn, dass sie vorher dem Miterben bekannt geworden oder im Aufgebotsverfahren angemeldet worden ist (§ 2060 Nr. 2)";
+        label en unofficial "After partition each co-heir is liable only for his proportionate part where the creditor asserts later than five years after the time of § 1974 (1), unless it became known to him earlier or was registered (§ 2060 no. 2)";
+        when miterbe(e, p) and auseinandersetzung_erfolgt(e) and verbindlichkeit_des_erbfalls(v, e)
+            and forderung_geltend_gemacht_am(v, geltend) and verschweigungsfrist_ende(e, ende) and geltend > ende
+            and not_known(forderung_dem_miterben_bekannt(v, p)) and not_known(forderung_im_aufgebot_angemeldet(v))
+            and not_known(vom_aufgebot_nicht_betroffen(v));
+        then haftet_nur_fuer_den_anteil(e, p, v);
+    }
+    rule TeilhaftungNachInsolvenz(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+        label de official "Nach der Teilung haftet jeder Miterbe nur für den seinem Erbteil entsprechenden Teil, wenn das Nachlassinsolvenzverfahren eröffnet und durch Verteilung der Masse oder durch einen Insolvenzplan beendigt worden ist (§ 2060 Nr. 3)";
+        label en unofficial "After partition each co-heir is liable only for his proportionate part where the insolvency proceedings were opened and ended by distribution or by an insolvency plan (§ 2060 no. 3)";
+        when miterbe(e, p) and auseinandersetzung_erfolgt(e) and verbindlichkeit_des_erbfalls(v, e)
+            and insolvenzverfahren_beendet(e);
+        then haftet_nur_fuer_den_anteil(e, p, v);
+    }
+}
+
+@source(BGB_P2061) {
+    rule AnmeldefristSechsMonate(e: Erbfall, tag: Date) strict {
+        label de official "Jeder Miterbe kann die Nachlassgläubiger öffentlich auffordern, ihre Forderungen binnen sechs Monaten bei ihm oder bei dem Nachlassgericht anzumelden; die Frist beginnt mit der letzten Einrückung (§ 2061 Abs. 1 Satz 1, Abs. 2 Satz 2)";
+        label en unofficial "Each co-heir may publicly summon the creditors to register their claims within six months with him or the probate court; the period begins with the last publication (§ 2061 (1) sentence 1, (2) sentence 2)";
+        when aufforderung_2061_erlassen_am(e, tag);
+        then anmeldefrist_2061_ende(e, add_business_days(add_calendar_period(tag, 6 calendar_month), 1 business_day));
+    }
+    rule TeilhaftungNachAufforderung(e: Erbfall, p: Person, v: Nachlassverbindlichkeit, ende: Date) strict {
+        label de official "Ist die Aufforderung erfolgt, so haftet nach der Teilung jeder Miterbe nur für den seinem Erbteil entsprechenden Teil einer Forderung, soweit nicht vor dem Ablauf der Frist die Anmeldung erfolgt oder die Forderung ihm zur Zeit der Teilung bekannt ist (§ 2061 Abs. 1 Satz 2)";
+        label en unofficial "Where the summons was issued, after partition each co-heir is liable only for his proportionate part unless the claim was registered before the period expired or was known to him at the partition (§ 2061 (1) sentence 2)";
+        when miterbe(e, p) and auseinandersetzung_erfolgt(e) and verbindlichkeit_des_erbfalls(v, e)
+            and anmeldefrist_2061_ende(e, ende) and not_known(forderung_bei_dem_miterben_angemeldet(v))
+            and not_known(forderung_dem_miterben_bekannt(v, p));
+        then haftet_nur_fuer_den_anteil(e, p, v);
+    }
+    rule KostenDerAufforderung(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Kosten fallen dem Erben zur Last, der die Aufforderung erlässt (§ 2061 Abs. 2 Satz 3)";
+        label en unofficial "The costs fall on the heir who issues the summons (§ 2061 (2) sentence 3)";
+        when miterbe(e, p) and aufforderung_2061_erlassen_am(e, tag);
+        then kosten_der_aufforderung_treffen_den_erben(e, p);
+    }
+}
+
+@source(BGB_P2062) {
+    rule NachlassverwaltungNurGemeinschaftlich(e: Erbfall) strict {
+        label de official "Die Anordnung einer Nachlassverwaltung kann von den Erben nur gemeinschaftlich beantragt werden (§ 2062 Halbsatz 1)";
+        label en unofficial "The administration of the estate may be applied for by the heirs only jointly (§ 2062 first half-sentence)";
+        when mehrere_erben(e) and not_known(auseinandersetzung_erfolgt(e));
+        then nachlassverwaltung_nur_gemeinschaftlich_beantragbar(e);
+    }
+    rule NachTeilungAusgeschlossen(e: Erbfall) strict {
+        label de official "Die Anordnung einer Nachlassverwaltung ist ausgeschlossen, wenn der Nachlass geteilt ist (§ 2062 Halbsatz 2)";
+        label en unofficial "The administration is excluded once the estate is divided (§ 2062 second half-sentence)";
+        when mehrere_erben(e) and auseinandersetzung_erfolgt(e);
+        then nachlassverwaltung_nach_teilung_ausgeschlossen(e);
+    }
+}
+
+@source(BGB_P2063) {
+    rule InventarKommtAllenZugute(e: Erbfall, p: Person, q: Person) strict {
+        label de official "Die Errichtung des Inventars durch einen Miterben kommt auch den übrigen Erben zustatten, soweit nicht ihre Haftung für die Nachlassverbindlichkeiten unbeschränkt ist (§ 2063 Abs. 1)";
+        label en unofficial "The drawing up of the inventory by one co-heir also benefits the others, unless their liability is unlimited (§ 2063 (1))";
+        when inventar_rechtzeitig_errichtet(e, q) and miterbe(e, p) and p != q
+            and not_known(unbeschraenkte_haftung(e, p));
+        then inventar_eines_miterben_kommt_allen_zugute(e, p);
+    }
+    rule BerufungUnterMiterben(e: Erbfall, p: Person) strict {
+        label de official "Ein Miterbe kann sich den übrigen Erben gegenüber auf die Beschränkung seiner Haftung auch dann berufen, wenn er den anderen Nachlassgläubigern gegenüber unbeschränkt haftet (§ 2063 Abs. 2)";
+        label en unofficial "A co-heir may rely on the limitation of his liability towards the other heirs even if unlimitedly liable to the other creditors (§ 2063 (2))";
+        when miterbe(e, p) and unbeschraenkte_haftung(e, p);
+        then berufung_auf_haftungsbeschraenkung_unter_miterben(e, p);
+    }
+}

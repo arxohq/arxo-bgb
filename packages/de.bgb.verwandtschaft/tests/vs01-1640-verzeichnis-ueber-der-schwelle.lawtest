@@ -1,0 +1,16 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+// § 1640 Abs. 1, Abs. 2 Nr. 1: die Eltern haben das von Todes wegen erworbene Vermögen zu verzeichnen; die Pflicht entfällt, wenn der Wert 15 000 Euro NICHT ÜBERSTEIGT. Ein Erwerb von 15 000,01 € übersteigt die Schwelle um einen Cent.
+test "§ 1640: ein Erwerb von 15 000,01 € löst die Verzeichnispflicht aus" {
+    given {
+        context { legal_time @2026-09-18; decision_time @2026-09-18T09:00:00Z; knowledge_time @2026-09-18T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERWANDTSCHAFT_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erwerb_von_todes_wegen_oder_unentgeltlich(entity_ref("urn:de:bgb:vw:vs01:K"), 15000.01 EUR) { origin case_input; }
+    }
+    evaluate truth(vermoegensverzeichnis_einzureichen(entity_ref("urn:de:bgb:vw:vs01:K")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verzeichnispflicht_entfaellt(entity_ref("urn:de:bgb:vw:vs01:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

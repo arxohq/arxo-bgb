@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 477 Abs. 1 Satz 2: beim Kauf eines lebenden Tieres gilt die Vermutung nur für sechs Monate seit Gefahrübergang. Übergabe am 20. Januar 2026, der abweichende Zustand zeigt sich am 20. Juli 2026 — dem letzten Tag der Sechsmonatsfrist.
+test "§ 477 Abs. 1 Satz 2: sechs Monate beim lebenden Tier" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:b03"), entity_ref("urn:de:bgb:kauf:b03:U")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:b03"), entity_ref("urn:de:bgb:kauf:b03:V")) { origin case_input; }
+        assert "f3": verbraucher(entity_ref("urn:de:bgb:kauf:b03"), entity_ref("urn:de:bgb:kauf:b03:V")) { origin case_input; }
+        assert "f4": unternehmer_im_kauf(entity_ref("urn:de:bgb:kauf:b03"), entity_ref("urn:de:bgb:kauf:b03:U")) { origin case_input; }
+        assert "f5": ware(entity_ref("urn:de:bgb:kauf:b03")) { origin case_input; }
+        assert "f6": vertragsschluss_am(entity_ref("urn:de:bgb:kauf:b03"), @2025-12-01) { origin case_input; }
+        assert "f7": uebergabe_am(entity_ref("urn:de:bgb:kauf:b03"), @2026-01-20) { origin adjudicated; }
+        assert "f8": not gebrauchte_ware_in_oeffentlicher_versteigerung(entity_ref("urn:de:bgb:kauf:b03")) { origin case_input; }
+        assert "f9": lebendes_tier(entity_ref("urn:de:bgb:kauf:b03")) { origin case_input; }
+        assert "f10": abweichender_zustand_gezeigt_am(entity_ref("urn:de:bgb:kauf:b03"), @2026-07-20) { origin case_input; }
+        assert "f11": not vermutung_mit_art_der_ware_unvereinbar(entity_ref("urn:de:bgb:kauf:b03")) { origin adjudicated; }
+    }
+    evaluate truth(mangel_bei_gefahruebergang_vorhanden(entity_ref("urn:de:bgb:kauf:b03")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

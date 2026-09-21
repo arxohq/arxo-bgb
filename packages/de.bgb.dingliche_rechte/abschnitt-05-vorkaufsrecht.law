@@ -1,0 +1,384 @@
+// --- Buch 3 Abschnitt 5: Dingliches Vorkaufsrecht (§§ 1094–1104) ------------------------------------
+//
+// § 1098 Abs. 1 verweist auf die §§ 463–473 (`de.bgb.kauf`, BG-05, eigene
+// Entität `Vorkaufsrecht` für das SCHULDRECHTLICHE Vorkaufsrecht mit eigenem
+// Schlüssel). Eine Brücke zu dieser fremden Entität würde einen neuen
+// Import und eine Typumwandlung mitten in der Sitzung des Nachbarn
+// verlangen; stattdessen bildet dieses Paket die Rechtsfolge und die
+// zweimonatige Ausübungsfrist des § 469 Abs. 2 LOKAL auf der eigenen
+// Entität `DinglichesVorkaufsrecht` nach, mit derselben Mechanik wie § 1028
+// und § 1057 (Ledger D-11-11).
+
+pub entity DinglichesVorkaufsrecht : Belastung {
+    label de official "dingliches Vorkaufsrecht: Belastung eines Grundstücks, kraft deren der Berechtigte dem Eigentümer gegenüber zum Vorkauf berechtigt ist (§ 1094 Abs. 1)";
+    label en unofficial "right of pre-emption in rem: encumbrance of land under which the entitled person has a right of pre-emption against the owner (§ 1094 (1))";
+}
+
+// --- § 1094: Inhalt -----------------------------------------------------------------------------------
+
+pub relation vk_herrschendes_grundstueck(v: DinglichesVorkaufsrecht, g: Grundstueck) kind empirical {
+    key(v);
+    label de official "das Vorkaufsrecht besteht zugunsten des jeweiligen Eigentümers eines anderen (herrschenden) Grundstücks (§ 1094 Abs. 2)";
+    label en unofficial "the right of pre-emption exists for the benefit of the owner for the time being of another (dominant) land (§ 1094 (2))";
+}
+pub relation vk_subjektiv_persoenlich(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "das Vorkaufsrecht besteht zugunsten einer bestimmten Person, nicht zugunsten des jeweiligen Eigentümers eines Grundstücks — ausdrückliche Eingabe des Falls (§ 1103 Abs. 2, § 1104 Abs. 2 Gegenschluss)";
+    label en unofficial "the right of pre-emption exists for a specific person, not for the owner for the time being of land — explicit case input (§ 1103 (2), § 1104 (2) a contrario)";
+}
+pub relation vk_wirksam_bestellt(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "das dingliche Vorkaufsrecht ist wirksam bestellt (§ 1094 Abs. 1)";
+    label en unofficial "the right of pre-emption in rem has been validly created (§ 1094 (1))";
+}
+@source(BGB_P1094) {
+    rule VkWirksamBestellt(v: DinglichesVorkaufsrecht, g: Grundstueck, p: Person) strict {
+        label de official "Ein Grundstück kann in der Weise belastet werden, dass der Berechtigte dem Eigentümer gegenüber zum Vorkauf berechtigt ist (§ 1094 Abs. 1)";
+        label en unofficial "Land may be encumbered so that the entitled person has a right of pre-emption against the owner (§ 1094 (1))";
+        when belastungsgegenstand_grundstueck(v, g) and berechtigter(v, p);
+        then vk_wirksam_bestellt(v);
+    }
+    rule VkWirksamBestelltZugunstenDesJeweiligenEigentuemers(v: DinglichesVorkaufsrecht, g: Grundstueck, h: Grundstueck) strict {
+        label de official "Das Vorkaufsrecht kann auch zugunsten des jeweiligen Eigentümers eines anderen Grundstücks bestellt werden (§ 1094 Abs. 2)";
+        label en unofficial "The right of pre-emption may also be created for the benefit of the owner for the time being of another land (§ 1094 (2))";
+        when belastungsgegenstand_grundstueck(v, g) and vk_herrschendes_grundstueck(v, h);
+        then vk_wirksam_bestellt(v);
+    }
+}
+
+// --- § 1095: Belastung eines Bruchteils -----------------------------------------------------------------
+
+pub relation vk_bruchteil_ist_miteigentumsanteil(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "der mit dem Vorkaufsrecht belastete Bruchteil besteht in dem Anteil eines Miteigentümers (§ 1095)";
+    label en unofficial "the fractional share encumbered with the right of pre-emption consists in the share of a co-owner (§ 1095)";
+}
+pub relation vk_belastung_des_bruchteils_zulaessig(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "die Belastung des Bruchteils mit dem Vorkaufsrecht ist zulässig (§ 1095)";
+    label en unofficial "encumbering the fractional share with the right of pre-emption is admissible (§ 1095)";
+}
+@source(BGB_P1095)
+rule VkBelastungDesBruchteilsZulaessig(v: DinglichesVorkaufsrecht) strict {
+    label de official "Ein Bruchteil eines Grundstücks kann mit dem Vorkaufsrecht nur belastet werden, wenn er in dem Anteil eines Miteigentümers besteht (§ 1095)";
+    label en unofficial "A fractional share of land may be encumbered with the right of pre-emption only if it consists in the share of a co-owner (§ 1095)";
+    when vk_bruchteil_ist_miteigentumsanteil(v);
+    then vk_belastung_des_bruchteils_zulaessig(v);
+}
+
+// --- § 1096: Erstreckung auf Zubehör -------------------------------------------------------------------
+
+pub relation vk_zweifel_ob_zubehoer_erfasst(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "es besteht Zweifel, ob sich das Vorkaufsrecht auf das mit dem Grundstück verkaufte Zubehör erstrecken soll (§ 1096 Satz 2)";
+    label en unofficial "doubt exists whether the right of pre-emption is to extend to the accessories sold with the land (§ 1096 sentence 2)";
+}
+pub relation vk_erstreckt_sich_auf_zubehoer(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "im Zweifel ist anzunehmen, dass sich das Vorkaufsrecht auf das Zubehör erstrecken soll (§ 1096 Satz 2)";
+    label en unofficial "in case of doubt it is presumed that the right of pre-emption extends to the accessories (§ 1096 sentence 2)";
+}
+@source(BGB_P1096)
+rule VkErstrecktSichAufZubehoerImZweifel(v: DinglichesVorkaufsrecht) strict {
+    label de official "Im Zweifel ist anzunehmen, dass sich das Vorkaufsrecht auf das mit dem Grundstück verkaufte Zubehör erstrecken soll (§ 1096 Satz 2)";
+    label en unofficial "In case of doubt it is presumed that the right of pre-emption is to extend to the accessories sold with the land (§ 1096 sentence 2)";
+    when vk_zweifel_ob_zubehoer_erfasst(v);
+    then vk_erstreckt_sich_auf_zubehoer(v);
+}
+
+// --- § 1097: Bestellung für einen oder mehrere Verkaufsfälle ---------------------------------------------
+
+pub relation vk_fuer_mehrere_oder_alle_verkaufsfaelle_bestellt(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "das Vorkaufsrecht ist für mehrere oder für alle Verkaufsfälle bestellt (§ 1097 Halbsatz 2)";
+    label en unofficial "the right of pre-emption has been created for several or for all cases of sale (§ 1097 clause 2)";
+}
+pub relation vk_beschraenkt_auf_verkauf_durch_ersteigentuemer_oder_erben(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "das Vorkaufsrecht beschränkt sich auf den Fall des Verkaufs durch den Eigentümer zur Zeit der Bestellung oder durch dessen Erben (§ 1097 Halbsatz 1)";
+    label en unofficial "the right of pre-emption is confined to a sale by the owner at the time of creation or by their heirs (§ 1097 clause 1)";
+}
+pub relation vk_gilt_fuer_jeden_verkaufsfall(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "das Vorkaufsrecht gilt für mehrere oder alle Verkaufsfälle (§ 1097 Halbsatz 2)";
+    label en unofficial "the right of pre-emption applies to several or all cases of sale (§ 1097 clause 2)";
+}
+@source(BGB_P1097)
+presumption VkBeschraenktAufErstenVerkaufsfallAlsRegel(v: DinglichesVorkaufsrecht) {
+    label de official "Das Vorkaufsrecht beschränkt sich auf den Fall des Verkaufs durch den Eigentümer, welchem das Grundstück zur Zeit der Bestellung gehört, oder durch dessen Erben (§ 1097 Halbsatz 1)";
+    label en unofficial "The right of pre-emption is confined to the case of a sale by the owner to whom the land belonged when it was created, or by their heirs (§ 1097 clause 1)";
+    when vk_wirksam_bestellt(v);
+    presume vk_beschraenkt_auf_verkauf_durch_ersteigentuemer_oder_erben(v);
+    unless vk_wirksam_bestellt(v) and vk_fuer_mehrere_oder_alle_verkaufsfaelle_bestellt(v) then not vk_beschraenkt_auf_verkauf_durch_ersteigentuemer_oder_erben(v);
+}
+@source(BGB_P1097)
+rule VkGiltFuerJedenVerkaufsfall(v: DinglichesVorkaufsrecht) strict {
+    label de official "Es kann jedoch auch für mehrere oder für alle Verkaufsfälle bestellt werden (§ 1097 Halbsatz 2)";
+    label en unofficial "It may, however, also be created for several or for all cases of sale (§ 1097 clause 2)";
+    when vk_fuer_mehrere_oder_alle_verkaufsfaelle_bestellt(v);
+    then vk_gilt_fuer_jeden_verkaufsfall(v);
+}
+
+// --- § 1098: Wirkung des Vorkaufsrechts -----------------------------------------------------------------
+
+pub relation vk_verkaufsfall_eingetreten(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "ein Verkaufsfall ist eingetreten, für den das Vorkaufsrecht besteht (§ 1098 Abs. 1 Satz 1)";
+    label en unofficial "a case of sale has occurred for which the right of pre-emption exists (§ 1098 (1) sentence 1)";
+}
+pub relation vk_rechtsverhaeltnis_nach_463_bis_473(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "das Rechtsverhältnis zwischen dem Berechtigten und dem Verpflichteten bestimmt sich nach den Vorschriften der §§ 463 bis 473 (§ 1098 Abs. 1 Satz 1)";
+    label en unofficial "the legal relationship between the entitled person and the person bound is governed by §§ 463 to 473 (§ 1098 (1) sentence 1)";
+}
+pub relation grundstueck_vom_insolvenzverwalter_freihaendig_verkauft(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "das Grundstück wird von dem Insolvenzverwalter aus freier Hand verkauft (§ 1098 Abs. 1 Satz 2)";
+    label en unofficial "the land is sold by the insolvency administrator by private sale (§ 1098 (1) sentence 2)";
+}
+pub relation vk_trotz_insolvenzverkauf_ausuebbar(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "das Vorkaufsrecht kann auch bei einem Verkauf durch den Insolvenzverwalter aus freier Hand ausgeübt werden (§ 1098 Abs. 1 Satz 2)";
+    label en unofficial "the right of pre-emption may also be exercised where the land is sold by the insolvency administrator by private sale (§ 1098 (1) sentence 2)";
+}
+pub relation vk_wirkung_wie_vormerkung_gegenueber_dritten(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "Dritten gegenüber hat das Vorkaufsrecht die Wirkung einer Vormerkung zur Sicherung des Übertragungsanspruchs (§ 1098 Abs. 2)";
+    label en unofficial "against third parties the right of pre-emption has the effect of a priority notice securing the claim to transfer of ownership (§ 1098 (2))";
+}
+pub relation vk_juristischer_person_ohne_vereinbarte_uebertragbarkeit(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "das nach § 1094 Abs. 1 begründete Vorkaufsrecht steht einer juristischen Person zu, ohne dass seine Übertragbarkeit vereinbart ist (§ 1098 Abs. 3)";
+    label en unofficial "the right of pre-emption created under § 1094 (1) belongs to a legal person without transferability being agreed (§ 1098 (3))";
+}
+pub relation vk_1059a_bis_d_gelten_entsprechend(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "für die Übertragung gelten die Vorschriften der §§ 1059a bis 1059d entsprechend (§ 1098 Abs. 3) — Verfahren der Landesbehörde, GRENZE";
+    label en unofficial "§§ 1059a to 1059d apply correspondingly to the transfer (§ 1098 (3)) — procedure of the competent authority, GRENZE";
+}
+@source(BGB_P1098) {
+    rule VkRechtsverhaeltnisNach463Bis473(v: DinglichesVorkaufsrecht) strict {
+        label de official "Das Rechtsverhältnis zwischen dem Berechtigten und dem Verpflichteten bestimmt sich nach den Vorschriften der §§ 463 bis 473 (§ 1098 Abs. 1 Satz 1)";
+        label en unofficial "The legal relationship between the entitled person and the person bound is governed by §§ 463 to 473 (§ 1098 (1) sentence 1)";
+        when vk_wirksam_bestellt(v) and vk_verkaufsfall_eingetreten(v);
+        then vk_rechtsverhaeltnis_nach_463_bis_473(v);
+    }
+    rule VkTrotzInsolvenzverkaufAusuebbar(v: DinglichesVorkaufsrecht) strict {
+        label de official "Das Vorkaufsrecht kann auch dann ausgeübt werden, wenn das Grundstück von dem Insolvenzverwalter aus freier Hand verkauft wird (§ 1098 Abs. 1 Satz 2)";
+        label en unofficial "The right of pre-emption may also be exercised where the land is sold by the insolvency administrator by private sale (§ 1098 (1) sentence 2)";
+        when vk_wirksam_bestellt(v) and grundstueck_vom_insolvenzverwalter_freihaendig_verkauft(v);
+        then vk_trotz_insolvenzverkauf_ausuebbar(v);
+    }
+    rule VkWirkungWieVormerkungGegenueberDritten(v: DinglichesVorkaufsrecht) strict {
+        label de official "Dritten gegenüber hat das Vorkaufsrecht die Wirkung einer Vormerkung zur Sicherung des durch die Ausübung des Rechts entstehenden Anspruchs auf Übertragung des Eigentums (§ 1098 Abs. 2)";
+        label en unofficial "Against third parties the right of pre-emption has the effect of a priority notice securing the claim to transfer of ownership arising from exercise of the right (§ 1098 (2))";
+        when vk_wirksam_bestellt(v);
+        then vk_wirkung_wie_vormerkung_gegenueber_dritten(v);
+    }
+    rule Vk1059aBisDGeltenEntsprechend(v: DinglichesVorkaufsrecht) strict {
+        label de official "Steht ein nach § 1094 Abs. 1 begründetes Vorkaufsrecht einer juristischen Person zu und ist seine Übertragbarkeit nicht vereinbart, so gelten für die Übertragung §§ 1059a bis 1059d entsprechend (§ 1098 Abs. 3)";
+        label en unofficial "If a right of pre-emption created under § 1094 (1) belongs to a legal person and its transferability is not agreed, §§ 1059a to 1059d apply correspondingly to the transfer (§ 1098 (3))";
+        when vk_juristischer_person_ohne_vereinbarte_uebertragbarkeit(v);
+        then vk_1059a_bis_d_gelten_entsprechend(v);
+    }
+}
+
+// --- § 469 Abs. 2 (lokal nachgebildet, D-11-11): zweimonatige Ausübungsfrist bei Grundstücken -----------
+
+pub relation vk_469_mitteilung_empfangen_am(v: DinglichesVorkaufsrecht, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag des Empfangs der Mitteilung über den Inhalt des mit dem Dritten geschlossenen Kaufvertrags (§ 1098 Abs. 1 i.V.m. § 469 Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "day of receipt of the notification of the content of the contract concluded with the third party (§ 1098 (1) in conjunction with § 469 (1), (2) sentence 1)";
+}
+pub relation vk_469_frist(v: DinglichesVorkaufsrecht, f: Frist) kind empirical {
+    key(v);
+    label de official "zweimonatige Ausübungsfrist des § 469 Abs. 2 Satz 1 bei einem Grundstück als Vorkaufsgegenstand";
+    label en unofficial "two-month period for exercise under § 469 (2) sentence 1 where the object of pre-emption is land";
+}
+pub relation vk_469_ausuebungsfrist_abgelaufen(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "die zweimonatige Ausübungsfrist des § 469 Abs. 2 Satz 1 ist abgelaufen, ohne dass das Vorkaufsrecht ausgeübt wurde (§ 1098 Abs. 1 i.V.m. § 469 Abs. 2 Satz 1)";
+    label en unofficial "the two-month period for exercise under § 469 (2) sentence 1 has expired without the right of pre-emption being exercised (§ 1098 (1) in conjunction with § 469 (2) sentence 1)";
+}
+pub relation vk_469_innerhalb_der_frist_ausgeuebt(v: DinglichesVorkaufsrecht, ausuebung: Date) kind empirical {
+    key(v);
+    label de official "Tag der Erklärung der Ausübung des Vorkaufsrechts (§ 1098 Abs. 1 i.V.m. § 464 Abs. 1)";
+    label en unofficial "day of the declaration exercising the right of pre-emption (§ 1098 (1) in conjunction with § 464 (1))";
+}
+pub relation vk_keine_ausuebung_erfolgt(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "das Vorkaufsrecht ist nicht ausgeübt worden — ausdrückliche Eingabe des Falls (§ 1098 Abs. 1 i.V.m. § 469 Abs. 2 Satz 1)";
+    label en unofficial "the right of pre-emption has not been exercised — explicit case input (§ 1098 (1) in conjunction with § 469 (2) sentence 1)";
+}
+pub relation vk_wirksam_ausgeuebt(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "das Vorkaufsrecht ist innerhalb der zweimonatigen Frist wirksam ausgeübt worden (§ 1098 Abs. 1 i.V.m. § 469 Abs. 2)";
+    label en unofficial "the right of pre-emption has been validly exercised within the two-month period (§ 1098 (1) in conjunction with § 469 (2))";
+}
+@source(BGB_P1098) {
+    rule Vk469FristEreignis(v: DinglichesVorkaufsrecht, f: Frist, tag: Date) strict {
+        label de official "Die zweimonatige Frist des § 469 Abs. 2 Satz 1 läuft vom Empfang der Mitteilung an (§ 187 Abs. 1)";
+        label en unofficial "The two-month period of § 469 (2) sentence 1 runs from receipt of the notification (§ 187 (1))";
+        when vk_469_frist(v, f) and vk_469_mitteilung_empfangen_am(v, tag);
+        then de.bgb.fristen::frist_ereignis(f, tag);
+    }
+    rule Vk469FristDauer(v: DinglichesVorkaufsrecht, f: Frist) strict {
+        label de official "Das Vorkaufsrecht kann bei einem Grundstück nur binnen zwei Monaten ausgeübt werden (§ 469 Abs. 2 Satz 1) — Monatsschritt nach § 188 Abs. 2, 3";
+        label en unofficial "In the case of land, the right of pre-emption may be exercised only within two months (§ 469 (2) sentence 1) — month step under § 188 (2), (3)";
+        when vk_469_frist(v, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 2 calendar_month);
+    }
+    rule Vk469AusuebungsfristAbgelaufen(v: DinglichesVorkaufsrecht, f: Frist, ende: Date) strict {
+        label de official "Mit dem Ablauf der zweimonatigen Frist ohne Ausübung ist das Vorkaufsrecht für diesen Verkaufsfall verbraucht (§ 1098 Abs. 1 i.V.m. § 469 Abs. 2 Satz 1)";
+        label en unofficial "With the expiry of the two-month period without exercise, the right of pre-emption is spent for this case of sale (§ 1098 (1) in conjunction with § 469 (2) sentence 1)";
+        when vk_469_frist(v, f) and de.bgb.fristen::frist_ende_kalender(f, ende) and vk_keine_ausuebung_erfolgt(v);
+        then vk_469_ausuebungsfrist_abgelaufen(v);
+    }
+    rule VkWirksamAusgeuebtInnerhalbDerFrist(v: DinglichesVorkaufsrecht, f: Frist, ende: Date, ausuebung: Date) strict {
+        label de official "Wird das Vorkaufsrecht innerhalb der zweimonatigen Frist ausgeübt, so ist die Ausübung wirksam (§ 1098 Abs. 1 i.V.m. § 469 Abs. 2 Satz 1, § 464 Abs. 1)";
+        label en unofficial "If the right of pre-emption is exercised within the two-month period, the exercise is effective (§ 1098 (1) in conjunction with § 469 (2) sentence 1, § 464 (1))";
+        when vk_469_frist(v, f) and de.bgb.fristen::frist_ende_kalender(f, ende)
+            and vk_469_innerhalb_der_frist_ausgeuebt(v, ausuebung) and ausuebung <= ende;
+        then vk_wirksam_ausgeuebt(v);
+    }
+}
+
+// --- § 1099: Mitteilungen --------------------------------------------------------------------------------
+
+pub relation grundstueck_in_eigentum_eines_dritten_gelangt(v: DinglichesVorkaufsrecht, dritter: Person) kind empirical {
+    label de official "das Grundstück gelangt in das Eigentum eines Dritten (§ 1099 Abs. 1)";
+    label en unofficial "ownership of the land passes to a third party (§ 1099 (1))";
+}
+pub relation dritter_kann_mitteilen(v: DinglichesVorkaufsrecht, dritter: Person) kind derived {
+    label de official "der Dritte kann in gleicher Weise wie der Verpflichtete den Inhalt des Kaufvertrags mitteilen (§ 1099 Abs. 1)";
+    label en unofficial "the third party may notify the content of the contract of sale in the same way as the person bound (§ 1099 (1))";
+}
+pub relation vorkaufsausuebung_erfolgt_oder_ausgeschlossen(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "die Ausübung des Vorkaufsrechts ist erfolgt oder ausgeschlossen (§ 1099 Abs. 2)";
+    label en unofficial "exercise of the right of pre-emption has occurred or is excluded (§ 1099 (2))";
+}
+pub relation verpflichteter_hat_neuen_eigentuemer_zu_benachrichtigen(v: DinglichesVorkaufsrecht, verpflichteter: Person) kind derived {
+    label de official "der Verpflichtete hat den neuen Eigentümer zu benachrichtigen (§ 1099 Abs. 2)";
+    label en unofficial "the person bound must notify the new owner (§ 1099 (2))";
+}
+@source(BGB_P1099) {
+    rule DritterKannMitteilen(v: DinglichesVorkaufsrecht, dritter: Person) strict {
+        label de official "Gelangt das Grundstück in das Eigentum eines Dritten, so kann dieser in gleicher Weise wie der Verpflichtete dem Berechtigten den Inhalt des Kaufvertrags mitteilen (§ 1099 Abs. 1)";
+        label en unofficial "If ownership of the land passes to a third party, they may notify the entitled person of the content of the contract of sale in the same way as the person bound (§ 1099 (1))";
+        when grundstueck_in_eigentum_eines_dritten_gelangt(v, dritter);
+        then dritter_kann_mitteilen(v, dritter);
+    }
+    rule VerpflichteterHatNeuenEigentuemerZuBenachrichtigen(v: DinglichesVorkaufsrecht, verpflichteter: Person) strict {
+        label de official "Der Verpflichtete hat den neuen Eigentümer zu benachrichtigen, sobald die Ausübung des Vorkaufsrechts erfolgt oder ausgeschlossen ist (§ 1099 Abs. 2)";
+        label en unofficial "The person bound must notify the new owner as soon as exercise of the right of pre-emption occurs or is excluded (§ 1099 (2))";
+        when vorkaufsausuebung_erfolgt_oder_ausgeschlossen(v) and besteller(v, verpflichteter);
+        then verpflichteter_hat_neuen_eigentuemer_zu_benachrichtigen(v, verpflichteter);
+    }
+}
+
+// --- §§ 1100–1102: Rechte und Befreiung von Käufer und Berechtigtem ---------------------------------------
+
+pub relation neuer_eigentuemer_ist_kaeufer_oder_rechtsnachfolger(v: DinglichesVorkaufsrecht, neuer_eigentuemer: Person) kind empirical {
+    label de official "der neue Eigentümer ist der Käufer oder ein Rechtsnachfolger des Käufers (§ 1100 Satz 1)";
+    label en unofficial "the new owner is the buyer or a successor in title of the buyer (§ 1100 sentence 1)";
+}
+pub relation berichtigter_kaufpreis(v: DinglichesVorkaufsrecht, betrag: Money) kind empirical {
+    key(v);
+    label de official "der zwischen dem Verpflichteten und dem Käufer vereinbarte und berichtigte Kaufpreis (§ 1100 Satz 1)";
+    label en unofficial "the purchase price agreed between the person bound and the buyer, to the extent discharged (§ 1100 sentence 1)";
+}
+pub relation kaeufer_kann_zustimmung_und_herausgabe_verweigern(v: DinglichesVorkaufsrecht, neuer_eigentuemer: Person, betrag: Money) kind derived {
+    label de official "der neue Eigentümer kann die Zustimmung zur Eintragung des Berechtigten und die Herausgabe des Grundstücks verweigern, bis ihm der berichtigte Kaufpreis erstattet wird (§ 1100 Satz 1)";
+    label en unofficial "the new owner may refuse consent to registration of the entitled person and the return of the land until the discharged purchase price is reimbursed (§ 1100 sentence 1)";
+}
+pub relation berechtigter_als_eigentuemer_eingetragen(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "der Berechtigte erlangt die Eintragung als Eigentümer (§ 1100 Satz 2)";
+    label en unofficial "the entitled person obtains registration as owner (§ 1100 Satz 2)";
+}
+pub relation bisheriger_eigentuemer_kann_erstattung_gegen_herausgabe_fordern(v: DinglichesVorkaufsrecht, bisheriger_eigentuemer: Person, betrag: Money) kind derived {
+    label de official "der bisherige Eigentümer kann vom Berechtigten die Erstattung des berichtigten Kaufpreises gegen Herausgabe des Grundstücks fordern (§ 1100 Satz 2)";
+    label en unofficial "the former owner may demand from the entitled person reimbursement of the discharged purchase price against return of the land (§ 1100 sentence 2)";
+}
+@source(BGB_P1100) {
+    rule KaeuferKannZustimmungUndHerausgabeVerweigern(v: DinglichesVorkaufsrecht, neuer_eigentuemer: Person, betrag: Money) strict {
+        label de official "Der neue Eigentümer kann, wenn er der Käufer oder ein Rechtsnachfolger ist, die Zustimmung zur Eintragung des Berechtigten und die Herausgabe des Grundstücks verweigern, bis ihm der berichtigte Kaufpreis erstattet wird (§ 1100 Satz 1)";
+        label en unofficial "The new owner, if the buyer or a successor in title, may refuse consent to registration of the entitled person and return of the land until the discharged purchase price is reimbursed (§ 1100 sentence 1)";
+        when neuer_eigentuemer_ist_kaeufer_oder_rechtsnachfolger(v, neuer_eigentuemer) and berichtigter_kaufpreis(v, betrag);
+        then kaeufer_kann_zustimmung_und_herausgabe_verweigern(v, neuer_eigentuemer, betrag);
+    }
+    rule BisherigerEigentuemerKannErstattungFordern(v: DinglichesVorkaufsrecht, bisheriger_eigentuemer: Person, betrag: Money) strict {
+        label de official "Erlangt der Berechtigte die Eintragung als Eigentümer, so kann der bisherige Eigentümer von ihm die Erstattung des berichtigten Kaufpreises gegen Herausgabe des Grundstücks fordern (§ 1100 Satz 2)";
+        label en unofficial "If the entitled person obtains registration as owner, the former owner may demand from them reimbursement of the discharged purchase price against return of the land (§ 1100 sentence 2)";
+        when berechtigter_als_eigentuemer_eingetragen(v) and besteller(v, bisheriger_eigentuemer) and berichtigter_kaufpreis(v, betrag);
+        then bisheriger_eigentuemer_kann_erstattung_gegen_herausgabe_fordern(v, bisheriger_eigentuemer, betrag);
+    }
+}
+
+pub relation berechtigter_erstattet_kaufpreis_nach_1100(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "der Berechtigte hat dem Käufer oder dessen Rechtsnachfolger den Kaufpreis nach § 1100 zu erstatten (§ 1101)";
+    label en unofficial "the entitled person must reimburse the purchase price to the buyer or their successor under § 1100 (§ 1101)";
+}
+pub relation berechtigter_frei_von_kaufpreiszahlung(v: DinglichesVorkaufsrecht, berechtigter: Person) kind derived {
+    label de official "soweit der Berechtigte den Kaufpreis erstattet, wird er von der Verpflichtung zur Zahlung des aus dem Vorkauf geschuldeten Kaufpreises frei (§ 1101)";
+    label en unofficial "to the extent the entitled person reimburses the purchase price, they are released from the obligation to pay the price owed from the pre-emption (§ 1101)";
+}
+@source(BGB_P1101)
+rule BerechtigterFreiVonKaufpreiszahlung(v: DinglichesVorkaufsrecht, berechtigter: Person) strict {
+    label de official "Soweit der Berechtigte nach § 1100 dem Käufer den Kaufpreis zu erstatten hat, wird er von der Verpflichtung zur Zahlung des aus dem Vorkauf geschuldeten Kaufpreises frei (§ 1101)";
+    label en unofficial "To the extent the entitled person must reimburse the purchase price to the buyer under § 1100, they are released from the obligation to pay the price owed from the pre-emption (§ 1101)";
+    when berechtigter_erstattet_kaufpreis_nach_1100(v) and berechtigter(v, berechtigter);
+    then berechtigter_frei_von_kaufpreiszahlung(v, berechtigter);
+}
+
+pub relation kaeufer_verliert_eigentum_durch_vorkaufsausuebung(v: DinglichesVorkaufsrecht, kaeufer: Person) kind empirical {
+    label de official "der Käufer oder sein Rechtsnachfolger verliert infolge der Geltendmachung des Vorkaufsrechts das Eigentum (§ 1102)";
+    label en unofficial "the buyer or their successor loses ownership as a result of the exercise of the right of pre-emption (§ 1102)";
+}
+pub relation kaufpreis_des_kaeufers_noch_nicht_berichtigt(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "der vom Käufer geschuldete Kaufpreis ist noch nicht berichtigt (§ 1102)";
+    label en unofficial "the purchase price owed by the buyer has not yet been discharged (§ 1102)";
+}
+pub relation kaeufer_frei_von_kaufpreispflicht(v: DinglichesVorkaufsrecht, kaeufer: Person) kind derived {
+    label de official "der Käufer wird von seiner Verpflichtung frei, soweit der Kaufpreis noch nicht berichtigt ist; den berichtigten Kaufpreis kann er nicht zurückfordern (§ 1102)";
+    label en unofficial "the buyer is released from their obligation to the extent the price is not yet discharged; a discharged price cannot be reclaimed (§ 1102)";
+}
+@source(BGB_P1102)
+rule KaeuferFreiVonKaufpreispflicht(v: DinglichesVorkaufsrecht, kaeufer: Person) strict {
+    label de official "Verliert der Käufer infolge der Geltendmachung des Vorkaufsrechts das Eigentum, so wird er, soweit der von ihm geschuldete Kaufpreis noch nicht berichtigt ist, von seiner Verpflichtung frei; den berichtigten Kaufpreis kann er nicht zurückfordern (§ 1102)";
+    label en unofficial "If the buyer loses ownership as a result of the exercise of the right of pre-emption, they are released from their obligation to the extent the price owed is not yet discharged; a discharged price cannot be reclaimed (§ 1102)";
+    when kaeufer_verliert_eigentum_durch_vorkaufsausuebung(v, kaeufer) and kaufpreis_des_kaeufers_noch_nicht_berichtigt(v);
+    then kaeufer_frei_von_kaufpreispflicht(v, kaeufer);
+}
+
+// --- § 1103: Subjektiv-dingliches und subjektiv-persönliches Vorkaufsrecht -------------------------------
+
+pub relation vk_subjektiv_dinglich_untrennbar(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "ein zugunsten des jeweiligen Eigentümers bestehendes Vorkaufsrecht kann nicht von dem Eigentum an diesem Grundstück getrennt werden (§ 1103 Abs. 1)";
+    label en unofficial "a right of pre-emption existing for the owner for the time being cannot be separated from ownership of that land (§ 1103 (1))";
+}
+pub relation vk_subjektiv_persoenlich_nicht_verbindbar(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "ein zugunsten einer bestimmten Person bestehendes Vorkaufsrecht kann nicht mit dem Eigentum an einem Grundstück verbunden werden (§ 1103 Abs. 2)";
+    label en unofficial "a right of pre-emption existing for a specific person cannot be linked to ownership of any land (§ 1103 (2))";
+}
+@source(BGB_P1103) {
+    rule VkSubjektivDinglichUntrennbar(v: DinglichesVorkaufsrecht, h: Grundstueck) strict {
+        label de official "Ein zugunsten des jeweiligen Eigentümers eines Grundstücks bestehendes Vorkaufsrecht kann nicht von dem Eigentum an diesem Grundstück getrennt werden (§ 1103 Abs. 1)";
+        label en unofficial "A right of pre-emption existing for the owner for the time being of land cannot be separated from ownership of that land (§ 1103 (1))";
+        when vk_herrschendes_grundstueck(v, h);
+        then vk_subjektiv_dinglich_untrennbar(v);
+    }
+    rule VkSubjektivPersoenlichNichtVerbindbar(v: DinglichesVorkaufsrecht, berechtigter: Person) strict {
+        label de official "Ein zugunsten einer bestimmten Person bestehendes Vorkaufsrecht kann nicht mit dem Eigentum an einem Grundstück verbunden werden (§ 1103 Abs. 2)";
+        label en unofficial "A right of pre-emption existing for a specific person cannot be linked to ownership of any land (§ 1103 (2))";
+        when berechtigter(v, berechtigter) and vk_subjektiv_persoenlich(v);
+        then vk_subjektiv_persoenlich_nicht_verbindbar(v);
+    }
+}
+
+// --- § 1104: Ausschluss unbekannter Berechtigter -----------------------------------------------------------
+
+pub relation vk_berechtigter_unbekannt(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "der Berechtigte des Vorkaufsrechts ist unbekannt (§ 1104 Abs. 1 Satz 1)";
+    label en unofficial "the person entitled to the right of pre-emption is unknown (§ 1104 (1) sentence 1)";
+}
+pub relation vk_voraussetzungen_des_1170_erfuellt(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "die in § 1170 für die Ausschließung eines Hypothekengläubigers bestimmten Voraussetzungen liegen vor (§ 1104 Abs. 1 Satz 1)";
+    label en unofficial "the requirements of § 1170 for excluding a mortgage creditor are met (§ 1104 (1) sentence 1)";
+}
+pub relation vk_ausschliessungsbeschluss_rechtskraeftig(v: DinglichesVorkaufsrecht) kind empirical {
+    label de official "der Ausschließungsbeschluss ist rechtskräftig geworden (§ 1104 Abs. 1 Satz 2)";
+    label en unofficial "the exclusion order has become final (§ 1104 (1) sentence 2)";
+}
+pub relation vk_erloschen_durch_ausschliessungsbeschluss(v: DinglichesVorkaufsrecht) kind derived {
+    label de official "mit der Rechtskraft des Ausschließungsbeschlusses erlischt das Vorkaufsrecht (§ 1104 Abs. 1 Satz 2)";
+    label en unofficial "the right of pre-emption is extinguished when the exclusion order becomes final (§ 1104 (1) sentence 2)";
+}
+@source(BGB_P1104)
+rule VkErloschenDurchAusschliessungsbeschluss(v: DinglichesVorkaufsrecht) strict {
+    label de official "Ist der Berechtigte unbekannt, so kann er im Wege des Aufgebotsverfahrens mit seinem Recht ausgeschlossen werden, wenn die Voraussetzungen des § 1170 vorliegen; mit der Rechtskraft des Ausschließungsbeschlusses erlischt das Vorkaufsrecht (§ 1104 Abs. 1). Auf ein Vorkaufsrecht zugunsten des jeweiligen Eigentümers findet dies keine Anwendung (§ 1104 Abs. 2)";
+    label en unofficial "If the entitled person is unknown, they may be excluded from their right by public notice proceedings where the requirements of § 1170 are met; the right of pre-emption is extinguished when the exclusion order becomes final (§ 1104 (1)). This does not apply to a right of pre-emption for the owner for the time being (§ 1104 (2))";
+    when vk_berechtigter_unbekannt(v) and vk_voraussetzungen_des_1170_erfuellt(v) and vk_ausschliessungsbeschluss_rechtskraeftig(v)
+        and vk_subjektiv_persoenlich(v);
+    then vk_erloschen_durch_ausschliessungsbeschluss(v);
+}

@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 199 Abs. 1 Nr. 2: Anspruch entstanden am 15. März 2020, Kenntnis erst am 1. Februar 2021 — beide Voraussetzungen erst 2021 erfüllt: Beginn 31. Dezember 2021, Ende 31. Dezember 2024.
+test "§ 199 Abs. 1: spätere Kenntnis verschiebt den Beginn auf den Schluss des Jahres 2021" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": de.bgb.core::anspruch_entstanden_am(entity_ref("urn:de:bgb:fristen:pilot:a07"), @2020-03-15) { origin case_input; }
+        assert "k": kenntnis_erlangt_am(entity_ref("urn:de:bgb:fristen:pilot:a07"), @2021-02-01) { origin adjudicated; }
+        assert "h": keine_hemmung(entity_ref("urn:de:bgb:fristen:pilot:a07")) { origin case_input; }
+    }
+    evaluate truth(regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:fristen:pilot:a07"), @2021-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(regelmaessige_verjaehrung_beginn(entity_ref("urn:de:bgb:fristen:pilot:a07"), @2020-12-31));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(verjaehrung_eingetreten_am(entity_ref("urn:de:bgb:fristen:pilot:a07"), @2024-12-31));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

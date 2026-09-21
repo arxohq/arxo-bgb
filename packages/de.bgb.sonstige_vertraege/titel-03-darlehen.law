@@ -1,0 +1,1736 @@
+// TITEL 3 — DARLEHENSVERTRAG; FINANZIERUNGSHILFEN; RATENLIEFERUNGSVERTRÄGE
+// (§§ 488–515)
+//
+// Teil des Pakets BG-08 (`package.law`). 37 geltende Paragraphen (§ 509 ist
+// weggefallen), nach Absätzen bearbeitet.
+//
+// SCHWELLEN UND SÄTZE AUS DEM TEXT (D-08-01). Alle Zahlen dieses Titels stehen
+// im Gesetz: 200 Euro (§ 491 Absatz 2 Satz 2 Nummer 1), 75 000 Euro (§ 494
+// Absatz 6 Satz 2), zehn Jahre / sechs Monate / drei Monate / zwei Wochen
+// (§ 489), zwei Teilzahlungen und 10 / 5 / 2,5 Prozent (§ 498), 1 Prozent und
+// 0,5 Prozent (§ 502 Absatz 3 Nummer 1), 20 Prozent (§ 503 Absatz 1 Satz 2),
+// 2,5 Prozentpunkte über dem Basiszinssatz (§ 497 Absatz 4 Satz 1).
+//
+// DER BASISZINSSATZ IST EIN EINGANG, KEINE KONSTANTE (D-08-05). § 247 nennt
+// den Basiszinssatz; seine HÖHE gibt die Deutsche Bundesbank zum 1. Januar und
+// 1. Juli. Das Paket führt ihn daher als Fallangabe `basiszinssatz(satz)` mit
+// dem Tag, zu dem er gilt, und rechnet daraus die beiden Verzugssätze: fünf
+// Prozentpunkte (§ 288 Absatz 1 Satz 2, über § 497 Absatz 1 Satz 1) und
+// zweieinhalb Prozentpunkte beim Immobiliar-Verbraucherdarlehen (§ 497
+// Absatz 4 Satz 1). § 288 selbst gehört BG-04 `de.bgb.schuldrecht_at`; bis zu
+// dessen Verschmelzung steht der Satz hier lokal, mit Anker an § 497.
+//
+// PROZENTE WERDEN NICHT IM GUARD GERECHNET. Jede Schwelle des § 498 und jede
+// Obergrenze des § 502 ist ein eigener Schluss (`rueckstandsschwelle_498`,
+// `hoechstbetrag_502`); der Guard vergleicht nur Variablen (Ledger D-06-07 des
+// Nachbarpakets, hier übernommen).
+
+language "law.core" version "0.2";
+package de.bgb.sonstige_vertraege version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-sonstige-vertraege";
+
+pub entity Darlehen {
+    label de official "Darlehensvertrag (§ 488 Absatz 1)";
+    label en unofficial "loan contract (§ 488 (1))";
+}
+
+pub relation darlehensbetrag_zur_verfuegung_gestellt_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Der Darlehensgeber hat den vereinbarten Geldbetrag zur Verfügung gestellt (§ 488 Absatz 1 Satz 1)";
+    label en unofficial "the lender placed the agreed sum at the borrower's disposal (§ 488 (1) sentence 1)";
+}
+pub relation darlehen_zurueckgezahlt_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Der Darlehensnehmer hat das Darlehen zurückgezahlt (§ 488 Absatz 1 Satz 2)";
+    label en unofficial "the borrower repaid the loan (§ 488 (1) sentence 2)";
+}
+pub relation darlehensbeginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn der vertraglichen Leistungspflicht aus dem Darlehen (§ 488 Absatz 1)";
+    label en unofficial "start of the contractual loan obligation (§ 488 (1))";
+}
+
+@source(BGB_P488)
+rule Position488Verfuegung(d: Darlehen, geber: Person, nehmer: Person, betrag: Money, beginn: Date) strict {
+    label de official "Der Darlehensgeber ist verpflichtet, dem Darlehensnehmer den Geldbetrag zur Verfügung zu stellen (§ 488 Absatz 1 Satz 1)";
+    label en unofficial "The lender is obliged to place the agreed sum at the borrower's disposal (§ 488 (1) sentence 1)";
+    when darlehensvertrag_geschlossen(d, betrag) and darlehensgeber(d, geber)
+     and darlehensnehmer(d, nehmer) and darlehensbeginn_am(d, beginn);
+    then duty Duty488Verfuegung {
+        bearer geber;
+        beneficiary nehmer;
+        achieve darlehensbetrag_zur_verfuegung_gestellt_am(d, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P488)
+rule Position488Rueckzahlung(d: Darlehen, geber: Person, nehmer: Person, betrag: Money, beginn: Date) strict {
+    label de official "Der Darlehensnehmer ist verpflichtet, das Darlehen zurückzuzahlen (§ 488 Absatz 1 Satz 2)";
+    label en unofficial "The borrower is obliged to repay the loan (§ 488 (1) sentence 2)";
+    when darlehensvertrag_geschlossen(d, betrag) and darlehensgeber(d, geber)
+     and darlehensnehmer(d, nehmer) and darlehensbeginn_am(d, beginn);
+    then duty Duty488Rueckzahlung {
+        bearer nehmer;
+        beneficiary geber;
+        achieve darlehen_zurueckgezahlt_am(d, beginn) during [beginn, infinity);
+    };
+}
+
+// § 488: Vertragstypische Pflichten beim Darlehensvertrag.
+
+pub relation darlehensgeber(d: Darlehen, p: Person) kind empirical {
+    key(d);
+    label de official "Darlehensgeber (§ 488 Absatz 1 Satz 1)";
+    label en unofficial "lender (§ 488 (1) sentence 1)";
+}
+pub relation darlehensnehmer(d: Darlehen, p: Person) kind empirical {
+    key(d);
+    label de official "Darlehensnehmer (§ 488 Absatz 1 Satz 2)";
+    label en unofficial "borrower (§ 488 (1) sentence 2)";
+}
+pub relation darlehensvertrag_geschlossen(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Der Darlehensvertrag ist über einen Geldbetrag in der vereinbarten Höhe geschlossen (§ 488 Absatz 1 Satz 1)";
+    label en unofficial "the loan contract has been concluded over a sum of money in the agreed amount (§ 488 (1) sentence 1)";
+}
+pub relation pflicht_zur_verfuegungstellung(d: Darlehen, p: Person, betrag: Money) kind institutional {
+    label de official "Der Darlehensgeber ist verpflichtet, dem Darlehensnehmer den Geldbetrag in der vereinbarten Höhe zur Verfügung zu stellen (§ 488 Absatz 1 Satz 1)";
+    label en unofficial "the lender is obliged to place the agreed sum at the borrower's disposal (§ 488 (1) sentence 1)";
+}
+pub relation pflicht_zur_rueckzahlung(d: Darlehen, p: Person, betrag: Money) kind institutional {
+    label de official "Der Darlehensnehmer ist verpflichtet, bei Fälligkeit das zur Verfügung gestellte Darlehen zurückzuzahlen (§ 488 Absatz 1 Satz 2)";
+    label en unofficial "the borrower is obliged to repay the loan made available when it falls due (§ 488 (1) sentence 2)";
+}
+pub relation rueckzahlungszeit_bestimmt(d: Darlehen) kind empirical {
+    label de official "Für die Rückzahlung des Darlehens ist eine Zeit bestimmt (§ 488 Absatz 3 Satz 1)";
+    label en unofficial "a time for repayment of the loan has been determined (§ 488 (3) sentence 1)";
+}
+pub relation kuendigungsfrist_488(d: Darlehen, dauer: Quantity) kind institutional {
+    key(d);
+    label de official "Kündigungsfrist des § 488 Absatz 3 Satz 2: drei Monate";
+    label en unofficial "period of notice under § 488 (3) sentence 2: three months";
+}
+
+@source(BGB_P488) {
+    rule PflichtenBeimDarlehensvertrag(d: Darlehen, geber: Person, nehmer: Person, betrag: Money) strict {
+        label de official "Durch den Darlehensvertrag wird der Darlehensgeber verpflichtet, dem Darlehensnehmer einen Geldbetrag in der vereinbarten Höhe zur Verfügung zu stellen; der Darlehensnehmer ist verpflichtet, einen geschuldeten Zins zu zahlen und bei Fälligkeit das zur Verfügung gestellte Darlehen zurückzuzahlen (§ 488 Absatz 1)";
+        label en unofficial "under the loan contract the lender is obliged to place the agreed sum at the borrower's disposal; the borrower is obliged to pay any interest owed and to repay the loan when it falls due (§ 488 (1))";
+        when darlehensvertrag_geschlossen(d, betrag) and darlehensgeber(d, geber) and darlehensnehmer(d, nehmer);
+        then pflicht_zur_verfuegungstellung(d, geber, betrag);
+    }
+    rule RueckzahlungspflichtDesDarlehensnehmers(d: Darlehen, nehmer: Person, betrag: Money) strict {
+        label de official "Der Darlehensnehmer ist verpflichtet, bei Fälligkeit das zur Verfügung gestellte Darlehen zurückzuzahlen (§ 488 Absatz 1 Satz 2)";
+        label en unofficial "the borrower is obliged to repay the loan made available when it falls due (§ 488 (1) sentence 2)";
+        when darlehensvertrag_geschlossen(d, betrag) and darlehensnehmer(d, nehmer);
+        then pflicht_zur_rueckzahlung(d, nehmer, betrag);
+    }
+    rule KuendigungsfristDreiMonate488(d: Darlehen, betrag: Money) strict {
+        label de official "Ist für die Rückzahlung des Darlehens eine Zeit nicht bestimmt, so hängt die Fälligkeit von der Kündigung ab; die Kündigungsfrist beträgt drei Monate (§ 488 Absatz 3 Sätze 1, 2)";
+        label en unofficial "where no time for repayment has been determined, maturity depends on termination; the period of notice is three months (§ 488 (3) sentences 1, 2)";
+        when darlehensvertrag_geschlossen(d, betrag) and not_known(rueckzahlungszeit_bestimmt(d));
+        then kuendigungsfrist_488(d, 3 calendar_month);
+    }
+}
+
+// § 489: Ordentliches Kündigungsrecht des Darlehensnehmers — zehn Jahre nach
+// vollständigem Empfang mit sechs Monaten Frist (Absatz 1 Nummer 2), bei
+// veränderlichem Zinssatz jederzeit mit drei Monaten (Absatz 2), und die
+// Zweiwochenfrist des Absatzes 3.
+
+pub relation gebundener_sollzinssatz(d: Darlehen) kind empirical {
+    label de official "Der Sollzinssatz des Darlehens ist gebunden (§ 489 Absatz 1, Absatz 5 Satz 2)";
+    label en unofficial "the borrowing rate of the loan is fixed (§ 489 (1), (5) sentence 2)";
+}
+pub relation veraenderlicher_zinssatz(d: Darlehen) kind empirical {
+    label de official "Der Darlehensvertrag hat einen veränderlichen Zinssatz (§ 489 Absatz 2)";
+    label en unofficial "the loan contract has a variable interest rate (§ 489 (2))";
+}
+pub relation zehnjahresfrist_489(f: Frist) kind empirical {
+    key(f);
+    label de official "Zehnjahresfrist nach dem vollständigen Empfang des Darlehens, nach deren Ablauf der Darlehensnehmer in jedem Fall kündigen kann (§ 489 Absatz 1 Nummer 2)";
+    label en unofficial "the ten-year period after full receipt of the loan, after which the borrower may terminate in any event (§ 489 (1) no. 2)";
+}
+pub relation vollstaendiger_empfang_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag des vollständigen Empfangs des Darlehens; wird nach dem Empfang eine neue Vereinbarung über die Zeit der Rückzahlung oder den Sollzinssatz getroffen, so tritt der Zeitpunkt dieser Vereinbarung an seine Stelle (§ 489 Absatz 1 Nummer 2)";
+    label en unofficial "day of full receipt of the loan; where after receipt a new agreement on the time of repayment or on the borrowing rate is made, the date of that agreement takes its place (§ 489 (1) no. 2)";
+}
+pub relation kuendigungsfrist_489(d: Darlehen, dauer: Quantity) kind institutional {
+    key(d);
+    label de official "Kündigungsfrist des Darlehensnehmers nach § 489: sechs Monate (Absatz 1 Nummer 2) oder drei Monate (Absatz 2)";
+    label en unofficial "the borrower's period of notice under § 489: six months ((1) no. 2) or three months ((2))";
+}
+pub relation rueckzahlungsfrist_489(f: Frist) kind empirical {
+    key(f);
+    label de official "Frist von zwei Wochen nach Wirksamwerden der Kündigung, binnen deren der Darlehensnehmer den geschuldeten Betrag zurückzahlen muss (§ 489 Absatz 3)";
+    label en unofficial "the two-week period after the termination takes effect within which the borrower must repay the sum owed (§ 489 (3))";
+}
+pub relation kuendigung_wirksam_geworden_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag, an dem die Kündigung des Darlehensnehmers wirksam geworden ist (§ 489 Absatz 3)";
+    label en unofficial "day on which the borrower's termination took effect (§ 489 (3))";
+}
+pub relation betrag_binnen_zwei_wochen_zurueckgezahlt(f: Frist) kind empirical {
+    label de official "Der Darlehensnehmer hat den geschuldeten Betrag binnen zwei Wochen nach Wirksamwerden der Kündigung zurückgezahlt (§ 489 Absatz 3)";
+    label en unofficial "the borrower repaid the sum owed within two weeks of the termination taking effect (§ 489 (3))";
+}
+pub relation kuendigung_gilt_als_nicht_erfolgt(f: Frist) kind institutional {
+    label de official "Eine Kündigung des Darlehensnehmers gilt als nicht erfolgt, wenn er den geschuldeten Betrag nicht binnen zwei Wochen nach Wirksamwerden der Kündigung zurückzahlt (§ 489 Absatz 3)";
+    label en unofficial "a termination by the borrower is deemed not to have occurred where he does not repay the sum owed within two weeks of the termination taking effect (§ 489 (3))";
+}
+
+@source(BGB_P489) {
+    rule Zehnjahresfrist489Ereignis(f: Frist, t: Date) strict {
+        label de official "Die Zehnjahresfrist läuft vom vollständigen Empfang des Darlehens an (§ 489 Absatz 1 Nummer 2)";
+        label en unofficial "the ten-year period runs from full receipt of the loan (§ 489 (1) no. 2)";
+        when zehnjahresfrist_489(f) and vollstaendiger_empfang_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Zehnjahresfrist489Dauer(f: Frist) strict {
+        label de official "Der Darlehensnehmer kann in jedem Fall nach Ablauf von zehn Jahren nach dem vollständigen Empfang kündigen (§ 489 Absatz 1 Nummer 2)";
+        label en unofficial "the borrower may in any event terminate after ten years have elapsed since full receipt (§ 489 (1) no. 2)";
+        when zehnjahresfrist_489(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+    }
+    rule Kuendigungsfrist489SechsMonate(d: Darlehen) strict {
+        label de official "Nach Ablauf von zehn Jahren nach dem vollständigen Empfang kann der Darlehensnehmer unter Einhaltung einer Kündigungsfrist von sechs Monaten kündigen (§ 489 Absatz 1 Nummer 2)";
+        label en unofficial "after ten years since full receipt the borrower may terminate on six months' notice (§ 489 (1) no. 2)";
+        when gebundener_sollzinssatz(d);
+        then kuendigungsfrist_489(d, 6 calendar_month);
+    }
+    rule Kuendigungsfrist489DreiMonate(d: Darlehen) strict {
+        label de official "Der Darlehensnehmer kann einen Darlehensvertrag mit veränderlichem Zinssatz jederzeit unter Einhaltung einer Kündigungsfrist von drei Monaten kündigen (§ 489 Absatz 2)";
+        label en unofficial "the borrower may at any time terminate a loan contract with a variable interest rate on three months' notice (§ 489 (2))";
+        when veraenderlicher_zinssatz(d);
+        then kuendigungsfrist_489(d, 3 calendar_month);
+    }
+    rule Rueckzahlungsfrist489Ereignis(f: Frist, t: Date) strict {
+        label de official "Die Zweiwochenfrist läuft vom Wirksamwerden der Kündigung an (§ 489 Absatz 3, § 187 Absatz 1)";
+        label en unofficial "the two-week period runs from the termination taking effect (§ 489 (3), § 187 (1))";
+        when rueckzahlungsfrist_489(f) and kuendigung_wirksam_geworden_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Rueckzahlungsfrist489Dauer(f: Frist) strict {
+        label de official "Die Frist beträgt zwei Wochen (§ 489 Absatz 3)";
+        label en unofficial "the period is two weeks (§ 489 (3))";
+        when rueckzahlungsfrist_489(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 14 calendar_day);
+    }
+    rule Kuendigung489GiltAlsNichtErfolgt(f: Frist) strict {
+        label de official "Eine Kündigung des Darlehensnehmers gilt als nicht erfolgt, wenn er den geschuldeten Betrag nicht binnen zwei Wochen nach Wirksamwerden der Kündigung zurückzahlt (§ 489 Absatz 3)";
+        label en unofficial "a termination by the borrower is deemed not to have occurred where he does not repay the sum owed within two weeks of the termination taking effect (§ 489 (3))";
+        when rueckzahlungsfrist_489(f) and not_known(betrag_binnen_zwei_wochen_zurueckgezahlt(f));
+        then kuendigung_gilt_als_nicht_erfolgt(f);
+    }
+}
+pub relation kuendigung_489_ausgeuebt_am(d: Darlehen, p: Person, tag: Date) kind empirical {
+    label de official "Der Darlehensnehmer hat das Darlehen gekündigt (§ 489)";
+    label en unofficial "the borrower terminated the loan (§ 489)";
+}
+pub relation kuendigungsrecht_489_beginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Kündigungsrechts nach § 489";
+    label en unofficial "start of the termination right under § 489";
+}
+@source(BGB_P489)
+rule Position489Kuendigung(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Der Darlehensnehmer ist zur Kündigung nach § 489 berechtigt";
+    label en unofficial "The borrower has the liberty to terminate under § 489";
+    when darlehensnehmer(d, p) and veraenderlicher_zinssatz(d)
+      and kuendigungsrecht_489_beginn_am(d, tag);
+    then liberty Liberty489Kuendigung {
+        holder p;
+        action kuendigung_489_ausgeuebt_am(d, p, tag);
+        window [tag, infinity);
+    };
+}
+
+// § 490: Außerordentliches Kündigungsrecht — Absatz 1 (Verschlechterung) und
+// Absatz 2 (berechtigte Interessen des Darlehensnehmers, sechs Monate seit
+// vollständigem Empfang). Beide Merkmale sind Wertungen (§ 47.3).
+
+@source(BGB_P490)
+pub external judgment relation wesentliche_verschlechterung_490(d: Darlehen) {
+    authority Court;
+    label de official "In den Vermögensverhältnissen des Darlehensnehmers oder in der Werthaltigkeit einer für das Darlehen gestellten Sicherheit tritt eine wesentliche Verschlechterung ein oder droht einzutreten, durch die die Rückzahlung des Darlehens gefährdet wird (§ 490 Absatz 1)";
+    label en unofficial "a substantial deterioration occurs or threatens to occur in the borrower's financial circumstances or in the value of security given for the loan, jeopardising repayment (§ 490 (1))";
+}
+pub relation darlehen_noch_nicht_ausgezahlt(d: Darlehen) kind empirical {
+    label de official "Das Darlehen ist noch nicht ausgezahlt (§ 490 Absatz 1)";
+    label en unofficial "the loan has not yet been paid out (§ 490 (1))";
+}
+pub relation fristlose_kuendigung_des_darlehensgebers_zulaessig(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber kann den Darlehensvertrag fristlos kündigen (§ 490 Absatz 1)";
+    label en unofficial "the lender may terminate the loan contract without notice (§ 490 (1))";
+}
+@source(BGB_P490)
+rule FristloseKuendigungVorAuszahlung(d: Darlehen) strict {
+    label de official "Bei wesentlicher Verschlechterung kann der Darlehensgeber den Darlehensvertrag vor Auszahlung des Darlehens im Zweifel stets, nach Auszahlung nur in der Regel fristlos kündigen (§ 490 Absatz 1)";
+    label en unofficial "in case of substantial deterioration the lender may, before payout, in case of doubt always, and after payout as a rule, terminate the loan contract without notice (§ 490 (1))";
+    when wesentliche_verschlechterung_490(d) and darlehen_noch_nicht_ausgezahlt(d);
+    then fristlose_kuendigung_des_darlehensgebers_zulaessig(d);
+}
+pub relation kuendigung_490_ausgeuebt_am(d: Darlehen, p: Person, beginn: Date) kind empirical {
+    label de official "Der Darlehensgeber hat die fristlose Kündigung ausgeübt (§ 490 Absatz 1)";
+    label en unofficial "the lender exercised termination without notice (§ 490 (1))";
+}
+pub relation kuendigung_490_beginn_am(d: Darlehen, beginn: Date) kind empirical {
+    label de official "Beginn des Kündigungsrechts nach § 490";
+    label en unofficial "start of the termination right under § 490";
+}
+@source(BGB_P490)
+rule Position490FristloseKuendigung(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Der Darlehensgeber ist zur fristlosen Kündigung berechtigt (§ 490 Absatz 1)";
+    label en unofficial "The lender has the liberty to terminate without notice (§ 490 (1))";
+    when darlehensgeber(d, p) and wesentliche_verschlechterung_490(d)
+     and kuendigung_490_beginn_am(d, beginn)
+     and darlehen_noch_nicht_ausgezahlt(d);
+    then liberty Liberty490FristloseKuendigung {
+        holder p;
+        action kuendigung_490_ausgeuebt_am(d, p, beginn);
+        window [beginn, infinity);
+    };
+}
+
+// § 491: Verbraucherdarlehensvertrag — die 200-Euro-Schwelle und die
+// Dreimonats-Bagatelle des Absatzes 2 Satz 2 sind AUSNAHMEN: ein positives
+// Prädikat `ausnahme_491_abs2` mit drei Produzenten, das die Hauptnorm mit
+// `not_known` liest.
+
+pub relation unternehmer_als_darlehensgeber(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber ist Unternehmer (§ 491 Absatz 2 Satz 1)";
+    label en unofficial "the lender is a trader (§ 491 (2) sentence 1)";
+}
+pub relation verbraucher_als_darlehensnehmer(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer ist Verbraucher (§ 491 Absatz 2 Satz 1)";
+    label en unofficial "the borrower is a consumer (§ 491 (2) sentence 1)";
+}
+pub relation entgeltlicher_darlehensvertrag(d: Darlehen) kind empirical {
+    label de official "Der Darlehensvertrag ist entgeltlich (§ 491 Absatz 2 Satz 1, Absatz 3 Satz 1)";
+    label en unofficial "the loan contract is for consideration (§ 491 (2) sentence 1, (3) sentence 1)";
+}
+pub relation nettodarlehensbetrag(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Nettodarlehensbetrag (Artikel 247 § 3 Absatz 2 EGBGB) — Eingang aus dem Vertrag (§ 491 Absatz 2 Satz 2 Nummer 1)";
+    label en unofficial "net loan amount (Article 247 § 3 (2) EGBGB) — input from the contract (§ 491 (2) sentence 2 no. 1)";
+}
+pub relation rueckzahlung_binnen_drei_monaten_und_geringe_kosten(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer hat das Darlehen binnen drei Monaten zurückzuzahlen und es sind nur geringe Kosten vereinbart (§ 491 Absatz 2 Satz 2 Nummer 3)";
+    label en unofficial "the borrower must repay the loan within three months and only minor costs are agreed (§ 491 (2) sentence 2 no. 3)";
+}
+pub relation haftung_auf_pfandsache_beschraenkt(d: Darlehen) kind empirical {
+    label de official "Die Haftung des Darlehensnehmers beschränkt sich auf eine dem Darlehensgeber zum Pfand übergebene Sache (§ 491 Absatz 2 Satz 2 Nummer 2)";
+    label en unofficial "the borrower's liability is limited to a thing pledged to the lender (§ 491 (2) sentence 2 no. 2)";
+}
+pub relation ausnahme_491_abs2(d: Darlehen) kind institutional {
+    label de official "Der Vertrag fällt unter eine der Ausnahmen des § 491 Absatz 2 Satz 2 und ist daher kein Allgemein-Verbraucherdarlehensvertrag";
+    label en unofficial "the contract falls under one of the exceptions of § 491 (2) sentence 2 and is therefore not a general consumer loan contract";
+}
+pub relation grundpfandrechtlich_besichert_oder_immobilienzweck(d: Darlehen) kind empirical {
+    label de official "Der Vertrag ist durch ein Grundpfandrecht oder eine Reallast besichert oder für den Erwerb oder die Erhaltung des Eigentums an Grundstücken oder Gebäuden bestimmt (§ 491 Absatz 3 Satz 1 Nummern 1, 2)";
+    label en unofficial "the contract is secured by a land charge or encumbrance or is intended for acquiring or maintaining ownership of land or buildings (§ 491 (3) sentence 1 nos. 1, 2)";
+}
+pub relation allgemein_verbraucherdarlehensvertrag(d: Darlehen) kind institutional {
+    label de official "Allgemein-Verbraucherdarlehensvertrag (§ 491 Absatz 2 Satz 1)";
+    label en unofficial "general consumer loan contract (§ 491 (2) sentence 1)";
+}
+pub relation immobiliar_verbraucherdarlehensvertrag(d: Darlehen) kind institutional {
+    label de official "Immobiliar-Verbraucherdarlehensvertrag (§ 491 Absatz 3 Satz 1)";
+    label en unofficial "real-estate consumer loan contract (§ 491 (3) sentence 1)";
+}
+pub relation verbraucherdarlehensvertrag(d: Darlehen) kind institutional {
+    label de official "Verbraucherdarlehensvertrag: Allgemein-Verbraucherdarlehensvertrag oder Immobiliar-Verbraucherdarlehensvertrag (§ 491 Absatz 1 Satz 2)";
+    label en unofficial "consumer loan contract: general or real-estate consumer loan contract (§ 491 (1) sentence 2)";
+}
+
+@source(BGB_P491) {
+    rule Ausnahme491Bagatellbetrag(d: Darlehen, betrag: Money) strict {
+        label de official "Keine Allgemein-Verbraucherdarlehensverträge sind Verträge, bei denen der Nettodarlehensbetrag weniger als 200 Euro beträgt (§ 491 Absatz 2 Satz 2 Nummer 1)";
+        label en unofficial "contracts whose net loan amount is less than EUR 200 are not general consumer loan contracts (§ 491 (2) sentence 2 no. 1)";
+        when nettodarlehensbetrag(d, betrag) and betrag < 200.00 EUR;
+        then ausnahme_491_abs2(d);
+    }
+    rule Ausnahme491Pfandhaftung(d: Darlehen) strict {
+        label de official "Keine Allgemein-Verbraucherdarlehensverträge sind Verträge, bei denen sich die Haftung des Darlehensnehmers auf eine dem Darlehensgeber zum Pfand übergebene Sache beschränkt (§ 491 Absatz 2 Satz 2 Nummer 2)";
+        label en unofficial "contracts in which the borrower's liability is limited to a thing pledged to the lender are not general consumer loan contracts (§ 491 (2) sentence 2 no. 2)";
+        when haftung_auf_pfandsache_beschraenkt(d);
+        then ausnahme_491_abs2(d);
+    }
+    rule Ausnahme491DreiMonate(d: Darlehen) strict {
+        label de official "Keine Allgemein-Verbraucherdarlehensverträge sind Verträge, bei denen der Darlehensnehmer das Darlehen binnen drei Monaten zurückzuzahlen hat und nur geringe Kosten vereinbart sind (§ 491 Absatz 2 Satz 2 Nummer 3)";
+        label en unofficial "contracts under which the borrower must repay within three months and only minor costs are agreed are not general consumer loan contracts (§ 491 (2) sentence 2 no. 3)";
+        when rueckzahlung_binnen_drei_monaten_und_geringe_kosten(d);
+        then ausnahme_491_abs2(d);
+    }
+    rule Ausnahme491Immobiliardarlehen(d: Darlehen) strict {
+        label de official "Keine Allgemein-Verbraucherdarlehensverträge sind Immobiliar-Verbraucherdarlehensverträge (§ 491 Absatz 2 Satz 2 Nummer 6)";
+        label en unofficial "real-estate consumer loan contracts are not general consumer loan contracts (§ 491 (2) sentence 2 no. 6)";
+        when grundpfandrechtlich_besichert_oder_immobilienzweck(d);
+        then ausnahme_491_abs2(d);
+    }
+    rule AllgemeinVerbraucherdarlehensvertrag(d: Darlehen) strict {
+        label de official "Allgemein-Verbraucherdarlehensverträge sind entgeltliche Darlehensverträge zwischen einem Unternehmer als Darlehensgeber und einem Verbraucher als Darlehensnehmer (§ 491 Absatz 2 Satz 1)";
+        label en unofficial "general consumer loan contracts are loan contracts for consideration between a trader as lender and a consumer as borrower (§ 491 (2) sentence 1)";
+        when entgeltlicher_darlehensvertrag(d) and unternehmer_als_darlehensgeber(d)
+            and verbraucher_als_darlehensnehmer(d) and not_known(ausnahme_491_abs2(d));
+        then allgemein_verbraucherdarlehensvertrag(d);
+    }
+    rule ImmobiliarVerbraucherdarlehensvertrag(d: Darlehen) strict {
+        label de official "Immobiliar-Verbraucherdarlehensverträge sind entgeltliche Darlehensverträge zwischen einem Unternehmer als Darlehensgeber und einem Verbraucher als Darlehensnehmer, die durch ein Grundpfandrecht besichert oder für den Erwerb oder die Erhaltung des Eigentums an Grundstücken bestimmt sind (§ 491 Absatz 3 Satz 1)";
+        label en unofficial "real-estate consumer loan contracts are loan contracts for consideration between a trader as lender and a consumer as borrower which are secured by a land charge or intended for acquiring or maintaining ownership of land (§ 491 (3) sentence 1)";
+        when entgeltlicher_darlehensvertrag(d) and unternehmer_als_darlehensgeber(d)
+            and verbraucher_als_darlehensnehmer(d) and grundpfandrechtlich_besichert_oder_immobilienzweck(d);
+        then immobiliar_verbraucherdarlehensvertrag(d);
+    }
+    rule VerbraucherdarlehensvertragAllgemein(d: Darlehen) strict {
+        label de official "Verbraucherdarlehensverträge sind Allgemein-Verbraucherdarlehensverträge und Immobiliar-Verbraucherdarlehensverträge (§ 491 Absatz 1 Satz 2)";
+        label en unofficial "consumer loan contracts are general and real-estate consumer loan contracts (§ 491 (1) sentence 2)";
+        when allgemein_verbraucherdarlehensvertrag(d);
+        then verbraucherdarlehensvertrag(d);
+    }
+    rule VerbraucherdarlehensvertragImmobiliar(d: Darlehen) strict {
+        label de official "Verbraucherdarlehensverträge sind Allgemein-Verbraucherdarlehensverträge und Immobiliar-Verbraucherdarlehensverträge (§ 491 Absatz 1 Satz 2)";
+        label en unofficial "consumer loan contracts are general and real-estate consumer loan contracts (§ 491 (1) sentence 2)";
+        when immobiliar_verbraucherdarlehensvertrag(d);
+        then verbraucherdarlehensvertrag(d);
+    }
+}
+
+// § 494: Rechtsfolgen von Formmängeln — Nichtigkeit (Absatz 1), Heilung durch
+// Empfang mit Ermäßigung des Sollzinssatzes auf den gesetzlichen Zinssatz
+// (Absatz 2), Minderung um den zu niedrig angegebenen Prozentsatz (Absatz 3),
+// die 75 000-Euro-Grenze für Sicherheiten (Absatz 6 Satz 2).
+
+pub relation schriftform_insgesamt_nicht_eingehalten(d: Darlehen) kind empirical {
+    label de official "Die Schriftform ist insgesamt nicht eingehalten oder eine vorgeschriebene Pflichtangabe fehlt (§ 494 Absatz 1)";
+    label en unofficial "the written form has not been observed at all or a mandatory particular is missing (§ 494 (1))";
+}
+pub relation darlehen_empfangen_oder_in_anspruch_genommen(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer empfängt das Darlehen oder nimmt es in Anspruch (§ 494 Absatz 2 Satz 1)";
+    label en unofficial "the borrower receives or draws down the loan (§ 494 (2) sentence 1)";
+}
+pub relation angabe_des_sollzinssatzes_fehlt(d: Darlehen) kind empirical {
+    label de official "Die Angabe des Sollzinssatzes, des effektiven Jahreszinses oder des Gesamtbetrags fehlt (§ 494 Absatz 2 Satz 2)";
+    label en unofficial "the borrowing rate, the annual percentage rate of charge or the total amount is not stated (§ 494 (2) sentence 2)";
+}
+pub relation vereinbarter_sollzinssatz(d: Darlehen, satz: Decimal) kind empirical {
+    key(d);
+    label de official "Dem Verbraucherdarlehensvertrag zugrunde gelegter Sollzinssatz in Prozent pro Jahr (§ 494 Absatz 2, 3)";
+    label en unofficial "borrowing rate underlying the consumer loan contract, in per cent per annum (§ 494 (2), (3))";
+}
+pub relation gesetzlicher_zinssatz(satz: Decimal) kind empirical {
+    label de official "Gesetzlicher Zinssatz (§ 246: vier vom Hundert für das Jahr) — Eingang des Falls, weil § 246 dem Paket BG-04 gehört (D-08-05)";
+    label en unofficial "statutory rate of interest (§ 246: four per cent per annum) — an input of the case, since § 246 belongs to package BG-04 (D-08-05)";
+}
+pub relation effektiver_jahreszins_zu_niedrig_um(d: Darlehen, punkte: Decimal) kind empirical {
+    key(d);
+    label de official "Prozentsatz, um den der effektive Jahreszins zu niedrig angegeben ist (§ 494 Absatz 3)";
+    label en unofficial "percentage by which the annual percentage rate of charge is understated (§ 494 (3))";
+}
+pub relation massgeblicher_sollzinssatz(d: Darlehen, satz: Decimal) kind derived {
+    key(d);
+    label de official "Der nach § 494 maßgebliche Sollzinssatz";
+    label en unofficial "the borrowing rate applicable under § 494";
+}
+pub relation verbraucherdarlehensvertrag_nichtig(d: Darlehen) kind institutional {
+    label de official "Der Verbraucherdarlehensvertrag ist nichtig (§ 494 Absatz 1)";
+    label en unofficial "the consumer loan contract is void (§ 494 (1))";
+}
+pub relation vertrag_trotz_mangels_gueltig(d: Darlehen) kind institutional {
+    label de official "Ungeachtet eines Mangels nach Absatz 1 wird der Verbraucherdarlehensvertrag gültig, soweit der Darlehensnehmer das Darlehen empfängt oder in Anspruch nimmt (§ 494 Absatz 2 Satz 1)";
+    label en unofficial "notwithstanding a defect under (1) the consumer loan contract becomes valid in so far as the borrower receives or draws down the loan (§ 494 (2) sentence 1)";
+}
+pub relation angaben_zu_sicherheiten_fehlen(d: Darlehen) kind empirical {
+    label de official "Im Vertrag fehlen Angaben zu Sicherheiten (§ 494 Absatz 6 Satz 2)";
+    label en unofficial "the contract lacks particulars on security (§ 494 (6) sentence 2)";
+}
+pub relation sicherheiten_koennen_nicht_gefordert_werden(d: Darlehen) kind institutional {
+    label de official "Fehlen Angaben zu Sicherheiten, so können Sicherheiten nicht gefordert werden; dies gilt nicht bei Allgemein-Verbraucherdarlehensverträgen, wenn der Nettodarlehensbetrag 75 000 Euro übersteigt (§ 494 Absatz 6 Satz 2)";
+    label en unofficial "where particulars on security are missing, security may not be demanded; this does not apply to general consumer loan contracts where the net loan amount exceeds EUR 75,000 (§ 494 (6) sentence 2)";
+}
+
+@source(BGB_P494) {
+    rule Formmangel494Nichtigkeit(d: Darlehen) strict {
+        label de official "Der Verbraucherdarlehensvertrag ist nichtig, wenn die Schriftform insgesamt nicht eingehalten ist oder eine der vorgeschriebenen Angaben fehlt (§ 494 Absatz 1)";
+        label en unofficial "the consumer loan contract is void where the written form has not been observed at all or a mandatory particular is missing (§ 494 (1))";
+        when verbraucherdarlehensvertrag(d) and schriftform_insgesamt_nicht_eingehalten(d)
+            and not_known(darlehen_empfangen_oder_in_anspruch_genommen(d));
+        then verbraucherdarlehensvertrag_nichtig(d);
+    }
+    rule Formmangel494GeheiltDurchEmpfang(d: Darlehen) strict {
+        label de official "Ungeachtet eines Mangels nach Absatz 1 wird der Verbraucherdarlehensvertrag gültig, soweit der Darlehensnehmer das Darlehen empfängt oder in Anspruch nimmt (§ 494 Absatz 2 Satz 1)";
+        label en unofficial "notwithstanding a defect under (1), the contract becomes valid in so far as the borrower receives or draws down the loan (§ 494 (2) sentence 1)";
+        when verbraucherdarlehensvertrag(d) and schriftform_insgesamt_nicht_eingehalten(d)
+            and darlehen_empfangen_oder_in_anspruch_genommen(d);
+        then vertrag_trotz_mangels_gueltig(d);
+    }
+    rule Sollzinssatz494ErmaessigtAufGesetzlichen(d: Darlehen, satz: Decimal) strict {
+        label de official "Der dem Verbraucherdarlehensvertrag zugrunde gelegte Sollzinssatz ermäßigt sich auf den gesetzlichen Zinssatz, wenn die Angabe des Sollzinssatzes, des effektiven Jahreszinses oder des Gesamtbetrags fehlt (§ 494 Absatz 2 Satz 2)";
+        label en unofficial "the borrowing rate underlying the consumer loan contract is reduced to the statutory rate where the borrowing rate, the annual percentage rate of charge or the total amount is not stated (§ 494 (2) sentence 2)";
+        when vertrag_trotz_mangels_gueltig(d) and angabe_des_sollzinssatzes_fehlt(d) and gesetzlicher_zinssatz(satz);
+        then massgeblicher_sollzinssatz(d, satz);
+    }
+    rule Sollzinssatz494VermindertUmZuNiedrigenEffektivzins(d: Darlehen, satz: Decimal, punkte: Decimal) strict {
+        label de official "Ist der effektive Jahreszins zu niedrig angegeben, so vermindert sich der dem Verbraucherdarlehensvertrag zugrunde gelegte Sollzinssatz um den Prozentsatz, um den der effektive Jahreszins zu niedrig angegeben ist (§ 494 Absatz 3)";
+        label en unofficial "where the annual percentage rate of charge is understated, the borrowing rate underlying the contract is reduced by the percentage of the understatement (§ 494 (3))";
+        when verbraucherdarlehensvertrag(d) and vereinbarter_sollzinssatz(d, satz)
+            and effektiver_jahreszins_zu_niedrig_um(d, punkte);
+        then massgeblicher_sollzinssatz(d, satz - punkte);
+    }
+    rule KeineSicherheitenOhneAngabe(d: Darlehen, betrag: Money) strict {
+        label de official "Fehlen Angaben zu Sicherheiten, so können Sicherheiten nicht gefordert werden; bei Allgemein-Verbraucherdarlehensverträgen gilt dies nicht, wenn der Nettodarlehensbetrag 75 000 Euro übersteigt (§ 494 Absatz 6 Satz 2)";
+        label en unofficial "where particulars on security are missing, security may not be demanded; for general consumer loan contracts this does not apply where the net loan amount exceeds EUR 75,000 (§ 494 (6) sentence 2)";
+        when allgemein_verbraucherdarlehensvertrag(d) and angaben_zu_sicherheiten_fehlen(d)
+            and nettodarlehensbetrag(d, betrag) and betrag <= 75000.00 EUR;
+        then sicherheiten_koennen_nicht_gefordert_werden(d);
+    }
+}
+pub relation sicherheit_494_gefordert_am(d: Darlehen, p: Person, tag: Date) kind empirical {
+    label de official "Der Darlehensgeber hat trotz fehlender Sicherheitenangaben eine Sicherheit gefordert (§ 494 Absatz 6)";
+    label en unofficial "the lender demanded security despite missing particulars (§ 494 (6))";
+}
+pub relation verbotsbeginn_494_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Verbots, Sicherheiten zu fordern (§ 494 Absatz 6)";
+    label en unofficial "start of the prohibition on demanding security (§ 494 (6))";
+}
+@source(BGB_P494)
+rule Position494SicherheitNichtFordern(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Der Darlehensgeber darf bei fehlenden Angaben keine Sicherheit fordern (§ 494 Absatz 6)";
+    label en unofficial "The lender may not demand security where particulars are missing (§ 494 (6))";
+    when darlehensgeber(d, p) and angaben_zu_sicherheiten_fehlen(d)
+      and sicherheiten_koennen_nicht_gefordert_werden(d)
+      and verbotsbeginn_494_am(d, tag);
+    then prohibition Prohibition494Sicherheit {
+        bearer p;
+        action sicherheit_494_gefordert_am(d, p, tag);
+        window [tag, infinity);
+    };
+}
+
+// §§ 491a, 492 (D-08-21): vorvertragliche Ansprüche und Formvorschriften mit
+// eigener Rechtsfolge — nicht bloß Katalogverweise auf Art. 247 EGBGB.
+pub relation vertragsentwurf_verlangt_491a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer verlangt vom Darlehensgeber einen Entwurf des Verbraucherdarlehensvertrags (§ 491a Absatz 2 Satz 1)";
+    label en unofficial "the borrower demands a draft of the consumer loan contract from the lender (§ 491a (2) sentence 1)";
+}
+pub relation darlehensgeber_zum_abschluss_nicht_bereit_491a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber ist zum Vertragsabschluss nicht bereit (§ 491a Absatz 2 Satz 2)";
+    label en unofficial "the lender is not willing to conclude the contract (§ 491a (2) sentence 2)";
+}
+pub relation anspruch_auf_vertragsentwurf_491a(d: Darlehen) kind institutional {
+    label de official "Der Darlehensnehmer kann vom Darlehensgeber einen Entwurf des Verbraucherdarlehensvertrags verlangen (§ 491a Absatz 2 Satz 1)";
+    label en unofficial "the borrower may demand a draft of the consumer loan contract from the lender (§ 491a (2) sentence 1)";
+}
+@source(BGB_P491a)
+rule AnspruchAufVertragsentwurf491a(d: Darlehen) strict {
+    label de official "Der Darlehensnehmer kann vom Darlehensgeber einen Entwurf des Verbraucherdarlehensvertrags verlangen; dies gilt nicht, solange der Darlehensgeber zum Vertragsabschluss nicht bereit ist (§ 491a Absatz 2 Satz 1, 2)";
+    label en unofficial "the borrower may demand a draft of the consumer loan contract from the lender; this does not apply as long as the lender is not willing to conclude the contract (§ 491a (2) sentence 1, 2)";
+    when vertragsentwurf_verlangt_491a(d) and not_known(darlehensgeber_zum_abschluss_nicht_bereit_491a(d));
+    then anspruch_auf_vertragsentwurf_491a(d);
+}
+
+pub relation antrag_und_annahme_getrennt_schriftlich_erklaert_492(d: Darlehen) kind empirical {
+    label de official "Antrag und Annahme werden durch die Vertragsparteien jeweils getrennt schriftlich erklärt (§ 492 Absatz 1 Satz 2)";
+    label en unofficial "offer and acceptance are declared in writing separately by the parties (§ 492 (1) sentence 2)";
+}
+pub relation schriftform_492_erfuellt(d: Darlehen) kind institutional {
+    label de official "Der Schriftform ist genügt (§ 492 Absatz 1 Satz 2)";
+    label en unofficial "the written-form requirement is satisfied (§ 492 (1) sentence 2)";
+}
+pub relation veraenderlicher_sollzinssatz_492_vereinbart(d: Darlehen) kind empirical {
+    label de official "Es ist ein veränderlicher Sollzinssatz vereinbart, der sich nach einem Index oder Referenzzinssatz richtet (§ 492 Absatz 7)";
+    label en unofficial "a variable borrowing rate has been agreed which follows an index or reference rate (§ 492 (7))";
+}
+pub relation index_objektiv_eindeutig_verfuegbar_ueberpruefbar_492(d: Darlehen) kind empirical {
+    label de official "Der Index oder Referenzzinssatz ist objektiv, eindeutig bestimmt und für beide Parteien verfügbar und überprüfbar (§ 492 Absatz 7)";
+    label en unofficial "the index or reference rate is objective, clearly determined and available and verifiable for both parties (§ 492 (7))";
+}
+pub relation vereinbarung_veraenderlicher_sollzinssatz_492_wirksam(d: Darlehen) kind institutional {
+    label de official "Die Vereinbarung eines veränderlichen Sollzinssatzes ist wirksam (§ 492 Absatz 7)";
+    label en unofficial "the agreement on a variable borrowing rate is effective (§ 492 (7))";
+}
+@source(BGB_P492) {
+    rule Schriftform492ErfuelltDurchGetrennteErklaerung(d: Darlehen) strict {
+        label de official "Der Schriftform ist genügt, wenn Antrag und Annahme durch die Vertragsparteien jeweils getrennt schriftlich erklärt werden (§ 492 Absatz 1 Satz 2)";
+        label en unofficial "the written-form requirement is satisfied where offer and acceptance are declared in writing separately by the parties (§ 492 (1) sentence 2)";
+        when antrag_und_annahme_getrennt_schriftlich_erklaert_492(d);
+        then schriftform_492_erfuellt(d);
+    }
+    rule VeraenderlicherSollzinssatz492Wirksam(d: Darlehen) strict {
+        label de official "Die Vereinbarung eines veränderlichen Sollzinssatzes, der sich nach einem Index oder Referenzzinssatz richtet, ist nur wirksam, wenn der Index oder Referenzzinssatz objektiv, eindeutig bestimmt und für Darlehensgeber und Darlehensnehmer verfügbar und überprüfbar ist (§ 492 Absatz 7)";
+        label en unofficial "the agreement on a variable borrowing rate following an index or reference rate is effective only where that index or rate is objective, clearly determined and available and verifiable for both lender and borrower (§ 492 (7))";
+        when veraenderlicher_sollzinssatz_492_vereinbart(d) and index_objektiv_eindeutig_verfuegbar_ueberpruefbar_492(d);
+        then vereinbarung_veraenderlicher_sollzinssatz_492_wirksam(d);
+    }
+}
+
+// §§ 494 Absatz 4, 6 Satz 1 (D-08-21): fehlende Kostenangabe und fehlende
+// Laufzeit-/Kündigungsangabe tragen je eine eigene Rechtsfolge neben der
+// bereits erfassten Sicherheiten-Regel (Absatz 6 Satz 2).
+pub relation kosten_im_vertrag_nicht_angegeben_494(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Im Vertrag nicht angegebene Kosten (§ 494 Absatz 4 Satz 1)";
+    label en unofficial "costs not stated in the contract (§ 494 (4) sentence 1)";
+}
+pub relation kosten_494_nicht_geschuldet(d: Darlehen, betrag: Money) kind institutional {
+    label de official "Nicht angegebene Kosten werden vom Darlehensnehmer nicht geschuldet (§ 494 Absatz 4 Satz 1)";
+    label en unofficial "costs not stated are not owed by the borrower (§ 494 (4) sentence 1)";
+}
+pub relation voraussetzungen_der_anpassung_nicht_angegeben_494(d: Darlehen) kind empirical {
+    label de official "Im Vertrag ist nicht angegeben, unter welchen Voraussetzungen Kosten oder Zinsen angepasst werden können (§ 494 Absatz 4 Satz 2)";
+    label en unofficial "the contract does not state the conditions under which costs or interest may be adjusted (§ 494 (4) sentence 2)";
+}
+pub relation anpassung_zum_nachteil_494_entfaellt(d: Darlehen) kind institutional {
+    label de official "Die Möglichkeit, Kosten oder Zinsen zum Nachteil des Darlehensnehmers anzupassen, entfällt (§ 494 Absatz 4 Satz 2)";
+    label en unofficial "the possibility of adjusting costs or interest to the borrower's disadvantage no longer exists (§ 494 (4) sentence 2)";
+}
+pub relation angaben_zu_laufzeit_oder_kuendigungsrecht_fehlen_494(d: Darlehen) kind empirical {
+    label de official "Im Vertrag fehlen Angaben zur Laufzeit oder zum Kündigungsrecht (§ 494 Absatz 6 Satz 1)";
+    label en unofficial "the contract lacks particulars on the term or the right of termination (§ 494 (6) sentence 1)";
+}
+pub relation darlehensnehmer_494_jederzeit_kuendigungsberechtigt(d: Darlehen) kind institutional {
+    label de official "Der Darlehensnehmer ist jederzeit zur Kündigung berechtigt (§ 494 Absatz 6 Satz 1)";
+    label en unofficial "the borrower is entitled to terminate at any time (§ 494 (6) sentence 1)";
+}
+@source(BGB_P494) {
+    rule Kosten494NichtGeschuldet(d: Darlehen, betrag: Money) strict {
+        label de official "Nicht angegebene Kosten werden vom Darlehensnehmer nicht geschuldet (§ 494 Absatz 4 Satz 1)";
+        label en unofficial "costs not stated are not owed by the borrower (§ 494 (4) sentence 1)";
+        when kosten_im_vertrag_nicht_angegeben_494(d, betrag);
+        then kosten_494_nicht_geschuldet(d, betrag);
+    }
+    rule Anpassung494EntfaelltOhneVoraussetzungen(d: Darlehen) strict {
+        label de official "Ist im Vertrag nicht angegeben, unter welchen Voraussetzungen Kosten oder Zinsen angepasst werden können, so entfällt die Möglichkeit, diese zum Nachteil des Darlehensnehmers anzupassen (§ 494 Absatz 4 Satz 2)";
+        label en unofficial "where the contract does not state the conditions for adjusting costs or interest, the possibility of adjusting them to the borrower's disadvantage no longer exists (§ 494 (4) sentence 2)";
+        when voraussetzungen_der_anpassung_nicht_angegeben_494(d);
+        then anpassung_zum_nachteil_494_entfaellt(d);
+    }
+    rule Darlehensnehmer494JederzeitKuendigungsberechtigt(d: Darlehen) strict {
+        label de official "Fehlen im Vertrag Angaben zur Laufzeit oder zum Kündigungsrecht, ist der Darlehensnehmer jederzeit zur Kündigung berechtigt (§ 494 Absatz 6 Satz 1)";
+        label en unofficial "where the contract lacks particulars on the term or the right of termination, the borrower is entitled to terminate at any time (§ 494 (6) sentence 1)";
+        when angaben_zu_laufzeit_oder_kuendigungsrecht_fehlen_494(d);
+        then darlehensnehmer_494_jederzeit_kuendigungsberechtigt(d);
+    }
+}
+
+// § 495: Widerrufsrecht; Bedenkzeit. Das Widerrufsrecht selbst steht in § 355
+// (BG-04); bis zu dessen Verschmelzung führt dieses Paket nur die Zuweisung
+// und die Ausnahmen des Absatzes 2 (D-08-05).
+
+pub relation widerrufsrecht_nach_355(d: Darlehen) kind institutional {
+    label de official "Dem Darlehensnehmer steht bei einem Verbraucherdarlehensvertrag ein Widerrufsrecht nach § 355 zu (§ 495 Absatz 1)";
+    label en unofficial "the borrower has a right of withdrawal under § 355 in the case of a consumer loan contract (§ 495 (1))";
+}
+pub relation ausnahme_495_abs2(d: Darlehen) kind empirical {
+    label de official "Der Vertrag fällt unter eine der drei Ausnahmen des § 495 Absatz 2 (Umschuldung zur Vermeidung eines gerichtlichen Verfahrens, notarielle Beurkundung mit Bestätigung, Überziehung nach § 504 Absatz 2 oder § 505)";
+    label en unofficial "the contract falls under one of the three exceptions of § 495 (2) (rescheduling to avoid court proceedings, notarial recording with confirmation, overdraft under § 504 (2) or § 505)";
+}
+pub relation bedenkzeit_sieben_tage(d: Darlehen, dauer: Quantity) kind institutional {
+    key(d);
+    label de official "Bei Immobiliar-Verbraucherdarlehensverträgen ist dem Darlehensnehmer in den Fällen des Absatzes 2 vor Vertragsschluss eine Bedenkzeit von zumindest sieben Tagen einzuräumen (§ 495 Absatz 3 Satz 1)";
+    label en unofficial "for real-estate consumer loan contracts the borrower must be granted a reflection period of at least seven days before conclusion in the cases of (2) (§ 495 (3) sentence 1)";
+}
+
+@source(BGB_P495) {
+    rule Widerrufsrecht495(d: Darlehen) strict {
+        label de official "Dem Darlehensnehmer steht bei einem Verbraucherdarlehensvertrag ein Widerrufsrecht nach § 355 zu (§ 495 Absatz 1)";
+        label en unofficial "the borrower has a right of withdrawal under § 355 in the case of a consumer loan contract (§ 495 (1))";
+        when verbraucherdarlehensvertrag(d) and not_known(ausnahme_495_abs2(d));
+        then widerrufsrecht_nach_355(d);
+    }
+    rule Bedenkzeit495(d: Darlehen) strict {
+        label de official "Bei Immobiliar-Verbraucherdarlehensverträgen ist dem Darlehensnehmer in den Fällen des Absatzes 2 vor Vertragsschluss eine Bedenkzeit von zumindest sieben Tagen einzuräumen (§ 495 Absatz 3 Satz 1)";
+        label en unofficial "for real-estate consumer loan contracts the borrower must be granted a reflection period of at least seven days before conclusion in the cases of (2) (§ 495 (3) sentence 1)";
+        when immobiliar_verbraucherdarlehensvertrag(d) and ausnahme_495_abs2(d);
+        then bedenkzeit_sieben_tage(d, 7 calendar_day);
+    }
+}
+pub relation widerruf_495_ausgeuebt_am(d: Darlehen, p: Person, tag: Date) kind empirical {
+    label de official "Der Darlehensnehmer hat den Widerruf ausgeübt (§ 495 Absatz 1)";
+    label en unofficial "the borrower exercised withdrawal (§ 495 (1))";
+}
+pub relation widerruf_495_beginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Widerrufsrechts nach § 495";
+    label en unofficial "start of the withdrawal right under § 495";
+}
+@source(BGB_P495)
+rule Position495Widerruf(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Der Darlehensnehmer ist zum Widerruf berechtigt (§ 495 Absatz 1)";
+    label en unofficial "The borrower has the liberty to withdraw (§ 495 (1))";
+    when darlehensnehmer(d, p) and verbraucherdarlehensvertrag(d)
+      and widerruf_495_beginn_am(d, tag)
+      and not_known(ausnahme_495_abs2(d));
+    then liberty Liberty495Widerruf {
+        holder p;
+        action widerruf_495_ausgeuebt_am(d, p, tag);
+        window [tag, infinity);
+    };
+}
+
+// § 496 (D-08-21): Einwendungsverzicht (Absatz 1), Unterrichtung bei
+// Abtretung/Gläubigerwechsel — unverzüglich, Bewertungskanal (Absatz 2),
+// Wechsel-/Scheckverbot mit Herausgabeanspruch und Haftung (Absatz 3).
+pub relation einwendungsverzicht_496_vereinbart(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer verzichtet auf das Recht, Einwendungen gemäß § 404 oder eine Aufrechnung gemäß § 406 einem Abtretungsgläubiger entgegenzusetzen (§ 496 Absatz 1)";
+    label en unofficial "the borrower waives the right to raise defences under § 404 or set-off under § 406 against an assignee (§ 496 (1))";
+}
+pub relation einwendungsverzicht_496_unwirksam(d: Darlehen) kind institutional {
+    label de official "Die Verzichtsvereinbarung ist unwirksam (§ 496 Absatz 1)";
+    label en unofficial "the waiver agreement is ineffective (§ 496 (1))";
+}
+pub relation forderung_abgetreten_oder_glaeubigerwechsel_496(d: Darlehen) kind empirical {
+    label de official "Eine Forderung des Darlehensgebers ist abgetreten worden oder in der Person des Darlehensgebers hat ein Wechsel stattgefunden (§ 496 Absatz 2 Satz 1)";
+    label en unofficial "a claim of the lender has been assigned or there has been a change in the lender (§ 496 (2) sentence 1)";
+}
+pub relation bisheriger_darlehensgeber_tritt_weiterhin_auf_496(d: Darlehen) kind empirical {
+    label de official "Der bisherige Darlehensgeber hat mit dem neuen Gläubiger vereinbart, dass im Verhältnis zum Darlehensnehmer weiterhin allein er auftritt (§ 496 Absatz 2 Satz 2)";
+    label en unofficial "the former lender has agreed with the new creditor that it alone continues to deal with the borrower (§ 496 (2) sentence 2)";
+}
+@source(BGB_P496)
+pub external judgment relation unterrichtung_ueber_abtretung_unverzueglich_496(d: Darlehen) {
+    authority Court;
+    label de official "Der Darlehensnehmer ist unverzüglich über die Abtretung oder den Gläubigerwechsel sowie über die Kontaktdaten des neuen Gläubigers unterrichtet worden (§ 496 Absatz 2 Satz 1)";
+    label en unofficial "the borrower was informed without undue delay of the assignment or change of lender and of the new creditor's contact details (§ 496 (2) sentence 1)";
+}
+pub relation wechselverbindlichkeit_vom_darlehensnehmer_verlangt_496(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer wird verpflichtet, für die Ansprüche aus dem Verbraucherdarlehensvertrag eine Wechselverbindlichkeit einzugehen (§ 496 Absatz 3 Satz 1)";
+    label en unofficial "the borrower is required to incur a bill-of-exchange liability for the lender's claims (§ 496 (3) sentence 1)";
+}
+pub relation scheck_vom_darlehensgeber_entgegengenommen_496(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber nimmt zur Sicherung seiner Ansprüche einen Scheck des Darlehensnehmers entgegen (§ 496 Absatz 3 Satz 2)";
+    label en unofficial "the lender accepts a cheque from the borrower to secure its claims (§ 496 (3) sentence 2)";
+}
+pub relation wechsel_oder_scheck_496_entgegen_verbot_begeben(d: Darlehen) kind institutional {
+    label de official "Ein entgegen § 496 Absatz 3 Satz 1 oder 2 begebener Wechsel oder Scheck liegt vor";
+    label en unofficial "a bill of exchange or cheque issued contrary to § 496 (3) sentence 1 or 2 exists";
+}
+pub relation anspruch_auf_herausgabe_496(d: Darlehen) kind institutional {
+    label de official "Der Darlehensnehmer kann vom Darlehensgeber jederzeit die Herausgabe des Wechsels oder Schecks verlangen (§ 496 Absatz 3 Satz 3)";
+    label en unofficial "the borrower may at any time demand the return of the bill or cheque from the lender (§ 496 (3) sentence 3)";
+}
+pub relation schaden_aus_wechsel_oder_scheckbegebung_496(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Schaden, der dem Darlehensnehmer aus der Wechsel- oder Scheckbegebung entstanden ist (§ 496 Absatz 3 Satz 4)";
+    label en unofficial "damage suffered by the borrower from the issuance of the bill or cheque (§ 496 (3) sentence 4)";
+}
+pub relation haftung_des_darlehensgebers_496(d: Darlehen, betrag: Money) kind institutional {
+    label de official "Der Darlehensgeber haftet für den Schaden, der dem Darlehensnehmer aus der Wechsel- oder Scheckbegebung entsteht (§ 496 Absatz 3 Satz 4)";
+    label en unofficial "the lender is liable for the damage suffered by the borrower from the issuance of the bill or cheque (§ 496 (3) sentence 4)";
+}
+pub relation herausgabe_496_ausgeuebt_am(d: Darlehen, p: Person, tag: Date) kind empirical {
+    label de official "Der Darlehensnehmer hat die Herausgabe von Wechsel oder Scheck verlangt (§ 496 Absatz 3 Satz 3)";
+    label en unofficial "the borrower demanded return of the bill or cheque (§ 496 (3) sentence 3)";
+}
+pub relation herausgabe_496_beginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Herausgaberechts nach § 496";
+    label en unofficial "start of the return right under § 496";
+}
+@source(BGB_P496)
+rule Position496Herausgabe(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Der Darlehensnehmer kann jederzeit die Herausgabe verlangen (§ 496 Absatz 3 Satz 3)";
+    label en unofficial "The borrower may at any time demand return (§ 496 (3) sentence 3)";
+    when anspruch_auf_herausgabe_496(d) and darlehensnehmer(d, p)
+      and herausgabe_496_beginn_am(d, tag);
+    then liberty Liberty496Herausgabe {
+        holder p;
+        action herausgabe_496_ausgeuebt_am(d, p, tag);
+        window [tag, infinity);
+    };
+}
+@source(BGB_P496) {
+    rule Einwendungsverzicht496Unwirksam(d: Darlehen) strict {
+        label de official "Eine Vereinbarung, durch die der Darlehensnehmer auf das Recht verzichtet, Einwendungen gemäß § 404 einem Abtretungsgläubiger entgegenzusetzen oder gemäß § 406 aufzurechnen, ist unwirksam (§ 496 Absatz 1)";
+        label en unofficial "an agreement by which the borrower waives the right to raise defences under § 404 against an assignee or to set off under § 406 is ineffective (§ 496 (1))";
+        when einwendungsverzicht_496_vereinbart(d);
+        then einwendungsverzicht_496_unwirksam(d);
+    }
+    rule WechselverbindlichkeitUnzulaessig496(d: Darlehen) strict {
+        label de official "Der Darlehensnehmer darf nicht verpflichtet werden, für die Ansprüche des Darlehensgebers eine Wechselverbindlichkeit einzugehen (§ 496 Absatz 3 Satz 1)";
+        label en unofficial "the borrower may not be required to incur a bill-of-exchange liability for the lender's claims (§ 496 (3) sentence 1)";
+        when wechselverbindlichkeit_vom_darlehensnehmer_verlangt_496(d);
+        then wechsel_oder_scheck_496_entgegen_verbot_begeben(d);
+    }
+    rule ScheckentgegennahmeUnzulaessig496(d: Darlehen) strict {
+        label de official "Der Darlehensgeber darf vom Darlehensnehmer zur Sicherung seiner Ansprüche einen Scheck nicht entgegennehmen (§ 496 Absatz 3 Satz 2)";
+        label en unofficial "the lender may not accept a cheque from the borrower to secure its claims (§ 496 (3) sentence 2)";
+        when scheck_vom_darlehensgeber_entgegengenommen_496(d);
+        then wechsel_oder_scheck_496_entgegen_verbot_begeben(d);
+    }
+    rule AnspruchAufHerausgabe496(d: Darlehen) strict {
+        label de official "Der Darlehensnehmer kann vom Darlehensgeber jederzeit die Herausgabe eines entgegen Satz 1 oder 2 begebenen Wechsels oder Schecks verlangen (§ 496 Absatz 3 Satz 3)";
+        label en unofficial "the borrower may at any time demand the return of a bill or cheque issued contrary to sentence 1 or 2 (§ 496 (3) sentence 3)";
+        when wechsel_oder_scheck_496_entgegen_verbot_begeben(d);
+        then anspruch_auf_herausgabe_496(d);
+    }
+    rule HaftungDesDarlehensgebers496(d: Darlehen, betrag: Money) strict {
+        label de official "Der Darlehensgeber haftet für jeden Schaden, der dem Darlehensnehmer aus einer solchen Wechsel- oder Scheckbegebung entsteht (§ 496 Absatz 3 Satz 4)";
+        label en unofficial "the lender is liable for any damage suffered by the borrower from such issuance of a bill or cheque (§ 496 (3) sentence 4)";
+        when wechsel_oder_scheck_496_entgegen_verbot_begeben(d) and schaden_aus_wechsel_oder_scheckbegebung_496(d, betrag);
+        then haftung_des_darlehensgebers_496(d, betrag);
+    }
+}
+
+// § 497: Verzug des Darlehensnehmers — der Verzugszinssatz. Absatz 1 Satz 1
+// verweist auf § 288 Absatz 1 (fünf Prozentpunkte über dem Basiszinssatz),
+// Absatz 4 Satz 1 setzt beim Immobiliar-Verbraucherdarlehen zweieinhalb
+// Prozentpunkte. Der Basiszinssatz kommt aus dem Fall (D-08-05).
+
+pub relation basiszinssatz(satz: Decimal) kind empirical {
+    label de official "Basiszinssatz nach § 247 in Prozent pro Jahr, gültig für den `legal_time` des Falls — Angabe der Deutschen Bundesbank, Eingang des Falls (D-08-05)";
+    label en unofficial "base rate of interest under § 247 in per cent per annum, applicable at the case's legal_time — a figure published by the Deutsche Bundesbank, an input of the case (D-08-05)";
+}
+pub relation darlehensnehmer_in_verzug(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Der Darlehensnehmer ist mit Zahlungen, die er auf Grund des Verbraucherdarlehensvertrags schuldet, in Verzug; geschuldeter Betrag (§ 497 Absatz 1 Satz 1)";
+    label en unofficial "the borrower is in default with payments owed under the consumer loan contract; the amount owed (§ 497 (1) sentence 1)";
+}
+pub relation verzugszinssatz_497(d: Darlehen, satz: Decimal) kind derived {
+    key(d);
+    label de official "Verzugszinssatz für den geschuldeten Betrag (§ 497 Absatz 1 Satz 1 in Verbindung mit § 288 Absatz 1, § 497 Absatz 4 Satz 1)";
+    label en unofficial "default interest rate on the amount owed (§ 497 (1) sentence 1 in conjunction with § 288 (1), § 497 (4) sentence 1)";
+}
+
+@source(BGB_P497) {
+    rule Verzugszins497Allgemein(d: Darlehen, betrag: Money, basis: Decimal) strict {
+        label de official "Soweit der Darlehensnehmer mit Zahlungen in Verzug kommt, hat er den geschuldeten Betrag nach § 288 Absatz 1 zu verzinsen — fünf Prozentpunkte über dem Basiszinssatz (§ 497 Absatz 1 Satz 1)";
+        label en unofficial "in so far as the borrower is in default with payments he must pay interest on the amount owed under § 288 (1) — five percentage points above the base rate (§ 497 (1) sentence 1)";
+        when allgemein_verbraucherdarlehensvertrag(d) and darlehensnehmer_in_verzug(d, betrag) and basiszinssatz(basis);
+        then verzugszinssatz_497(d, basis + 5.0);
+    }
+    rule Verzugszins497Immobiliar(d: Darlehen, betrag: Money, basis: Decimal) strict {
+        label de official "Bei Immobiliar-Verbraucherdarlehensverträgen beträgt der Verzugszinssatz abweichend von Absatz 1 für das Jahr 2,5 Prozentpunkte über dem Basiszinssatz (§ 497 Absatz 4 Satz 1)";
+        label en unofficial "for real-estate consumer loan contracts the default interest rate is, by way of derogation from (1), 2.5 percentage points above the base rate per annum (§ 497 (4) sentence 1)";
+        when immobiliar_verbraucherdarlehensvertrag(d) and darlehensnehmer_in_verzug(d, betrag) and basiszinssatz(basis);
+        then verzugszinssatz_497(d, basis + 2.5);
+    }
+}
+pub relation verzugszins_497_entrichtet_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Der Darlehensnehmer hat Verzugszinsen entrichtet (§ 497)";
+    label en unofficial "the borrower paid default interest (§ 497)";
+}
+pub relation verzugszins_497_beginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn der Verzugszinspflicht nach § 497";
+    label en unofficial "start of default interest duty under § 497";
+}
+@source(BGB_P497)
+rule Position497Verzugszins(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Der Darlehensnehmer ist verpflichtet, Verzugszinsen zu entrichten (§ 497 Absatz 1)";
+    label en unofficial "The borrower is obliged to pay default interest (§ 497 (1))";
+    when darlehensnehmer(d, p) and darlehensnehmer_in_verzug(d, 1.00 EUR)
+     and verzugszins_497_beginn_am(d, beginn);
+    then duty Duty497Verzugszins {
+        bearer p;
+        achieve verzugszins_497_entrichtet_am(d, beginn) during [beginn, infinity);
+    };
+}
+
+// § 498: Gesamtfälligstellung bei Teilzahlungsdarlehen — die drei Prozentsätze
+// und die zweiwöchige Frist. Die Schwelle wird als eigener Schluss gerechnet,
+// nicht im Guard.
+
+pub relation teilzahlungsdarlehen(d: Darlehen) kind empirical {
+    label de official "Darlehen, das in Teilzahlungen zu tilgen ist (§ 498 Absatz 1 Satz 1)";
+    label en unofficial "loan to be repaid in instalments (§ 498 (1) sentence 1)";
+}
+pub relation nennbetrag_des_darlehens(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Nennbetrag des Darlehens (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b)";
+    label en unofficial "nominal amount of the loan (§ 498 (1) sentence 1 no. 1 (b))";
+}
+pub relation rueckstand(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Rückständiger Betrag, mit dem der Darlehensnehmer in Verzug ist (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b)";
+    label en unofficial "amount in arrears with which the borrower is in default (§ 498 (1) sentence 1 no. 1 (b))";
+}
+pub relation mit_zwei_aufeinander_folgenden_teilzahlungen_in_verzug(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer ist mit mindestens zwei aufeinander folgenden Teilzahlungen ganz oder teilweise in Verzug (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe a)";
+    label en unofficial "the borrower is wholly or partly in default with at least two successive instalments (§ 498 (1) sentence 1 no. 1 (a))";
+}
+pub relation vertragslaufzeit_bis_drei_jahre(d: Darlehen) kind empirical {
+    label de official "Die Vertragslaufzeit beträgt bis zu drei Jahren (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b)";
+    label en unofficial "the contract term is up to three years (§ 498 (1) sentence 1 no. 1 (b))";
+}
+pub relation vertragslaufzeit_ueber_drei_jahre(d: Darlehen) kind empirical {
+    label de official "Die Vertragslaufzeit beträgt mehr als drei Jahre (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b)";
+    label en unofficial "the contract term is more than three years (§ 498 (1) sentence 1 no. 1 (b))";
+}
+pub relation rueckstandsschwelle_498(d: Darlehen, betrag: Money) kind derived {
+    key(d);
+    label de official "Betrag, mit dem der Darlehensnehmer mindestens in Verzug sein muss: 10 Prozent (Laufzeit bis drei Jahre), 5 Prozent (Laufzeit über drei Jahre) oder 2,5 Prozent (Immobiliar-Verbraucherdarlehen) des Nennbetrags (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b, Absatz 2)";
+    label en unofficial "the amount with which the borrower must at least be in default: 10 per cent (term up to three years), 5 per cent (term over three years) or 2.5 per cent (real-estate consumer loan) of the nominal amount (§ 498 (1) sentence 1 no. 1 (b), (2))";
+}
+pub relation zahlungsfrist_498(f: Frist) kind empirical {
+    key(f);
+    label de official "Zweiwöchige Frist zur Zahlung des rückständigen Betrags, die der Darlehensgeber mit der Erklärung gesetzt hat, dass er bei Nichtzahlung die gesamte Restschuld verlange (§ 498 Absatz 1 Satz 1 Nummer 2)";
+    label en unofficial "the two-week period for payment of the arrears set by the lender with the declaration that on non-payment he will demand the entire remaining debt (§ 498 (1) sentence 1 no. 2)";
+}
+pub relation fristsetzung_zugegangen_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag, an dem die Fristsetzung mit Gesamtfälligstellungserklärung zugegangen ist (§ 498 Absatz 1 Satz 1 Nummer 2)";
+    label en unofficial "day on which the notice setting the period with the acceleration declaration was received (§ 498 (1) sentence 1 no. 2)";
+}
+pub relation frist_erfolglos_verstrichen_498(d: Darlehen) kind empirical {
+    label de official "Die zweiwöchige Zahlungsfrist ist erfolglos verstrichen (§ 498 Absatz 1 Satz 1 Nummer 2)";
+    label en unofficial "the two-week payment period has expired without success (§ 498 (1) sentence 1 no. 2)";
+}
+pub relation kuendigung_wegen_zahlungsverzugs_zulaessig(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber kann den Verbraucherdarlehensvertrag wegen Zahlungsverzugs kündigen (§ 498 Absatz 1 Satz 1)";
+    label en unofficial "the lender may terminate the consumer loan contract on account of default in payment (§ 498 (1) sentence 1)";
+}
+
+@source(BGB_P498) {
+    rule Rueckstandsschwelle498ZehnProzent(d: Darlehen, nenn: Money) strict {
+        label de official "Bei einer Vertragslaufzeit bis zu drei Jahren muss der Darlehensnehmer mit mindestens 10 Prozent des Nennbetrags des Darlehens in Verzug sein (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b)";
+        label en unofficial "for a contract term of up to three years the borrower must be in default with at least 10 per cent of the nominal amount (§ 498 (1) sentence 1 no. 1 (b))";
+        when allgemein_verbraucherdarlehensvertrag(d) and teilzahlungsdarlehen(d)
+            and vertragslaufzeit_bis_drei_jahre(d) and nennbetrag_des_darlehens(d, nenn);
+        then rueckstandsschwelle_498(d, div_round(nenn * 10, 100 * 1.0, 2, "HALF_UP"));
+    }
+    rule Rueckstandsschwelle498FuenfProzent(d: Darlehen, nenn: Money) strict {
+        label de official "Bei einer Vertragslaufzeit von mehr als drei Jahren muss der Darlehensnehmer mit mindestens 5 Prozent des Nennbetrags des Darlehens in Verzug sein (§ 498 Absatz 1 Satz 1 Nummer 1 Buchstabe b)";
+        label en unofficial "for a contract term of more than three years the borrower must be in default with at least 5 per cent of the nominal amount (§ 498 (1) sentence 1 no. 1 (b))";
+        when allgemein_verbraucherdarlehensvertrag(d) and teilzahlungsdarlehen(d)
+            and vertragslaufzeit_ueber_drei_jahre(d) and nennbetrag_des_darlehens(d, nenn);
+        then rueckstandsschwelle_498(d, div_round(nenn * 5, 100 * 1.0, 2, "HALF_UP"));
+    }
+    rule Rueckstandsschwelle498ZweiKommaFuenf(d: Darlehen, nenn: Money) strict {
+        label de official "Bei einem Immobiliar-Verbraucherdarlehensvertrag muss der Darlehensnehmer abweichend von Absatz 1 Satz 1 Nummer 1 Buchstabe b mit mindestens 2,5 Prozent des Nennbetrags des Darlehens in Verzug sein (§ 498 Absatz 2)";
+        label en unofficial "for a real-estate consumer loan contract the borrower must, by way of derogation, be in default with at least 2.5 per cent of the nominal amount (§ 498 (2))";
+        when immobiliar_verbraucherdarlehensvertrag(d) and teilzahlungsdarlehen(d) and nennbetrag_des_darlehens(d, nenn);
+        then rueckstandsschwelle_498(d, div_round(nenn * 25, 1000 * 1.0, 2, "HALF_UP"));
+    }
+    rule Zahlungsfrist498Ereignis(f: Frist, t: Date) strict {
+        label de official "Die zweiwöchige Zahlungsfrist läuft vom Zugang der Fristsetzung an (§ 498 Absatz 1 Satz 1 Nummer 2, § 187 Absatz 1)";
+        label en unofficial "the two-week payment period runs from receipt of the notice setting the period (§ 498 (1) sentence 1 no. 2, § 187 (1))";
+        when zahlungsfrist_498(f) and fristsetzung_zugegangen_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Zahlungsfrist498Dauer(f: Frist) strict {
+        label de official "Der Darlehensgeber hat dem Darlehensnehmer erfolglos eine zweiwöchige Frist zur Zahlung des rückständigen Betrags gesetzt (§ 498 Absatz 1 Satz 1 Nummer 2)";
+        label en unofficial "the lender has unsuccessfully set the borrower a two-week period for payment of the arrears (§ 498 (1) sentence 1 no. 2)";
+        when zahlungsfrist_498(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 14 calendar_day);
+    }
+    rule Gesamtfaelligstellung498(d: Darlehen, rueck: Money, schwelle: Money) strict {
+        label de official "Der Darlehensgeber kann den Verbraucherdarlehensvertrag bei einem Teilzahlungsdarlehen wegen Zahlungsverzugs nur kündigen, wenn der Darlehensnehmer mit mindestens zwei aufeinander folgenden Teilzahlungen und mit dem Mindestanteil des Nennbetrags in Verzug ist und die zweiwöchige Frist erfolglos verstrichen ist (§ 498 Absatz 1 Satz 1)";
+        label en unofficial "the lender may terminate an instalment consumer loan for default only where the borrower is in default with at least two successive instalments and with the minimum share of the nominal amount, and the two-week period has expired without success (§ 498 (1) sentence 1)";
+        when teilzahlungsdarlehen(d) and mit_zwei_aufeinander_folgenden_teilzahlungen_in_verzug(d)
+            and rueckstand(d, rueck) and rueckstandsschwelle_498(d, schwelle) and rueck >= schwelle
+            and frist_erfolglos_verstrichen_498(d);
+        then kuendigung_wegen_zahlungsverzugs_zulaessig(d);
+    }
+}
+pub relation kuendigung_498_ausgeuebt_am(d: Darlehen, p: Person, tag: Date) kind empirical {
+    label de official "Der Darlehensgeber hat wegen Zahlungsverzugs gekündigt (§ 498)";
+    label en unofficial "the lender terminated for payment default (§ 498)";
+}
+pub relation kuendigungsrecht_498_beginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Kündigungsrechts nach § 498";
+    label en unofficial "start of termination right under § 498";
+}
+@source(BGB_P498)
+rule Position498Kuendigung(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Der Darlehensgeber ist berechtigt, den Verbraucherdarlehensvertrag wegen Zahlungsverzugs zu kündigen (§ 498)";
+    label en unofficial "The lender has the liberty to terminate the consumer loan for payment default (§ 498)";
+    when darlehensgeber(d, p) and kuendigung_wegen_zahlungsverzugs_zulaessig(d)
+     and kuendigungsrecht_498_beginn_am(d, beginn);
+    then liberty Liberty498Kuendigung {
+        holder p;
+        action kuendigung_498_ausgeuebt_am(d, p, beginn);
+        window [beginn, infinity];
+    };
+}
+
+// § 499 (D-08-21): Kündigungsvereinbarung des Darlehensgebers unwirksam bei
+// bestimmter Laufzeit oder Frist unter zwei Monaten (Absatz 1); Verweigerung
+// der Auszahlung aus sachlichem Grund samt Unterrichtungspflicht (Absatz 2,
+// unverzüglich als Bewertungskanal); Kündigungsverbot wegen unvollständiger
+// Angaben/mangelhafter Kreditwürdigkeitsprüfung mit Ausnahme (Absatz 3).
+pub relation kuendigungsrecht_des_darlehensgebers_vereinbart_499(d: Darlehen) kind empirical {
+    label de official "Im Allgemein-Verbraucherdarlehensvertrag ist ein Kündigungsrecht des Darlehensgebers vereinbart (§ 499 Absatz 1)";
+    label en unofficial "a right of termination for the lender is agreed in the general consumer loan contract (§ 499 (1))";
+}
+pub relation bestimmte_vertragslaufzeit_vereinbart_499(d: Darlehen) kind empirical {
+    label de official "Eine bestimmte Vertragslaufzeit ist vereinbart (§ 499 Absatz 1)";
+    label en unofficial "a fixed contract term has been agreed (§ 499 (1))";
+}
+pub relation kuendigungsfrist_des_darlehensgebers_499(d: Darlehen, monate: Integer) kind empirical {
+    key(d);
+    label de official "Vereinbarte Kündigungsfrist des Darlehensgebers in Monaten (§ 499 Absatz 1)";
+    label en unofficial "the lender's agreed notice period, in months (§ 499 (1))";
+}
+pub relation kuendigungsrechtsvereinbarung_499_unwirksam(d: Darlehen) kind institutional {
+    label de official "Die Vereinbarung über ein Kündigungsrecht des Darlehensgebers ist unwirksam (§ 499 Absatz 1)";
+    label en unofficial "the agreement on a right of termination for the lender is ineffective (§ 499 (1))";
+}
+@source(BGB_P499) {
+    rule Kuendigungsrechtsvereinbarung499UnwirksamBeiLaufzeit(d: Darlehen) strict {
+        label de official "Eine Vereinbarung über ein Kündigungsrecht des Darlehensgebers ist unwirksam, wenn eine bestimmte Vertragslaufzeit vereinbart wurde (§ 499 Absatz 1)";
+        label en unofficial "an agreement on a right of termination for the lender is ineffective where a fixed contract term has been agreed (§ 499 (1))";
+        when kuendigungsrecht_des_darlehensgebers_vereinbart_499(d) and bestimmte_vertragslaufzeit_vereinbart_499(d);
+        then kuendigungsrechtsvereinbarung_499_unwirksam(d);
+    }
+    rule Kuendigungsrechtsvereinbarung499UnwirksamBeiKurzerFrist(d: Darlehen, monate: Integer) strict {
+        label de official "Eine Vereinbarung über ein Kündigungsrecht des Darlehensgebers ist unwirksam, wenn die Kündigungsfrist zwei Monate unterschreitet (§ 499 Absatz 1)";
+        label en unofficial "an agreement on a right of termination for the lender is ineffective where the notice period is shorter than two months (§ 499 (1))";
+        when kuendigungsrecht_des_darlehensgebers_vereinbart_499(d) and kuendigungsfrist_des_darlehensgebers_499(d, monate)
+            and monate < 2;
+        then kuendigungsrechtsvereinbarung_499_unwirksam(d);
+    }
+}
+
+pub relation auszahlung_ohne_bestimmte_rueckzahlungszeit_499(d: Darlehen) kind empirical {
+    label de official "Ein Allgemein-Verbraucherdarlehen, bei dem eine Zeit für die Rückzahlung nicht bestimmt ist, soll ausgezahlt werden (§ 499 Absatz 2 Satz 1)";
+    label en unofficial "a general consumer loan for which no time for repayment is fixed is to be paid out (§ 499 (2) sentence 1)";
+}
+pub relation verweigerungsvereinbarung_499_abs2_getroffen(d: Darlehen) kind empirical {
+    label de official "Zahlungsdienstleister und Darlehensnehmer haben eine entsprechende Vereinbarung nach § 499 Absatz 2 Satz 1 getroffen";
+    label en unofficial "the lender and borrower have made the corresponding agreement under § 499 (2) sentence 1";
+}
+pub relation sachlicher_grund_fuer_verweigerung_499(d: Darlehen) kind empirical {
+    label de official "Ein sachlicher Grund für die Verweigerung der Auszahlung liegt vor (§ 499 Absatz 2 Satz 1)";
+    label en unofficial "an objective ground for refusing payout exists (§ 499 (2) sentence 1)";
+}
+pub relation auszahlung_499_verweigert(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber ist berechtigt, die Auszahlung zu verweigern (§ 499 Absatz 2 Satz 1)";
+    label en unofficial "the lender is entitled to refuse payout (§ 499 (2) sentence 1)";
+}
+@source(BGB_P499)
+rule Auszahlung499VerweigertBeiSachlichemGrund(d: Darlehen) strict {
+    label de official "Der Darlehensgeber ist bei entsprechender Vereinbarung berechtigt, die Auszahlung eines Allgemein-Verbraucherdarlehens, bei dem eine Zeit für die Rückzahlung nicht bestimmt ist, aus einem sachlichen Grund zu verweigern (§ 499 Absatz 2 Satz 1)";
+    label en unofficial "where correspondingly agreed, the lender may refuse to pay out a general consumer loan with no fixed repayment time, for an objective reason (§ 499 (2) sentence 1)";
+    when auszahlung_ohne_bestimmte_rueckzahlungszeit_499(d) and verweigerungsvereinbarung_499_abs2_getroffen(d)
+        and sachlicher_grund_fuer_verweigerung_499(d);
+    then auszahlung_499_verweigert(d);
+}
+
+pub relation angaben_vor_vertragsschluss_unvollstaendig_499(d: Darlehen) kind empirical {
+    label de official "Die vom Darlehensnehmer vor Vertragsschluss gemachten Angaben waren unvollständig, oder die Kreditwürdigkeitsprüfung wurde nicht ordnungsgemäß durchgeführt (§ 499 Absatz 3 Satz 1)";
+    label en unofficial "the particulars given by the borrower before conclusion were incomplete, or the creditworthiness assessment was not properly carried out (§ 499 (3) sentence 1)";
+}
+pub relation darlehensnehmer_hat_wissentlich_informationen_vorenthalten_oder_gefaelscht_499(d: Darlehen) kind empirical {
+    label de official "Der Mangel der Kreditwürdigkeitsprüfung beruht darauf, dass der Darlehensnehmer relevante Informationen wissentlich vorenthalten oder gefälscht hat (§ 499 Absatz 3 Satz 2)";
+    label en unofficial "the deficiency in the creditworthiness assessment results from the borrower knowingly withholding or falsifying relevant information (§ 499 (3) sentence 2)";
+}
+pub relation kuendigung_499_wegen_unvollstaendiger_angaben_unzulaessig(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber kann den Verbraucherdarlehensvertrag nicht allein deshalb kündigen, auf andere Weise beenden oder seine Änderung verlangen (§ 499 Absatz 3 Satz 1)";
+    label en unofficial "the lender may not terminate, otherwise end or demand the amendment of the consumer loan contract for this reason alone (§ 499 (3) sentence 1)";
+}
+@source(BGB_P499)
+rule Kuendigung499WegenUnvollstaendigerAngabenUnzulaessig(d: Darlehen) strict {
+    label de official "Der Darlehensgeber kann einen Verbraucherdarlehensvertrag nicht allein deshalb kündigen, weil die vor Vertragsschluss gemachten Angaben unvollständig waren oder die Kreditwürdigkeitsprüfung nicht ordnungsgemäß durchgeführt wurde; dies gilt nicht, wenn der Mangel darauf beruht, dass der Darlehensnehmer relevante Informationen wissentlich vorenthalten oder gefälscht hat (§ 499 Absatz 3)";
+    label en unofficial "the lender may not terminate the consumer loan contract merely because the pre-contractual particulars were incomplete or the creditworthiness assessment was not properly conducted; this does not apply where the borrower knowingly withheld or falsified relevant information (§ 499 (3))";
+    when angaben_vor_vertragsschluss_unvollstaendig_499(d) and not_known(darlehensnehmer_hat_wissentlich_informationen_vorenthalten_oder_gefaelscht_499(d));
+    then kuendigung_499_wegen_unvollstaendiger_angaben_unzulaessig(d);
+}
+
+// § 500, § 501, § 502: vorzeitige Rückzahlung, Kostenermäßigung und die
+// Obergrenzen der Vorfälligkeitsentschädigung (1 Prozent / 0,5 Prozent).
+
+pub relation vorzeitig_zurueckgezahlter_betrag(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Vorzeitig zurückgezahlter Betrag (§ 500 Absatz 2 Satz 1, § 502 Absatz 3 Nummer 1)";
+    label en unofficial "amount repaid early (§ 500 (2) sentence 1, § 502 (3) no. 1)";
+}
+pub relation zeitraum_bis_vereinbarter_rueckzahlung_ueber_ein_jahr(d: Darlehen) kind empirical {
+    label de official "Der Zeitraum zwischen der vorzeitigen und der vereinbarten Rückzahlung überschreitet ein Jahr (§ 502 Absatz 3 Nummer 1)";
+    label en unofficial "the period between the early and the agreed repayment exceeds one year (§ 502 (3) no. 1)";
+}
+pub relation zeitraum_bis_vereinbarter_rueckzahlung_hoechstens_ein_jahr(d: Darlehen) kind empirical {
+    label de official "Der Zeitraum zwischen der vorzeitigen und der vereinbarten Rückzahlung überschreitet ein Jahr nicht (§ 502 Absatz 3 Nummer 1)";
+    label en unofficial "the period between the early and the agreed repayment does not exceed one year (§ 502 (3) no. 1)";
+}
+pub relation gebundener_sollzinssatz_bei_vertragsabschluss_vereinbart(d: Darlehen) kind empirical {
+    label de official "Der gebundene Sollzinssatz wurde bei Vertragsabschluss vereinbart (§ 502 Absatz 1 Satz 2)";
+    label en unofficial "the fixed borrowing rate was agreed at the conclusion of the contract (§ 502 (1) sentence 2)";
+}
+pub relation ausschlussgrund_502_abs2(d: Darlehen) kind empirical {
+    label de official "Ein Ausschlussgrund des § 502 Absatz 2 liegt vor (Rückzahlung aus Versicherungsmitteln; unzureichende Angaben zu Laufzeit, Kündigungsrecht oder Berechnung der Entschädigung)";
+    label en unofficial "a ground of exclusion under § 502 (2) applies (repayment from insurance proceeds; insufficient particulars on term, right of termination or calculation of the compensation)";
+}
+pub relation anspruch_auf_vorfaelligkeitsentschaedigung(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber kann im Fall der vorzeitigen Rückzahlung eine angemessene Vorfälligkeitsentschädigung verlangen (§ 502 Absatz 1 Satz 1)";
+    label en unofficial "in case of early repayment the lender may demand reasonable compensation for early repayment (§ 502 (1) sentence 1)";
+}
+pub relation hoechstbetrag_502(d: Darlehen, betrag: Money) kind derived {
+    key(d);
+    label de official "Obergrenze der Vorfälligkeitsentschädigung bei Allgemein-Verbraucherdarlehensverträgen: 1 Prozent des vorzeitig zurückgezahlten Betrags oder 0,5 Prozent, wenn der Zeitraum zwischen der vorzeitigen und der vereinbarten Rückzahlung ein Jahr nicht überschreitet (§ 502 Absatz 3 Nummer 1)";
+    label en unofficial "cap on the compensation for early repayment in general consumer loan contracts: 1 per cent of the amount repaid early, or 0.5 per cent where the period between early and agreed repayment does not exceed one year (§ 502 (3) no. 1)";
+}
+pub relation vorzeitige_erfuellung_zulaessig(d: Darlehen) kind institutional {
+    label de official "Der Darlehensnehmer kann seine Verbindlichkeiten aus einem Verbraucherdarlehensvertrag jederzeit ganz oder teilweise vorzeitig erfüllen (§ 500 Absatz 2 Satz 1)";
+    label en unofficial "the borrower may at any time discharge his obligations under a consumer loan contract early, in whole or in part (§ 500 (2) sentence 1)";
+}
+@source(BGB_P500)
+pub external judgment relation berechtigtes_interesse_an_vorzeitiger_erfuellung(d: Darlehen) {
+    authority Court;
+    label de official "Berechtigtes Interesse des Darlehensnehmers eines Immobiliar-Verbraucherdarlehensvertrags mit gebundenem Sollzinssatz an der vorzeitigen Erfüllung im Zeitraum der Sollzinsbindung (§ 500 Absatz 2 Satz 2)";
+    label en unofficial "legitimate interest of the borrower of a fixed-rate real-estate consumer loan in early discharge during the fixed-rate period (§ 500 (2) sentence 2)";
+}
+
+@source(BGB_P500) {
+    rule VorzeitigeErfuellungAllgemein(d: Darlehen) strict {
+        label de official "Der Darlehensnehmer kann seine Verbindlichkeiten aus einem Verbraucherdarlehensvertrag jederzeit ganz oder teilweise vorzeitig erfüllen (§ 500 Absatz 2 Satz 1)";
+        label en unofficial "the borrower may at any time discharge his obligations under a consumer loan contract early, in whole or in part (§ 500 (2) sentence 1)";
+        when allgemein_verbraucherdarlehensvertrag(d);
+        then vorzeitige_erfuellung_zulaessig(d);
+    }
+    rule VorzeitigeErfuellungImmobiliarMitInteresse(d: Darlehen) strict {
+        label de official "Der Darlehensnehmer eines Immobiliar-Verbraucherdarlehensvertrags mit gebundenem Sollzinssatz kann seine Verbindlichkeiten im Zeitraum der Sollzinsbindung nur dann vorzeitig erfüllen, wenn hierfür ein berechtigtes Interesse besteht (§ 500 Absatz 2 Satz 2)";
+        label en unofficial "the borrower of a fixed-rate real-estate consumer loan may discharge his obligations early during the fixed-rate period only where he has a legitimate interest in doing so (§ 500 (2) sentence 2)";
+        when immobiliar_verbraucherdarlehensvertrag(d) and gebundener_sollzinssatz(d)
+            and berechtigtes_interesse_an_vorzeitiger_erfuellung(d);
+        then vorzeitige_erfuellung_zulaessig(d);
+    }
+}
+@source(BGB_P502) {
+    rule Vorfaelligkeitsentschaedigung502(d: Darlehen) strict {
+        label de official "Der Darlehensgeber kann im Fall der vorzeitigen Rückzahlung eine angemessene Vorfälligkeitsentschädigung verlangen, wenn der Darlehensnehmer zum Zeitpunkt der Rückzahlung Zinsen zu einem gebundenen Sollzinssatz schuldet; bei Allgemein-Verbraucherdarlehensverträgen nur, wenn der gebundene Sollzinssatz bei Vertragsabschluss vereinbart wurde (§ 502 Absatz 1)";
+        label en unofficial "in case of early repayment the lender may demand reasonable compensation where the borrower owes interest at a fixed rate at the time of repayment; for general consumer loans only where the fixed rate was agreed at conclusion (§ 502 (1))";
+        when allgemein_verbraucherdarlehensvertrag(d) and gebundener_sollzinssatz(d)
+            and gebundener_sollzinssatz_bei_vertragsabschluss_vereinbart(d)
+            and not_known(ausschlussgrund_502_abs2(d));
+        then anspruch_auf_vorfaelligkeitsentschaedigung(d);
+    }
+    rule Hoechstbetrag502EinProzent(d: Darlehen, betrag: Money) strict {
+        label de official "Bei Allgemein-Verbraucherdarlehensverträgen darf die Vorfälligkeitsentschädigung 1 Prozent des vorzeitig zurückgezahlten Betrags nicht überschreiten (§ 502 Absatz 3 Nummer 1)";
+        label en unofficial "for general consumer loan contracts the compensation for early repayment may not exceed 1 per cent of the amount repaid early (§ 502 (3) no. 1)";
+        when allgemein_verbraucherdarlehensvertrag(d) and vorzeitig_zurueckgezahlter_betrag(d, betrag)
+            and zeitraum_bis_vereinbarter_rueckzahlung_ueber_ein_jahr(d);
+        then hoechstbetrag_502(d, div_round(betrag * 1, 100 * 1.0, 2, "HALF_UP"));
+    }
+    rule Hoechstbetrag502HalbesProzent(d: Darlehen, betrag: Money) strict {
+        label de official "Überschreitet der Zeitraum zwischen der vorzeitigen und der vereinbarten Rückzahlung ein Jahr nicht, darf die Vorfälligkeitsentschädigung 0,5 Prozent des vorzeitig zurückgezahlten Betrags nicht überschreiten (§ 502 Absatz 3 Nummer 1)";
+        label en unofficial "where the period between early and agreed repayment does not exceed one year, the compensation may not exceed 0.5 per cent of the amount repaid early (§ 502 (3) no. 1)";
+        when allgemein_verbraucherdarlehensvertrag(d) and vorzeitig_zurueckgezahlter_betrag(d, betrag)
+            and zeitraum_bis_vereinbarter_rueckzahlung_hoechstens_ein_jahr(d);
+        then hoechstbetrag_502(d, div_round(betrag * 5, 1000 * 1.0, 2, "HALF_UP"));
+    }
+}
+pub relation entschaedigung_502_verlangt_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Der Darlehensgeber hat Vorfälligkeitsentschädigung verlangt (§ 502)";
+    label en unofficial "the lender demanded early repayment compensation (§ 502)";
+}
+pub relation entschaedigungsrecht_502_beginn_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Anspruchs auf Vorfälligkeitsentschädigung (§ 502)";
+    label en unofficial "start of the early repayment compensation claim (§ 502)";
+}
+@source(BGB_P502)
+rule Position502Entschaedigung(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Der Darlehensgeber ist berechtigt, Vorfälligkeitsentschädigung zu verlangen (§ 502)";
+    label en unofficial "The lender has the liberty to demand early repayment compensation (§ 502)";
+    when darlehensgeber(d, p) and allgemein_verbraucherdarlehensvertrag(d)
+     and gebundener_sollzinssatz(d)
+     and gebundener_sollzinssatz_bei_vertragsabschluss_vereinbart(d)
+     and not_known(ausschlussgrund_502_abs2(d))
+     and entschaedigungsrecht_502_beginn_am(d, beginn);
+    then liberty Liberty502Entschaedigung {
+        holder p;
+        action entschaedigung_502_verlangt_am(d, beginn);
+        window [beginn, infinity];
+    };
+}
+
+// § 501 (D-08-21): Kostenermäßigung bei vorzeitiger Rückzahlung (Absatz 1)
+// und bei Fälligstellung durch Kündigung (Absatz 2) — jeweils eine Pflicht
+// zur anteiligen Kürzung, ohne eigene Berechnungsformel im Normtext.
+pub relation vorzeitig_erfuellt_nach_500_abs2(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer hat seine Verbindlichkeiten aus dem Verbraucherdarlehensvertrag nach § 500 Absatz 2 vorzeitig erfüllt (§ 501 Absatz 1)";
+    label en unofficial "the borrower has discharged his obligations under the consumer loan contract early under § 500 (2) (§ 501 (1))";
+}
+pub relation gesamtkosten_501_abs1_ermaessigt(d: Darlehen) kind institutional {
+    label de official "Die Gesamtkosten des Kredits ermäßigen sich um die Zinsen und die Kosten entsprechend der verbleibenden Laufzeit des Vertrags (§ 501 Absatz 1)";
+    label en unofficial "the total cost of credit is reduced by the interest and costs corresponding to the remaining term of the contract (§ 501 (1))";
+}
+pub relation restschuld_durch_kuendigung_vorzeitig_faellig_501(d: Darlehen) kind empirical {
+    label de official "Die Restschuld eines Verbraucherdarlehens wird vor der vereinbarten Zeit durch Kündigung fällig (§ 501 Absatz 2)";
+    label en unofficial "the outstanding balance of a consumer loan becomes due before the agreed time through termination (§ 501 (2))";
+}
+pub relation gesamtkosten_501_abs2_ermaessigt(d: Darlehen) kind institutional {
+    label de official "Die Gesamtkosten des Kredits ermäßigen sich um die Zinsen und die sonstigen laufzeitabhängigen Kosten, die auf die Zeit nach der Fälligkeit entfallen (§ 501 Absatz 2)";
+    label en unofficial "the total cost of credit is reduced by the interest and other term-dependent costs relating to the period after the debt became due (§ 501 (2))";
+}
+@source(BGB_P501) {
+    rule Kostenermaessigung501VorzeitigeRueckzahlung(d: Darlehen) strict {
+        label de official "Soweit der Darlehensnehmer seine Verbindlichkeiten aus einem Verbraucherdarlehensvertrag nach § 500 Absatz 2 vorzeitig erfüllt, ermäßigen sich die Gesamtkosten des Kredits um die Zinsen und die Kosten entsprechend der verbleibenden Laufzeit des Vertrags (§ 501 Absatz 1)";
+        label en unofficial "insofar as the borrower discharges obligations under a consumer loan contract early under § 500 (2), the total cost of credit is reduced by the interest and costs corresponding to the remaining term (§ 501 (1))";
+        when vorzeitig_erfuellt_nach_500_abs2(d);
+        then gesamtkosten_501_abs1_ermaessigt(d);
+    }
+    rule Kostenermaessigung501BeiKuendigungsfaelligstellung(d: Darlehen) strict {
+        label de official "Soweit die Restschuld eines Verbraucherdarlehens vor der vereinbarten Zeit durch Kündigung fällig wird, ermäßigen sich die Gesamtkosten des Kredits um die Zinsen und die sonstigen laufzeitabhängigen Kosten, die auf die Zeit nach der Fälligkeit entfallen (§ 501 Absatz 2)";
+        label en unofficial "insofar as the outstanding balance of a consumer loan becomes due before the agreed time through termination, the total cost of credit is reduced by the interest and other term-dependent costs relating to the period after it became due (§ 501 (2))";
+        when restschuld_durch_kuendigung_vorzeitig_faellig_501(d);
+        then gesamtkosten_501_abs2_ermaessigt(d);
+    }
+}
+
+// § 503 (D-08-21): Umwandlungsrecht bei Immobiliar-Verbraucherdarlehen in
+// Fremdwährung — Schwelle 20 Prozent (Absatz 1), Umstellung zum
+// Marktwechselkurs am Tag des Antrags (Absatz 2).
+pub relation immobiliardarlehen_in_fremdwaehrung_503(d: Darlehen) kind empirical {
+    label de official "Es handelt sich um einen nicht auf die Landeswährung des Darlehensnehmers lautenden Immobiliar-Verbraucherdarlehensvertrag (§ 503 Absatz 1 Satz 1)";
+    label en unofficial "the contract is a real-estate consumer loan not denominated in the borrower's home currency (§ 503 (1) sentence 1)";
+}
+pub relation wertsteigerung_503_in_prozent(d: Darlehen, prozent: Decimal) kind empirical {
+    key(d);
+    label de official "Prozentualer Wertanstieg des ausstehenden Restbetrags oder der regelmäßigen Raten in der Landeswährung des Darlehensnehmers gegenüber dem Wert bei Vertragsabschluss (§ 503 Absatz 1 Satz 2)";
+    label en unofficial "percentage increase in the value of the outstanding balance or regular instalments in the borrower's home currency compared with the value at conclusion (§ 503 (1) sentence 2)";
+}
+pub relation umwandlungsrecht_503_besteht(d: Darlehen) kind institutional {
+    label de official "Der Darlehensnehmer kann die Umwandlung des Darlehens in die Landeswährung des Darlehensnehmers verlangen (§ 503 Absatz 1 Satz 1, 2)";
+    label en unofficial "the borrower may demand conversion of the loan into his home currency (§ 503 (1) sentence 1, 2)";
+}
+pub relation antrag_auf_umstellung_503_gestellt_am(d: Darlehen, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag des Antrags auf Umstellung (§ 503 Absatz 2 Satz 1)";
+    label en unofficial "day the application for conversion was made (§ 503 (2) sentence 1)";
+}
+pub relation marktwechselkurs_am_503(d: Darlehen, tag: Date, kurs: Decimal) kind empirical {
+    key(d);
+    label de official "Am Tag des Antrags auf Umstellung geltender Marktwechselkurs (§ 503 Absatz 2 Satz 1)";
+    label en unofficial "market exchange rate applicable on the day the conversion application was made (§ 503 (2) sentence 1)";
+}
+pub relation umstellungskurs_503(d: Darlehen, kurs: Decimal) kind institutional {
+    label de official "Die Umstellung des Darlehens erfolgt zu dem Wechselkurs, der dem am Tag des Antrags auf Umstellung geltenden Marktwechselkurs entspricht (§ 503 Absatz 2 Satz 1)";
+    label en unofficial "the loan is converted at the exchange rate corresponding to the market exchange rate applicable on the day the conversion application was made (§ 503 (2) sentence 1)";
+}
+@source(BGB_P503) {
+    rule Umwandlungsrecht503BeiZwanzigProzent(d: Darlehen, prozent: Decimal) strict {
+        label de official "Das Recht auf Umwandlung besteht, wenn der Wert des ausstehenden Restbetrags oder der regelmäßigen Raten in der Landeswährung des Darlehensnehmers um mehr als 20 Prozent über dem Wert bei Vertragsabschluss liegt (§ 503 Absatz 1 Satz 2)";
+        label en unofficial "the right of conversion exists where the value of the outstanding balance or regular instalments in the borrower's home currency exceeds the value at conclusion by more than 20 per cent (§ 503 (1) sentence 2)";
+        when immobiliardarlehen_in_fremdwaehrung_503(d) and wertsteigerung_503_in_prozent(d, prozent) and prozent > 20.0;
+        then umwandlungsrecht_503_besteht(d);
+    }
+    rule Umstellungskurs503ZumMarktwechselkurs(d: Darlehen, tag: Date, kurs: Decimal) strict {
+        label de official "Die Umstellung des Darlehens hat zu dem Wechselkurs zu erfolgen, der dem am Tag des Antrags auf Umstellung geltenden Marktwechselkurs entspricht (§ 503 Absatz 2 Satz 1)";
+        label en unofficial "conversion of the loan must be made at the exchange rate corresponding to the market exchange rate applicable on the day of the conversion application (§ 503 (2) sentence 1)";
+        when antrag_auf_umstellung_503_gestellt_am(d, tag) and marktwechselkurs_am_503(d, tag, kurs);
+        then umstellungskurs_503(d, kurs);
+    }
+}
+
+// § 505a, § 505d: Kreditwürdigkeitsprüfung und der Verstoß gegen sie.
+
+pub relation kreditwuerdigkeitspruefung_durchgefuehrt(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber hat vor dem Abschluss des Verbraucherdarlehensvertrags die Kreditwürdigkeit des Darlehensnehmers geprüft (§ 505a Absatz 1 Satz 1)";
+    label en unofficial "the lender assessed the borrower's creditworthiness before concluding the consumer loan contract (§ 505a (1) sentence 1)";
+}
+pub relation erhebliche_zweifel_an_kreditwuerdigkeit(d: Darlehen) kind empirical {
+    label de official "Aus der Kreditwürdigkeitsprüfung ergeben sich erhebliche Zweifel daran, dass der Darlehensnehmer seinen Verpflichtungen vertragsgemäß nachkommen wird (§ 505a Absatz 1 Satz 2)";
+    label en unofficial "the creditworthiness assessment gives rise to substantial doubts that the borrower will meet his obligations as agreed (§ 505a (1) sentence 2)";
+}
+pub relation darlehensvertrag_darf_nicht_geschlossen_werden(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber darf den Verbraucherdarlehensvertrag nicht abschließen (§ 505a Absatz 1 Satz 2)";
+    label en unofficial "the lender may not conclude the consumer loan contract (§ 505a (1) sentence 2)";
+}
+pub relation sollzinssatz_ermaessigt_wegen_505d(d: Darlehen, satz: Decimal) kind institutional {
+    key(d);
+    label de official "Verstößt der Darlehensgeber gegen die Pflicht zur Kreditwürdigkeitsprüfung, ermäßigt sich der Sollzinssatz auf den marktüblichen Zinssatz (§ 505d Absatz 1 Satz 1)";
+    label en unofficial "where the lender breaches the duty to assess creditworthiness, the borrowing rate is reduced to the market rate (§ 505d (1) sentence 1)";
+}
+pub relation marktueblicher_zinssatz(satz: Decimal) kind empirical {
+    label de official "Marktüblicher Zinssatz für Hypothekendarlehen oder Konsumentenkredite in Prozent pro Jahr — Angabe der Deutschen Bundesbank, Eingang des Falls (§ 505d Absatz 1 Satz 2; D-08-05)";
+    label en unofficial "market rate for mortgage or consumer credit in per cent per annum — a figure published by the Deutsche Bundesbank, an input of the case (§ 505d (1) sentence 2; D-08-05)";
+}
+
+@source(BGB_P505a)
+rule Kreditvergabeverbot505a(d: Darlehen) strict {
+    label de official "Der Darlehensgeber darf den Verbraucherdarlehensvertrag nur abschließen, wenn sich aus der Kreditwürdigkeitsprüfung keine erheblichen Zweifel daran ergeben, dass der Darlehensnehmer seinen Verpflichtungen vertragsgemäß nachkommen wird (§ 505a Absatz 1 Satz 2)";
+    label en unofficial "the lender may conclude the consumer loan contract only where the creditworthiness assessment gives rise to no substantial doubts that the borrower will meet his obligations as agreed (§ 505a (1) sentence 2)";
+    when verbraucherdarlehensvertrag(d) and erhebliche_zweifel_an_kreditwuerdigkeit(d);
+    then darlehensvertrag_darf_nicht_geschlossen_werden(d);
+}
+pub relation kreditvertrag_505a_geschlossen_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Der Darlehensgeber hat den Verbraucherdarlehensvertrag geschlossen (§ 505a)";
+    label en unofficial "the lender concluded the consumer loan contract (§ 505a)";
+}
+pub relation verbotsbeginn_505a_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Kreditvergabeverbots nach § 505a";
+    label en unofficial "start of the lending prohibition under § 505a";
+}
+@source(BGB_P505a)
+rule Position505aKreditvergabe(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Dem Darlehensgeber ist es verboten, den Vertrag bei erheblichen Zweifeln an der Kreditwürdigkeit zu schließen (§ 505a)";
+    label en unofficial "The lender is prohibited from concluding the contract where substantial doubts about creditworthiness exist (§ 505a)";
+    when darlehensgeber(d, p) and verbraucherdarlehensvertrag(d)
+     and erhebliche_zweifel_an_kreditwuerdigkeit(d)
+     and verbotsbeginn_505a_am(d, beginn);
+    then prohibition Prohibition505aKreditvergabe {
+        bearer p;
+        action kreditvertrag_505a_geschlossen_am(d, beginn);
+        window [beginn, infinity);
+    };
+}
+@source(BGB_P505d)
+rule Zinsermaessigung505d(d: Darlehen, satz: Decimal) strict {
+    label de official "Verstößt der Darlehensgeber gegen die Pflicht zur Kreditwürdigkeitsprüfung, so ermäßigt sich der vereinbarte Sollzinssatz auf den marktüblichen Zinssatz (§ 505d Absatz 1 Sätze 1, 2)";
+    label en unofficial "where the lender breaches the duty to assess creditworthiness, the agreed borrowing rate is reduced to the market rate (§ 505d (1) sentences 1, 2)";
+    when verbraucherdarlehensvertrag(d) and not_known(kreditwuerdigkeitspruefung_durchgefuehrt(d))
+        and marktueblicher_zinssatz(satz);
+    then sollzinssatz_ermaessigt_wegen_505d(d, satz);
+}
+
+// §§ 506–508, 510, 513–515: Finanzierungshilfen, Teilzahlungsgeschäfte,
+// Ratenlieferungsverträge, Existenzgründer, unentgeltliche Verträge.
+
+pub relation entgeltlicher_zahlungsaufschub_oder_finanzierungshilfe(d: Darlehen) kind empirical {
+    label de official "Der Unternehmer gewährt einem Verbraucher einen entgeltlichen Zahlungsaufschub oder eine sonstige entgeltliche Finanzierungshilfe (§ 506 Absatz 1)";
+    label en unofficial "the trader grants a consumer a deferred payment for consideration or other financing aid for consideration (§ 506 (1))";
+}
+pub relation vorschriften_ueber_verbraucherdarlehen_anwendbar(d: Darlehen) kind institutional {
+    label de official "Die Vorschriften der §§ 358–360 und 491a–502, 505a–505e sind entsprechend anzuwenden (§ 506 Absatz 1, § 513, § 514 Absatz 1)";
+    label en unofficial "§§ 358–360 and 491a–502, 505a–505e apply mutatis mutandis (§ 506 (1), § 513, § 514 (1))";
+}
+pub relation existenzgruender_nettodarlehensbetrag(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Nettodarlehensbetrag eines Vertrags mit einer natürlichen Person, die ein Gewerbe oder eine selbständige berufliche Tätigkeit aufnimmt (§ 513)";
+    label en unofficial "net loan amount of a contract with a natural person taking up a trade or self-employed professional activity (§ 513)";
+}
+pub relation unentgeltlicher_darlehensvertrag_mit_verbraucher(d: Darlehen) kind empirical {
+    label de official "Ein Unternehmer gewährt einem Verbraucher ein unentgeltliches Darlehen (§ 514 Absatz 1 Satz 1)";
+    label en unofficial "a trader grants a consumer an interest-free loan (§ 514 (1) sentence 1)";
+}
+
+@source(BGB_P506)
+rule Finanzierungshilfe506(d: Darlehen) strict {
+    label de official "Die Vorschriften über Verbraucherdarlehensverträge sind auf Verträge entsprechend anzuwenden, durch die ein Unternehmer einem Verbraucher einen entgeltlichen Zahlungsaufschub oder eine sonstige entgeltliche Finanzierungshilfe gewährt (§ 506 Absatz 1)";
+    label en unofficial "the provisions on consumer loan contracts apply mutatis mutandis to contracts by which a trader grants a consumer deferred payment or other financing aid for consideration (§ 506 (1))";
+    when entgeltlicher_zahlungsaufschub_oder_finanzierungshilfe(d);
+    then vorschriften_ueber_verbraucherdarlehen_anwendbar(d);
+}
+@source(BGB_P513)
+rule Existenzgruender513(d: Darlehen, betrag: Money) strict {
+    label de official "Die §§ 491–502, 505a–505e gelten auch für natürliche Personen, die ein Gewerbe oder eine selbständige berufliche Tätigkeit aufnehmen, es sei denn, der Nettodarlehensbetrag oder Barzahlungspreis übersteigt 75 000 Euro (§ 513)";
+    label en unofficial "§§ 491–502, 505a–505e also apply to natural persons taking up a trade or self-employed activity, unless the net loan amount or cash price exceeds EUR 75,000 (§ 513)";
+    when existenzgruender_nettodarlehensbetrag(d, betrag) and betrag <= 75000.00 EUR;
+    then vorschriften_ueber_verbraucherdarlehen_anwendbar(d);
+}
+@source(BGB_P514)
+rule UnentgeltlicherDarlehensvertrag514(d: Darlehen) strict {
+    label de official "Gewährt ein Unternehmer einem Verbraucher ein unentgeltliches Darlehen, sind die Vorschriften über Verbraucherdarlehensverträge in dem von § 514 Absatz 1 bestimmten Umfang anzuwenden";
+    label en unofficial "where a trader grants a consumer an interest-free loan, the provisions on consumer loan contracts apply to the extent determined by § 514 (1)";
+    when unentgeltlicher_darlehensvertrag_mit_verbraucher(d);
+    then vorschriften_ueber_verbraucherdarlehen_anwendbar(d);
+}
+
+// ==================================================================================================
+// VERBRAUCHERDARLEHEN-INFORMATION: §§ 492a, 492b, 493, 504a, 505 (D-08-14)
+// ==================================================================================================
+//
+// KOPPLUNGSGESCHÄFTE (§§ 492a, 492b): Verbotsnorm mit Gegenausnahmen — dieselbe
+// Struktur wie § 762/§ 763 (Titel 19). Ein Kopplungsgeschäft entsteht aus zwei
+// unabhängigen Tatbeständen (Immobiliar Absatz 1, Allgemein Absatz 1a) und wird
+// durch zwei unabhängige Zulässigkeitsgründe geheilt (§ 492b Absatz 1 Nummer 1,
+// Absatz 2); beide Zulässigkeitsgründe münden im selben Prädikat.
+//
+// DREI-MONATS-FRIST DES § 493 IST RÜCKWÄRTS GERICHTET („spätestens drei Monate
+// VOR Ende der Sollzinsbindung") — die vorwärts gerichtete Fristen-Mechanik von
+// `de.bgb.fristen` (negative Perioden sind unausdrückbar, Ledger-Notiz D-06-08
+// des Nachbarpakets) passt hier nicht. Ausgedrückt als VORWÄRTS-Vergleich: die
+// Unterrichtung plus drei Monate darf das Ende der Sollzinsbindung nicht
+// überschreiten (`add_calendar_period(unterrichtung, 3 calendar_month) <= ende`).
+//
+// PROZENTSCHWELLEN OHNE BRUCHRECHNUNG (D-08-01): § 504a Absatz 1 (75 Prozent
+// des Höchstbetrags) und § 505 Absatz 2 Satz 2 (Hälfte des Geldeingangs) sind
+// je ein eigener `div_round`-Schluss, der Guard vergleicht nur Money-Variablen.
+
+pub relation kopplungsgeschaeft_verlangt_492a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber macht den Abschluss des Immobiliar-Verbraucherdarlehensvertrags davon abhängig, dass der Darlehensnehmer oder ein Dritter weitere Finanzprodukte oder -dienstleistungen erwirbt (§ 492a Absatz 1 Satz 1)";
+    label en unofficial "the lender makes conclusion of the real-estate consumer loan contract conditional on the borrower or a third party acquiring further financial products or services (§ 492a (1) sentence 1)";
+}
+pub relation bereit_ohne_weitere_produkte_492a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber ist zum Abschluss bereit, ohne dass der Verbraucher weitere Finanzprodukte oder -dienstleistungen erwirbt (§ 492a Absatz 1 Satz 2)";
+    label en unofficial "the lender is willing to conclude the contract without the consumer acquiring further financial products or services (§ 492a (1) sentence 2)";
+}
+pub relation restschuldversicherung_verlangt_492a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber macht den Abschluss des Allgemein-Verbraucherdarlehensvertrags davon abhängig, dass der Darlehensnehmer oder ein Dritter eine Restschuldversicherung abschließt (§ 492a Absatz 1a Satz 1)";
+    label en unofficial "the lender makes conclusion of the general consumer loan contract conditional on the borrower or a third party taking out payment protection insurance (§ 492a (1a) sentence 1)";
+}
+pub relation bereit_ohne_restschuldversicherung_492a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber ist zum Abschluss bereit, ohne dass der Verbraucher eine Restschuldversicherung abschließt (§ 492a Absatz 1a Satz 2)";
+    label en unofficial "the lender is willing to conclude the contract without the consumer taking out payment protection insurance (§ 492a (1a) sentence 2)";
+}
+pub relation kopplungsgeschaeft_492a(d: Darlehen) kind institutional {
+    label de official "Kopplungsgeschäft im Sinne des § 492a (§ 492a Absatz 1, 1a)";
+    label en unofficial "tying transaction within the meaning of § 492a (§ 492a (1), (1a))";
+}
+pub relation zahlungs_oder_sparkonto_grund_492b(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber macht den Abschluss davon abhängig, dass der Darlehensnehmer, ein Familienangehöriger oder beide zusammen ein Zahlungs- oder Sparkonto eröffnen, dessen einziger Zweck die Ansammlung von Kapital zur Rückzahlung, Bedienung oder als zusätzliche Sicherheit ist (§ 492b Absatz 1 Nummer 1)";
+    label en unofficial "the lender makes conclusion conditional on the borrower, a family member, or both opening a payment or savings account whose sole purpose is accumulating capital to repay, service or additionally secure the loan (§ 492b (1) no. 1)";
+}
+pub relation versicherung_mit_freier_anbieterwahl_492b(d: Darlehen) kind empirical {
+    label de official "Der Darlehensgeber macht den Abschluss davon abhängig, dass der Darlehensnehmer eine einschlägige Versicherung abschließt, wobei dem Darlehensnehmer gestattet ist, diese auch bei einem anderen Anbieter abzuschließen (§ 492b Absatz 2)";
+    label en unofficial "the lender makes conclusion conditional on the borrower taking out relevant insurance, provided the borrower is permitted to take it out with a different provider (§ 492b (2))";
+}
+pub relation zulaessiges_kopplungsgeschaeft_492b(d: Darlehen) kind institutional {
+    label de official "Zulässiges Kopplungsgeschäft (§ 492b)";
+    label en unofficial "permissible tying transaction (§ 492b)";
+}
+pub relation nichtigkeit_der_gekoppelten_geschaefte_492a(d: Darlehen) kind institutional {
+    label de official "Die mit dem Verbraucherdarlehensvertrag gekoppelten Geschäfte sind nichtig; die Wirksamkeit des Verbraucherdarlehensvertrags bleibt davon unberührt (§ 492a Absatz 2)";
+    label en unofficial "the transactions tied to the consumer loan contract are void; the validity of the consumer loan contract itself is unaffected (§ 492a (2))";
+}
+
+@source(BGB_P492a) {
+    rule KopplungsgeschaeftImmobiliar492a(d: Darlehen) strict {
+        label de official "Der Darlehensgeber darf den Abschluss eines Immobiliar-Verbraucherdarlehenvertrags nicht davon abhängig machen, dass der Darlehensnehmer oder ein Dritter weitere Finanzprodukte oder -dienstleistungen erwirbt, es sei denn, der Darlehensgeber ist auch ohne einen solchen Erwerb zum Abschluss bereit (§ 492a Absatz 1)";
+        label en unofficial "the lender may not make conclusion of a real-estate consumer loan contract conditional on the borrower or a third party acquiring further financial products or services, unless the lender is willing to conclude the contract without such acquisition (§ 492a (1))";
+        when immobiliar_verbraucherdarlehensvertrag(d) and kopplungsgeschaeft_verlangt_492a(d) and not_known(bereit_ohne_weitere_produkte_492a(d));
+        then kopplungsgeschaeft_492a(d);
+    }
+    rule KopplungsgeschaeftAllgemein492a(d: Darlehen) strict {
+        label de official "Der Darlehensgeber darf den Abschluss eines Allgemein-Verbraucherdarlehensvertrags nicht davon abhängig machen, dass der Darlehensnehmer oder ein Dritter eine Restschuldversicherung abschließt, es sei denn, der Darlehensgeber ist auch ohne eine solche Versicherung zum Abschluss bereit (§ 492a Absatz 1a)";
+        label en unofficial "the lender may not make conclusion of a general consumer loan contract conditional on the borrower or a third party taking out payment protection insurance, unless the lender is willing to conclude the contract without such insurance (§ 492a (1a))";
+        when allgemein_verbraucherdarlehensvertrag(d) and restschuldversicherung_verlangt_492a(d) and not_known(bereit_ohne_restschuldversicherung_492a(d));
+        then kopplungsgeschaeft_492a(d);
+    }
+}
+pub relation kopplung_492a_vereinbart_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Das unzulässige Kopplungsgeschäft wurde vereinbart (§ 492a)";
+    label en unofficial "the impermissible tying transaction was agreed (§ 492a)";
+}
+pub relation verbotsbeginn_492a_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn des Kopplungsverbots nach § 492a";
+    label en unofficial "start of the tying prohibition under § 492a";
+}
+@source(BGB_P492a)
+rule Position492aKopplung(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Dem Darlehensgeber ist es verboten, den Vertrag von weiteren Finanzprodukten abhängig zu machen (§ 492a)";
+    label en unofficial "The lender is prohibited from making the contract conditional on further financial products (§ 492a)";
+    when darlehensgeber(d, p) and immobiliar_verbraucherdarlehensvertrag(d)
+     and kopplungsgeschaeft_verlangt_492a(d)
+     and not_known(bereit_ohne_weitere_produkte_492a(d))
+     and verbotsbeginn_492a_am(d, beginn);
+    then prohibition Prohibition492aKopplung {
+        bearer p;
+        action kopplung_492a_vereinbart_am(d, beginn);
+        window [beginn, infinity);
+    };
+}
+@source(BGB_P492b) {
+    rule ZulaessigesKopplungsgeschaeftKonto492b(d: Darlehen) strict {
+        label de official "Ein Kopplungsgeschäft ist zulässig, wenn der Darlehensgeber den Abschluss davon abhängig macht, dass der Darlehensnehmer, ein Familienangehöriger oder beide zusammen ein Zahlungs- oder Sparkonto zur Ansammlung von Kapital eröffnen (§ 492b Absatz 1 Nummer 1)";
+        label en unofficial "a tying transaction is permissible where the lender makes conclusion conditional on the borrower, a family member, or both opening a payment or savings account to accumulate capital (§ 492b (1) no. 1)";
+        when zahlungs_oder_sparkonto_grund_492b(d);
+        then zulaessiges_kopplungsgeschaeft_492b(d);
+    }
+    rule ZulaessigesKopplungsgeschaeftVersicherung492b(d: Darlehen) strict {
+        label de official "Ein Kopplungsgeschäft ist zulässig, wenn der Darlehensgeber den Abschluss davon abhängig macht, dass der Darlehensnehmer eine einschlägige Versicherung abschließt und ihm gestattet ist, diese auch bei einem anderen Anbieter abzuschließen (§ 492b Absatz 2)";
+        label en unofficial "a tying transaction is permissible where the lender makes conclusion conditional on the borrower taking out relevant insurance and the borrower is permitted to take it out with a different provider (§ 492b (2))";
+        when versicherung_mit_freier_anbieterwahl_492b(d);
+        then zulaessiges_kopplungsgeschaeft_492b(d);
+    }
+}
+@source(BGB_P492a)
+rule NichtigkeitBeiUnzulaessigemKopplungsgeschaeft492a(d: Darlehen) strict {
+    label de official "Soweit ein Kopplungsgeschäft nach Absatz 1 oder Absatz 1a unzulässig ist, sind die mit dem Verbraucherdarlehensvertrag gekoppelten Geschäfte nichtig; die Wirksamkeit des Verbraucherdarlehensvertrags bleibt davon unberührt (§ 492a Absatz 2)";
+    label en unofficial "insofar as a tying transaction under paragraph 1 or 1a is impermissible, the transactions tied to the consumer loan contract are void; the validity of the consumer loan contract itself is unaffected (§ 492a (2))";
+    when kopplungsgeschaeft_492a(d) and not_known(zulaessiges_kopplungsgeschaeft_492b(d));
+    then nichtigkeit_der_gekoppelten_geschaefte_492a(d);
+}
+
+pub relation sollzinsbindung_endet_vor_rueckzahlung_493(d: Darlehen) kind empirical {
+    label de official "Der Sollzinssatz ist gebunden und die Sollzinsbindung endet vor der für die Rückzahlung bestimmten Zeit (§ 493 Absatz 1 Satz 1)";
+    label en unofficial "the borrowing rate is fixed and the fixed-rate period ends before the time set for repayment (§ 493 (1) sentence 1)";
+}
+pub relation unterrichtung_erfolgt_am_493(d: Darlehen, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag, an dem der Darlehensgeber den Darlehensnehmer unterrichtet (§ 493 Absatz 1 Satz 1)";
+    label en unofficial "day the lender informs the borrower (§ 493 (1) sentence 1)";
+}
+pub relation ende_der_sollzinsbindung_am_493(d: Darlehen, tag: Date) kind empirical {
+    key(d);
+    label de official "Tag, an dem die Sollzinsbindung endet (§ 493 Absatz 1 Satz 1)";
+    label en unofficial "day the fixed-rate period ends (§ 493 (1) sentence 1)";
+}
+pub relation unterrichtungspflicht_493_sollzinsbindung(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber unterrichtet den Darlehensnehmer spätestens drei Monate vor Ende der Sollzinsbindung darüber, ob er zu einer neuen Sollzinsbindungsabrede bereit ist (§ 493 Absatz 1 Satz 1)";
+    label en unofficial "the lender informs the borrower, no later than three months before the fixed-rate period ends, whether it is willing to agree a new fixed rate (§ 493 (1) sentence 1)";
+}
+pub relation rechtzeitig_unterrichtet_493(d: Darlehen) kind institutional {
+    label de official "Die Unterrichtung erfolgt spätestens drei Monate vor Ende der Sollzinsbindung (§ 493 Absatz 1 Satz 1)";
+    label en unofficial "the information is given no later than three months before the fixed-rate period ends (§ 493 (1) sentence 1)";
+}
+pub relation vertrag_wird_beendet_493(d: Darlehen) kind empirical {
+    label de official "Der Verbraucherdarlehensvertrag wird beendet (§ 493 Absatz 2 Satz 1)";
+    label en unofficial "the consumer loan contract is terminated (§ 493 (2) sentence 1)";
+}
+pub relation unterrichtungspflicht_493_beendigung(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber unterrichtet den Darlehensnehmer spätestens drei Monate vor Beendigung eines Verbraucherdarlehensvertrags darüber, ob er zur Fortführung des Darlehensverhältnisses bereit ist (§ 493 Absatz 2 Satz 1)";
+    label en unofficial "the lender informs the borrower, no later than three months before termination of a consumer loan contract, whether it is willing to continue the loan relationship (§ 493 (2) sentence 1)";
+}
+
+@source(BGB_P493) {
+    rule UnterrichtungspflichtSollzinsbindung493(d: Darlehen) strict {
+        label de official "Ist in einem Verbraucherdarlehensvertrag der Sollzinssatz gebunden und endet die Sollzinsbindung vor der für die Rückzahlung bestimmten Zeit, unterrichtet der Darlehensgeber den Darlehensnehmer spätestens drei Monate vor Ende der Sollzinsbindung darüber, ob er zu einer neuen Sollzinsbindungsabrede bereit ist (§ 493 Absatz 1 Satz 1)";
+        label en unofficial "where the borrowing rate under a consumer loan contract is fixed and the fixed-rate period ends before the time set for repayment, the lender informs the borrower, no later than three months before the fixed-rate period ends, whether it is willing to agree a new fixed rate (§ 493 (1) sentence 1)";
+        when verbraucherdarlehensvertrag(d) and sollzinsbindung_endet_vor_rueckzahlung_493(d);
+        then unterrichtungspflicht_493_sollzinsbindung(d);
+    }
+    rule RechtzeitigeUnterrichtungSollzinsbindung493(d: Darlehen, x: Date, y: Date) strict {
+        label de official "Die Unterrichtung ist rechtzeitig, wenn sie spätestens drei Monate vor Ende der Sollzinsbindung erfolgt (§ 493 Absatz 1 Satz 1)";
+        label en unofficial "the notification is timely where it is given no later than three months before the fixed-rate period ends (§ 493 (1) sentence 1)";
+        when unterrichtung_erfolgt_am_493(d, x) and ende_der_sollzinsbindung_am_493(d, y)
+            and add_calendar_period(x, 3 calendar_month) <= y;
+        then rechtzeitig_unterrichtet_493(d);
+    }
+    rule UnterrichtungspflichtBeendigung493(d: Darlehen) strict {
+        label de official "Der Darlehensgeber unterrichtet den Darlehensnehmer spätestens drei Monate vor Beendigung eines Verbraucherdarlehensvertrags darüber, ob er zur Fortführung des Darlehensverhältnisses bereit ist (§ 493 Absatz 2 Satz 1)";
+        label en unofficial "the lender informs the borrower, no later than three months before termination of a consumer loan contract, whether it is willing to continue the loan relationship (§ 493 (2) sentence 1)";
+        when verbraucherdarlehensvertrag(d) and vertrag_wird_beendet_493(d);
+        then unterrichtungspflicht_493_beendigung(d);
+    }
+}
+
+@source(BGB_P493)
+rule Position493Unterrichtung(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Der Darlehensgeber ist verpflichtet, den Darlehensnehmer rechtzeitig zu unterrichten (§ 493 Absatz 1)";
+    label en unofficial "The lender is obliged to inform the borrower in due time (§ 493 (1))";
+    when darlehensgeber(d, p) and verbraucherdarlehensvertrag(d)
+      and sollzinsbindung_endet_vor_rueckzahlung_493(d)
+      and unterrichtung_erfolgt_am_493(d, tag);
+    then duty Duty493Unterrichtung {
+        bearer p;
+        achieve unterrichtung_erfolgt_am_493(d, tag) during [tag, infinity);
+    };
+}
+pub relation ununterbrochene_inanspruchnahme_sechs_monate_504a(d: Darlehen) kind empirical {
+    label de official "Der Darlehensnehmer hat die ihm eingeräumte Überziehungsmöglichkeit ununterbrochen über einen Zeitraum von sechs Monaten in Anspruch genommen (§ 504a Absatz 1 Satz 1)";
+    label en unofficial "the borrower has continuously used the overdraft facility granted to him for a period of six months (§ 504a (1) sentence 1)";
+}
+pub relation durchschnittliche_inanspruchnahme_504a(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Durchschnittlich in Anspruch genommener Betrag über den Sechsmonatszeitraum (§ 504a Absatz 1 Satz 1)";
+    label en unofficial "average amount drawn down over the six-month period (§ 504a (1) sentence 1)";
+}
+pub relation vereinbarter_hoechstbetrag_504a(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Vereinbarter Höchstbetrag der Überziehungsmöglichkeit (§ 504a Absatz 1 Satz 1)";
+    label en unofficial "agreed maximum amount of the overdraft facility (§ 504a (1) sentence 1)";
+}
+pub relation schwelle_75_prozent_504a(d: Darlehen, betrag: Money) kind derived {
+    key(d);
+    label de official "75 Prozent des vereinbarten Höchstbetrags (§ 504a Absatz 1 Satz 1)";
+    label en unofficial "75 per cent of the agreed maximum amount (§ 504a (1) sentence 1)";
+}
+pub relation beratungsangebotspflicht_504a(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber hat dem Darlehensnehmer eine Beratung anzubieten (§ 504a Absatz 1 Satz 1)";
+    label en unofficial "the lender must offer the borrower advice (§ 504a (1) sentence 1)";
+}
+
+@source(BGB_P504a) {
+    rule Schwelle75Prozent504a(d: Darlehen, hoechst: Money) strict {
+        label de official "Rechenschritt: 75 Prozent des vereinbarten Höchstbetrags (§ 504a Absatz 1 Satz 1)";
+        label en unofficial "computation step: 75 per cent of the agreed maximum amount (§ 504a (1) sentence 1)";
+        when vereinbarter_hoechstbetrag_504a(d, hoechst);
+        then schwelle_75_prozent_504a(d, div_round(hoechst * 75, 100 * 1.0, 2, "HALF_UP"));
+    }
+    rule Beratungsangebotspflicht504a(d: Darlehen, durchschnitt: Money, schwelle: Money) strict {
+        label de official "Der Darlehensgeber hat dem Darlehensnehmer eine Beratung anzubieten, wenn der Darlehensnehmer eine ihm eingeräumte Überziehungsmöglichkeit ununterbrochen über einen Zeitraum von sechs Monaten und durchschnittlich in Höhe eines Betrags in Anspruch genommen hat, der 75 Prozent des vereinbarten Höchstbetrags übersteigt (§ 504a Absatz 1 Satz 1)";
+        label en unofficial "the lender must offer the borrower advice where the borrower has continuously used the overdraft facility for six months and on average drawn an amount exceeding 75 per cent of the agreed maximum amount (§ 504a (1) sentence 1)";
+        when ununterbrochene_inanspruchnahme_sechs_monate_504a(d) and durchschnittliche_inanspruchnahme_504a(d, durchschnitt)
+            and schwelle_75_prozent_504a(d, schwelle) and durchschnitt > schwelle;
+        then beratungsangebotspflicht_504a(d);
+    }
+}
+
+pub relation entgelt_fuer_geduldete_ueberziehung_vereinbart_505(d: Darlehen) kind empirical {
+    label de official "Ein Unternehmer vereinbart mit einem Verbraucher in einem Vertrag über ein laufendes Konto ohne eingeräumte Überziehungsmöglichkeit ein Entgelt für den Fall, dass er eine Überziehung des Kontos duldet (§ 505 Absatz 1 Satz 1)";
+    label en unofficial "a trader agrees with a consumer, in a current-account contract without a granted overdraft facility, a fee for tolerating an overdraft (§ 505 (1) sentence 1)";
+}
+pub relation angaben_ordnungsgemaess_mitgeteilt_505(d: Darlehen) kind empirical {
+    label de official "Die Angaben nach Artikel 247 § 17 Absatz 1 EGBGB sind auf einem dauerhaften Datenträger enthalten und in regelmäßigen Zeitabständen mitgeteilt (§ 505 Absatz 1 Satz 1)";
+    label en unofficial "the particulars under Article 247 § 17 (1) EGBGB are contained on a durable medium and communicated at regular intervals (§ 505 (1) sentence 1)";
+}
+pub relation erhebliche_ueberziehung_ueber_einen_monat_505(d: Darlehen) kind empirical {
+    label de official "Es kommt zu einer erheblichen Überziehung von mehr als einem Monat (§ 505 Absatz 2 Satz 1)";
+    label en unofficial "a significant overdraft of more than one month occurs (§ 505 (2) sentence 1)";
+}
+pub relation unterrichtungspflicht_505_abs2(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber unterrichtet den Darlehensnehmer unverzüglich über die sich aus Artikel 247 § 17 Absatz 2 EGBGB ergebenden Einzelheiten (§ 505 Absatz 2 Satz 1)";
+    label en unofficial "the lender promptly informs the borrower of the particulars under Article 247 § 17 (2) EGBGB (§ 505 (2) sentence 1)";
+}
+pub relation ununterbrochene_ueberziehung_ueber_drei_monate_505(d: Darlehen) kind empirical {
+    label de official "Es ist zu einer ununterbrochenen Überziehung von mehr als drei Monaten gekommen (§ 505 Absatz 2 Satz 2)";
+    label en unofficial "an uninterrupted overdraft of more than three months has occurred (§ 505 (2) sentence 2)";
+}
+pub relation durchschnittlicher_ueberziehungsbetrag_505(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Durchschnittlicher Überziehungsbetrag über die letzten drei Monate (§ 505 Absatz 2 Satz 2)";
+    label en unofficial "average overdraft amount over the last three months (§ 505 (2) sentence 2)";
+}
+pub relation durchschnittlicher_monatlicher_geldeingang_505(d: Darlehen, betrag: Money) kind empirical {
+    key(d);
+    label de official "Durchschnittlicher monatlicher Geldeingang auf dem Konto innerhalb der letzten drei Monate (§ 505 Absatz 2 Satz 2)";
+    label en unofficial "average monthly incoming funds on the account over the last three months (§ 505 (2) sentence 2)";
+}
+pub relation haelfte_des_geldeingangs_505(d: Darlehen, betrag: Money) kind derived {
+    key(d);
+    label de official "Hälfte des durchschnittlichen monatlichen Geldeingangs (§ 505 Absatz 2 Satz 2)";
+    label en unofficial "half of the average monthly incoming funds (§ 505 (2) sentence 2)";
+}
+pub relation beratungspflicht_504a_entsprechend_505(d: Darlehen) kind institutional {
+    label de official "§ 504a gilt entsprechend (§ 505 Absatz 2 Satz 2)";
+    label en unofficial "§ 504a applies mutatis mutandis (§ 505 (2) sentence 2)";
+}
+pub relation verstoss_gegen_absatz_1_oder_2_505(d: Darlehen) kind empirical {
+    label de official "Der Unternehmer verstößt gegen Absatz 1 oder Absatz 2 (§ 505 Absatz 3)";
+    label en unofficial "the trader breaches paragraph 1 or paragraph 2 (§ 505 (3))";
+}
+pub relation keine_kosten_und_zinsen_ueber_rueckzahlung_hinaus_505(d: Darlehen) kind institutional {
+    label de official "Der Darlehensgeber kann über die Rückzahlung des Darlehens hinaus Kosten und Zinsen nicht verlangen (§ 505 Absatz 3)";
+    label en unofficial "the lender may not claim costs and interest beyond repayment of the loan (§ 505 (3))";
+}
+
+pub relation unterrichtung_505_erfolgt_am(d: Darlehen, p: Person, tag: Date) kind empirical {
+    label de official "Der Darlehensgeber hat über die erhebliche Überziehung unterrichtet (§ 505 Absatz 2)";
+    label en unofficial "the lender informed about the significant overdraft (§ 505 (2))";
+}
+pub relation unterrichtungsbeginn_505_am(d: Darlehen, tag: Date) kind empirical {
+    label de official "Beginn der Unterrichtungspflicht nach § 505";
+    label en unofficial "start of the information duty under § 505";
+}
+@source(BGB_P505)
+rule Position505Unterrichtung(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Der Darlehensgeber muss unverzüglich unterrichten (§ 505 Absatz 2)";
+    label en unofficial "The lender must inform without undue delay (§ 505 (2))";
+    when darlehensgeber(d, p) and erhebliche_ueberziehung_ueber_einen_monat_505(d)
+      and unterrichtungsbeginn_505_am(d, tag);
+    then duty Duty505Unterrichtung {
+        bearer p;
+        achieve unterrichtung_505_erfolgt_am(d, p, tag) during [tag, infinity);
+    };
+}
+@source(BGB_P505) {
+    rule UnterrichtungspflichtBeiErheblicherUeberziehung505(d: Darlehen) strict {
+        label de official "Kommt es zu einer erheblichen Überziehung von mehr als einem Monat, unterrichtet der Darlehensgeber den Darlehensnehmer unverzüglich über die sich aus Artikel 247 § 17 Absatz 2 EGBGB ergebenden Einzelheiten (§ 505 Absatz 2 Satz 1)";
+        label en unofficial "where a significant overdraft of more than one month occurs, the lender promptly informs the borrower of the particulars under Article 247 § 17 (2) EGBGB (§ 505 (2) sentence 1)";
+        when entgelt_fuer_geduldete_ueberziehung_vereinbart_505(d) and erhebliche_ueberziehung_ueber_einen_monat_505(d);
+        then unterrichtungspflicht_505_abs2(d);
+    }
+    rule HaelfteDesGeldeingangs505(d: Darlehen, eingang: Money) strict {
+        label de official "Rechenschritt: die Hälfte des durchschnittlichen monatlichen Geldeingangs (§ 505 Absatz 2 Satz 2)";
+        label en unofficial "computation step: half of the average monthly incoming funds (§ 505 (2) sentence 2)";
+        when durchschnittlicher_monatlicher_geldeingang_505(d, eingang);
+        then haelfte_des_geldeingangs_505(d, div_round(eingang * 1, 2 * 1.0, 2, "HALF_UP"));
+    }
+    rule Beratungspflicht505Entsprechend(d: Darlehen, betrag: Money, haelfte: Money) strict {
+        label de official "Wenn es zu einer ununterbrochenen Überziehung von mehr als drei Monaten gekommen ist und der durchschnittliche Überziehungsbetrag die Hälfte des durchschnittlichen monatlichen Geldeingangs innerhalb der letzten drei Monate übersteigt, gilt § 504a entsprechend (§ 505 Absatz 2 Satz 2)";
+        label en unofficial "where an uninterrupted overdraft of more than three months has occurred and the average overdraft amount exceeds half of the average monthly incoming funds over the last three months, § 504a applies mutatis mutandis (§ 505 (2) sentence 2)";
+        when entgelt_fuer_geduldete_ueberziehung_vereinbart_505(d) and ununterbrochene_ueberziehung_ueber_drei_monate_505(d)
+            and durchschnittlicher_ueberziehungsbetrag_505(d, betrag) and haelfte_des_geldeingangs_505(d, haelfte)
+            and betrag > haelfte;
+        then beratungspflicht_504a_entsprechend_505(d);
+    }
+    rule KeineWeiterenKostenBeiVerstoss505(d: Darlehen) strict {
+        label de official "Verstößt der Unternehmer gegen Absatz 1 oder Absatz 2, kann der Darlehensgeber über die Rückzahlung des Darlehens hinaus Kosten und Zinsen nicht verlangen (§ 505 Absatz 3)";
+        label en unofficial "where the trader breaches paragraph 1 or paragraph 2, the lender may not claim costs and interest beyond repayment of the loan (§ 505 (3))";
+        when verstoss_gegen_absatz_1_oder_2_505(d);
+        then keine_kosten_und_zinsen_ueber_rueckzahlung_hinaus_505(d);
+    }
+}
+
+// § 137 maintenance witnesses for the executable loan prohibitions.
+pub relation violation_494_sicherheit(d: Darlehen, p: Person) kind derived {
+    label de official "Sicherheit trotz Verbots nach § 494 gefordert";
+    label en unofficial "security demanded in violation of § 494";
+}
+@source(BGB_P494)
+rule Violation494Sicherheit(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Eine Sicherheit wird trotz fehlender Angaben zu den Sicherheiten gefordert (§ 494 Absatz 6)";
+    label en unofficial "security is demanded despite missing information about the security (§ 494 (6))";
+    when darlehensgeber(d, p) and sicherheit_494_gefordert_am(d, p, tag);
+    then violation_494_sicherheit(d, p);
+}
+@source(BGB_P494)
+rule Maintenance494SicherheitRule(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Das Verbot, eine Sicherheit nach § 494 Absatz 6 zu fordern, bleibt ab seinem Beginn bestehen";
+    label en unofficial "the prohibition on demanding security under § 494 (6) remains in force from its start";
+    when darlehensgeber(d, p) and angaben_zu_sicherheiten_fehlen(d)
+      and sicherheiten_koennen_nicht_gefordert_werden(d)
+      and verbotsbeginn_494_am(d, beginn);
+    then duty Maintenance494Sicherheit {
+        bearer p;
+        goal maintenance {
+            condition not violation_494_sicherheit(d, p);
+            window [beginn, infinity);
+        }
+    };
+}
+
+pub relation violation_505a_kreditvergabe(d: Darlehen, p: Person) kind derived {
+    label de official "Verbraucherdarlehensvertrag trotz Verbots nach § 505a geschlossen";
+    label en unofficial "consumer loan concluded in violation of § 505a";
+}
+@source(BGB_P505a)
+rule Violation505aKreditvergabe(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Ein Verbraucherdarlehensvertrag wird trotz erheblicher Zweifel an der Kreditwürdigkeit geschlossen (§ 505a)";
+    label en unofficial "a consumer loan contract is concluded despite substantial doubts about creditworthiness (§ 505a)";
+    when darlehensgeber(d, p) and kreditvertrag_505a_geschlossen_am(d, tag);
+    then violation_505a_kreditvergabe(d, p);
+}
+  @source(BGB_P505a)
+  rule Maintenance505aKreditvergabeRule(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Das Verbot der Kreditvergabe nach § 505a bleibt ab seinem Beginn bestehen";
+    label en unofficial "the prohibition on granting credit under § 505a remains in force from its start";
+    when darlehensgeber(d, p) and verbraucherdarlehensvertrag(d)
+      and erhebliche_zweifel_an_kreditwuerdigkeit(d)
+      and verbotsbeginn_505a_am(d, beginn);
+    then duty Maintenance505aKreditvergabe {
+        bearer p;
+        goal maintenance {
+            condition not violation_505a_kreditvergabe(d, p);
+            window [beginn, infinity);
+        }
+    };
+}
+
+pub relation violation_492a_kopplung(d: Darlehen, p: Person) kind derived {
+    label de official "Kopplungsgeschäft trotz Verbots nach § 492a vereinbart";
+    label en unofficial "tying transaction agreed in violation of § 492a";
+}
+@source(BGB_P492a)
+rule Violation492aKopplung(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Ein Kopplungsgeschäft wird entgegen § 492a vereinbart";
+    label en unofficial "a tying transaction is agreed contrary to § 492a";
+  when darlehensgeber(d, p) and kopplung_492a_vereinbart_am(d, tag);
+    then violation_492a_kopplung(d, p);
+}
+  @source(BGB_P492a)
+  rule Maintenance492aKopplungRule(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Das Kopplungsverbot nach § 492a bleibt ab seinem Beginn bestehen";
+    label en unofficial "the tying prohibition under § 492a remains in force from its start";
+    when darlehensgeber(d, p) and immobiliar_verbraucherdarlehensvertrag(d)
+      and kopplungsgeschaeft_verlangt_492a(d)
+      and not_known(bereit_ohne_weitere_produkte_492a(d))
+      and verbotsbeginn_492a_am(d, beginn);
+    then duty Maintenance492aKopplung {
+        bearer p;
+        goal maintenance {
+            condition not violation_492a_kopplung(d, p);
+            window [beginn, infinity);
+        }
+    };
+}
+
+pub relation violation_512_abweichung(d: Darlehen, p: Person) kind derived {
+    label de official "Nachteilige Abweichung trotz Verbots nach § 512 vereinbart";
+    label en unofficial "detrimental deviation agreed in violation of § 512";
+}
+@source(BGB_P512)
+rule Violation512Abweichung(d: Darlehen, p: Person, tag: Date) strict {
+    label de official "Von den Vorschriften über Verbraucherdarlehensverträge wird zum Nachteil des Verbrauchers abgewichen (§ 512)";
+    label en unofficial "the consumer-loan provisions are departed from to the consumer's detriment (§ 512)";
+  when verbraucher_512(d, p) and abweichung_512_vereinbart_am(d, tag);
+    then violation_512_abweichung(d, p);
+}
+@source(BGB_P512)
+rule Maintenance512AbweichungRule(d: Darlehen, p: Person, beginn: Date) strict {
+    label de official "Das Abweichungsverbot nach § 512 bleibt ab seinem Beginn bestehen";
+    label en unofficial "the prohibition on detrimental deviations under § 512 remains in force from its start";
+    when verbraucher_512(d, p) and verbotsbeginn_512_am(d, beginn);
+    then duty Maintenance512Abweichung {
+        bearer p;
+        goal maintenance {
+            condition not violation_512_abweichung(d, p);
+            window [beginn, infinity);
+        }
+    };
+}

@@ -1,0 +1,20 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 926 Abs. 1 Satz 2: die Vermutung entfällt, wenn Veräußerer und Erwerber ausdrücklich vereinbaren, dass sich die Veräußerung NICHT auf das Zubehör erstreckt. Kanarei zu gb04: gleiche Tatsachen, zusätzlich "f5" kippt beide Erwartungen.
+test "§ 926 Abs. 1: Vermutung widerlegt durch ausdrücklichen Ausschluss des Zubehörs" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": eigentum_am_grundstueck_erworben(entity_ref("urn:de:bgb:be:gb05:grundstueck"), entity_ref("urn:de:bgb:be:gb05:K")) { origin case_input; }
+        assert "f2": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:gb05:grundstueck"), entity_ref("urn:de:bgb:be:gb05:V")) { origin case_input; }
+        assert "f3": zubehoerstueck(entity_ref("urn:de:bgb:be:gb05:grundstueck"), entity_ref("urn:de:bgb:be:gb05:traktor")) { origin case_input; }
+        assert "f4": zubehoer_gehoert_dem_veraeusserer_zur_zeit_des_erwerbs(entity_ref("urn:de:bgb:be:gb05:grundstueck"), entity_ref("urn:de:bgb:be:gb05:traktor")) { origin case_input; }
+        assert "f5": einigkeit_ueber_ausschluss_des_zubehoers(entity_ref("urn:de:bgb:be:gb05:grundstueck")) { origin case_input; }
+    }
+    evaluate truth(einigkeit_ueber_erstreckung_auf_zubehoer(entity_ref("urn:de:bgb:be:gb05:grundstueck")));
+    expect truth_status == FALSE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_durch_zubehoerregel_erworben(entity_ref("urn:de:bgb:be:gb05:traktor"), entity_ref("urn:de:bgb:be:gb05:K")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

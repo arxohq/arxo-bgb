@@ -1,0 +1,21 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// § 1303 Satz 2: P ist am 10.05.2009 geboren; das 16. Lebensjahr ist mit ABLAUF des 09.05.2025 vollendet (§ 187 Abs. 2 Satz 2, § 188 Abs. 2). Die Ehe wurde am 09.05.2025 geschlossen — an diesem Tag ist das Lebensjahr noch nicht vollendet, die Ehe ist daher unwirksam. Zugleich greift das Eheverbot des Satzes 1 (Volljährigkeit erst mit Ablauf des 09.05.2027).
+test "§ 1303 Satz 2: Eheschließung am Tag der Vollendung des 16. Lebensjahrs" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_EHE_KALENDER; }
+        assert "f1": ehegatten(entity_ref("urn:de:bgb:ehe:v05:E"), entity_ref("urn:de:bgb:ehe:v05:P"), entity_ref("urn:de:bgb:ehe:v05:Q")) { origin case_input; }
+        assert "f2": eheschliessung_am(entity_ref("urn:de:bgb:ehe:v05:E"), @2025-05-09) { origin case_input; }
+        assert "f3": de.bgb.fristen::geburtstag(entity_ref("urn:de:bgb:ehe:v05:P"), @2009-05-10) { origin case_input; }
+        assert "f4": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:ehe:v05:P"), 16 calendar_year) { origin case_input; }
+        assert "f5": de.bgb.fristen::lebensjahr_gefragt(entity_ref("urn:de:bgb:ehe:v05:P"), 18 calendar_year) { origin case_input; }
+    }
+    evaluate truth(de.bgb.fristen::lebensjahr_vollendet_am(entity_ref("urn:de:bgb:ehe:v05:P"), 16 calendar_year, @2025-05-09));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(ehe_unwirksam(entity_ref("urn:de:bgb:ehe:v05:E"), "§ 1303 Satz 2: Eheschließung mit einer Person, die das 16. Lebensjahr nicht vollendet hatte"));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

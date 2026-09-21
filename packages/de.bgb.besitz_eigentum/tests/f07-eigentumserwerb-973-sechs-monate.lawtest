@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 973 Abs. 1 Satz 1: mit dem Ablauf von sechs Monaten nach der Anzeige des Fundes bei der zuständigen Behörde (14. November 2025) erwirbt der Finder das Eigentum — Ende der Frist ist der 14. Mai 2026 (§§ 187 Abs. 1, 188 Abs. 2).
+test "§ 973 Abs. 1: Eigentumserwerb des Finders sechs Monate nach der Anzeige" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": fundsache(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:mantel")) { origin case_input; }
+        assert "f2": finder(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:F")) { origin case_input; }
+        assert "f3": empfangsberechtigter(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:B")) { origin case_input; }
+        assert "f4": wert_der_fundsache(entity_ref("urn:de:bgb:be:f:fund"), 1000.00 EUR) { origin case_input; }
+        assert "f5": fundsache_ist_kein_tier(entity_ref("urn:de:bgb:be:f:fund")) { origin case_input; }
+        assert "f6": fund_bei_der_behoerde_angezeigt_am(entity_ref("urn:de:bgb:be:f:fund"), @2025-11-14) { origin adjudicated; }
+        assert "f7": fundfrist(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:frist")) { origin case_input; }
+    }
+    evaluate truth(fundfrist_abgelaufen_am(entity_ref("urn:de:bgb:be:f:fund"), @2026-05-14));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentumserwerb_des_finders_am(entity_ref("urn:de:bgb:be:f:fund"), entity_ref("urn:de:bgb:be:f:F"), @2026-05-14));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_durch_fund_erworben(entity_ref("urn:de:bgb:be:f:mantel"), entity_ref("urn:de:bgb:be:f:F")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

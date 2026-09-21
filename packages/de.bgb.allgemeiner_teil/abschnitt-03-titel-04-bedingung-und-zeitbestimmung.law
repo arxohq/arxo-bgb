@@ -1,0 +1,195 @@
+// BUCH 1 ABSCHNITT 3 TITEL 4 — BEDINGUNG UND ZEITBESTIMMUNG (§§ 158–163)
+//
+// KANÄLE (DECISION-0194). „Wider Treu und Glauben“ (§ 162) und das
+// Verschulden während der Schwebezeit (§ 160 Abs. 1) sind WERTUNGEN des
+// Gerichts; der Eintritt der Bedingung und sein Tag sind festgestellte
+// Tatsachen. § 163 verweist für den Anfangs- und den Endtermin auf die
+// §§ 158, 160, 161 — die Verweisung steht als Regel, nicht als Kommentar.
+
+language "law.core" version "0.2";
+package de.bgb.allgemeiner_teil version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-allgemeiner-teil";
+
+pub enum Bedingungsart {
+    label de official "Art der Bedingung (§ 158)";
+    label en unofficial "kind of condition (§ 158)";
+    Aufschiebend,
+    Aufloesend
+}
+pub enum Terminart {
+    label de official "Art des Termins (§ 163)";
+    label en unofficial "kind of time stipulation (§ 163)";
+    Anfangstermin,
+    Endtermin
+}
+
+pub relation bedingung(r: Rechtsgeschaeft, art: Bedingungsart) kind empirical {
+    key(r);
+    label de official "das Rechtsgeschäft ist unter einer aufschiebenden oder auflösenden Bedingung vorgenommen (§ 158)";
+    label en unofficial "the transaction was effected subject to a condition precedent or subsequent (§ 158)";
+}
+pub relation bedingung_eingetreten_am(r: Rechtsgeschaeft, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag des Eintritts der Bedingung (§ 158) — festgestellte Tatsache";
+    label en unofficial "day on which the condition is fulfilled (§ 158) — established fact";
+}
+pub relation termin(r: Rechtsgeschaeft, art: Terminart, tag: Date) kind empirical {
+    key(r);
+    label de official "für die Wirkung des Rechtsgeschäfts bestimmter Anfangs- oder Endtermin (§ 163)";
+    label en unofficial "commencement or end date stipulated for the effect of the transaction (§ 163)";
+}
+pub relation wirkung_tritt_ein_am(r: Rechtsgeschaeft, tag: Date) kind institutional {
+    key(r);
+    label de official "Tag, mit dem die von der Bedingung abhängig gemachte Wirkung eintritt (§ 158 Abs. 1, § 163)";
+    label en unofficial "day on which the effect made dependent on the condition arises (§ 158 (1), § 163)";
+}
+pub relation wirkung_endet_am(r: Rechtsgeschaeft, tag: Date) kind institutional {
+    key(r);
+    label de official "Tag, mit dem die Wirkung des Rechtsgeschäfts endigt und der frühere Rechtszustand wieder eintritt (§ 158 Abs. 2, § 163)";
+    label en unofficial "day on which the effect ends and the previous legal position returns (§ 158 (2), § 163)";
+}
+
+@source(BGB_P158)
+rule AufschiebendeBedingung(r: Rechtsgeschaeft, t: Date) strict {
+    label de official "Wird ein Rechtsgeschäft unter einer aufschiebenden Bedingung vorgenommen, so tritt die von der Bedingung abhängig gemachte Wirkung mit dem Eintritt der Bedingung ein (§ 158 Abs. 1)";
+    label en unofficial "Where a transaction is effected subject to a condition precedent, the effect arises upon fulfilment of the condition (§ 158 (1))";
+    when bedingung(r, Aufschiebend) and bedingung_eingetreten_am(r, t);
+    then wirkung_tritt_ein_am(r, t);
+}
+
+@source(BGB_P158)
+rule AufloesendeBedingung(r: Rechtsgeschaeft, t: Date) strict {
+    label de official "Wird ein Rechtsgeschäft unter einer auflösenden Bedingung vorgenommen, so endigt mit dem Eintritt der Bedingung die Wirkung des Rechtsgeschäfts; mit diesem Zeitpunkt tritt der frühere Rechtszustand wieder ein (§ 158 Abs. 2)";
+    label en unofficial "Where a transaction is effected subject to a condition subsequent, its effect ends upon fulfilment and the previous legal position returns (§ 158 (2))";
+    when bedingung(r, Aufloesend) and bedingung_eingetreten_am(r, t);
+    then wirkung_endet_am(r, t);
+}
+
+@source(BGB_P163)
+rule Anfangstermin(r: Rechtsgeschaeft, t: Date) strict {
+    label de official "Ist für die Wirkung eines Rechtsgeschäfts bei dessen Vornahme ein Anfangstermin bestimmt worden, so finden die für die aufschiebende Bedingung geltenden Vorschriften der §§ 158, 160, 161 entsprechende Anwendung (§ 163)";
+    label en unofficial "Where a commencement date is stipulated, the provisions on conditions precedent (§§ 158, 160, 161) apply accordingly (§ 163)";
+    when termin(r, Anfangstermin, t);
+    then wirkung_tritt_ein_am(r, t);
+}
+
+@source(BGB_P163)
+rule Endtermin(r: Rechtsgeschaeft, t: Date) strict {
+    label de official "Ist ein Endtermin bestimmt worden, so finden die für die auflösende Bedingung geltenden Vorschriften der §§ 158, 160, 161 entsprechende Anwendung (§ 163)";
+    label en unofficial "Where an end date is stipulated, the provisions on conditions subsequent apply accordingly (§ 163)";
+    when termin(r, Endtermin, t);
+    then wirkung_endet_am(r, t);
+}
+
+// § 159 Rückbeziehung.
+pub relation rueckbeziehung_vereinbart_auf(r: Rechtsgeschaeft, tag: Date) kind empirical {
+    key(r);
+    label de official "nach dem Inhalt des Rechtsgeschäfts sollen die an den Eintritt der Bedingung geknüpften Folgen auf einen früheren Zeitpunkt zurückbezogen werden (§ 159)";
+    label en unofficial "under the content of the transaction the consequences are to be related back to an earlier time (§ 159)";
+}
+pub relation verpflichtung_zur_rueckbeziehung(r: Rechtsgeschaeft, tag: Date) kind institutional {
+    key(r);
+    label de official "die Beteiligten sind verpflichtet, einander zu gewähren, was sie haben würden, wenn die Folgen in dem früheren Zeitpunkt eingetreten wären (§ 159)";
+    label en unofficial "the parties must grant each other what they would have had if the consequences had arisen at the earlier time (§ 159)";
+}
+
+@source(BGB_P159)
+rule Rueckbeziehung(r: Rechtsgeschaeft, frueher: Date, t: Date) strict {
+    label de official "Sollen nach dem Inhalt des Rechtsgeschäfts die an den Eintritt der Bedingung geknüpften Folgen auf einen früheren Zeitpunkt zurückbezogen werden, so sind im Falle des Eintritts der Bedingung die Beteiligten verpflichtet, einander zu gewähren, was sie haben würden, wenn die Folgen in dem früheren Zeitpunkt eingetreten wären (§ 159)";
+    label en unofficial "Where the consequences are to be related back, upon fulfilment the parties must grant each other what they would have had at that earlier time (§ 159)";
+    when rueckbeziehung_vereinbart_auf(r, frueher) and bedingung_eingetreten_am(r, t);
+    then verpflichtung_zur_rueckbeziehung(r, frueher);
+}
+
+// § 160 Haftung während der Schwebezeit.
+pub relation bedingt_berechtigter(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "wer unter einer aufschiebenden Bedingung berechtigt ist oder zu dessen Gunsten bei einer auflösenden Bedingung der frühere Rechtszustand wieder eintritt (§ 160 Abs. 1, 2)";
+    label en unofficial "the person entitled subject to a condition precedent, or in whose favour the previous position returns (§ 160 (1), (2))";
+}
+pub relation anderer_teil(r: Rechtsgeschaeft, p: Person) kind empirical {
+    label de official "der andere Teil des bedingten Rechtsgeschäfts (§ 160)";
+    label en unofficial "the other party to the conditional transaction (§ 160)";
+}
+
+@source(BGB_P160)
+pub external judgment relation recht_waehrend_der_schwebezeit_schuldhaft_vereitelt(r: Rechtsgeschaeft, p: Person) {
+    authority Court;
+    label de official "§ 160 Abs. 1: der andere Teil hat während der Schwebezeit das von der Bedingung abhängige Recht durch sein Verschulden vereitelt oder beeinträchtigt";
+    label en unofficial "§ 160 (1): during the state of suspense the other party culpably frustrated or impaired the conditional right";
+}
+
+pub relation schadensersatzanspruch_schwebezeit(r: Rechtsgeschaeft, berechtigter: Person, verpflichteter: Person) kind institutional {
+    label de official "Anspruch auf Schadensersatz wegen Vereitelung oder Beeinträchtigung des bedingten Rechts während der Schwebezeit (§ 160)";
+    label en unofficial "claim for damages for frustration or impairment of the conditional right during the state of suspense (§ 160)";
+}
+
+@source(BGB_P160)
+rule HaftungWaehrendDerSchwebezeit(r: Rechtsgeschaeft, b: Person, a: Person, t: Date) strict {
+    label de official "Wer unter einer aufschiebenden Bedingung berechtigt ist, kann im Falle des Eintritts der Bedingung Schadensersatz von dem anderen Teil verlangen, wenn dieser während der Schwebezeit das von der Bedingung abhängige Recht durch sein Verschulden vereitelt oder beeinträchtigt (§ 160 Abs. 1); den gleichen Anspruch hat bei einer auflösenden Bedingung derjenige, zu dessen Gunsten der frühere Rechtszustand wieder eintritt (§ 160 Abs. 2)";
+    label en unofficial "A person entitled subject to a condition may claim damages if the other party culpably frustrated the conditional right during the suspense (§ 160)";
+    when bedingt_berechtigter(r, b)
+        and anderer_teil(r, a)
+        and bedingung_eingetreten_am(r, t)
+        and recht_waehrend_der_schwebezeit_schuldhaft_vereitelt(r, a);
+    then schadensersatzanspruch_schwebezeit(r, b, a);
+}
+
+// § 161 Unwirksamkeit von Verfügungen während der Schwebezeit.
+pub relation weitere_verfuegung_waehrend_der_schwebezeit(r: Rechtsgeschaeft, weitere: Rechtsgeschaeft) kind empirical {
+    label de official "während der Schwebezeit über den Gegenstand getroffene weitere Verfügung, auch im Wege der Zwangsvollstreckung, der Arrestvollziehung oder durch den Insolvenzverwalter (§ 161 Abs. 1)";
+    label en unofficial "further disposition of the object during the suspense, including by execution, attachment or the insolvency administrator (§ 161 (1))";
+}
+pub relation vereitelt_die_bedingte_wirkung(weitere: Rechtsgeschaeft) kind empirical {
+    label de official "die weitere Verfügung würde die von der Bedingung abhängige Wirkung vereiteln oder beeinträchtigen (§ 161 Abs. 1 Satz 1)";
+    label en unofficial "the further disposition would frustrate or impair the conditional effect (§ 161 (1))";
+}
+
+@source(BGB_P161)
+rule VerfuegungWaehrendDerSchwebezeitUnwirksam(r: Rechtsgeschaeft, weitere: Rechtsgeschaeft, t: Date) strict {
+    label de official "Hat jemand unter einer aufschiebenden Bedingung über einen Gegenstand verfügt, so ist jede weitere Verfügung, die er während der Schwebezeit über den Gegenstand trifft, im Falle des Eintritts der Bedingung insoweit unwirksam, als sie die von der Bedingung abhängige Wirkung vereiteln oder beeinträchtigen würde (§ 161 Abs. 1 Satz 1); dasselbe gilt bei einer auflösenden Bedingung (§ 161 Abs. 2)";
+    label en unofficial "A further disposition made during the suspense is ineffective upon fulfilment in so far as it would frustrate the conditional effect (§ 161 (1), (2))";
+    when weitere_verfuegung_waehrend_der_schwebezeit(r, weitere)
+        and vereitelt_die_bedingte_wirkung(weitere)
+        and bedingung_eingetreten_am(r, t);
+    then unwirksam(weitere);
+}
+
+// § 162 Verhinderung oder Herbeiführung des Bedingungseintritts.
+@source(BGB_P162)
+pub external judgment relation eintritt_wider_treu_und_glauben_verhindert(r: Rechtsgeschaeft, p: Person) {
+    authority Court;
+    label de official "§ 162 Abs. 1: der Eintritt der Bedingung ist von der Partei, zu deren Nachteil er gereichen würde, wider Treu und Glauben verhindert worden";
+    label en unofficial "§ 162 (1): fulfilment was prevented, contrary to good faith, by the party to whose detriment it would be";
+}
+
+@source(BGB_P162)
+pub external judgment relation eintritt_wider_treu_und_glauben_herbeigefuehrt(r: Rechtsgeschaeft, p: Person) {
+    authority Court;
+    label de official "§ 162 Abs. 2: der Eintritt der Bedingung ist von der Partei, zu deren Vorteil er gereicht, wider Treu und Glauben herbeigeführt worden";
+    label en unofficial "§ 162 (2): fulfilment was brought about, contrary to good faith, by the party to whose advantage it is";
+}
+
+pub relation bedingung_gilt_als_eingetreten(r: Rechtsgeschaeft) kind institutional {
+    label de official "die Bedingung gilt als eingetreten (§ 162 Abs. 1)";
+    label en unofficial "the condition is deemed fulfilled (§ 162 (1))";
+}
+pub relation eintritt_gilt_als_nicht_erfolgt(r: Rechtsgeschaeft) kind institutional {
+    label de official "der Eintritt der Bedingung gilt als nicht erfolgt (§ 162 Abs. 2)";
+    label en unofficial "fulfilment is deemed not to have occurred (§ 162 (2))";
+}
+
+@source(BGB_P162)
+rule TreuwidrigeVerhinderung(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Wird der Eintritt der Bedingung von der Partei, zu deren Nachteil er gereichen würde, wider Treu und Glauben verhindert, so gilt die Bedingung als eingetreten (§ 162 Abs. 1)";
+    label en unofficial "If fulfilment is prevented contrary to good faith by the party to whose detriment it would be, the condition is deemed fulfilled (§ 162 (1))";
+    when anderer_teil(r, p) and eintritt_wider_treu_und_glauben_verhindert(r, p);
+    then bedingung_gilt_als_eingetreten(r);
+}
+
+@source(BGB_P162)
+rule TreuwidrigeHerbeifuehrung(r: Rechtsgeschaeft, p: Person) strict {
+    label de official "Wird der Eintritt der Bedingung von der Partei, zu deren Vorteil er gereicht, wider Treu und Glauben herbeigeführt, so gilt der Eintritt als nicht erfolgt (§ 162 Abs. 2)";
+    label en unofficial "If fulfilment is brought about contrary to good faith by the party to whose advantage it is, it is deemed not to have occurred (§ 162 (2))";
+    when bedingt_berechtigter(r, p) and eintritt_wider_treu_und_glauben_herbeigefuehrt(r, p);
+    then eintritt_gilt_als_nicht_erfolgt(r);
+}

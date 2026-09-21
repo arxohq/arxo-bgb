@@ -1,0 +1,970 @@
+// --- Buch 3 Abschnitt 2: allgemeine Vorschriften über Rechte an Grundstücken (§§ 873–902) --------
+//
+// DAS GRUNDBUCH IST EIN ÄUSSERES REGISTER. Das BGB setzt es voraus; geführt
+// wird es nach der Grundbuchordnung. Dieses Paket rechnet den Inhalt des
+// Grundbuchs nicht aus: Eintragung, Löschung, Abteilung, Tag und Reihenfolge
+// sind FESTGESTELLTE TATSACHEN des Falls (`origin adjudicated`, Grundbuchamt);
+// die Norm verknüpft sie (docs/foundations/de-bgb/SOURCES.json, external).
+//
+// Die Vermutungen der §§ 891 und 921 stehen als `presumption` mit beiden
+// Seiten: die Vermutung gilt, bis der Fall das Gegenteil feststellt. Der
+// öffentliche Glaube des § 892 ist eine widerlegliche Regel: der eingetragene
+// Inhalt gilt als richtig, es sei denn, ein Widerspruch ist eingetragen oder
+// die Unrichtigkeit ist dem Erwerber bekannt (Kenntnis: festgestellte
+// Tatsache, § 892 Abs. 2 nennt den maßgebenden Zeitpunkt).
+//
+// Die Buchersitzung des § 900 Abs. 1 rechnet dreißig Jahre vom Tag der
+// Eintragung (§§ 187 Abs. 1, 188 Abs. 2) als KALENDARISCHES Ende — eine
+// Erwerbsfrist kennt die Verlegung des § 193 nicht; der eingetragene
+// Widerspruch hemmt den Lauf (Satz 3) und verschiebt das Ende um die Zahl der
+// gehemmten Tage (§ 209 entsprechend, wie in `de.bgb.fristen`).
+
+pub entity Recht {
+    label de official "Recht an einem Grundstück oder Recht an einem solchen Recht (§ 873 Abs. 1)";
+    label en unofficial "right in a plot of land or right in such a right (§ 873 (1))";
+}
+pub entity Vormerkung {
+    label de official "Vormerkung zur Sicherung eines Anspruchs auf Einräumung oder Aufhebung eines Rechts an einem Grundstück (§ 883 Abs. 1)";
+    label en unofficial "priority notice securing a claim to the grant or cancellation of a right in land (§ 883 (1))";
+}
+pub entity Verfuegung {
+    label de official "Verfügung über das Grundstück oder das Recht (§ 883 Abs. 2)";
+    label en unofficial "disposition of the land or the right (§ 883 (2))";
+}
+
+// --- Eingaben des Falls: Grundbuch (äußeres Register, GBO) ---------------------------------------
+
+pub relation recht_am_grundstueck(r: Recht, g: Grundstueck) kind empirical {
+    key(r);
+    label de official "Grundstück, das mit dem Recht belastet ist oder auf das sich das Recht bezieht (§ 873 Abs. 1)";
+    label en unofficial "land encumbered by or subject to the right (§ 873 (1))";
+}
+pub relation im_grundbuch_eingetragen_fuer(r: Recht, p: Person) kind empirical {
+    label de official "im Grundbuch ist für diese Person das Recht eingetragen (§ 891 Abs. 1, § 892 Abs. 1) — Inhalt des Grundbuchs, festgestellte Tatsache";
+    label en unofficial "the right is registered in the land register for this person (§ 891 (1), § 892 (1)) — content of the register, established fact";
+}
+pub relation eingetragen_am(r: Recht, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag, unter dessen Angabe das Recht im Grundbuch eingetragen ist (§ 879 Abs. 1 Satz 2, § 900 Abs. 1 Satz 1)";
+    label en unofficial "day under which the right is registered (§ 879 (1) sentence 2, § 900 (1) sentence 1)";
+}
+pub relation eingetragen_in_abteilung(r: Recht, abteilung: Integer) kind empirical {
+    key(r);
+    label de official "Abteilung des Grundbuchs, in der das Recht eingetragen ist (§ 879 Abs. 1)";
+    label en unofficial "section of the land register in which the right is registered (§ 879 (1))";
+}
+pub relation reihenfolge_der_eintragung(r: Recht, nummer: Integer) kind empirical {
+    key(r);
+    label de official "Reihenfolge der Eintragungen innerhalb derselben Abteilung (§ 879 Abs. 1 Satz 1)";
+    label en unofficial "order of entries within the same section (§ 879 (1) sentence 1)";
+}
+pub relation im_grundbuch_geloescht(r: Recht) kind empirical {
+    label de official "das eingetragene Recht ist im Grundbuch gelöscht (§ 891 Abs. 2, § 875 Abs. 1)";
+    label en unofficial "the registered right has been cancelled in the register (§ 891 (2), § 875 (1))";
+}
+pub relation widerspruch_gegen_die_richtigkeit_eingetragen(r: Recht) kind empirical {
+    label de official "gegen die Richtigkeit des Grundbuchs ist ein Widerspruch eingetragen (§ 892 Abs. 1, § 899, § 900 Abs. 1 Satz 3)";
+    label en unofficial "an objection to the correctness of the register is registered (§ 892 (1), § 899, § 900 (1) sentence 3)";
+}
+pub relation wirkliche_rechtslage_weicht_ab(r: Recht) kind empirical {
+    label de official "der Inhalt des Grundbuchs steht mit der wirklichen Rechtslage nicht im Einklang (§ 894) — festgestellte Tatsache, die die Vermutung des § 891 widerlegt";
+    label en unofficial "the content of the register does not correspond to the true legal position (§ 894) — established fact rebutting the presumption of § 891";
+}
+
+// --- Erwerb, Aufhebung und Bindung (§§ 873–878) ---------------------------------------------------
+
+pub relation einigung_ueber_die_rechtsaenderung(r: Recht, berechtigter: Person, anderer: Person, tag: Date) kind empirical {
+    label de official "Einigung des Berechtigten und des anderen Teils über den Eintritt der Rechtsänderung (§ 873 Abs. 1)";
+    label en unofficial "agreement of the entitled person and the other party on the change of rights (§ 873 (1))";
+}
+pub relation erklaerung_notariell_beurkundet(r: Recht) kind empirical {
+    label de official "die Erklärungen sind notariell beurkundet (§ 873 Abs. 2)";
+    label en unofficial "the declarations are recorded by a notary (§ 873 (2))";
+}
+pub relation erklaerung_vor_dem_grundbuchamt(r: Recht) kind empirical {
+    label de official "die Erklärungen sind vor dem Grundbuchamt abgegeben oder bei diesem eingereicht (§ 873 Abs. 2)";
+    label en unofficial "the declarations were made before or submitted to the land registry (§ 873 (2))";
+}
+pub relation eintragungsbewilligung_ueberlassen(r: Recht) kind empirical {
+    label de official "der Berechtigte hat dem anderen Teil eine den Vorschriften der Grundbuchordnung entsprechende Eintragungsbewilligung überlassen (§ 873 Abs. 2)";
+    label en unofficial "the entitled person has handed over an approval of registration complying with the Land Register Code (§ 873 (2))";
+}
+pub relation aufhebungserklaerung_des_berechtigten(r: Recht) kind empirical {
+    label de official "Erklärung des Berechtigten, dass er das Recht aufgebe, dem Grundbuchamt oder dem Begünstigten gegenüber (§ 875 Abs. 1)";
+    label en unofficial "declaration of the entitled person that they surrender the right, made to the land registry or the beneficiary (§ 875 (1))";
+}
+pub relation belastet_mit_dem_recht_eines_dritten(r: Recht, dritter: Person) kind empirical {
+    label de official "das Recht ist mit dem Recht eines Dritten belastet (§ 876 Satz 1)";
+    label en unofficial "the right is encumbered with the right of a third party (§ 876 sentence 1)";
+}
+pub relation zustimmung_des_dritten(r: Recht, dritter: Person) kind empirical {
+    label de official "Zustimmung des Dritten, dem Grundbuchamt oder dem Begünstigten gegenüber erklärt; sie ist unwiderruflich (§ 876 Satz 3)";
+    label en unofficial "consent of the third party, declared to the land registry or the beneficiary; it is irrevocable (§ 876 sentence 3)";
+}
+pub relation eintragungsantrag_gestellt_am(r: Recht, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag, an dem der Antrag auf Eintragung bei dem Grundbuchamt gestellt worden ist (§ 878, § 892 Abs. 2)";
+    label en unofficial "day on which the application for registration was filed with the land registry (§ 878, § 892 (2))";
+}
+pub relation verfuegungsbeschraenkung_eingetreten_am(r: Recht, tag: Date) kind empirical {
+    key(r);
+    label de official "Tag, an dem der Berechtigte in der Verfügung beschränkt worden ist (§ 878)";
+    label en unofficial "day on which the entitled person became restricted in their power of disposition (§ 878)";
+}
+
+pub relation bindung_an_die_einigung(r: Recht) kind derived {
+    label de official "die Beteiligten sind vor der Eintragung an die Einigung gebunden (§ 873 Abs. 2)";
+    label en unofficial "the parties are bound by the agreement before registration (§ 873 (2))";
+}
+pub relation rechtsaenderung_eingetreten(r: Recht, berechtigter: Person, erwerber: Person) kind derived {
+    label de official "die Rechtsänderung ist eingetreten: Einigung und Eintragung liegen vor (§ 873 Abs. 1)";
+    label en unofficial "the change of rights has occurred: agreement and registration are present (§ 873 (1))";
+}
+pub relation recht_aufgehoben(r: Recht) kind derived {
+    label de official "das Recht an dem Grundstück ist aufgehoben (§ 875 Abs. 1, § 876)";
+    label en unofficial "the right in the land has been surrendered (§ 875 (1), § 876)";
+}
+pub relation erklaerung_bleibt_wirksam(r: Recht) kind derived {
+    label de official "die Erklärung wird durch die nachträgliche Verfügungsbeschränkung nicht unwirksam (§ 878)";
+    label en unofficial "the declaration does not become ineffective through a subsequent restriction (§ 878)";
+}
+
+@source(BGB_P873) {
+    rule RechtsaenderungDurchEinigungUndEintragung(r: Recht, berechtigter: Person, erwerber: Person, tag: Date) strict {
+        label de official "Zur Übertragung des Eigentums an einem Grundstück, zur Belastung eines Grundstücks mit einem Recht sowie zur Übertragung oder Belastung eines solchen Rechts ist die Einigung des Berechtigten und des anderen Teils über den Eintritt der Rechtsänderung und die Eintragung der Rechtsänderung in das Grundbuch erforderlich (§ 873 Abs. 1)";
+        label en unofficial "Transfer of ownership of land, encumbrance of land with a right and transfer or encumbrance of such a right require the agreement of the entitled person and the other party and registration of the change in the land register (§ 873 (1))";
+        when einigung_ueber_die_rechtsaenderung(r, berechtigter, erwerber, tag) and im_grundbuch_eingetragen_fuer(r, erwerber);
+        then rechtsaenderung_eingetreten(r, berechtigter, erwerber);
+    }
+    rule BindungDurchNotarielleBeurkundung(r: Recht) strict {
+        label de official "Vor der Eintragung sind die Beteiligten an die Einigung nur gebunden, wenn die Erklärungen notariell beurkundet sind (§ 873 Abs. 2)";
+        label en unofficial "Before registration the parties are bound only if the declarations are notarially recorded (§ 873 (2))";
+        when erklaerung_notariell_beurkundet(r);
+        then bindung_an_die_einigung(r);
+    }
+    rule BindungDurchErklaerungVorDemGrundbuchamt(r: Recht) strict {
+        label de official "Vor der Eintragung sind die Beteiligten an die Einigung nur gebunden, wenn die Erklärungen vor dem Grundbuchamt abgegeben oder bei diesem eingereicht sind (§ 873 Abs. 2)";
+        label en unofficial "Before registration the parties are bound only if the declarations were made before or submitted to the land registry (§ 873 (2))";
+        when erklaerung_vor_dem_grundbuchamt(r);
+        then bindung_an_die_einigung(r);
+    }
+    rule BindungDurchEintragungsbewilligung(r: Recht) strict {
+        label de official "Vor der Eintragung sind die Beteiligten an die Einigung nur gebunden, wenn der Berechtigte dem anderen Teil eine den Vorschriften der Grundbuchordnung entsprechende Eintragungsbewilligung überlassen hat (§ 873 Abs. 2)";
+        label en unofficial "Before registration the parties are bound only if the entitled person handed over an approval of registration under the Land Register Code (§ 873 (2))";
+        when eintragungsbewilligung_ueberlassen(r);
+        then bindung_an_die_einigung(r);
+    }
+}
+
+@source(BGB_P875)
+rule AufhebungDurchErklaerungUndLoeschung(r: Recht) strict {
+    label de official "Zur Aufhebung eines Rechts an einem Grundstück ist die Erklärung des Berechtigten, dass er das Recht aufgebe, und die Löschung des Rechts im Grundbuch erforderlich (§ 875 Abs. 1 Satz 1)";
+    label en unofficial "Surrender of a right in land requires the declaration of the entitled person that they surrender the right and cancellation of the right in the register (§ 875 (1) sentence 1)";
+    when aufhebungserklaerung_des_berechtigten(r) and im_grundbuch_geloescht(r);
+    then recht_aufgehoben(r);
+}
+
+@source(BGB_P876)
+rule AufhebungDesBelastetenRechtsBrauchtZustimmung(r: Recht, dritter: Person) strict {
+    label de official "Ist ein Recht an einem Grundstück mit dem Recht eines Dritten belastet, so ist zur Aufhebung des belasteten Rechts die Zustimmung des Dritten erforderlich (§ 876 Satz 1)";
+    label en unofficial "If a right in land is encumbered with a third party's right, surrender of the encumbered right requires that party's consent (§ 876 sentence 1)";
+    when aufhebungserklaerung_des_berechtigten(r) and im_grundbuch_geloescht(r)
+        and belastet_mit_dem_recht_eines_dritten(r, dritter) and zustimmung_des_dritten(r, dritter);
+    then recht_aufgehoben(r);
+}
+
+@source(BGB_P878)
+rule NachtraeglicheVerfuegungsbeschraenkung(r: Recht, antrag: Date, beschraenkung: Date) strict {
+    label de official "Eine von dem Berechtigten in Gemäßheit der §§ 873, 875, 877 abgegebene Erklärung wird nicht dadurch unwirksam, dass der Berechtigte in der Verfügung beschränkt wird, nachdem die Erklärung für ihn bindend geworden und der Antrag auf Eintragung bei dem Grundbuchamt gestellt worden ist (§ 878)";
+    label en unofficial "A declaration under §§ 873, 875, 877 does not become ineffective because the entitled person becomes restricted after the declaration became binding and the application for registration was filed (§ 878)";
+    when bindung_an_die_einigung(r) and eintragungsantrag_gestellt_am(r, antrag)
+        and verfuegungsbeschraenkung_eingetreten_am(r, beschraenkung) and beschraenkung > antrag;
+    then erklaerung_bleibt_wirksam(r);
+}
+
+// --- § 874 Bezugnahme, § 877 Rechtsänderungen (Welle B6, dritter Anlauf) ----------------------------
+//
+// § 874 ist eine MATERIELLE Zulassungsnorm, keine reine GBO-Verfahrensregel:
+// sie entscheidet, WELCHER INHALT wirksam wird, wenn zur näheren Bezeichnung
+// auf die Eintragungsbewilligung (oder die bisherige Eintragung, Satz 2)
+// Bezug genommen wird — das Gesetz kann anderes vorschreiben (Defeater).
+// § 877 braucht KEINE eigene Regel: die Vorschriften der §§ 873, 874, 876
+// sind bereits generisch auf `Recht` formuliert und unterscheiden nicht
+// zwischen einem neu bestellten und einem inhaltlich geänderten Recht — die
+// entsprechende Anwendung ist durch die Formulierung der bestehenden Regeln
+// bereits erfüllt (Ledger D-10-13, Muster § 889/§ 999 Abs. 2).
+
+pub relation bezugnahme_auf_eintragungsbewilligung(r: Recht) kind empirical {
+    label de official "bei der Eintragung eines Rechts wird zur näheren Bezeichnung des Inhalts auf die Eintragungsbewilligung Bezug genommen (§ 874 Satz 1)";
+    label en unofficial "on registration of a right, reference is made to the registration approval to describe its content more precisely (§ 874 sentence 1)";
+}
+pub relation bezugnahme_auf_bisherige_eintragung_nach_44_gbo(r: Recht) kind empirical {
+    label de official "der Bezugnahme auf die Eintragungsbewilligung steht die Bezugnahme auf die bisherige Eintragung nach § 44 Abs. 3 Satz 2 GBO gleich (§ 874 Satz 2)";
+    label en unofficial "reference to the previous registration under § 44 (3) sentence 2 GBO is equivalent to reference to the registration approval (§ 874 sentence 2)";
+}
+pub relation gesetz_schreibt_andere_inhaltsbestimmung_vor(r: Recht) kind empirical {
+    label de official "das Gesetz schreibt für den Inhalt dieses Rechts eine andere Bezeichnung vor — Eingabe des Falls (§ 874 Satz 1 Halbsatz 2)";
+    label en unofficial "the statute prescribes a different way of specifying the content of this right — case input (§ 874 sentence 1)";
+}
+pub relation inhalt_wirksam_durch_bezugnahme_bestimmt(r: Recht) kind derived {
+    label de official "der Inhalt des Rechts ist durch die Bezugnahme wirksam näher bezeichnet (§ 874)";
+    label en unofficial "the content of the right is validly specified by the reference (§ 874)";
+}
+
+@source(BGB_P874) {
+    rule InhaltDurchBezugnahmeAufBewilligung874(r: Recht) defeasible {
+        label de official "Bei der Eintragung eines Rechts, mit dem ein Grundstück belastet wird, kann zur näheren Bezeichnung des Inhalts des Rechts auf die Eintragungsbewilligung Bezug genommen werden, soweit nicht das Gesetz ein anderes vorschreibt (§ 874 Satz 1)";
+        label en unofficial "On registration of a right encumbering land, reference may be made to the registration approval to describe its content more precisely, unless the statute prescribes otherwise (§ 874 sentence 1)";
+        when bezugnahme_auf_eintragungsbewilligung(r);
+        unless bezugnahme_auf_eintragungsbewilligung(r) and gesetz_schreibt_andere_inhaltsbestimmung_vor(r);
+        then inhalt_wirksam_durch_bezugnahme_bestimmt(r);
+    }
+    rule InhaltDurchBezugnahmeAufBisherigeEintragung874(r: Recht) defeasible {
+        label de official "Einer Bezugnahme auf die Eintragungsbewilligung steht die Bezugnahme auf die bisherige Eintragung nach § 44 Abs. 3 Satz 2 der Grundbuchordnung gleich (§ 874 Satz 2)";
+        label en unofficial "Reference to the previous registration under § 44 (3) sentence 2 of the Land Register Code is equivalent to reference to the registration approval (§ 874 sentence 2)";
+        when bezugnahme_auf_bisherige_eintragung_nach_44_gbo(r);
+        unless bezugnahme_auf_bisherige_eintragung_nach_44_gbo(r) and gesetz_schreibt_andere_inhaltsbestimmung_vor(r);
+        then inhalt_wirksam_durch_bezugnahme_bestimmt(r);
+    }
+}
+
+// --- § 880 Rangänderung, § 881 Rangvorbehalt (Welle B6, dritter Anlauf) -----------------------------
+
+pub relation rangaenderung_vereinbart(zuruecktretend: Recht, vortretend: Recht) kind empirical {
+    key(zuruecktretend, vortretend);
+    label de official "Einigung des zurücktretenden und des vortretenden Berechtigten über die Rangänderung (§ 880 Abs. 2 Satz 1)";
+    label en unofficial "agreement of the yielding and the advancing right holder on the change of rank (§ 880 (2) sentence 1)";
+}
+pub relation rangaenderung_eingetragen(zuruecktretend: Recht, vortretend: Recht) kind empirical {
+    key(zuruecktretend, vortretend);
+    label de official "Eintragung der Rangänderung in das Grundbuch (§ 880 Abs. 2 Satz 1)";
+    label en unofficial "registration of the change of rank in the land register (§ 880 (2) sentence 1)";
+}
+pub relation zuruecktretendes_recht_ist_hypothek_grundschuld_oder_rentenschuld(zuruecktretend: Recht) kind empirical {
+    label de official "das zurücktretende Recht ist eine Hypothek, eine Grundschuld oder eine Rentenschuld — Eingabe des Falls (§ 880 Abs. 2 Satz 2)";
+    label en unofficial "the yielding right is a mortgage, a land charge or an annuity charge — case input (§ 880 (2) sentence 2)";
+}
+pub relation zustimmung_des_eigentuemers_zur_rangaenderung(zuruecktretend: Recht, vortretend: Recht) kind empirical {
+    label de official "Zustimmung des Eigentümers zum Rücktritt der Hypothek, Grundschuld oder Rentenschuld — unwiderruflich (§ 880 Abs. 2 Satz 2, 3)";
+    label en unofficial "consent of the owner to the yielding of the mortgage, land charge or annuity charge — irrevocable (§ 880 (2) sentences 2, 3)";
+}
+pub relation rang_geaendert(zuruecktretend: Recht, vortretend: Recht) kind derived {
+    label de official "der Rang der beiden Rechte ist geändert: das vortretende Recht hat nunmehr den Vorrang (§ 880 Abs. 1, 2)";
+    label en unofficial "the rank of the two rights has been changed: the advancing right now has priority (§ 880 (1), (2))";
+}
+
+@source(BGB_P880) {
+    rule RangaenderungOhneWeitereZustimmung880Abs2(zuruecktretend: Recht, vortretend: Recht) strict {
+        label de official "Zu der Rangänderung ist die Einigung des zurücktretenden und des vortretenden Berechtigten und die Eintragung der Änderung in das Grundbuch erforderlich (§ 880 Abs. 2 Satz 1) — das zurücktretende Recht ist keine Hypothek, Grundschuld oder Rentenschuld und braucht daher keine Zustimmung des Eigentümers";
+        label en unofficial "The change of rank requires the agreement of the yielding and advancing right holders and registration of the change (§ 880 (2) sentence 1) — the yielding right is not a mortgage, land charge or annuity charge and needs no owner's consent";
+        when rangaenderung_vereinbart(zuruecktretend, vortretend) and rangaenderung_eingetragen(zuruecktretend, vortretend)
+            and keine_hypothek_grundschuld_oder_rentenschuld(zuruecktretend);
+        then rang_geaendert(zuruecktretend, vortretend);
+    }
+    rule RangaenderungMitZustimmungDesEigentuemers880Abs2(zuruecktretend: Recht, vortretend: Recht) strict {
+        label de official "Soll eine Hypothek, eine Grundschuld oder eine Rentenschuld zurücktreten, so ist außerdem die Zustimmung des Eigentümers erforderlich (§ 880 Abs. 2 Satz 2)";
+        label en unofficial "If a mortgage, land charge or annuity charge is to yield, the owner's consent is additionally required (§ 880 (2) sentence 2)";
+        when rangaenderung_vereinbart(zuruecktretend, vortretend) and rangaenderung_eingetragen(zuruecktretend, vortretend)
+            and zuruecktretendes_recht_ist_hypothek_grundschuld_oder_rentenschuld(zuruecktretend)
+            and zustimmung_des_eigentuemers_zur_rangaenderung(zuruecktretend, vortretend);
+        then rang_geaendert(zuruecktretend, vortretend);
+    }
+    rule RangaenderungBeiBelastetemZuruecktretendenRecht880Abs3(zuruecktretend: Recht, vortretend: Recht, dritter: Person) strict {
+        label de official "Ist das zurücktretende Recht mit dem Recht eines Dritten belastet, so findet § 876 entsprechende Anwendung: die Rangänderung bedarf zusätzlich der Zustimmung des Dritten (§ 880 Abs. 3)";
+        label en unofficial "If the yielding right is encumbered with a third party's right, § 876 applies correspondingly: the change of rank additionally requires that party's consent (§ 880 (3))";
+        when rangaenderung_vereinbart(zuruecktretend, vortretend) and rangaenderung_eingetragen(zuruecktretend, vortretend)
+            and keine_hypothek_grundschuld_oder_rentenschuld(zuruecktretend)
+            and belastet_mit_dem_recht_eines_dritten(zuruecktretend, dritter) and zustimmung_des_dritten(zuruecktretend, dritter);
+        then rang_geaendert(zuruecktretend, vortretend);
+    }
+    rule RangDesVortretendenRechtsBleibtBeiAufhebung880Abs4(zuruecktretend: Recht, vortretend: Recht) strict {
+        label de official "Der dem vortretenden Recht eingeräumte Rang geht nicht dadurch verloren, dass das zurücktretende Recht durch Rechtsgeschäft aufgehoben wird (§ 880 Abs. 4)";
+        label en unofficial "The rank given to the advancing right is not lost merely because the yielding right is surrendered by legal transaction (§ 880 (4))";
+        when rang_geaendert(zuruecktretend, vortretend) and recht_aufgehoben(zuruecktretend);
+        then rang_bleibt_trotz_aufhebung_des_zuruecktretenden_rechts(vortretend);
+    }
+    rule ZwischenrechtDurchRangaenderungUnberuehrt880Abs5(zuruecktretend: Recht, vortretend: Recht, zwischenrecht: Recht) strict {
+        label de official "Rechte, die den Rang zwischen dem zurücktretenden und dem vortretenden Recht haben, werden durch die Rangänderung nicht berührt (§ 880 Abs. 5)";
+        label en unofficial "Rights ranking between the yielding and the advancing right are not affected by the change of rank (§ 880 (5))";
+        when rang_geaendert(zuruecktretend, vortretend) and zwischenrecht_der_rangaenderung(zwischenrecht, zuruecktretend, vortretend);
+        then zwischenrecht_durch_rangaenderung_unberuehrt(zwischenrecht);
+    }
+}
+
+pub relation keine_hypothek_grundschuld_oder_rentenschuld(zuruecktretend: Recht) kind empirical {
+    label de official "das zurücktretende Recht ist keine Hypothek, Grundschuld oder Rentenschuld — ausdrückliche Angabe des Falls, das Fehlen der Angabe ist keine Verneinung (§ 880 Abs. 2 Satz 2)";
+    label en unofficial "the yielding right is not a mortgage, land charge or annuity charge — explicit case input, its absence is not a denial (§ 880 (2) sentence 2)";
+}
+pub relation rang_bleibt_trotz_aufhebung_des_zuruecktretenden_rechts(vortretend: Recht) kind derived {
+    label de official "der Rang des vortretenden Rechts bleibt trotz Aufhebung des zurücktretenden Rechts erhalten (§ 880 Abs. 4)";
+    label en unofficial "the rank of the advancing right is preserved despite surrender of the yielding right (§ 880 (4))";
+}
+pub relation zwischenrecht_der_rangaenderung(zwischenrecht: Recht, zuruecktretend: Recht, vortretend: Recht) kind empirical {
+    label de official "Recht, das den Rang zwischen dem zurücktretenden und dem vortretenden Recht hat — Eingabe des Falls (§ 880 Abs. 5)";
+    label en unofficial "a right ranking between the yielding and the advancing right — case input (§ 880 (5))";
+}
+pub relation zwischenrecht_durch_rangaenderung_unberuehrt(zwischenrecht: Recht) kind derived {
+    label de official "das Zwischenrecht wird durch die Rangänderung nicht berührt (§ 880 Abs. 5)";
+    label en unofficial "the intervening right is not affected by the change of rank (§ 880 (5))";
+}
+
+pub relation rangvorbehalt_eingetragen(zuruecktretend: Recht) kind empirical {
+    label de official "der Rangvorbehalt ist beim zurücktretenden Recht in das Grundbuch eingetragen (§ 881 Abs. 2)";
+    label en unofficial "the reservation of priority is registered at the yielding right (§ 881 (2))";
+}
+pub relation neues_recht_mit_vorbehaltenem_rang_eingetragen(neu: Recht, zuruecktretend: Recht) kind empirical {
+    label de official "das dem Umfang nach bestimmte Recht, dem der Vorrang vorbehalten war, ist eingetragen worden (§ 881 Abs. 1)";
+    label en unofficial "the right, defined in scope, for which priority was reserved, has been registered (§ 881 (1))";
+}
+pub relation grundstueck_mit_rangvorbehalt_veraeussert(zuruecktretend: Recht, erwerber: Person) kind empirical {
+    label de official "das Grundstück, für das der Rangvorbehalt besteht, wird veräußert (§ 881 Abs. 3)";
+    label en unofficial "the land for which the reservation of priority exists is transferred (§ 881 (3))";
+}
+pub relation vor_eintragung_ohne_entsprechenden_vorbehalt_belastet(zuruecktretend: Recht, zwischenbelastung: Recht) kind empirical {
+    label de official "das Grundstück ist vor der Eintragung des bevorrechtigten Rechts mit einem Recht OHNE einen entsprechenden Vorbehalt belastet worden (§ 881 Abs. 4)";
+    label en unofficial "the land was, before registration of the prioritised right, encumbered with a right WITHOUT a corresponding reservation (§ 881 (4))";
+}
+pub relation zwischenbelastung_ueber_vorbehalt_hinaus_beeintraechtigt(zwischenbelastung: Recht) kind empirical {
+    label de official "das mit dem Vorbehalt eingetragene Recht erleidet infolge der Zwischenbelastung eine über den Vorbehalt hinausgehende Beeinträchtigung — Eingabe des Falls (§ 881 Abs. 4)";
+    label en unofficial "the right registered with the reservation suffers, because of the intervening encumbrance, an impairment going beyond the reservation — case input (§ 881 (4))";
+}
+pub relation vorrang_aus_rangvorbehalt(neu: Recht, zuruecktretend: Recht) kind derived {
+    label de official "das nachträglich eingetragene Recht hat kraft des Rangvorbehalts den Vorrang vor dem zurücktretenden Recht (§ 881 Abs. 1, 2)";
+    label en unofficial "the subsequently registered right has priority over the yielding right by virtue of the reservation (§ 881 (1), (2))";
+}
+pub relation befugnis_aus_rangvorbehalt_geht_auf_erwerber_ueber(zuruecktretend: Recht, erwerber: Person) kind derived {
+    label de official "die vorbehaltene Befugnis geht auf den Erwerber des Grundstücks über (§ 881 Abs. 3)";
+    label en unofficial "the reserved power passes to the acquirer of the land (§ 881 (3))";
+}
+pub relation vorrang_aus_881_insoweit_ohne_wirkung(neu: Recht, zwischenbelastung: Recht) kind derived {
+    label de official "der Vorrang hat insoweit keine Wirkung, als das mit dem Vorbehalt eingetragene Recht durch die Zwischenbelastung eine über den Vorbehalt hinausgehende Beeinträchtigung erleiden würde (§ 881 Abs. 4)";
+    label en unofficial "the priority has no effect to the extent the reserved right would suffer, through the intervening encumbrance, an impairment beyond the reservation (§ 881 (4))";
+}
+
+@source(BGB_P881) {
+    rule VorrangKraftRangvorbehalt881(neu: Recht, zuruecktretend: Recht) strict {
+        label de official "Der Eigentümer kann sich bei der Belastung des Grundstücks mit einem Recht die Befugnis vorbehalten, ein anderes, dem Umfang nach bestimmtes Recht mit dem Rang vor jenem Recht eintragen zu lassen; der Vorbehalt bedarf der Eintragung beim zurücktretenden Recht (§ 881 Abs. 1, 2)";
+        label en unofficial "The owner may, when encumbering the land with a right, reserve the power to have another, scope-defined right registered with priority over that right; the reservation requires registration at the yielding right (§ 881 (1), (2))";
+        when rangvorbehalt_eingetragen(zuruecktretend) and neues_recht_mit_vorbehaltenem_rang_eingetragen(neu, zuruecktretend);
+        then vorrang_aus_rangvorbehalt(neu, zuruecktretend);
+    }
+    rule UebergangDerBefugnisBeiVeraeusserung881Abs3(zuruecktretend: Recht, erwerber: Person) strict {
+        label de official "Wird das Grundstück veräußert, so geht die vorbehaltene Befugnis auf den Erwerber über (§ 881 Abs. 3)";
+        label en unofficial "If the land is transferred, the reserved power passes to the acquirer (§ 881 (3))";
+        when rangvorbehalt_eingetragen(zuruecktretend) and grundstueck_mit_rangvorbehalt_veraeussert(zuruecktretend, erwerber);
+        then befugnis_aus_rangvorbehalt_geht_auf_erwerber_ueber(zuruecktretend, erwerber);
+    }
+    rule BegrenzteWirkungBeiZwischenbelastung881Abs4(neu: Recht, zuruecktretend: Recht, zwischenbelastung: Recht) strict {
+        label de official "Ist das Grundstück vor der Eintragung des bevorrechtigten Rechts mit einem Recht ohne einen entsprechenden Vorbehalt belastet worden, so hat der Vorrang insoweit keine Wirkung, als das mit dem Vorbehalt eingetragene Recht infolge der inzwischen eingetretenen Belastung eine über den Vorbehalt hinausgehende Beeinträchtigung erleiden würde (§ 881 Abs. 4)";
+        label en unofficial "If, before registration of the prioritised right, the land was encumbered with a right without a corresponding reservation, the priority has no effect to the extent the reserved right would suffer an impairment beyond the reservation because of the intervening encumbrance (§ 881 (4))";
+        when vorrang_aus_rangvorbehalt(neu, zuruecktretend) and vor_eintragung_ohne_entsprechenden_vorbehalt_belastet(zuruecktretend, zwischenbelastung)
+            and zwischenbelastung_ueber_vorbehalt_hinaus_beeintraechtigt(zwischenbelastung);
+        then vorrang_aus_881_insoweit_ohne_wirkung(neu, zwischenbelastung);
+    }
+}
+
+// --- § 882 Höchstbetrag des Wertersatzes (dritter Anlauf) --------------------------------------------
+
+pub relation hoechstbetrag_des_wertersatzes_bestimmt(r: Recht, betrag: Money) kind empirical {
+    key(r);
+    label de official "der Höchstbetrag des Ersatzes für ein Recht, dessen Wert bei Erlöschen durch den Zuschlag aus dem Erlös zu ersetzen ist, wird bestimmt (§ 882 Satz 1)";
+    label en unofficial "the maximum amount of compensation is determined for a right whose value is to be compensated from the proceeds if it lapses on the award (§ 882 sentence 1)";
+}
+pub relation hoechstbetrag_im_grundbuch_eingetragen(r: Recht) kind empirical {
+    label de official "die Bestimmung des Höchstbetrags ist in das Grundbuch eingetragen (§ 882 Satz 2)";
+    label en unofficial "the determination of the maximum amount is registered in the land register (§ 882 sentence 2)";
+}
+pub relation hoechstbetrag_wirksam_bestimmt(r: Recht, betrag: Money) kind derived {
+    label de official "der Höchstbetrag des Wertersatzes ist wirksam bestimmt (§ 882)";
+    label en unofficial "the maximum amount of compensation is validly determined (§ 882)";
+}
+
+@source(BGB_P882)
+rule HoechstbetragDesWertersatzes882(r: Recht, betrag: Money) strict {
+    label de official "Wird ein Grundstück mit einem Recht belastet, für welches nach den für die Zwangsversteigerung geltenden Vorschriften dem Berechtigten im Falle des Erlöschens durch den Zuschlag der Wert aus dem Erlös zu ersetzen ist, so kann der Höchstbetrag des Ersatzes bestimmt werden; die Bestimmung bedarf der Eintragung in das Grundbuch (§ 882)";
+    label en unofficial "If land is encumbered with a right for which, under the rules on compulsory auction, the entitled person is to be compensated from the proceeds if the right lapses on the award, the maximum amount of compensation may be determined; the determination requires registration (§ 882)";
+    when hoechstbetrag_des_wertersatzes_bestimmt(r, betrag) and hoechstbetrag_im_grundbuch_eingetragen(r);
+    then hoechstbetrag_wirksam_bestimmt(r, betrag);
+}
+
+// --- Rangverhältnis (§ 879) -----------------------------------------------------------------------
+
+pub relation vorrang(frueher: Recht, spaeter: Recht) kind derived {
+    label de official "Vorrang des einen Rechts vor dem anderen (§ 879 Abs. 1)";
+    label en unofficial "priority of one right over the other (§ 879 (1))";
+}
+pub relation gleicher_rang(eins: Recht, zwei: Recht) kind derived {
+    label de official "gleicher Rang mehrerer Rechte (§ 879 Abs. 1 Satz 2 Halbsatz 2)";
+    label en unofficial "equal rank of several rights (§ 879 (1) sentence 2)";
+}
+
+@source(BGB_P879) {
+    rule RangInDerselbenAbteilungNachDerReihenfolge(a: Recht, b: Recht, g: Grundstueck, abt: Integer, na: Integer, nb: Integer) strict {
+        label de official "Das Rangverhältnis unter mehreren Rechten, mit denen ein Grundstück belastet ist, bestimmt sich, wenn die Rechte in derselben Abteilung des Grundbuchs eingetragen sind, nach der Reihenfolge der Eintragungen (§ 879 Abs. 1 Satz 1)";
+        label en unofficial "Where the rights are registered in the same section, priority follows the order of entries (§ 879 (1) sentence 1)";
+        when recht_am_grundstueck(a, g) and recht_am_grundstueck(b, g)
+            and eingetragen_in_abteilung(a, abt) and eingetragen_in_abteilung(b, abt)
+            and reihenfolge_der_eintragung(a, na) and reihenfolge_der_eintragung(b, nb) and na < nb;
+        then vorrang(a, b);
+    }
+    rule RangInVerschiedenenAbteilungenNachDemTag(a: Recht, b: Recht, g: Grundstueck, abta: Integer, abtb: Integer, ta: Date, tb: Date) strict {
+        label de official "Sind die Rechte in verschiedenen Abteilungen eingetragen, so hat das unter Angabe eines früheren Tages eingetragene Recht den Vorrang (§ 879 Abs. 1 Satz 2 Halbsatz 1)";
+        label en unofficial "Where the rights are registered in different sections, the right registered under an earlier day has priority (§ 879 (1) sentence 2)";
+        when recht_am_grundstueck(a, g) and recht_am_grundstueck(b, g)
+            and eingetragen_in_abteilung(a, abta) and eingetragen_in_abteilung(b, abtb) and abta != abtb
+            and eingetragen_am(a, ta) and eingetragen_am(b, tb) and ta < tb;
+        then vorrang(a, b);
+    }
+    rule GleicherRangBeiDemselbenTag(a: Recht, b: Recht, g: Grundstueck, abta: Integer, abtb: Integer, tag: Date) strict {
+        label de official "Rechte, die unter Angabe desselben Tages eingetragen sind, haben gleichen Rang (§ 879 Abs. 1 Satz 2 Halbsatz 2)";
+        label en unofficial "Rights registered under the same day have equal rank (§ 879 (1) sentence 2)";
+        when recht_am_grundstueck(a, g) and recht_am_grundstueck(b, g)
+            and eingetragen_in_abteilung(a, abta) and eingetragen_in_abteilung(b, abtb) and abta != abtb
+            and eingetragen_am(a, tag) and eingetragen_am(b, tag);
+        then gleicher_rang(a, b);
+    }
+}
+
+// --- Vormerkung (§§ 883, 888) ---------------------------------------------------------------------
+
+pub relation vormerkung_sichert_anspruch(v: Vormerkung, glaeubiger: Person, betroffener: Person) kind empirical {
+    label de official "Anspruch auf Einräumung oder Aufhebung eines Rechts an einem Grundstück, den die Vormerkung sichert (§ 883 Abs. 1 Satz 1)";
+    label en unofficial "claim to the grant or cancellation of a right in land secured by the priority notice (§ 883 (1) sentence 1)";
+}
+pub relation vormerkung_eingetragen_am(v: Vormerkung, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der Eintragung der Vormerkung in das Grundbuch (§ 883 Abs. 2, Abs. 3)";
+    label en unofficial "day on which the priority notice was registered (§ 883 (2), (3))";
+}
+pub relation verfuegung_ueber_das_grundstueck_am(vf: Verfuegung, v: Vormerkung, tag: Date) kind empirical {
+    key(vf);
+    label de official "Verfügung über das Grundstück oder das Recht, die nach der Eintragung der Vormerkung getroffen wird (§ 883 Abs. 2)";
+    label en unofficial "disposition of the land or right made after registration of the priority notice (§ 883 (2))";
+}
+pub relation verfuegung_vereitelt_oder_beeintraechtigt_den_anspruch(vf: Verfuegung) kind empirical {
+    label de official "die Verfügung würde den durch die Vormerkung gesicherten Anspruch vereiteln oder beeinträchtigen (§ 883 Abs. 2)";
+    label en unofficial "the disposition would defeat or impair the claim secured by the priority notice (§ 883 (2))";
+}
+pub relation erwerb_gegenueber_dem_vormerkungsberechtigten_unwirksam(vf: Verfuegung, erwerber: Person) kind empirical {
+    label de official "der Erwerb eines eingetragenen Rechts ist gegenüber demjenigen, zu dessen Gunsten die Vormerkung besteht, unwirksam (§ 888 Abs. 1)";
+    label en unofficial "the acquisition of a registered right is ineffective towards the beneficiary of the priority notice (§ 888 (1))";
+}
+pub relation verfuegung_relativ_unwirksam(vf: Verfuegung, v: Vormerkung) kind derived {
+    label de official "die Verfügung ist insoweit unwirksam, als sie den durch die Vormerkung gesicherten Anspruch vereiteln oder beeinträchtigen würde (§ 883 Abs. 2)";
+    label en unofficial "the disposition is ineffective in so far as it would defeat or impair the secured claim (§ 883 (2))";
+}
+pub relation anspruch_auf_zustimmung_des_erwerbers(vf: Verfuegung, glaeubiger: Person, erwerber: Person) kind derived {
+    label de official "Anspruch des Vormerkungsberechtigten auf Zustimmung zu der Eintragung oder Löschung, die zur Verwirklichung des gesicherten Anspruchs erforderlich ist (§ 888 Abs. 1)";
+    label en unofficial "claim of the beneficiary of the priority notice to consent to the registration or cancellation needed to realise the secured claim (§ 888 (1))";
+}
+
+@source(BGB_P883)
+rule VerfuegungNachEintragungDerVormerkungUnwirksam(vf: Verfuegung, v: Vormerkung, tv: Date, tf: Date) strict {
+    label de official "Eine Verfügung, die nach der Eintragung der Vormerkung über das Grundstück oder das Recht getroffen wird, ist insoweit unwirksam, als sie den Anspruch vereiteln oder beeinträchtigen würde (§ 883 Abs. 2 Satz 1)";
+    label en unofficial "A disposition made after registration of the priority notice is ineffective in so far as it would defeat or impair the claim (§ 883 (2) sentence 1)";
+    when vormerkung_eingetragen_am(v, tv) and verfuegung_ueber_das_grundstueck_am(vf, v, tf) and tf > tv
+        and verfuegung_vereitelt_oder_beeintraechtigt_den_anspruch(vf);
+    then verfuegung_relativ_unwirksam(vf, v);
+}
+
+@source(BGB_P888)
+rule ZustimmungsanspruchDesVormerkungsberechtigten(vf: Verfuegung, v: Vormerkung, glaeubiger: Person, betroffener: Person, erwerber: Person) strict {
+    label de official "Soweit der Erwerb eines eingetragenen Rechts gegenüber demjenigen, zu dessen Gunsten die Vormerkung besteht, unwirksam ist, kann dieser von dem Erwerber die Zustimmung zu der Eintragung oder der Löschung verlangen, die zur Verwirklichung des durch die Vormerkung gesicherten Anspruchs erforderlich ist (§ 888 Abs. 1)";
+    label en unofficial "In so far as the acquisition is ineffective towards the beneficiary of the priority notice, the beneficiary may demand the acquirer's consent to the registration or cancellation needed to realise the secured claim (§ 888 (1))";
+    when verfuegung_relativ_unwirksam(vf, v) and vormerkung_sichert_anspruch(v, glaeubiger, betroffener)
+        and erwerb_gegenueber_dem_vormerkungsberechtigten_unwirksam(vf, erwerber);
+    then anspruch_auf_zustimmung_des_erwerbers(vf, glaeubiger, erwerber);
+}
+
+// --- § 884 Wirkung gegenüber Erben, § 886 Beseitigungsanspruch (Welle B6, Block 3) ------------------
+
+pub relation erbe_des_verpflichteten(v: Vormerkung, erbe: Person) kind empirical {
+    label de official "Erbe des durch die Vormerkung Verpflichteten — Eingabe des Falls (§ 884)";
+    label en unofficial "heir of the person bound by the priority notice — case input (§ 884)";
+}
+pub relation beschraenkung_der_erbenhaftung_unbeachtlich(v: Vormerkung, erbe: Person) kind derived {
+    label de official "der Erbe des Verpflichteten kann sich, soweit der Anspruch durch die Vormerkung gesichert ist, nicht auf die Beschränkung seiner Haftung berufen (§ 884)";
+    label en unofficial "the heir of the person bound may not invoke a limitation of liability in so far as the claim is secured by the priority notice (§ 884)";
+}
+
+@source(BGB_P884)
+rule ErbenhaftungsbeschraenkungUnbeachtlich(v: Vormerkung, glaeubiger: Person, verpflichteter: Person, erbe: Person) strict {
+    label de official "Soweit der Anspruch durch die Vormerkung gesichert ist, kann sich der Erbe des Verpflichteten nicht auf die Beschränkung seiner Haftung berufen (§ 884)";
+    label en unofficial "In so far as the claim is secured by the priority notice, the heir of the person bound may not invoke a limitation of liability (§ 884)";
+    when vormerkung_sichert_anspruch(v, glaeubiger, verpflichteter) and erbe_des_verpflichteten(v, erbe);
+    then beschraenkung_der_erbenhaftung_unbeachtlich(v, erbe);
+}
+
+pub relation dauernde_einrede_gegen_gesicherten_anspruch(v: Vormerkung, betroffener: Person) kind empirical {
+    label de official "dem von der Vormerkung Betroffenen steht eine Einrede zu, durch welche die Geltendmachung des gesicherten Anspruchs dauernd ausgeschlossen wird — Eingabe des Falls (§ 886)";
+    label en unofficial "the person affected by the priority notice has a defence permanently excluding assertion of the secured claim — case input (§ 886)";
+}
+pub relation beseitigungsanspruch_der_vormerkung(v: Vormerkung, betroffener: Person, glaeubiger: Person) kind derived {
+    label de official "Anspruch des von der Vormerkung Betroffenen gegen den Gläubiger auf Beseitigung der Vormerkung (§ 886)";
+    label en unofficial "claim of the person affected by the priority notice against its beneficiary for its removal (§ 886)";
+}
+
+@source(BGB_P886)
+rule BeseitigungsanspruchBeiDauernderEinrede(v: Vormerkung, glaeubiger: Person, betroffener: Person) strict {
+    label de official "Steht demjenigen, dessen Grundstück oder dessen Recht von der Vormerkung betroffen wird, eine Einrede zu, durch welche die Geltendmachung des gesicherten Anspruchs dauernd ausgeschlossen wird, so kann er von dem Gläubiger die Beseitigung der Vormerkung verlangen (§ 886)";
+    label en unofficial "If the person whose land or right is affected by the priority notice has a defence permanently excluding assertion of the secured claim, they may demand its removal from the beneficiary (§ 886)";
+    when vormerkung_sichert_anspruch(v, glaeubiger, betroffener) and dauernde_einrede_gegen_gesicherten_anspruch(v, betroffener);
+    then beseitigungsanspruch_der_vormerkung(v, betroffener, glaeubiger);
+}
+
+// --- § 885 Voraussetzung der Eintragung, § 887 Aufgebot, § 890 Vereinigung/Zuschreibung (dritter Anlauf) --
+
+pub relation bewilligung_der_vormerkung(v: Vormerkung) kind empirical {
+    label de official "Bewilligung desjenigen, dessen Grundstück oder dessen Recht von der Vormerkung betroffen wird (§ 885 Abs. 1 Satz 1)";
+    label en unofficial "approval of the person whose land or right is affected by the priority notice (§ 885 (1) sentence 1)";
+}
+pub relation einstweilige_verfuegung_fuer_die_vormerkung(v: Vormerkung) kind empirical {
+    label de official "einstweilige Verfügung, auf deren Grund die Vormerkung eingetragen wird — Erlassung setzt keine Glaubhaftmachung der Gefährdung voraus (§ 885 Abs. 1 Satz 1, 2)";
+    label en unofficial "interim injunction on the basis of which the priority notice is registered — its issuance does not require the endangerment of the claim to be shown credible (§ 885 (1) sentences 1, 2)";
+}
+pub relation vormerkung_eintragbar(v: Vormerkung) kind derived {
+    label de official "die Vormerkung kann eingetragen werden (§ 885 Abs. 1)";
+    label en unofficial "the priority notice may be registered (§ 885 (1))";
+}
+
+@source(BGB_P885) {
+    rule EintragungAufGrundBewilligung885(v: Vormerkung) strict {
+        label de official "Die Eintragung einer Vormerkung erfolgt auf Grund einer Bewilligung desjenigen, dessen Grundstück oder dessen Recht von der Vormerkung betroffen wird (§ 885 Abs. 1 Satz 1)";
+        label en unofficial "A priority notice is registered on the basis of the approval of the person whose land or right is affected (§ 885 (1) sentence 1)";
+        when bewilligung_der_vormerkung(v);
+        then vormerkung_eintragbar(v);
+    }
+    rule EintragungAufGrundEinstweiligerVerfuegung885(v: Vormerkung) strict {
+        label de official "Die Eintragung einer Vormerkung erfolgt auf Grund einer einstweiligen Verfügung; zu deren Erlassung ist nicht erforderlich, dass eine Gefährdung des zu sichernden Anspruchs glaubhaft gemacht wird (§ 885 Abs. 1 Satz 1, 2)";
+        label en unofficial "A priority notice is registered on the basis of an interim injunction; its issuance does not require the endangerment of the claim to be secured to be shown credible (§ 885 (1) sentences 1, 2)";
+        when einstweilige_verfuegung_fuer_die_vormerkung(v);
+        then vormerkung_eintragbar(v);
+    }
+}
+
+pub relation glaeubiger_der_vormerkung_unbekannt(v: Vormerkung) kind empirical {
+    label de official "der Gläubiger, dessen Anspruch durch die Vormerkung gesichert ist, ist unbekannt (§ 887 Satz 1)";
+    label en unofficial "the creditor whose claim is secured by the priority notice is unknown (§ 887 sentence 1)";
+}
+pub relation voraussetzungen_des_1170_fuer_ausschliessung_liegen_vor(v: Vormerkung) kind empirical {
+    label de official "die im § 1170 für die Ausschließung eines Hypothekengläubigers bestimmten Voraussetzungen liegen vor — Eingabe des Falls; § 1170 (Aufgebotsverfahren, u. a. zehn Jahre ohne Geltendmachung) liegt außerhalb dieses Pakets (§ 887 Satz 1)";
+    label en unofficial "the conditions of § 1170 for excluding a mortgage creditor are met — case input; § 1170 (public notice procedure, inter alia ten years without assertion) lies outside this package (§ 887 sentence 1)";
+}
+pub relation ausschliessungsbeschluss_rechtskraeftig_am(v: Vormerkung, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag der Rechtskraft des Ausschließungsbeschlusses (§ 887 Satz 2)";
+    label en unofficial "day the exclusion order becomes final and binding (§ 887 sentence 2)";
+}
+pub relation glaeubiger_im_aufgebotsverfahren_ausschliessbar(v: Vormerkung) kind derived {
+    label de official "der unbekannte Gläubiger kann im Wege des Aufgebotsverfahrens mit seinem Recht ausgeschlossen werden (§ 887 Satz 1)";
+    label en unofficial "the unknown creditor may be excluded from their right by way of the public notice procedure (§ 887 sentence 1)";
+}
+pub relation wirkung_der_vormerkung_erloschen_am(v: Vormerkung, tag: Date) kind derived {
+    label de official "mit der Rechtskraft des Ausschließungsbeschlusses erlischt die Wirkung der Vormerkung (§ 887 Satz 2)";
+    label en unofficial "on the exclusion order becoming final, the effect of the priority notice lapses (§ 887 sentence 2)";
+}
+
+@source(BGB_P887) {
+    rule AusschliessungMoeglich887(v: Vormerkung) strict {
+        label de official "Ist der Gläubiger, dessen Anspruch durch die Vormerkung gesichert ist, unbekannt, so kann er im Wege des Aufgebotsverfahrens mit seinem Recht ausgeschlossen werden, wenn die im § 1170 für die Ausschließung eines Hypothekengläubigers bestimmten Voraussetzungen vorliegen (§ 887 Satz 1)";
+        label en unofficial "If the creditor whose claim is secured by the priority notice is unknown, they may be excluded from their right by public notice procedure if the conditions of § 1170 for excluding a mortgage creditor are met (§ 887 sentence 1)";
+        when glaeubiger_der_vormerkung_unbekannt(v) and voraussetzungen_des_1170_fuer_ausschliessung_liegen_vor(v);
+        then glaeubiger_im_aufgebotsverfahren_ausschliessbar(v);
+    }
+    rule WirkungErlischtMitRechtskraft887(v: Vormerkung, tag: Date) strict {
+        label de official "Mit der Rechtskraft des Ausschließungsbeschlusses erlischt die Wirkung der Vormerkung (§ 887 Satz 2)";
+        label en unofficial "On the exclusion order becoming final and binding, the effect of the priority notice lapses (§ 887 sentence 2)";
+        when glaeubiger_im_aufgebotsverfahren_ausschliessbar(v) and ausschliessungsbeschluss_rechtskraeftig_am(v, tag);
+        then wirkung_der_vormerkung_erloschen_am(v, tag);
+    }
+}
+
+pub relation grundstuecke_als_ein_grundstueck_eingetragen(g1: Grundstueck, g2: Grundstueck, vereinigt: Grundstueck) kind empirical {
+    key(vereinigt);
+    label de official "der Eigentümer lässt mehrere Grundstücke als ein Grundstück in das Grundbuch eintragen (§ 890 Abs. 1)";
+    label en unofficial "the owner has several plots registered as one plot in the land register (§ 890 (1))";
+}
+pub relation grundstueck_einem_anderen_zugeschrieben(teil: Grundstueck, haupt: Grundstueck) kind empirical {
+    key(teil);
+    label de official "der Eigentümer lässt ein Grundstück einem anderen im Grundbuch zuschreiben (§ 890 Abs. 2)";
+    label en unofficial "the owner has one plot recorded as an addition to another in the land register (§ 890 (2))";
+}
+pub relation grundstuecke_vereinigt(vereinigt: Grundstueck, g1: Grundstueck, g2: Grundstueck) kind derived {
+    label de official "mehrere Grundstücke sind zu einem Grundstück vereinigt (§ 890 Abs. 1)";
+    label en unofficial "several plots have been merged into one plot (§ 890 (1))";
+}
+pub relation grundstueck_ist_bestandteil_durch_zuschreibung(teil: Grundstueck, haupt: Grundstueck) kind derived {
+    label de official "das zugeschriebene Grundstück ist zum Bestandteil des anderen Grundstücks geworden (§ 890 Abs. 2)";
+    label en unofficial "the recorded plot has become a component of the other plot (§ 890 (2))";
+}
+
+@source(BGB_P890) {
+    rule Grundstuecksvereinigung890Abs1(g1: Grundstueck, g2: Grundstueck, vereinigt: Grundstueck) strict {
+        label de official "Mehrere Grundstücke können dadurch zu einem Grundstück vereinigt werden, dass der Eigentümer sie als ein Grundstück in das Grundbuch eintragen lässt (§ 890 Abs. 1)";
+        label en unofficial "Several plots may be merged into one by the owner having them registered as one plot in the land register (§ 890 (1))";
+        when grundstuecke_als_ein_grundstueck_eingetragen(g1, g2, vereinigt);
+        then grundstuecke_vereinigt(vereinigt, g1, g2);
+    }
+    rule GrundstuecksZuschreibung890Abs2(teil: Grundstueck, haupt: Grundstueck) strict {
+        label de official "Ein Grundstück kann dadurch zum Bestandteil eines anderen Grundstücks gemacht werden, dass der Eigentümer es diesem im Grundbuch zuschreiben lässt (§ 890 Abs. 2)";
+        label en unofficial "A plot may be made a component of another plot by the owner having it recorded as an addition in the land register (§ 890 (2))";
+        when grundstueck_einem_anderen_zugeschrieben(teil, haupt);
+        then grundstueck_ist_bestandteil_durch_zuschreibung(teil, haupt);
+    }
+}
+
+// --- § 889 Ausschluss der Konsolidation --------------------------------------------------------------
+//
+// § 889 ordnet an, dass ein Recht an fremdem Grundstück NICHT durch
+// Konsolidation (Zusammenfallen von Recht und Eigentum in einer Person)
+// erlischt. Dieses Paket kennt keine Regel, die ein Erlöschen DURCH
+// Konsolidation herbeiführt — die Norm ist durch die Abwesenheit einer
+// solchen Regel bereits erfüllt, keine zusätzliche Regel nötig (Ledger
+// D-10-11, Muster wie § 999 Abs. 2 in Block 1).
+
+// --- § 893 „gilt entsprechend“: Leistung und Rechtsgeschäft mit dem Eingetragenen --------------------
+
+pub relation leistung_aufgrund_des_eingetragenen_rechts_bewirkt(r: Recht, erwerber: Person) kind empirical {
+    label de official "an den Eingetragenen ist auf Grund seines Rechts eine Leistung bewirkt worden — Eingabe des Falls (§ 893)";
+    label en unofficial "a performance has been rendered to the registered person by virtue of their right — case input (§ 893)";
+}
+pub relation rechtsgeschaeft_ueber_das_eingetragene_recht(r: Recht, erwerber: Person) kind empirical {
+    label de official "zwischen dem Eingetragenen und einem anderen ist in Ansehung des Rechts ein nicht unter § 892 fallendes Rechtsgeschäft vorgenommen worden, das eine Verfügung über das Recht enthält — Eingabe des Falls (§ 893)";
+    label en unofficial "a legal transaction not falling under § 892, containing a disposition of the right, has been made between the registered person and another — case input (§ 893)";
+}
+
+@source(BGB_P893) {
+    rule LeistungGiltAlsErwerbDurchRechtsgeschaeft893(r: Recht, erwerber: Person) strict {
+        label de official "§ 892 findet entsprechende Anwendung, wenn an den Eingetragenen auf Grund seines Rechts eine Leistung bewirkt wird (§ 893)";
+        label en unofficial "§ 892 applies correspondingly where a performance is rendered to the registered person by virtue of their right (§ 893)";
+        when leistung_aufgrund_des_eingetragenen_rechts_bewirkt(r, erwerber);
+        then erwerb_durch_rechtsgeschaeft(r, erwerber);
+    }
+    rule RechtsgeschaeftUeberDasRechtGiltAlsErwerb893(r: Recht, erwerber: Person) strict {
+        label de official "§ 892 findet entsprechende Anwendung, wenn zwischen dem Eingetragenen und einem anderen ein nicht unter § 892 fallendes Rechtsgeschäft vorgenommen wird, das eine Verfügung über das Recht enthält (§ 893)";
+        label en unofficial "§ 892 applies correspondingly to a legal transaction, not falling under § 892, containing a disposition of the right, made between the registered person and another (§ 893)";
+        when rechtsgeschaeft_ueber_das_eingetragene_recht(r, erwerber);
+        then erwerb_durch_rechtsgeschaeft(r, erwerber);
+    }
+}
+
+// --- Vermutung, öffentlicher Glaube, Berichtigung (§§ 891, 892, 894, 898, 899) --------------------
+
+pub relation recht_steht_zu(r: Recht, p: Person) kind derived {
+    label de official "dem Eingetragenen steht das Recht zu (Vermutung des § 891 Abs. 1)";
+    label en unofficial "the registered person is entitled to the right (presumption of § 891 (1))";
+}
+pub relation recht_besteht_nicht(r: Recht) kind derived {
+    label de official "das gelöschte Recht besteht nicht (Vermutung des § 891 Abs. 2)";
+    label en unofficial "the cancelled right does not exist (presumption of § 891 (2))";
+}
+
+@source(BGB_P891)
+presumption VermutungDesEingetragenenRechts(r: Recht, p: Person) {
+    label de official "Ist im Grundbuch für jemand ein Recht eingetragen, so wird vermutet, dass ihm das Recht zustehe (§ 891 Abs. 1); die Vermutung entfällt, wenn der Inhalt des Grundbuchs mit der wirklichen Rechtslage nicht im Einklang steht (§ 894)";
+    label en unofficial "If a right is registered for a person, it is presumed that the right belongs to them (§ 891 (1)); the presumption falls away if the register does not correspond to the true legal position (§ 894)";
+    when im_grundbuch_eingetragen_fuer(r, p);
+    presume recht_steht_zu(r, p);
+    unless im_grundbuch_eingetragen_fuer(r, p) and wirkliche_rechtslage_weicht_ab(r) then not recht_steht_zu(r, p);
+}
+
+@source(BGB_P891)
+presumption VermutungDesNichtbestehensGeloeschterRechte(r: Recht) {
+    label de official "Ist im Grundbuch ein eingetragenes Recht gelöscht, so wird vermutet, dass das Recht nicht bestehe (§ 891 Abs. 2)";
+    label en unofficial "If a registered right has been cancelled, it is presumed that the right does not exist (§ 891 (2))";
+    when im_grundbuch_geloescht(r);
+    presume recht_besteht_nicht(r);
+    unless im_grundbuch_geloescht(r) and wirkliche_rechtslage_weicht_ab(r) then not recht_besteht_nicht(r);
+}
+
+pub relation erwerb_durch_rechtsgeschaeft(r: Recht, erwerber: Person) kind empirical {
+    label de official "jemand erwirbt ein Recht an einem Grundstück oder ein Recht an einem solchen Recht durch Rechtsgeschäft (§ 892 Abs. 1 Satz 1)";
+    label en unofficial "a person acquires a right in land or a right in such a right by legal transaction (§ 892 (1) sentence 1)";
+}
+pub relation unrichtigkeit_dem_erwerber_bekannt(r: Recht, erwerber: Person) kind empirical {
+    label de official "die Unrichtigkeit des Grundbuchs ist dem Erwerber bekannt (§ 892 Abs. 1 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the incorrectness of the register is known to the acquirer (§ 892 (1) sentence 1) — established fact";
+}
+pub relation keine_spaetere_einigung(r: Recht) kind empirical {
+    label de official "die nach § 873 erforderliche Einigung ist nicht erst nach dem Eintragungsantrag zustande gekommen — ausdrückliche Angabe des Falls (§ 892 Abs. 2); das Fehlen einer Angabe ist keine Verneinung";
+    label en unofficial "the agreement required by § 873 was not reached after the application — explicit case input (§ 892 (2))";
+}
+pub relation spaetere_einigung_am(r: Recht, tag: Date) kind empirical {
+    key(r);
+    label de official "die nach § 873 erforderliche Einigung kommt erst nach der Stellung des Eintragungsantrags zustande (§ 892 Abs. 2)";
+    label en unofficial "the agreement required by § 873 is reached only after the application for registration (§ 892 (2))";
+}
+pub relation guter_glaube_ausgeschlossen(r: Recht, erwerber: Person) kind derived {
+    label de official "der öffentliche Glaube des Grundbuchs greift nicht ein: ein Widerspruch ist eingetragen oder die Unrichtigkeit ist dem Erwerber bekannt (§ 892 Abs. 1 Satz 1)";
+    label en unofficial "the public faith of the register does not apply: an objection is registered or the incorrectness is known to the acquirer (§ 892 (1) sentence 1)";
+}
+pub relation inhalt_des_grundbuchs_gilt_als_richtig(r: Recht, erwerber: Person) kind derived {
+    label de official "zugunsten des Erwerbers gilt der Inhalt des Grundbuchs als richtig (§ 892 Abs. 1 Satz 1)";
+    label en unofficial "in favour of the acquirer the content of the register is deemed correct (§ 892 (1) sentence 1)";
+}
+pub relation massgebende_zeit_fuer_die_kenntnis(r: Recht, tag: Date) kind derived {
+    label de official "maßgebende Zeit für die Kenntnis des Erwerbers: die Stellung des Antrags auf Eintragung oder, wenn die Einigung erst später zustande kommt, die Zeit der Einigung (§ 892 Abs. 2)";
+    label en unofficial "time decisive for the acquirer's knowledge: the filing of the application or, if the agreement is reached later, the time of the agreement (§ 892 (2))";
+}
+
+@source(BGB_P892) {
+    rule GuterGlaubeAusgeschlossenDurchWiderspruch(r: Recht, erwerber: Person) strict {
+        label de official "Der Inhalt des Grundbuchs gilt nicht als richtig, wenn ein Widerspruch gegen die Richtigkeit eingetragen ist (§ 892 Abs. 1 Satz 1)";
+        label en unofficial "The content of the register is not deemed correct if an objection to its correctness is registered (§ 892 (1) sentence 1)";
+        when erwerb_durch_rechtsgeschaeft(r, erwerber) and widerspruch_gegen_die_richtigkeit_eingetragen(r);
+        then guter_glaube_ausgeschlossen(r, erwerber);
+    }
+    rule GuterGlaubeAusgeschlossenDurchKenntnis(r: Recht, erwerber: Person) strict {
+        label de official "Der Inhalt des Grundbuchs gilt nicht als richtig, wenn die Unrichtigkeit dem Erwerber bekannt ist (§ 892 Abs. 1 Satz 1)";
+        label en unofficial "The content of the register is not deemed correct if the incorrectness is known to the acquirer (§ 892 (1) sentence 1)";
+        when erwerb_durch_rechtsgeschaeft(r, erwerber) and unrichtigkeit_dem_erwerber_bekannt(r, erwerber);
+        then guter_glaube_ausgeschlossen(r, erwerber);
+    }
+    rule OeffentlicherGlaubeDesGrundbuchs(r: Recht, erwerber: Person) defeasible {
+        label de official "Zugunsten desjenigen, welcher ein Recht an einem Grundstück oder ein Recht an einem solchen Recht durch Rechtsgeschäft erwirbt, gilt der Inhalt des Grundbuchs als richtig, es sei denn, dass ein Widerspruch gegen die Richtigkeit eingetragen oder die Unrichtigkeit dem Erwerber bekannt ist (§ 892 Abs. 1 Satz 1)";
+        label en unofficial "In favour of a person acquiring a right in land by legal transaction the content of the register is deemed correct unless an objection is registered or the incorrectness is known to them (§ 892 (1) sentence 1)";
+        when erwerb_durch_rechtsgeschaeft(r, erwerber);
+        unless erwerb_durch_rechtsgeschaeft(r, erwerber) and guter_glaube_ausgeschlossen(r, erwerber);
+        then inhalt_des_grundbuchs_gilt_als_richtig(r, erwerber);
+    }
+    rule MassgebendeZeitIstDerAntrag(r: Recht, antrag: Date) strict {
+        label de official "Ist zu dem Erwerb des Rechts die Eintragung erforderlich, so ist für die Kenntnis des Erwerbers die Zeit der Stellung des Antrags auf Eintragung maßgebend (§ 892 Abs. 2)";
+        label en unofficial "Where registration is required for acquisition, the time of filing the application is decisive for the acquirer's knowledge (§ 892 (2))";
+        when eintragungsantrag_gestellt_am(r, antrag) and keine_spaetere_einigung(r);
+        then massgebende_zeit_fuer_die_kenntnis(r, antrag);
+    }
+    rule MassgebendeZeitIstDieSpaetereEinigung(r: Recht, antrag: Date, einigung: Date) strict {
+        label de official "Kommt die nach § 873 erforderliche Einigung erst später zustande, so ist die Zeit der Einigung maßgebend (§ 892 Abs. 2)";
+        label en unofficial "If the agreement required by § 873 is reached later, the time of the agreement is decisive (§ 892 (2))";
+        when eintragungsantrag_gestellt_am(r, antrag) and spaetere_einigung_am(r, einigung) and einigung > antrag;
+        then massgebende_zeit_fuer_die_kenntnis(r, einigung);
+    }
+}
+
+pub relation recht_nicht_oder_nicht_richtig_eingetragen_fuer(r: Recht, berechtigter: Person) kind empirical {
+    label de official "das Recht des Berechtigten ist nicht oder nicht richtig eingetragen oder durch die Eintragung einer nicht bestehenden Belastung beeinträchtigt (§ 894)";
+    label en unofficial "the right of the entitled person is not or not correctly registered or impaired by the registration of a non-existent encumbrance (§ 894)";
+}
+pub relation von_der_berichtigung_betroffen(r: Recht, betroffener: Person) kind empirical {
+    label de official "Person, deren Recht durch die Berichtigung betroffen wird (§ 894)";
+    label en unofficial "person whose right is affected by the correction (§ 894)";
+}
+pub relation einstweilige_verfuegung_oder_bewilligung(r: Recht) kind empirical {
+    label de official "einstweilige Verfügung oder Bewilligung desjenigen, dessen Recht betroffen wird (§ 899 Abs. 2 Satz 1, § 885 Abs. 1)";
+    label en unofficial "interim injunction or approval of the person whose right is affected (§ 899 (2) sentence 1, § 885 (1))";
+}
+pub relation anspruch_auf_berichtigung(r: Recht, berechtigter: Person, betroffener: Person) kind derived {
+    label de official "Anspruch auf Zustimmung zu der Berichtigung des Grundbuchs (§ 894)";
+    label en unofficial "claim to consent to the correction of the land register (§ 894)";
+}
+pub relation anspruch_unverjaehrbar(r: Recht) kind derived {
+    label de official "der Anspruch unterliegt nicht der Verjährung (§ 898, § 902 Abs. 1 Satz 1, § 924)";
+    label en unofficial "the claim is not subject to limitation (§ 898, § 902 (1) sentence 1, § 924)";
+}
+pub relation widerspruch_eintragbar(r: Recht) kind derived {
+    label de official "ein Widerspruch gegen die Richtigkeit des Grundbuchs kann eingetragen werden (§ 899 Abs. 1, Abs. 2)";
+    label en unofficial "an objection to the correctness of the register may be registered (§ 899 (1), (2))";
+}
+
+@source(BGB_P894)
+rule BerichtigungsanspruchDesBerechtigten(r: Recht, berechtigter: Person, betroffener: Person) strict {
+    label de official "Steht der Inhalt des Grundbuchs mit der wirklichen Rechtslage nicht im Einklang, so kann derjenige, dessen Recht nicht oder nicht richtig eingetragen ist, die Zustimmung zu der Berichtigung des Grundbuchs von demjenigen verlangen, dessen Recht durch die Berichtigung betroffen wird (§ 894)";
+    label en unofficial "If the register does not correspond to the true legal position, the person whose right is not or not correctly registered may demand consent to its correction from the person affected (§ 894)";
+    when wirkliche_rechtslage_weicht_ab(r) and recht_nicht_oder_nicht_richtig_eingetragen_fuer(r, berechtigter)
+        and von_der_berichtigung_betroffen(r, betroffener);
+    then anspruch_auf_berichtigung(r, berechtigter, betroffener);
+}
+
+// --- §§ 895–897 Voreintragung, Vorlegung des Briefes, Kosten der Berichtigung (dritter Anlauf) ------
+
+pub relation berichtigung_setzt_voreintragung_voraus(r: Recht, betroffener: Person) kind empirical {
+    label de official "die Berichtigung des Grundbuchs kann erst erfolgen, nachdem das Recht des nach § 894 Verpflichteten eingetragen worden ist — Eingabe des Falls (§ 895)";
+    label en unofficial "correction of the register can only occur once the right of the person obliged under § 894 has been registered — case input (§ 895)";
+}
+pub relation voreintragung_verlangt(r: Recht, betroffener: Person) kind empirical {
+    label de official "der Berechtigte verlangt, dass der nach § 894 Verpflichtete sein Recht eintragen lässt (§ 895)";
+    label en unofficial "the entitled person demands that the person obliged under § 894 have their own right registered (§ 895)";
+}
+pub relation pflicht_zur_voreintragung(r: Recht, betroffener: Person) kind derived {
+    label de official "der nach § 894 Verpflichtete hat auf Verlangen sein Recht eintragen zu lassen (§ 895)";
+    label en unofficial "the person obliged under § 894 must, on demand, have their own right registered (§ 895)";
+}
+
+@source(BGB_P895)
+rule VoreintragungDesVerpflichteten895(r: Recht, berechtigter: Person, betroffener: Person) strict {
+    label de official "Kann die Berichtigung des Grundbuchs erst erfolgen, nachdem das Recht des nach § 894 Verpflichteten eingetragen worden ist, so hat dieser auf Verlangen sein Recht eintragen zu lassen (§ 895)";
+    label en unofficial "If correction of the register can only occur once the right of the person obliged under § 894 has been registered, that person must, on demand, have their own right registered (§ 895)";
+    when anspruch_auf_berichtigung(r, berechtigter, betroffener) and berichtigung_setzt_voreintragung_voraus(r, betroffener)
+        and voreintragung_verlangt(r, betroffener);
+    then pflicht_zur_voreintragung(r, betroffener);
+}
+
+pub relation vorlegung_des_briefes_zur_berichtigung_erforderlich(r: Recht) kind empirical {
+    label de official "zur Berichtigung des Grundbuchs ist die Vorlegung eines Hypotheken-, Grundschuld- oder Rentenschuldbriefs erforderlich — Eingabe des Falls (§ 896)";
+    label en unofficial "correction of the register requires production of a mortgage, land charge or annuity charge certificate — case input (§ 896)";
+}
+pub relation besitzer_des_briefes(r: Recht, besitzer: Person) kind empirical {
+    label de official "Besitzer des Hypotheken-, Grundschuld- oder Rentenschuldbriefs (§ 896)";
+    label en unofficial "possessor of the mortgage, land charge or annuity charge certificate (§ 896)";
+}
+pub relation anspruch_auf_vorlegung_des_briefes(r: Recht, berechtigter: Person, besitzer: Person) kind derived {
+    label de official "Anspruch desjenigen, zu dessen Gunsten die Berichtigung erfolgen soll, gegen den Besitzer des Briefes auf dessen Vorlegung beim Grundbuchamt (§ 896)";
+    label en unofficial "claim of the person in whose favour the correction is to occur against the possessor of the certificate for its production to the land registry (§ 896)";
+}
+
+@source(BGB_P896)
+rule VorlegungDesBriefes896(r: Recht, berechtigter: Person, betroffener: Person, besitzer: Person) strict {
+    label de official "Ist zur Berichtigung des Grundbuchs die Vorlegung eines Hypotheken-, Grundschuld- oder Rentenschuldbriefs erforderlich, so kann derjenige, zu dessen Gunsten die Berichtigung erfolgen soll, von dem Besitzer des Briefes verlangen, dass der Brief dem Grundbuchamt vorgelegt wird (§ 896)";
+    label en unofficial "If correction of the register requires production of a mortgage, land charge or annuity charge certificate, the person in whose favour the correction is to occur may demand that the possessor produce the certificate to the land registry (§ 896)";
+    when anspruch_auf_berichtigung(r, berechtigter, betroffener) and vorlegung_des_briefes_zur_berichtigung_erforderlich(r)
+        and besitzer_des_briefes(r, besitzer);
+    then anspruch_auf_vorlegung_des_briefes(r, berechtigter, besitzer);
+}
+
+pub relation abweichendes_rechtsverhaeltnis_bestimmt_kostentraeger(r: Recht, traeger: Person) kind empirical {
+    label de official "aus einem zwischen dem Verlangenden und dem Verpflichteten bestehenden Rechtsverhältnis ergibt sich, dass ein anderer als der Verlangende die Kosten trägt — Eingabe des Falls (§ 897)";
+    label en unofficial "a legal relationship between the demanding party and the person obliged shows that someone other than the demanding party bears the costs — case input (§ 897)";
+}
+pub relation kostentragung_der_berichtigung(r: Recht, traeger: Person) kind derived {
+    label de official "Trägerschaft der Kosten der Berichtigung des Grundbuchs und der dazu erforderlichen Erklärungen (§ 897)";
+    label en unofficial "who bears the costs of correcting the register and the declarations required for it (§ 897)";
+}
+
+@source(BGB_P897) {
+    rule KostenTraegtDerVerlangende897(r: Recht, berechtigter: Person, betroffener: Person, traeger: Person) defeasible {
+        label de official "Die Kosten der Berichtigung des Grundbuchs und der dazu erforderlichen Erklärungen hat derjenige zu tragen, welcher die Berichtigung verlangt, sofern nicht aus einem zwischen ihm und dem Verpflichteten bestehenden Rechtsverhältnis sich ein anderes ergibt (§ 897)";
+        label en unofficial "The costs of correcting the register and the necessary declarations are borne by the person demanding the correction, unless a legal relationship with the person obliged shows otherwise (§ 897)";
+        when anspruch_auf_berichtigung(r, berechtigter, betroffener);
+        unless anspruch_auf_berichtigung(r, berechtigter, betroffener) and abweichendes_rechtsverhaeltnis_bestimmt_kostentraeger(r, traeger);
+        then kostentragung_der_berichtigung(r, berechtigter);
+    }
+    rule KostenNachAbweichendemRechtsverhaeltnis897(r: Recht, traeger: Person, berechtigter: Person, betroffener: Person) strict {
+        label de official "Ergibt sich aus einem zwischen dem Verlangenden und dem Verpflichteten bestehenden Rechtsverhältnis, dass ein anderer die Kosten trägt, so trägt dieser sie (§ 897 Halbsatz 2)";
+        label en unofficial "If a legal relationship between the demanding party and the person obliged shows that someone else bears the costs, that person bears them (§ 897, second half-sentence)";
+        when anspruch_auf_berichtigung(r, berechtigter, betroffener) and abweichendes_rechtsverhaeltnis_bestimmt_kostentraeger(r, traeger);
+        then kostentragung_der_berichtigung(r, traeger);
+    }
+}
+
+@source(BGB_P898)
+rule BerichtigungsanspruchUnverjaehrbar(r: Recht, berechtigter: Person, betroffener: Person) strict {
+    label de official "Die in den §§ 894 bis 896 bestimmten Ansprüche unterliegen nicht der Verjährung (§ 898)";
+    label en unofficial "The claims determined in §§ 894 to 896 are not subject to limitation (§ 898)";
+    when anspruch_auf_berichtigung(r, berechtigter, betroffener);
+    then anspruch_unverjaehrbar(r);
+}
+
+@source(BGB_P899)
+rule EintragungEinesWiderspruchs(r: Recht, berechtigter: Person, betroffener: Person) strict {
+    label de official "In den Fällen des § 894 kann ein Widerspruch gegen die Richtigkeit des Grundbuchs eingetragen werden; die Eintragung erfolgt auf Grund einer einstweiligen Verfügung oder auf Grund einer Bewilligung desjenigen, dessen Recht durch die Berichtigung des Grundbuchs betroffen wird (§ 899 Abs. 1, Abs. 2 Satz 1)";
+    label en unofficial "In the cases of § 894 an objection to the correctness of the register may be registered on the basis of an interim injunction or the approval of the person affected (§ 899 (1), (2) sentence 1)";
+    when anspruch_auf_berichtigung(r, berechtigter, betroffener) and einstweilige_verfuegung_oder_bewilligung(r);
+    then widerspruch_eintragbar(r);
+}
+
+// --- Buchersitzung und Erlöschen (§§ 900, 901, 902) ------------------------------------------------
+
+pub relation buchersitzungsfrist(r: Recht, f: Frist) kind empirical {
+    label de official "Frist der Buchersitzung für dieses eingetragene Recht — Bezeichnung der Frist, deren Ablauf `de.bgb.fristen` rechnet (§ 900 Abs. 1 Satz 2)";
+    label en unofficial "period of registered-title acquisition for this right — handle of the period computed by `de.bgb.fristen` (§ 900 (1) sentence 2)";
+}
+pub relation eigenbesitz_waehrend_der_ganzen_zeit(r: Recht) kind empirical {
+    label de official "der Eingetragene hat das Grundstück während der ganzen Zeit der Eintragung im Eigenbesitz gehabt (§ 900 Abs. 1 Satz 1)";
+    label en unofficial "the registered person had proprietary possession of the land during the whole time of registration (§ 900 (1) sentence 1)";
+}
+pub relation widerspruch_eingetragen_von_bis(r: Recht, von: Date, bis: Date) kind empirical {
+    key(r);
+    label de official "Zeitraum, während dessen ein Widerspruch gegen die Richtigkeit der Eintragung im Grundbuch eingetragen war — der Lauf der Frist ist gehemmt (§ 900 Abs. 1 Satz 3)";
+    label en unofficial "period during which an objection was registered — the running of the period is suspended (§ 900 (1) sentence 3)";
+}
+pub relation keine_hemmung_der_buchersitzung(r: Recht) kind empirical {
+    label de official "kein Widerspruch war eingetragen — ausdrückliche Angabe des Falls; das Fehlen einer Angabe ist keine Verneinung (§ 900 Abs. 1 Satz 3)";
+    label en unofficial "no objection was registered — explicit case input; absence of an input is not a denial (§ 900 (1) sentence 3)";
+}
+pub relation anspruch_des_berechtigten_verjaehrt(r: Recht) kind empirical {
+    label de official "der Anspruch des Berechtigten gegen den Eigentümer ist verjährt (§ 901 Satz 1) — Verjährung rechnet `de.bgb.fristen`";
+    label en unofficial "the claim of the entitled person against the owner is time-barred (§ 901 sentence 1)";
+}
+pub relation mit_unrecht_geloescht(r: Recht) kind empirical {
+    label de official "das Recht an einem fremden Grundstück ist im Grundbuch mit Unrecht gelöscht (§ 901 Satz 1)";
+    label en unofficial "the right in another's land was wrongly cancelled in the register (§ 901 sentence 1)";
+}
+pub relation anspruch_auf_rueckstaende_oder_schadensersatz(r: Recht) kind empirical {
+    label de official "der Anspruch ist auf Rückstände wiederkehrender Leistungen oder auf Schadensersatz gerichtet (§ 902 Abs. 1 Satz 2)";
+    label en unofficial "the claim is directed at arrears of recurring payments or at damages (§ 902 (1) sentence 2)";
+}
+pub relation hemmungstage_der_buchersitzung(r: Recht, tage: Integer) kind derived {
+    key(r);
+    label de official "Zahl der Tage, während deren der Lauf der dreißigjährigen Frist gehemmt war, erster und letzter Tag eingeschlossen (§ 900 Abs. 1 Satz 3)";
+    label en unofficial "number of days during which the thirty-year period was suspended, first and last day included (§ 900 (1) sentence 3)";
+}
+pub relation buchersitzung_vollendet_am(r: Recht, tag: Date) kind derived {
+    key(r);
+    label de official "Tag, mit dessen Ablauf die dreißigjährige Frist der Buchersitzung abgelaufen ist (§ 900 Abs. 1)";
+    label en unofficial "day at whose end the thirty-year period of registered-title acquisition expires (§ 900 (1))";
+}
+pub relation eigentum_durch_buchersitzung_erworben(g: Grundstueck, p: Person, tag: Date) kind derived {
+    label de official "Tag, mit dessen Ablauf der im Grundbuch eingetragene Eigenbesitzer das Eigentum an dem Grundstück erwirbt (§ 900 Abs. 1 Satz 1)";
+    label en unofficial "day at whose end the registered proprietary possessor acquires ownership of the land (§ 900 (1) sentence 1)";
+}
+pub relation nicht_eingetragenes_recht_erloschen(r: Recht) kind derived {
+    label de official "das mit Unrecht gelöschte oder nicht eingetragene Recht an einem fremden Grundstück ist erloschen (§ 901)";
+    label en unofficial "the wrongly cancelled or unregistered right in another's land has lapsed (§ 901)";
+}
+
+@source(BGB_P900) {
+    rule BuchersitzungsfristEreignis(r: Recht, f: Frist, e: Date) strict {
+        label de official "Die dreißigjährige Frist wird in derselben Weise berechnet wie die Frist für die Ersitzung einer beweglichen Sache (§ 900 Abs. 1 Satz 2): Ereignis ist der Tag der Eintragung (§ 187 Abs. 1)";
+        label en unofficial "The thirty-year period is computed like the period for acquisitive prescription of a movable (§ 900 (1) sentence 2): the event is the day of registration (§ 187 (1))";
+        when buchersitzungsfrist(r, f) and eingetragen_am(r, e);
+        then de.bgb.fristen::frist_ereignis(f, e);
+    }
+    rule BuchersitzungsfristDauer(r: Recht, f: Frist, e: Date) strict {
+        label de official "Die Eintragung muss 30 Jahre bestanden haben (§ 900 Abs. 1 Satz 1) — Jahresschritt nach § 188 Abs. 2";
+        label en unofficial "The registration must have existed for 30 years (§ 900 (1) sentence 1) — year step under § 188 (2)";
+        when buchersitzungsfrist(r, f) and eingetragen_am(r, e);
+        then de.bgb.fristen::frist_dauer_kalender(f, 30 calendar_year);
+    }
+    rule HemmungstageDurchEingetragenenWiderspruch(r: Recht, von: Date, bis: Date) strict {
+        label de official "Der Lauf der Frist ist gehemmt, solange ein Widerspruch gegen die Richtigkeit der Eintragung im Grundbuch eingetragen ist (§ 900 Abs. 1 Satz 3) — gezählt in Tagen, erster und letzter Tag eingeschlossen";
+        label en unofficial "The running of the period is suspended while an objection is registered (§ 900 (1) sentence 3) — counted in days, first and last day included";
+        when widerspruch_eingetragen_von_bis(r, von, bis);
+        then hemmungstage_der_buchersitzung(r, days_between(von, bis) + 1);
+    }
+    rule BuchersitzungEndeMitHemmung(r: Recht, f: Frist, k: Date, n: Integer) strict {
+        label de official "Das Ende der dreißigjährigen Frist verschiebt sich um die Tage, während deren der Lauf gehemmt war (§ 900 Abs. 1 Satz 3)";
+        label en unofficial "The end of the thirty-year period moves by the days during which it was suspended (§ 900 (1) sentence 3)";
+        when buchersitzungsfrist(r, f) and de.bgb.fristen::frist_ende_kalender(f, k) and hemmungstage_der_buchersitzung(r, n);
+        then buchersitzung_vollendet_am(r, add_calendar_period(k, with_unit(n, "calendar_day")));
+    }
+    rule BuchersitzungEndeOhneHemmung(r: Recht, f: Frist, k: Date) strict {
+        label de official "Ohne eingetragenen Widerspruch endet die dreißigjährige Frist mit dem kalendarischen Ende (§ 900 Abs. 1 Satz 1, 2)";
+        label en unofficial "Without a registered objection the thirty-year period ends with the calendar end (§ 900 (1) sentences 1, 2)";
+        when buchersitzungsfrist(r, f) and de.bgb.fristen::frist_ende_kalender(f, k) and keine_hemmung_der_buchersitzung(r);
+        then buchersitzung_vollendet_am(r, k);
+    }
+    rule EigentumserwerbDurchBuchersitzung(r: Recht, g: Grundstueck, p: Person, ende: Date) strict {
+        label de official "Wer als Eigentümer eines Grundstücks im Grundbuch eingetragen ist, ohne dass er das Eigentum erlangt hat, erwirbt das Eigentum, wenn die Eintragung 30 Jahre bestanden und er während dieser Zeit das Grundstück im Eigenbesitz gehabt hat (§ 900 Abs. 1 Satz 1)";
+        label en unofficial "A person registered as owner without having acquired ownership acquires it if the registration has existed for 30 years and they had proprietary possession during that time (§ 900 (1) sentence 1)";
+        when im_grundbuch_eingetragen_fuer(r, p) and recht_am_grundstueck(r, g)
+            and eigenbesitz_waehrend_der_ganzen_zeit(r) and buchersitzung_vollendet_am(r, ende);
+        then eigentum_durch_buchersitzung_erworben(g, p, ende);
+    }
+}
+
+@source(BGB_P901)
+rule ErloeschenNichtEingetragenerRechte(r: Recht) strict {
+    label de official "Ist ein Recht an einem fremden Grundstück im Grundbuch mit Unrecht gelöscht, so erlischt es, wenn der Anspruch des Berechtigten gegen den Eigentümer verjährt ist (§ 901 Satz 1)";
+    label en unofficial "If a right in another's land was wrongly cancelled, it lapses when the claim of the entitled person against the owner is time-barred (§ 901 sentence 1)";
+    when mit_unrecht_geloescht(r) and anspruch_des_berechtigten_verjaehrt(r);
+    then nicht_eingetragenes_recht_erloschen(r);
+}
+
+@source(BGB_P902)
+rule AnspruecheAusEingetragenenRechtenUnverjaehrbar(r: Recht, p: Person) defeasible {
+    label de official "Die Ansprüche aus eingetragenen Rechten unterliegen nicht der Verjährung; dies gilt nicht für Ansprüche, die auf Rückstände wiederkehrender Leistungen oder auf Schadensersatz gerichtet sind (§ 902 Abs. 1)";
+    label en unofficial "Claims arising from registered rights are not subject to limitation; this does not apply to claims for arrears of recurring payments or for damages (§ 902 (1))";
+    when im_grundbuch_eingetragen_fuer(r, p);
+    unless im_grundbuch_eingetragen_fuer(r, p) and anspruch_auf_rueckstaende_oder_schadensersatz(r);
+    then anspruch_unverjaehrbar(r);
+}

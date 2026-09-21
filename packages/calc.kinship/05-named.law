@@ -1,0 +1,84 @@
+// Именованные родственники — до шестой очереди наследования по закону.
+// «Разные лица» — счёт `ancestor_or_self(f, a, b, 0)` нулём (тождество —
+// глубина 0), потому что неравенство сущностей в теле правила недоступно.
+
+language "law.core" version "0.2";
+package calc.kinship version "0.1.0";
+namespace "urn:law:calc:kinship";
+
+rule Parent(f: Family, p: Actor, c: Actor) strict { label ru official "родитель"; when family_wellformed(f) and effective_parent(f, p, c); then parent(f, p, c); }
+rule Child(f: Family, p: Actor, c: Actor) strict { label ru official "ребёнок"; when family_wellformed(f) and effective_parent(f, p, c); then child(f, c, p); }
+rule Grandparent(f: Family, g: Actor, p: Actor) strict { label ru official "дед или бабка — предок глубины 2"; when family_wellformed(f) and ancestor_or_self(f, g, p, 2); then grandparent(f, g, p); }
+rule Grandchild(f: Family, g: Actor, p: Actor) strict { label ru official "внук — лицо, чей предок глубины 2 данное лицо"; when family_wellformed(f) and ancestor_or_self(f, p, g, 2); then grandchild(f, g, p); }
+rule GreatGrandparent(f: Family, g: Actor, p: Actor) strict { label ru official "прадед или прабабка — предок глубины 3"; when family_wellformed(f) and ancestor_or_self(f, g, p, 3); then great_grandparent(f, g, p); }
+
+// --- Братья и сёстры -------------------------------------------------------------------
+
+rule FullSibling(f: Family, s: Actor, p: Actor, q: Actor) strict {
+    label ru official "полнородные: общих действующих родителей двое, лица разные";
+    when family_wellformed(f) and effective_parent(f, q, s) and effective_parent(f, q, p)
+        and (count all z: Integer where ancestor_or_self(f, s, p, z) and z == 0) == 0
+        and (count distinct r: Actor where effective_parent(f, r, s) and effective_parent(f, r, p)) >= 2;
+    then full_sibling(f, s, p);
+}
+
+rule HalfSibling(f: Family, s: Actor, p: Actor, q: Actor) strict {
+    label ru official "неполнородные: общий действующий родитель ровно один, лица разные";
+    when family_wellformed(f) and effective_parent(f, q, s) and effective_parent(f, q, p)
+        and (count all z: Integer where ancestor_or_self(f, s, p, z) and z == 0) == 0
+        and (count distinct r: Actor where effective_parent(f, r, s) and effective_parent(f, r, p)) == 1;
+    then half_sibling(f, s, p);
+}
+
+rule SiblingFull(f: Family, s: Actor, p: Actor) strict { label ru official "брат или сестра: полнородный"; when full_sibling(f, s, p); then sibling(f, s, p); }
+rule SiblingHalf(f: Family, s: Actor, p: Actor) strict { label ru official "брат или сестра: неполнородный"; when half_sibling(f, s, p); then sibling(f, s, p); }
+
+// --- Дяди, племянники, двоюродные ----------------------------------------------------------
+
+rule UncleOrAunt(f: Family, u: Actor, p: Actor, q: Actor) strict {
+    label ru official "дядя или тётя — брат или сестра родителя";
+    when sibling(f, u, q) and effective_parent(f, q, p);
+    then uncle_or_aunt(f, u, p);
+}
+
+rule NephewOrNiece(f: Family, n: Actor, p: Actor) strict {
+    label ru official "племянник — лицо, которому данное лицо дядя или тётя";
+    when uncle_or_aunt(f, p, n);
+    then nephew_or_niece(f, n, p);
+}
+
+rule Cousin(f: Family, c: Actor, p: Actor, u: Actor) strict {
+    label ru official "двоюродный брат или сестра — ребёнок дяди или тёти";
+    when uncle_or_aunt(f, u, p) and effective_parent(f, u, c);
+    then cousin(f, c, p);
+}
+
+rule CousinGrandchild(f: Family, g: Actor, p: Actor, s: Actor) strict {
+    label ru official "двоюродный внук — внук брата или сестры";
+    when sibling(f, s, p) and ancestor_or_self(f, s, g, 2);
+    then cousin_grandchild(f, g, p);
+}
+
+rule GreatUncleOrAunt(f: Family, u: Actor, p: Actor, g: Actor) strict {
+    label ru official "двоюродный дед — брат или сестра деда либо бабки";
+    when grandparent(f, g, p) and sibling(f, u, g);
+    then great_uncle_or_aunt(f, u, p);
+}
+
+rule CousinGreatGrandchild(f: Family, g: Actor, p: Actor, s: Actor) strict {
+    label ru official "двоюродный правнук — правнук брата или сестры";
+    when sibling(f, s, p) and ancestor_or_self(f, s, g, 3);
+    then cousin_great_grandchild(f, g, p);
+}
+
+rule CousinNephewOrNiece(f: Family, n: Actor, p: Actor, c: Actor) strict {
+    label ru official "двоюродный племянник — ребёнок двоюродного брата или сестры";
+    when cousin(f, c, p) and effective_parent(f, c, n);
+    then cousin_nephew_or_niece(f, n, p);
+}
+
+rule CousinUncleOrAunt(f: Family, u: Actor, p: Actor, q: Actor) strict {
+    label ru official "двоюродный дядя — двоюродный брат или сестра родителя";
+    when effective_parent(f, q, p) and cousin(f, u, q);
+    then cousin_uncle_or_aunt(f, u, p);
+}

@@ -1,0 +1,33 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+
+test "§§ 851 bis 853: Rechtsfolgen aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "m851": bewegliche_sache(entity_ref("urn:de:bgb:handlung:h851")) { origin case_input; }
+        assert "p851": ersatz_an_besitzer_geleistet(entity_ref("urn:de:bgb:handlung:h851"), entity_ref("urn:de:bgb:person:possessor")) { origin case_input; }
+        assert "e852": etwas_auf_kosten_des_verletzten_erlangt(entity_ref("urn:de:bgb:handlung:h852")) { origin case_input; }
+        assert "s852": handelnder(entity_ref("urn:de:bgb:handlung:h852"), entity_ref("urn:de:bgb:person:liable")) { origin case_input; }
+        assert "v852": verletzter(entity_ref("urn:de:bgb:handlung:h852"), entity_ref("urn:de:bgb:person:injured")) { origin case_input; }
+        assert "r852": restanspruch_entstanden_am(entity_ref("urn:de:bgb:handlung:h852"), @2026-06-02) { origin case_input; }
+        assert "f853": forderung_durch_unerlaubte_handlung_erlangt(entity_ref("urn:de:bgb:handlung:h853")) { origin case_input; }
+        assert "v853": verletzter(entity_ref("urn:de:bgb:handlung:h853"), entity_ref("urn:de:bgb:person:refuser")) { origin case_input; }
+        assert "t851": handlungstag(entity_ref("urn:de:bgb:handlung:h851"), @2026-06-01) { origin case_input; }
+        assert "t853": handlungstag(entity_ref("urn:de:bgb:handlung:h853"), @2026-06-03) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(Liberty851Befreiung, ACTIVE);
+    expect position(Duty852Restschadensersatz, ACTIVE);
+    expect position(Liberty853Arglisteinrede, ACTIVE);
+}
+
+test "§§ 851 bis 853: ohne Voraussetzungen keine Position" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+    }
+    evaluate positions();
+    expect not position(Liberty851Befreiung, ACTIVE);
+    expect not position(Duty852Restschadensersatz, ACTIVE);
+    expect not position(Liberty853Arglisteinrede, ACTIVE);
+}

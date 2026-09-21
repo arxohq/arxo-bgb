@@ -1,0 +1,480 @@
+// TITEL 2 — EINGEHUNG DER EHE (§§ 1303–1312)
+//
+// Der Titel trennt drei Stärken: das VERBOT („darf nicht“, §§ 1303 Satz 1,
+// 1306, 1307), die UNWIRKSAMKEIT („kann nicht wirksam eingegangen werden“,
+// § 1303 Satz 2, § 1304) und die ORDNUNGSVORSCHRIFT („soll nicht“, §§ 1308
+// Abs. 1, 1309 Abs. 1, 1312). Das Paket bildet diese drei Stärken in drei
+// verschiedenen Köpfen ab und wirft sie nicht in einen Topf: ein Verstoß gegen
+// ein Verbot macht die Ehe nach § 1314 Abs. 1 AUFHEBBAR (Titel 3), ein Verstoß
+// gegen § 1303 Satz 2 macht sie unwirksam, ein Verstoß gegen eine
+// Ordnungsvorschrift lässt sie unberührt.
+//
+// ALTER. „Volljährigkeit“ und „das 16. Lebensjahr nicht vollendet“ werden über
+// `de.bgb.fristen::lebensjahr_vollendet_am` gerechnet (§ 187 Abs. 2, § 188
+// Abs. 2: Vollendung mit ABLAUF des Tages vor dem Geburtstag). Am Tag der
+// Vollendung selbst ist das Lebensjahr noch nicht vollendet, daher steht die
+// Schwelle als `Eheschliessungstag <= Vollendungstag` (Muster D-09-06).
+//
+// VERWANDTSCHAFT. § 1307 liest `calc.kinship` qualifiziert: gerade Linie über
+// `kin_line` mit `Ascending`/`Descending`, vollbürtige und halbbürtige
+// Geschwister über `full_sibling` und `half_sibling`. Satz 2 („auch wenn das
+// Verwandtschaftsverhältnis durch Annahme als Kind erloschen ist“) ist eine
+// eigene Regel über einen ausdrücklichen Eingang: das Erlöschen ist im
+// Rechnergraph nicht mehr sichtbar.
+
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+// --- Eingänge des Falls ---------------------------------------------------------------------------
+
+pub relation eheschliessung_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der Eheschließung (§ 1310 Abs. 1 Satz 1)";
+    label en unofficial "day on which the marriage was entered into (§ 1310 (1) sentence 1)";
+}
+pub relation familie_der_ehe(ehe: Ehe, f: Familie) kind empirical {
+    key(ehe);
+    label de official "Graph der Familie, nach dem die Verwandtschaft des § 1307 berechnet wird (calc.kinship)";
+    label en unofficial "graph of the family from which the kinship of § 1307 is computed (calc.kinship)";
+}
+relation geschaeftsunfaehig_bei_der_eheschliessung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Eheschließende war bei der Eheschließung geschäftsunfähig (§ 1304)";
+    label en unofficial "the person entering into the marriage lacked capacity to contract at the time (§ 1304)";
+}
+relation bestehende_ehe_mit_dritter_person(ehe: Ehe, p: Person, dritter: Person) kind empirical {
+    label de official "Zwischen einer der Personen, die die Ehe miteinander eingehen wollen, und einer dritten Person besteht eine Ehe (§ 1306)";
+    label en unofficial "a marriage exists between one of the persons wishing to marry and a third person (§ 1306)";
+}
+relation bestehende_lebenspartnerschaft_mit_dritter_person(ehe: Ehe, p: Person, dritter: Person) kind empirical {
+    label de official "Zwischen einer der Personen, die die Ehe miteinander eingehen wollen, und einer dritten Person besteht eine Lebenspartnerschaft (§ 1306)";
+    label en unofficial "a civil partnership exists between one of the persons wishing to marry and a third person (§ 1306)";
+}
+relation verwandtschaft_durch_annahme_erloschen(ehe: Ehe, erster: Person, zweiter: Person) kind empirical {
+    label de official "Das Verwandtschaftsverhältnis zwischen den Eheschließenden ist durch Annahme als Kind erloschen (§ 1307 Satz 2)";
+    label en unofficial "the kinship between the persons marrying has expired through adoption (§ 1307 sentence 2)";
+}
+relation verwandtschaft_durch_annahme_begruendet(ehe: Ehe, erster: Person, zweiter: Person) kind empirical {
+    label de official "Die Verwandtschaft im Sinne des § 1307 ist durch Annahme als Kind begründet worden (§ 1308 Abs. 1 Satz 1)";
+    label en unofficial "the kinship within the meaning of § 1307 was established by adoption (§ 1308 (1) sentence 1)";
+}
+relation annahmeverhaeltnis_aufgeloest(ehe: Ehe, erster: Person, zweiter: Person) kind empirical {
+    label de official "Das Annahmeverhältnis ist aufgelöst worden (§ 1308 Abs. 1 Satz 2)";
+    label en unofficial "the adoptive relationship has been dissolved (§ 1308 (1) sentence 2)";
+}
+relation verwandtschaft_in_der_seitenlinie_durch_annahme(ehe: Ehe, erster: Person, zweiter: Person) kind empirical {
+    label de official "Durch die Annahme als Kind ist eine Verwandtschaft in der Seitenlinie begründet worden (§ 1308 Abs. 2 Satz 1)";
+    label en unofficial "the adoption established a kinship in the collateral line (§ 1308 (2) sentence 1)";
+}
+relation befreiung_nach_1308_erteilt(ehe: Ehe, antragsteller: Person) kind empirical {
+    label de official "Das Familiengericht hat auf Antrag Befreiung von § 1308 Abs. 1 erteilt (§ 1308 Abs. 2 Satz 1) — festgestellte Tatsache, im Fall mit `origin adjudicated`";
+    label en unofficial "the family court has granted exemption from § 1308 (1) on application ((2) sentence 1) — established fact, in the case with `origin adjudicated`";
+}
+relation unterliegt_auslaendischem_recht(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Eheschließende unterliegt hinsichtlich der Voraussetzungen der Eheschließung ausländischem Recht (§ 1309 Abs. 1 Satz 1)";
+    label en unofficial "as regards the requirements of marriage the person is subject to foreign law (§ 1309 (1) sentence 1)";
+}
+relation ehefaehigkeitszeugnis_ausgestellt_am(ehe: Ehe, p: Person, tag: Date) kind empirical {
+    label de official "Tag der Ausstellung des Zeugnisses der inneren Behörde des Heimatstaats (§ 1309 Abs. 1 Satz 1, 3)";
+    label en unofficial "day on which the certificate of the home state authority was issued (§ 1309 (1) sentences 1, 3)";
+}
+relation zeugnisfrist(ehe: Ehe, p: Person, f: Frist) kind empirical {
+    label de official "Frist des § 1309 Abs. 1 Satz 3 (sechs Monate seit der Ausstellung)";
+    label en unofficial "period of § 1309 (1) sentence 3 (six months from issue)";
+}
+relation befreiung_vom_ehefaehigkeitszeugnis(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Präsident des Oberlandesgerichts hat Befreiung vom Erfordernis des Zeugnisses erteilt (§ 1309 Abs. 2 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the president of the higher regional court has granted exemption from the certificate requirement ((2) sentence 1) — established fact";
+}
+relation erklaerung_vor_dem_standesbeamten(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Eheschließenden erklären vor dem Standesbeamten, die Ehe miteinander eingehen zu wollen (§ 1310 Abs. 1 Satz 1)";
+    label en unofficial "the persons marrying declare before the registrar that they wish to enter into the marriage (§ 1310 (1) sentence 1)";
+}
+relation amt_des_standesbeamten_oeffentlich_ausgeuebt(ehe: Ehe) kind empirical {
+    label de official "Wer, ohne Standesbeamter zu sein, das Amt eines Standesbeamten öffentlich ausgeübt und die Ehe in das Eheregister eingetragen hat, gilt als Standesbeamter (§ 1310 Abs. 2)";
+    label en unofficial "a person who publicly exercised the office of registrar and entered the marriage in the register counts as registrar (§ 1310 (2))";
+}
+relation eintragung_in_das_eheregister(ehe: Ehe) kind empirical {
+    label de official "Der Standesbeamte hat die Ehe in das Eheregister eingetragen (§ 1310 Abs. 3 Nr. 1)";
+    label en unofficial "the registrar entered the marriage in the register of marriages (§ 1310 (3) no. 1)";
+}
+relation hinweis_im_geburtenregister(ehe: Ehe) kind empirical {
+    label de official "Der Standesbeamte hat im Zusammenhang mit der Beurkundung der Geburt eines gemeinsamen Kindes einen Hinweis auf die Eheschließung in das Geburtenregister eingetragen (§ 1310 Abs. 3 Nr. 2)";
+    label en unofficial "the registrar entered a reference to the marriage in the register of births (§ 1310 (3) no. 2)";
+}
+relation familienrechtliche_erklaerung_entgegengenommen(ehe: Ehe) kind empirical {
+    label de official "Der Standesbeamte hat eine familienrechtliche Erklärung entgegengenommen, die eine bestehende Ehe voraussetzt, und hierüber eine Bescheinigung erteilt (§ 1310 Abs. 3 Nr. 3)";
+    label en unofficial "the registrar received a family-law declaration presupposing an existing marriage and issued a certificate (§ 1310 (3) no. 3)";
+}
+relation heilungsfrist_1310(ehe: Ehe, f: Frist) kind empirical {
+    key(ehe);
+    label de official "Frist des § 1310 Abs. 3 letzter Halbsatz (zehn Jahre als Ehegatten miteinander gelebt)";
+    label en unofficial "period of § 1310 (3) final half-sentence (ten years lived together as spouses)";
+}
+relation als_ehegatten_miteinander_gelebt_bis(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag, bis zu dem die Ehegatten seit der Erklärung als Ehegatten miteinander gelebt haben (§ 1310 Abs. 3)";
+    label en unofficial "day up to which the spouses have lived together as spouses since the declaration (§ 1310 (3))";
+}
+relation erklaerung_nicht_persoenlich_oder_nicht_bei_gleichzeitiger_anwesenheit(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Erklärung nach § 1310 Abs. 1 ist NICHT persönlich oder NICHT bei gleichzeitiger Anwesenheit abgegeben (§ 1311 Satz 1) — ausdrückliche Angabe des Falls; das Schweigen des Falls ist keine Verneinung";
+    label en unofficial "the declaration under § 1310 (1) was NOT made in person or NOT in simultaneous presence (§ 1311 sentence 1) — explicit input; silence of the case is not a denial";
+}
+relation kein_ehefaehigkeitszeugnis_beigebracht(ehe: Ehe, p: Person) kind empirical {
+    label de official "Der Eheschließende hat kein Zeugnis der inneren Behörde seines Heimatstaats beigebracht (§ 1309 Abs. 1 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the person has produced no certificate of the home state authority (§ 1309 (1) sentence 1) — explicit input";
+}
+relation trauung_ohne_einzelne_befragung(ehe: Ehe) kind empirical {
+    label de official "Der Standesbeamte hat die Eheschließenden nicht einzeln befragt oder den Ausspruch nicht vorgenommen (§ 1312 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the registrar did not question the parties individually or omitted the pronouncement (§ 1312 sentence 1) — explicit input";
+}
+relation kein_zwischenzeitlicher_hinderungsgrund_1305(ehe: Ehe) kind empirical {
+    label de official "Weder hat einer der nicht wirksam Verheirateten zwischenzeitlich mit einer dritten Person eine Ehe geschlossen noch ist die Unwirksamkeit der Ehe gerichtlich festgestellt worden (§ 1305 Abs. 2 Satz 4) — ausdrückliche Angabe des Falls";
+    label en unofficial "neither has one of the persons meanwhile married a third person nor has the invalidity been established by a court ((2) sentence 4) — explicit input";
+}
+pub relation bewertungstag(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag, auf den der Fall die Verhältnisse der Ehe beurteilt (Trennungszeit, Fristen)";
+    label en unofficial "day as of which the case assesses the circumstances of the marriage (time of living apart, periods)";
+}
+relation trennungsfrist_drei_jahre(ehe: Ehe, f: Frist) kind empirical {
+    key(ehe);
+    label de official "Frist von drei Jahren Getrenntleben (§ 1305 Abs. 1 Satz 1 Nr. 2, 3; § 1385 Nr. 1; § 1566 Abs. 2)";
+    label en unofficial "period of three years of living apart (§ 1305 (1) sentence 1 nos. 2, 3; § 1385 no. 1; § 1566 (2))";
+}
+relation erklaerung_unter_bedingung_oder_zeitbestimmung(ehe: Ehe, p: Person) kind empirical {
+    label de official "Die Erklärung ist unter einer Bedingung oder Zeitbestimmung abgegeben (§ 1311 Satz 2)";
+    label en unofficial "the declaration was made subject to a condition or a time provision (§ 1311 sentence 2)";
+}
+relation zeugen_gewuenscht(ehe: Ehe) kind empirical {
+    label de official "Die Eheschließenden wünschen die Eheschließung in Gegenwart von einem oder zwei Zeugen (§ 1312 Satz 2)";
+    label en unofficial "the parties wish the marriage to take place in the presence of one or two witnesses (§ 1312 sentence 2)";
+}
+
+// § 1305: Eingänge der unwirksamen Minderjährigenehe.
+
+relation im_ausland_geschlossen(ehe: Ehe) kind empirical {
+    label de official "Die Ehe ist im Ausland geschlossen (§ 1305 Abs. 1 Satz 1)";
+    label en unofficial "the marriage was entered into abroad (§ 1305 (1) sentence 1)";
+}
+relation zusammenleben_wie_in_ehelicher_lebensgemeinschaft(ehe: Ehe) kind empirical {
+    label de official "Die nicht wirksam Verheirateten leben wie in einer ehelichen Lebensgemeinschaft zusammen (§ 1305 Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "the persons not validly married live together as in a marital community (§ 1305 (1) sentence 1 no. 1)";
+}
+relation trennung_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag, seit dem die Ehegatten getrennt leben (§ 1567; für § 1305 Abs. 1 Satz 1 Nr. 2, 3 und für §§ 1565, 1566, 1385)";
+    label en unofficial "day since which the spouses have lived apart (§ 1567; for § 1305 (1) sentence 1 nos. 2, 3 and for §§ 1565, 1566, 1385)";
+}
+relation unwirksamkeit_gerichtlich_festgestellt(ehe: Ehe) kind empirical {
+    label de official "Die Unwirksamkeit der Ehe ist gerichtlich festgestellt (§ 1305 Abs. 1 Satz 1 Nr. 3) — festgestellte Tatsache";
+    label en unofficial "the invalidity of the marriage has been established by a court (§ 1305 (1) sentence 1 no. 3) — established fact";
+}
+relation beide_bei_eheschliessung_unter_sechzehn(ehe: Ehe) kind empirical {
+    label de official "Beide Personen waren bei der Eheschließung noch nicht 16 Jahre alt (§ 1305 Abs. 1 Satz 5)";
+    label en unofficial "both persons were under 16 at the time of the marriage (§ 1305 (1) sentence 5)";
+}
+relation erneute_eheschliessung_im_inland_am(ehe: Ehe, tag: Date) kind empirical {
+    key(ehe);
+    label de official "Tag der erneuten Eheschließung im Inland (§ 1305 Abs. 2 Satz 1)";
+    label en unofficial "day of the renewed marriage within the country (§ 1305 (2) sentence 1)";
+}
+relation ehe_auch_aus_anderem_grund_unwirksam(ehe: Ehe) kind empirical {
+    label de official "Die Ehe ist auch aus anderem Grund unwirksam (§ 1305 Abs. 4)";
+    label en unofficial "the marriage is invalid on another ground as well (§ 1305 (4))";
+}
+
+// --- Ergebnisse -------------------------------------------------------------------------------------
+
+pub relation eheverbot(ehe: Ehe, grund: Text) kind institutional {
+    label de official "Eheverbot: die Ehe DARF nicht geschlossen werden (§§ 1303 Satz 1, 1306, 1307); der Verstoß macht die Ehe nach § 1314 Abs. 1 aufhebbar, nicht unwirksam";
+    label en unofficial "impediment to marriage: the marriage MUST NOT be entered into (§§ 1303 sentence 1, 1306, 1307); breach makes it annullable under § 1314 (1), not invalid";
+}
+pub relation ehe_unwirksam(ehe: Ehe, grund: Text) kind institutional {
+    label de official "Die Ehe ist nicht wirksam eingegangen (§ 1303 Satz 2, § 1304)";
+    label en unofficial "the marriage has not been validly entered into (§ 1303 sentence 2, § 1304)";
+}
+relation ordnungsvorschrift_verletzt(ehe: Ehe, grund: Text) kind institutional {
+    label de official "Verstoß gegen eine Soll-Vorschrift der Eheschließung (§§ 1308 Abs. 1, 1309 Abs. 1, 1312 Satz 1): die Wirksamkeit der Ehe bleibt unberührt";
+    label en unofficial "breach of a directory provision on entering into marriage (§§ 1308 (1), 1309 (1), 1312 sentence 1): the validity of the marriage is unaffected";
+}
+pub relation ehe_geschlossen(ehe: Ehe) kind institutional {
+    label de official "Die Ehe ist geschlossen (§ 1310 Abs. 1 Satz 1, Abs. 2, Abs. 3)";
+    label en unofficial "the marriage has been entered into (§ 1310 (1) sentence 1, (2), (3))";
+}
+relation zeugnis_ohne_kraft_ab(ehe: Ehe, p: Person, tag: Date) kind institutional {
+    label de official "Das Zeugnis verliert seine Kraft, wenn die Ehe nicht binnen sechs Monaten seit der Ausstellung geschlossen wird (§ 1309 Abs. 1 Satz 3): letzter Tag der Sechsmonatsfrist";
+    label en unofficial "The certificate loses its force if the marriage is not entered into within six months of issue (§ 1309 (1) sentence 3): last day of the six-month period";
+}
+relation erklaerung_unwirksam(ehe: Ehe, p: Person) kind institutional {
+    label de official "Die Erklärung kann nicht unter einer Bedingung oder Zeitbestimmung abgegeben werden (§ 1311 Satz 2)";
+    label en unofficial "the declaration cannot be made subject to a condition or a time provision (§ 1311 sentence 2)";
+}
+relation befreiung_von_1308_wirksam(ehe: Ehe, antragsteller: Person) kind institutional {
+    label de official "Die Befreiung des Familiengerichts von § 1308 Abs. 1 ist erteilt und betrifft eine durch Annahme begründete Verwandtschaft in der Seitenlinie (§ 1308 Abs. 2 Satz 1)";
+    label en unofficial "The exemption of the family court from § 1308 (1) has been granted and concerns a collateral kinship established by adoption ((2) sentence 1)";
+}
+relation zeugen_zulaessig(ehe: Ehe) kind institutional {
+    label de official "Die Eheschließung kann in Gegenwart von einem oder zwei Zeugen erfolgen (§ 1312 Satz 2)";
+    label en unofficial "The marriage may take place in the presence of one or two witnesses (§ 1312 sentence 2)";
+}
+relation vorschriften_des_1305_anwendbar(ehe: Ehe, gruppe: Text) kind institutional {
+    label de official "Auf die unwirksame Minderjährigenehe werden die genannten Vorschriften zugunsten der bei Eheschließung noch nicht 16-jährigen Person entsprechend angewendet (§ 1305 Abs. 1 Satz 1)";
+    label en unofficial "the provisions named are applied mutatis mutandis in favour of the person under 16 at the time of the marriage (§ 1305 (1) sentence 1)";
+}
+relation rueckwirkende_heilung_der_ehe(ehe: Ehe) kind institutional {
+    label de official "Nach der erneuten Eheschließung ist für Rechtsfolgen der Ehe der Tag der unwirksamen Eheschließung maßgeblich (§ 1305 Abs. 2 Satz 3)";
+    label en unofficial "After the renewed marriage the day of the invalid marriage is decisive for the legal effects of the marriage (§ 1305 (2) sentence 3)";
+}
+
+// --- Regeln -------------------------------------------------------------------------------------------
+
+@source(BGB_P1303) {
+    rule EheVorEintrittDerVolljaehrigkeit(ehe: Ehe, p: Person, t: Date, v: Date) strict {
+        label de official "Eine Ehe darf nicht vor Eintritt der Volljährigkeit eingegangen werden (§ 1303 Satz 1): der Eheschließende hat am Tag der Eheschließung das 18. Lebensjahr noch nicht vollendet";
+        label en unofficial "A marriage may not be entered into before the attainment of majority (§ 1303 sentence 1)";
+        when ehegatte(ehe, p) and eheschliessung_am(ehe, t)
+         and de.bgb.fristen::lebensjahr_vollendet_am(p, 18 calendar_year, v) and t <= v;
+        then eheverbot(ehe, "§ 1303 Satz 1: Eheschließung vor Eintritt der Volljährigkeit");
+    }
+    rule EheMitPersonUnterSechzehnUnwirksam(ehe: Ehe, p: Person, t: Date, v: Date) strict {
+        label de official "Mit einer Person, die das 16. Lebensjahr nicht vollendet hat, kann eine Ehe nicht wirksam eingegangen werden (§ 1303 Satz 2)";
+        label en unofficial "A marriage cannot be validly entered into with a person who has not completed the 16th year of life (§ 1303 sentence 2)";
+        when ehegatte(ehe, p) and eheschliessung_am(ehe, t)
+         and de.bgb.fristen::lebensjahr_vollendet_am(p, 16 calendar_year, v) and t <= v;
+        then ehe_unwirksam(ehe, "§ 1303 Satz 2: Eheschließung mit einer Person, die das 16. Lebensjahr nicht vollendet hatte");
+    }
+}
+
+@source(BGB_P1304)
+rule GeschaeftsunfaehigerKannKeineEheEingehen(ehe: Ehe, p: Person) strict {
+    label de official "Wer geschäftsunfähig ist, kann eine Ehe nicht eingehen (§ 1304)";
+    label en unofficial "A person who lacks capacity to contract cannot enter into a marriage (§ 1304)";
+    when geschaeftsunfaehig_bei_der_eheschliessung(ehe, p);
+    then ehe_unwirksam(ehe, "§ 1304: Geschäftsunfähigkeit bei der Eheschließung");
+}
+
+@source(BGB_P1305) {
+    rule Familienunterhalt1305Nr1(ehe: Ehe) strict {
+        label de official "Auf eine im Ausland geschlossene und nach § 1303 Satz 2 unwirksame Ehe werden die §§ 1360 bis 1360b entsprechend angewendet, wenn die nicht wirksam Verheirateten wie in einer ehelichen Lebensgemeinschaft zusammenleben (§ 1305 Abs. 1 Satz 1 Nr. 1)";
+        label en unofficial "§§ 1360 to 1360b apply mutatis mutandis where the persons not validly married live together as in a marital community (§ 1305 (1) sentence 1 no. 1)";
+        when im_ausland_geschlossen(ehe) and ehe_unwirksam(ehe, "§ 1303 Satz 2: Eheschließung mit einer Person, die das 16. Lebensjahr nicht vollendet hatte")
+         and zusammenleben_wie_in_ehelicher_lebensgemeinschaft(ehe)
+         and not_known(beide_bei_eheschliessung_unter_sechzehn(ehe))
+         and not_known(ehe_auch_aus_anderem_grund_unwirksam(ehe));
+        then vorschriften_des_1305_anwendbar(ehe, "§§ 1360 bis 1360b");
+    }
+    rule TrennungsunterhaltUnterDreiJahren(ehe: Ehe, f: Frist, tr: Date, ende: Date, bewertung: Date) strict {
+        label de official "Die §§ 1361 und 1586 werden entsprechend angewendet, wenn die nicht wirksam Verheirateten seit WENIGER ALS drei Jahren getrennt leben (§ 1305 Abs. 1 Satz 1 Nr. 2)";
+        label en unofficial "§§ 1361 and 1586 apply where the persons have lived apart for LESS THAN three years (§ 1305 (1) sentence 1 no. 2)";
+        when im_ausland_geschlossen(ehe) and trennungsfrist_drei_jahre(ehe, f) and trennung_am(ehe, tr)
+         and de.bgb.fristen::frist_ende_kalender(f, ende) and bewertungstag(ehe, bewertung)
+         and bewertung <= ende
+         and not_known(beide_bei_eheschliessung_unter_sechzehn(ehe))
+         and not_known(ehe_auch_aus_anderem_grund_unwirksam(ehe));
+        then vorschriften_des_1305_anwendbar(ehe, "§§ 1361 und 1586");
+    }
+    rule NachehelicherUnterhaltNachDreiJahren(ehe: Ehe, f: Frist, tr: Date, ende: Date, bewertung: Date) strict {
+        label de official "Die §§ 1569 bis 1583 sowie 1585 bis 1586b werden entsprechend angewendet, wenn die nicht wirksam Verheirateten seit MINDESTENS drei Jahren getrennt leben (§ 1305 Abs. 1 Satz 1 Nr. 3 Alt. 1)";
+        label en unofficial "§§ 1569 to 1583 and 1585 to 1586b apply where the persons have lived apart for AT LEAST three years (§ 1305 (1) sentence 1 no. 3 alt. 1)";
+        when im_ausland_geschlossen(ehe) and trennungsfrist_drei_jahre(ehe, f) and trennung_am(ehe, tr)
+         and de.bgb.fristen::frist_ende_kalender(f, ende) and bewertungstag(ehe, bewertung)
+         and bewertung > ende
+         and not_known(beide_bei_eheschliessung_unter_sechzehn(ehe))
+         and not_known(ehe_auch_aus_anderem_grund_unwirksam(ehe));
+        then vorschriften_des_1305_anwendbar(ehe, "§§ 1569 bis 1583 sowie 1585 bis 1586b");
+    }
+    rule NachehelicherUnterhaltNachFeststellung(ehe: Ehe) strict {
+        label de official "Die §§ 1569 bis 1583 sowie 1585 bis 1586b werden auch angewendet, wenn die Unwirksamkeit der Ehe gerichtlich festgestellt wurde (§ 1305 Abs. 1 Satz 1 Nr. 3 Alt. 2)";
+        label en unofficial "§§ 1569 to 1583 and 1585 to 1586b also apply where the invalidity was established by a court (§ 1305 (1) sentence 1 no. 3 alt. 2)";
+        when im_ausland_geschlossen(ehe) and unwirksamkeit_gerichtlich_festgestellt(ehe)
+         and not_known(beide_bei_eheschliessung_unter_sechzehn(ehe))
+         and not_known(ehe_auch_aus_anderem_grund_unwirksam(ehe));
+        then vorschriften_des_1305_anwendbar(ehe, "§§ 1569 bis 1583 sowie 1585 bis 1586b");
+    }
+    rule RueckwirkendeHeilung(ehe: Ehe, t: Date) strict {
+        label de official "Nach der erneuten Eheschließung im Inland ist für Rechtsfolgen der Ehe der Tag der unwirksamen Eheschließung maßgeblich (§ 1305 Abs. 2 Satz 3); dies gilt nicht bei zwischenzeitlicher Ehe mit einer dritten Person oder gerichtlich festgestellter Unwirksamkeit (Satz 4)";
+        label en unofficial "After the renewed marriage the day of the invalid marriage is decisive ((2) sentence 3); not so in the cases of sentence 4";
+        when erneute_eheschliessung_im_inland_am(ehe, t) and kein_zwischenzeitlicher_hinderungsgrund_1305(ehe);
+        then rueckwirkende_heilung_der_ehe(ehe);
+    }
+}
+
+@source(BGB_P1306) {
+    rule Doppelehe(ehe: Ehe, p: Person, d: Person) strict {
+        label de official "Eine Ehe darf nicht geschlossen werden, wenn zwischen einer der Personen, die die Ehe miteinander eingehen wollen, und einer dritten Person eine Ehe besteht (§ 1306)";
+        label en unofficial "A marriage may not be entered into if a marriage exists between one of the persons and a third person (§ 1306)";
+        when bestehende_ehe_mit_dritter_person(ehe, p, d);
+        then eheverbot(ehe, "§ 1306: bestehende Ehe mit einer dritten Person");
+    }
+    rule BestehendeLebenspartnerschaft(ehe: Ehe, p: Person, d: Person) strict {
+        label de official "Eine Ehe darf nicht geschlossen werden, wenn zwischen einer der Personen und einer dritten Person eine Lebenspartnerschaft besteht (§ 1306)";
+        label en unofficial "A marriage may not be entered into if a civil partnership exists between one of the persons and a third person (§ 1306)";
+        when bestehende_lebenspartnerschaft_mit_dritter_person(ehe, p, d);
+        then eheverbot(ehe, "§ 1306: bestehende Lebenspartnerschaft mit einer dritten Person");
+    }
+}
+
+@source(BGB_P1307) {
+    rule VerwandteInAufsteigenderLinie(ehe: Ehe, f: Familie, a: Person, b: Person) strict {
+        label de official "Eine Ehe darf nicht geschlossen werden zwischen Verwandten in gerader Linie (§ 1307 Satz 1): aufsteigende Linie";
+        label en unofficial "A marriage may not be entered into between relatives in the direct line (§ 1307 sentence 1): ascending line";
+        when familie_der_ehe(ehe, f) and ehegatten(ehe, a, b)
+         and calc.kinship::kin_line(f, a, b, calc.kinship::Ascending);
+        then eheverbot(ehe, "§ 1307 Satz 1: Verwandtschaft in gerader Linie");
+    }
+    rule VerwandteInAbsteigenderLinie(ehe: Ehe, f: Familie, a: Person, b: Person) strict {
+        label de official "Eine Ehe darf nicht geschlossen werden zwischen Verwandten in gerader Linie (§ 1307 Satz 1): absteigende Linie";
+        label en unofficial "A marriage may not be entered into between relatives in the direct line (§ 1307 sentence 1): descending line";
+        when familie_der_ehe(ehe, f) and ehegatten(ehe, a, b)
+         and calc.kinship::kin_line(f, a, b, calc.kinship::Descending);
+        then eheverbot(ehe, "§ 1307 Satz 1: Verwandtschaft in gerader Linie");
+    }
+    rule VollbuertigeGeschwister(ehe: Ehe, f: Familie, a: Person, b: Person) strict {
+        label de official "Eine Ehe darf nicht geschlossen werden zwischen vollbürtigen Geschwistern (§ 1307 Satz 1)";
+        label en unofficial "A marriage may not be entered into between siblings of the full blood (§ 1307 sentence 1)";
+        when familie_der_ehe(ehe, f) and ehegatten(ehe, a, b) and calc.kinship::full_sibling(f, a, b);
+        then eheverbot(ehe, "§ 1307 Satz 1: vollbürtige Geschwister");
+    }
+    rule HalbbuertigeGeschwister(ehe: Ehe, f: Familie, a: Person, b: Person) strict {
+        label de official "Eine Ehe darf nicht geschlossen werden zwischen halbbürtigen Geschwistern (§ 1307 Satz 1)";
+        label en unofficial "A marriage may not be entered into between siblings of the half blood (§ 1307 sentence 1)";
+        when familie_der_ehe(ehe, f) and ehegatten(ehe, a, b) and calc.kinship::half_sibling(f, a, b);
+        then eheverbot(ehe, "§ 1307 Satz 1: halbbürtige Geschwister");
+    }
+    rule ErloschenesVerwandtschaftsverhaeltnis(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Das Verbot gilt auch, wenn das Verwandtschaftsverhältnis durch Annahme als Kind erloschen ist (§ 1307 Satz 2); das Erlöschen ist im Graph der Familie nicht mehr sichtbar und daher ausdrücklicher Eingang des Falls";
+        label en unofficial "The prohibition applies also where the kinship has expired through adoption (§ 1307 sentence 2)";
+        when verwandtschaft_durch_annahme_erloschen(ehe, a, b);
+        then eheverbot(ehe, "§ 1307 Satz 2: durch Annahme als Kind erloschene Verwandtschaft");
+    }
+}
+
+@source(BGB_P1308) {
+    rule AnnahmeAlsKindSollVerbot(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Eine Ehe soll nicht geschlossen werden zwischen Personen, deren Verwandtschaft im Sinne des § 1307 durch Annahme als Kind begründet worden ist (§ 1308 Abs. 1 Satz 1); dies gilt nicht, wenn das Annahmeverhältnis aufgelöst worden ist (Satz 2), und nicht bei erteilter Befreiung (Abs. 2)";
+        label en unofficial "A marriage should not be entered into between persons whose kinship within § 1307 was established by adoption (§ 1308 (1) sentence 1)";
+        when verwandtschaft_durch_annahme_begruendet(ehe, a, b)
+         and not_known(annahmeverhaeltnis_aufgeloest(ehe, a, b))
+         and not_known(befreiung_nach_1308_erteilt(ehe, a))
+         and not_known(befreiung_nach_1308_erteilt(ehe, b));
+        then ordnungsvorschrift_verletzt(ehe, "§ 1308 Abs. 1 Satz 1: durch Annahme als Kind begründete Verwandtschaft");
+    }
+    rule BefreiungNurBeiSeitenlinie(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Das Familiengericht kann auf Antrag Befreiung erteilen, wenn zwischen dem Antragsteller und seinem künftigen Ehegatten durch die Annahme als Kind eine Verwandtschaft in der SEITENLINIE begründet worden ist (§ 1308 Abs. 2 Satz 1); ob wichtige Gründe entgegenstehen (Satz 2), entscheidet das Gericht";
+        label en unofficial "The family court may grant exemption where the adoption established a collateral kinship ((2) sentence 1)";
+        when befreiung_nach_1308_erteilt(ehe, a) and verwandtschaft_in_der_seitenlinie_durch_annahme(ehe, a, b);
+        then befreiung_von_1308_wirksam(ehe, a);
+    }
+}
+
+@source(BGB_P1309) {
+    rule EhefaehigkeitszeugnisSoll(ehe: Ehe, p: Person) strict {
+        label de official "Wer hinsichtlich der Voraussetzungen der Eheschließung ausländischem Recht unterliegt, soll eine Ehe nicht eingehen, bevor er ein Ehefähigkeitszeugnis beigebracht hat (§ 1309 Abs. 1 Satz 1); von dem Erfordernis kann Befreiung erteilt werden (Abs. 2)";
+        label en unofficial "A person subject to foreign law should not marry before producing a certificate of capacity (§ 1309 (1) sentence 1); exemption may be granted ((2))";
+        when unterliegt_auslaendischem_recht(ehe, p) and kein_ehefaehigkeitszeugnis_beigebracht(ehe, p)
+         and not_known(befreiung_vom_ehefaehigkeitszeugnis(ehe, p));
+        then ordnungsvorschrift_verletzt(ehe, "§ 1309 Abs. 1 Satz 1: fehlendes Ehefähigkeitszeugnis");
+    }
+    rule ZeugnisfristEreignis(ehe: Ehe, p: Person, f: Frist, t: Date) strict {
+        label de official "Die Frist des Zeugnisses läuft von seiner Ausstellung an (§ 1309 Abs. 1 Satz 3)";
+        label en unofficial "The period of the certificate runs from its issue (§ 1309 (1) sentence 3)";
+        when zeugnisfrist(ehe, p, f) and ehefaehigkeitszeugnis_ausgestellt_am(ehe, p, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule ZeugnisfristDauer(ehe: Ehe, p: Person, f: Frist) strict {
+        label de official "Das Zeugnis verliert seine Kraft, wenn die Ehe nicht binnen SECHS MONATEN seit der Ausstellung geschlossen wird (§ 1309 Abs. 1 Satz 3)";
+        label en unofficial "The certificate loses its force if the marriage is not entered into within SIX MONTHS of its issue (§ 1309 (1) sentence 3)";
+        when zeugnisfrist(ehe, p, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 6 calendar_month);
+    }
+    rule ZeugnisOhneKraft(ehe: Ehe, p: Person, f: Frist, e: Date) strict {
+        label de official "Letzter Tag der Sechsmonatsfrist des Ehefähigkeitszeugnisses: die Ehe ist binnen der Frist zu schließen, daher gilt § 193 (§ 1309 Abs. 1 Satz 3)";
+        label en unofficial "Last day of the six-month period of the certificate; the marriage is to be entered into within it, so § 193 applies (§ 1309 (1) sentence 3)";
+        when zeugnisfrist(ehe, p, f) and de.bgb.fristen::frist_ende(f, e);
+        then zeugnis_ohne_kraft_ab(ehe, p, e);
+    }
+}
+
+@source(BGB_P1310) {
+    rule EheDurchErklaerungVorDemStandesbeamten(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Die Ehe wird nur dadurch geschlossen, dass die Eheschließenden vor dem Standesbeamten erklären, die Ehe miteinander eingehen zu wollen (§ 1310 Abs. 1 Satz 1)";
+        label en unofficial "A marriage is entered into only by the parties declaring before the registrar that they wish to marry each other (§ 1310 (1) sentence 1)";
+        when ehegatten(ehe, a, b) and erklaerung_vor_dem_standesbeamten(ehe, a)
+         and erklaerung_vor_dem_standesbeamten(ehe, b);
+        then ehe_geschlossen(ehe);
+    }
+    rule ScheinstandesbeamterGiltAlsStandesbeamter(ehe: Ehe, a: Person, b: Person) strict {
+        label de official "Als Standesbeamter gilt auch, wer, ohne Standesbeamter zu sein, das Amt eines Standesbeamten öffentlich ausgeübt und die Ehe in das Eheregister eingetragen hat (§ 1310 Abs. 2)";
+        label en unofficial "A person who publicly exercised the office of registrar and entered the marriage in the register also counts as registrar (§ 1310 (2))";
+        when ehegatten(ehe, a, b) and amt_des_standesbeamten_oeffentlich_ausgeuebt(ehe)
+         and eintragung_in_das_eheregister(ehe);
+        then ehe_geschlossen(ehe);
+    }
+    rule HeilungsfristEreignis(ehe: Ehe, f: Frist, t: Date) strict {
+        label de official "Die Frist des § 1310 Abs. 3 läuft von der Erklärung an, die Ehe miteinander eingehen zu wollen";
+        label en unofficial "The period of § 1310 (3) runs from the declaration of the wish to marry";
+        when heilungsfrist_1310(ehe, f) and eheschliessung_am(ehe, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule HeilungsfristDauer(ehe: Ehe, f: Frist) strict {
+        label de official "Die Ehegatten müssen seitdem ZEHN JAHRE als Ehegatten miteinander gelebt haben (§ 1310 Abs. 3 letzter Halbsatz)";
+        label en unofficial "The spouses must have lived together as spouses for TEN YEARS since then (§ 1310 (3) final half-sentence)";
+        when heilungsfrist_1310(ehe, f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 10 calendar_year);
+    }
+    rule HeilungDurchEintragungImEheregister(ehe: Ehe, f: Frist, e: Date, gelebt: Date) strict {
+        label de official "Eine Ehe gilt auch dann als geschlossen, wenn die Ehegatten erklärt haben, die Ehe miteinander eingehen zu wollen, der Standesbeamte die Ehe in das Eheregister eingetragen hat und die Ehegatten seitdem zehn Jahre als Ehegatten miteinander gelebt haben (§ 1310 Abs. 3 Nr. 1)";
+        label en unofficial "A marriage also counts as entered into where the registrar entered it in the register and the spouses have since lived together as spouses for ten years (§ 1310 (3) no. 1)";
+        when eintragung_in_das_eheregister(ehe) and heilungsfrist_1310(ehe, f)
+         and de.bgb.fristen::frist_ende_kalender(f, e) and als_ehegatten_miteinander_gelebt_bis(ehe, gelebt)
+         and gelebt > e;
+        then ehe_geschlossen(ehe);
+    }
+    rule HeilungDurchHinweisImGeburtenregister(ehe: Ehe, f: Frist, e: Date, gelebt: Date) strict {
+        label de official "Dasselbe gilt, wenn der Standesbeamte im Zusammenhang mit der Beurkundung der Geburt eines gemeinsamen Kindes einen Hinweis auf die Eheschließung in das Geburtenregister eingetragen hat (§ 1310 Abs. 3 Nr. 2)";
+        label en unofficial "The same applies where the registrar entered a reference to the marriage in the register of births (§ 1310 (3) no. 2)";
+        when hinweis_im_geburtenregister(ehe) and heilungsfrist_1310(ehe, f)
+         and de.bgb.fristen::frist_ende_kalender(f, e) and als_ehegatten_miteinander_gelebt_bis(ehe, gelebt)
+         and gelebt > e;
+        then ehe_geschlossen(ehe);
+    }
+    rule HeilungDurchFamilienrechtlicheErklaerung(ehe: Ehe, f: Frist, e: Date, gelebt: Date) strict {
+        label de official "Dasselbe gilt, wenn der Standesbeamte eine familienrechtliche Erklärung entgegengenommen hat, die eine bestehende Ehe voraussetzt, und hierüber eine Bescheinigung erteilt worden ist (§ 1310 Abs. 3 Nr. 3)";
+        label en unofficial "The same applies where the registrar received a family-law declaration presupposing an existing marriage and a certificate was issued (§ 1310 (3) no. 3)";
+        when familienrechtliche_erklaerung_entgegengenommen(ehe) and heilungsfrist_1310(ehe, f)
+         and de.bgb.fristen::frist_ende_kalender(f, e) and als_ehegatten_miteinander_gelebt_bis(ehe, gelebt)
+         and gelebt > e;
+        then ehe_geschlossen(ehe);
+    }
+}
+
+@source(BGB_P1311) {
+    rule ErklaerungNichtPersoenlich(ehe: Ehe, p: Person) strict {
+        label de official "Die Eheschließenden müssen die Erklärungen nach § 1310 Abs. 1 persönlich und bei gleichzeitiger Anwesenheit abgeben (§ 1311 Satz 1); geschieht dies nicht, so ist die Ehe nach § 1314 Abs. 1 Nr. 2 aufhebbar";
+        label en unofficial "The parties must make the declarations in person and in simultaneous presence (§ 1311 sentence 1); otherwise the marriage is annullable under § 1314 (1) no. 2";
+        when erklaerung_nicht_persoenlich_oder_nicht_bei_gleichzeitiger_anwesenheit(ehe, p);
+        then eheverbot(ehe, "§ 1311 Satz 1: Erklärung nicht persönlich und bei gleichzeitiger Anwesenheit");
+    }
+    rule ErklaerungUnterBedingung(ehe: Ehe, p: Person) strict {
+        label de official "Die Erklärungen können nicht unter einer Bedingung oder Zeitbestimmung abgegeben werden (§ 1311 Satz 2)";
+        label en unofficial "The declarations cannot be made subject to a condition or time provision (§ 1311 sentence 2)";
+        when erklaerung_unter_bedingung_oder_zeitbestimmung(ehe, p);
+        then erklaerung_unwirksam(ehe, p);
+    }
+}
+
+@source(BGB_P1312) {
+    rule TrauungSollVorschrift(ehe: Ehe) strict {
+        label de official "Der Standesbeamte SOLL bei der Eheschließung die Eheschließenden einzeln befragen und aussprechen, dass sie nunmehr kraft Gesetzes rechtmäßig verbundene Eheleute sind (§ 1312 Satz 1); der Verstoß lässt die Wirksamkeit unberührt";
+        label en unofficial "The registrar SHOULD question the parties individually and pronounce them lawfully joined (§ 1312 sentence 1); breach does not affect validity";
+        when trauung_ohne_einzelne_befragung(ehe);
+        then ordnungsvorschrift_verletzt(ehe, "§ 1312 Satz 1: Trauung ohne einzelne Befragung und Ausspruch");
+    }
+    rule ZeugenAufWunsch(ehe: Ehe) strict {
+        label de official "Die Eheschließung kann in Gegenwart von einem oder zwei Zeugen erfolgen, sofern die Eheschließenden dies wünschen (§ 1312 Satz 2)";
+        label en unofficial "The marriage may take place in the presence of one or two witnesses if the parties so wish (§ 1312 sentence 2)";
+        when zeugen_gewuenscht(ehe);
+        then zeugen_zulaessig(ehe);
+    }
+}

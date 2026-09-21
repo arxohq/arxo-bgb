@@ -1,0 +1,25 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 247 Abs. 1 Sätze 2 und 3: zum 1. Juli 2025 galt vorher ein Basiszinssatz
+// von 2,27 Prozent (gültig ab 1. Januar 2025). Bezugsgröße bei der letzten
+// Veränderung war der Zinssatz der Hauptrefinanzierungsoperation der EZB vor
+// dem 1. Januar 2025 — 3,15 Prozent; Bezugsgröße vor dem 1. Juli 2025 —
+// 2,15 Prozent. Die Bezugsgröße ist um einen Prozentpunkt gefallen, der
+// Basiszinssatz also auf 1,27 Prozent. Unabhängige Erwartung: die
+// Bekanntmachung der Deutschen Bundesbank weist für den 1. Juli 2025
+// denselben Satz von 1,27 Prozent aus (Schnappschuss
+// sources/bundesbank-basiszinssatz/, SOURCES.json.expectations).
+test "§ 247 Abs. 1: Basiszinssatz zum 1. Juli 2025 ist 1,27 Prozent" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": halbjahr_beginn(entity_ref("urn:de:bgb:sr-at:v03:h1"), @2025-07-01) { origin case_input; }
+        assert "a2": basiszinssatz_vor_der_veraenderung(entity_ref("urn:de:bgb:sr-at:v03:h1"), 2.27) { origin case_input; }
+        assert "a3": bezugsgroesse_bei_der_letzten_veraenderung(entity_ref("urn:de:bgb:sr-at:v03:h1"), 3.15) { origin case_input; }
+        assert "a4": bezugsgroesse_vor_dem_halbjahr(entity_ref("urn:de:bgb:sr-at:v03:h1"), 2.15) { origin case_input; }
+    }
+    evaluate truth(basiszinssatz_des_halbjahrs(entity_ref("urn:de:bgb:sr-at:v03:h1"), 1.27));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    expect applied(VeraenderungDesBasiszinssatzes);
+}

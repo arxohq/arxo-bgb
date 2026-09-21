@@ -1,0 +1,699 @@
+// --- Untertitel 3 Kapitel 2 Bauvertrag (§§ 650a–650h) ------------------------------------------------
+//
+// KORRIDOR 2018 (Ledger D-07-08). Das Kapitel 2 ist durch das Gesetz zur
+// Reform des Bauvertragsrechts vom 28. April 2017 (BGBl. I S. 969) eingefügt
+// worden und gilt nach Art. 229 § 39 EGBGB für Schuldverhältnisse, die ab dem
+// 1. Januar 2018 entstanden sind. Jede Regel dieses Kapitels trägt daher
+// `effective [@2018-01-01, infinity)`; für einen Fall mit früherem
+// `legal_time` schweigt das Paket, statt die alte Rechtslage zu behaupten.
+// Der connecting factor (Vertragsschluss) steht in SOURCES.json.transitions;
+// die Übergangsnorm selbst gehört `de.bgb.uebergang` (Koordinator).
+//
+// GELD. § 650c Abs. 3 (80 Prozent der angebotenen Mehrvergütung), § 650f
+// Abs. 1 (10 Prozent Nebenforderungen), Abs. 3 (Höchstsatz 2 Prozent für das
+// Jahr) und Abs. 5 Satz 3 (5 Prozent des nicht erbrachten Teils) rechnen je
+// EINE Division, gerundet auf den Cent (Ledger D-07-07). Die Prozentsätze
+// sind Literale des Textes.
+//
+// FRISTEN. § 650b Abs. 2 (30 Tage nach Zugang des Änderungsbegehrens) und
+// § 650g Abs. 4 Satz 3 (30 Tage nach Zugang der Schlussrechnung) rechnen
+// unter BGB_DIENST_WERK_KALENDER. § 193 wird bei § 650b Abs. 2 nicht
+// gerechnet — der Besteller gibt seine Anordnung NACH dem Ablauf ab, nicht
+// innerhalb der Frist. Bei § 650g Abs. 4 Satz 3 sind die Einwendungen
+// INNERHALB der Frist zu erheben; die Verlegung des § 193 wird dort
+// ausdrücklich gerechnet, mit demselben Ausdruck wie im Eigentümerpaket
+// `de.bgb.fristen` (Regel Verlegung193). Zeilen: DEADLINES.json, BG-07.
+//
+// WAS DIESES KAPITEL NICHT TUT: § 650d verweist auf das Verfügungsverfahren
+// der Zivilprozessordnung, § 650e auf das Grundbuchrecht und § 650f Abs. 2
+// auf das Aufsichtsrecht der Kreditinstitute und Kreditversicherer — fremde
+// Ordnungen, die dieses Paket nur benennt (SOURCES.json, external).
+
+language "law.core" version "0.2";
+package de.bgb.dienst_werk version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dienst-werk";
+
+// --- § 650a Bauvertrag -----------------------------------------------------------------------------
+
+pub relation herstellung_oder_umbau_eines_bauwerks_650a(w: Werkvertrag) kind empirical {
+    label de official "der Vertrag betrifft die Herstellung, die Wiederherstellung, die Beseitigung oder den Umbau eines Bauwerks, einer Außenanlage oder eines Teils davon (§ 650a Abs. 1 Satz 1)";
+    label en unofficial "the contract concerns the construction, reconstruction, removal or conversion of a building, an outdoor facility or a part thereof (§ 650a (1) sentence 1)";
+}
+pub relation instandhaltung_eines_bauwerks_650a(w: Werkvertrag) kind empirical {
+    label de official "der Vertrag betrifft die Instandhaltung eines Bauwerks (§ 650a Abs. 2)";
+    label en unofficial "the contract concerns the maintenance of a building (§ 650a (2))";
+}
+@source(BGB_P650a)
+pub external judgment relation werk_von_wesentlicher_bedeutung_650a(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 650a Abs. 2. Das Werk ist für die Konstruktion, den Bestand oder den bestimmungsgemäßen Gebrauch des Bauwerks von wesentlicher Bedeutung";
+    label en unofficial "§ 650a (2). The work is of essential importance for the construction, the existence or the intended use of the building";
+}
+pub relation bauvertrag_650a(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Vertrag ist ein Bauvertrag; für ihn gelten ergänzend die Vorschriften des Kapitels 2 (§ 650a Abs. 1)";
+    label en unofficial "the contract is a construction contract; the provisions of Chapter 2 apply to it in addition (§ 650a (1))";
+}
+
+@source(BGB_P650a)
+rule Bauvertrag650aAbs1(w: Werkvertrag) strict {
+    label de official "Ein Bauvertrag ist ein Vertrag über die Herstellung, die Wiederherstellung, die Beseitigung oder den Umbau eines Bauwerks, einer Außenanlage oder eines Teils davon (§ 650a Abs. 1 Satz 1)";
+    label en unofficial "A construction contract is a contract for the construction, reconstruction, removal or conversion of a building, an outdoor facility or a part thereof (§ 650a (1) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when herstellung_oder_umbau_eines_bauwerks_650a(w);
+    then bauvertrag_650a(w);
+}
+
+@source(BGB_P650a)
+rule Bauvertrag650aAbs2(w: Werkvertrag) strict {
+    label de official "Ein Vertrag über die Instandhaltung eines Bauwerks ist ein Bauvertrag, wenn das Werk für die Konstruktion, den Bestand oder den bestimmungsgemäßen Gebrauch von wesentlicher Bedeutung ist (§ 650a Abs. 2)";
+    label en unofficial "A contract for the maintenance of a building is a construction contract if the work is of essential importance for the construction, the existence or the intended use (§ 650a (2))";
+    effective [@2018-01-01, infinity);
+    when instandhaltung_eines_bauwerks_650a(w);
+    when werk_von_wesentlicher_bedeutung_650a(w);
+    then bauvertrag_650a(w);
+}
+
+// --- § 650b Änderung des Vertrags; Anordnungsrecht des Bestellers -------------------------------------
+
+pub relation aenderungsbegehren_zugegangen_am_650b(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag des Zugangs des Änderungsbegehrens des Bestellers beim Unternehmer (§ 650b Abs. 2 Satz 1)";
+    label en unofficial "day the customer's request for a change was received by the contractor (§ 650b (2) sentence 1)";
+}
+pub relation aenderung_des_werkerfolgs_begehrt_650b(w: Werkvertrag) kind empirical {
+    label de official "der Besteller begehrt eine Änderung des vereinbarten Werkerfolgs (§ 650b Abs. 1 Satz 1 Nr. 1)";
+    label en unofficial "the customer requests a change to the agreed result of the work (§ 650b (1) sentence 1 no. 1)";
+}
+pub relation notwendige_aenderung_begehrt_650b(w: Werkvertrag) kind empirical {
+    label de official "der Besteller begehrt eine Änderung, die zur Erreichung des vereinbarten Werkerfolgs notwendig ist (§ 650b Abs. 1 Satz 1 Nr. 2)";
+    label en unofficial "the customer requests a change necessary to achieve the agreed result of the work (§ 650b (1) sentence 1 no. 2)";
+}
+@source(BGB_P650b)
+pub external judgment relation ausfuehrung_der_aenderung_zumutbar_650b(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 650b Abs. 1 Satz 2, Abs. 2 Satz 2. Dem Unternehmer ist die Ausführung der Änderung nach Absatz 1 Satz 1 Nummer 1 zumutbar";
+    label en unofficial "§ 650b (1) sentence 2, (2) sentence 2. Carrying out the change under (1) sentence 1 no. 1 is reasonable for the contractor";
+}
+pub relation angebot_ueber_mehr_oder_mindervverguetung_erstellt_650b(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat ein Angebot über die Mehr- oder Mindervergütung erstellt (§ 650b Abs. 1 Satz 2)";
+    label en unofficial "the contractor has prepared an offer for the additional or reduced compensation (§ 650b (1) sentence 2)";
+}
+pub relation einigungsfrist_ende_650b(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "letzter Tag der Dreißigtagefrist zur Einigung über die Änderung (§ 650b Abs. 2 Satz 1) — Politik BGB_DIENST_WERK_KALENDER, keine Verlegung nach § 193: die Anordnung wird NACH dem Ablauf abgegeben";
+    label en unofficial "last day of the thirty-day period for reaching agreement on the change (§ 650b (2) sentence 1) — policy BGB_DIENST_WERK_KALENDER, no postponement under § 193: the order is given AFTER the period has run";
+}
+pub relation keine_einigung_bis_fristablauf_650b(w: Werkvertrag) kind empirical {
+    label de official "die Parteien haben bis zum Ablauf der Dreißigtagefrist keine Einigung erzielt (§ 650b Abs. 2 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the parties reached no agreement before the thirty-day period expired (§ 650b (2) sentence 1) — express statement of the case";
+}
+pub relation anordnung_in_textform_650b(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag der Anordnung der Änderung in Textform durch den Besteller (§ 650b Abs. 2 Satz 1)";
+    label en unofficial "day the customer ordered the change in text form (§ 650b (2) sentence 1)";
+}
+pub relation anordnungsrecht_650b(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Besteller kann die Änderung in Textform anordnen (§ 650b Abs. 2 Satz 1)";
+    label en unofficial "the customer may order the change in text form (§ 650b (2) sentence 1)";
+}
+pub relation befolgungspflicht_650b(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer ist verpflichtet, der Anordnung des Bestellers nachzukommen (§ 650b Abs. 2 Satz 2)";
+    label en unofficial "the contractor is obliged to comply with the customer's order (§ 650b (2) sentence 2)";
+}
+
+@source(BGB_P650b)
+rule Angebotspflicht650bAbs1Nr1(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Begehrt der Besteller eine Änderung des vereinbarten Werkerfolgs, ist der Unternehmer verpflichtet, ein Angebot über die Mehr- oder Mindervergütung zu erstellen, jedoch nur, wenn ihm die Ausführung der Änderung zumutbar ist (§ 650b Abs. 1 Satz 1 Nr. 1, Satz 2)";
+    label en unofficial "Where the customer requests a change to the agreed result of the work, the contractor must prepare an offer for the additional or reduced compensation, but only if carrying out the change is reasonable for them (§ 650b (1) sentence 1 no. 1, sentence 2)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when aenderung_des_werkerfolgs_begehrt_650b(w);
+    when ausfuehrung_der_aenderung_zumutbar_650b(w);
+    then duty AngebotUeberMehrverguetung650b {
+        bearer u;
+        achieve angebot_ueber_mehr_oder_mindervverguetung_erstellt_650b(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P650b)
+rule Angebotspflicht650bAbs1Nr2(w: Werkvertrag, u: Person, schluss: Date) strict {
+    label de official "Begehrt der Besteller eine zur Erreichung des vereinbarten Werkerfolgs notwendige Änderung, ist der Unternehmer verpflichtet, ein Angebot über die Mehr- oder Mindervergütung zu erstellen (§ 650b Abs. 1 Satz 1 Nr. 2, Satz 2)";
+    label en unofficial "Where the customer requests a change necessary to achieve the agreed result of the work, the contractor must prepare an offer for the additional or reduced compensation (§ 650b (1) sentence 1 no. 2, sentence 2)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when unternehmer(w, u);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when notwendige_aenderung_begehrt_650b(w);
+    then duty AngebotUeberMehrverguetungNotwendig650b {
+        bearer u;
+        achieve angebot_ueber_mehr_oder_mindervverguetung_erstellt_650b(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P650b)
+rule Einigungsfrist650bAbs2(w: Werkvertrag, zugang: Date) strict {
+    label de official "Erzielen die Parteien binnen 30 Tagen nach Zugang des Änderungsbegehrens beim Unternehmer keine Einigung nach Absatz 1, kann der Besteller die Änderung anordnen (§ 650b Abs. 2 Satz 1) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "If the parties reach no agreement under (1) within 30 days of the contractor receiving the request for a change, the customer may order the change (§ 650b (2) sentence 1) — policy BGB_DIENST_WERK_KALENDER";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when aenderungsbegehren_zugegangen_am_650b(w, zugang);
+    then einigungsfrist_ende_650b(w, add_calendar_period(zugang, 30 calendar_day));
+}
+
+@source(BGB_P650b)
+rule Anordnungsrecht650bAbs2(w: Werkvertrag, ende: Date, anordnung: Date) strict {
+    label de official "Nach dem fruchtlosen Ablauf der Dreißigtagefrist kann der Besteller die Änderung in Textform anordnen (§ 650b Abs. 2 Satz 1)";
+    label en unofficial "After the fruitless expiry of the thirty-day period the customer may order the change in text form (§ 650b (2) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when einigungsfrist_ende_650b(w, ende);
+    when keine_einigung_bis_fristablauf_650b(w);
+    when anordnung_in_textform_650b(w, anordnung);
+    when anordnung > ende;
+    then anordnungsrecht_650b(w);
+}
+
+@source(BGB_P650b)
+rule Befolgungspflicht650bAbs2Satz2(w: Werkvertrag) strict {
+    label de official "Der Unternehmer ist verpflichtet, der Anordnung des Bestellers nachzukommen, einer Anordnung nach Absatz 1 Satz 1 Nummer 1 jedoch nur, wenn ihm die Ausführung zumutbar ist (§ 650b Abs. 2 Satz 2)";
+    label en unofficial "The contractor must comply with the customer's order, but with an order under (1) sentence 1 no. 1 only if carrying it out is reasonable for them (§ 650b (2) sentence 2)";
+    effective [@2018-01-01, infinity);
+    when anordnungsrecht_650b(w);
+    when notwendige_aenderung_begehrt_650b(w);
+    then befolgungspflicht_650b(w);
+}
+
+@source(BGB_P650b)
+rule BefolgungspflichtZumutbar650bAbs2Satz2(w: Werkvertrag) strict {
+    label de official "Bei einer Anordnung nach Absatz 1 Satz 1 Nummer 1 besteht die Befolgungspflicht nur, wenn dem Unternehmer die Ausführung zumutbar ist (§ 650b Abs. 2 Satz 2)";
+    label en unofficial "With an order under (1) sentence 1 no. 1 the duty to comply exists only if carrying it out is reasonable for the contractor (§ 650b (2) sentence 2)";
+    effective [@2018-01-01, infinity);
+    when anordnungsrecht_650b(w);
+    when aenderung_des_werkerfolgs_begehrt_650b(w);
+    when ausfuehrung_der_aenderung_zumutbar_650b(w);
+    then befolgungspflicht_650b(w);
+}
+
+// --- § 650c Vergütungsanpassung bei Anordnungen nach § 650b Abs. 2 --------------------------------------
+
+pub relation tatsaechlich_erforderliche_kosten_650c(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die tatsächlich erforderlichen Kosten des vermehrten oder verminderten Aufwands mit angemessenen Zuschlägen für allgemeine Geschäftskosten, Wagnis und Gewinn (§ 650c Abs. 1 Satz 1)";
+    label en unofficial "the costs actually required for the increased or reduced effort, with appropriate surcharges for general business costs, risk and profit (§ 650c (1) sentence 1)";
+}
+pub relation verguetungsanpassung_650c(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "Höhe des Vergütungsanspruchs für den infolge der Anordnung vermehrten oder verminderten Aufwand (§ 650c Abs. 1 Satz 1)";
+    label en unofficial "amount of the claim to compensation for the effort increased or reduced as a result of the order (§ 650c (1) sentence 1)";
+}
+pub relation planung_geschuldet_und_aenderung_notwendig_650c(w: Werkvertrag) kind empirical {
+    label de official "die Leistungspflicht des Unternehmers umfasst auch die Planung des Bauwerks oder der Außenanlage, und die Änderung ist eine solche nach § 650b Abs. 1 Satz 1 Nr. 2 (§ 650c Abs. 1 Satz 2)";
+    label en unofficial "the contractor's obligation also covers the planning of the building or outdoor facility and the change is one under § 650b (1) sentence 1 no. 2 (§ 650c (1) sentence 2)";
+}
+pub relation kein_anspruch_auf_mehrverguetung_650c(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "dem Unternehmer steht kein Anspruch auf Vergütung für vermehrten Aufwand zu (§ 650c Abs. 1 Satz 2)";
+    label en unofficial "the contractor has no claim to compensation for the increased effort (§ 650c (1) sentence 2)";
+}
+
+@source(BGB_P650c)
+rule Verguetungsanpassung650cAbs1(w: Werkvertrag, betrag: Money) strict {
+    label de official "Die Höhe des Vergütungsanspruchs für den infolge einer Anordnung des Bestellers nach § 650b Abs. 2 vermehrten oder verminderten Aufwand ist nach den tatsächlich erforderlichen Kosten mit angemessenen Zuschlägen für allgemeine Geschäftskosten, Wagnis und Gewinn zu ermitteln (§ 650c Abs. 1 Satz 1)";
+    label en unofficial "The amount of the claim to compensation for the effort increased or reduced as a result of an order under § 650b (2) is to be determined by the costs actually required, with appropriate surcharges for general business costs, risk and profit (§ 650c (1) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when anordnungsrecht_650b(w);
+    when tatsaechlich_erforderliche_kosten_650c(w, betrag);
+    then verguetungsanpassung_650c(w, betrag);
+}
+
+@source(BGB_P650c)
+rule KeineMehrverguetung650cAbs1Satz2(w: Werkvertrag) strict {
+    label de official "Umfasst die Leistungspflicht des Unternehmers auch die Planung des Bauwerks oder der Außenanlage, steht diesem im Fall des § 650b Abs. 1 Satz 1 Nr. 2 kein Anspruch auf Vergütung für vermehrten Aufwand zu (§ 650c Abs. 1 Satz 2)";
+    label en unofficial "Where the contractor's obligation also covers the planning of the building or outdoor facility, they have no claim to compensation for increased effort in the case of § 650b (1) sentence 1 no. 2 (§ 650c (1) sentence 2)";
+    effective [@2018-01-01, infinity);
+    when planung_geschuldet_und_aenderung_notwendig_650c(w);
+    then kein_anspruch_auf_mehrverguetung_650c(w);
+}
+
+pub relation urkalkulation_hinterlegt_650c(w: Werkvertrag) kind empirical {
+    label de official "eine Urkalkulation ist vereinbarungsgemäß hinterlegt (§ 650c Abs. 2 Satz 1)";
+    label en unofficial "an original calculation has been deposited as agreed (§ 650c (2) sentence 1)";
+}
+pub relation fortgeschriebene_verguetung_650c(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die auf Basis der Urkalkulation fortgeschriebene Vergütung (§ 650c Abs. 2 Satz 2)";
+    label en unofficial "the compensation extrapolated on the basis of the original calculation (§ 650c (2) sentence 2)";
+}
+pub relation gegenbeweis_fortschreibung_unrichtig_650c(w: Werkvertrag) kind empirical {
+    label de official "es ist bewiesen, dass die fortgeschriebene Vergütung der Vergütung nach Absatz 1 nicht entspricht (§ 650c Abs. 2 Satz 2) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "it has been proved that the extrapolated compensation does not correspond to the compensation under (1) (§ 650c (2) sentence 2) — express rebutting evidence of the case";
+}
+
+@source(BGB_P650c)
+presumption Urkalkulationsvermutung650cAbs2(w: Werkvertrag, betrag: Money) {
+    label de official "Es wird vermutet, dass die auf Basis der Urkalkulation fortgeschriebene Vergütung der Vergütung nach Absatz 1 entspricht (§ 650c Abs. 2 Satz 2)";
+    label en unofficial "It is presumed that the compensation extrapolated on the basis of the original calculation corresponds to the compensation under (1) (§ 650c (2) sentence 2)";
+    when urkalkulation_hinterlegt_650c(w)
+        and fortgeschriebene_verguetung_650c(w, betrag);
+    presume verguetungsanpassung_650c(w, betrag);
+    unless gegenbeweis_fortschreibung_unrichtig_650c(w)
+        and fortgeschriebene_verguetung_650c(w, betrag)
+        then not verguetungsanpassung_650c(w, betrag);
+}
+
+pub relation angebotene_mehrverguetung_650c(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die in einem Angebot nach § 650b Abs. 1 Satz 2 genannte Mehrvergütung (§ 650c Abs. 3 Satz 1)";
+    label en unofficial "the additional compensation stated in an offer under § 650b (1) sentence 2 (§ 650c (3) sentence 1)";
+}
+pub relation keine_einigung_ueber_hoehe_650c(w: Werkvertrag) kind empirical {
+    label de official "die Parteien haben sich nicht über die Höhe der Mehrvergütung geeinigt und es ergeht keine anderslautende gerichtliche Entscheidung (§ 650c Abs. 3 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the parties have not agreed on the amount of the additional compensation and no diverging court decision is given (§ 650c (3) sentence 1) — express statement of the case";
+}
+pub relation abschlagsansatz_650c(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "Betrag, den der Unternehmer bei der Berechnung von Abschlagszahlungen ansetzen kann — 80 Prozent der angebotenen Mehrvergütung (§ 650c Abs. 3 Satz 1)";
+    label en unofficial "amount the contractor may apply when calculating interim payments — 80 per cent of the additional compensation offered (§ 650c (3) sentence 1)";
+}
+
+@source(BGB_P650c)
+rule Abschlagsansatz650cAbs3(w: Werkvertrag, betrag: Money) strict {
+    label de official "Bei der Berechnung von vereinbarten oder gemäß § 632a geschuldeten Abschlagszahlungen kann der Unternehmer 80 Prozent einer in einem Angebot nach § 650b Abs. 1 Satz 2 genannten Mehrvergütung ansetzen, wenn sich die Parteien nicht über die Höhe geeinigt haben (§ 650c Abs. 3 Satz 1) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "When calculating interim payments agreed or owed under § 632a, the contractor may apply 80 per cent of additional compensation stated in an offer under § 650b (1) sentence 2 where the parties have not agreed on the amount (§ 650c (3) sentence 1) — one division, rounded to the cent (ledger D-07-07)";
+    effective [@2018-01-01, infinity);
+    when angebotene_mehrverguetung_650c(w, betrag);
+    when keine_einigung_ueber_hoehe_650c(w);
+    then abschlagsansatz_650c(w, div_round(betrag * 80, 100 * 1.0, 2, "HALF_UP"));
+}
+
+// --- § 650d Einstweilige Verfügung ------------------------------------------------------------------------
+
+pub relation streit_ueber_anordnung_oder_verguetungsanpassung_650d(w: Werkvertrag) kind empirical {
+    label de official "zwischen den Parteien besteht Streit über das Anordnungsrecht gemäß § 650b oder die Vergütungsanpassung gemäß § 650c (§ 650d)";
+    label en unofficial "the parties are in dispute about the right to order under § 650b or the adjustment of compensation under § 650c (§ 650d)";
+}
+pub relation bauausfuehrung_begonnen_650d(w: Werkvertrag) kind empirical {
+    label de official "die Bauausführung hat begonnen (§ 650d)";
+    label en unofficial "the construction work has begun (§ 650d)";
+}
+pub relation verfuegungsgrund_nicht_glaubhaft_zu_machen_650d(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "zum Erlass einer einstweiligen Verfügung ist es nicht erforderlich, dass der Verfügungsgrund glaubhaft gemacht wird (§ 650d) — das Verfügungsverfahren selbst gehört der Zivilprozessordnung";
+    label en unofficial "for the issue of an interim injunction it is not necessary to substantiate the ground for the injunction (§ 650d) — the injunction procedure itself belongs to the Code of Civil Procedure";
+}
+
+@source(BGB_P650d)
+rule EinstweiligeVerfuegung650d(w: Werkvertrag) strict {
+    label de official "Zum Erlass einer einstweiligen Verfügung in Streitigkeiten über das Anordnungsrecht gemäß § 650b oder die Vergütungsanpassung gemäß § 650c ist es nach Beginn der Bauausführung nicht erforderlich, dass der Verfügungsgrund glaubhaft gemacht wird (§ 650d)";
+    label en unofficial "For the issue of an interim injunction in disputes about the right to order under § 650b or the adjustment of compensation under § 650c it is not necessary, after the construction work has begun, to substantiate the ground for the injunction (§ 650d)";
+    effective [@2018-01-01, infinity);
+    when streit_ueber_anordnung_oder_verguetungsanpassung_650d(w);
+    when bauausfuehrung_begonnen_650d(w);
+    then verfuegungsgrund_nicht_glaubhaft_zu_machen_650d(w);
+}
+
+// --- § 650e Sicherungshypothek des Bauunternehmers ---------------------------------------------------------
+
+pub relation baugrundstueck_des_bestellers_650e(w: Werkvertrag) kind empirical {
+    label de official "das Baugrundstück gehört dem Besteller (§ 650e Satz 1)";
+    label en unofficial "the building plot belongs to the customer (§ 650e sentence 1)";
+}
+pub relation sicherungshypothekenanspruch_650e(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "Anspruch des Unternehmers auf Einräumung einer Sicherungshypothek an dem Baugrundstück des Bestellers (§ 650e Satz 1) — die Eintragung selbst gehört dem Grundbuchrecht";
+    label en unofficial "the contractor's claim to the grant of a security mortgage over the customer's building plot (§ 650e sentence 1) — the registration itself belongs to land-register law";
+}
+
+@source(BGB_P650e)
+rule Sicherungshypothek650e(w: Werkvertrag) strict {
+    label de official "Der Unternehmer kann für seine Forderungen aus dem Vertrag die Einräumung einer Sicherungshypothek an dem Baugrundstück des Bestellers verlangen (§ 650e Satz 1)";
+    label en unofficial "The contractor may demand, for their claims under the contract, the grant of a security mortgage over the customer's building plot (§ 650e sentence 1)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when baugrundstueck_des_bestellers_650e(w);
+    when kein_sicherheitsanspruch_erlangt_650f(w);
+    then sicherungshypothekenanspruch_650e(w);
+}
+
+// --- § 650f Bauhandwerkersicherung --------------------------------------------------------------------------
+
+pub relation nicht_gezahlte_verguetung_650f(w: Werkvertrag, betrag: Money) kind empirical {
+    key(w);
+    label de official "die auch in Zusatzaufträgen vereinbarte und noch nicht gezahlte Vergütung (§ 650f Abs. 1 Satz 1)";
+    label en unofficial "the compensation agreed, including in supplementary orders, and not yet paid (§ 650f (1) sentence 1)";
+}
+pub relation besteller_ist_juristische_person_des_oeffentlichen_rechts_650f(w: Werkvertrag) kind empirical {
+    label de official "der Besteller ist eine juristische Person des öffentlichen Rechts oder ein öffentlich-rechtliches Sondervermögen, über deren Vermögen ein Insolvenzverfahren unzulässig ist (§ 650f Abs. 6 Satz 1 Nr. 1)";
+    label en unofficial "the customer is a legal person under public law or a public-law special fund whose assets cannot be subject to insolvency proceedings (§ 650f (6) sentence 1 no. 1)";
+}
+pub relation kein_ausnahmefall_650f_abs6(w: Werkvertrag) kind empirical {
+    label de official "keiner der Ausnahmefälle des § 650f Abs. 6 Satz 1 liegt vor — ausdrückliche Angabe des Falls";
+    label en unofficial "none of the exceptional cases of § 650f (6) sentence 1 applies — express statement of the case";
+}
+pub relation sicherheitsbetrag_650f(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "Höhe der zu leistenden Bauhandwerkersicherung — Vergütung zuzüglich 10 Prozent Nebenforderungen (§ 650f Abs. 1 Satz 1)";
+    label en unofficial "amount of the construction contractor's security to be provided — compensation plus 10 per cent for ancillary claims (§ 650f (1) sentence 1)";
+}
+pub relation sicherheitsanspruch_650f(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann vom Besteller Sicherheit für die noch nicht gezahlte Vergütung verlangen (§ 650f Abs. 1 Satz 1)";
+    label en unofficial "the contractor may demand security from the customer for the compensation not yet paid (§ 650f (1) sentence 1)";
+}
+pub relation kein_sicherheitsanspruch_erlangt_650f(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat für seinen Vergütungsanspruch keine Sicherheit nach § 650f Abs. 1 oder 2 erlangt (§ 650f Abs. 4) — ausdrückliche Angabe des Falls";
+    label en unofficial "the contractor has obtained no security under § 650f (1) or (2) for their claim to compensation (§ 650f (4)) — express statement of the case";
+}
+
+@source(BGB_P650f)
+rule Bauhandwerkersicherung650fAbs1(w: Werkvertrag, betrag: Money) strict {
+    label de official "Der Unternehmer kann vom Besteller Sicherheit für die auch in Zusatzaufträgen vereinbarte und noch nicht gezahlte Vergütung einschließlich dazugehöriger Nebenforderungen, die mit 10 Prozent des zu sichernden Vergütungsanspruchs anzusetzen sind, verlangen (§ 650f Abs. 1 Satz 1) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "The contractor may demand security from the customer for the compensation agreed, including in supplementary orders, and not yet paid, including the ancillary claims to be applied at 10 per cent of the claim to be secured (§ 650f (1) sentence 1) — one division, rounded to the cent (ledger D-07-07)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when nicht_gezahlte_verguetung_650f(w, betrag);
+    when kein_ausnahmefall_650f_abs6(w);
+    then sicherheitsbetrag_650f(w, betrag + div_round(betrag * 10, 100 * 1.0, 2, "HALF_UP"));
+}
+
+@source(BGB_P650f)
+rule Sicherheitsanspruch650fAbs1(w: Werkvertrag, betrag: Money) strict {
+    label de official "Der Anspruch des Unternehmers auf Sicherheit wird nicht dadurch ausgeschlossen, dass der Besteller Erfüllung verlangen kann oder das Werk abgenommen hat (§ 650f Abs. 1 Satz 3)";
+    label en unofficial "The contractor's claim to security is not excluded by the fact that the customer may demand performance or has accepted the work (§ 650f (1) sentence 3)";
+    effective [@2018-01-01, infinity);
+    when sicherheitsbetrag_650f(w, betrag);
+    then sicherheitsanspruch_650f(w);
+}
+
+pub relation sicherheit_650f_verlangt(w: Werkvertrag, u: Person, b: Person) kind empirical {
+    label de official "der Unternehmer hat vom Besteller Sicherheit verlangt (§ 650f Abs. 1)";
+    label en unofficial "the contractor demanded security from the customer (§ 650f (1))";
+}
+
+@source(BGB_P650f)
+rule PositionSicherheitsanspruch650fAbs1(w: Werkvertrag, u: Person, b: Person, beginn: Date, betrag: Money) strict {
+    label de official "Der Unternehmer kann vom Besteller Sicherheit verlangen (§ 650f Abs. 1) — normative Position";
+    label en unofficial "the contractor may demand security from the customer (§ 650f (1)) — normative position";
+    effective [@2018-01-01, infinity);
+    when unternehmer(w, u);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, beginn);
+    when sicherheitsbetrag_650f(w, betrag);
+    then liberty Sicherheitsanspruch650fAbs1Position {
+        holder u;
+        action sicherheit_650f_verlangt(w, u, b);
+        window [beginn, infinity);
+    };
+}
+
+@source(BGB_P650f)
+rule KeineSicherungOeffentlicherBesteller650fAbs6(w: Werkvertrag) strict {
+    label de official "Die Absätze 1 bis 5 finden keine Anwendung, wenn der Besteller eine juristische Person des öffentlichen Rechts oder ein öffentlich-rechtliches Sondervermögen ist, über deren Vermögen ein Insolvenzverfahren unzulässig ist (§ 650f Abs. 6 Satz 1 Nr. 1)";
+    label en unofficial "Subsections (1) to (5) do not apply where the customer is a legal person under public law or a public-law special fund whose assets cannot be subject to insolvency proceedings (§ 650f (6) sentence 1 no. 1)";
+    effective [@2018-01-01, infinity);
+    when besteller_ist_juristische_person_des_oeffentlichen_rechts_650f(w);
+    then sicherung_650f_ausgeschlossen(w);
+}
+
+pub relation sicherung_650f_ausgeschlossen(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Bauhandwerkersicherung der Absätze 1 bis 5 ist ausgeschlossen (§ 650f Abs. 6 Satz 1)";
+    label en unofficial "the construction contractor's security under subsections (1) to (5) is excluded (§ 650f (6) sentence 1)";
+}
+
+pub relation sicherheitsfrist_ablauf_650f(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "letzter Tag der vom Unternehmer zur Leistung der Sicherheit bestimmten angemessenen Frist (§ 650f Abs. 5 Satz 1)";
+    label en unofficial "last day of the appropriate period set by the contractor for providing the security (§ 650f (5) sentence 1)";
+}
+pub relation sicherheit_bis_fristablauf_nicht_geleistet_650f(w: Werkvertrag) kind empirical {
+    label de official "die Sicherheit wurde bis zum Ablauf der Frist nicht geleistet (§ 650f Abs. 5 Satz 1) — ausdrückliche Angabe des Falls";
+    label en unofficial "the security was not provided before the period expired (§ 650f (5) sentence 1) — express statement of the case";
+}
+pub relation leistungsverweigerungs_und_kuendigungsrecht_650f(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann die Leistung verweigern oder den Vertrag kündigen (§ 650f Abs. 5 Satz 1)";
+    label en unofficial "the contractor may refuse performance or terminate the contract (§ 650f (5) sentence 1)";
+}
+
+@source(BGB_P650f)
+rule Kuendigungsrecht650fAbs5(w: Werkvertrag, ablauf: Date) strict {
+    label de official "Hat der Unternehmer dem Besteller erfolglos eine angemessene Frist zur Leistung der Sicherheit nach Absatz 1 bestimmt, so kann er die Leistung verweigern oder den Vertrag kündigen (§ 650f Abs. 5 Satz 1)";
+    label en unofficial "Where the contractor has set the customer an appropriate period for providing the security under (1) without success, they may refuse performance or terminate the contract (§ 650f (5) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when sicherheitsanspruch_650f(w);
+    when sicherheitsfrist_ablauf_650f(w, ablauf);
+    when sicherheit_bis_fristablauf_nicht_geleistet_650f(w);
+    then leistungsverweigerungs_und_kuendigungsrecht_650f(w);
+}
+
+pub relation kuendigung_wegen_fehlender_sicherheit_650f(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer hat den Vertrag wegen der nicht geleisteten Sicherheit gekündigt (§ 650f Abs. 5 Satz 2)";
+    label en unofficial "the contractor terminated the contract because the security was not provided (§ 650f (5) sentence 2)";
+}
+pub relation verguetungsanspruch_nach_kuendigung_650f(w: Werkvertrag, betrag: Money) kind institutional {
+    key(w);
+    label de official "dem Unternehmer zustehender Teil der Vergütung nach der Kündigung wegen fehlender Sicherheit — vermutete 5 Prozent des nicht erbrachten Teils (§ 650f Abs. 5 Satz 3)";
+    label en unofficial "part of the compensation due to the contractor after termination for want of security — presumed 5 per cent of the part not performed (§ 650f (5) sentence 3)";
+}
+pub relation gegenbeweis_andere_ersparnis_650f(w: Werkvertrag) kind empirical {
+    label de official "es ist bewiesen, dass dem Unternehmer nach Anrechnung des Ersparten und anderweit Erworbenen ein anderer Betrag als die vermuteten 5 Prozent zusteht (§ 650f Abs. 5 Satz 2, 3) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "it has been proved that, after setting off what was saved and otherwise earned, the contractor is entitled to an amount other than the presumed 5 per cent (§ 650f (5) sentences 2, 3) — express rebutting evidence of the case";
+}
+
+@source(BGB_P650f)
+presumption Verguetungsvermutung650fAbs5Satz3(w: Werkvertrag, betrag: Money) {
+    label de official "Es wird vermutet, dass dem Unternehmer nach der Kündigung wegen fehlender Sicherheit 5 Prozent der auf den noch nicht erbrachten Teil der Werkleistung entfallenden vereinbarten Vergütung zustehen (§ 650f Abs. 5 Satz 3) — eine Division, gerundet auf den Cent (Ledger D-07-07)";
+    label en unofficial "It is presumed that after termination for want of security the contractor is entitled to 5 per cent of the agreed compensation attributable to the part of the work not yet performed (§ 650f (5) sentence 3) — one division, rounded to the cent (ledger D-07-07)";
+    when kuendigung_wegen_fehlender_sicherheit_650f(w)
+        and verguetung_fuer_nicht_erbrachten_teil_648(w, betrag);
+    presume verguetungsanspruch_nach_kuendigung_650f(w, div_round(betrag * 5, 100 * 1.0, 2, "HALF_UP"));
+    unless gegenbeweis_andere_ersparnis_650f(w)
+        and verguetung_fuer_nicht_erbrachten_teil_648(w, betrag)
+        then not verguetungsanspruch_nach_kuendigung_650f(w, div_round(betrag * 5, 100 * 1.0, 2, "HALF_UP"));
+}
+
+pub relation abweichende_vereinbarung_650f(w: Werkvertrag) kind empirical {
+    label de official "eine von den Absätzen 1 bis 5 abweichende Vereinbarung ist getroffen (§ 650f Abs. 7)";
+    label en unofficial "an agreement deviating from subsections (1) to (5) has been made (§ 650f (7))";
+}
+pub relation abweichende_vereinbarung_unwirksam_650f(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die abweichende Vereinbarung ist unwirksam (§ 650f Abs. 7)";
+    label en unofficial "the deviating agreement is void (§ 650f (7))";
+}
+
+@source(BGB_P650f)
+rule AbweichendeVereinbarungUnwirksam650fAbs7(w: Werkvertrag) strict {
+    label de official "Eine von den Absätzen 1 bis 5 abweichende Vereinbarung ist unwirksam (§ 650f Abs. 7)";
+    label en unofficial "An agreement deviating from subsections (1) to (5) is void (§ 650f (7))";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when abweichende_vereinbarung_650f(w);
+    then abweichende_vereinbarung_unwirksam_650f(w);
+}
+
+// --- § 650g Zustandsfeststellung bei Verweigerung der Abnahme; Schlussrechnung -------------------------------
+
+pub relation abnahme_unter_mangelangabe_verweigert_650g(w: Werkvertrag) kind empirical {
+    label de official "der Besteller verweigert die Abnahme unter Angabe von Mängeln (§ 650g Abs. 1 Satz 1)";
+    label en unofficial "the customer refuses acceptance stating defects (§ 650g (1) sentence 1)";
+}
+pub relation zustandsfeststellung_verlangt_650g(w: Werkvertrag) kind empirical {
+    label de official "der Unternehmer verlangt die gemeinsame Feststellung des Zustands des Werks (§ 650g Abs. 1 Satz 1)";
+    label en unofficial "the contractor demands the joint determination of the state of the work (§ 650g (1) sentence 1)";
+}
+pub relation an_zustandsfeststellung_mitgewirkt_650g(w: Werkvertrag) kind empirical {
+    label de official "an der gemeinsamen Feststellung des Zustands des Werks wurde mitgewirkt (§ 650g Abs. 1 Satz 1)";
+    label en unofficial "the joint determination of the state of the work was participated in (§ 650g (1) sentence 1)";
+}
+pub relation besteller_bleibt_termin_fern_650g(w: Werkvertrag) kind empirical {
+    label de official "der Besteller bleibt einem vereinbarten oder vom Unternehmer innerhalb einer angemessenen Frist bestimmten Termin zur Zustandsfeststellung fern (§ 650g Abs. 2 Satz 1)";
+    label en unofficial "the customer fails to attend an agreed appointment for determining the state of the work, or one set by the contractor within an appropriate period (§ 650g (2) sentence 1)";
+}
+pub relation fernbleiben_nicht_zu_vertreten_und_mitgeteilt_650g(w: Werkvertrag) kind empirical {
+    label de official "der Besteller bleibt infolge eines Umstands fern, den er nicht zu vertreten hat und den er dem Unternehmer unverzüglich mitgeteilt hat (§ 650g Abs. 2 Satz 2)";
+    label en unofficial "the customer is absent owing to a circumstance for which they are not responsible and which they communicated to the contractor without undue delay (§ 650g (2) sentence 2)";
+}
+pub relation einseitige_zustandsfeststellung_zulaessig_650g(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "der Unternehmer kann die Zustandsfeststellung einseitig vornehmen (§ 650g Abs. 2 Satz 1)";
+    label en unofficial "the contractor may determine the state of the work unilaterally (§ 650g (2) sentence 1)";
+}
+
+@source(BGB_P650g)
+rule Mitwirkungspflicht650gAbs1(w: Werkvertrag, b: Person, schluss: Date) strict {
+    label de official "Verweigert der Besteller die Abnahme unter Angabe von Mängeln, hat er auf Verlangen des Unternehmers an einer gemeinsamen Feststellung des Zustands des Werks mitzuwirken (§ 650g Abs. 1 Satz 1)";
+    label en unofficial "Where the customer refuses acceptance stating defects, they must, at the contractor's request, participate in a joint determination of the state of the work (§ 650g (1) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when besteller(w, b);
+    when werkvertrag_geschlossen_am(w, schluss);
+    when abnahme_unter_mangelangabe_verweigert_650g(w);
+    when zustandsfeststellung_verlangt_650g(w);
+    then duty ZustandsfeststellungMitwirken650g {
+        bearer b;
+        achieve an_zustandsfeststellung_mitgewirkt_650g(w) during [schluss, infinity);
+    };
+}
+
+@source(BGB_P650g)
+rule EinseitigeZustandsfeststellung650gAbs2(w: Werkvertrag) strict {
+    label de official "Bleibt der Besteller einem Termin zur Zustandsfeststellung fern, so kann der Unternehmer die Zustandsfeststellung auch einseitig vornehmen; dies gilt nicht bei nicht zu vertretendem und unverzüglich mitgeteiltem Fernbleiben (§ 650g Abs. 2 Satz 1, 2)";
+    label en unofficial "Where the customer fails to attend an appointment for determining the state of the work, the contractor may make the determination unilaterally; this does not apply where the absence is not their responsibility and was communicated without undue delay (§ 650g (2) sentences 1, 2)";
+    effective [@2018-01-01, infinity);
+    when besteller_bleibt_termin_fern_650g(w);
+    when not fernbleiben_nicht_zu_vertreten_und_mitgeteilt_650g(w);
+    then einseitige_zustandsfeststellung_zulaessig_650g(w);
+}
+
+pub relation werk_dem_besteller_verschafft_650g(w: Werkvertrag) kind empirical {
+    label de official "das Werk ist dem Besteller verschafft worden (§ 650g Abs. 3 Satz 1)";
+    label en unofficial "the work has been provided to the customer (§ 650g (3) sentence 1)";
+}
+pub relation offenkundiger_mangel_nicht_angegeben_650g(w: Werkvertrag) kind empirical {
+    label de official "in der Zustandsfeststellung nach Absatz 1 oder 2 ist ein offenkundiger Mangel nicht angegeben (§ 650g Abs. 3 Satz 1)";
+    label en unofficial "an obvious defect is not stated in the determination of the state of the work under (1) or (2) (§ 650g (3) sentence 1)";
+}
+pub relation mangel_nach_art_nicht_vom_besteller_verursachbar_650g(w: Werkvertrag) kind empirical {
+    label de official "der Mangel kann nach seiner Art nicht vom Besteller verursacht worden sein (§ 650g Abs. 3 Satz 2) — ausdrücklicher Gegenbeweis des Falls";
+    label en unofficial "by its nature the defect cannot have been caused by the customer (§ 650g (3) sentence 2) — express rebutting evidence of the case";
+}
+pub relation mangel_nach_zustandsfeststellung_entstanden_650g(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "es wird vermutet, dass der Mangel nach der Zustandsfeststellung entstanden und vom Besteller zu vertreten ist (§ 650g Abs. 3 Satz 1)";
+    label en unofficial "it is presumed that the defect arose after the determination of the state of the work and is the customer's responsibility (§ 650g (3) sentence 1)";
+}
+
+@source(BGB_P650g)
+presumption Mangelvermutung650gAbs3(w: Werkvertrag) {
+    label de official "Ist das Werk dem Besteller verschafft worden und ist in der Zustandsfeststellung ein offenkundiger Mangel nicht angegeben, wird vermutet, dass dieser nach der Zustandsfeststellung entstanden und vom Besteller zu vertreten ist (§ 650g Abs. 3 Satz 1)";
+    label en unofficial "Where the work has been provided to the customer and an obvious defect is not stated in the determination of its state, it is presumed that the defect arose after the determination and is the customer's responsibility (§ 650g (3) sentence 1)";
+    when werk_dem_besteller_verschafft_650g(w)
+        and offenkundiger_mangel_nicht_angegeben_650g(w);
+    presume mangel_nach_zustandsfeststellung_entstanden_650g(w);
+    unless mangel_nach_art_nicht_vom_besteller_verursachbar_650g(w)
+        then not mangel_nach_zustandsfeststellung_entstanden_650g(w);
+}
+
+pub relation schlussrechnung_zugegangen_am_650g(w: Werkvertrag, tag: Date) kind empirical {
+    key(w);
+    label de official "Tag des Zugangs der Schlussrechnung beim Besteller (§ 650g Abs. 4 Satz 3)";
+    label en unofficial "day the final invoice was received by the customer (§ 650g (4) sentence 3)";
+}
+pub relation einwendungsfrist_kalenderende_650g(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "kalendarisches Ende der Dreißigtagefrist für begründete Einwendungen gegen die Prüffähigkeit der Schlussrechnung (§ 650g Abs. 4 Satz 3) — Politik BGB_DIENST_WERK_KALENDER";
+    label en unofficial "calendar end of the thirty-day period for reasoned objections to the verifiability of the final invoice (§ 650g (4) sentence 3) — policy BGB_DIENST_WERK_KALENDER";
+}
+pub relation einwendungsfrist_ende_650g(w: Werkvertrag, tag: Date) kind institutional {
+    key(w);
+    label de official "letzter Tag für begründete Einwendungen gegen die Prüffähigkeit der Schlussrechnung nach der Verlegung des § 193 — die Einwendungen sind INNERHALB der Frist zu erheben";
+    label en unofficial "last day for reasoned objections to the verifiability of the final invoice after the postponement under § 193 — the objections must be raised WITHIN the period";
+}
+pub relation keine_begruendeten_einwendungen_650g(w: Werkvertrag) kind empirical {
+    label de official "der Besteller hat innerhalb der Frist keine begründeten Einwendungen gegen die Prüffähigkeit erhoben (§ 650g Abs. 4 Satz 3) — ausdrückliche Angabe des Falls";
+    label en unofficial "the customer raised no reasoned objections to the verifiability within the period (§ 650g (4) sentence 3) — express statement of the case";
+}
+@source(BGB_P650g)
+pub external judgment relation schlussrechnung_pruefbar_650g(w: Werkvertrag) {
+    authority Court;
+    label de official "§ 650g Abs. 4 Satz 2. Die Schlussrechnung enthält eine übersichtliche Aufstellung der erbrachten Leistungen und ist für den Besteller nachvollziehbar — sie ist prüffähig";
+    label en unofficial "§ 650g (4) sentence 2. The final invoice contains a clear statement of the services rendered and is comprehensible to the customer — it is verifiable";
+}
+pub relation schlussrechnung_gilt_als_pruefbar_650g(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Schlussrechnung gilt als prüffähig (§ 650g Abs. 4 Satz 3)";
+    label en unofficial "the final invoice is deemed verifiable (§ 650g (4) sentence 3)";
+}
+
+@source(BGB_P650g)
+rule EinwendungsfristKalenderende650gAbs4(w: Werkvertrag, zugang: Date) strict {
+    label de official "Der Besteller kann innerhalb von 30 Tagen nach Zugang der Schlussrechnung begründete Einwendungen gegen ihre Prüffähigkeit erheben (§ 650g Abs. 4 Satz 3) — kalendarisches Ende unter BGB_DIENST_WERK_KALENDER";
+    label en unofficial "The customer may raise reasoned objections to the verifiability of the final invoice within 30 days of receiving it (§ 650g (4) sentence 3) — calendar end under BGB_DIENST_WERK_KALENDER";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when schlussrechnung_zugegangen_am_650g(w, zugang);
+    then einwendungsfrist_kalenderende_650g(w, add_calendar_period(zugang, 30 calendar_day));
+}
+
+@source(BGB_P650g)
+rule Verlegung193Einwendungsfrist650g(w: Werkvertrag, k: Date) strict {
+    label de official "Sind die Einwendungen innerhalb der Frist zu erheben und fällt der letzte Tag auf einen Sonntag, einen anerkannten Feiertag oder einen Sonnabend, so tritt an seine Stelle der nächste Werktag (§ 193) — derselbe Ausdruck wie im Eigentümerpaket de.bgb.fristen";
+    label en unofficial "Where the objections must be raised within the period and the last day falls on a Sunday, a recognised public holiday or a Saturday, the next working day takes its place (§ 193) — the same expression as in the owner package de.bgb.fristen";
+    effective [@2018-01-01, infinity);
+    when einwendungsfrist_kalenderende_650g(w, k);
+    then einwendungsfrist_ende_650g(w, add_business_days(k, 1 business_day));
+}
+
+@source(BGB_P650g)
+rule SchlussrechnungGiltAlsPruefbar650gAbs4(w: Werkvertrag, ende: Date) strict {
+    label de official "Die Schlussrechnung gilt als prüffähig, wenn der Besteller nicht innerhalb von 30 Tagen nach Zugang begründete Einwendungen gegen ihre Prüffähigkeit erhoben hat (§ 650g Abs. 4 Satz 3)";
+    label en unofficial "The final invoice is deemed verifiable if the customer has not raised reasoned objections to its verifiability within 30 days of receipt (§ 650g (4) sentence 3)";
+    effective [@2018-01-01, infinity);
+    when einwendungsfrist_ende_650g(w, ende);
+    when keine_begruendeten_einwendungen_650g(w);
+    then schlussrechnung_gilt_als_pruefbar_650g(w);
+}
+
+@source(BGB_P650g)
+rule FaelligkeitNachSchlussrechnung650gAbs4(w: Werkvertrag, tag: Date) strict {
+    label de official "Die Vergütung ist zu entrichten, wenn der Besteller das Werk abgenommen hat und der Unternehmer ihm eine prüffähige Schlussrechnung erteilt hat (§ 650g Abs. 4 Satz 1)";
+    label en unofficial "The compensation is payable where the customer has accepted the work and the contractor has issued them a verifiable final invoice (§ 650g (4) sentence 1)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when abnahme_am(w, tag);
+    when schlussrechnung_gilt_als_pruefbar_650g(w);
+    then bauverguetung_faellig_650g(w);
+}
+
+pub relation bauverguetung_faellig_650g(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Vergütung des Bauvertrags ist zu entrichten (§ 650g Abs. 4 Satz 1)";
+    label en unofficial "the compensation under the construction contract is payable (§ 650g (4) sentence 1)";
+}
+
+// --- § 650h Schriftform der Kündigung ------------------------------------------------------------------------
+
+pub relation kuendigung_des_bauvertrags_schriftlich_650h(w: Werkvertrag) kind empirical {
+    label de official "die Kündigung des Bauvertrags ist schriftlich erklärt (§ 650h)";
+    label en unofficial "the termination of the construction contract is declared in writing (§ 650h)";
+}
+pub relation kuendigung_des_bauvertrags_nicht_schriftlich_650h(w: Werkvertrag) kind empirical {
+    label de official "die Kündigung des Bauvertrags ist nicht schriftlich erklärt (§ 650h) — ausdrückliche Angabe des Falls";
+    label en unofficial "the termination of the construction contract is not declared in writing (§ 650h) — express statement of the case";
+}
+pub relation kuendigung_650h_formwirksam(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Kündigung des Bauvertrags erfüllt das Formerfordernis der Schriftform (§ 650h)";
+    label en unofficial "the termination of the construction contract satisfies the requirement of written form (§ 650h)";
+}
+pub relation kuendigung_650h_formunwirksam(w: Werkvertrag) kind institutional {
+    key(w);
+    label de official "die Kündigung des Bauvertrags erfüllt das Formerfordernis der Schriftform nicht (§ 650h)";
+    label en unofficial "the termination of the construction contract does not satisfy the requirement of written form (§ 650h)";
+}
+
+@source(BGB_P650h)
+rule Schriftform650hWirksam(w: Werkvertrag) strict {
+    label de official "Die Kündigung des Bauvertrags bedarf der schriftlichen Form (§ 650h)";
+    label en unofficial "The termination of the construction contract requires written form (§ 650h)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when kuendigung_des_bauvertrags_schriftlich_650h(w);
+    then kuendigung_650h_formwirksam(w);
+}
+
+@source(BGB_P650h)
+rule Schriftform650hUnwirksam(w: Werkvertrag) strict {
+    label de official "Eine nicht schriftlich erklärte Kündigung des Bauvertrags erfüllt das Formerfordernis nicht (§ 650h)";
+    label en unofficial "A termination of the construction contract not declared in writing does not satisfy the form requirement (§ 650h)";
+    effective [@2018-01-01, infinity);
+    when bauvertrag_650a(w);
+    when kuendigung_des_bauvertrags_nicht_schriftlich_650h(w);
+    then kuendigung_650h_formunwirksam(w);
+}

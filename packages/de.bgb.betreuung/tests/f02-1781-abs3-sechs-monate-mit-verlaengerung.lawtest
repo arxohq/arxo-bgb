@@ -1,0 +1,15 @@
+language "law.core" version "0.2";
+package de.bgb.betreuung version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-betreuung";
+// § 1781 Absatz 3 Satz 2: dieselbe Bestellung, aber mit Verlängerungsbeschluss — die Frist verdoppelt sich auf sechs Monate und endet am 10.07.2026 (Freitag).
+test "§ 1781 Absatz 3: sechs Monate ab Bestellung mit Verlängerungsbeschluss" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_BETREUUNG_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": vormundbestellungsfrist_1781(entity_ref("urn:de:bgb:bt:f02:F")) { origin case_input; }
+        assert "f2": vorlaeufige_vormundbestellung_am(entity_ref("urn:de:bgb:bt:f02:F"), @2026-01-10) { origin case_input; }
+        assert "f3": vormundbestellungsfrist_1781_verlaengert(entity_ref("urn:de:bgb:bt:f02:F")) { origin adjudicated; }
+    }
+    evaluate truth(de.bgb.fristen::frist_ende(entity_ref("urn:de:bgb:bt:f02:F"), @2026-07-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

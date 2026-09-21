@@ -1,0 +1,36 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// BMJ „Erben und Vererben“ (Stand Juli 2025), S. 17, Beispiel: Ehefrau (Zugewinngemeinschaft) und Eltern — die Ehefrau erhält 3/4 (1/2 + 1/4), die Eltern als Erben 2. Ordnung je 1/8 (§ 1925 Abs. 2, § 1931 Abs. 1, § 1371 Abs. 1).
+test "§§ 1925, 1931, 1371: Ehegatte bei Zugewinngemeinschaft neben den Eltern (BMJ-Beispiel)" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:pilot:e04:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:F")) { origin case_input; }
+        assert "f4": ehe_beim_erbfall(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:EHE")) { origin case_input; }
+        assert "f5": de.bgb.ehe::ehegatten(entity_ref("urn:de:bgb:pilot:e04:EHE"), entity_ref("urn:de:bgb:pilot:e04:D"), entity_ref("urn:de:bgb:pilot:e04:S")) { origin case_input; }
+        assert "f6": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:S")) { origin case_input; }
+        assert "f7": de.bgb.ehe::kein_ehevertrag(entity_ref("urn:de:bgb:pilot:e04:EHE")) { origin case_input; }
+        assert "f10": abstammung(entity_ref("urn:de:bgb:pilot:e04:F"), entity_ref("urn:de:bgb:pilot:e04:M"), entity_ref("urn:de:bgb:pilot:e04:D")) { origin case_input; }
+        assert "f11": abstammung(entity_ref("urn:de:bgb:pilot:e04:F"), entity_ref("urn:de:bgb:pilot:e04:V"), entity_ref("urn:de:bgb:pilot:e04:D")) { origin case_input; }
+        assert "f12": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:M")) { origin case_input; }
+        assert "f13": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:V")) { origin case_input; }
+    }
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:S"), 3 / 4));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:M"), 1 / 8));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e04:E"), entity_ref("urn:de:bgb:pilot:e04:V"), 1 / 8));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(berufene_ordnung(entity_ref("urn:de:bgb:pilot:e04:E"), 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erbschaft_vollstaendig_verteilt(entity_ref("urn:de:bgb:pilot:e04:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

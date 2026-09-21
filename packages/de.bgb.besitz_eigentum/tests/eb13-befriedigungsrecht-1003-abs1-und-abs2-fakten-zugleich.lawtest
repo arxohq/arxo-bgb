@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 1003 Abs. 1 und Abs. 2 Fakten zugleich im selben Fall: Bestreiten schließt den einfachen Weg des Abs. 1 aus, der Weg des Abs. 2 (Feststellung, zweite Frist) trägt trotzdem — Regressionstest zu D-10-13 (vormals NEITHER statt COMPUTED).
+test "§ 1003: Abs. 2 trägt, wenn Abs. 1- und Abs. 2-Tatsachen im selben Fall vorliegen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": aufforderung_zur_erklaerung_mit_betrag_am(entity_ref("urn:de:bgb:be:eb13:sache"), entity_ref("urn:de:bgb:be:eb13:B"), @2026-03-01, 400.00 EUR) { origin case_input; }
+        assert "f2": vom_besitzer_bestimmte_frist_abgelaufen_am(entity_ref("urn:de:bgb:be:eb13:sache"), entity_ref("urn:de:bgb:be:eb13:B"), @2026-04-01) { origin case_input; }
+        assert "f3": anspruch_vor_ablauf_bestritten(entity_ref("urn:de:bgb:be:eb13:sache"), entity_ref("urn:de:bgb:be:eb13:B")) { origin case_input; }
+        assert "f4": rechtskraeftige_feststellung_des_betrags_am(entity_ref("urn:de:bgb:be:eb13:sache"), entity_ref("urn:de:bgb:be:eb13:B"), @2026-06-01) { origin adjudicated; }
+        assert "f5": zweite_aufforderungsfrist_nach_feststellung_abgelaufen_am(entity_ref("urn:de:bgb:be:eb13:sache"), entity_ref("urn:de:bgb:be:eb13:B"), @2026-07-01) { origin case_input; }
+    }
+    evaluate truth(befriedigungsrecht_aus_der_sache(entity_ref("urn:de:bgb:be:eb13:sache"), entity_ref("urn:de:bgb:be:eb13:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

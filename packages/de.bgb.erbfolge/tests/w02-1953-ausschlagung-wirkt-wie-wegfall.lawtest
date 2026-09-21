@@ -1,0 +1,43 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+
+// § 1945, § 1953: Das Kind K1 schlaegt die Erbschaft form- und fristgerecht aus.
+// Der Anfall an es gilt als nicht erfolgt; die Erbschaft faellt demjenigen an,
+// der berufen waere, haette K1 zur Zeit des Erbfalls nicht gelebt (§ 1953 Abs. 2).
+// Erwartung aus dem Text: an die Stelle von K1 tritt sein Kind EK (§ 1924 Abs. 3);
+// K1 haelt 1/2, also erhaelt EK 1/2 und K2 die andere Haelfte.
+test "§ 1953: die Ausschlagung eines Kindes laesst seinen Stamm eintreten" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:e:w02:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:F")) { origin case_input; }
+        assert "f4": abstammung(entity_ref("urn:de:bgb:e:w02:F"), entity_ref("urn:de:bgb:e:w02:D"), entity_ref("urn:de:bgb:e:w02:K1")) { origin case_input; }
+        assert "f5": abstammung(entity_ref("urn:de:bgb:e:w02:F"), entity_ref("urn:de:bgb:e:w02:D"), entity_ref("urn:de:bgb:e:w02:K2")) { origin case_input; }
+        assert "f6": abstammung(entity_ref("urn:de:bgb:e:w02:F"), entity_ref("urn:de:bgb:e:w02:K1"), entity_ref("urn:de:bgb:e:w02:EK")) { origin case_input; }
+        assert "f7": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1")) { origin case_input; }
+        assert "f8": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K2")) { origin case_input; }
+        assert "f9": lebt_beim_erbfall(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:EK")) { origin case_input; }
+        assert "f10": kenntnis_von_anfall_und_grund_am(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1"), @2026-03-05) { origin case_input; }
+        assert "f11": keine_hemmung_der_ausschlagungsfrist(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1")) { origin case_input; }
+        assert "f12": erklaerung_in_oeffentlich_beglaubigter_form(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1")) { origin case_input; }
+        assert "f13": ausschlagung_erklaert_am(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1"), @2026-04-10) { origin case_input; }
+    }
+    evaluate truth(ausgeschlagen(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(weggefallen(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K1")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesamterbteil(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:EK"), 1 / 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesamterbteil(entity_ref("urn:de:bgb:e:w02:E"), entity_ref("urn:de:bgb:e:w02:K2"), 1 / 2));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(nachlass_vollstaendig_verteilt(entity_ref("urn:de:bgb:e:w02:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

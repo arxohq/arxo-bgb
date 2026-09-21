@@ -1,0 +1,834 @@
+// --- Buch 3 Abschnitt 3 Titel 3 Untertitel 5: Fund (§§ 965–984) -----------------------------------
+//
+// Der Fund ist die einzige Stelle dieses Pakets, an der das Gesetz mit GELD
+// und PROZENTSÄTZEN rechnet: § 971 Abs. 1 Satz 2 („von dem Werte der Sache
+// bis zu 500 Euro fünf vom Hundert, von dem Mehrwert drei vom Hundert, bei
+// Tieren drei vom Hundert“), die Schwelle von zehn Euro (§ 965 Abs. 2 Satz 2,
+// § 973 Abs. 2 Satz 1) und die Schwelle von fünfzig Euro (§ 978 Abs. 2
+// Satz 1). Alle Zahlen stehen im Text; erfunden wird keine.
+//
+// RUNDUNG (Politik des Pakets, keine Norm — README „Rundung“, Ledger D-10-06).
+// Das Gesetz nennt keine Rundung. Der Finderlohn wird EINMAL je Anspruch auf
+// den Cent kaufmännisch gerundet: `div_round(Wert × Prozentsatz, 100.0, 2,
+// "HALF_UP")`; bei der Staffel wird erst summiert, dann gerundet, damit keine
+// zweite Rundung entsteht. Der halbe Finderlohn des § 978 Abs. 2 Satz 2 wird
+// aus demselben ungerundeten Zwischenwert gebildet.
+//
+// FRISTEN. § 973 Abs. 1 (sechs Monate nach der Anzeige bei der zuständigen
+// Behörde) und § 973 Abs. 2 (bei einer Sache bis zehn Euro: sechs Monate ab
+// dem Fund) sind ERWERBSFRISTEN: kalendarisches Ende nach §§ 187 Abs. 1,
+// 188 Abs. 2, ohne Verlegung nach § 193. § 977 Satz 2 (drei Jahre) ist eine
+// Klagefrist und liest das Ende mit § 193.
+
+pub entity Fund {
+    label de official "Fund: eine verlorene Sache ist gefunden und an sich genommen worden (§ 965 Abs. 1)";
+    label en unofficial "finding: a lost thing has been found and taken (§ 965 (1))";
+}
+
+pub relation fundsache(f: Fund, s: Sache) kind empirical {
+    key(f);
+    label de official "verlorene Sache, die gefunden und an sich genommen worden ist (§ 965 Abs. 1)";
+    label en unofficial "lost thing found and taken (§ 965 (1))";
+}
+pub relation finder(f: Fund, p: Person) kind empirical {
+    key(f);
+    label de official "Finder (§ 965 Abs. 1)";
+    label en unofficial "finder (§ 965 (1))";
+}
+pub relation empfangsberechtigter(f: Fund, p: Person) kind empirical {
+    label de official "Verlierer, Eigentümer oder sonstiger Empfangsberechtigter (§ 965 Abs. 1)";
+    label en unofficial "loser, owner or other person entitled to receive (§ 965 (1))";
+}
+pub relation wert_der_fundsache(f: Fund, wert: Money) kind empirical {
+    key(f);
+    label de official "Wert der Sache, nach dem sich der Finderlohn und die Anzeigepflicht bemessen (§ 965 Abs. 2 Satz 2, § 971 Abs. 1 Satz 2, § 973 Abs. 2, § 978 Abs. 2)";
+    label en unofficial "value of the thing determining the finder's reward and the duty to notify (§ 965 (2) sentence 2, § 971 (1) sentence 2, § 973 (2), § 978 (2))";
+}
+pub relation fundsache_ist_tier(f: Fund) kind empirical {
+    label de official "die gefundene Sache ist ein Tier (§ 971 Abs. 1 Satz 2 Halbsatz 3: „bei Tieren drei vom Hundert“)";
+    label en unofficial "the thing found is an animal (§ 971 (1) sentence 2: „three per cent for animals“)";
+}
+pub relation fundsache_ist_kein_tier(f: Fund) kind empirical {
+    label de official "die gefundene Sache ist kein Tier — ausdrückliche Angabe des Falls; das Fehlen der Angabe ist keine Verneinung (§ 971 Abs. 1 Satz 2)";
+    label en unofficial "the thing found is not an animal — explicit case input; absence of the input is not a denial (§ 971 (1) sentence 2)";
+}
+pub relation fund_bei_der_behoerde_angezeigt_am(f: Fund, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Anzeige des Fundes bei der zuständigen Behörde (§ 965 Abs. 2, § 973 Abs. 1 Satz 1)";
+    label en unofficial "day on which the finding was reported to the competent authority (§ 965 (2), § 973 (1) sentence 1)";
+}
+pub relation gefunden_am(f: Fund, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag des Fundes (§ 973 Abs. 2 Satz 1)";
+    label en unofficial "day of the finding (§ 973 (2) sentence 1)";
+}
+pub relation anzeigepflicht_verletzt(f: Fund) kind empirical {
+    label de official "der Finder hat die Anzeigepflicht verletzt (§ 971 Abs. 2)";
+    label en unofficial "the finder has breached the duty to notify (§ 971 (2))";
+}
+pub relation fund_auf_nachfrage_verheimlicht(f: Fund) kind empirical {
+    label de official "der Finder hat den Fund auf Nachfrage verheimlicht (§ 971 Abs. 2, § 973 Abs. 2 Satz 2)";
+    label en unofficial "the finder concealed the finding when asked (§ 971 (2), § 973 (2) sentence 2)";
+}
+pub relation empfangsberechtigter_vor_fristablauf_bekannt_oder_angemeldet(f: Fund) kind empirical {
+    label de official "vor dem Ablauf der sechsmonatigen Frist ist ein Empfangsberechtigter dem Finder bekannt geworden oder hat sein Recht bei der zuständigen Behörde angemeldet (§ 973 Abs. 1 Satz 1)";
+    label en unofficial "before expiry of the six-month period a person entitled became known to the finder or registered their right with the authority (§ 973 (1) sentence 1)";
+}
+pub relation fundfrist(f: Fund, fr: Frist) kind empirical {
+    label de official "Frist des § 973 für diesen Fund — Bezeichnung der Frist, deren Ablauf `de.bgb.fristen` rechnet";
+    label en unofficial "period of § 973 for this finding — handle of the period computed by `de.bgb.fristen`";
+}
+pub relation fund_in_behoerde_oder_verkehrsanstalt(f: Fund) kind empirical {
+    label de official "die Sache ist in den Geschäftsräumen oder den Beförderungsmitteln einer öffentlichen Behörde oder einer dem öffentlichen Verkehr dienenden Verkehrsanstalt gefunden worden (§ 978 Abs. 1 Satz 1)";
+    label en unofficial "the thing was found on the premises or in the vehicles of a public authority or a public transport undertaking (§ 978 (1) sentence 1)";
+}
+pub relation finder_ist_bediensteter(f: Fund) kind empirical {
+    label de official "der Finder ist Bediensteter der Behörde oder der Verkehrsanstalt (§ 978 Abs. 2 Satz 3)";
+    label en unofficial "the finder is an employee of the authority or the transport undertaking (§ 978 (2) sentence 3)";
+}
+pub relation ablieferungspflicht_verletzt(f: Fund) kind empirical {
+    label de official "der Finder hat die Ablieferungspflicht verletzt (§ 978 Abs. 2 Satz 3)";
+    label en unofficial "the finder has breached the duty to hand over (§ 978 (2) sentence 3)";
+}
+pub relation schatz_entdeckt(s: Sache, entdecker: Person, verbergende_sache: Sache) kind empirical {
+    label de official "eine Sache, die so lange verborgen gelegen hat, dass der Eigentümer nicht mehr zu ermitteln ist (Schatz), ist entdeckt und infolge der Entdeckung in Besitz genommen worden (§ 984)";
+    label en unofficial "a thing hidden so long that its owner can no longer be ascertained (treasure) has been discovered and taken into possession (§ 984)";
+}
+
+pub relation anzeigepflicht_des_finders(f: Fund, finder: Person) kind derived {
+    label de official "Pflicht des Finders, dem Verlierer, dem Eigentümer oder einem sonstigen Empfangsberechtigten und, wenn er diese nicht kennt, der zuständigen Behörde unverzüglich Anzeige zu machen (§ 965); die Anzeige an die Behörde entfällt, wenn die Sache nicht mehr als zehn Euro wert ist (§ 965 Abs. 2 Satz 2)";
+    label en unofficial "duty of the finder to notify the loser, owner or other entitled person and, if unknown, the competent authority without undue delay (§ 965); notification to the authority is not required if the thing is worth no more than ten euros (§ 965 (2) sentence 2)";
+}
+pub relation finderlohn_grundbetrag(f: Fund, betrag: Money) kind derived {
+    key(f);
+    label de official "Finderlohn nach § 971 Abs. 1 Satz 2: von dem Werte der Sache bis zu 500 Euro fünf vom Hundert, von dem Mehrwert drei vom Hundert, bei Tieren drei vom Hundert";
+    label en unofficial "finder's reward under § 971 (1) sentence 2: five per cent of the value up to 500 euros, three per cent of the excess, three per cent for animals";
+}
+pub relation finderlohnanspruch(f: Fund, finder: Person, betrag: Money) kind derived {
+    label de official "Anspruch des Finders auf Finderlohn gegen den Empfangsberechtigten (§ 971 Abs. 1 Satz 1)";
+    label en unofficial "claim of the finder to the reward against the person entitled (§ 971 (1) sentence 1)";
+}
+pub relation finderlohn_ausgeschlossen(f: Fund) kind derived {
+    label de official "der Anspruch auf Finderlohn ist ausgeschlossen (§ 971 Abs. 2, § 978 Abs. 2 Satz 3)";
+    label en unofficial "the claim to the reward is excluded (§ 971 (2), § 978 (2) sentence 3)";
+}
+pub relation fundfrist_abgelaufen_am(f: Fund, tag: Date) kind derived {
+    key(f);
+    label de official "Tag, mit dessen Ablauf die sechsmonatige Frist des § 973 abgelaufen ist";
+    label en unofficial "day at whose end the six-month period of § 973 expires";
+}
+pub relation eigentumserwerb_des_finders_am(f: Fund, finder: Person, tag: Date) kind derived {
+    label de official "Mit dem Ablauf von sechs Monaten nach der Anzeige des Fundes bei der zuständigen Behörde erwirbt der Finder das Eigentum an der Sache (§ 973 Abs. 1 Satz 1)";
+    label en unofficial "On expiry of six months after reporting the finding to the authority the finder acquires ownership (§ 973 (1) sentence 1)";
+}
+
+@source(BGB_P965) {
+    rule AnzeigepflichtDesFinders(f: Fund, p: Person) defeasible {
+        label de official "Wer eine verlorene Sache findet und an sich nimmt, hat dem Verlierer oder dem Eigentümer oder einem sonstigen Empfangsberechtigten unverzüglich Anzeige zu machen; kennt der Finder die Empfangsberechtigten nicht, so hat er den Fund unverzüglich der zuständigen Behörde anzuzeigen (§ 965 Abs. 1, Abs. 2 Satz 1); ist die Sache nicht mehr als zehn Euro wert, so bedarf es der Anzeige nicht (Abs. 2 Satz 2)";
+        label en unofficial "A person who finds and takes a lost thing must notify the loser, owner or other entitled person without undue delay, and the competent authority if those are unknown (§ 965 (1), (2) sentence 1); no notification is required if the thing is worth no more than ten euros ((2) sentence 2)";
+        when finder(f, p);
+        unless finder(f, p) and sache_nicht_mehr_als_zehn_euro_wert(f);
+        then anzeigepflicht_des_finders(f, p);
+    }
+    rule SacheNichtMehrAlsZehnEuroWert(f: Fund, w: Money) strict {
+        label de official "Ist die Sache nicht mehr als zehn Euro wert, so bedarf es der Anzeige nicht (§ 965 Abs. 2 Satz 2)";
+        label en unofficial "If the thing is worth no more than ten euros, notification is not required (§ 965 (2) sentence 2)";
+        when wert_der_fundsache(f, w) and w <= 10.00 EUR;
+        then sache_nicht_mehr_als_zehn_euro_wert(f);
+    }
+}
+
+pub relation sache_nicht_mehr_als_zehn_euro_wert(f: Fund) kind derived {
+    label de official "die Sache ist nicht mehr als zehn Euro wert (§ 965 Abs. 2 Satz 2, § 973 Abs. 2 Satz 1)";
+    label en unofficial "the thing is worth no more than ten euros (§ 965 (2) sentence 2, § 973 (2) sentence 1)";
+}
+
+@source(BGB_P971) {
+    rule FinderlohnFuenfProzentBisFuenfhundertEuro(f: Fund, w: Money) strict {
+        label de official "Der Finderlohn beträgt von dem Werte der Sache bis zu 500 Euro fünf vom Hundert (§ 971 Abs. 1 Satz 2) — Wert der Sache höchstens 500 Euro";
+        label en unofficial "The reward is five per cent of the value of the thing up to 500 euros (§ 971 (1) sentence 2) — value at most 500 euros";
+        when wert_der_fundsache(f, w) and fundsache_ist_kein_tier(f) and w <= 500.00 EUR;
+        then finderlohn_grundbetrag(f, div_round(w * 5, 100.0, 2, "HALF_UP"));
+    }
+    rule FinderlohnStaffelUeberFuenfhundertEuro(f: Fund, w: Money) strict {
+        label de official "Der Finderlohn beträgt von dem Werte der Sache bis zu 500 Euro fünf vom Hundert, von dem Mehrwert drei vom Hundert (§ 971 Abs. 1 Satz 2) — Wert der Sache über 500 Euro; einmalige kaufmännische Rundung auf den Cent (Politik des Pakets)";
+        label en unofficial "The reward is five per cent of the first 500 euros and three per cent of the excess (§ 971 (1) sentence 2) — value above 500 euros; rounded once to the cent (package policy)";
+        when wert_der_fundsache(f, w) and fundsache_ist_kein_tier(f) and w > 500.00 EUR;
+        then finderlohn_grundbetrag(f, div_round(500.00 EUR * 5 + (w - 500.00 EUR) * 3, 100.0, 2, "HALF_UP"));
+    }
+    rule FinderlohnBeiTierenDreiProzent(f: Fund, w: Money) strict {
+        label de official "Bei Tieren beträgt der Finderlohn drei vom Hundert (§ 971 Abs. 1 Satz 2 Halbsatz 3)";
+        label en unofficial "For animals the reward is three per cent (§ 971 (1) sentence 2)";
+        when wert_der_fundsache(f, w) and fundsache_ist_tier(f);
+        then finderlohn_grundbetrag(f, div_round(w * 3, 100.0, 2, "HALF_UP"));
+    }
+    rule FinderlohnAusgeschlossenBeiPflichtverletzung(f: Fund) strict {
+        label de official "Der Anspruch ist ausgeschlossen, wenn der Finder die Anzeigepflicht verletzt (§ 971 Abs. 2)";
+        label en unofficial "The claim is excluded if the finder breaches the duty to notify (§ 971 (2))";
+        when anzeigepflicht_verletzt(f);
+        then finderlohn_ausgeschlossen(f);
+    }
+    rule FinderlohnAusgeschlossenBeiVerheimlichung(f: Fund) strict {
+        label de official "Der Anspruch ist ausgeschlossen, wenn der Finder den Fund auf Nachfrage verheimlicht (§ 971 Abs. 2)";
+        label en unofficial "The claim is excluded if the finder conceals the finding when asked (§ 971 (2))";
+        when fund_auf_nachfrage_verheimlicht(f);
+        then finderlohn_ausgeschlossen(f);
+    }
+    rule FinderlohnanspruchDesFinders(f: Fund, p: Person, betrag: Money) defeasible {
+        label de official "Der Finder kann von dem Empfangsberechtigten einen Finderlohn verlangen (§ 971 Abs. 1 Satz 1)";
+        label en unofficial "The finder may demand a reward from the person entitled (§ 971 (1) sentence 1)";
+        when finder(f, p) and finderlohn_grundbetrag(f, betrag);
+        unless finder(f, p) and finderlohn_grundbetrag(f, betrag) and finderlohn_ausgeschlossen(f);
+        then finderlohnanspruch(f, p, betrag);
+    }
+}
+
+@source(BGB_P973) {
+    rule FundfristEreignisNachAnzeige(f: Fund, fr: Frist, tag: Date) strict {
+        label de official "Mit dem Ablauf von sechs Monaten nach der Anzeige des Fundes bei der zuständigen Behörde erwirbt der Finder das Eigentum an der Sache (§ 973 Abs. 1 Satz 1) — Ereignis der Frist ist der Tag der Anzeige (§ 187 Abs. 1)";
+        label en unofficial "On expiry of six months after reporting the finding the finder acquires ownership (§ 973 (1) sentence 1) — the event is the day of the report (§ 187 (1))";
+        when fundfrist(f, fr) and fund_bei_der_behoerde_angezeigt_am(f, tag);
+        then de.bgb.fristen::frist_ereignis(fr, tag);
+    }
+    rule FundfristEreignisBeiGeringwertigerSache(f: Fund, fr: Frist, tag: Date) strict {
+        label de official "Ist die Sache nicht mehr als zehn Euro wert, so beginnt die sechsmonatige Frist mit dem Fund (§ 973 Abs. 2 Satz 1)";
+        label en unofficial "If the thing is worth no more than ten euros, the six-month period begins with the finding (§ 973 (2) sentence 1)";
+        when fundfrist(f, fr) and sache_nicht_mehr_als_zehn_euro_wert(f) and gefunden_am(f, tag);
+        then de.bgb.fristen::frist_ereignis(fr, tag);
+    }
+    rule FundfristDauerSechsMonate(f: Fund, fr: Frist, p: Person) strict {
+        label de official "Die Frist des § 973 beträgt sechs Monate (§ 188 Abs. 2, 3)";
+        label en unofficial "The period of § 973 is six months (§ 188 (2), (3))";
+        when fundfrist(f, fr) and finder(f, p);
+        then de.bgb.fristen::frist_dauer_kalender(fr, 6 calendar_month);
+    }
+    rule FundfristAbgelaufen(f: Fund, fr: Frist, k: Date) strict {
+        label de official "Kalendarisches Ende der sechsmonatigen Frist des § 973 (Erwerbsfrist: ohne Verlegung nach § 193)";
+        label en unofficial "Calendar end of the six-month period of § 973 (acquisition period: no transfer under § 193)";
+        when fundfrist(f, fr) and de.bgb.fristen::frist_ende_kalender(fr, k);
+        then fundfrist_abgelaufen_am(f, k);
+    }
+    rule EigentumserwerbDesFinders(f: Fund, s: Sache, p: Person, ende: Date) defeasible {
+        label de official "Mit dem Ablauf von sechs Monaten nach der Anzeige des Fundes bei der zuständigen Behörde erwirbt der Finder das Eigentum an der Sache, es sei denn, dass vorher ein Empfangsberechtigter dem Finder bekannt geworden ist oder sein Recht bei der zuständigen Behörde angemeldet hat (§ 973 Abs. 1 Satz 1); der Finder erwirbt das Eigentum nicht, wenn er den Fund auf Nachfrage verheimlicht (Abs. 2 Satz 2)";
+        label en unofficial "On expiry of six months the finder acquires ownership unless a person entitled became known or registered their right before (§ 973 (1) sentence 1); no acquisition if the finder concealed the finding ((2) sentence 2)";
+        when fundfrist_abgelaufen_am(f, ende) and fundsache(f, s) and finder(f, p);
+        unless fundsache(f, s) and finder(f, p) and fundfrist_abgelaufen_am(f, ende)
+            and eigentumserwerb_des_finders_ausgeschlossen(f);
+        then eigentumserwerb_des_finders_am(f, p, ende);
+    }
+    rule ErwerbAusgeschlossenBeiBekanntemEmpfangsberechtigten(f: Fund) strict {
+        label de official "Der Erwerb tritt nicht ein, wenn vorher ein Empfangsberechtigter dem Finder bekannt geworden ist oder sein Recht bei der zuständigen Behörde angemeldet hat (§ 973 Abs. 1 Satz 1)";
+        label en unofficial "No acquisition if a person entitled became known to the finder or registered their right before (§ 973 (1) sentence 1)";
+        when empfangsberechtigter_vor_fristablauf_bekannt_oder_angemeldet(f);
+        then eigentumserwerb_des_finders_ausgeschlossen(f);
+    }
+    rule ErwerbAusgeschlossenBeiVerheimlichung(f: Fund) strict {
+        label de official "Der Finder erwirbt das Eigentum nicht, wenn er den Fund auf Nachfrage verheimlicht (§ 973 Abs. 2 Satz 2)";
+        label en unofficial "The finder does not acquire ownership if they concealed the finding when asked (§ 973 (2) sentence 2)";
+        when fund_auf_nachfrage_verheimlicht(f);
+        then eigentumserwerb_des_finders_ausgeschlossen(f);
+    }
+    rule EigentumDesFinders(f: Fund, s: Sache, p: Person, tag: Date) defeasible {
+        label de official "Mit dem Erwerb nach § 973 wird der Finder Eigentümer der Sache; die sonstigen Rechte an der Sache erlöschen (§ 973 Abs. 1 Satz 2)";
+        label en unofficial "On acquisition under § 973 the finder becomes owner; other rights in the thing lapse (§ 973 (1) sentence 2)";
+        when eigentumserwerb_des_finders_am(f, p, tag) and fundsache(f, s);
+        then eigentum_durch_fund_erworben(s, p);
+    }
+}
+
+// --- § 976 Abs. 1 Eigentumserwerb der Gemeinde bei Verzicht des Finders -----------------------------
+//
+// Der Verzicht wirkt VOR dem Erwerb: er entzieht dem Finder das Recht zum
+// Erwerb (§ 973), das Recht geht auf die Gemeinde über. Zwei sich
+// gegenseitig ausschließende strict-Produzenten derselben Bedingung
+// (Fristablauf) verhindern KEY_CONFLICT/BOTH: `eigentumserwerb_des_finders_ausgeschlossen`
+// nimmt den Verzicht als dritten Grund auf (der Finder erwirbt dann nicht),
+// die neue Regel unten setzt an den ANDEREN beiden Gründen (bekannter
+// Empfangsberechtigter, Verheimlichung) an — genau dann, wenn NUR der
+// Verzicht vorliegt, erwirbt die Gemeinde (Ledger D-10-09, revidiert D-10-08).
+
+pub relation verzicht_des_finders_gegenueber_der_behoerde(f: Fund) kind empirical {
+    label de official "der Finder hat der zuständigen Behörde gegenüber auf das Recht zum Erwerb des Eigentums an der Sache verzichtet (§ 976 Abs. 1)";
+    label en unofficial "the finder has waived, vis-à-vis the competent authority, the right to acquire ownership (§ 976 (1))";
+}
+pub relation gemeinde_des_fundorts(f: Fund, gemeinde: Person) kind empirical {
+    label de official "die Gemeinde des Fundorts — Eingabe des Falls (§ 976)";
+    label en unofficial "the municipality of the place of finding — case input (§ 976)";
+}
+pub relation eigentumserwerb_976_ausser_verzicht_ausgeschlossen(f: Fund) kind derived {
+    label de official "der Eigentumserwerb nach § 973 ist aus einem von Verzicht unabhängigen Grund ausgeschlossen — bekannter Empfangsberechtigter oder Verheimlichung (§ 973 Abs. 1 Satz 1, Abs. 2 Satz 2); dann erwirbt auch die Gemeinde nicht (§ 976 Abs. 1)";
+    label en unofficial "acquisition under § 973 is excluded for a reason independent of the waiver — a person entitled became known, or concealment (§ 973 (1) sentence 1, (2) sentence 2); then the municipality does not acquire either (§ 976 (1))";
+}
+
+@source(BGB_P976) {
+    rule ErwerbAusgeschlossenBeiVerzicht976(f: Fund) strict {
+        label de official "Verzichtet der Finder der zuständigen Behörde gegenüber auf das Recht zum Erwerb des Eigentums an der Sache, so geht sein Recht auf die Gemeinde des Fundorts über (§ 976 Abs. 1) — der Finder selbst erwirbt dann nicht";
+        label en unofficial "If the finder waives, vis-à-vis the competent authority, the right to acquire ownership, their right passes to the municipality of the place of finding (§ 976 (1)) — the finder themselves then does not acquire";
+        when verzicht_des_finders_gegenueber_der_behoerde(f);
+        then eigentumserwerb_des_finders_ausgeschlossen(f);
+    }
+    rule Erwerb976AusgeschlossenBeiBekanntemEmpfangsberechtigten(f: Fund) strict {
+        label de official "Wie § 973 Abs. 1 Satz 1: bekannter Empfangsberechtigter schließt auch den Erwerb der Gemeinde aus";
+        label en unofficial "As in § 973 (1) sentence 1: a known person entitled also excludes the municipality's acquisition";
+        when empfangsberechtigter_vor_fristablauf_bekannt_oder_angemeldet(f);
+        then eigentumserwerb_976_ausser_verzicht_ausgeschlossen(f);
+    }
+    rule Erwerb976AusgeschlossenBeiVerheimlichung(f: Fund) strict {
+        label de official "Wie § 973 Abs. 2 Satz 2: Verheimlichung schließt auch den Erwerb der Gemeinde aus";
+        label en unofficial "As in § 973 (2) sentence 2: concealment also excludes the municipality's acquisition";
+        when fund_auf_nachfrage_verheimlicht(f);
+        then eigentumserwerb_976_ausser_verzicht_ausgeschlossen(f);
+    }
+    rule EigentumserwerbDerGemeindeBeiVerzicht976(f: Fund, s: Sache, gemeinde: Person, ende: Date) defeasible {
+        label de official "Verzichtet der Finder auf das Recht zum Erwerb, so erwirbt an seiner Stelle die Gemeinde des Fundorts mit dem Ablauf der Frist des § 973, sofern der Erwerb nicht aus einem anderen Grund ausgeschlossen ist (§ 976 Abs. 1)";
+        label en unofficial "If the finder waives the right to acquire, the municipality of the place of finding acquires instead on expiry of the § 973 period, unless acquisition is excluded for another reason (§ 976 (1))";
+        when fundfrist_abgelaufen_am(f, ende) and fundsache(f, s) and gemeinde_des_fundorts(f, gemeinde)
+            and verzicht_des_finders_gegenueber_der_behoerde(f);
+        unless fundsache(f, s) and gemeinde_des_fundorts(f, gemeinde) and fundfrist_abgelaufen_am(f, ende)
+            and eigentumserwerb_976_ausser_verzicht_ausgeschlossen(f);
+        then eigentum_durch_fund_erworben(s, gemeinde);
+    }
+}
+
+// --- § 976 Abs. 2 Eigentumsübergang auf die Gemeinde bei Nichtverlangen (dritter Anlauf) ------------
+//
+// Dieselbe Technik wie Abs. 1: kein zeitliches „Rückgängigmachen“ eines
+// bereits erworbenen Eigentums, sondern EIN weiterer Ausschlussgrund für den
+// Finder-Erwerb (analog zum Verzicht des Abs. 1), gepaart mit einem eigenen
+// Erwerbstatbestand für die Gemeinde bei denselben Tatsachen — phasengetrennt
+// über `not_known` statt eines gemeinsamen Ausschluss-Kopfes (Muster D-10-13).
+
+pub relation von_behoerde_fuer_herausgabeverlangen_bestimmte_frist_abgelaufen_am(f: Fund, tag: Date) kind empirical {
+    key(f);
+    label de official "Ende der vom Finder von der zuständigen Behörde bestimmten Frist, binnen der die Herausgabe zu verlangen ist (§ 976 Abs. 2)";
+    label en unofficial "end of the period, set for the finder by the competent authority, within which surrender must be demanded (§ 976 (2))";
+}
+pub relation herausgabe_binnen_frist_verlangt(f: Fund) kind empirical {
+    label de official "der Finder verlangt die Herausgabe vor dem Ablauf der von der Behörde bestimmten Frist — Eingabe des Falls (§ 976 Abs. 2)";
+    label en unofficial "the finder demands surrender before the period set by the authority expires — case input (§ 976 (2))";
+}
+
+@source(BGB_P976) {
+    rule ErwerbAusgeschlossenBeiAblieferungUndNichtverlangen976Abs2(f: Fund, tag: Date) strict {
+        label de official "Hat der Finder nach der Ablieferung der Sache oder des Versteigerungserlöses an die zuständige Behörde auf Grund der §§ 973, 974 das Eigentum erworben, so geht es auf die Gemeinde des Fundorts über, wenn nicht der Finder vor dem Ablauf einer ihm von der Behörde bestimmten Frist die Herausgabe verlangt (§ 976 Abs. 2) — der Erwerb des Finders selbst entfällt dann";
+        label en unofficial "If the finder acquired ownership under §§ 973, 974 after delivering the thing or the auction proceeds to the authority, it passes to the municipality unless the finder demands surrender before a period set by the authority expires (§ 976 (2)) — the finder's own acquisition then does not occur";
+        when ablieferung_an_die_behoerde_erfolgt(f) and von_behoerde_fuer_herausgabeverlangen_bestimmte_frist_abgelaufen_am(f, tag)
+            and not_known(herausgabe_binnen_frist_verlangt(f));
+        then eigentumserwerb_des_finders_ausgeschlossen(f);
+    }
+    rule EigentumserwerbDerGemeindeBeiNichtverlangen976Abs2(f: Fund, s: Sache, gemeinde: Person, ende: Date, frist976: Date) defeasible {
+        label de official "Hat der Finder nach der Ablieferung der Sache oder des Versteigerungserlöses an die zuständige Behörde auf Grund der §§ 973, 974 das Eigentum erworben, so geht es auf die Gemeinde des Fundorts über, wenn nicht der Finder vor dem Ablauf einer ihm von der Behörde bestimmten Frist die Herausgabe verlangt (§ 976 Abs. 2)";
+        label en unofficial "If the finder acquired ownership under §§ 973, 974 after delivering the thing or the auction proceeds to the authority, it passes to the municipality unless the finder demands surrender before a period set by the authority expires (§ 976 (2))";
+        when fundfrist_abgelaufen_am(f, ende) and fundsache(f, s) and gemeinde_des_fundorts(f, gemeinde)
+            and ablieferung_an_die_behoerde_erfolgt(f) and von_behoerde_fuer_herausgabeverlangen_bestimmte_frist_abgelaufen_am(f, frist976)
+            and not_known(herausgabe_binnen_frist_verlangt(f));
+        unless fundsache(f, s) and gemeinde_des_fundorts(f, gemeinde) and fundfrist_abgelaufen_am(f, ende)
+            and eigentumserwerb_976_ausser_verzicht_ausgeschlossen(f);
+        then eigentum_durch_fund_erworben(s, gemeinde);
+    }
+}
+
+pub relation eigentum_durch_fund_erworben(s: Sache, p: Person) kind derived {
+    label de official "Erwerb des Eigentums an der Fundsache durch den Finder (§ 973 Abs. 1)";
+    label en unofficial "acquisition of ownership of the found thing by the finder (§ 973 (1))";
+}
+
+@source(BGB_P973)
+rule ErwerbDurchFundSammelt(s: Sache, p: Person) defeasible {
+    label de official "Sammlung der Erwerbstatbestände: Fund (§ 973)";
+    label en unofficial "collection of acquisition grounds: finding (§ 973)";
+    when eigentum_durch_fund_erworben(s, p);
+    then eigentum_erworben(s, p);
+}
+
+pub relation eigentumserwerb_des_finders_ausgeschlossen(f: Fund) kind derived {
+    label de official "der Eigentumserwerb des Finders ist ausgeschlossen (§ 973 Abs. 1 Satz 1, Abs. 2 Satz 2)";
+    label en unofficial "the finder's acquisition of ownership is excluded (§ 973 (1) sentence 1, (2) sentence 2)";
+}
+
+// --- § 974 Eigentumserwerb nach Verschweigung — wiederverwendet § 1003 des Pakets (dritter Anlauf) ---
+//
+// Ist ein Empfangsberechtigter vor Ablauf der Sechsmonatsfrist bekannt
+// geworden oder hat er sein Recht rechtzeitig angemeldet (§ 973 Abs. 1
+// Satz 1 schließt DAMIT den einfachen Erwerb aus), kann der Finder ihn nach
+// § 1003 zur Erklärung auffordern; nach Ablauf DIESER Frist erwirbt der
+// Finder trotzdem, wenn keine rechtzeitige Bereiterklärung vorliegt —
+// phasengetrennt wie § 1003 selbst (D-10-13): positive Prämisse plus
+// `not_known` statt eines Ausschluss-Kopfes.
+
+pub relation aufforderung_nach_1003_wegen_974(f: Fund) kind empirical {
+    label de official "der Finder fordert die Empfangsberechtigten nach der Vorschrift des § 1003 zur Erklärung über die ihm nach den §§ 970 bis 972 zustehenden Ansprüche auf (§ 974 Satz 1)";
+    label en unofficial "the finder calls on the persons entitled, under § 1003, to declare themselves on the claims available to the finder under §§ 970 to 972 (§ 974 sentence 1)";
+}
+pub relation frist_zur_erklaerung_974_abgelaufen_am(f: Fund, tag: Date) kind empirical {
+    key(f);
+    label de official "Ende der für die Erklärung nach § 1003 bestimmten Frist (§ 974 Satz 2)";
+    label en unofficial "end of the period set under § 1003 for the declaration (§ 974 sentence 2)";
+}
+pub relation empfangsberechtigte_zur_befriedigung_rechtzeitig_bereit_erklaert(f: Fund) kind empirical {
+    label de official "die Empfangsberechtigten erklären sich rechtzeitig zu der Befriedigung der Ansprüche des Finders bereit — Eingabe des Falls (§ 974 Satz 2 Halbsatz 2)";
+    label en unofficial "the persons entitled declare themselves, in time, ready to satisfy the finder's claims — case input (§ 974 sentence 2, second half-sentence)";
+}
+
+@source(BGB_P974)
+rule EigentumserwerbNachVerschweigung974(f: Fund, s: Sache, p: Person, tag: Date) defeasible {
+    label de official "Sind vor dem Ablauf der sechsmonatigen Frist Empfangsberechtigte dem Finder bekannt geworden oder haben sie ihre Rechte rechtzeitig angemeldet, so kann der Finder sie nach § 1003 zur Erklärung auffordern; mit dem Ablauf der dafür bestimmten Frist erwirbt der Finder das Eigentum, wenn nicht die Empfangsberechtigten sich rechtzeitig zu der Befriedigung der Ansprüche bereit erklären (§ 974)";
+    label en unofficial "If persons entitled became known to the finder, or registered their rights in time, before the six-month period expired, the finder may call on them under § 1003; on expiry of the period so set the finder acquires ownership unless the persons entitled declare themselves ready in time to satisfy the claims (§ 974)";
+    when aufforderung_nach_1003_wegen_974(f) and fundsache(f, s) and finder(f, p) and frist_zur_erklaerung_974_abgelaufen_am(f, tag)
+        and not_known(empfangsberechtigte_zur_befriedigung_rechtzeitig_bereit_erklaert(f));
+    then eigentumserwerb_des_finders_am(f, p, tag);
+}
+
+@source(BGB_P978) {
+    rule AblieferungspflichtBeiBehoerdenfund(f: Fund, p: Person) strict {
+        label de official "Wer eine Sache in den Geschäftsräumen oder den Beförderungsmitteln einer öffentlichen Behörde oder einer dem öffentlichen Verkehr dienenden Verkehrsanstalt findet und an sich nimmt, hat die Sache unverzüglich an die Behörde oder die Verkehrsanstalt oder an einen ihrer Angestellten abzuliefern; die Vorschriften der §§ 965 bis 967 und 969 bis 977 finden keine Anwendung (§ 978 Abs. 1)";
+        label en unofficial "A person finding and taking a thing on the premises or in the vehicles of a public authority or public transport undertaking must hand it over without undue delay; §§ 965 to 967 and 969 to 977 do not apply (§ 978 (1))";
+        when fund_in_behoerde_oder_verkehrsanstalt(f) and finder(f, p);
+        then ablieferungspflicht_des_finders(f, p);
+    }
+    rule HalberFinderlohnAbFuenfzigEuro(f: Fund, p: Person, w: Money) defeasible {
+        label de official "Ist die Sache nicht weniger als 50 Euro wert, so kann der Finder von dem Empfangsberechtigten einen Finderlohn verlangen; der Finderlohn besteht in der Hälfte des Betrags, der sich bei Anwendung des § 971 Abs. 1 Satz 2, 3 ergeben würde (§ 978 Abs. 2 Satz 1, 2)";
+        label en unofficial "If the thing is worth not less than 50 euros, the finder may demand a reward amounting to half of what § 971 (1) sentences 2, 3 would give (§ 978 (2) sentences 1, 2)";
+        when fund_in_behoerde_oder_verkehrsanstalt(f) and finder(f, p) and wert_der_fundsache(f, w) and w >= 50.00 EUR
+            and fundsache_ist_kein_tier(f) and w <= 500.00 EUR;
+        unless finder(f, p) and wert_der_fundsache(f, w) and finderlohn_bei_behoerdenfund_ausgeschlossen(f);
+        then finderlohnanspruch(f, p, div_round(w * 5, 200.0, 2, "HALF_UP"));
+    }
+    rule HalberFinderlohnStaffelUeberFuenfhundertEuro(f: Fund, p: Person, w: Money) defeasible {
+        label de official "Der Finderlohn besteht in der Hälfte des Betrags, der sich bei Anwendung des § 971 Abs. 1 Satz 2, 3 ergeben würde (§ 978 Abs. 2 Satz 2) — Wert der Sache über 500 Euro: die Hälfte aus fünf vom Hundert der ersten 500 Euro und drei vom Hundert des Mehrwerts";
+        label en unofficial "The reward is half of what § 971 (1) sentences 2, 3 would give (§ 978 (2) sentence 2) — value above 500 euros";
+        when fund_in_behoerde_oder_verkehrsanstalt(f) and finder(f, p) and wert_der_fundsache(f, w)
+            and fundsache_ist_kein_tier(f) and w > 500.00 EUR;
+        unless finder(f, p) and wert_der_fundsache(f, w) and finderlohn_bei_behoerdenfund_ausgeschlossen(f);
+        then finderlohnanspruch(f, p, div_round(500.00 EUR * 5 + (w - 500.00 EUR) * 3, 200.0, 2, "HALF_UP"));
+    }
+    rule FinderlohnAusgeschlossenBeimBediensteten(f: Fund) strict {
+        label de official "Der Anspruch ist ausgeschlossen, wenn der Finder Bediensteter der Behörde oder der Verkehrsanstalt ist (§ 978 Abs. 2 Satz 3)";
+        label en unofficial "The claim is excluded if the finder is an employee of the authority or undertaking (§ 978 (2) sentence 3)";
+        when finder_ist_bediensteter(f);
+        then finderlohn_bei_behoerdenfund_ausgeschlossen(f);
+    }
+    rule FinderlohnAusgeschlossenBeiVerletzterAblieferungspflicht(f: Fund) strict {
+        label de official "Der Anspruch ist ausgeschlossen, wenn der Finder die Ablieferungspflicht verletzt (§ 978 Abs. 2 Satz 3)";
+        label en unofficial "The claim is excluded if the finder breaches the duty to hand over (§ 978 (2) sentence 3)";
+        when ablieferungspflicht_verletzt(f);
+        then finderlohn_bei_behoerdenfund_ausgeschlossen(f);
+    }
+}
+
+pub relation ablieferungspflicht_des_finders(f: Fund, finder: Person) kind derived {
+    label de official "Pflicht, die Sache unverzüglich an die Behörde oder die Verkehrsanstalt abzuliefern (§ 978 Abs. 1 Satz 1)";
+    label en unofficial "duty to hand the thing over to the authority or undertaking without undue delay (§ 978 (1) sentence 1)";
+}
+pub relation finderlohn_bei_behoerdenfund_ausgeschlossen(f: Fund) kind derived {
+    label de official "der Finderlohnanspruch beim Fund in einer Behörde oder Verkehrsanstalt ist ausgeschlossen (§ 978 Abs. 2 Satz 3)";
+    label en unofficial "the reward claim for a finding on public premises is excluded (§ 978 (2) sentence 3)";
+}
+
+// --- §§ 966–970, 975 Aufbewahrung, Ablieferung, Haftung, Befreiung, Aufwendungsersatz (Welle B6) ---
+//
+// § 972 (Zurückbehaltungsrecht: entsprechende Anwendung der §§ 1000–1002 auf
+// die Ansprüche der §§ 970, 971) und § 974 (Eigentumserwerb nach der
+// Verschweigung, Aufforderungsverfahren nach § 1003 ohne eine im Text
+// benannte Erklärungsfrist) sind reine Verweisungen bzw. Verfahrensnormen
+// ohne eigenen entscheidungsrelevanten Tatbestand außerhalb der §§ 1000–1002
+// und § 1003; sie werden nicht dupliziert (`analysis/saetze.json`, Grund
+// `verweisung`/`verfahren`). § 976 (Eigentumsübergang auf die Gemeinde durch
+// Verzicht oder Nichtverlangen) bliebe eine zweite Erwerbsgrundlage für
+// dieselbe Sache, die die geschlossene Welt des Kopfes `eigentum_erworben`
+// verletzen würde, ohne dass das Paket eine Zeitachse über mehrere
+// Erwerbsvorgänge führt (`analysis/saetze.json`, Grund `zeitachse`, D-10-08).
+
+pub relation verwahrungspflicht_des_finders(f: Fund, finder: Person) kind derived {
+    label de official "Pflicht des Finders zur Verwahrung der Sache (§ 966 Abs. 1)";
+    label en unofficial "the finder's duty to keep the thing safe (§ 966 (1))";
+}
+pub relation sache_verderb_zu_besorgen(f: Fund) kind empirical {
+    label de official "der Verderb der Sache ist zu besorgen — Eingabe des Falls (§ 966 Abs. 2 Satz 1)";
+    label en unofficial "the thing is at risk of decay — case input (§ 966 (2) sentence 1)";
+}
+pub relation aufbewahrung_unverhaeltnismaessig_teuer(f: Fund) kind empirical {
+    label de official "die Aufbewahrung der Sache ist mit unverhältnismäßigen Kosten verbunden — Eingabe des Falls (§ 966 Abs. 2 Satz 1)";
+    label en unofficial "keeping the thing is disproportionately costly — case input (§ 966 (2) sentence 1)";
+}
+pub relation versteigerungspflicht_des_finders(f: Fund) kind derived {
+    label de official "Pflicht des Finders, die Sache öffentlich versteigern zu lassen (§ 966 Abs. 2 Satz 1)";
+    label en unofficial "the finder's duty to have the thing sold at public auction (§ 966 (2) sentence 1)";
+}
+pub relation anzeigepflicht_vor_versteigerung(f: Fund) kind derived {
+    label de official "Pflicht, der zuständigen Behörde vor der Versteigerung Anzeige zu machen (§ 966 Abs. 2 Satz 2)";
+    label en unofficial "duty to notify the competent authority before the auction (§ 966 (2) sentence 2)";
+}
+pub relation versteigerungserloes_ersetzt_die_sache(f: Fund) kind derived {
+    label de official "der Erlös der Versteigerung tritt an die Stelle der Sache (§ 966 Abs. 2 Satz 3, § 975 Satz 2)";
+    label en unofficial "the proceeds of the auction take the place of the thing (§ 966 (2) sentence 3, § 975 sentence 2)";
+}
+
+@source(BGB_P966) {
+    rule VerwahrungspflichtDesFinders(f: Fund, p: Person) strict {
+        label de official "Der Finder ist zur Verwahrung der Sache verpflichtet (§ 966 Abs. 1)";
+        label en unofficial "The finder is obliged to keep the thing safe (§ 966 (1))";
+        when finder(f, p);
+        then verwahrungspflicht_des_finders(f, p);
+    }
+    rule VersteigerungspflichtBeiVerderb(f: Fund) strict {
+        label de official "Ist der Verderb der Sache zu besorgen, so hat der Finder die Sache öffentlich versteigern zu lassen (§ 966 Abs. 2 Satz 1)";
+        label en unofficial "If the thing is at risk of decay, the finder must have it sold at public auction (§ 966 (2) sentence 1)";
+        when sache_verderb_zu_besorgen(f);
+        then versteigerungspflicht_des_finders(f);
+    }
+    rule VersteigerungspflichtBeiUnverhaeltnismaessigenKosten(f: Fund) strict {
+        label de official "Ist die Aufbewahrung mit unverhältnismäßigen Kosten verbunden, so hat der Finder die Sache öffentlich versteigern zu lassen (§ 966 Abs. 2 Satz 1)";
+        label en unofficial "If keeping the thing is disproportionately costly, the finder must have it sold at public auction (§ 966 (2) sentence 1)";
+        when aufbewahrung_unverhaeltnismaessig_teuer(f);
+        then versteigerungspflicht_des_finders(f);
+    }
+    rule AnzeigeVorVersteigerung(f: Fund) strict {
+        label de official "Vor der Versteigerung ist der zuständigen Behörde Anzeige zu machen (§ 966 Abs. 2 Satz 2)";
+        label en unofficial "The competent authority must be notified before the auction (§ 966 (2) sentence 2)";
+        when versteigerungspflicht_des_finders(f);
+        then anzeigepflicht_vor_versteigerung(f);
+    }
+    rule ErloesTrittAnDieStelleDerSache(f: Fund) strict {
+        label de official "Der Erlös tritt an die Stelle der Sache (§ 966 Abs. 2 Satz 3)";
+        label en unofficial "The proceeds take the place of the thing (§ 966 (2) sentence 3)";
+        when versteigerungspflicht_des_finders(f);
+        then versteigerungserloes_ersetzt_die_sache(f);
+    }
+}
+
+pub relation ablieferungsrecht_des_finders(f: Fund, finder: Person) kind derived {
+    label de official "Recht des Finders, die Sache oder den Versteigerungserlös an die zuständige Behörde abzuliefern (§ 967)";
+    label en unofficial "the finder's right to hand the thing or the auction proceeds over to the competent authority (§ 967)";
+}
+pub relation behoerde_ordnet_ablieferung_an(f: Fund) kind empirical {
+    label de official "die zuständige Behörde hat die Ablieferung angeordnet — Eingabe des Falls (§ 967)";
+    label en unofficial "the competent authority has ordered the thing to be handed over — case input (§ 967)";
+}
+pub relation ablieferungspflicht_nach_behoerdlicher_anordnung(f: Fund, finder: Person) kind derived {
+    label de official "Pflicht des Finders, die Sache oder den Versteigerungserlös auf Anordnung der zuständigen Behörde abzuliefern (§ 967)";
+    label en unofficial "the finder's duty, once ordered by the competent authority, to hand the thing or the proceeds over (§ 967)";
+}
+
+@source(BGB_P967) {
+    rule AblieferungsrechtDesFinders(f: Fund, p: Person) strict {
+        label de official "Der Finder ist berechtigt, die Sache oder den Versteigerungserlös an die zuständige Behörde abzuliefern (§ 967)";
+        label en unofficial "The finder is entitled to hand the thing or the auction proceeds over to the competent authority (§ 967)";
+        when finder(f, p);
+        then ablieferungsrecht_des_finders(f, p);
+    }
+    rule AblieferungspflichtNachAnordnung(f: Fund, p: Person) strict {
+        label de official "Der Finder ist auf Anordnung der zuständigen Behörde zur Ablieferung verpflichtet (§ 967)";
+        label en unofficial "On the authority's order the finder is obliged to hand the thing over (§ 967)";
+        when finder(f, p) and behoerde_ordnet_ablieferung_an(f);
+        then ablieferungspflicht_nach_behoerdlicher_anordnung(f, p);
+    }
+}
+
+pub relation finder_haftet_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(f: Fund) kind derived {
+    label de official "der Finder hat nur Vorsatz und grobe Fahrlässigkeit zu vertreten (§ 968) — beschränkter Haftungsmaßstab für die Verwahrung der Fundsache";
+    label en unofficial "the finder is liable only for intent and gross negligence (§ 968) — limited standard of liability for keeping the found thing";
+}
+
+@source(BGB_P968)
+rule HaftungsmassstabDesFinders(f: Fund, p: Person) strict {
+    label de official "Der Finder hat nur Vorsatz und grobe Fahrlässigkeit zu vertreten (§ 968)";
+    label en unofficial "The finder is liable only for intent and gross negligence (§ 968)";
+    when finder(f, p);
+    then finder_haftet_nur_bei_vorsatz_oder_grober_fahrlaessigkeit(f);
+}
+
+pub relation herausgabe_an_den_verlierer_erfolgt(f: Fund) kind empirical {
+    label de official "der Finder hat die Sache an den Verlierer herausgegeben — Eingabe des Falls (§ 969)";
+    label en unofficial "the finder has surrendered the thing to the loser — case input (§ 969)";
+}
+pub relation finder_gegenueber_allen_empfangsberechtigten_befreit(f: Fund) kind derived {
+    label de official "der Finder wird durch die Herausgabe der Sache an den Verlierer auch den sonstigen Empfangsberechtigten gegenüber befreit (§ 969)";
+    label en unofficial "by surrendering the thing to the loser the finder is also discharged towards other persons entitled (§ 969)";
+}
+
+@source(BGB_P969)
+rule BefreiungDurchHerausgabeAnDenVerlierer(f: Fund) strict {
+    label de official "Der Finder wird durch die Herausgabe der Sache an den Verlierer auch den sonstigen Empfangsberechtigten gegenüber befreit (§ 969)";
+    label en unofficial "By surrendering the thing to the loser the finder is discharged towards other entitled persons too (§ 969)";
+    when herausgabe_an_den_verlierer_erfolgt(f);
+    then finder_gegenueber_allen_empfangsberechtigten_befreit(f);
+}
+
+pub relation aufwendung_gemacht(f: Fund, betrag: Money) kind empirical {
+    key(f);
+    label de official "Aufwendung, die der Finder zum Zwecke der Verwahrung oder Erhaltung der Sache oder zur Ermittlung eines Empfangsberechtigten gemacht hat — Eingabe des Falls (§ 970)";
+    label en unofficial "expense the finder incurred to keep or preserve the thing or to ascertain a person entitled — case input (§ 970)";
+}
+pub relation aufwendung_war_erforderlich(f: Fund) kind empirical {
+    label de official "der Finder durfte die Aufwendung den Umständen nach für erforderlich halten — Eingabe des Falls (§ 970)";
+    label en unofficial "the finder was entitled to consider the expense necessary in the circumstances — case input (§ 970)";
+}
+pub relation fundaufwendungsersatzanspruch(f: Fund, finder: Person, betrag: Money) kind derived {
+    label de official "Anspruch des Finders auf Ersatz der Aufwendungen gegen den Empfangsberechtigten (§ 970)";
+    label en unofficial "the finder's claim to reimbursement of expenses against the person entitled (§ 970)";
+}
+
+@source(BGB_P970)
+rule ErsatzDerAufwendungenDesFinders(f: Fund, p: Person, betrag: Money) defeasible {
+    label de official "Macht der Finder zum Zwecke der Verwahrung oder Erhaltung der Sache oder zum Zwecke der Ermittlung eines Empfangsberechtigten Aufwendungen, die er den Umständen nach für erforderlich halten darf, so kann er von dem Empfangsberechtigten Ersatz verlangen (§ 970)";
+    label en unofficial "If the finder incurs expenses for keeping or preserving the thing or for ascertaining a person entitled, which they were entitled to consider necessary, they may demand reimbursement from the person entitled (§ 970)";
+    when finder(f, p) and aufwendung_gemacht(f, betrag) and aufwendung_war_erforderlich(f);
+    then fundaufwendungsersatzanspruch(f, p, betrag);
+}
+
+pub relation ablieferung_an_die_behoerde_erfolgt(f: Fund) kind empirical {
+    label de official "der Finder hat die Sache oder den Versteigerungserlös an die zuständige Behörde abgeliefert — Eingabe des Falls (§ 975 Satz 1)";
+    label en unofficial "the finder has handed the thing or the auction proceeds over to the competent authority — case input (§ 975 sentence 1)";
+}
+pub relation rechte_des_finders_durch_ablieferung_unberuehrt(f: Fund) kind derived {
+    label de official "durch die Ablieferung der Sache oder des Versteigerungserlöses an die zuständige Behörde werden die Rechte des Finders nicht berührt (§ 975 Satz 1)";
+    label en unofficial "handing the thing or the auction proceeds over to the competent authority does not affect the finder's rights (§ 975 sentence 1)";
+}
+pub relation herausgabe_durch_behoerde_bedarf_zustimmung_des_finders(f: Fund) kind derived {
+    label de official "die zuständige Behörde darf die Sache oder den Erlös nur mit Zustimmung des Finders einem Empfangsberechtigten herausgeben (§ 975 Satz 3)";
+    label en unofficial "the competent authority may only surrender the thing or the proceeds to a person entitled with the finder's consent (§ 975 sentence 3)";
+}
+
+@source(BGB_P975) {
+    rule RechteDesFindersBleibenUnberuehrt(f: Fund) strict {
+        label de official "Durch die Ablieferung der Sache oder des Versteigerungserlöses an die zuständige Behörde werden die Rechte des Finders nicht berührt (§ 975 Satz 1)";
+        label en unofficial "Handing the thing or the auction proceeds over to the authority does not affect the finder's rights (§ 975 sentence 1)";
+        when ablieferung_an_die_behoerde_erfolgt(f);
+        then rechte_des_finders_durch_ablieferung_unberuehrt(f);
+    }
+    rule ErloesErsetztDieSacheBeiDerBehoerde(f: Fund) strict {
+        label de official "Lässt die zuständige Behörde die Sache versteigern, so tritt der Erlös an die Stelle der Sache (§ 975 Satz 2)";
+        label en unofficial "If the competent authority has the thing auctioned, the proceeds take the place of the thing (§ 975 sentence 2)";
+        when ablieferung_an_die_behoerde_erfolgt(f) and versteigerungspflicht_des_finders(f);
+        then versteigerungserloes_ersetzt_die_sache(f);
+    }
+    rule ZustimmungserfordernisDerHerausgabe(f: Fund) strict {
+        label de official "Die zuständige Behörde darf die Sache oder den Erlös nur mit Zustimmung des Finders einem Empfangsberechtigten herausgeben (§ 975 Satz 3)";
+        label en unofficial "The competent authority may surrender the thing or the proceeds to a person entitled only with the finder's consent (§ 975 sentence 3)";
+        when ablieferung_an_die_behoerde_erfolgt(f);
+        then herausgabe_durch_behoerde_bedarf_zustimmung_des_finders(f);
+    }
+}
+
+// --- § 977 Bereicherungsanspruch (Klagefrist drei Jahre) --------------------------------------------
+//
+// § 977 verweist der Höhe nach auf das Bereicherungsrecht (`de.bgb.bereicherung_delikt`,
+// Welle B6, README „Verweisungen“); dieses Paket bildet nur den eigenen
+// Tatbestand des § 977 — Rechtsverlust, Schuldner (Finder oder Gemeinde je
+// nach Erwerbsweg) und Betrag als Eingaben des Falls — und die dreijährige
+// Klagefrist mit der Verlegung des § 193 (D-10-05, DEADLINES.json).
+
+pub relation rechtsverlust_durch_eigentumsuebergang_erlitten(f: Fund, p: Person) kind empirical {
+    label de official "Person, die infolge der Eigentumsänderung nach §§ 973, 974, 976 einen Rechtsverlust erleidet — Eingabe des Falls (§ 977 Satz 1)";
+    label en unofficial "person who suffers a loss of right through the change of ownership under §§ 973, 974, 976 — case input (§ 977 sentence 1)";
+}
+pub relation erwerber_haftet_aus_bereicherung(f: Fund, p: Person) kind empirical {
+    label de official "Schuldner des Bereicherungsanspruchs — der Finder in den Fällen der §§ 973, 974, die Gemeinde des Fundorts im Fall des § 976 — Eingabe des Falls (§ 977 Satz 1)";
+    label en unofficial "debtor of the enrichment claim — the finder under §§ 973, 974, the municipality of the place of finding under § 976 — case input (§ 977 sentence 1)";
+}
+pub relation bereicherungswert_977(f: Fund, betrag: Money) kind empirical {
+    key(f);
+    label de official "durch die Rechtsänderung Erlangtes, dessen Herausgabe nach den Vorschriften über die ungerechtfertigte Bereicherung verlangt werden kann — Eingabe des Falls, der Höhe nach `de.bgb.bereicherung_delikt` (§ 977 Satz 1)";
+    label en unofficial "what was obtained through the change of right, recoverable under unjust enrichment — case input, quantified by `de.bgb.bereicherung_delikt` (§ 977 sentence 1)";
+}
+pub relation eigentumsuebergang_am_977(f: Fund, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag des Übergangs des Eigentums auf den Finder oder die Gemeinde (§ 977 Satz 2)";
+    label en unofficial "day on which ownership passed to the finder or the municipality (§ 977 sentence 2)";
+}
+pub relation bereicherungsfrist_977(f: Fund, fr: Frist) kind empirical {
+    label de official "Frist des § 977 Satz 2 für diesen Fund — Bezeichnung der Frist, deren Ablauf `de.bgb.fristen` rechnet";
+    label en unofficial "period of § 977 sentence 2 for this finding — handle of the period computed by `de.bgb.fristen`";
+}
+pub relation klage_auf_bereicherung_erhoben_am(f: Fund, tag: Date) kind empirical {
+    label de official "Tag der gerichtlichen Geltendmachung des Anspruchs aus § 977 — Eingabe des Falls (§ 977 Satz 2)";
+    label en unofficial "day the claim under § 977 was asserted by action — case input (§ 977 sentence 2)";
+}
+pub relation klage_977_vor_ablauf_erhoben(f: Fund) kind derived {
+    label de official "die gerichtliche Geltendmachung des Anspruchs aus § 977 ist vor dem Ablauf der Frist erfolgt (§ 977 Satz 2)";
+    label en unofficial "the claim under § 977 was asserted by action before the period expired (§ 977 sentence 2)";
+}
+pub relation bereicherungsanspruch_977_erloschen_am(f: Fund, tag: Date) kind derived {
+    label de official "der Anspruch des § 977 ist mit Ablauf von drei Jahren nach dem Übergang des Eigentums erloschen, sofern keine gerichtliche Geltendmachung vorher erfolgte (§ 977 Satz 2)";
+    label en unofficial "the claim of § 977 has expired three years after ownership passed, absent an earlier action (§ 977 sentence 2)";
+}
+pub relation bereicherungsanspruch_977(f: Fund, verlierer: Person, schuldner: Person, betrag: Money) kind derived {
+    label de official "Anspruch des Rechtsverlierers gegen den Finder oder die Gemeinde auf Herausgabe des durch die Rechtsänderung Erlangten (§ 977 Satz 1)";
+    label en unofficial "claim of the person who lost the right against the finder or the municipality for surrender of what was obtained (§ 977 sentence 1)";
+}
+
+@source(BGB_P977) {
+    rule BereicherungsfristEreignis(f: Fund, fr: Frist, tag: Date) strict {
+        label de official "Die Frist des § 977 Satz 2 beginnt mit dem Übergang des Eigentums auf den Finder oder die Gemeinde (§ 187 Abs. 1)";
+        label en unofficial "The period of § 977 sentence 2 begins when ownership passes to the finder or the municipality (§ 187 (1))";
+        when bereicherungsfrist_977(f, fr) and eigentumsuebergang_am_977(f, tag);
+        then de.bgb.fristen::frist_ereignis(fr, tag);
+    }
+    rule BereicherungsfristDauer(f: Fund, fr: Frist) strict {
+        label de official "Der Anspruch aus § 977 erlischt mit dem Ablauf von drei Jahren (§ 977 Satz 2)";
+        label en unofficial "The claim under § 977 expires after three years (§ 977 sentence 2)";
+        when bereicherungsfrist_977(f, fr);
+        then de.bgb.fristen::frist_dauer_kalender(fr, 3 calendar_year);
+    }
+    rule Klage977VorAblauf(f: Fund, fr: Frist, k: Date, ende: Date) strict {
+        label de official "Der Anspruch erlischt nicht, wenn die gerichtliche Geltendmachung vorher erfolgt (§ 977 Satz 2)";
+        label en unofficial "The claim does not expire if it is asserted by action before the period ends (§ 977 sentence 2)";
+        when bereicherungsfrist_977(f, fr) and klage_auf_bereicherung_erhoben_am(f, k) and de.bgb.fristen::frist_ende(fr, ende) and k <= ende;
+        then klage_977_vor_ablauf_erhoben(f);
+    }
+    rule Erloeschen977NachDreiJahren(f: Fund, fr: Frist, ende: Date) defeasible {
+        label de official "Der Anspruch erlischt mit dem Ablauf von drei Jahren nach dem Übergang des Eigentums auf den Finder oder die Gemeinde, wenn nicht die gerichtliche Geltendmachung vorher erfolgt (§ 977 Satz 2); § 193 verlegt das Ende auf den nächsten Werktag";
+        label en unofficial "The claim expires three years after ownership passed to the finder or the municipality unless asserted by action before (§ 977 sentence 2); § 193 moves the end to the next working day";
+        when bereicherungsfrist_977(f, fr) and de.bgb.fristen::frist_ende(fr, ende);
+        unless bereicherungsfrist_977(f, fr) and de.bgb.fristen::frist_ende(fr, ende) and klage_977_vor_ablauf_erhoben(f);
+        then bereicherungsanspruch_977_erloschen_am(f, ende);
+    }
+    // Absatz-Satz-Trennung: Satz 1 begründet den Anspruch zeitunabhängig; Satz 2
+    // beschreibt sein Erlöschen ZU EINEM DATUM (oben). Wie bei § 864 dieses
+    // Pakets bleiben beides zwei eigenständige, unbedingt lesbare Ergebnisse —
+    // KEIN drittes "ausgeschlossen"-Flag über das bloße Vorliegen von
+    // `frist_ende` (das rechnet unabhängig vom `legal_time` des Falls und
+    // würde den Anspruch sonst IMMER ausschließen, D-10-08). Ob der Anspruch
+    // zum maßgebenden Zeitpunkt bereits erloschen ist, vergleicht die
+    // aufrufende Seite `bereicherungsanspruch_977_erloschen_am(f, X)` mit
+    // dem eigenen `legal_time`.
+    rule BereicherungsanspruchDesRechtsverlierers(f: Fund, verlierer: Person, schuldner: Person, betrag: Money) defeasible {
+        label de official "Wer infolge der Vorschriften der §§ 973, 974, 976 einen Rechtsverlust erleidet, kann in den Fällen der §§ 973, 974 von dem Finder, in den Fällen des § 976 von der Gemeinde des Fundorts die Herausgabe des durch die Rechtsänderung Erlangten fordern (§ 977 Satz 1)";
+        label en unofficial "A person who suffers a loss of right under §§ 973, 974, 976 may demand surrender of what was obtained — from the finder under §§ 973, 974, from the municipality under § 976 (§ 977 sentence 1)";
+        when rechtsverlust_durch_eigentumsuebergang_erlitten(f, verlierer) and erwerber_haftet_aus_bereicherung(f, schuldner) and bereicherungswert_977(f, betrag);
+        then bereicherungsanspruch_977(f, verlierer, schuldner, betrag);
+    }
+}
+
+// --- § 978 Abs. 3 Finderlohn gegen den nach § 981 Abs. 1 Berechtigten -------------------------------
+//
+// Wer nach § 981 Abs. 1 den Versteigerungserlös oder gefundenes Geld erhält
+// (Fiskus, Gemeinde oder Betreiber der Verkehrsanstalt), ist Eingabe des
+// Falls — das Verwertungsverfahren der §§ 979–983 wird nicht geführt
+// (`analysis/saetze.json`, Grund `verfahren`; README „Was das Paket nicht
+// tut“). Der Finderlohn selbst folgt derselben Staffel wie § 978 Abs. 2.
+
+pub relation berechtigter_nach_981(f: Fund, p: Person) kind empirical {
+    label de official "wer nach § 981 Abs. 1 den Versteigerungserlös oder gefundenes Geld erhält — Eingabe des Falls (§ 978 Abs. 3 Satz 1)";
+    label en unofficial "who receives the auction proceeds or found money under § 981 (1) — case input (§ 978 (3) sentence 1)";
+}
+pub relation finderlohnanspruch_978abs3_entstanden_am(f: Fund, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Entstehung des Finderlohnanspruchs gegen den nach § 981 Abs. 1 Berechtigten (§ 978 Abs. 3 Satz 2)";
+    label en unofficial "day the reward claim against the person entitled under § 981 (1) arose (§ 978 (3) sentence 2)";
+}
+pub relation finderlohnfrist_978abs3(f: Fund, fr: Frist) kind empirical {
+    label de official "Frist des § 978 Abs. 3 Satz 2 für diesen Fund — Bezeichnung der Frist, deren Ablauf `de.bgb.fristen` rechnet";
+    label en unofficial "period of § 978 (3) sentence 2 for this finding — handle of the period computed by `de.bgb.fristen`";
+}
+pub relation klage_978abs3_erhoben_am(f: Fund, tag: Date) kind empirical {
+    label de official "Tag der gerichtlichen Geltendmachung des Anspruchs aus § 978 Abs. 3 — Eingabe des Falls";
+    label en unofficial "day the claim under § 978 (3) was asserted by action — case input";
+}
+pub relation klage_978abs3_vor_ablauf_erhoben(f: Fund) kind derived {
+    label de official "die gerichtliche Geltendmachung des Anspruchs aus § 978 Abs. 3 ist vor dem Ablauf der Frist erfolgt";
+    label en unofficial "the claim under § 978 (3) was asserted by action before the period expired";
+}
+pub relation finderlohnanspruch_978abs3_erloschen_am(f: Fund, tag: Date) kind derived {
+    label de official "der Anspruch aus § 978 Abs. 3 ist mit Ablauf von drei Jahren nach seiner Entstehung erloschen (§ 978 Abs. 3 Satz 2)";
+    label en unofficial "the claim under § 978 (3) has expired three years after it arose (§ 978 (3) sentence 2)";
+}
+pub relation finderlohnanspruch_978abs3_ausgeschlossen(f: Fund) kind derived {
+    label de official "der Finderlohnanspruch nach § 978 Abs. 3 ist ausgeschlossen, weil der Finder Bediensteter ist oder die Ablieferungspflicht verletzt hat (§ 978 Abs. 2 Satz 3, Abs. 3 Satz 1); der Ablauf der Dreijahresfrist des Absatzes 3 Satzes 2 ist ein eigenes, zeitunabhängig berechnetes Ergebnis (`finderlohnanspruch_978abs3_erloschen_am`), das hier nicht einfließt (D-10-08)";
+    label en unofficial "the reward claim under § 978 (3) is excluded because the finder is an employee or breached the duty to hand over (§ 978 (2) sentence 3, (3) sentence 1); expiry of the three-year period of (3) sentence 2 is a separate, time-independent result (`finderlohnanspruch_978abs3_erloschen_am`) not folded in here (D-10-08)";
+}
+
+@source(BGB_P978) {
+    rule FinderlohnGegenBerechtigtenNach981(f: Fund, p: Person, w: Money) defeasible {
+        label de official "Fällt der Versteigerungserlös oder gefundenes Geld an den nach § 981 Abs. 1 Berechtigten, so besteht ein Anspruch auf Finderlohn nach Absatz 2 Satz 1 bis 3 gegen diesen (§ 978 Abs. 3 Satz 1) — Staffel bis 500 Euro";
+        label en unofficial "If the auction proceeds or found money fall to the person entitled under § 981 (1), a reward claim under (2) sentences 1 to 3 exists against them (§ 978 (3) sentence 1) — up to 500 euros";
+        when berechtigter_nach_981(f, p) and wert_der_fundsache(f, w) and w >= 50.00 EUR and fundsache_ist_kein_tier(f) and w <= 500.00 EUR;
+        unless berechtigter_nach_981(f, p) and wert_der_fundsache(f, w) and finderlohnanspruch_978abs3_ausgeschlossen(f);
+        then finderlohnanspruch(f, p, div_round(w * 5, 200.0, 2, "HALF_UP"));
+    }
+    rule FinderlohnGegenBerechtigtenNach981UeberFuenfhundertEuro(f: Fund, p: Person, w: Money) defeasible {
+        label de official "Anspruch auf Finderlohn nach Absatz 2 Satz 1 bis 3 gegen den nach § 981 Abs. 1 Berechtigten (§ 978 Abs. 3 Satz 1) — Wert der Sache über 500 Euro";
+        label en unofficial "Reward claim under (2) sentences 1 to 3 against the person entitled under § 981 (1) (§ 978 (3) sentence 1) — value above 500 euros";
+        when berechtigter_nach_981(f, p) and wert_der_fundsache(f, w) and fundsache_ist_kein_tier(f) and w > 500.00 EUR;
+        unless berechtigter_nach_981(f, p) and wert_der_fundsache(f, w) and finderlohnanspruch_978abs3_ausgeschlossen(f);
+        then finderlohnanspruch(f, p, div_round(500.00 EUR * 5 + (w - 500.00 EUR) * 3, 200.0, 2, "HALF_UP"));
+    }
+    rule Finderlohn978Abs3AusgeschlossenAusAbs2(f: Fund) strict {
+        label de official "Der Anspruch nach Absatz 3 ist wie der Anspruch nach Absatz 2 ausgeschlossen, wenn der Finder Bediensteter ist oder die Ablieferungspflicht verletzt (§ 978 Abs. 2 Satz 3, Abs. 3 Satz 1)";
+        label en unofficial "The claim under (3) is excluded, as under (2), if the finder is an employee or breached the duty to hand over (§ 978 (2) sentence 3, (3) sentence 1)";
+        when finderlohn_bei_behoerdenfund_ausgeschlossen(f);
+        then finderlohnanspruch_978abs3_ausgeschlossen(f);
+    }
+    rule Finderlohnfrist978Abs3Ereignis(f: Fund, fr: Frist, tag: Date) strict {
+        label de official "Die Frist des § 978 Abs. 3 Satz 2 beginnt mit der Entstehung des Anspruchs gegen den nach § 981 Abs. 1 Berechtigten (§ 187 Abs. 1)";
+        label en unofficial "The period of § 978 (3) sentence 2 begins when the claim against the person entitled under § 981 (1) arises (§ 187 (1))";
+        when finderlohnfrist_978abs3(f, fr) and finderlohnanspruch_978abs3_entstanden_am(f, tag);
+        then de.bgb.fristen::frist_ereignis(fr, tag);
+    }
+    rule Finderlohnfrist978Abs3Dauer(f: Fund, fr: Frist) strict {
+        label de official "Der Anspruch erlischt mit dem Ablauf von drei Jahren nach seiner Entstehung (§ 978 Abs. 3 Satz 2)";
+        label en unofficial "The claim expires three years after it arose (§ 978 (3) sentence 2)";
+        when finderlohnfrist_978abs3(f, fr);
+        then de.bgb.fristen::frist_dauer_kalender(fr, 3 calendar_year);
+    }
+    rule Klage978Abs3VorAblauf(f: Fund, fr: Frist, k: Date, ende: Date) strict {
+        label de official "Der Anspruch erlischt nicht, wenn die gerichtliche Geltendmachung vorher erfolgt (§ 978 Abs. 3 Satz 2 in Verbindung mit § 977 Satz 2)";
+        label en unofficial "The claim does not expire if it is asserted by action before the period ends (§ 978 (3) sentence 2 with § 977 sentence 2)";
+        when finderlohnfrist_978abs3(f, fr) and klage_978abs3_erhoben_am(f, k) and de.bgb.fristen::frist_ende(fr, ende) and k <= ende;
+        then klage_978abs3_vor_ablauf_erhoben(f);
+    }
+    rule Erloeschen978Abs3NachDreiJahren(f: Fund, fr: Frist, ende: Date) defeasible {
+        label de official "Der Anspruch erlischt mit dem Ablauf von drei Jahren nach seiner Entstehung gegen den nach § 981 Abs. 1 Berechtigten, wenn nicht die gerichtliche Geltendmachung vorher erfolgt (§ 978 Abs. 3 Satz 2)";
+        label en unofficial "The claim expires three years after it arose against the person entitled under § 981 (1) unless asserted by action before (§ 978 (3) sentence 2)";
+        when finderlohnfrist_978abs3(f, fr) and de.bgb.fristen::frist_ende(fr, ende);
+        unless finderlohnfrist_978abs3(f, fr) and de.bgb.fristen::frist_ende(fr, ende) and klage_978abs3_vor_ablauf_erhoben(f);
+        then finderlohnanspruch_978abs3_erloschen_am(f, ende);
+    }
+}
+// Wie bei § 977 (oben) bleibt `finderlohnanspruch_978abs3_erloschen_am(f, X)`
+// ein eigenständiges, zeitunabhängig berechnetes Ergebnis, das die
+// aufrufende Seite mit ihrem `legal_time` vergleicht; es speist NICHT das
+// Flag `finderlohnanspruch_978abs3_ausgeschlossen`, das nur die
+// zeitunabhängigen Ausschlussgründe des Absatzes 2 Satz 3 sammelt
+// (D-10-08, wie § 977).
+
+// --- § 972 Zurückbehaltungsrecht des Finders — entsprechende Anwendung der §§ 1000–1002 -------------
+//
+// „gilt entsprechend“ = EIN Prädikat (Muster D-08-10): die Ansprüche der
+// §§ 970, 971 werden, sobald sie einmal entstanden sind, als
+// `verwendungsersatzanspruch(s, finder)` gelesen — derselbe Kopf, den §§ 1000
+// (Zurückbehaltungsrecht), 1001 (Klage) und 1002 (Erlöschen) dieses Pakets
+// bereits für den Eigentümer-Besitzer-Verhältnis führen (Datei
+// `abschnitt-03-titel-04-05-ansprueche-und-miteigentum.law`). Keine zweite
+// Regelkette; die Grenze aus dem ersten Schnitt (D-10-08) entfällt (D-10-09).
+
+@source(BGB_P972) {
+    rule FinderVerwendungsersatzanspruchAusAufwendungen972(f: Fund, s: Sache, p: Person, betrag: Money) defeasible {
+        label de official "Auf die in § 970 bestimmten Ansprüche finden die für die Ansprüche des Besitzers gegen den Eigentümer wegen Verwendungen geltenden Vorschriften der §§ 1000 bis 1002 entsprechende Anwendung (§ 972)";
+        label en unofficial "The provisions of §§ 1000 to 1002 on the possessor's claims against the owner for outlays apply correspondingly to the claims of § 970 (§ 972)";
+        when fundsache(f, s) and finder(f, p) and fundaufwendungsersatzanspruch(f, p, betrag);
+        then verwendungsersatzanspruch(s, p);
+    }
+    rule FinderVerwendungsersatzanspruchAusFinderlohn972(f: Fund, s: Sache, p: Person, betrag: Money) defeasible {
+        label de official "Auf den in § 971 bestimmten Anspruch finden die §§ 1000 bis 1002 entsprechende Anwendung (§ 972)";
+        label en unofficial "§§ 1000 to 1002 also apply correspondingly to the claim of § 971 (§ 972)";
+        when fundsache(f, s) and finder(f, p) and finderlohnanspruch(f, p, betrag);
+        then verwendungsersatzanspruch(s, p);
+    }
+}
+
+@source(BGB_P984) {
+    rule SchatzZurHaelfteDemEntdecker(s: Sache, entdecker: Person, verbergende: Sache) defeasible {
+        label de official "Wird ein Schatz entdeckt und infolge der Entdeckung in Besitz genommen, so wird das Eigentum zur Hälfte von dem Entdecker erworben (§ 984)";
+        label en unofficial "If treasure is discovered and taken into possession, half of the ownership is acquired by the discoverer (§ 984)";
+        when schatz_entdeckt(s, entdecker, verbergende);
+        then miteigentumsanteil(s, entdecker, 1, 2);
+    }
+    rule SchatzZurHaelfteDemEigentuemerDerVerbergendenSache(s: Sache, entdecker: Person, verbergende: Sache, halter: Person) defeasible {
+        label de official "Wird ein Schatz entdeckt und infolge der Entdeckung in Besitz genommen, so wird das Eigentum zur Hälfte von dem Eigentümer der Sache erworben, in welcher der Schatz verborgen war (§ 984)";
+        label en unofficial "Half of the ownership is acquired by the owner of the thing in which the treasure was hidden (§ 984)";
+        when schatz_entdeckt(s, entdecker, verbergende) and eigentuemer_vor_dem_vorgang(verbergende, halter);
+        then miteigentumsanteil(s, halter, 1, 2);
+    }
+}

@@ -1,0 +1,244 @@
+// --- Buch 3 Abschnitt 6: Reallasten (§§ 1105–1112) --------------------------------------------------
+//
+// § 1107 setzt die Reallast in dieselbe Rechtsfolge wie die Zinsen einer
+// Hypothekenforderung (§ 1118, Abschnitt 7): dieses Paket liest dafür DAS
+// EINE gemeinsame, generisch auf `Belastung` deklarierte Prädikat
+// `gesicherte_forderung` (`abschnitt-07-titel-01-hypothek.law`) als Träger
+// der Einzelleistung, statt ein zweites Forderungsfeld einzuführen. §§ 1110–
+// 1112 spiegeln die Struktur der §§ 1103 f. (Vorkaufsrecht), hier für die
+// Reallast; § 1112 verweist auf § 1104 (Ausschluss unbekannter Berechtigter).
+
+pub entity Reallast : Belastung {
+    label de official "Reallast: Belastung eines Grundstücks, kraft deren wiederkehrende Leistungen aus dem Grundstück zu entrichten sind (§ 1105 Abs. 1 Satz 1)";
+    label en unofficial "charge on land (Reallast): encumbrance of land under which recurring performances are to be rendered out of the land (§ 1105 (1) sentence 1)";
+}
+
+// --- § 1105: Inhalt -----------------------------------------------------------------------------------
+
+pub relation rl_herrschendes_grundstueck(rl: Reallast, g: Grundstueck) kind empirical {
+    key(rl);
+    label de official "die Reallast besteht zugunsten des jeweiligen Eigentümers eines anderen (herrschenden) Grundstücks (§ 1105 Abs. 2)";
+    label en unofficial "the charge exists for the benefit of the owner for the time being of another (dominant) land (§ 1105 (2))";
+}
+pub relation rl_anpassungsklausel_vereinbart(rl: Reallast) kind empirical {
+    label de official "es ist vereinbart, dass sich die Leistungen ohne weiteres an veränderte Verhältnisse anpassen (§ 1105 Abs. 1 Satz 2)";
+    label en unofficial "it has been agreed that the performances automatically adjust to changed circumstances (§ 1105 (1) sentence 2)";
+}
+pub relation rl_wirksam_bestellt(rl: Reallast) kind derived {
+    label de official "die Reallast ist wirksam bestellt (§ 1105 Abs. 1)";
+    label en unofficial "the charge on land has been validly created (§ 1105 (1))";
+}
+pub relation rl_anpassungsfaehiger_inhalt_zulaessig(rl: Reallast) kind derived {
+    label de official "die Vereinbarung einer Anpassung an veränderte Verhältnisse ist zulässiger Inhalt der Reallast (§ 1105 Abs. 1 Satz 2)";
+    label en unofficial "an agreement to adjust to changed circumstances is a permissible content of the charge (§ 1105 (1) sentence 2)";
+}
+@source(BGB_P1105) {
+    rule RlWirksamBestellt(rl: Reallast, g: Grundstueck, p: Person) strict {
+        label de official "Ein Grundstück kann in der Weise belastet werden, dass an den Berechtigten wiederkehrende Leistungen aus dem Grundstück zu entrichten sind (§ 1105 Abs. 1 Satz 1)";
+        label en unofficial "Land may be encumbered so that recurring performances are to be rendered out of it to the entitled person (§ 1105 (1) sentence 1)";
+        when belastungsgegenstand_grundstueck(rl, g) and berechtigter(rl, p);
+        then rl_wirksam_bestellt(rl);
+    }
+    rule RlWirksamBestelltZugunstenDesJeweiligenEigentuemers(rl: Reallast, g: Grundstueck, h: Grundstueck) strict {
+        label de official "Die Reallast kann auch zugunsten des jeweiligen Eigentümers eines anderen Grundstücks bestellt werden (§ 1105 Abs. 2)";
+        label en unofficial "The charge may also be created for the benefit of the owner for the time being of another land (§ 1105 (2))";
+        when belastungsgegenstand_grundstueck(rl, g) and rl_herrschendes_grundstueck(rl, h);
+        then rl_wirksam_bestellt(rl);
+    }
+    rule RlAnpassungsfaehigerInhaltZulaessig(rl: Reallast) strict {
+        label de official "Als Inhalt der Reallast kann auch vereinbart werden, dass die Leistungen sich ohne weiteres an veränderte Verhältnisse anpassen, wenn Art und Umfang anhand der Vereinbarung bestimmt werden können (§ 1105 Abs. 1 Satz 2)";
+        label en unofficial "It may also be agreed that the performances automatically adjust to changed circumstances, where the kind and extent of the charge can be determined from the agreement (§ 1105 (1) sentence 2)";
+        when rl_wirksam_bestellt(rl) and rl_anpassungsklausel_vereinbart(rl);
+        then rl_anpassungsfaehiger_inhalt_zulaessig(rl);
+    }
+}
+
+// --- § 1106: Belastung eines Bruchteils -------------------------------------------------------------
+
+pub relation rl_bruchteil_ist_miteigentumsanteil(rl: Reallast) kind empirical {
+    label de official "der mit der Reallast belastete Bruchteil besteht in dem Anteil eines Miteigentümers (§ 1106)";
+    label en unofficial "the fractional share encumbered with the charge consists in the share of a co-owner (§ 1106)";
+}
+pub relation rl_belastung_des_bruchteils_zulaessig(rl: Reallast) kind derived {
+    label de official "die Belastung des Bruchteils mit der Reallast ist zulässig (§ 1106)";
+    label en unofficial "encumbering the fractional share with the charge is admissible (§ 1106)";
+}
+@source(BGB_P1106)
+rule RlBelastungDesBruchteilsZulaessig(rl: Reallast) strict {
+    label de official "Ein Bruchteil eines Grundstücks kann mit einer Reallast nur belastet werden, wenn er in dem Anteil eines Miteigentümers besteht (§ 1106)";
+    label en unofficial "A fractional share of land may be encumbered with a charge only if it consists in the share of a co-owner (§ 1106)";
+    when rl_bruchteil_ist_miteigentumsanteil(rl);
+    then rl_belastung_des_bruchteils_zulaessig(rl);
+}
+
+// --- § 1107: Einzelleistungen wie Hypothekenzinsen ----------------------------------------------------
+
+pub relation rl_einzelleistung(rl: Reallast, a: Anspruch) kind derived {
+    label de official "auf die einzelnen Leistungen finden die für die Zinsen einer Hypothekenforderung geltenden Vorschriften entsprechende Anwendung (§ 1107)";
+    label en unofficial "the provisions on the interest of a mortgage claim apply correspondingly to the individual performances (§ 1107)";
+}
+@source(BGB_P1107)
+rule RlEinzelleistungWieHypothekenzinsen(rl: Reallast, a: Anspruch) strict {
+    label de official "Auf die einzelnen Leistungen finden die für die Zinsen einer Hypothekenforderung geltenden Vorschriften entsprechende Anwendung (§ 1107)";
+    label en unofficial "The provisions applicable to the interest of a mortgage claim apply correspondingly to the individual performances (§ 1107)";
+    when rl_wirksam_bestellt(rl) and gesicherte_forderung(rl, a);
+    then rl_einzelleistung(rl, a);
+}
+
+// --- § 1108: Persönliche Haftung des Eigentümers -------------------------------------------------------
+
+pub relation rl_leistung_faellig_waehrend_eigentumsdauer(rl: Reallast, p: Person) kind empirical {
+    label de official "eine Leistung wird während der Dauer des Eigentums dieser Person fällig (§ 1108 Abs. 1)";
+    label en unofficial "a performance falls due during this person's period of ownership (§ 1108 (1))";
+}
+pub relation rl_abweichende_bestimmung_zur_persoenlichen_haftung(rl: Reallast) kind empirical {
+    label de official "ein anderes über die persönliche Haftung ist bestimmt (§ 1108 Abs. 1) — ausdrückliche Eingabe des Falls";
+    label en unofficial "something else has been determined about the personal liability (§ 1108 (1)) — explicit case input";
+}
+pub relation rl_eigentuemer_haftet_persoenlich(rl: Reallast, p: Person) kind derived {
+    label de official "der Eigentümer haftet für die während der Dauer seines Eigentums fällig werdenden Leistungen auch persönlich (§ 1108 Abs. 1)";
+    label en unofficial "the owner is also personally liable for the performances falling due during their ownership (§ 1108 (1))";
+}
+pub relation rl_grundstueck_geteilt_in(alt: Grundstueck, teil: Grundstueck) kind empirical {
+    label de official "das mit der Reallast belastete Grundstück wird geteilt (§ 1108 Abs. 2)";
+    label en unofficial "the land encumbered with the charge is divided (§ 1108 (2))";
+}
+pub relation rl_teileigentuemer_haften_als_gesamtschuldner(rl: Reallast, eins: Person, zwei: Person) kind derived {
+    label de official "die Eigentümer der einzelnen Teile haften als Gesamtschuldner (§ 1108 Abs. 2)";
+    label en unofficial "the owners of the individual parts are liable as joint and several debtors (§ 1108 (2))";
+}
+@source(BGB_P1108)
+presumption RlEigentuemerHaftetPersoenlich(rl: Reallast, p: Person) {
+    label de official "Der Eigentümer haftet für die während der Dauer seines Eigentums fällig werdenden Leistungen auch persönlich, soweit nicht ein anderes bestimmt ist (§ 1108 Abs. 1)";
+    label en unofficial "The owner is also personally liable for the performances falling due during their ownership, unless otherwise determined (§ 1108 (1))";
+    when rl_leistung_faellig_waehrend_eigentumsdauer(rl, p);
+    presume rl_eigentuemer_haftet_persoenlich(rl, p);
+    unless rl_leistung_faellig_waehrend_eigentumsdauer(rl, p) and rl_abweichende_bestimmung_zur_persoenlichen_haftung(rl) then not rl_eigentuemer_haftet_persoenlich(rl, p);
+}
+@source(BGB_P1108) {
+    rule RlTeileigentuemerHaftenAlsGesamtschuldner(rl: Reallast, belastet: Grundstueck, eins: Person, zwei: Person, teil1: Grundstueck, teil2: Grundstueck) strict {
+        label de official "Wird das Grundstück geteilt, so haften die Eigentümer der einzelnen Teile als Gesamtschuldner (§ 1108 Abs. 2)";
+        label en unofficial "If the land is divided, the owners of the individual parts are liable as joint and several debtors (§ 1108 (2))";
+        when belastungsgegenstand_grundstueck(rl, belastet) and rl_grundstueck_geteilt_in(belastet, teil1) and rl_grundstueck_geteilt_in(belastet, teil2)
+            and teil1 != teil2 and besteller(rl, eins) and besteller(rl, zwei) and eins != zwei;
+        then rl_teileigentuemer_haften_als_gesamtschuldner(rl, eins, zwei);
+    }
+}
+
+// --- § 1109: Teilung des herrschenden Grundstücks ------------------------------------------------------
+
+pub relation rl_herrschendes_grundstueck_geteilt_in(alt: Grundstueck, teil: Grundstueck) kind empirical {
+    label de official "das herrschende Grundstück wird geteilt (§ 1109 Abs. 1 Satz 1)";
+    label en unofficial "the dominant land is divided (§ 1109 (1) sentence 1)";
+}
+pub relation rl_besteht_fuer_teil_fort(rl: Reallast, teil: Grundstueck) kind derived {
+    label de official "die Reallast besteht für die einzelnen Teile des geteilten herrschenden Grundstücks fort (§ 1109 Abs. 1 Satz 1)";
+    label en unofficial "the charge continues to exist for the individual parts of the divided dominant land (§ 1109 (1) sentence 1)";
+}
+pub relation rl_bestimmung_nur_ein_teil_berechtigt(rl: Reallast, teil: Grundstueck) kind empirical {
+    label de official "der Berechtigte bestimmt, dass das Recht nur mit einem der Teile verbunden sein soll, dem Grundbuchamt gegenüber und eingetragen (§ 1109 Abs. 2 Satz 1, 2)";
+    label en unofficial "the entitled person determines, towards the land registry and by registration, that the right is to be linked to only one of the parts (§ 1109 (2) sentence 1, 2)";
+}
+pub relation rl_nur_mit_bestimmtem_teil_verbunden(rl: Reallast, teil: Grundstueck) kind derived {
+    label de official "das Recht ist nur mit dem bestimmten Teil verbunden (§ 1109 Abs. 2)";
+    label en unofficial "the right is linked only to the determined part (§ 1109 (2))";
+}
+pub relation rl_dient_nur_diesem_teil_zum_vorteil(rl: Reallast, teil: Grundstueck) kind empirical {
+    label de official "die Reallast gereicht nur diesem Teil des geteilten herrschenden Grundstücks zum Vorteil (§ 1109 Abs. 3)";
+    label en unofficial "the charge benefits only this part of the divided dominant land (§ 1109 (3))";
+}
+pub relation rl_bleibt_allein_mit_vorteilsteil_verbunden(rl: Reallast, teil: Grundstueck) kind derived {
+    label de official "gereicht die Reallast nur einem der Teile zum Vorteil, so bleibt sie mit diesem Teil allein verbunden (§ 1109 Abs. 3)";
+    label en unofficial "if the charge benefits only one of the parts, it remains linked to that part alone (§ 1109 (3))";
+}
+@source(BGB_P1109) {
+    rule RlBestehtFuerTeilFort(rl: Reallast, alt: Grundstueck, teil: Grundstueck) strict {
+        label de official "Wird das Grundstück des Berechtigten geteilt, so besteht die Reallast für die einzelnen Teile fort (§ 1109 Abs. 1 Satz 1)";
+        label en unofficial "If the land of the entitled person is divided, the charge continues to exist for the individual parts (§ 1109 (1) sentence 1)";
+        when rl_herrschendes_grundstueck(rl, alt) and rl_herrschendes_grundstueck_geteilt_in(alt, teil);
+        then rl_besteht_fuer_teil_fort(rl, teil);
+    }
+    rule RlNurMitBestimmtemTeilVerbunden(rl: Reallast, teil: Grundstueck) strict {
+        label de official "Der Berechtigte kann bestimmen, dass das Recht nur mit einem der Teile verbunden sein soll; die Bestimmung erfolgt dem Grundbuchamt gegenüber und bedarf der Eintragung (§ 1109 Abs. 2 Satz 1, 2)";
+        label en unofficial "The entitled person may determine that the right is to be linked to only one of the parts; the determination is made towards the land registry and requires registration (§ 1109 (2) sentence 1, 2)";
+        when rl_bestimmung_nur_ein_teil_berechtigt(rl, teil);
+        then rl_nur_mit_bestimmtem_teil_verbunden(rl, teil);
+    }
+    rule RlBleibtAlleinMitVorteilsteilVerbunden(rl: Reallast, teil: Grundstueck) strict {
+        label de official "Gereicht die Reallast nur einem der Teile zum Vorteil, so bleibt sie mit diesem Teil allein verbunden (§ 1109 Abs. 3)";
+        label en unofficial "If the charge benefits only one of the parts, it remains linked to that part alone (§ 1109 (3))";
+        when rl_dient_nur_diesem_teil_zum_vorteil(rl, teil);
+        then rl_bleibt_allein_mit_vorteilsteil_verbunden(rl, teil);
+    }
+}
+
+// --- §§ 1110, 1111: Subjektiv-dingliche und subjektiv-persönliche Reallast --------------------------------
+
+pub relation rl_subjektiv_persoenlich(rl: Reallast) kind empirical {
+    label de official "die Reallast besteht zugunsten einer bestimmten Person, nicht zugunsten des jeweiligen Eigentümers eines Grundstücks — ausdrückliche Eingabe des Falls (§ 1111 Abs. 1)";
+    label en unofficial "the charge exists for a specific person, not for the owner for the time being of land — explicit case input (§ 1111 (1))";
+}
+pub relation rl_subjektiv_dinglich_untrennbar(rl: Reallast) kind derived {
+    label de official "eine zugunsten des jeweiligen Eigentümers bestehende Reallast kann nicht von dem Eigentum an diesem Grundstück getrennt werden (§ 1110)";
+    label en unofficial "a charge existing for the owner for the time being cannot be separated from ownership of that land (§ 1110)";
+}
+pub relation rl_subjektiv_persoenlich_nicht_verbindbar(rl: Reallast) kind derived {
+    label de official "eine zugunsten einer bestimmten Person bestehende Reallast kann nicht mit dem Eigentum an einem Grundstück verbunden werden (§ 1111 Abs. 1)";
+    label en unofficial "a charge existing for a specific person cannot be linked to ownership of any land (§ 1111 (1))";
+}
+pub relation rl_einzelleistungsanspruch_nicht_uebertragbar(rl: Reallast) kind empirical {
+    label de official "der Anspruch auf die einzelne Leistung ist nicht übertragbar (§ 1111 Abs. 2)";
+    label en unofficial "the claim to the individual performance is not transferable (§ 1111 (2))";
+}
+pub relation rl_nicht_veraeusserbar_oder_belastbar(rl: Reallast) kind derived {
+    label de official "das Recht kann nicht veräußert oder belastet werden (§ 1111 Abs. 2)";
+    label en unofficial "the right cannot be alienated or encumbered (§ 1111 (2))";
+}
+@source(BGB_P1110)
+rule RlSubjektivDinglichUntrennbar(rl: Reallast, h: Grundstueck) strict {
+    label de official "Eine zugunsten des jeweiligen Eigentümers eines Grundstücks bestehende Reallast kann nicht von dem Eigentum an diesem Grundstück getrennt werden (§ 1110)";
+    label en unofficial "A charge existing for the owner for the time being of land cannot be separated from ownership of that land (§ 1110)";
+    when rl_herrschendes_grundstueck(rl, h);
+    then rl_subjektiv_dinglich_untrennbar(rl);
+}
+@source(BGB_P1111) {
+    rule RlSubjektivPersoenlichNichtVerbindbar(rl: Reallast, berechtigter: Person) strict {
+        label de official "Eine zugunsten einer bestimmten Person bestehende Reallast kann nicht mit dem Eigentum an einem Grundstück verbunden werden (§ 1111 Abs. 1)";
+        label en unofficial "A charge existing for a specific person cannot be linked to ownership of any land (§ 1111 (1))";
+        when berechtigter(rl, berechtigter) and rl_subjektiv_persoenlich(rl);
+        then rl_subjektiv_persoenlich_nicht_verbindbar(rl);
+    }
+    rule RlNichtVeraeusserbarOderBelastbar(rl: Reallast) strict {
+        label de official "Ist der Anspruch auf die einzelne Leistung nicht übertragbar, so kann das Recht nicht veräußert oder belastet werden (§ 1111 Abs. 2)";
+        label en unofficial "If the claim to the individual performance is not transferable, the right cannot be alienated or encumbered (§ 1111 (2))";
+        when rl_einzelleistungsanspruch_nicht_uebertragbar(rl);
+        then rl_nicht_veraeusserbar_oder_belastbar(rl);
+    }
+}
+
+// --- § 1112: Ausschluss unbekannter Berechtigter — Verweis auf § 1104 -------------------------------------
+
+pub relation rl_berechtigter_unbekannt(rl: Reallast) kind empirical {
+    label de official "der Berechtigte der Reallast ist unbekannt (§ 1112 i.V.m. § 1104 Abs. 1 Satz 1)";
+    label en unofficial "the person entitled to the charge is unknown (§ 1112 in conjunction with § 1104 (1) sentence 1)";
+}
+pub relation rl_voraussetzungen_des_1170_erfuellt(rl: Reallast) kind empirical {
+    label de official "die in § 1170 für die Ausschließung eines Hypothekengläubigers bestimmten Voraussetzungen liegen vor (§ 1112 i.V.m. § 1104 Abs. 1 Satz 1)";
+    label en unofficial "the requirements of § 1170 for excluding a mortgage creditor are met (§ 1112 in conjunction with § 1104 (1) sentence 1)";
+}
+pub relation rl_ausschliessungsbeschluss_rechtskraeftig(rl: Reallast) kind empirical {
+    label de official "der Ausschließungsbeschluss ist rechtskräftig geworden (§ 1112 i.V.m. § 1104 Abs. 1 Satz 2)";
+    label en unofficial "the exclusion order has become final (§ 1112 in conjunction with § 1104 (1) sentence 2)";
+}
+pub relation rl_erloschen_durch_ausschliessungsbeschluss(rl: Reallast) kind derived {
+    label de official "mit der Rechtskraft des Ausschließungsbeschlusses erlischt die Reallast (§ 1112 i.V.m. § 1104 Abs. 1 Satz 2)";
+    label en unofficial "the charge is extinguished when the exclusion order becomes final (§ 1112 in conjunction with § 1104 (1) sentence 2)";
+}
+@source(BGB_P1112)
+rule RlErloschenDurchAusschliessungsbeschluss(rl: Reallast) strict {
+    label de official "Ist der Berechtigte unbekannt, so findet auf die Ausschließung seines Rechts § 1104 entsprechende Anwendung: mit der Rechtskraft des Ausschließungsbeschlusses erlischt die Reallast (§ 1112)";
+    label en unofficial "If the entitled person is unknown, § 1104 applies correspondingly to the exclusion of their right: the charge is extinguished when the exclusion order becomes final (§ 1112)";
+    when rl_berechtigter_unbekannt(rl) and rl_voraussetzungen_des_1170_erfuellt(rl) and rl_ausschliessungsbeschluss_rechtskraeftig(rl)
+        and rl_subjektiv_persoenlich(rl);
+    then rl_erloschen_durch_ausschliessungsbeschluss(rl);
+}

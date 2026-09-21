@@ -1,0 +1,1963 @@
+// TITEL 12 — AUFTRAG, GESCHÄFTSBESORGUNGSVERTRAG UND ZAHLUNGSDIENSTE
+// (§§ 662–676c)
+//
+// Teil des Pakets BG-08 (`package.law`). 44 geltende Paragraphen, nach
+// Absätzen bearbeitet.
+//
+// „UNVERZÜGLICH" IST EIN BEWERTENDES MERKMAL, KEINE NULLFRIST (D-08-04).
+// §§ 663, 673 Satz 2, 675u Satz 2, 676b Absatz 1 verlangen eine Handlung
+// „unverzüglich"; das ist die Wertung des § 121 Absatz 1 Satz 1 („ohne
+// schuldhaftes Zögern"), die das Gericht trifft — Kanal § 47.3. Wo der Text
+// DANEBEN eine kalendarische Höchstgrenze nennt (§ 675u Satz 3: „spätestens
+// bis zum Ende des Geschäftstags, der auf den Tag der Anzeige folgt"; § 676b
+// Absatz 2: „spätestens 13 Monate nach dem Tag der Belastung"), ist DIESE
+// Grenze eine Frist des § 86 mit Zeile in DEADLINES.json.
+//
+// „ERFORDERLICH" IN § 670 ist ebenso eine Wertung: der Beauftragte darf die
+// Aufwendungen „den Umständen nach für erforderlich halten". Nicht das
+// Ergebnis, sondern die Beurteilung aus der Sicht des Beauftragten ist
+// maßgebend; ein Fall-Fakt „die Aufwendung war erforderlich" ist verboten.
+//
+// ZAHLUNGSDIENSTEAUFSICHT IST AUSSEN. § 675v Absatz 4 verweist auf die starke
+// Kundenauthentifizierung im Sinne des § 1 Absatz 24 ZAG, § 675d auf Artikel
+// 248 EGBGB. Diese Begriffe sind Eingänge des Falls, keine Regeln dieses
+// Pakets — Zeile in SOURCES.json.external.dependencies.
+
+language "law.core" version "0.2";
+package de.bgb.sonstige_vertraege version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-sonstige-vertraege";
+
+pub entity Auftrag {
+    label de official "Auftrag (§ 662)";
+    label en unofficial "mandate (§ 662)";
+}
+
+// § 662: Vertragstypische Pflichten beim Auftrag.
+
+pub relation auftraggeber(a: Auftrag, p: Person) kind empirical {
+    key(a);
+    label de official "Auftraggeber (§ 662)";
+    label en unofficial "mandator (§ 662)";
+}
+pub relation beauftragter(a: Auftrag, p: Person) kind empirical {
+    key(a);
+    label de official "Beauftragter (§ 662)";
+    label en unofficial "mandatary (§ 662)";
+}
+pub relation auftrag_angenommen(a: Auftrag) kind empirical {
+    label de official "Der Beauftragte hat den Auftrag angenommen (§ 662)";
+    label en unofficial "the mandatary has accepted the mandate (§ 662)";
+}
+pub relation pflicht_zur_unentgeltlichen_geschaeftsbesorgung(a: Auftrag, p: Person) kind institutional {
+    label de official "Durch die Annahme eines Auftrags verpflichtet sich der Beauftragte, ein ihm von dem Auftraggeber übertragenes Geschäft für diesen unentgeltlich zu besorgen (§ 662)";
+    label en unofficial "by accepting a mandate the mandatary undertakes to attend gratuitously to the business entrusted to him by the mandator (§ 662)";
+}
+pub relation geschaeftsbesorgung_durchgefuehrt_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat das übertragene Geschäft besorgt (§ 662)";
+    label en unofficial "the mandatary attended to the entrusted business (§ 662)";
+}
+pub relation auftrag_beginn_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Beginn der Pflicht aus dem angenommenen Auftrag (§ 662)";
+    label en unofficial "start of the accepted mandate obligation (§ 662)";
+}
+@source(BGB_P662)
+rule Position662Geschaeftsbesorgung(a: Auftrag, ag: Person, b: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, das übertragene Geschäft unentgeltlich zu besorgen (§ 662)";
+    label en unofficial "The mandatary is obliged to attend gratuitously to the entrusted business (§ 662)";
+    when auftrag_angenommen(a) and auftraggeber(a, ag) and beauftragter(a, b)
+     and auftrag_beginn_am(a, beginn);
+    then duty Duty662Geschaeftsbesorgung {
+        bearer b;
+        beneficiary ag;
+        achieve geschaeftsbesorgung_durchgefuehrt_am(a, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P662)
+rule PflichtenBeimAuftrag(a: Auftrag, p: Person) strict {
+    label de official "Durch die Annahme eines Auftrags verpflichtet sich der Beauftragte, ein ihm von dem Auftraggeber übertragenes Geschäft für diesen unentgeltlich zu besorgen (§ 662)";
+    label en unofficial "by accepting a mandate the mandatary undertakes to attend gratuitously to the business entrusted to him by the mandator (§ 662)";
+    when auftrag_angenommen(a) and beauftragter(a, p);
+    then pflicht_zur_unentgeltlichen_geschaeftsbesorgung(a, p);
+}
+
+// § 663: Anzeigepflicht bei Ablehnung — „unverzüglich" als Wertung.
+
+pub relation oeffentlich_bestellt_oder_erboten(a: Auftrag, p: Person) kind empirical {
+    label de official "Der Beauftragte ist zur Besorgung gewisser Geschäfte öffentlich bestellt, hat sich öffentlich erboten oder hat sich dem Auftraggeber gegenüber erboten (§ 663)";
+    label en unofficial "the mandatary is publicly appointed to attend to certain business, has publicly offered to do so, or has offered to do so to the mandator (§ 663)";
+}
+pub relation auftrag_nicht_angenommen(a: Auftrag) kind empirical {
+    label de official "Der Beauftragte hat den auf solche Geschäfte gerichteten Auftrag nicht angenommen (§ 663)";
+    label en unofficial "the mandatary has not accepted the mandate directed at such business (§ 663)";
+}
+pub relation anzeigepflicht_bei_ablehnung(a: Auftrag, p: Person) kind institutional {
+    label de official "Der Beauftragte ist verpflichtet, die Ablehnung dem Auftraggeber unverzüglich anzuzeigen (§ 663)";
+    label en unofficial "the mandatary must notify the mandator of the rejection without undue delay (§ 663)";
+}
+@source(BGB_P663)
+rule AnzeigepflichtBeiAblehnung(a: Auftrag, p: Person) strict {
+    label de official "Wer zur Besorgung gewisser Geschäfte öffentlich bestellt ist oder sich öffentlich erboten hat, ist, wenn er einen auf solche Geschäfte gerichteten Auftrag nicht annimmt, verpflichtet, die Ablehnung dem Auftraggeber unverzüglich anzuzeigen (§ 663)";
+    label en unofficial "a person publicly appointed or who has publicly offered to attend to certain business must, where he does not accept a mandate directed at such business, notify the mandator of the rejection without undue delay (§ 663)";
+    when oeffentlich_bestellt_oder_erboten(a, p) and auftrag_nicht_angenommen(a);
+    then anzeigepflicht_bei_ablehnung(a, p);
+}
+pub relation ablehnung_663_angezeigt_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat die Ablehnung angezeigt (§ 663)";
+    label en unofficial "the mandatary notified the refusal (§ 663)";
+}
+pub relation anzeigepflicht_663_beginn_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Beginn der Anzeigepflicht bei Ablehnung (§ 663)";
+    label en unofficial "start of the duty to notify refusal (§ 663)";
+}
+@source(BGB_P663)
+rule Position663Anzeige(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, die Ablehnung dem Auftraggeber anzuzeigen (§ 663)";
+    label en unofficial "The mandatary is obliged to notify the mandator of the refusal (§ 663)";
+    when oeffentlich_bestellt_oder_erboten(a, p) and auftrag_nicht_angenommen(a)
+     and anzeigepflicht_663_beginn_am(a, beginn);
+    then duty Duty663Anzeige {
+        bearer p;
+        achieve ablehnung_663_angezeigt_am(a, beginn) during [beginn, infinity);
+    };
+}
+
+// §§ 664–669: Unübertragbarkeit, Weisungen, Auskunft, Herausgabe, Verzinsung,
+// Vorschuss.
+
+pub relation uebertragung_der_ausfuehrung_gestattet(a: Auftrag) kind empirical {
+    label de official "Die Übertragung der Ausführung des Auftrags auf einen Dritten ist gestattet (§ 664 Absatz 1 Satz 1)";
+    label en unofficial "transfer of the execution of the mandate to a third party is permitted (§ 664 (1) sentence 1)";
+}
+pub relation ausfuehrung_darf_nicht_uebertragen_werden(a: Auftrag) kind institutional {
+    label de official "Der Beauftragte darf im Zweifel die Ausführung des Auftrags nicht einem Dritten übertragen (§ 664 Absatz 1 Satz 1)";
+    label en unofficial "in case of doubt the mandatary may not transfer the execution of the mandate to a third party (§ 664 (1) sentence 1)";
+}
+@source(BGB_P665)
+pub external judgment relation abweichung_waere_gebilligt_worden(a: Auftrag, weisung: Text) {
+    authority Court;
+    label de official "Der Beauftragte durfte den Umständen nach annehmen, dass der Auftraggeber bei Kenntnis der Sachlage die Abweichung von der Weisung billigen würde (§ 665 Satz 1)";
+    label en unofficial "the mandatary was entitled in the circumstances to assume that the mandator, knowing the facts, would approve the departure from the instruction (§ 665 sentence 1)";
+}
+pub relation abweichung_von_weisung_zulaessig(a: Auftrag, weisung: Text) kind institutional {
+    label de official "Der Beauftragte ist berechtigt, von den Weisungen des Auftraggebers abzuweichen (§ 665 Satz 1)";
+    label en unofficial "the mandatary is entitled to depart from the mandator's instructions (§ 665 sentence 1)";
+}
+pub relation auskunfts_und_rechenschaftspflicht(a: Auftrag, p: Person) kind institutional {
+    label de official "Der Beauftragte ist verpflichtet, die erforderlichen Nachrichten zu geben, auf Verlangen Auskunft zu erteilen und nach der Ausführung Rechenschaft abzulegen (§ 666)";
+    label en unofficial "the mandatary must give the necessary information, provide information on request and render account after execution (§ 666)";
+}
+pub relation aus_der_geschaeftsbesorgung_erlangt(a: Auftrag, gegenstand: Text) kind empirical {
+    label de official "Was der Beauftragte zur Ausführung des Auftrags erhält und was er aus der Geschäftsbesorgung erlangt (§ 667)";
+    label en unofficial "what the mandatary receives to execute the mandate and obtains from attending to the business (§ 667)";
+}
+pub relation herausgabepflicht(a: Auftrag, gegenstand: Text) kind institutional {
+    label de official "Der Beauftragte ist verpflichtet, dem Auftraggeber alles herauszugeben, was er zur Ausführung des Auftrags erhält und was er aus der Geschäftsbesorgung erlangt (§ 667)";
+    label en unofficial "the mandatary must hand over to the mandator everything he receives to execute the mandate and obtains from attending to the business (§ 667)";
+}
+pub relation geld_fuer_sich_verwendet_am(a: Auftrag, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, von dem an der Beauftragte herauszugebendes Geld für sich verwendet hat (§ 668)";
+    label en unofficial "day from which the mandatary used for himself money he was to hand over (§ 668)";
+}
+pub relation verzinsungspflicht_ab(a: Auftrag, tag: Date) kind institutional {
+    label de official "Der Beauftragte ist verpflichtet, für sich verwendetes Geld von der Zeit der Verwendung an zu verzinsen (§ 668)";
+    label en unofficial "the mandatary must pay interest on money used for himself from the time of use (§ 668)";
+}
+pub relation vorschuss_verlangt(a: Auftrag, betrag: Money) kind empirical {
+    key(a);
+    label de official "Der Beauftragte hat für die zur Ausführung des Auftrags erforderlichen Aufwendungen Vorschuss verlangt (§ 669)";
+    label en unofficial "the mandatary has requested an advance for the expenses necessary to execute the mandate (§ 669)";
+}
+pub relation vorschusspflicht(a: Auftrag, betrag: Money) kind institutional {
+    label de official "Für die zur Ausführung des Auftrags erforderlichen Aufwendungen hat der Auftraggeber dem Beauftragten auf Verlangen Vorschuss zu leisten (§ 669)";
+    label en unofficial "the mandator must on request make an advance to the mandatary for the expenses necessary to execute the mandate (§ 669)";
+}
+
+@source(BGB_P664)
+rule UnuebertragbarkeitImZweifel(a: Auftrag) strict {
+    label de official "Der Beauftragte darf im Zweifel die Ausführung des Auftrags nicht einem Dritten übertragen (§ 664 Absatz 1 Satz 1)";
+    label en unofficial "in case of doubt the mandatary may not transfer the execution of the mandate to a third party (§ 664 (1) sentence 1)";
+    when auftrag_angenommen(a) and not_known(uebertragung_der_ausfuehrung_gestattet(a));
+    then ausfuehrung_darf_nicht_uebertragen_werden(a);
+}
+pub relation auftragsausfuehrung_uebertragen_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat die Ausführung des Auftrags übertragen (§ 664)";
+    label en unofficial "the mandatary transferred execution of the mandate (§ 664)";
+}
+pub relation auftragspflicht_664_beginn_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Beginn des Verbots der Übertragung (§ 664)";
+    label en unofficial "start of the prohibition on transfer (§ 664)";
+}
+@source(BGB_P664)
+rule Position664Unuebertragbarkeit(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Dem Beauftragten ist es verboten, die Ausführung des Auftrags einem Dritten zu übertragen (§ 664 Absatz 1 Satz 1)";
+    label en unofficial "The mandatary is prohibited from transferring execution of the mandate to a third party (§ 664 (1) sentence 1)";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+     and not_known(uebertragung_der_ausfuehrung_gestattet(a))
+     and auftragspflicht_664_beginn_am(a, beginn);
+    then prohibition Prohibition664Unuebertragbarkeit {
+        bearer p;
+        action auftragsausfuehrung_uebertragen_am(a, beginn);
+        window [beginn, infinity];
+    };
+}
+@source(BGB_P665)
+rule AbweichungVonWeisungen(a: Auftrag, weisung: Text) strict {
+    label de official "Der Beauftragte ist berechtigt, von den Weisungen des Auftraggebers abzuweichen, wenn er den Umständen nach annehmen darf, dass der Auftraggeber bei Kenntnis der Sachlage die Abweichung billigen würde (§ 665 Satz 1)";
+    label en unofficial "the mandatary may depart from the mandator's instructions where he is entitled in the circumstances to assume that the mandator, knowing the facts, would approve the departure (§ 665 sentence 1)";
+    when auftrag_angenommen(a) and abweichung_waere_gebilligt_worden(a, weisung);
+    then abweichung_von_weisung_zulaessig(a, weisung);
+}
+@source(BGB_P666)
+rule AuskunftUndRechenschaft(a: Auftrag, p: Person) strict {
+    label de official "Der Beauftragte ist verpflichtet, dem Auftraggeber die erforderlichen Nachrichten zu geben, auf Verlangen über den Stand des Geschäfts Auskunft zu erteilen und nach der Ausführung des Auftrags Rechenschaft abzulegen (§ 666)";
+    label en unofficial "the mandatary must give the mandator the necessary information, provide information on request about the state of the business and render account after executing the mandate (§ 666)";
+    when auftrag_angenommen(a) and beauftragter(a, p);
+    then auskunfts_und_rechenschaftspflicht(a, p);
+}
+@source(BGB_P667)
+rule Herausgabepflicht667(a: Auftrag, gegenstand: Text) strict {
+    label de official "Der Beauftragte ist verpflichtet, dem Auftraggeber alles, was er zur Ausführung des Auftrags erhält und was er aus der Geschäftsbesorgung erlangt, herauszugeben (§ 667)";
+    label en unofficial "the mandatary must hand over to the mandator everything he receives to execute the mandate and obtains from attending to the business (§ 667)";
+    when auftrag_angenommen(a) and aus_der_geschaeftsbesorgung_erlangt(a, gegenstand);
+    then herausgabepflicht(a, gegenstand);
+}
+pub relation abweichung_ausgeuebt_am(a: Auftrag, weisung: Text, tag: Date) kind empirical {
+    label de official "Der Beauftragte ist von der Weisung abgewichen (§ 665)";
+    label en unofficial "the mandatary departed from the instruction (§ 665)";
+}
+pub relation auskunft_und_rechenschaft_erfolgt_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat Auskunft erteilt und Rechenschaft abgelegt (§ 666)";
+    label en unofficial "the mandatary provided information and rendered account (§ 666)";
+}
+pub relation herausgabe_erfolgt_am(a: Auftrag, gegenstand: Text, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat den Gegenstand herausgegeben (§ 667)";
+    label en unofficial "the mandatary handed over the item (§ 667)";
+}
+pub relation auftragspflicht_beginn_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Beginn der Pflicht aus dem Auftrag (§§ 665–667)";
+    label en unofficial "start of the mandate duties (§§ 665–667)";
+}
+@source(BGB_P665)
+rule Position665Abweichung(a: Auftrag, p: Person, weisung: Text, beginn: Date) strict {
+    label de official "Der Beauftragte ist berechtigt, von der Weisung abzuweichen (§ 665 Satz 1)";
+    label en unofficial "The mandatary has the liberty to depart from the instruction (§ 665 sentence 1)";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+     and abweichung_waere_gebilligt_worden(a, weisung)
+     and auftragspflicht_beginn_am(a, beginn);
+    then liberty Liberty665Abweichung {
+        holder p;
+        action abweichung_ausgeuebt_am(a, weisung, beginn);
+        window [beginn, infinity];
+    };
+}
+@source(BGB_P666)
+rule Position666Auskunft(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, dem Auftraggeber Auskunft zu erteilen und Rechenschaft abzulegen (§ 666)";
+    label en unofficial "The mandatary is obliged to provide information and render account (§ 666)";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+     and auftragspflicht_beginn_am(a, beginn);
+    then duty Duty666Auskunft {
+        bearer p;
+        beneficiary a;
+        achieve auskunft_und_rechenschaft_erfolgt_am(a, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P667)
+rule Position667Herausgabe(a: Auftrag, p: Person, gegenstand: Text, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, dem Auftraggeber den Gegenstand herauszugeben (§ 667)";
+    label en unofficial "The mandatary is obliged to hand over the item to the mandator (§ 667)";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+     and aus_der_geschaeftsbesorgung_erlangt(a, gegenstand)
+     and auftragspflicht_beginn_am(a, beginn);
+    then duty Duty667Herausgabe {
+        bearer p;
+        beneficiary a;
+        achieve herausgabe_erfolgt_am(a, gegenstand, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P668)
+rule VerzinsungDesVerwendetenGeldes(a: Auftrag, tag: Date) strict {
+    label de official "Verwendet der Beauftragte Geld für sich, das er dem Auftraggeber herauszugeben oder für ihn zu verwenden hat, so ist er verpflichtet, es von der Zeit der Verwendung an zu verzinsen (§ 668)";
+    label en unofficial "where the mandatary uses for himself money he is to hand over to or use for the mandator, he must pay interest on it from the time of use (§ 668)";
+    when auftrag_angenommen(a) and geld_fuer_sich_verwendet_am(a, tag);
+    then verzinsungspflicht_ab(a, tag);
+}
+@source(BGB_P669)
+rule Vorschusspflicht669(a: Auftrag, betrag: Money) strict {
+    label de official "Für die zur Ausführung des Auftrags erforderlichen Aufwendungen hat der Auftraggeber dem Beauftragten auf Verlangen Vorschuss zu leisten (§ 669)";
+    label en unofficial "the mandator must on request make an advance to the mandatary for the expenses necessary to execute the mandate (§ 669)";
+    when auftrag_angenommen(a) and vorschuss_verlangt(a, betrag);
+    then vorschusspflicht(a, betrag);
+}
+
+// § 670: Ersatz von Aufwendungen — die Wertung „den Umständen nach für
+// erforderlich halten dürfen".
+
+pub relation aufwendung_zur_ausfuehrung(a: Auftrag, betrag: Money) kind empirical {
+    key(a);
+    label de official "Aufwendung, die der Beauftragte zum Zwecke der Ausführung des Auftrags gemacht hat (§ 670)";
+    label en unofficial "expense incurred by the mandatary for the purpose of executing the mandate (§ 670)";
+}
+@source(BGB_P670)
+pub external judgment relation aufwendung_fuer_erforderlich_halten_duerfen(a: Auftrag, betrag: Money) {
+    authority Court;
+    label de official "Der Beauftragte durfte die Aufwendung den Umständen nach für erforderlich halten (§ 670)";
+    label en unofficial "the mandatary was entitled in the circumstances to regard the expense as necessary (§ 670)";
+}
+pub relation aufwendungsersatzanspruch(a: Auftrag, betrag: Money) kind institutional {
+    label de official "Der Auftraggeber ist zum Ersatz der Aufwendungen verpflichtet (§ 670)";
+    label en unofficial "the mandator must reimburse the expenses (§ 670)";
+}
+@source(BGB_P670)
+rule ErsatzVonAufwendungen670(a: Auftrag, betrag: Money) strict {
+    label de official "Macht der Beauftragte zum Zwecke der Ausführung des Auftrags Aufwendungen, die er den Umständen nach für erforderlich halten darf, so ist der Auftraggeber zum Ersatz verpflichtet (§ 670)";
+    label en unofficial "where the mandatary incurs expenses for the purpose of executing the mandate which he is entitled in the circumstances to regard as necessary, the mandator must reimburse him (§ 670)";
+    when auftrag_angenommen(a) and aufwendung_zur_ausfuehrung(a, betrag)
+        and aufwendung_fuer_erforderlich_halten_duerfen(a, betrag);
+    then aufwendungsersatzanspruch(a, betrag);
+}
+pub relation verzinsung_erfolgt_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat das verwendete Geld verzinst (§ 668)";
+    label en unofficial "the mandatary paid interest on the used money (§ 668)";
+}
+pub relation vorschuss_geleistet_am(a: Auftrag, betrag: Money, tag: Date) kind empirical {
+    label de official "Der Auftraggeber hat dem Beauftragten Vorschuss geleistet (§ 669)";
+    label en unofficial "the mandator paid the advance to the mandatary (§ 669)";
+}
+pub relation aufwendungen_ersetzt_am(a: Auftrag, betrag: Money, tag: Date) kind empirical {
+    label de official "Der Auftraggeber hat die Aufwendungen ersetzt (§ 670)";
+    label en unofficial "the mandator reimbursed the expenses (§ 670)";
+}
+pub relation auftragsleistung_beginn_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Beginn der Pflicht aus §§ 668–670";
+    label en unofficial "start of the duties under §§ 668–670";
+}
+@source(BGB_P668)
+rule Position668Verzinsung(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, das für sich verwendete Geld zu verzinsen (§ 668)";
+    label en unofficial "The mandatary is obliged to pay interest on money used for himself (§ 668)";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+     and geld_fuer_sich_verwendet_am(a, beginn);
+    then duty Duty668Verzinsung {
+        bearer p;
+        achieve verzinsung_erfolgt_am(a, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P669)
+rule Position669Vorschuss(a: Auftrag, ag: Person, p: Person, betrag: Money, beginn: Date) strict {
+    label de official "Der Auftraggeber ist verpflichtet, dem Beauftragten Vorschuss zu leisten (§ 669)";
+    label en unofficial "The mandator is obliged to pay the advance to the mandatary (§ 669)";
+    when auftrag_angenommen(a) and auftraggeber(a, ag) and beauftragter(a, p)
+     and vorschuss_verlangt(a, betrag) and auftragsleistung_beginn_am(a, beginn);
+    then duty Duty669Vorschuss {
+        bearer ag;
+        beneficiary p;
+        achieve vorschuss_geleistet_am(a, betrag, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P670)
+rule Position670Aufwendungsersatz(a: Auftrag, ag: Person, p: Person, betrag: Money, beginn: Date) strict {
+    label de official "Der Auftraggeber ist verpflichtet, dem Beauftragten erforderliche Aufwendungen zu ersetzen (§ 670)";
+    label en unofficial "The mandator is obliged to reimburse the mandatary's necessary expenses (§ 670)";
+    when auftrag_angenommen(a) and auftraggeber(a, ag) and beauftragter(a, p)
+     and aufwendung_zur_ausfuehrung(a, betrag)
+     and aufwendung_fuer_erforderlich_halten_duerfen(a, betrag)
+     and auftragsleistung_beginn_am(a, beginn);
+    then duty Duty670Aufwendungsersatz {
+        bearer ag;
+        beneficiary p;
+        achieve aufwendungen_ersetzt_am(a, betrag, beginn) during [beginn, infinity);
+    };
+}
+
+// §§ 671–674: Widerruf, Kündigung, Tod, Fiktion des Fortbestehens.
+
+pub relation auftrag_widerrufen(a: Auftrag) kind empirical {
+    label de official "Der Auftraggeber hat den Auftrag widerrufen (§ 671 Absatz 1)";
+    label en unofficial "the mandator has revoked the mandate (§ 671 (1))";
+}
+pub relation auftrag_gekuendigt(a: Auftrag) kind empirical {
+    label de official "Der Beauftragte hat den Auftrag gekündigt (§ 671 Absatz 1)";
+    label en unofficial "the mandatary has terminated the mandate (§ 671 (1))";
+}
+@source(BGB_P671)
+pub external judgment relation kuendigung_zur_unzeit_ohne_wichtigen_grund(a: Auftrag) {
+    authority Court;
+    label de official "Der Beauftragte hat zur Unzeit gekündigt, ohne dass ein wichtiger Grund für die unzeitige Kündigung vorlag (§ 671 Absatz 2)";
+    label en unofficial "the mandatary terminated at an inopportune time without good cause for doing so (§ 671 (2))";
+}
+pub relation schadensersatzpflicht_wegen_unzeitiger_kuendigung(a: Auftrag) kind institutional {
+    label de official "Kündigt der Beauftragte ohne wichtigen Grund zur Unzeit, so hat er dem Auftraggeber den daraus entstehenden Schaden zu ersetzen (§ 671 Absatz 2 Satz 2)";
+    label en unofficial "where the mandatary terminates at an inopportune time without good cause he must compensate the mandator for the resulting damage (§ 671 (2) sentence 2)";
+}
+pub relation auftraggeber_verstorben_oder_geschaeftsunfaehig(a: Auftrag) kind empirical {
+    label de official "Der Auftraggeber ist verstorben oder geschäftsunfähig geworden (§ 672 Satz 1)";
+    label en unofficial "the mandator has died or become legally incapable (§ 672 sentence 1)";
+}
+pub relation anderes_ergibt_sich_672(a: Auftrag) kind empirical {
+    label de official "Aus dem Auftrag ergibt sich, dass er durch den Tod oder die Geschäftsunfähigkeit des Auftraggebers erlischt (§ 672 Satz 1: „im Zweifel“)";
+    label en unofficial "the mandate provides that it is extinguished by the mandator's death or legal incapacity (§ 672 sentence 1: in case of doubt)";
+}
+pub relation beauftragter_verstorben(a: Auftrag) kind empirical {
+    label de official "Der Beauftragte ist verstorben (§ 673 Satz 1)";
+    label en unofficial "the mandatary has died (§ 673 sentence 1)";
+}
+pub relation anderes_ergibt_sich_673(a: Auftrag) kind empirical {
+    label de official "Aus dem Auftrag ergibt sich, dass er durch den Tod des Beauftragten nicht erlischt (§ 673 Satz 1: „im Zweifel“)";
+    label en unofficial "the mandate provides that it is not extinguished by the mandatary's death (§ 673 sentence 1: in case of doubt)";
+}
+pub relation auftrag_erloschen(a: Auftrag) kind institutional {
+    label de official "Der Auftrag ist erloschen (§§ 671, 673)";
+    label en unofficial "the mandate is extinguished (§§ 671, 673)";
+}
+pub relation auftrag_besteht_fort(a: Auftrag) kind institutional {
+    label de official "Der Auftrag erlischt im Zweifel nicht durch den Tod oder den Eintritt der Geschäftsunfähigkeit des Auftraggebers (§ 672 Satz 1)";
+    label en unofficial "in case of doubt the mandate is not extinguished by the mandator's death or legal incapacity (§ 672 sentence 1)";
+}
+pub relation beauftragter_kennt_erloeschen(a: Auftrag) kind empirical {
+    label de official "Der Beauftragte hat vom Erlöschen des Auftrags Kenntnis erlangt oder muss es kennen (§ 674)";
+    label en unofficial "the mandatary has learned of the extinction of the mandate or must be aware of it (§ 674)";
+}
+pub relation auftrag_gilt_zugunsten_des_beauftragten_als_fortbestehend(a: Auftrag) kind institutional {
+    label de official "Erlischt der Auftrag in anderer Weise als durch Widerruf, so gilt er zugunsten des Beauftragten gleichwohl als fortbestehend, bis der Beauftragte von dem Erlöschen Kenntnis erlangt oder das Erlöschen kennen muss (§ 674)";
+    label en unofficial "where the mandate is extinguished otherwise than by revocation, it is nevertheless deemed to continue in the mandatary's favour until he learns of or must be aware of the extinction (§ 674)";
+}
+
+@source(BGB_P671) {
+    rule AuftragErloschenDurchWiderruf(a: Auftrag) strict {
+        label de official "Der Auftrag kann von dem Auftraggeber jederzeit widerrufen werden (§ 671 Absatz 1)";
+        label en unofficial "the mandate may be revoked by the mandator at any time (§ 671 (1))";
+        when auftrag_angenommen(a) and auftrag_widerrufen(a);
+        then auftrag_erloschen(a);
+    }
+    rule AuftragErloschenDurchKuendigung(a: Auftrag) strict {
+        label de official "Der Auftrag kann von dem Beauftragten jederzeit gekündigt werden (§ 671 Absatz 1)";
+        label en unofficial "the mandate may be terminated by the mandatary at any time (§ 671 (1))";
+        when auftrag_angenommen(a) and auftrag_gekuendigt(a);
+        then auftrag_erloschen(a);
+    }
+    rule SchadensersatzWegenUnzeitigerKuendigung(a: Auftrag) strict {
+        label de official "Kündigt der Beauftragte ohne wichtigen Grund zur Unzeit, so hat er dem Auftraggeber den daraus entstehenden Schaden zu ersetzen (§ 671 Absatz 2 Satz 2)";
+        label en unofficial "where the mandatary terminates at an inopportune time without good cause he must compensate the mandator for the resulting damage (§ 671 (2) sentence 2)";
+        when auftrag_gekuendigt(a) and kuendigung_zur_unzeit_ohne_wichtigen_grund(a);
+        then schadensersatzpflicht_wegen_unzeitiger_kuendigung(a);
+    }
+}
+@source(BGB_P672)
+rule AuftragBestehtTrotzTodesDesAuftraggebersFort(a: Auftrag) strict {
+    label de official "Der Auftrag erlischt im Zweifel nicht durch den Tod oder den Eintritt der Geschäftsunfähigkeit des Auftraggebers (§ 672 Satz 1)";
+    label en unofficial "in case of doubt the mandate is not extinguished by the mandator's death or legal incapacity (§ 672 sentence 1)";
+    when auftrag_angenommen(a) and auftraggeber_verstorben_oder_geschaeftsunfaehig(a)
+        and not_known(anderes_ergibt_sich_672(a));
+    then auftrag_besteht_fort(a);
+}
+@source(BGB_P673)
+rule AuftragErlischtDurchTodDesBeauftragten(a: Auftrag) strict {
+    label de official "Der Auftrag erlischt im Zweifel durch den Tod des Beauftragten (§ 673 Satz 1)";
+    label en unofficial "in case of doubt the mandate is extinguished by the mandatary's death (§ 673 sentence 1)";
+    when auftrag_angenommen(a) and beauftragter_verstorben(a) and not_known(anderes_ergibt_sich_673(a));
+    then auftrag_erloschen(a);
+}
+@source(BGB_P674)
+rule FiktionDesFortbestehens(a: Auftrag) strict {
+    label de official "Erlischt der Auftrag in anderer Weise als durch Widerruf, so gilt er zugunsten des Beauftragten gleichwohl als fortbestehend, bis der Beauftragte von dem Erlöschen Kenntnis erlangt oder das Erlöschen kennen muss (§ 674)";
+    label en unofficial "where the mandate is extinguished otherwise than by revocation, it is nevertheless deemed to continue in the mandatary's favour until he learns of or must be aware of the extinction (§ 674)";
+    when auftrag_erloschen(a) and not_known(auftrag_widerrufen(a)) and not_known(beauftragter_kennt_erloeschen(a));
+    then auftrag_gilt_zugunsten_des_beauftragten_als_fortbestehend(a);
+}
+pub relation schadensersatz_671_geleistet_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Beauftragte hat den Schaden aus der Kündigung ersetzt (§ 671 Absatz 2)";
+    label en unofficial "the mandatary compensated the damage caused by termination (§ 671 (2))";
+}
+pub relation auftrag_fortgefuehrt_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Auftrag wurde trotz des Todes oder der Geschäftsunfähigkeit fortgeführt (§ 672)";
+    label en unofficial "the mandate was continued despite death or incapacity (§ 672)";
+}
+pub relation auftrag_bis_kenntnis_fortgefuehrt_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Der Auftrag wurde bis zur Kenntnis vom Erlöschen fortgeführt (§ 674)";
+    label en unofficial "the mandate was continued until knowledge of extinction (§ 674)";
+}
+pub relation auftragspflicht_671_beginn_am(a: Auftrag, tag: Date) kind empirical {
+    label de official "Beginn der Ersatzpflicht aus § 671 Absatz 2";
+    label en unofficial "start of the duty under § 671 (2)";
+}
+@source(BGB_P671)
+rule Position671Schadensersatz(a: Auftrag, p: Person, ag: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, dem Auftraggeber den Schaden aus der Kündigung zur Unzeit zu ersetzen (§ 671 Absatz 2)";
+    label en unofficial "The mandatary is obliged to compensate the mandator for damage caused by untimely termination (§ 671 (2))";
+    when auftrag_gekuendigt(a) and beauftragter(a, p) and auftraggeber(a, ag)
+     and kuendigung_zur_unzeit_ohne_wichtigen_grund(a)
+     and auftragspflicht_671_beginn_am(a, beginn);
+    then duty Duty671Schadensersatz {
+        bearer p;
+        beneficiary ag;
+        achieve schadensersatz_671_geleistet_am(a, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P672)
+rule Position672Fortfuehrung(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist verpflichtet, den Auftrag trotz des Todes oder der Geschäftsunfähigkeit des Auftraggebers fortzuführen (§ 672)";
+    label en unofficial "The mandatary is obliged to continue the mandate despite the mandator's death or incapacity (§ 672)";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+     and auftraggeber_verstorben_oder_geschaeftsunfaehig(a)
+     and not_known(anderes_ergibt_sich_672(a))
+     and auftragspflicht_671_beginn_am(a, beginn);
+    then duty Duty672Fortfuehrung {
+        bearer p;
+        achieve auftrag_fortgefuehrt_am(a, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P674)
+rule Position674Fortfuehrung(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Der Beauftragte ist berechtigt, den Auftrag bis zur Kenntnis vom Erlöschen fortzuführen (§ 674)";
+    label en unofficial "The mandatary has the liberty to continue the mandate until learning of its extinction (§ 674)";
+    when auftrag_erloschen(a) and beauftragter(a, p)
+     and not_known(auftrag_widerrufen(a)) and not_known(beauftragter_kennt_erloeschen(a))
+     and auftragspflicht_671_beginn_am(a, beginn);
+    then duty Duty674Fortfuehrung {
+        bearer p;
+        achieve auftrag_bis_kenntnis_fortgefuehrt_am(a, beginn) during [beginn, infinity);
+    };
+}
+
+// § 675: Entgeltliche Geschäftsbesorgung — die Verweisungskette des Absatzes 1
+// und der Haftungsausschluss für Rat und Empfehlung (Absatz 2).
+
+pub relation dienst_oder_werkvertrag_mit_geschaeftsbesorgung(a: Auftrag) kind empirical {
+    label de official "Dienstvertrag oder Werkvertrag, der eine Geschäftsbesorgung zum Gegenstand hat (§ 675 Absatz 1)";
+    label en unofficial "contract for services or for work whose object is attending to business (§ 675 (1))";
+}
+pub relation auftragsrecht_entsprechend_anwendbar(a: Auftrag) kind institutional {
+    label de official "Auf den Vertrag finden die Vorschriften der §§ 663, 665–670, 672–674 entsprechende Anwendung (§ 675 Absatz 1)";
+    label en unofficial "§§ 663, 665–670, 672–674 apply mutatis mutandis to the contract (§ 675 (1))";
+}
+pub relation rat_oder_empfehlung_erteilt(ratgeber: Person, empfaenger: Person) kind empirical {
+    label de official "Jemand erteilt einem anderen einen Rat oder eine Empfehlung (§ 675 Absatz 2)";
+    label en unofficial "a person gives another advice or a recommendation (§ 675 (2))";
+}
+pub relation keine_haftung_fuer_rat_oder_empfehlung(ratgeber: Person, empfaenger: Person) kind institutional {
+    label de official "Wer einem anderen einen Rat oder eine Empfehlung erteilt, ist zum Ersatz des aus der Befolgung entstehenden Schadens nicht verpflichtet, unbeschadet der Verantwortlichkeit aus Vertrag, unerlaubter Handlung oder sonstiger gesetzlicher Bestimmung (§ 675 Absatz 2)";
+    label en unofficial "a person giving advice or a recommendation is not obliged to compensate damage arising from following it, without prejudice to liability in contract, in tort or under any other statutory provision (§ 675 (2))";
+}
+
+@source(BGB_P675) {
+    rule Geschaeftsbesorgung675(a: Auftrag) strict {
+        label de official "Auf einen Dienstvertrag oder einen Werkvertrag, der eine Geschäftsbesorgung zum Gegenstand hat, finden die Vorschriften der §§ 663, 665 bis 670, 672 bis 674 entsprechende Anwendung (§ 675 Absatz 1)";
+        label en unofficial "§§ 663, 665 to 670, 672 to 674 apply mutatis mutandis to a contract for services or for work whose object is attending to business (§ 675 (1))";
+        when dienst_oder_werkvertrag_mit_geschaeftsbesorgung(a);
+        then auftragsrecht_entsprechend_anwendbar(a);
+    }
+    rule KeineHaftungFuerRat(ratgeber: Person, empfaenger: Person) strict {
+        label de official "Wer einem anderen einen Rat oder eine Empfehlung erteilt, ist zum Ersatz des aus der Befolgung des Rates oder der Empfehlung entstehenden Schadens nicht verpflichtet (§ 675 Absatz 2)";
+        label en unofficial "a person giving another advice or a recommendation is not obliged to compensate damage arising from following it (§ 675 (2))";
+        when rat_oder_empfehlung_erteilt(ratgeber, empfaenger);
+        then keine_haftung_fuer_rat_oder_empfehlung(ratgeber, empfaenger);
+    }
+}
+
+// ==================================================================================================
+// ZAHLUNGSDIENSTE (§§ 675c–676c)
+// ==================================================================================================
+
+pub entity Zahlungsvorgang {
+    label de official "Zahlungsvorgang (§ 675f Absatz 4 Satz 1)";
+    label en unofficial "payment transaction (§ 675f (4) sentence 1)";
+}
+
+pub relation zahler(zv: Zahlungsvorgang, p: Person) kind empirical {
+    key(zv);
+    label de official "Zahler des Zahlungsvorgangs (§ 675f)";
+    label en unofficial "payer of the payment transaction (§ 675f)";
+}
+pub relation zahlungsdienstleister_des_zahlers(zv: Zahlungsvorgang, p: Person) kind empirical {
+    key(zv);
+    label de official "Zahlungsdienstleister des Zahlers (§ 675f)";
+    label en unofficial "the payer's payment service provider (§ 675f)";
+}
+pub relation zahlungsbetrag(zv: Zahlungsvorgang, betrag: Money) kind empirical {
+    key(zv);
+    label de official "Zahlungsbetrag des Zahlungsvorgangs (§ 675u Satz 2)";
+    label en unofficial "amount of the payment transaction (§ 675u sentence 2)";
+}
+pub relation nicht_autorisierter_zahlungsvorgang(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsvorgang ist nicht autorisiert (§ 675u Satz 1, § 675j Absatz 1)";
+    label en unofficial "the payment transaction is unauthorised (§ 675u sentence 1, § 675j (1))";
+}
+pub relation erstattungspflicht_675u(zv: Zahlungsvorgang, betrag: Money) kind institutional {
+    label de official "Der Zahlungsdienstleister ist verpflichtet, dem Zahler den Zahlungsbetrag unverzüglich zu erstatten und das Zahlungskonto wieder auf den Stand zu bringen, auf dem es sich ohne die Belastung befunden hätte (§ 675u Satz 2)";
+    label en unofficial "the payment service provider must refund the payment amount to the payer without undue delay and restore the payment account to the state it would have been in without the debit (§ 675u sentence 2)";
+}
+pub relation kein_aufwendungsersatzanspruch_675u(zv: Zahlungsvorgang) kind institutional {
+    label de official "Im Fall eines nicht autorisierten Zahlungsvorgangs hat der Zahlungsdienstleister des Zahlers gegen diesen keinen Anspruch auf Erstattung seiner Aufwendungen (§ 675u Satz 1)";
+    label en unofficial "in the case of an unauthorised payment transaction the payer's payment service provider has no claim against him for reimbursement of its expenses (§ 675u sentence 1)";
+}
+pub relation erstattungsfrist_675u(f: Frist) kind empirical {
+    key(f);
+    label de official "Äußerste Grenze der Erstattung: bis zum Ende des Geschäftstags, der auf den Tag der Anzeige oder der anderweitigen Kenntniserlangung folgt (§ 675u Satz 3)";
+    label en unofficial "outer limit of the refund: by the end of the business day following the day of notification or of otherwise obtaining knowledge (§ 675u sentence 3)";
+}
+pub relation anzeige_der_nichtautorisierung_am(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag, an welchem dem Zahlungsdienstleister angezeigt wurde, dass der Zahlungsvorgang nicht autorisiert ist, oder er auf andere Weise davon Kenntnis erhalten hat (§ 675u Satz 3)";
+    label en unofficial "day on which the payment service provider was notified that the transaction is unauthorised or otherwise obtained knowledge of it (§ 675u sentence 3)";
+}
+
+// §§ 675c, 675g–675i, 675n, 675p, 675q, 675r (D-08-19): Anfang des
+// Untertitels, vor § 675u. § 675c Absatz 1 ist Verweisungsnorm nach dem
+// Muster D-08-07 (parallel zu § 675 Absatz 1 für die allgemeine
+// Geschäftsbesorgung, hier speziell für Zahlungsdienste). §§ 675g, 675h,
+// 675i tragen Fristen und Beträge des Zahlungsdiensterahmenvertrags (zwei
+// Monate/ein Monat, 30/150/200 Euro). §§ 675n, 675p, 675q, 675r tragen den
+// Zugang, den Widerruf und die Ausführung des einzelnen Zahlungsauftrags.
+// §§ 675d, 675e, 675f, 675j, 675k, 675l, 675m, 675o bleiben Grenze dieser
+// Sitzung: § 675d verweist ausschließlich auf Artikel 248 EGBGB-Kataloge
+// ohne eigene Schwelle in diesem Paragraphen; § 675e ist eine Meta-Norm
+// darüber, WELCHE anderen Vorschriften abdingbar sind (kein eigenständiges
+// Rechtsfolgenprädikat); § 675f ist überwiegend Begriffsbestimmung
+// (Einzelzahlungsvertrag/Rahmenvertrag/Zahlungsvorgang/Zahlungsauftrag) mit
+// einer Entgeltpflicht, die bereits über die allgemeine Auftragsmechanik
+// erfasst ist; §§ 675j, 675k, 675l, 675m, 675o folgen einer nächsten
+// Sitzung — kein Platz in dieser Wave, keine inhaltliche Aussage über ihre
+// Formalisierbarkeit.
+
+pub entity Zahlungsdienstevertrag {
+    label de official "Zahlungsdienstevertrag: Einzelzahlungsvertrag oder Zahlungsdiensterahmenvertrag (§ 675f Absatz 1, 2)";
+    label en unofficial "payment services contract: single payment services contract or framework contract (§ 675f (1), (2))";
+}
+pub relation zahlungsdienstleister_zdv(zdv: Zahlungsdienstevertrag, p: Person) kind empirical {
+    key(zdv);
+    label de official "Zahlungsdienstleister des Zahlungsdienstevertrags (§ 675f)";
+    label en unofficial "the payment service provider under the contract (§ 675f)";
+}
+pub relation zahlungsdienstnutzer_zdv(zdv: Zahlungsdienstevertrag, p: Person) kind empirical {
+    key(zdv);
+    label de official "Zahlungsdienstnutzer des Zahlungsdienstevertrags (§ 675f)";
+    label en unofficial "the payment service user under the contract (§ 675f)";
+}
+pub relation geschaeftsbesorgungsvertrag_ueber_zahlungsdienste_geschlossen(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Es ist ein Geschäftsbesorgungsvertrag geschlossen, der die Erbringung von Zahlungsdiensten oder die Ausgabe und Nutzung von E-Geld zum Gegenstand hat (§ 675c Absatz 1, 2)";
+    label en unofficial "a contract for the management of another's affairs has been concluded, having as its object the provision of payment services or the issuance and use of e-money (§ 675c (1), (2))";
+}
+pub relation auftragsrecht_entsprechend_bei_zahlungsdiensten(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Auf den Vertrag finden die §§ 663, 665 bis 670 und 672 bis 674 entsprechende Anwendung, soweit in diesem Untertitel nichts Abweichendes bestimmt ist (§ 675c Absatz 1, 2)";
+    label en unofficial "the contract is governed correspondingly by §§ 663, 665 to 670 and 672 to 674, unless this subtitle provides otherwise (§ 675c (1), (2))";
+}
+@source(BGB_P675c)
+rule AuftragsrechtEntsprechendBeiZahlungsdiensten(zdv: Zahlungsdienstevertrag) strict {
+    label de official "Auf einen Geschäftsbesorgungsvertrag, der die Erbringung von Zahlungsdiensten zum Gegenstand hat, sind die §§ 663, 665 bis 670 und 672 bis 674 entsprechend anzuwenden, soweit in diesem Untertitel nichts Abweichendes bestimmt ist; dies gilt auch für einen Vertrag über die Ausgabe und Nutzung von E-Geld (§ 675c Absatz 1, 2)";
+    label en unofficial "a contract for the management of another's affairs having payment services as its object is governed correspondingly by §§ 663, 665 to 670 and 672 to 674, unless this subtitle provides otherwise; the same applies to a contract on the issuance and use of e-money (§ 675c (1), (2))";
+    when geschaeftsbesorgungsvertrag_ueber_zahlungsdienste_geschlossen(zdv);
+    then auftragsrecht_entsprechend_bei_zahlungsdiensten(zdv);
+}
+
+// § 675g Änderung des Zahlungsdiensterahmenvertrags: Angebotsfrist von
+// mindestens zwei Monaten (Absatz 1); vereinbarte Zustimmungsfiktion bei
+// Schweigen samt fristlosem Kündigungsrecht des Nutzers (Absatz 2).
+pub relation aenderung_vorgeschlagen_am_675g(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    key(zdv);
+    label de official "Tag, an dem der Zahlungsdienstleister dem Zahlungsdienstnutzer die beabsichtigte Änderung anbietet (§ 675g Absatz 1)";
+    label en unofficial "day on which the provider offers the user the intended amendment (§ 675g (1))";
+}
+pub relation wirksamwerden_vorgeschlagen_am_675g(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    key(zdv);
+    label de official "Vorgeschlagener Zeitpunkt des Wirksamwerdens der Änderung (§ 675g Absatz 1)";
+    label en unofficial "proposed date on which the amendment is to take effect (§ 675g (1))";
+}
+pub relation aenderungsangebot_rechtzeitig_675g(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Das Änderungsangebot ist spätestens zwei Monate vor dem vorgeschlagenen Zeitpunkt des Wirksamwerdens unterbreitet worden (§ 675g Absatz 1)";
+    label en unofficial "the amendment was offered at the latest two months before the proposed date it is to take effect (§ 675g (1))";
+}
+pub relation zustimmungsfiktion_vereinbart_675g(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Zahlungsdienstleister und Zahlungsdienstnutzer haben vereinbart, dass die Zustimmung zu einer Änderung als erteilt gilt, wenn der Nutzer seine Ablehnung nicht vor dem vorgeschlagenen Zeitpunkt des Wirksamwerdens angezeigt hat (§ 675g Absatz 2 Satz 1)";
+    label en unofficial "the provider and user have agreed that consent to an amendment is deemed given unless the user notifies his rejection before the proposed effective date (§ 675g (2) sentence 1)";
+}
+pub relation fristloses_kuendigungsrecht_675g(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Der Zahlungsdienstnutzer ist berechtigt, den Zahlungsdiensterahmenvertrag vor dem vorgeschlagenen Zeitpunkt des Wirksamwerdens der Änderung fristlos zu kündigen (§ 675g Absatz 2 Satz 2)";
+    label en unofficial "the user is entitled to terminate the framework contract without notice before the proposed effective date of the amendment (§ 675g (2) sentence 2)";
+}
+@source(BGB_P675g) {
+    rule AenderungsangebotRechtzeitig675g(zdv: Zahlungsdienstevertrag, angebot: Date, wirksam: Date) strict {
+        label de official "Eine Änderung auf Veranlassung des Zahlungsdienstleisters setzt voraus, dass dieser die Änderung spätestens zwei Monate vor dem vorgeschlagenen Zeitpunkt ihres Wirksamwerdens anbietet (§ 675g Absatz 1)";
+        label en unofficial "an amendment initiated by the provider requires that it be offered at the latest two months before the proposed date it takes effect (§ 675g (1))";
+        when aenderung_vorgeschlagen_am_675g(zdv, angebot) and wirksamwerden_vorgeschlagen_am_675g(zdv, wirksam)
+            and add_calendar_period(angebot, with_unit(2, "calendar_month")) <= wirksam;
+        then aenderungsangebot_rechtzeitig_675g(zdv);
+    }
+    rule FristlosesKuendigungsrecht675g(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Im Fall einer Vereinbarung nach Absatz 2 Satz 1 ist der Zahlungsdienstnutzer auch berechtigt, den Zahlungsdiensterahmenvertrag vor dem vorgeschlagenen Zeitpunkt des Wirksamwerdens der Änderung fristlos zu kündigen (§ 675g Absatz 2 Satz 2)";
+        label en unofficial "where such an agreement exists, the user may also terminate the framework contract without notice before the amendment's proposed effective date (§ 675g (2) sentence 2)";
+        when zustimmungsfiktion_vereinbart_675g(zdv);
+        then fristloses_kuendigungsrecht_675g(zdv);
+    }
+}
+
+// § 675h Ordentliche Kündigung: Nutzer jederzeit, vereinbarte Kündigungsfrist
+// höchstens ein Monat (Absatz 1); Dienstleister nur bei unbestimmter Zeit
+// und vereinbartem Kündigungsrecht, Frist mindestens zwei Monate
+// (Absatz 2); Entgelte nur anteilig (Absatz 3).
+pub relation kuendigungsfrist_vereinbart_675h(zdv: Zahlungsdienstevertrag, monate: Integer) kind empirical {
+    key(zdv);
+    label de official "Vereinbarte Kündigungsfrist des Zahlungsdienstnutzers in Monaten (§ 675h Absatz 1 Satz 2)";
+    label en unofficial "agreed notice period of the user, in months (§ 675h (1) sentence 2)";
+}
+pub relation kuendigungsfristvereinbarung_675h_unwirksam(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die Vereinbarung einer Kündigungsfrist von mehr als einem Monat ist unwirksam (§ 675h Absatz 1 Satz 2)";
+    label en unofficial "an agreement on a notice period of more than one month is ineffective (§ 675h (1) sentence 2)";
+}
+pub relation dienstleister_kuendigungsfrist_vereinbart_675h(zdv: Zahlungsdienstevertrag, monate: Integer) kind empirical {
+    key(zdv);
+    label de official "Vereinbarte Kündigungsfrist des Zahlungsdienstleisters in Monaten (§ 675h Absatz 2 Satz 2)";
+    label en unofficial "agreed notice period of the provider, in months (§ 675h (2) sentence 2)";
+}
+pub relation dienstleister_kuendigungsfrist_675h_unwirksam(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die Kündigungsfrist darf zwei Monate nicht unterschreiten; eine kürzere Vereinbarung ist insoweit unwirksam (§ 675h Absatz 2 Satz 2)";
+    label en unofficial "the notice period must not be shorter than two months; a shorter agreement is ineffective to that extent (§ 675h (2) sentence 2)";
+}
+pub relation im_voraus_gezahltes_entgelt_675h(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Im Voraus gezahltes Entgelt, das auf die Zeit nach Beendigung des Vertrags entfällt (§ 675h Absatz 3 Satz 2)";
+    label en unofficial "fee paid in advance that relates to the period after termination of the contract (§ 675h (3) sentence 2)";
+}
+pub relation entgelt_anteilig_zu_erstatten_675h(zdv: Zahlungsdienstevertrag, betrag: Money) kind institutional {
+    label de official "Im Voraus gezahlte Entgelte, die auf die Zeit nach Beendigung des Vertrags fallen, sind anteilig zu erstatten (§ 675h Absatz 3 Satz 2)";
+    label en unofficial "fees paid in advance relating to the period after termination must be refunded pro rata (§ 675h (3) sentence 2)";
+}
+@source(BGB_P675h) {
+    rule KuendigungsfristvereinbarungUnwirksam675h(zdv: Zahlungsdienstevertrag, monate: Integer) strict {
+        label de official "Die Vereinbarung einer Kündigungsfrist des Zahlungsdienstnutzers von mehr als einem Monat ist unwirksam (§ 675h Absatz 1 Satz 2)";
+        label en unofficial "an agreement on a user's notice period of more than one month is ineffective (§ 675h (1) sentence 2)";
+        when kuendigungsfrist_vereinbart_675h(zdv, monate) and monate > 1;
+        then kuendigungsfristvereinbarung_675h_unwirksam(zdv);
+    }
+    rule DienstleisterKuendigungsfristUnwirksam675h(zdv: Zahlungsdienstevertrag, monate: Integer) strict {
+        label de official "Eine für den Zahlungsdienstleister vereinbarte Kündigungsfrist von weniger als zwei Monaten ist insoweit unwirksam (§ 675h Absatz 2 Satz 2)";
+        label en unofficial "an agreement on the provider's notice period of less than two months is ineffective to that extent (§ 675h (2) sentence 2)";
+        when dienstleister_kuendigungsfrist_vereinbart_675h(zdv, monate) and monate < 2;
+        then dienstleister_kuendigungsfrist_675h_unwirksam(zdv);
+    }
+    rule EntgeltAnteiligZuErstatten675h(zdv: Zahlungsdienstevertrag, betrag: Money) strict {
+        label de official "Im Voraus gezahlte Entgelte, die auf die Zeit nach Beendigung des Vertrags fallen, sind anteilig zu erstatten (§ 675h Absatz 3 Satz 2)";
+        label en unofficial "fees paid in advance relating to the period after termination must be refunded pro rata (§ 675h (3) sentence 2)";
+        when im_voraus_gezahltes_entgelt_675h(zdv, betrag);
+        then entgelt_anteilig_zu_erstatten_675h(zdv, betrag);
+    }
+}
+
+// § 675i Ausnahmen für Kleinbetragsinstrumente: drei alternative
+// Schwellen — 30 Euro je Zahlungsvorgang, 150 Euro Ausgabenobergrenze oder
+// Speicherbetrag, auf 200 Euro erhöht bei rein inländischer Nutzung.
+pub relation zahlungsvorgangsbetrag_kleinbetragsinstrument(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Mit dem Instrument ausgelöster einzelner Zahlungsvorgang (§ 675i Absatz 1 Nummer 1)";
+    label en unofficial "single payment transaction triggered with the instrument (§ 675i (1) no. 1)";
+}
+pub relation ausgabenobergrenze_kleinbetragsinstrument(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Ausgabenobergrenze des Instruments (§ 675i Absatz 1 Nummer 2)";
+    label en unofficial "spending ceiling of the instrument (§ 675i (1) no. 2)";
+}
+pub relation gespeicherter_betrag_kleinbetragsinstrument(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Höchster zu keiner Zeit überschrittener gespeicherter Geldbetrag (§ 675i Absatz 1 Nummer 3)";
+    label en unofficial "the highest stored amount never exceeded (§ 675i (1) no. 3)";
+}
+pub relation nur_inlaendische_zahlungsvorgaenge_675i(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Das Kleinbetragsinstrument kann nur für inländische Zahlungsvorgänge genutzt werden (§ 675i Absatz 1 Satz 3)";
+    label en unofficial "the low-value instrument can be used only for domestic payment transactions (§ 675i (1) sentence 3)";
+}
+pub relation kleinbetragsinstrument_675i(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Es handelt sich um ein Kleinbetragsinstrument im Sinne des § 675i Absatz 1";
+    label en unofficial "the instrument is a low-value instrument within § 675i (1)";
+}
+@source(BGB_P675i) {
+    rule Kleinbetragsinstrument675iEinzelbetrag(zdv: Zahlungsdienstevertrag, betrag: Money) strict {
+        label de official "Ein Kleinbetragsinstrument ist ein Mittel, mit dem nur einzelne Zahlungsvorgänge bis höchstens 30 Euro ausgelöst werden können (§ 675i Absatz 1 Nummer 1)";
+        label en unofficial "a low-value instrument is one with which only individual transactions of up to EUR 30 can be triggered (§ 675i (1) no. 1)";
+        when zahlungsvorgangsbetrag_kleinbetragsinstrument(zdv, betrag) and betrag <= 30.00 EUR;
+        then kleinbetragsinstrument_675i(zdv);
+    }
+    rule Kleinbetragsinstrument675iAusgabenobergrenze(zdv: Zahlungsdienstevertrag, betrag: Money) strict {
+        label de official "Ein Kleinbetragsinstrument ist ein Mittel, das eine Ausgabenobergrenze von 150 Euro hat, bei rein inländischer Nutzung von 200 Euro (§ 675i Absatz 1 Nummer 2, Satz 3)";
+        label en unofficial "a low-value instrument has a spending ceiling of EUR 150, raised to EUR 200 for purely domestic use (§ 675i (1) no. 2, sentence 3)";
+        when ausgabenobergrenze_kleinbetragsinstrument(zdv, betrag) and not_known(nur_inlaendische_zahlungsvorgaenge_675i(zdv))
+            and betrag <= 150.00 EUR;
+        then kleinbetragsinstrument_675i(zdv);
+    }
+    rule Kleinbetragsinstrument675iAusgabenobergrenzeInland(zdv: Zahlungsdienstevertrag, betrag: Money) strict {
+        label de official "Bei rein inländischer Nutzung erhöht sich die Betragsgrenze der Ausgabenobergrenze auf 200 Euro (§ 675i Absatz 1 Nummer 2, Satz 3)";
+        label en unofficial "for purely domestic use the spending-ceiling threshold rises to EUR 200 (§ 675i (1) no. 2, sentence 3)";
+        when ausgabenobergrenze_kleinbetragsinstrument(zdv, betrag) and nur_inlaendische_zahlungsvorgaenge_675i(zdv)
+            and betrag <= 200.00 EUR;
+        then kleinbetragsinstrument_675i(zdv);
+    }
+    rule Kleinbetragsinstrument675iGespeicherterBetrag(zdv: Zahlungsdienstevertrag, betrag: Money) strict {
+        label de official "Ein Kleinbetragsinstrument ist ein Mittel, das Geldbeträge speichert, die zu keiner Zeit 150 Euro übersteigen, bei rein inländischer Nutzung 200 Euro (§ 675i Absatz 1 Nummer 3, Satz 3)";
+        label en unofficial "a low-value instrument stores amounts never exceeding EUR 150, raised to EUR 200 for purely domestic use (§ 675i (1) no. 3, sentence 3)";
+        when gespeicherter_betrag_kleinbetragsinstrument(zdv, betrag) and not_known(nur_inlaendische_zahlungsvorgaenge_675i(zdv))
+            and betrag <= 150.00 EUR;
+        then kleinbetragsinstrument_675i(zdv);
+    }
+}
+
+// § 675n Zugang von Zahlungsaufträgen: Wirksamkeit mit Zugang; fällt der
+// Zugang nicht auf einen Geschäftstag, gilt der nächste Geschäftstag.
+pub relation zahlungsauftrag_zugegangen_am_675n(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    key(zv);
+    label de official "Tag, an dem der Zahlungsauftrag dem Zahlungsdienstleister des Zahlers zugeht (§ 675n Absatz 1 Satz 1)";
+    label en unofficial "day on which the payment order reaches the payer's payment service provider (§ 675n (1) sentence 1)";
+}
+pub relation zugangstag_ist_geschaeftstag_675n(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zugangstag ist ein Geschäftstag des Zahlungsdienstleisters des Zahlers (§ 675n Absatz 1 Satz 2)";
+    label en unofficial "the day of receipt is a business day of the payer's payment service provider (§ 675n (1) sentence 2)";
+}
+pub relation zahlungsauftrag_wirksam_675n(zv: Zahlungsvorgang, tag: Date) kind institutional {
+    label de official "Der Zahlungsauftrag wird mit Zugang wirksam; fällt der Zugang nicht auf einen Geschäftstag, gilt er als am darauf folgenden Geschäftstag zugegangen (§ 675n Absatz 1)";
+    label en unofficial "the payment order becomes effective upon receipt; if receipt does not fall on a business day, it is deemed received on the following business day (§ 675n (1))";
+}
+@source(BGB_P675n) {
+    rule ZahlungsauftragWirksamAmGeschaeftstag675n(zv: Zahlungsvorgang, tag: Date) strict {
+        label de official "Ein Zahlungsauftrag wird wirksam, wenn er dem Zahlungsdienstleister des Zahlers an einem Geschäftstag zugeht (§ 675n Absatz 1 Satz 1, 2)";
+        label en unofficial "a payment order becomes effective when it reaches the payer's provider on a business day (§ 675n (1) sentence 1, 2)";
+        when zahlungsauftrag_zugegangen_am_675n(zv, tag) and zugangstag_ist_geschaeftstag_675n(zv);
+        then zahlungsauftrag_wirksam_675n(zv, tag);
+    }
+}
+
+// § 675p Unwiderruflichkeit: nach Zugang grundsätzlich kein Widerruf mehr;
+// bei Terminauftrag und Lastschrift bis zum Ende des Geschäftstags VOR dem
+// vereinbarten Tag (D-08-16-Muster: Vergleich vorwärts über Kalendertage).
+pub relation zahlungsauftrag_widerrufen_am_675p(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    key(zv);
+    label de official "Tag, an dem der Zahlungsdienstnutzer den Zahlungsauftrag widerruft (§ 675p)";
+    label en unofficial "day on which the user revokes the payment order (§ 675p)";
+}
+pub relation vereinbarter_termin_675p(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    key(zv);
+    label de official "Zwischen Zahlungsdienstnutzer und Zahlungsdienstleister vereinbarter Termin für die Ausführung des Zahlungsauftrags (§ 675n Absatz 2, § 675p Absatz 3)";
+    label en unofficial "date for execution of the payment order agreed between the user and the provider (§ 675n (2), § 675p (3))";
+}
+pub relation widerruf_675p_rechtzeitig(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsdienstnutzer hat den Zahlungsauftrag bis zum Ende des Geschäftstags vor dem vereinbarten Tag widerrufen (§ 675p Absatz 3)";
+    label en unofficial "the user revoked the payment order by the end of the business day before the agreed day (§ 675p (3))";
+}
+@source(BGB_P675p)
+rule Widerruf675pBisVortagDesVereinbartenTermins(zv: Zahlungsvorgang, widerruf: Date, termin: Date) strict {
+    label de official "Ist ein bestimmter Termin für die Ausführung eines Zahlungsauftrags vereinbart, kann der Zahlungsdienstnutzer den Zahlungsauftrag bis zum Ende des Geschäftstags vor dem vereinbarten Tag widerrufen (§ 675p Absatz 3)";
+    label en unofficial "where a specific date for execution has been agreed, the user may revoke the payment order by the end of the business day before the agreed day (§ 675p (3))";
+    when zahlungsauftrag_widerrufen_am_675p(zv, widerruf) and vereinbarter_termin_675p(zv, termin)
+        and add_calendar_period(widerruf, with_unit(1, "calendar_day")) <= termin;
+    then widerruf_675p_rechtzeitig(zv);
+}
+
+// § 675q Entgelte: ungekürzte Weiterleitung des Zahlungsbetrags.
+pub relation zahlungsbetrag_675q(zv: Zahlungsvorgang, betrag: Money) kind empirical {
+    key(zv);
+    label de official "Betrag, der Gegenstand des Zahlungsvorgangs ist (§ 675q Absatz 1)";
+    label en unofficial "the amount that is the subject of the payment transaction (§ 675q (1))";
+}
+pub relation ungekuerzte_uebermittlung_675q(zv: Zahlungsvorgang, betrag: Money) kind institutional {
+    label de official "Der Zahlungsbetrag ist ungekürzt an den Zahlungsdienstleister des Zahlungsempfängers zu übermitteln (§ 675q Absatz 1)";
+    label en unofficial "the payment amount must be transferred in full to the payee's payment service provider (§ 675q (1))";
+}
+@source(BGB_P675q)
+rule UngekuerzteUebermittlung675q(zv: Zahlungsvorgang, betrag: Money) strict {
+    label de official "Der Zahlungsdienstleister des Zahlers sowie sämtliche zwischengeschalteten Stellen sind verpflichtet, den Zahlungsbetrag ungekürzt an den Zahlungsdienstleister des Zahlungsempfängers zu übermitteln (§ 675q Absatz 1)";
+    label en unofficial "the payer's payment service provider and all intermediaries must transfer the payment amount in full to the payee's payment service provider (§ 675q (1))";
+    when zahlungsbetrag_675q(zv, betrag);
+    then ungekuerzte_uebermittlung_675q(zv, betrag);
+}
+
+// § 675r Kundenkennung: ordnungsgemäße Ausführung anhand der angegebenen
+// Kennung, unabhängig vom tatsächlich gemeinten Empfänger.
+pub relation kundenkennung_angegeben_675r(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsdienstnutzer hat eine Kundenkennung angegeben (§ 675r Absatz 1 Satz 1, Absatz 2)";
+    label en unofficial "the user has provided a customer identifier (§ 675r (1) sentence 1, (2))";
+}
+pub relation ausgefuehrt_in_uebereinstimmung_mit_kundenkennung_675r(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsauftrag ist in Übereinstimmung mit der angegebenen Kundenkennung ausgeführt worden (§ 675r Absatz 1 Satz 2)";
+    label en unofficial "the payment order was executed in accordance with the customer identifier provided (§ 675r (1) sentence 2)";
+}
+pub relation ordnungsgemaess_ausgefuehrt_675r(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsauftrag gilt im Hinblick auf den durch die Kundenkennung bezeichneten Zahlungsempfänger als ordnungsgemäß ausgeführt (§ 675r Absatz 1 Satz 2)";
+    label en unofficial "the payment order is deemed properly executed with regard to the payee designated by the customer identifier (§ 675r (1) sentence 2)";
+}
+@source(BGB_P675r)
+rule OrdnungsgemaessAusgefuehrtNachKundenkennung675r(zv: Zahlungsvorgang) strict {
+    label de official "Wird ein Zahlungsauftrag in Übereinstimmung mit der angegebenen Kundenkennung ausgeführt, so gilt er im Hinblick auf den durch die Kundenkennung bezeichneten Zahlungsempfänger als ordnungsgemäß ausgeführt (§ 675r Absatz 1 Satz 2)";
+    label en unofficial "where a payment order is executed in accordance with the customer identifier provided, it is deemed properly executed with regard to the payee designated by that identifier (§ 675r (1) sentence 2)";
+    when kundenkennung_angegeben_675r(zv) and ausgefuehrt_in_uebereinstimmung_mit_kundenkennung_675r(zv);
+    then ordnungsgemaess_ausgefuehrt_675r(zv);
+}
+
+// §§ 675d, 675e, 675f, 675j, 675k, 675l, 675m, 675o (D-08-20): Rest des
+// Zahlungsdiensterechts vor § 675u. § 675d Absatz 1 bleibt Eingang (Katalog
+// Art. 248 EGBGB ohne eigene Schwelle IN DIESEM Paragraphen); Absatz 3
+// (Beweislast) und Absatz 4/5 (Entgeltschranken) tragen eigene Regeln.
+// § 675e ist KEINE bloße Meta-Norm: Absatz 1 erklärt eine zum Nachteil des
+// Nutzers vereinbarte Abweichung für unwirksam, Absatz 4 lässt für
+// Unternehmer eine ausdrücklich vereinbarte Abweichung zu — beides trägt
+// eine eigene Rechtsfolge. § 675f Absatz 5, 6 ebenso.
+
+// § 675d Absatz 3–5: Beweislast, Entgeltschranken.
+pub relation unterrichtung_streitig_675d(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Die ordnungsgemäße Unterrichtung ist streitig (§ 675d Absatz 3)";
+    label en unofficial "whether proper information was given is in dispute (§ 675d (3))";
+}
+pub relation beweislast_beim_dienstleister_675d(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die Beweislast für die ordnungsgemäße Unterrichtung trifft den Zahlungsdienstleister (§ 675d Absatz 3)";
+    label en unofficial "the burden of proving proper information lies with the payment service provider (§ 675d (3))";
+}
+pub relation unterrichtung_auf_verlangen_haeufiger_675d(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstleister erbringt die Information auf Verlangen häufiger als in Artikel 248 EGBGB vorgesehen (§ 675d Absatz 4 Nummer 1)";
+    label en unofficial "the provider furnishes the information, on request, more often than provided in Article 248 EGBGB (§ 675d (4) no. 1)";
+}
+pub relation unterrichtung_auf_verlangen_weitergehend_675d(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstleister erbringt auf Verlangen eine über Artikel 248 EGBGB hinausgehende Information (§ 675d Absatz 4 Nummer 2)";
+    label en unofficial "the provider furnishes, on request, information going beyond Article 248 EGBGB (§ 675d (4) no. 2)";
+}
+pub relation unterrichtung_auf_verlangen_andere_kommunikationsmittel_675d(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstleister erbringt die Information auf Verlangen mithilfe anderer als der vereinbarten Kommunikationsmittel (§ 675d Absatz 4 Nummer 3)";
+    label en unofficial "the provider furnishes the information, on request, using communication means other than those agreed (§ 675d (4) no. 3)";
+}
+pub relation entgelt_fuer_unterrichtung_angemessen_675d(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Das vereinbarte Entgelt für die Unterrichtung ist angemessen und an den tatsächlichen Kosten des Zahlungsdienstleisters ausgerichtet (§ 675d Absatz 4 Satz 2)";
+    label en unofficial "the agreed fee for the information is reasonable and corresponds to the provider's actual costs (§ 675d (4) sentence 2)";
+}
+pub relation entgelt_fuer_unterrichtung_zulaessig_675d(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Für die Unterrichtung darf der Zahlungsdienstleister mit dem Zahlungsdienstnutzer ein Entgelt vereinbaren (§ 675d Absatz 4)";
+    label en unofficial "the provider may agree a fee with the user for the information (§ 675d (4))";
+}
+pub relation volle_hoehe_vor_ausloesung_bekannt_gemacht_675d(zv: Zahlungsvorgang) kind empirical {
+    label de official "Die volle Höhe der Entgelte gemäß Artikel 248 §§ 17 Absatz 2, 18 EGBGB wurde vor der Auslösung des Zahlungsvorgangs bekannt gemacht (§ 675d Absatz 5 Satz 2)";
+    label en unofficial "the full amount of the fees under Article 248 §§ 17 (2), 18 EGBGB was made known before the transaction was triggered (§ 675d (5) sentence 2)";
+}
+pub relation zahler_verpflichtet_zur_entrichtung_675d(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahler ist verpflichtet, die Entgelte gemäß Artikel 248 § 17 Absatz 2 und § 18 EGBGB zu entrichten (§ 675d Absatz 5 Satz 2)";
+    label en unofficial "the payer must pay the fees under Article 248 § 17 (2) and § 18 EGBGB (§ 675d (5) sentence 2)";
+}
+@source(BGB_P675d) {
+    rule BeweislastBeimDienstleister675d(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Ist die ordnungsgemäße Unterrichtung streitig, so trifft die Beweislast den Zahlungsdienstleister (§ 675d Absatz 3)";
+        label en unofficial "where it is disputed whether proper information was given, the burden of proof lies with the provider (§ 675d (3))";
+        when unterrichtung_streitig_675d(zdv);
+        then beweislast_beim_dienstleister_675d(zdv);
+    }
+    rule EntgeltFuerUnterrichtungZulaessigHaeufiger675d(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Für die Unterrichtung darf ein Entgelt vereinbart werden, wenn die Information häufiger erbracht wird als in Artikel 248 EGBGB vorgesehen und das Entgelt angemessen ist (§ 675d Absatz 4 Nummer 1)";
+        label en unofficial "a fee may be agreed for information furnished more often than provided in Article 248 EGBGB, if the fee is reasonable (§ 675d (4) no. 1)";
+        when unterrichtung_auf_verlangen_haeufiger_675d(zdv) and entgelt_fuer_unterrichtung_angemessen_675d(zdv);
+        then entgelt_fuer_unterrichtung_zulaessig_675d(zdv);
+    }
+    rule EntgeltFuerUnterrichtungZulaessigWeitergehend675d(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Für die Unterrichtung darf ein Entgelt vereinbart werden, wenn die Information über Artikel 248 EGBGB hinausgeht und das Entgelt angemessen ist (§ 675d Absatz 4 Nummer 2)";
+        label en unofficial "a fee may be agreed for information going beyond Article 248 EGBGB, if the fee is reasonable (§ 675d (4) no. 2)";
+        when unterrichtung_auf_verlangen_weitergehend_675d(zdv) and entgelt_fuer_unterrichtung_angemessen_675d(zdv);
+        then entgelt_fuer_unterrichtung_zulaessig_675d(zdv);
+    }
+    rule EntgeltFuerUnterrichtungZulaessigAndereKommunikationsmittel675d(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Für die Unterrichtung darf ein Entgelt vereinbart werden, wenn die Information mithilfe anderer Kommunikationsmittel erbracht wird und das Entgelt angemessen ist (§ 675d Absatz 4 Nummer 3)";
+        label en unofficial "a fee may be agreed for information furnished using other communication means, if the fee is reasonable (§ 675d (4) no. 3)";
+        when unterrichtung_auf_verlangen_andere_kommunikationsmittel_675d(zdv) and entgelt_fuer_unterrichtung_angemessen_675d(zdv);
+        then entgelt_fuer_unterrichtung_zulaessig_675d(zdv);
+    }
+    rule ZahlerVerpflichtetNachBekanntgabe675d(zv: Zahlungsvorgang) strict {
+        label de official "Der Zahler ist nur dann verpflichtet, die Entgelte gemäß Artikel 248 § 17 Absatz 2 und § 18 EGBGB zu entrichten, wenn deren volle Höhe vor der Auslösung des Zahlungsvorgangs bekannt gemacht wurde (§ 675d Absatz 5 Satz 2)";
+        label en unofficial "the payer is only obliged to pay the fees under Article 248 § 17 (2) and § 18 EGBGB if their full amount was made known before the transaction was triggered (§ 675d (5) sentence 2)";
+        when volle_hoehe_vor_ausloesung_bekannt_gemacht_675d(zv);
+        then zahler_verpflichtet_zur_entrichtung_675d(zv);
+    }
+}
+
+// § 675e Absatz 1, 4: zwingendes Recht zugunsten des Nutzers; für
+// Unternehmer ausdrücklich zugelassene Abweichung.
+pub relation abweichung_zum_nachteil_des_nutzers_vereinbart_675e(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Es ist eine Abweichung von den Vorschriften dieses Untertitels zum Nachteil des Zahlungsdienstnutzers vereinbart worden (§ 675e Absatz 1)";
+    label en unofficial "a deviation from this subtitle's provisions to the disadvantage of the user has been agreed (§ 675e (1))";
+}
+pub relation kein_verbraucher_675e(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstnutzer ist kein Verbraucher (§ 675e Absatz 4)";
+    label en unofficial "the payment service user is not a consumer (§ 675e (4))";
+}
+pub relation abweichung_675e_abs4_vereinbart(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Die Parteien haben eine Abweichung von den in § 675e Absatz 4 genannten Vorschriften vereinbart (§ 675e Absatz 4)";
+    label en unofficial "the parties have agreed a deviation from the provisions named in § 675e (4) (§ 675e (4))";
+}
+pub relation abweichung_675e_abs4_zulaessig(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die Abweichung ist zulässig, weil der Zahlungsdienstnutzer kein Verbraucher ist und die Parteien dies vereinbart haben (§ 675e Absatz 4)";
+    label en unofficial "the deviation is permitted because the user is not a consumer and the parties agreed it (§ 675e (4))";
+}
+pub relation abweichung_675e_unwirksam(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die zum Nachteil des Zahlungsdienstnutzers vereinbarte Abweichung ist unwirksam (§ 675e Absatz 1)";
+    label en unofficial "the deviation agreed to the disadvantage of the user is ineffective (§ 675e (1))";
+}
+@source(BGB_P675e) {
+    rule Abweichung675eAbs4Zulaessig(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Handelt es sich bei dem Zahlungsdienstnutzer nicht um einen Verbraucher, so können die Parteien eine Abweichung von den in Absatz 4 genannten Vorschriften vereinbaren (§ 675e Absatz 4)";
+        label en unofficial "where the user is not a consumer, the parties may agree a deviation from the provisions named in (4) (§ 675e (4))";
+        when kein_verbraucher_675e(zdv) and abweichung_675e_abs4_vereinbart(zdv);
+        then abweichung_675e_abs4_zulaessig(zdv);
+    }
+    rule Abweichung675eZumNachteilUnwirksam(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Soweit nichts anderes bestimmt ist, darf von den Vorschriften dieses Untertitels nicht zum Nachteil des Zahlungsdienstnutzers abgewichen werden; eine solche Abweichung ist unwirksam (§ 675e Absatz 1)";
+        label en unofficial "unless otherwise provided, this subtitle's provisions may not be deviated from to the user's disadvantage; such a deviation is ineffective (§ 675e (1))";
+        when abweichung_zum_nachteil_des_nutzers_vereinbart_675e(zdv) and not_known(abweichung_675e_abs4_zulaessig(zdv));
+        then abweichung_675e_unwirksam(zdv);
+    }
+}
+
+// § 675f Absatz 5, 6: Entgeltpflicht des Nutzers und ihre Grenze bei
+// Nebenpflichten; Surcharging-Verbot zugunsten des Zahlungsempfängers.
+pub relation vereinbartes_entgelt_675f(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Für die Erbringung eines Zahlungsdienstes vereinbartes Entgelt (§ 675f Absatz 5 Satz 1)";
+    label en unofficial "the fee agreed for provision of a payment service (§ 675f (5) sentence 1)";
+}
+pub relation entgeltpflicht_675f_abs5(zdv: Zahlungsdienstevertrag, betrag: Money) kind institutional {
+    label de official "Der Zahlungsdienstnutzer ist verpflichtet, dem Zahlungsdienstleister das vereinbarte Entgelt zu entrichten (§ 675f Absatz 5 Satz 1)";
+    label en unofficial "the user must pay the provider the agreed fee (§ 675f (5) sentence 1)";
+}
+pub relation nebenpflicht_entgelt_zugelassen_und_vereinbart_675f(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Für die Erfüllung einer Nebenpflicht ist ein Entgelt zugelassen und zwischen den Parteien vereinbart worden (§ 675f Absatz 5 Satz 2)";
+    label en unofficial "a fee for an ancillary duty has been permitted and agreed between the parties (§ 675f (5) sentence 2)";
+}
+pub relation nebenpflicht_entgelt_angemessen_675f(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Das Entgelt für die Nebenpflicht ist angemessen und an den tatsächlichen Kosten des Zahlungsdienstleisters ausgerichtet (§ 675f Absatz 5 Satz 2)";
+    label en unofficial "the fee for the ancillary duty is reasonable and corresponds to the provider's actual costs (§ 675f (5) sentence 2)";
+}
+pub relation entgeltanspruch_fuer_nebenpflicht_675f(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Für die Erfüllung von Nebenpflichten hat der Zahlungsdienstleister nur dann einen Anspruch auf ein Entgelt (§ 675f Absatz 5 Satz 2)";
+    label en unofficial "for fulfilling ancillary duties the provider has a claim to a fee only in that case (§ 675f (5) sentence 2)";
+}
+pub relation ermaessigung_fuer_zahlungsinstrument_ausgeschlossen_675f(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Im Zahlungsdiensterahmenvertrag zwischen Zahlungsempfänger und dessen Zahlungsdienstleister ist das Recht des Zahlungsempfängers, für die Nutzung eines bestimmten Zahlungsinstruments eine Ermäßigung oder einen anderweitigen Anreiz anzubieten, ausgeschlossen worden (§ 675f Absatz 6)";
+    label en unofficial "the framework contract between the payee and its provider purports to exclude the payee's right to offer a discount or other incentive for using a particular payment instrument (§ 675f (6))";
+}
+pub relation ausschluss_der_ermaessigung_675f_unwirksam(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Der Ausschluss des Rechts des Zahlungsempfängers, eine Ermäßigung oder einen anderweitigen Anreiz anzubieten, ist unwirksam (§ 675f Absatz 6)";
+    label en unofficial "the exclusion of the payee's right to offer a discount or other incentive is ineffective (§ 675f (6))";
+}
+@source(BGB_P675f) {
+    rule Entgeltpflicht675fAbs5(zdv: Zahlungsdienstevertrag, betrag: Money) strict {
+        label de official "Der Zahlungsdienstnutzer ist verpflichtet, dem Zahlungsdienstleister das für die Erbringung eines Zahlungsdienstes vereinbarte Entgelt zu entrichten (§ 675f Absatz 5 Satz 1)";
+        label en unofficial "the user must pay the provider the agreed fee for provision of a payment service (§ 675f (5) sentence 1)";
+        when vereinbartes_entgelt_675f(zdv, betrag);
+        then entgeltpflicht_675f_abs5(zdv, betrag);
+    }
+    rule EntgeltanspruchFuerNebenpflicht675f(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Für die Erfüllung von Nebenpflichten nach diesem Untertitel hat der Zahlungsdienstleister nur dann einen Anspruch auf ein Entgelt, sofern dies zugelassen und vereinbart worden ist und das Entgelt angemessen ist (§ 675f Absatz 5 Satz 2)";
+        label en unofficial "for fulfilling ancillary duties under this subtitle the provider has a claim to a fee only where this has been permitted and agreed and the fee is reasonable (§ 675f (5) sentence 2)";
+        when nebenpflicht_entgelt_zugelassen_und_vereinbart_675f(zdv) and nebenpflicht_entgelt_angemessen_675f(zdv);
+        then entgeltanspruch_fuer_nebenpflicht_675f(zdv);
+    }
+    rule AusschlussDerErmaessigungUnwirksam675f(zdv: Zahlungsdienstevertrag) strict {
+        label de official "In einem Zahlungsdiensterahmenvertrag zwischen dem Zahlungsempfänger und seinem Zahlungsdienstleister darf das Recht des Zahlungsempfängers, dem Zahler für die Nutzung eines bestimmten Zahlungsinstruments eine Ermäßigung oder einen anderweitigen Anreiz anzubieten, nicht ausgeschlossen werden; ein gleichwohl vereinbarter Ausschluss ist unwirksam (§ 675f Absatz 6)";
+        label en unofficial "a framework contract between the payee and its provider may not exclude the payee's right to offer the payer a discount or other incentive for using a particular payment instrument; an exclusion agreed nonetheless is ineffective (§ 675f (6))";
+        when ermaessigung_fuer_zahlungsinstrument_ausgeschlossen_675f(zdv);
+        then ausschluss_der_ermaessigung_675f_unwirksam(zdv);
+    }
+}
+pub relation entgelt_675f_entrichtet_am(zdv: Zahlungsdienstevertrag, betrag: Money, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstnutzer hat das vereinbarte Entgelt entrichtet (§ 675f Absatz 5)";
+    label en unofficial "the payment service user paid the agreed fee (§ 675f (5))";
+}
+pub relation zahlungsdienstpflicht_beginn_am(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    label de official "Beginn der Pflicht im Zahlungsdiensterahmenvertrag";
+    label en unofficial "start of the payment service contract duty";
+}
+@source(BGB_P675f)
+rule Position675fEntgelt(zdv: Zahlungsdienstevertrag, nutzer: Person, betrag: Money, beginn: Date) strict {
+    label de official "Der Zahlungsdienstnutzer ist verpflichtet, das vereinbarte Entgelt zu entrichten (§ 675f Absatz 5 Satz 1)";
+    label en unofficial "The payment service user is obliged to pay the agreed fee (§ 675f (5) sentence 1)";
+    when zahlungsdienstnutzer_zdv(zdv, nutzer) and vereinbartes_entgelt_675f(zdv, betrag)
+     and zahlungsdienstpflicht_beginn_am(zdv, beginn);
+    then duty Duty675fEntgelt {
+        bearer nutzer;
+        achieve entgelt_675f_entrichtet_am(zdv, betrag, beginn) during [beginn, infinity);
+    };
+}
+
+// § 675j Zustimmung (Autorisierung) und ihr Widerruf.
+pub relation zustimmung_zum_zahlungsvorgang_erteilt_675j(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahler hat dem Zahlungsvorgang zugestimmt (§ 675j Absatz 1 Satz 1)";
+    label en unofficial "the payer has consented to the payment transaction (§ 675j (1) sentence 1)";
+}
+pub relation zahlungsvorgang_autorisiert_675j(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsvorgang ist gegenüber dem Zahler wirksam (Autorisierung) (§ 675j Absatz 1 Satz 1)";
+    label en unofficial "the payment transaction is effective as against the payer (authorisation) (§ 675j (1) sentence 1)";
+}
+pub relation zustimmung_widerrufen_vor_unwiderruflichkeit_675j(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahler hat die Zustimmung durch Erklärung gegenüber dem Zahlungsdienstleister widerrufen, solange der Zahlungsauftrag noch widerruflich war (§ 675j Absatz 2 Satz 1, § 675p)";
+    label en unofficial "the payer revoked consent by declaration to the provider while the payment order was still revocable (§ 675j (2) sentence 1, § 675p)";
+}
+pub relation zustimmung_wirksam_widerrufen_675j(zv: Zahlungsvorgang) kind institutional {
+    label de official "Die Zustimmung ist wirksam widerrufen; jeder nachfolgende Zahlungsvorgang ist nicht mehr autorisiert (§ 675j Absatz 2)";
+    label en unofficial "consent is effectively revoked; every subsequent payment transaction is no longer authorised (§ 675j (2))";
+}
+@source(BGB_P675j) {
+    rule ZahlungsvorgangAutorisiert675j(zv: Zahlungsvorgang) strict {
+        label de official "Ein Zahlungsvorgang ist gegenüber dem Zahler nur wirksam, wenn er diesem zugestimmt hat (Autorisierung) (§ 675j Absatz 1 Satz 1)";
+        label en unofficial "a payment transaction is effective as against the payer only if he has consented to it (authorisation) (§ 675j (1) sentence 1)";
+        when zustimmung_zum_zahlungsvorgang_erteilt_675j(zv);
+        then zahlungsvorgang_autorisiert_675j(zv);
+    }
+    rule ZustimmungWiderrufenSolangeWiderruflich675j(zv: Zahlungsvorgang) strict {
+        label de official "Die Zustimmung kann vom Zahler durch Erklärung gegenüber dem Zahlungsdienstleister so lange widerrufen werden, wie der Zahlungsauftrag widerruflich ist (§ 675j Absatz 2 Satz 1, § 675p)";
+        label en unofficial "the payer may revoke consent by declaration to the provider as long as the payment order remains revocable (§ 675j (2) sentence 1, § 675p)";
+        when zustimmung_widerrufen_vor_unwiderruflichkeit_675j(zv);
+        then zustimmung_wirksam_widerrufen_675j(zv);
+    }
+}
+
+// § 675k Absatz 1: vereinbarte Betragsobergrenze; Absatz 2: Sperre bei
+// sachlichen Gründen samt Unterrichtungspflicht (unverzüglich —
+// Bewertungskanal); Absatz 3: Verweigerung des Kontozugangs für
+// Drittdienstleister, ebenso unterrichtungspflichtig.
+pub relation betragsobergrenze_vereinbart_675k(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Zahler und Zahlungsdienstleister haben eine Betragsobergrenze für die Nutzung des Zahlungsinstruments vereinbart (§ 675k Absatz 1)";
+    label en unofficial "the payer and provider have agreed a maximum amount for use of the payment instrument (§ 675k (1))";
+}
+pub relation nutzungsbetrag_675k(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Mit dem Zahlungsinstrument genutzter Betrag (§ 675k Absatz 1)";
+    label en unofficial "amount used with the payment instrument (§ 675k (1))";
+}
+pub relation betragsobergrenze_675k_ueberschritten(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Der genutzte Betrag überschreitet die vereinbarte Betragsobergrenze (§ 675k Absatz 1)";
+    label en unofficial "the amount used exceeds the agreed maximum (§ 675k (1))";
+}
+pub enum Sperrgrund675k {
+    label de official "Sachlicher Sperrgrund (§ 675k Absatz 2)";
+    label en unofficial "objective ground for blocking (§ 675k (2))";
+    SicherheitDesInstruments,
+    VerdachtNichtAutorisierterOderBetruegerischerVerwendung,
+    ErhoehtesRisikoBeiKreditgewaehrung
+}
+pub relation sperrgrund_675k_eingetreten(zdv: Zahlungsdienstevertrag, grund: Sperrgrund675k) kind empirical {
+    label de official "Ein sachlicher Sperrgrund im Sinne des § 675k Absatz 2 ist eingetreten";
+    label en unofficial "an objective ground for blocking under § 675k (2) has arisen";
+}
+pub relation sperre_675k_zulaessig(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Der Zahlungsdienstleister hat das Recht, das Zahlungsinstrument zu sperren (§ 675k Absatz 2 Satz 1)";
+    label en unofficial "the provider has the right to block the payment instrument (§ 675k (2) sentence 1)";
+}
+@source(BGB_P675k)
+pub external judgment relation unterrichtung_ueber_sperrung_unverzueglich_675k(zdv: Zahlungsdienstevertrag) {
+    authority Court;
+    label de official "Der Zahlungsdienstleister hat den Zahler über die Sperrung möglichst vor, spätestens jedoch unverzüglich nach der Sperrung unterrichtet (§ 675k Absatz 2 Satz 2)";
+    label en unofficial "the provider informed the payer of the block if possible before, but at the latest without undue delay after, the block (§ 675k (2) sentence 2)";
+}
+pub relation zugang_zum_zahlungskonto_verweigert_675k(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der kontoführende Zahlungsdienstleister hat einem Zahlungsauslöse- oder Kontoinformationsdienstleister den Zugang zum Zahlungskonto verweigert (§ 675k Absatz 3 Satz 1)";
+    label en unofficial "the account-servicing provider has refused a payment initiation or account information service provider access to the payment account (§ 675k (3) sentence 1)";
+}
+@source(BGB_P675k)
+pub external judgment relation unterrichtung_ueber_zugangsverweigerung_unverzueglich_675k(zdv: Zahlungsdienstevertrag) {
+    authority Court;
+    label de official "Die Unterrichtung über die Verweigerung des Kontozugangs ist möglichst vor, spätestens jedoch unverzüglich nach der Verweigerung erfolgt (§ 675k Absatz 3 Satz 2)";
+    label en unofficial "notice of the refusal of account access was given if possible before, but at the latest without undue delay after, the refusal (§ 675k (3) sentence 2)";
+}
+@source(BGB_P675k) {
+    rule BetragsobergrenzeUeberschritten675k(zdv: Zahlungsdienstevertrag, obergrenze: Money, betrag: Money) strict {
+        label de official "Übersteigt der mit dem Zahlungsinstrument genutzte Betrag die vereinbarte Betragsobergrenze, ist diese überschritten (§ 675k Absatz 1)";
+        label en unofficial "where the amount used with the payment instrument exceeds the agreed maximum, that maximum is exceeded (§ 675k (1))";
+        when betragsobergrenze_vereinbart_675k(zdv, obergrenze) and nutzungsbetrag_675k(zdv, betrag) and betrag > obergrenze;
+        then betragsobergrenze_675k_ueberschritten(zdv);
+    }
+    rule SperreZulaessigBeiSachlichemGrund675k(zdv: Zahlungsdienstevertrag, grund: Sperrgrund675k) strict {
+        label de official "Zahler und Zahlungsdienstleister können vereinbaren, dass der Zahlungsdienstleister das Recht hat, ein Zahlungsinstrument zu sperren, wenn ein sachlicher Grund vorliegt (§ 675k Absatz 2 Satz 1)";
+        label en unofficial "the payer and provider may agree that the provider has the right to block a payment instrument where an objective ground exists (§ 675k (2) sentence 1)";
+        when sperrgrund_675k_eingetreten(zdv, grund);
+        then sperre_675k_zulaessig(zdv);
+    }
+}
+
+// § 675l Absatz 1: Pflichten des Nutzers — Schutz der Sicherheitsmerkmale,
+// unverzügliche Anzeige (Bewertungskanal), Entgeltdeckel für den Ersatz.
+// Absatz 2: Wirksamkeitsschranke für Nutzungsbedingungen.
+pub relation zahlungsinstrument_erhalten_675l(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstnutzer hat ein Zahlungsinstrument erhalten (§ 675l Absatz 1 Satz 1)";
+    label en unofficial "the user has received a payment instrument (§ 675l (1) sentence 1)";
+}
+pub relation schutzpflicht_der_sicherheitsmerkmale_675l(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Der Zahlungsdienstnutzer ist verpflichtet, unmittelbar nach Erhalt alle zumutbaren Vorkehrungen zu treffen, um die personalisierten Sicherheitsmerkmale vor unbefugtem Zugriff zu schützen (§ 675l Absatz 1 Satz 1)";
+    label en unofficial "the user must, immediately upon receipt, take all reasonable steps to protect the personalised security features from unauthorised access (§ 675l (1) sentence 1)";
+}
+@source(BGB_P675l)
+pub external judgment relation anzeige_unverzueglich_nach_kenntnis_675l(zdv: Zahlungsdienstevertrag) {
+    authority Court;
+    label de official "Der Zahlungsdienstnutzer hat dem Zahlungsdienstleister den Verlust, den Diebstahl, die missbräuchliche Verwendung oder die sonstige nicht autorisierte Nutzung unverzüglich angezeigt, nachdem er hiervon Kenntnis erlangt hat (§ 675l Absatz 1 Satz 2)";
+    label en unofficial "the user notified the provider of loss, theft, misuse or other unauthorised use without undue delay after obtaining knowledge of it (§ 675l (1) sentence 2)";
+}
+pub relation ersatzentgelt_vereinbart_675l(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Für den Ersatz eines verlorenen, gestohlenen, missbräuchlich verwendeten oder sonst nicht autorisiert genutzten Zahlungsinstruments vereinbartes Entgelt (§ 675l Absatz 1 Satz 3)";
+    label en unofficial "the fee agreed for replacing a lost, stolen, misused or otherwise unauthorisedly used payment instrument (§ 675l (1) sentence 3)";
+}
+pub relation ersatzkosten_675l(zdv: Zahlungsdienstevertrag, betrag: Money) kind empirical {
+    key(zdv);
+    label de official "Ausschließlich und unmittelbar mit dem Ersatz verbundene Kosten (§ 675l Absatz 1 Satz 3)";
+    label en unofficial "costs exclusively and directly connected with the replacement (§ 675l (1) sentence 3)";
+}
+pub relation ersatzentgelt_675l_unwirksam(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Das vereinbarte Ersatzentgelt ist unwirksam, soweit es die ausschließlich und unmittelbar mit dem Ersatz verbundenen Kosten übersteigt (§ 675l Absatz 1 Satz 3)";
+    label en unofficial "the agreed replacement fee is ineffective to the extent it exceeds the costs exclusively and directly connected with the replacement (§ 675l (1) sentence 3)";
+}
+pub relation nutzungsbedingung_675l_vereinbart(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstnutzer hat sich verpflichtet, Bedingungen für die Ausgabe und Nutzung eines Zahlungsinstruments einzuhalten (§ 675l Absatz 2)";
+    label en unofficial "the user has undertaken to comply with conditions for the issue and use of a payment instrument (§ 675l (2))";
+}
+pub relation nutzungsbedingung_675l_sachlich_verhaeltnismaessig_nicht_benachteiligend(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Die Bedingungen sind sachlich, verhältnismäßig und nicht benachteiligend (§ 675l Absatz 2)";
+    label en unofficial "the conditions are objective, proportionate and not discriminatory (§ 675l (2))";
+}
+pub relation nutzungsbedingung_675l_wirksam(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die Vereinbarung über die Nutzungsbedingungen ist wirksam (§ 675l Absatz 2)";
+    label en unofficial "the agreement on the conditions of use is effective (§ 675l (2))";
+}
+@source(BGB_P675l) {
+    rule SchutzpflichtDerSicherheitsmerkmale675l(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Der Zahlungsdienstnutzer ist verpflichtet, unmittelbar nach Erhalt eines Zahlungsinstruments alle zumutbaren Vorkehrungen zu treffen, um die personalisierten Sicherheitsmerkmale vor unbefugtem Zugriff zu schützen (§ 675l Absatz 1 Satz 1)";
+        label en unofficial "the user must, immediately upon receipt of a payment instrument, take all reasonable steps to protect the personalised security features from unauthorised access (§ 675l (1) sentence 1)";
+        when zahlungsinstrument_erhalten_675l(zdv);
+        then schutzpflicht_der_sicherheitsmerkmale_675l(zdv);
+    }
+    rule ErsatzentgeltUnwirksamUeberKosten675l(zdv: Zahlungsdienstevertrag, entgelt: Money, kosten: Money) strict {
+        label de official "Für den Ersatz eines verlorenen, gestohlenen, missbräuchlich verwendeten oder sonst nicht autorisiert genutzten Zahlungsinstruments darf der Zahlungsdienstleister allenfalls die ausschließlich und unmittelbar mit dem Ersatz verbundenen Kosten als Entgelt vereinbaren (§ 675l Absatz 1 Satz 3)";
+        label en unofficial "for replacing a lost, stolen, misused or otherwise unauthorisedly used payment instrument, the provider may agree a fee covering at most the costs exclusively and directly connected with the replacement (§ 675l (1) sentence 3)";
+        when ersatzentgelt_vereinbart_675l(zdv, entgelt) and ersatzkosten_675l(zdv, kosten) and entgelt > kosten;
+        then ersatzentgelt_675l_unwirksam(zdv);
+    }
+    rule Nutzungsbedingung675lWirksam(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Eine Vereinbarung, durch die sich der Zahlungsdienstnutzer verpflichtet, Bedingungen für die Ausgabe und Nutzung eines Zahlungsinstruments einzuhalten, ist nur insoweit wirksam, als diese Bedingungen sachlich, verhältnismäßig und nicht benachteiligend sind (§ 675l Absatz 2)";
+        label en unofficial "an agreement obliging the user to comply with conditions for the issue and use of a payment instrument is effective only to the extent the conditions are objective, proportionate and not discriminatory (§ 675l (2))";
+        when nutzungsbedingung_675l_vereinbart(zdv) and nutzungsbedingung_675l_sachlich_verhaeltnismaessig_nicht_benachteiligend(zdv);
+        then nutzungsbedingung_675l_wirksam(zdv);
+    }
+}
+pub relation sicherheitsmerkmale_geschuetzt_am(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstnutzer hat die Sicherheitsmerkmale geschützt (§ 675l Absatz 1)";
+    label en unofficial "the user protected the security features (§ 675l (1))";
+}
+@source(BGB_P675l)
+rule Position675lSicherheitsmerkmale(zdv: Zahlungsdienstevertrag, nutzer: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstnutzer ist verpflichtet, die personalisierten Sicherheitsmerkmale zu schützen (§ 675l Absatz 1)";
+    label en unofficial "The payment service user is obliged to protect the personalised security features (§ 675l (1))";
+    when zahlungsdienstnutzer_zdv(zdv, nutzer) and zahlungsinstrument_erhalten_675l(zdv)
+     and zahlungsdienstpflicht_beginn_am(zdv, beginn);
+    then duty Duty675lSicherheitsmerkmale {
+        bearer nutzer;
+        achieve sicherheitsmerkmale_geschuetzt_am(zdv, beginn) during [beginn, infinity);
+    };
+}
+
+// § 675m Absatz 1 Nummer 2 (Verbot unaufgeforderter Zusendung), Satz 2
+// (18-Monats-Nachweisfrist), Absatz 2 (Gefahrtragung bei Versendung),
+// Absatz 3 (Auskunftsrecht des Zahlers).
+pub relation unaufgeforderte_zusendung_675m(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Der Zahlungsdienstleister versendet ein Zahlungsinstrument unaufgefordert an den Nutzer (§ 675m Absatz 1 Nummer 2)";
+    label en unofficial "the provider sends a payment instrument to the user unsolicited (§ 675m (1) no. 2)";
+}
+pub relation ersatz_eines_ausgegebenen_instruments_675m(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Ein bereits an den Nutzer ausgegebenes Zahlungsinstrument muss ersetzt werden (§ 675m Absatz 1 Nummer 2 Halbsatz 2)";
+    label en unofficial "a payment instrument already issued to the user must be replaced (§ 675m (1) no. 2 second half-sentence)";
+}
+pub relation unaufgeforderte_zusendung_675m_unzulaessig(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die unaufgeforderte Zusendung ist unzulässig (§ 675m Absatz 1 Nummer 2)";
+    label en unofficial "the unsolicited sending is impermissible (§ 675m (1) no. 2)";
+}
+pub relation anzeige_verlust_erfolgt_am_675m(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    key(zdv);
+    label de official "Tag, an dem der Zahlungsdienstnutzer den Verlust, den Diebstahl, die missbräuchliche Verwendung oder die sonstige nicht autorisierte Nutzung angezeigt hat (§ 675m Absatz 1 Satz 2)";
+    label en unofficial "day on which the user notified loss, theft, misuse or other unauthorised use (§ 675m (1) sentence 2)";
+}
+pub relation nachweismittel_bereitzustellen_bis_675m(zdv: Zahlungsdienstevertrag, bis: Date) kind institutional {
+    label de official "Der Zahlungsdienstleister stellt dem Nutzer auf Anfrage bis mindestens 18 Monate nach der Anzeige die Mittel zum Nachweis der Anzeige zur Verfügung (§ 675m Absatz 1 Satz 2)";
+    label en unofficial "the provider must, on request, provide the user with the means to prove notification for at least 18 months after it (§ 675m (1) sentence 2)";
+}
+pub relation gefahr_der_versendung_beim_dienstleister_675m(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Die Gefahr der Versendung eines Zahlungsinstruments und der personalisierten Sicherheitsmerkmale trägt der Zahlungsdienstleister (§ 675m Absatz 2)";
+    label en unofficial "the provider bears the risk of dispatching a payment instrument and its personalised security features (§ 675m (2))";
+}
+pub relation zahlungsinstrument_ausgegeben_675m(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Es ist ein Zahlungsinstrument im Sinne des § 675m Absatz 2 ausgegeben worden";
+    label en unofficial "a payment instrument within § 675m (2) has been issued";
+}
+pub relation bestaetigungsersuchen_675m(zdv: Zahlungsdienstevertrag) kind empirical {
+    label de official "Ein Zahlungsdienstleister, der kartengebundene Zahlungsinstrumente ausgibt, hat den kontoführenden Zahlungsdienstleister um Bestätigung der Verfügbarkeit eines Betrags ersucht (§ 675m Absatz 3)";
+    label en unofficial "a provider issuing card-based payment instruments has asked the account-servicing provider to confirm that an amount is available (§ 675m (3))";
+}
+pub relation anspruch_auf_identifizierungsdaten_675m(zdv: Zahlungsdienstevertrag) kind institutional {
+    label de official "Der Zahler kann von seinem kontoführenden Zahlungsdienstleister die Identifizierungsdaten des ersuchenden Zahlungsdienstleisters und die erteilte Antwort verlangen (§ 675m Absatz 3)";
+    label en unofficial "the payer may demand from the account-servicing provider the identification data of the requesting provider and the answer given (§ 675m (3))";
+}
+@source(BGB_P675m) {
+    rule UnaufgeforderteZusendungUnzulaessig675m(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Der Zahlungsdienstleister hat die unaufgeforderte Zusendung von Zahlungsinstrumenten an den Zahlungsdienstnutzer zu unterlassen, es sei denn, ein bereits ausgegebenes Zahlungsinstrument muss ersetzt werden (§ 675m Absatz 1 Nummer 2)";
+        label en unofficial "the provider must refrain from sending payment instruments unsolicited to the user, unless an instrument already issued must be replaced (§ 675m (1) no. 2)";
+        when unaufgeforderte_zusendung_675m(zdv) and not_known(ersatz_eines_ausgegebenen_instruments_675m(zdv));
+        then unaufgeforderte_zusendung_675m_unzulaessig(zdv);
+    }
+    rule NachweismittelBereitzustellen675m(zdv: Zahlungsdienstevertrag, tag: Date) strict {
+        label de official "Hat der Zahlungsdienstnutzer eine Anzeige gemacht, stellt sein Zahlungsdienstleister ihm auf Anfrage bis mindestens 18 Monate nach dieser Anzeige die Mittel zum Nachweis der Anzeige zur Verfügung (§ 675m Absatz 1 Satz 2)";
+        label en unofficial "where the user has made a notification, the provider must, on request, provide the means to prove it for at least 18 months after (§ 675m (1) sentence 2)";
+        when anzeige_verlust_erfolgt_am_675m(zdv, tag);
+        then nachweismittel_bereitzustellen_bis_675m(zdv, add_calendar_period(tag, with_unit(18, "calendar_month")));
+    }
+    rule GefahrDerVersendungBeimDienstleister675m(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Die Gefahr der Versendung eines Zahlungsinstruments und der Versendung personalisierter Sicherheitsmerkmale an den Zahlungsdienstnutzer trägt der Zahlungsdienstleister (§ 675m Absatz 2)";
+        label en unofficial "the provider bears the risk of dispatching a payment instrument and personalised security features to the user (§ 675m (2))";
+        when zahlungsinstrument_ausgegeben_675m(zdv);
+        then gefahr_der_versendung_beim_dienstleister_675m(zdv);
+    }
+    rule AnspruchAufIdentifizierungsdaten675m(zdv: Zahlungsdienstevertrag) strict {
+        label de official "Hat ein Zahlungsdienstleister, der kartengebundene Zahlungsinstrumente ausgibt, den kontoführenden Zahlungsdienstleister um Bestätigung ersucht, so kann der Zahler von seinem kontoführenden Zahlungsdienstleister die Identifizierungsdaten dieses Zahlungsdienstleisters und die erteilte Antwort verlangen (§ 675m Absatz 3)";
+        label en unofficial "where a provider issuing card-based instruments has asked for confirmation, the payer may demand from the account-servicing provider the identification data and answer (§ 675m (3))";
+        when bestaetigungsersuchen_675m(zdv);
+        then anspruch_auf_identifizierungsdaten_675m(zdv);
+    }
+}
+pub relation nachweismittel_675m_bereitgestellt_am(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstleister hat die Nachweismittel bereitgestellt (§ 675m Absatz 1 Satz 2)";
+    label en unofficial "the provider provided the means of proof (§ 675m (1) sentence 2)";
+}
+pub relation zahlungsinstrument_675m_versendet_am(zdv: Zahlungsdienstevertrag, tag: Date) kind empirical {
+    label de official "Das Zahlungsinstrument wurde versendet (§ 675m Absatz 2)";
+    label en unofficial "the payment instrument was dispatched (§ 675m (2))";
+}
+@source(BGB_P675m)
+rule Position675mNachweismittel(zdv: Zahlungsdienstevertrag, p: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstleister ist verpflichtet, dem Nutzer Nachweismittel bereitzustellen (§ 675m Absatz 1 Satz 2)";
+    label en unofficial "The provider is obliged to provide the user with means of proof (§ 675m (1) sentence 2)";
+    when zahlungsdienstleister_zdv(zdv, p) and anzeige_verlust_erfolgt_am_675m(zdv, beginn);
+    then duty Duty675mNachweismittel {
+        bearer p;
+        achieve nachweismittel_675m_bereitgestellt_am(zdv, beginn) during [beginn, infinity);
+    };
+}
+@source(BGB_P675m)
+rule Position675mVersendung(zdv: Zahlungsdienstevertrag, p: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstleister ist verpflichtet, das Zahlungsinstrument ordnungsgemäß zu versenden (§ 675m Absatz 2)";
+    label en unofficial "The provider is obliged to dispatch the payment instrument properly (§ 675m (2))";
+    when zahlungsdienstleister_zdv(zdv, p) and zahlungsinstrument_ausgegeben_675m(zdv)
+     and zahlungsdienstpflicht_beginn_am(zdv, beginn);
+    then duty Duty675mVersendung {
+        bearer p;
+        achieve zahlungsinstrument_675m_versendet_am(zdv, beginn) during [beginn, infinity);
+    };
+}
+
+// § 675o Absatz 1 (Unterrichtungspflicht bei Ablehnung, unverzüglich —
+// Bewertungskanal — spätestens innerhalb der Fristen des § 675s Absatz 1),
+// Absatz 2 (kein Ablehnungsrecht bei erfüllten Bedingungen).
+pub relation zahlungsauftrag_abgelehnt_675o(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsdienstleister lehnt die Ausführung oder Auslösung eines Zahlungsauftrags ab (§ 675o Absatz 1 Satz 1)";
+    label en unofficial "the provider refuses to execute or trigger a payment order (§ 675o (1) sentence 1)";
+}
+@source(BGB_P675o)
+pub external judgment relation unterrichtung_ueber_ablehnung_unverzueglich_675o(zv: Zahlungsvorgang) {
+    authority Court;
+    label de official "Der Zahlungsdienstleister hat den Zahlungsdienstnutzer über die Ablehnung unverzüglich, auf jeden Fall aber innerhalb der Fristen gemäß § 675s Absatz 1 unterrichtet (§ 675o Absatz 1 Satz 1)";
+    label en unofficial "the provider informed the user of the refusal without undue delay, in any case within the periods under § 675s (1) (§ 675o (1) sentence 1)";
+}
+pub relation berechtigte_ablehnung_675o(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsdienstleister lehnt die Ausführung eines Zahlungsauftrags berechtigterweise ab (§ 675o Absatz 1 Satz 4)";
+    label en unofficial "the provider justifiably refuses to execute a payment order (§ 675o (1) sentence 4)";
+}
+pub relation entgelt_fuer_berechtigte_ablehnung_vereinbart_675o(zv: Zahlungsvorgang, betrag: Money) kind empirical {
+    key(zv);
+    label de official "Entgelt, das der Zahlungsdienstleister mit dem Zahlungsdienstnutzer im Zahlungsdiensterahmenvertrag für den Fall einer berechtigten Ablehnung vereinbart hat (§ 675o Absatz 1 Satz 4)";
+    label en unofficial "fee agreed in the framework contract for the case of a justified refusal (§ 675o (1) sentence 4)";
+}
+pub relation entgeltanspruch_fuer_ablehnung_675o(zv: Zahlungsvorgang, betrag: Money) kind institutional {
+    label de official "Der Zahlungsdienstleister hat Anspruch auf das vereinbarte Entgelt für die berechtigte Ablehnung (§ 675o Absatz 1 Satz 4)";
+    label en unofficial "the provider is entitled to the agreed fee for the justified refusal (§ 675o (1) sentence 4)";
+}
+pub relation ausfuehrungsbedingungen_erfuellt_675o(zv: Zahlungsvorgang) kind empirical {
+    label de official "Die im Zahlungsdiensterahmenvertrag festgelegten Ausführungsbedingungen sind erfüllt, und die Ausführung verstößt nicht gegen sonstige Rechtsvorschriften (§ 675o Absatz 2)";
+    label en unofficial "the execution conditions laid down in the framework contract are met, and execution does not infringe other legal provisions (§ 675o (2))";
+}
+pub relation ablehnung_675o_unzulaessig(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsdienstleister des Zahlers ist nicht berechtigt, die Ausführung eines autorisierten Zahlungsauftrags abzulehnen (§ 675o Absatz 2)";
+    label en unofficial "the payer's provider is not entitled to refuse execution of an authorised payment order (§ 675o (2))";
+}
+@source(BGB_P675o) {
+    rule EntgeltanspruchFuerBerechtigteAblehnung675o(zv: Zahlungsvorgang, betrag: Money) strict {
+        label de official "Der Zahlungsdienstleister darf mit dem Zahlungsdienstnutzer im Zahlungsdiensterahmenvertrag ein Entgelt für den Fall vereinbaren, dass er die Ausführung eines Zahlungsauftrags berechtigterweise ablehnt (§ 675o Absatz 1 Satz 4)";
+        label en unofficial "the provider may agree with the user a fee in the framework contract for the case of a justified refusal to execute a payment order (§ 675o (1) sentence 4)";
+        when berechtigte_ablehnung_675o(zv) and entgelt_fuer_berechtigte_ablehnung_vereinbart_675o(zv, betrag);
+        then entgeltanspruch_fuer_ablehnung_675o(zv, betrag);
+    }
+    rule AblehnungUnzulaessigBeiErfuelltenBedingungen675o(zv: Zahlungsvorgang) strict {
+        label de official "Der Zahlungsdienstleister des Zahlers ist nicht berechtigt, die Ausführung eines autorisierten Zahlungsauftrags abzulehnen, wenn die im Zahlungsdiensterahmenvertrag festgelegten Ausführungsbedingungen erfüllt sind und die Ausführung nicht gegen sonstige Rechtsvorschriften verstößt (§ 675o Absatz 2)";
+        label en unofficial "the payer's provider is not entitled to refuse execution of an authorised payment order where the execution conditions in the framework contract are met and execution does not infringe other legal provisions (§ 675o (2))";
+        when ausfuehrungsbedingungen_erfuellt_675o(zv);
+        then ablehnung_675o_unzulaessig(zv);
+    }
+}
+pub relation unterrichtung_675o_erfolgt_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstleister hat über die Ablehnung unterrichtet (§ 675o)";
+    label en unofficial "the provider informed the user of the refusal (§ 675o)";
+}
+pub relation zahlungsvorgang_beginn_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Beginn der Pflicht zur Unterrichtung über die Ablehnung (§ 675o)";
+    label en unofficial "start of the duty to inform about refusal (§ 675o)";
+}
+@source(BGB_P675o)
+rule Position675oUnterrichtung(zv: Zahlungsvorgang, p: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstleister ist verpflichtet, den Nutzer über die Ablehnung zu unterrichten (§ 675o Absatz 1)";
+    label en unofficial "The provider is obliged to inform the user about the refusal (§ 675o (1))";
+    when zahlungsdienstleister_des_zahlers(zv, p) and zahlungsauftrag_abgelehnt_675o(zv)
+     and unterrichtung_ueber_ablehnung_unverzueglich_675o(zv)
+     and zahlungsvorgang_beginn_am(zv, beginn);
+    then duty Duty675oUnterrichtung {
+        bearer p;
+        achieve unterrichtung_675o_erfolgt_am(zv, beginn) during [beginn, infinity);
+    };
+}
+
+@source(BGB_P675u) {
+    rule KeinAufwendungsersatzBeiNichtautorisierung(zv: Zahlungsvorgang) strict {
+        label de official "Im Fall eines nicht autorisierten Zahlungsvorgangs hat der Zahlungsdienstleister des Zahlers gegen diesen keinen Anspruch auf Erstattung seiner Aufwendungen (§ 675u Satz 1)";
+        label en unofficial "in the case of an unauthorised payment transaction the payer's payment service provider has no claim against him for reimbursement of its expenses (§ 675u sentence 1)";
+        when nicht_autorisierter_zahlungsvorgang(zv);
+        then kein_aufwendungsersatzanspruch_675u(zv);
+    }
+    rule Erstattungspflicht675u(zv: Zahlungsvorgang, betrag: Money) strict {
+        label de official "Der Zahlungsdienstleister ist verpflichtet, dem Zahler den Zahlungsbetrag unverzüglich zu erstatten und, sofern der Betrag einem Zahlungskonto belastet worden ist, dieses wieder auf den Stand zu bringen, auf dem es sich ohne die Belastung befunden hätte (§ 675u Satz 2)";
+        label en unofficial "the payment service provider must refund the payment amount to the payer without undue delay and, where it was debited to a payment account, restore that account to the state it would have been in without the debit (§ 675u sentence 2)";
+        when nicht_autorisierter_zahlungsvorgang(zv) and zahlungsbetrag(zv, betrag);
+        then erstattungspflicht_675u(zv, betrag);
+    }
+    rule Erstattungsfrist675uEreignis(f: Frist, t: Date) strict {
+        label de official "Die äußerste Erstattungsgrenze läuft vom Tag der Anzeige oder der anderweitigen Kenntniserlangung an (§ 675u Satz 3, § 187 Absatz 1)";
+        label en unofficial "the outer refund limit runs from the day of notification or of otherwise obtaining knowledge (§ 675u sentence 3, § 187 (1))";
+        when erstattungsfrist_675u(f) and anzeige_der_nichtautorisierung_am(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Erstattungsfrist675uDauer(f: Frist) strict {
+        label de official "Die Verpflichtung ist unverzüglich, spätestens jedoch bis zum Ende des Geschäftstags zu erfüllen, der auf den Tag der Anzeige folgt (§ 675u Satz 3)";
+        label en unofficial "the obligation must be fulfilled without undue delay, at the latest by the end of the business day following the day of notification (§ 675u sentence 3)";
+        when erstattungsfrist_675u(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 1 calendar_day);
+    }
+}
+pub relation erstattung_675u_erfolgt_am(zv: Zahlungsvorgang, betrag: Money, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstleister hat den Zahlungsbetrag erstattet (§ 675u)";
+    label en unofficial "the provider refunded the payment amount (§ 675u)";
+}
+pub relation zahlungspflicht_beginn_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Beginn der Erstattungspflicht (§ 675u)";
+    label en unofficial "start of the refund duty (§ 675u)";
+}
+@source(BGB_P675u)
+rule Position675uErstattung(zv: Zahlungsvorgang, p: Person, betrag: Money, beginn: Date) strict {
+    label de official "Der Zahlungsdienstleister ist verpflichtet, dem Zahler den Zahlungsbetrag zu erstatten (§ 675u Satz 2)";
+    label en unofficial "The provider is obliged to refund the payment amount to the payer (§ 675u sentence 2)";
+    when zahlungsdienstleister_des_zahlers(zv, p) and nicht_autorisierter_zahlungsvorgang(zv)
+     and zahlungsbetrag(zv, betrag) and zahlungspflicht_beginn_am(zv, beginn);
+    then duty Duty675uErstattung {
+        bearer p;
+        achieve erstattung_675u_erfolgt_am(zv, betrag, beginn) during [beginn, infinity);
+    };
+}
+
+// § 675v: Haftung des Zahlers bei missbräuchlicher Nutzung eines
+// Zahlungsinstruments — 50 Euro, ihre Ausnahmen und der volle Schaden.
+
+pub relation zahlungsinstrument_abhandengekommen_oder_missbraucht(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der nicht autorisierte Zahlungsvorgang beruht auf der Nutzung eines verloren gegangenen, gestohlenen oder sonst abhandengekommenen Zahlungsinstruments oder auf dessen sonstiger missbräuchlicher Verwendung (§ 675v Absatz 1)";
+    label en unofficial "the unauthorised transaction results from the use of a lost, stolen or otherwise misappropriated payment instrument or from its other misuse (§ 675v (1))";
+}
+pub relation verlust_nicht_bemerkbar(zv: Zahlungsvorgang) kind empirical {
+    label de official "Es ist dem Zahler nicht möglich gewesen, den Verlust, den Diebstahl, das Abhandenkommen oder eine sonstige missbräuchliche Verwendung vor dem nicht autorisierten Zahlungsvorgang zu bemerken (§ 675v Absatz 2 Nummer 1)";
+    label en unofficial "it was not possible for the payer to notice the loss, theft, misappropriation or other misuse before the unauthorised transaction (§ 675v (2) no. 1)";
+}
+pub relation verlust_vom_zahlungsdienstleister_verursacht(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Verlust des Zahlungsinstruments ist durch einen Angestellten, Agenten, eine Zweigniederlassung des Zahlungsdienstleisters oder eine sonstige Auslagerungsstelle verursacht worden (§ 675v Absatz 2 Nummer 2)";
+    label en unofficial "the loss of the payment instrument was caused by an employee, agent, branch of the payment service provider or another outsourcing entity (§ 675v (2) no. 2)";
+}
+pub relation zahler_in_betruegerischer_absicht(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahler hat in betrügerischer Absicht gehandelt (§ 675v Absatz 3 Nummer 1)";
+    label en unofficial "the payer acted with fraudulent intent (§ 675v (3) no. 1)";
+}
+pub relation vorsaetzliche_oder_grob_fahrlaessige_pflichtverletzung_675l(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahler hat den Schaden durch vorsätzliche oder grob fahrlässige Verletzung einer Pflicht gemäß § 675l Absatz 1 oder vereinbarter Bedingungen herbeigeführt (§ 675v Absatz 3 Nummer 2)";
+    label en unofficial "the payer caused the damage by an intentional or grossly negligent breach of a duty under § 675l (1) or of agreed conditions (§ 675v (3) no. 2)";
+}
+pub relation starke_kundenauthentifizierung_nicht_verlangt_oder_akzeptiert(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsdienstleister des Zahlers hat eine starke Kundenauthentifizierung im Sinne des § 1 Absatz 24 des Zahlungsdiensteaufsichtsgesetzes nicht verlangt oder der Zahlungsempfänger oder sein Zahlungsdienstleister hat sie nicht akzeptiert (§ 675v Absatz 4 Satz 1) — Eingang aus dem ZAG";
+    label en unofficial "the payer's provider did not require strong customer authentication within the meaning of § 1 (24) of the Payment Services Supervision Act, or the payee or its provider did not accept it (§ 675v (4) sentence 1) — an input from the ZAG";
+}
+pub relation nutzung_nach_anzeige_675l(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Schaden ist aus der Nutzung eines nach der Anzeige gemäß § 675l Absatz 1 Satz 2 verwendeten Zahlungsinstruments entstanden (§ 675v Absatz 5 Satz 1)";
+    label en unofficial "the damage arose from the use of a payment instrument used after the notification under § 675l (1) sentence 2 (§ 675v (5) sentence 1)";
+}
+pub relation haftungsausschluss_675v(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahler haftet nicht nach § 675v Absatz 1 oder Absatz 3 (§ 675v Absätze 2, 4, 5)";
+    label en unofficial "the payer is not liable under § 675v (1) or (3) (§ 675v (2), (4), (5))";
+}
+pub relation haftung_des_zahlers_bis_50_euro(zv: Zahlungsvorgang, betrag: Money) kind institutional {
+    label de official "Der Zahlungsdienstleister des Zahlers kann von diesem den Ersatz des entstandenen Schadens bis zu einem Betrag von 50 Euro verlangen (§ 675v Absatz 1)";
+    label en unofficial "the payer's payment service provider may claim compensation for the damage caused up to an amount of EUR 50 (§ 675v (1))";
+}
+pub relation haftung_des_zahlers_in_voller_hoehe(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahler ist seinem Zahlungsdienstleister zum Ersatz des gesamten Schadens verpflichtet (§ 675v Absatz 3)";
+    label en unofficial "the payer must compensate his payment service provider for the entire damage (§ 675v (3))";
+}
+
+@source(BGB_P675v) {
+    rule Haftungsausschluss675vNichtBemerkbar(zv: Zahlungsvorgang) strict {
+        label de official "Der Zahler haftet nicht nach Absatz 1, wenn es ihm nicht möglich gewesen ist, den Verlust vor dem nicht autorisierten Zahlungsvorgang zu bemerken (§ 675v Absatz 2 Nummer 1)";
+        label en unofficial "the payer is not liable under (1) where it was not possible for him to notice the loss before the unauthorised transaction (§ 675v (2) no. 1)";
+        when zahlungsinstrument_abhandengekommen_oder_missbraucht(zv) and verlust_nicht_bemerkbar(zv);
+        then haftungsausschluss_675v(zv);
+    }
+    rule Haftungsausschluss675vVerursachtDurchDienstleister(zv: Zahlungsvorgang) strict {
+        label de official "Der Zahler haftet nicht nach Absatz 1, wenn der Verlust des Zahlungsinstruments durch einen Angestellten, Agenten oder eine Zweigniederlassung des Zahlungsdienstleisters verursacht worden ist (§ 675v Absatz 2 Nummer 2)";
+        label en unofficial "the payer is not liable under (1) where the loss of the payment instrument was caused by an employee, agent or branch of the payment service provider (§ 675v (2) no. 2)";
+        when zahlungsinstrument_abhandengekommen_oder_missbraucht(zv) and verlust_vom_zahlungsdienstleister_verursacht(zv);
+        then haftungsausschluss_675v(zv);
+    }
+    rule Haftungsausschluss675vOhneStarkeAuthentifizierung(zv: Zahlungsvorgang) strict {
+        label de official "Abweichend von den Absätzen 1 und 3 ist der Zahler nicht zum Schadensersatz verpflichtet, wenn eine starke Kundenauthentifizierung nicht verlangt oder nicht akzeptiert wurde; dies gilt nicht, wenn der Zahler in betrügerischer Absicht gehandelt hat (§ 675v Absatz 4)";
+        label en unofficial "by way of derogation from (1) and (3) the payer is not liable where strong customer authentication was not required or not accepted; this does not apply where the payer acted with fraudulent intent (§ 675v (4))";
+        when starke_kundenauthentifizierung_nicht_verlangt_oder_akzeptiert(zv)
+            and not_known(zahler_in_betruegerischer_absicht(zv));
+        then haftungsausschluss_675v(zv);
+    }
+    rule Haftungsausschluss675vNachAnzeige(zv: Zahlungsvorgang) strict {
+        label de official "Abweichend von den Absätzen 1 und 3 ist der Zahler nicht zum Ersatz von Schäden verpflichtet, die aus der Nutzung eines nach der Anzeige gemäß § 675l Absatz 1 Satz 2 verwendeten Zahlungsinstruments entstanden sind; dies gilt nicht bei betrügerischer Absicht (§ 675v Absatz 5)";
+        label en unofficial "by way of derogation from (1) and (3) the payer is not liable for damage arising from use of a payment instrument used after the notification under § 675l (1) sentence 2; this does not apply in case of fraudulent intent (§ 675v (5))";
+        when nutzung_nach_anzeige_675l(zv) and not_known(zahler_in_betruegerischer_absicht(zv));
+        then haftungsausschluss_675v(zv);
+    }
+    rule Haftung675vBis50Euro(zv: Zahlungsvorgang) strict {
+        label de official "Beruhen nicht autorisierte Zahlungsvorgänge auf der Nutzung eines abhandengekommenen oder sonst missbräuchlich verwendeten Zahlungsinstruments, so kann der Zahlungsdienstleister des Zahlers von diesem den Ersatz des hierdurch entstandenen Schadens bis zu einem Betrag von 50 Euro verlangen (§ 675v Absatz 1)";
+        label en unofficial "where unauthorised transactions result from the use of a misappropriated or otherwise misused payment instrument, the payer's provider may claim compensation for the resulting damage up to EUR 50 (§ 675v (1))";
+        when nicht_autorisierter_zahlungsvorgang(zv) and zahlungsinstrument_abhandengekommen_oder_missbraucht(zv)
+            and not_known(haftungsausschluss_675v(zv));
+        then haftung_des_zahlers_bis_50_euro(zv, 50.00 EUR);
+    }
+    rule Haftung675vVollerSchadenBetrug(zv: Zahlungsvorgang) strict {
+        label de official "Abweichend von den Absätzen 1 und 2 ist der Zahler zum Ersatz des gesamten Schadens verpflichtet, wenn er in betrügerischer Absicht gehandelt hat (§ 675v Absatz 3 Nummer 1)";
+        label en unofficial "by way of derogation from (1) and (2) the payer must compensate the entire damage where he acted with fraudulent intent (§ 675v (3) no. 1)";
+        when nicht_autorisierter_zahlungsvorgang(zv) and zahler_in_betruegerischer_absicht(zv);
+        then haftung_des_zahlers_in_voller_hoehe(zv);
+    }
+    rule Haftung675vVollerSchadenGrobeFahrlaessigkeit(zv: Zahlungsvorgang) strict {
+        label de official "Abweichend von den Absätzen 1 und 2 ist der Zahler zum Ersatz des gesamten Schadens verpflichtet, wenn er den Schaden durch vorsätzliche oder grob fahrlässige Verletzung einer Pflicht gemäß § 675l Absatz 1 oder vereinbarter Bedingungen herbeigeführt hat (§ 675v Absatz 3 Nummer 2)";
+        label en unofficial "by way of derogation from (1) and (2) the payer must compensate the entire damage where he caused it by an intentional or grossly negligent breach of a duty under § 675l (1) or of agreed conditions (§ 675v (3) no. 2)";
+        when nicht_autorisierter_zahlungsvorgang(zv) and vorsaetzliche_oder_grob_fahrlaessige_pflichtverletzung_675l(zv)
+            and not_known(haftungsausschluss_675v(zv));
+        then haftung_des_zahlers_in_voller_hoehe(zv);
+    }
+}
+pub relation haftungsausschluss_675v_geltend_gemacht_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Der Zahler hat den Haftungsausschluss nach § 675v geltend gemacht";
+    label en unofficial "the payer invoked the exclusion of liability under § 675v";
+}
+@source(BGB_P675v)
+rule Position675vHaftungsausschluss(zv: Zahlungsvorgang, p: Person, beginn: Date) strict {
+    label de official "Der Zahler ist berechtigt, den Haftungsausschluss nach § 675v geltend zu machen";
+    label en unofficial "The payer has the liberty to invoke the exclusion of liability under § 675v";
+    when zahler(zv, p) and haftungsausschluss_675v(zv)
+     and zahlungspflicht_beginn_am(zv, beginn);
+    then liberty Liberty675vHaftungsausschluss {
+        holder p;
+        action haftungsausschluss_675v_geltend_gemacht_am(zv, beginn);
+        window [beginn, infinity];
+    };
+}
+
+// § 676b: Anzeige nicht autorisierter oder fehlerhaft ausgeführter
+// Zahlungsvorgänge — 13 Monate ab dem Tag der Belastung.
+
+pub relation anzeigefrist_676b(f: Frist) kind empirical {
+    key(f);
+    label de official "Ausschlussfrist des § 676b Absatz 2 Satz 1: 13 Monate nach dem Tag der Belastung mit einem nicht autorisierten oder fehlerhaft ausgeführten Zahlungsvorgang";
+    label en unofficial "the cut-off period of § 676b (2) sentence 1: 13 months after the day of the debit for an unauthorised or incorrectly executed payment transaction";
+}
+pub relation tag_der_belastung(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Belastung mit dem nicht autorisierten oder fehlerhaft ausgeführten Zahlungsvorgang; hat der Zahlungsdienstleister nicht nach Artikel 248 EGBGB unterrichtet, ist der Tag der Unterrichtung maßgeblich (§ 676b Absatz 2)";
+    label en unofficial "day of the debit for the unauthorised or incorrectly executed transaction; where the provider did not inform under Article 248 EGBGB, the day of informing is decisive (§ 676b (2))";
+}
+pub relation unterrichtung_erfolgt_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    key(zv);
+    label de official "Tag, an dem der Zahlungsdienstnutzer seinen Zahlungsdienstleister über den nicht autorisierten oder fehlerhaft ausgeführten Zahlungsvorgang unterrichtet hat (§ 676b Absatz 1, 2)";
+    label en unofficial "day on which the payment service user informed his provider of the unauthorised or incorrectly executed transaction (§ 676b (1), (2))";
+}
+pub relation ansprueche_676b_ausgeschlossen(zv: Zahlungsvorgang) kind institutional {
+    label de official "Ansprüche und Einwendungen des Zahlungsdienstnutzers gegen den Zahlungsdienstleister sind ausgeschlossen (§ 676b Absatz 2 Satz 1)";
+    label en unofficial "the payment service user's claims and defences against the provider are excluded (§ 676b (2) sentence 1)";
+}
+@source(BGB_P676b)
+pub external judgment relation unverzueglich_unterrichtet_676b(zv: Zahlungsvorgang) {
+    authority Court;
+    label de official "Der Zahlungsdienstnutzer hat seinen Zahlungsdienstleister unverzüglich nach Feststellung eines nicht autorisierten oder fehlerhaft ausgeführten Zahlungsvorgangs unterrichtet (§ 676b Absatz 1)";
+    label en unofficial "the payment service user informed his provider without undue delay after establishing an unauthorised or incorrectly executed transaction (§ 676b (1))";
+}
+
+@source(BGB_P676b) {
+    rule Anzeigefrist676bEreignis(f: Frist, t: Date) strict {
+        label de official "Die Dreizehnmonatsfrist läuft vom Tag der Belastung an (§ 676b Absatz 2 Satz 1, § 187 Absatz 1)";
+        label en unofficial "the thirteen-month period runs from the day of the debit (§ 676b (2) sentence 1, § 187 (1))";
+        when anzeigefrist_676b(f) and tag_der_belastung(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Anzeigefrist676bDauer(f: Frist) strict {
+        label de official "Ansprüche und Einwendungen sind ausgeschlossen, wenn der Zahlungsdienstnutzer den Zahlungsdienstleister nicht spätestens 13 Monate nach dem Tag der Belastung unterrichtet hat (§ 676b Absatz 2 Satz 1)";
+        label en unofficial "claims and defences are excluded where the user did not inform the provider at the latest 13 months after the day of the debit (§ 676b (2) sentence 1)";
+        when anzeigefrist_676b(f);
+        then de.bgb.fristen::frist_dauer_kalender(f, 13 calendar_month);
+    }
+    rule Ausschluss676bNachFristablauf(zv: Zahlungsvorgang, f: Frist, unterrichtet: Date, ende: Date) strict {
+        label de official "Ansprüche und Einwendungen des Zahlungsdienstnutzers gegen den Zahlungsdienstleister sind ausgeschlossen, wenn dieser ihn nicht spätestens 13 Monate nach dem Tag der Belastung unterrichtet hat (§ 676b Absatz 2 Satz 1)";
+        label en unofficial "the user's claims and defences against the provider are excluded where he did not inform the provider at the latest 13 months after the day of the debit (§ 676b (2) sentence 1)";
+        when anzeigefrist_676b(f) and unterrichtung_erfolgt_am(zv, unterrichtet)
+            and de.bgb.fristen::frist_ende(f, ende) and unterrichtet > ende;
+        then ansprueche_676b_ausgeschlossen(zv);
+    }
+}
+pub relation unterrichtung_676b_erfolgt_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstnutzer hat den Zahlungsdienstleister unterrichtet (§ 676b)";
+    label en unofficial "the user informed the provider (§ 676b)";
+}
+pub relation unterrichtungspflicht_676b_beginn_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Beginn der Unterrichtungspflicht nach § 676b";
+    label en unofficial "start of the notification duty under § 676b";
+}
+@source(BGB_P676b)
+rule Position676bUnterrichtung(zv: Zahlungsvorgang, p: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstnutzer ist verpflichtet, den Zahlungsdienstleister über den Zahlungsvorgang zu unterrichten (§ 676b Absatz 1)";
+    label en unofficial "The payment service user is obliged to inform the provider about the transaction (§ 676b (1))";
+    when zahler(zv, p) and unterrichtungspflicht_676b_beginn_am(zv, beginn);
+    then duty Duty676bUnterrichtung {
+        bearer p;
+        achieve unterrichtung_676b_erfolgt_am(zv, beginn) during [beginn, infinity);
+    };
+}
+
+// § 676c: Haftungsausschluss bei ungewöhnlichem, unvorhersehbarem Ereignis
+// oder gesetzlicher Verpflichtung.
+
+pub relation ungewoehnliches_unvorhersehbares_ereignis(zv: Zahlungsvorgang) kind empirical {
+    label de official "Die anspruchsbegründenden Umstände beruhen auf einem ungewöhnlichen und unvorhersehbaren Ereignis, auf das die sich darauf berufende Partei keinen Einfluss hat und dessen Folgen trotz Anwendung der gebotenen Sorgfalt nicht hätten vermieden werden können (§ 676c Nummer 1)";
+    label en unofficial "the circumstances giving rise to the claim are due to an abnormal and unforeseeable event beyond the control of the party invoking it, the consequences of which could not have been avoided despite due care (§ 676c no. 1)";
+}
+pub relation durch_gesetzliche_verpflichtung_herbeigefuehrt(zv: Zahlungsvorgang) kind empirical {
+    label de official "Die anspruchsbegründenden Umstände wurden vom Zahlungsdienstleister auf Grund einer gesetzlichen Verpflichtung herbeigeführt (§ 676c Nummer 2)";
+    label en unofficial "the circumstances giving rise to the claim were brought about by the provider under a statutory obligation (§ 676c no. 2)";
+}
+pub relation ansprueche_676c_ausgeschlossen(zv: Zahlungsvorgang) kind institutional {
+    label de official "Ansprüche nach diesem Kapitel sind ausgeschlossen (§ 676c)";
+    label en unofficial "claims under this chapter are excluded (§ 676c)";
+}
+@source(BGB_P676c) {
+    rule Haftungsausschluss676cHoehereGewalt(zv: Zahlungsvorgang) strict {
+        label de official "Ansprüche nach diesem Kapitel sind ausgeschlossen, wenn die anspruchsbegründenden Umstände auf einem ungewöhnlichen und unvorhersehbaren Ereignis beruhen (§ 676c Nummer 1)";
+        label en unofficial "claims under this chapter are excluded where the circumstances giving rise to them are due to an abnormal and unforeseeable event (§ 676c no. 1)";
+        when ungewoehnliches_unvorhersehbares_ereignis(zv);
+        then ansprueche_676c_ausgeschlossen(zv);
+    }
+    rule Haftungsausschluss676cGesetzlichePflicht(zv: Zahlungsvorgang) strict {
+        label de official "Ansprüche nach diesem Kapitel sind ausgeschlossen, wenn die anspruchsbegründenden Umstände vom Zahlungsdienstleister auf Grund einer gesetzlichen Verpflichtung herbeigeführt wurden (§ 676c Nummer 2)";
+        label en unofficial "claims under this chapter are excluded where the circumstances giving rise to them were brought about by the provider under a statutory obligation (§ 676c no. 2)";
+        when durch_gesetzliche_verpflichtung_herbeigefuehrt(zv);
+        then ansprueche_676c_ausgeschlossen(zv);
+    }
+}
+
+// ==================================================================================================
+// AUSFÜHRUNG UND HAFTUNG BEI ZAHLUNGSVORGÄNGEN (§§ 675s, 675t, 675w–676a, D-08-13)
+// ==================================================================================================
+//
+// Kernsätze, nicht die vollständige PSD2-Kaskade. Jede Norm dieses Blocks trägt
+// mehrere EWR-/SEPA-Ausnahmen, die auf § 675d Absatz 6 verweisen — einen Absatz,
+// der außerhalb der formalisierten Fläche dieses Pakets liegt (Zahlungsdienste-
+// aufsicht ist außen, README „Was das Paket nicht tut"). Ausgeführt ist der
+// Hauptsatz jeder Vorschrift; die Ausnahmen bleiben Teil des gepinnten Texts.
+// Fristen, wo der Text eine Zahl nennt (§ 675s ein Geschäftstag, § 675t Absatz 2
+// ein Geschäftstag bei Nichtverbrauchern) — Zeilen in DEADLINES.json.
+
+pub relation ausfuehrungsfrist_675s(f: Frist) kind empirical {
+    key(f);
+    label de official "Ausführungsfrist: der Zahlungsbetrag muss spätestens am Ende des auf den Zugang des Zahlungsauftrags folgenden Geschäftstags beim Zahlungsdienstleister des Zahlungsempfängers eingehen (§ 675s Absatz 1 Satz 1)";
+    label en unofficial "execution period: the payment amount must arrive at the payee's payment service provider by the end of the business day following receipt of the payment order (§ 675s (1) sentence 1)";
+}
+pub relation zugang_des_zahlungsauftrags_am_675s(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag des Zugangs des Zahlungsauftrags beim Zahlungsdienstleister des Zahlers (§ 675s Absatz 1 Satz 1, § 675n)";
+    label en unofficial "day the payment order is received by the payer's payment service provider (§ 675s (1) sentence 1, § 675n)";
+}
+pub relation in_papierform_ausgeloest_675s(f: Frist) kind empirical {
+    label de official "Der Zahlungsvorgang ist in Papierform ausgelöst worden (§ 675s Absatz 1 Satz 3)";
+    label en unofficial "the payment transaction was initiated in paper form (§ 675s (1) sentence 3)";
+}
+
+@source(BGB_P675s) {
+    rule Ausfuehrungsfrist675sEreignis(f: Frist, t: Date) strict {
+        label de official "Die Ausführungsfrist läuft vom Zugang des Zahlungsauftrags an (§ 675s Absatz 1 Satz 1, § 187 Absatz 1)";
+        label en unofficial "the execution period runs from receipt of the payment order (§ 675s (1) sentence 1, § 187 (1))";
+        when ausfuehrungsfrist_675s(f) and zugang_des_zahlungsauftrags_am_675s(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Ausfuehrungsfrist675sDauerStandard(f: Frist) strict {
+        label de official "Der Zahlungsdienstleister des Zahlers ist verpflichtet sicherzustellen, dass der Zahlungsbetrag spätestens am Ende des auf den Zugangszeitpunkt des Zahlungsauftrags folgenden Geschäftstags beim Zahlungsdienstleister des Zahlungsempfängers eingeht (§ 675s Absatz 1 Satz 1)";
+        label en unofficial "the payer's payment service provider must ensure that the payment amount arrives at the payee's payment service provider by the end of the business day following receipt of the payment order (§ 675s (1) sentence 1)";
+        when ausfuehrungsfrist_675s(f) and not_known(in_papierform_ausgeloest_675s(f));
+        then de.bgb.fristen::frist_dauer_tage(f, 1 calendar_day);
+    }
+    rule Ausfuehrungsfrist675sDauerPapierform(f: Frist) strict {
+        label de official "Für in Papierform ausgelöste Zahlungsvorgänge können die Fristen nach Satz 1 um einen weiteren Geschäftstag verlängert werden (§ 675s Absatz 1 Satz 3)";
+        label en unofficial "for payment transactions initiated in paper form, the periods under sentence 1 may be extended by a further business day (§ 675s (1) sentence 3)";
+        when ausfuehrungsfrist_675s(f) and in_papierform_ausgeloest_675s(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 2 calendar_day);
+    }
+}
+
+pub relation bareinzahlung_durch_verbraucher_675t(zv: Zahlungsvorgang) kind empirical {
+    label de official "Ein Verbraucher zahlt Bargeld auf ein Zahlungskonto in der Währung dieses Kontos ein (§ 675t Absatz 2 Satz 1)";
+    label en unofficial "a consumer pays cash into a payment account in the currency of that account (§ 675t (2) sentence 1)";
+}
+pub relation betrag_dem_zahlungsempfaenger_unverzueglich_verfuegbar_675t(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsdienstleister stellt sicher, dass der Betrag dem Zahlungsempfänger unverzüglich nach dem Zeitpunkt der Entgegennahme verfügbar gemacht und wertgestellt wird (§ 675t Absatz 2 Satz 1)";
+    label en unofficial "the payment service provider ensures that the amount is made available to the payee and value-dated without undue delay after receipt (§ 675t (2) sentence 1)";
+}
+pub relation bareinzahlungsfrist_675t(f: Frist) kind empirical {
+    key(f);
+    label de official "Ist der Zahlungsdienstnutzer kein Verbraucher, muss dem Zahlungsempfänger der Geldbetrag spätestens an dem auf die Entgegennahme folgenden Geschäftstag verfügbar gemacht und wertgestellt werden (§ 675t Absatz 2 Satz 2)";
+    label en unofficial "where the payment service user is not a consumer, the amount must be made available and value-dated to the payee by the business day following receipt at the latest (§ 675t (2) sentence 2)";
+}
+pub relation bareinzahlung_entgegengenommen_am_675t(f: Frist, tag: Date) kind empirical {
+    key(f);
+    label de official "Tag der Entgegennahme der Bareinzahlung (§ 675t Absatz 2 Satz 2)";
+    label en unofficial "day the cash payment was received (§ 675t (2) sentence 2)";
+}
+pub relation zahlungseingang_beim_zdl_des_empfaengers_am_675t(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    key(zv);
+    label de official "Tag, an dem der Zahlungsbetrag auf dem Konto des Zahlungsdienstleisters des Zahlungsempfängers eingegangen ist (§ 675t Absatz 1 Satz 2)";
+    label en unofficial "day the payment amount arrived on the account of the payee's payment service provider (§ 675t (1) sentence 2)";
+}
+pub relation wertstellungsdatum_spaetestens_675t(zv: Zahlungsvorgang, tag: Date) kind institutional {
+    key(zv);
+    label de official "Das Wertstellungsdatum ist spätestens der Geschäftstag, an dem der Zahlungsbetrag auf dem Konto des Zahlungsdienstleisters des Zahlungsempfängers eingegangen ist (§ 675t Absatz 1 Satz 2)";
+    label en unofficial "the value date is at the latest the business day on which the payment amount arrived on the account of the payee's payment service provider (§ 675t (1) sentence 2)";
+}
+
+@source(BGB_P675t) {
+    rule VerfuegbarmachungBeiVerbraucherbareinzahlung675t(zv: Zahlungsvorgang) strict {
+        label de official "Zahlt ein Verbraucher Bargeld auf ein Zahlungskonto in der Währung dieses Kontos ein, stellt der Zahlungsdienstleister sicher, dass der Betrag dem Zahlungsempfänger unverzüglich nach dem Zeitpunkt der Entgegennahme verfügbar gemacht und wertgestellt wird (§ 675t Absatz 2 Satz 1)";
+        label en unofficial "where a consumer pays cash into a payment account in the currency of that account, the payment service provider ensures the amount is made available and value-dated without undue delay after receipt (§ 675t (2) sentence 1)";
+        when bareinzahlung_durch_verbraucher_675t(zv);
+        then betrag_dem_zahlungsempfaenger_unverzueglich_verfuegbar_675t(zv);
+    }
+    rule Bareinzahlungsfrist675tEreignis(f: Frist, t: Date) strict {
+        label de official "Die Frist läuft vom Tag der Entgegennahme der Bareinzahlung an (§ 675t Absatz 2 Satz 2, § 187 Absatz 1)";
+        label en unofficial "the period runs from the day the cash payment was received (§ 675t (2) sentence 2, § 187 (1))";
+        when bareinzahlungsfrist_675t(f) and bareinzahlung_entgegengenommen_am_675t(f, t);
+        then de.bgb.fristen::frist_ereignis(f, t);
+    }
+    rule Bareinzahlungsfrist675tDauer(f: Frist) strict {
+        label de official "Ist der Zahlungsdienstnutzer kein Verbraucher, muss dem Zahlungsempfänger der Geldbetrag spätestens an dem auf die Entgegennahme folgenden Geschäftstag verfügbar gemacht und wertgestellt werden (§ 675t Absatz 2 Satz 2)";
+        label en unofficial "where the payment service user is not a consumer, the amount must be made available and value-dated to the payee by the business day following receipt at the latest (§ 675t (2) sentence 2)";
+        when bareinzahlungsfrist_675t(f);
+        then de.bgb.fristen::frist_dauer_tage(f, 1 calendar_day);
+    }
+    rule Wertstellungsdatum675t(zv: Zahlungsvorgang, tag: Date) strict {
+        label de official "Das Wertstellungsdatum ist spätestens der Geschäftstag, an dem der Zahlungsbetrag auf dem Konto des Zahlungsdienstleisters des Zahlungsempfängers eingegangen ist (§ 675t Absatz 1 Satz 2)";
+        label en unofficial "the value date is at the latest the business day on which the payment amount arrived on the account of the payee's payment service provider (§ 675t (1) sentence 2)";
+        when zahlungseingang_beim_zdl_des_empfaengers_am_675t(zv, tag);
+        then wertstellungsdatum_spaetestens_675t(zv, tag);
+    }
+}
+
+pub relation autorisierung_streitig_675w(zv: Zahlungsvorgang) kind empirical {
+    label de official "Die Autorisierung eines ausgeführten Zahlungsvorgangs ist streitig (§ 675w Satz 1)";
+    label en unofficial "the authorisation of an executed payment transaction is disputed (§ 675w sentence 1)";
+}
+pub relation nachweispflicht_zdl_675w(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsdienstleister hat nachzuweisen, dass eine Authentifizierung erfolgt ist und der Zahlungsvorgang ordnungsgemäß aufgezeichnet, verbucht sowie nicht durch eine Störung beeinträchtigt wurde (§ 675w Satz 1)";
+    label en unofficial "the payment service provider must prove that authentication took place and the transaction was properly recorded, entered in the accounts and not affected by a technical breakdown (§ 675w sentence 1)";
+}
+@source(BGB_P675w)
+rule NachweisDerAuthentifizierung675w(zv: Zahlungsvorgang) strict {
+    label de official "Ist die Autorisierung eines ausgeführten Zahlungsvorgangs streitig, hat der Zahlungsdienstleister nachzuweisen, dass eine Authentifizierung erfolgt ist und der Zahlungsvorgang ordnungsgemäß aufgezeichnet, verbucht sowie nicht durch eine Störung beeinträchtigt wurde (§ 675w Satz 1)";
+    label en unofficial "where the authorisation of an executed payment transaction is disputed, the payment service provider must prove that authentication took place and the transaction was properly recorded, entered in the accounts and not affected by a technical breakdown (§ 675w sentence 1)";
+    when autorisierung_streitig_675w(zv);
+    then nachweispflicht_zdl_675w(zv);
+}
+
+pub relation betrag_bei_autorisierung_nicht_angegeben_675x(zv: Zahlungsvorgang) kind empirical {
+    label de official "Bei der Autorisierung wurde der genaue Betrag nicht angegeben (§ 675x Absatz 1 Satz 1 Nummer 1)";
+    label en unofficial "the exact amount was not specified at the time of authorisation (§ 675x (1) sentence 1 no. 1)";
+}
+pub relation zahlungsbetrag_uebersteigt_erwartbaren_betrag_675x(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsbetrag übersteigt den Betrag, den der Zahler entsprechend seinem bisherigen Ausgabeverhalten, den Bedingungen des Zahlungsdiensterahmenvertrags und den Umständen des Einzelfalls hätte erwarten können (§ 675x Absatz 1 Satz 1 Nummer 2)";
+    label en unofficial "the payment amount exceeds the amount the payer could reasonably have expected given his spending pattern, the framework contract and the circumstances (§ 675x (1) sentence 1 no. 2)";
+}
+pub relation erstattungsanspruch_675x(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahler hat gegen seinen Zahlungsdienstleister einen Anspruch auf Erstattung des belasteten Zahlungsbetrags (§ 675x Absatz 1 Satz 1)";
+    label en unofficial "the payer has a claim against his payment service provider for reimbursement of the debited amount (§ 675x (1) sentence 1)";
+}
+pub relation rechtzeitig_geltend_gemacht_675x(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Erstattungsanspruch wurde innerhalb von acht Wochen ab dem Zeitpunkt der Belastung geltend gemacht (§ 675x Absatz 4)";
+    label en unofficial "the reimbursement claim was asserted within eight weeks of the debit (§ 675x (4))";
+}
+pub relation erstattungsanspruch_ausgeschlossen_675x(zv: Zahlungsvorgang) kind institutional {
+    label de official "Ein Anspruch des Zahlers auf Erstattung ist ausgeschlossen, wenn er ihn nicht innerhalb von acht Wochen ab dem Zeitpunkt der Belastung geltend macht (§ 675x Absatz 4)";
+    label en unofficial "the payer's claim for reimbursement is excluded if he does not assert it within eight weeks of the debit (§ 675x (4))";
+}
+
+@source(BGB_P675x) {
+    rule Erstattungsanspruch675x(zv: Zahlungsvorgang) strict {
+        label de official "Der Zahler hat gegen seinen Zahlungsdienstleister einen Anspruch auf Erstattung eines belasteten Zahlungsbetrags, wenn bei der Autorisierung der genaue Betrag nicht angegeben wurde und der Zahlungsbetrag den erwartbaren Betrag übersteigt (§ 675x Absatz 1 Satz 1)";
+        label en unofficial "the payer has a claim against his payment service provider for reimbursement of a debited amount where the exact amount was not specified at authorisation and the amount exceeds what could reasonably be expected (§ 675x (1) sentence 1)";
+        when betrag_bei_autorisierung_nicht_angegeben_675x(zv) and zahlungsbetrag_uebersteigt_erwartbaren_betrag_675x(zv);
+        then erstattungsanspruch_675x(zv);
+    }
+    rule ErstattungsanspruchAusgeschlossenNachAchtWochen675x(zv: Zahlungsvorgang) strict {
+        label de official "Ein Anspruch des Zahlers auf Erstattung ist ausgeschlossen, wenn er ihn nicht innerhalb von acht Wochen ab dem Zeitpunkt der Belastung des betreffenden Zahlungsbetrags gegenüber seinem Zahlungsdienstleister geltend macht (§ 675x Absatz 4)";
+        label en unofficial "the payer's claim for reimbursement is excluded where he does not assert it within eight weeks of the debit against his payment service provider (§ 675x (4))";
+        when erstattungsanspruch_675x(zv) and not_known(rechtzeitig_geltend_gemacht_675x(zv));
+        then erstattungsanspruch_ausgeschlossen_675x(zv);
+    }
+}
+
+pub relation zahlungsvorgang_vom_zahler_ausgeloest_675y(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsvorgang wird vom Zahler ausgelöst (§ 675y Absatz 1 Satz 1)";
+    label en unofficial "the payment transaction is initiated by the payer (§ 675y (1) sentence 1)";
+}
+pub relation nicht_erfolgte_oder_fehlerhafte_ausfuehrung_675y(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Zahlungsauftrag wurde nicht oder fehlerhaft ausgeführt (§ 675y Absatz 1 Satz 1)";
+    label en unofficial "the payment order was not executed, or was executed incorrectly (§ 675y (1) sentence 1)";
+}
+pub relation erstattungsanspruch_675y(zv: Zahlungsvorgang, betrag: Money) kind institutional {
+    label de official "Der Zahler kann von seinem Zahlungsdienstleister die unverzügliche und ungekürzte Erstattung des Zahlungsbetrags verlangen (§ 675y Absatz 1 Satz 1)";
+    label en unofficial "the payer may demand immediate and undiminished reimbursement of the payment amount from his payment service provider (§ 675y (1) sentence 1)";
+}
+@source(BGB_P675y)
+rule Erstattungsanspruch675yAbs1(zv: Zahlungsvorgang, betrag: Money) strict {
+    label de official "Wird ein Zahlungsvorgang vom Zahler ausgelöst, kann dieser von seinem Zahlungsdienstleister im Fall einer nicht erfolgten oder fehlerhaften Ausführung des Zahlungsauftrags die unverzügliche und ungekürzte Erstattung des Zahlungsbetrags verlangen (§ 675y Absatz 1 Satz 1)";
+    label en unofficial "where a payment transaction is initiated by the payer, he may, in the event of non-execution or defective execution of the payment order, demand immediate and undiminished reimbursement of the payment amount from his payment service provider (§ 675y (1) sentence 1)";
+    when zahlungsvorgang_vom_zahler_ausgeloest_675y(zv) and nicht_erfolgte_oder_fehlerhafte_ausfuehrung_675y(zv) and zahlungsbetrag(zv, betrag);
+    then erstattungsanspruch_675y(zv, betrag);
+}
+
+pub relation schaden_wegen_nicht_erfolgter_fehlerhafter_oder_verspaeteter_ausfuehrung_675z(zv: Zahlungsvorgang, betrag: Money) kind empirical {
+    label de official "Schaden des Zahlungsdienstnutzers wegen nicht erfolgter, fehlerhafter oder verspäteter Ausführung eines Zahlungsauftrags, der nicht bereits von § 675y erfasst ist (§ 675z Satz 2)";
+    label en unofficial "loss suffered by the payment service user due to non-execution, defective execution or delayed execution of a payment order not already covered by § 675y (§ 675z sentence 2)";
+}
+pub relation vorsatz_oder_grobe_fahrlaessigkeit_675z(zv: Zahlungsvorgang) kind empirical {
+    label de official "Der Schaden beruht auf Vorsatz oder grober Fahrlässigkeit des Zahlungsdienstleisters, betrifft den Zinsschaden oder eine besonders übernommene Gefahr (§ 675z Satz 2 Halbsatz 2)";
+    label en unofficial "the loss is due to intent or gross negligence of the payment service provider, concerns interest damage, or a risk specially assumed by it (§ 675z sentence 2 second half-sentence)";
+}
+pub relation haftung_begrenzt_auf_12500_euro_675z(zv: Zahlungsvorgang) kind institutional {
+    label de official "Die Haftung des Zahlungsdienstleisters kann auf 12 500 Euro begrenzt werden (§ 675z Satz 2)";
+    label en unofficial "the payment service provider's liability may be limited to EUR 12,500 (§ 675z sentence 2)";
+}
+@source(BGB_P675z)
+rule Haftungsbegrenzung675z(zv: Zahlungsvorgang, betrag: Money) strict {
+    label de official "Die Haftung eines Zahlungsdienstleisters gegenüber seinem Zahlungsdienstnutzer für einen wegen nicht erfolgter, fehlerhafter oder verspäteter Ausführung eines Zahlungsauftrags entstandenen Schaden, der nicht bereits von § 675y erfasst ist, kann auf 12 500 Euro begrenzt werden; dies gilt nicht für Vorsatz und grobe Fahrlässigkeit, den Zinsschaden und für besonders übernommene Gefahren (§ 675z Satz 2)";
+    label en unofficial "a payment service provider's liability towards its user for loss due to non-execution, defective execution or delayed execution of a payment order, not already covered by § 675y, may be limited to EUR 12,500; this does not apply to intent, gross negligence, interest damage and specially assumed risks (§ 675z Satz 2)";
+    when schaden_wegen_nicht_erfolgter_fehlerhafter_oder_verspaeteter_ausfuehrung_675z(zv, betrag) and not_known(vorsatz_oder_grobe_fahrlaessigkeit_675z(zv));
+    then haftung_begrenzt_auf_12500_euro_675z(zv);
+}
+
+pub relation ordnungsgemaesse_ausfuehrung_streitig_676(zv: Zahlungsvorgang) kind empirical {
+    label de official "Zwischen dem Zahlungsdienstnutzer und seinem Zahlungsdienstleister ist streitig, ob der Zahlungsvorgang ordnungsgemäß ausgeführt wurde (§ 676)";
+    label en unofficial "it is disputed between the payment service user and the payment service provider whether the payment transaction was properly executed (§ 676)";
+}
+pub relation nachweispflicht_zdl_676(zv: Zahlungsvorgang) kind institutional {
+    label de official "Der Zahlungsdienstleister muss nachweisen, dass der Zahlungsvorgang ordnungsgemäß aufgezeichnet und verbucht sowie nicht durch eine Störung beeinträchtigt wurde (§ 676)";
+    label en unofficial "the payment service provider must prove that the payment transaction was properly recorded and entered in the accounts and not affected by a technical breakdown (§ 676)";
+}
+@source(BGB_P676)
+rule NachweisDerAusfuehrung676(zv: Zahlungsvorgang) strict {
+    label de official "Ist zwischen dem Zahlungsdienstnutzer und seinem Zahlungsdienstleister streitig, ob der Zahlungsvorgang ordnungsgemäß ausgeführt wurde, muss der Zahlungsdienstleister nachweisen, dass der Zahlungsvorgang ordnungsgemäß aufgezeichnet und verbucht sowie nicht durch eine Störung beeinträchtigt wurde (§ 676)";
+    label en unofficial "where it is disputed between the payment service user and the payment service provider whether the transaction was properly executed, the provider must prove that it was properly recorded and entered in the accounts and not affected by a technical breakdown (§ 676)";
+    when ordnungsgemaesse_ausfuehrung_streitig_676(zv);
+    then nachweispflicht_zdl_676(zv);
+}
+pub relation nachweis_676_erfolgt_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstleister hat die ordnungsgemäße Ausführung nachgewiesen (§ 676)";
+    label en unofficial "the provider proved proper execution (§ 676)";
+}
+@source(BGB_P676)
+rule Position676Nachweis(zv: Zahlungsvorgang, p: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstleister ist verpflichtet, die ordnungsgemäße Ausführung nachzuweisen (§ 676)";
+    label en unofficial "The provider is obliged to prove proper execution (§ 676)";
+    when zahlungsdienstleister_des_zahlers(zv, p) and ordnungsgemaesse_ausfuehrung_streitig_676(zv)
+     and zahlungspflicht_beginn_am(zv, beginn);
+    then duty Duty676Nachweis {
+        bearer p;
+        achieve nachweis_676_erfolgt_am(zv, beginn) during [beginn, infinity);
+    };
+}
+
+pub relation ursache_im_verantwortungsbereich_eines_anderen_675u_675y_675z(zv: Zahlungsvorgang, dritter: Person) kind empirical {
+    label de official "Die Ursache für die Haftung eines Zahlungsdienstleisters gemäß den §§ 675u, 675y und 675z liegt im Verantwortungsbereich eines anderen Zahlungsdienstleisters, eines Zahlungsauslösedienstleisters oder einer zwischengeschalteten Stelle (§ 676a Absatz 1)";
+    label en unofficial "the cause of a payment service provider's liability under §§ 675u, 675y and 675z lies within the sphere of responsibility of another payment service provider, a payment initiation service provider or an intermediary (§ 676a (1))";
+}
+pub relation ausgleichsanspruch_676a(zv: Zahlungsvorgang, dritter: Person) kind institutional {
+    label de official "Der Zahlungsdienstleister kann von dem anderen Zahlungsdienstleister, dem Zahlungsauslösedienstleister oder der zwischengeschalteten Stelle den Ersatz des Schadens verlangen, der ihm aus der Erfüllung der Ansprüche eines Zahlungsdienstnutzers gemäß den §§ 675u, 675y und 675z entsteht (§ 676a Absatz 1)";
+    label en unofficial "the payment service provider may claim from the other payment service provider, payment initiation service provider or intermediary compensation for the loss incurred in satisfying a user's claims under §§ 675u, 675y and 675z (§ 676a (1))";
+}
+@source(BGB_P676a)
+rule Ausgleichsanspruch676a(zv: Zahlungsvorgang, dritter: Person) strict {
+    label de official "Liegt die Ursache für die Haftung eines Zahlungsdienstleisters gemäß den §§ 675u, 675y und 675z im Verantwortungsbereich eines anderen Zahlungsdienstleisters, eines Zahlungsauslösedienstleisters oder einer zwischengeschalteten Stelle, so kann der Zahlungsdienstleister von diesem den Ersatz des Schadens verlangen (§ 676a Absatz 1)";
+    label en unofficial "where the cause of a payment service provider's liability under §§ 675u, 675y and 675z lies within the sphere of responsibility of another payment service provider, a payment initiation service provider or an intermediary, the provider may claim compensation from it (§ 676a (1))";
+    when ursache_im_verantwortungsbereich_eines_anderen_675u_675y_675z(zv, dritter);
+    then ausgleichsanspruch_676a(zv, dritter);
+}
+pub relation ausgleich_676a_geltend_gemacht_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Der Zahlungsdienstleister hat den Ausgleichsanspruch geltend gemacht (§ 676a)";
+    label en unofficial "the provider asserted the recourse claim (§ 676a)";
+}
+pub relation ausgleichspflicht_beginn_am(zv: Zahlungsvorgang, tag: Date) kind empirical {
+    label de official "Beginn des Ausgleichsanspruchs nach § 676a";
+    label en unofficial "start of the recourse claim under § 676a";
+}
+@source(BGB_P676a)
+rule Position676aAusgleich(zv: Zahlungsvorgang, p: Person, dritter: Person, beginn: Date) strict {
+    label de official "Der Zahlungsdienstleister ist berechtigt, vom verantwortlichen anderen Dienstleister Ausgleich zu verlangen (§ 676a)";
+    label en unofficial "The provider has the liberty to claim recourse from the responsible other provider (§ 676a)";
+    when zahlungsdienstleister_des_zahlers(zv, p)
+     and ursache_im_verantwortungsbereich_eines_anderen_675u_675y_675z(zv, dritter)
+     and ausgleichspflicht_beginn_am(zv, beginn);
+    then liberty Liberty676aAusgleich {
+        holder p;
+        against dritter;
+        action ausgleich_676a_geltend_gemacht_am(zv, beginn);
+        window [beginn, infinity];
+    };
+}
+
+pub relation violation_664_unuebertragbarkeit(a: Auftrag, p: Person) kind derived {
+    label de official "Ausführung des Auftrags trotz Verbots nach § 664 übertragen";
+    label en unofficial "execution of the mandate transferred in violation of § 664";
+}
+@source(BGB_P664)
+rule Violation664Unuebertragbarkeit(a: Auftrag, p: Person, tag: Date) strict {
+    label de official "Die Ausführung des Auftrags wird entgegen § 664 übertragen";
+    label en unofficial "the execution of the mandate is transferred contrary to § 664";
+    when beauftragter(a, p) and auftragsausfuehrung_uebertragen_am(a, tag);
+    then violation_664_unuebertragbarkeit(a, p);
+}
+@source(BGB_P664)
+rule Maintenance664UnuebertragbarkeitRule(a: Auftrag, p: Person, beginn: Date) strict {
+    label de official "Das Verbot der Übertragung der Auftragsausführung nach § 664 bleibt ab seinem Beginn bestehen";
+    label en unofficial "the prohibition on transferring execution under § 664 remains in force from its start";
+    when auftrag_angenommen(a) and beauftragter(a, p)
+      and not_known(uebertragung_der_ausfuehrung_gestattet(a))
+      and auftragspflicht_664_beginn_am(a, beginn);
+    then duty Maintenance664Unuebertragbarkeit {
+        bearer p;
+        goal maintenance {
+            condition not violation_664_unuebertragbarkeit(a, p);
+            window [beginn, infinity);
+        }
+    };
+}

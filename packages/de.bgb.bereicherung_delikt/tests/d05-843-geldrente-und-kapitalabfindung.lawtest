@@ -1,0 +1,27 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 843: infolge einer Körperverletzung ist die Erwerbsfähigkeit gemindert — Schadensersatz durch Entrichtung einer Geldrente von 1.200,00 €. Das Gericht hat einen wichtigen Grund bejaht, so dass der Verletzte statt der Rente eine Abfindung in Kapital verlangen kann (Abs. 3); der Anspruch wird nicht dadurch ausgeschlossen, dass ein anderer Unterhalt zu gewähren hat (Abs. 4).
+test "§ 843: Geldrente, Kapitalabfindung bei wichtigem Grund und Unterhalt eines anderen" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": verletzung_koerper(entity_ref("urn:de:bgb:bd:d05")) { origin case_input; }
+        assert "f2": kein_rechtfertigungsgrund(entity_ref("urn:de:bgb:bd:d05")) { origin case_input; }
+        assert "f3": kausal_verursacht(entity_ref("urn:de:bgb:bd:d05")) { origin case_input; }
+        assert "f4": handelnder(entity_ref("urn:de:bgb:bd:d05"), entity_ref("urn:de:bgb:bd:d05:S")) { origin case_input; }
+        assert "f5": verletzter(entity_ref("urn:de:bgb:bd:d05"), entity_ref("urn:de:bgb:bd:d05:V")) { origin case_input; }
+        assert "j1": fahrlaessigkeit(entity_ref("urn:de:bgb:bd:d05")) { origin adjudicated; }
+        assert "j2": not vorsatz(entity_ref("urn:de:bgb:bd:d05")) { origin adjudicated; }
+        assert "f6": erwerbsfaehigkeit_aufgehoben_oder_gemindert(entity_ref("urn:de:bgb:bd:d05")) { origin case_input; }
+        assert "f7": rentenbetrag(entity_ref("urn:de:bgb:bd:d05"), 1200.00 EUR) { origin case_input; }
+        assert "f8": unterhalt_durch_anderen(entity_ref("urn:de:bgb:bd:d05")) { origin case_input; }
+        assert "j3": wichtiger_grund_fuer_kapitalabfindung(entity_ref("urn:de:bgb:bd:d05")) { origin adjudicated; }
+    }
+    evaluate truth(geldrente(entity_ref("urn:de:bgb:bd:d05"), entity_ref("urn:de:bgb:bd:d05:V"), 1200.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(kapitalabfindung_verlangbar(entity_ref("urn:de:bgb:bd:d05"), entity_ref("urn:de:bgb:bd:d05:V")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(rentenanspruch_nicht_ausgeschlossen(entity_ref("urn:de:bgb:bd:d05")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

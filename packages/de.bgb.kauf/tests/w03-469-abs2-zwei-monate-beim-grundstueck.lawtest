@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 469 Abs. 2 Satz 1: bei Grundstücken kann das Vorkaufsrecht nur bis zum Ablauf von zwei Monaten nach dem Empfang der Mitteilung ausgeübt werden. Empfangen am 12. März 2026, letzter Tag ist Dienstag, der 12. Mai 2026. Mit der Erklärung an diesem Tag kommt der Kauf zwischen Berechtigtem und Verpflichtetem zustande (§ 464 Abs. 2).
+test "§ 469 Abs. 2: zwei Monate beim Grundstück enden am 12. Mai 2026" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": vorkaufsberechtigter(entity_ref("urn:de:bgb:kauf:w03:VK"), entity_ref("urn:de:bgb:kauf:w03:B")) { origin case_input; }
+        assert "f2": vorkaufsverpflichteter(entity_ref("urn:de:bgb:kauf:w03:VK"), entity_ref("urn:de:bgb:kauf:w03:P")) { origin case_input; }
+        assert "f3": drittkaufvertrag(entity_ref("urn:de:bgb:kauf:w03:VK"), entity_ref("urn:de:bgb:kauf:w03")) { origin case_input; }
+        assert "f4": vorkaufsgegenstand_ist_grundstueck(entity_ref("urn:de:bgb:kauf:w03:VK")) { origin case_input; }
+        assert "f5": not verkauf_im_wege_der_zwangsvollstreckung(entity_ref("urn:de:bgb:kauf:w03")) { origin case_input; }
+        assert "f6": not verkauf_auf_gesetzlichen_auftrag_oder_aus_insolvenzmasse(entity_ref("urn:de:bgb:kauf:w03")) { origin case_input; }
+        assert "f7": not verkauf_an_gesetzlichen_erben_mit_ruecksicht_auf_erbrecht(entity_ref("urn:de:bgb:kauf:w03:VK")) { origin case_input; }
+        assert "f8": mitteilung_empfangen_am(entity_ref("urn:de:bgb:kauf:w03:VK"), @2026-03-12) { origin case_input; }
+        assert "f9": not ausuebungsfrist_vorkauf_bestimmt(entity_ref("urn:de:bgb:kauf:w03:VK")) { origin case_input; }
+        assert "f10": vorkauf_ausgeuebt_am(entity_ref("urn:de:bgb:kauf:w03:VK"), @2026-05-12) { origin case_input; }
+    }
+    evaluate truth(vorkaufsrecht_ausuebbar(entity_ref("urn:de:bgb:kauf:w03:VK")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vorkaufsfrist_ende(entity_ref("urn:de:bgb:kauf:w03:VK"), @2026-05-12));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(vorkauf_zustande_gekommen(entity_ref("urn:de:bgb:kauf:w03:VK"), entity_ref("urn:de:bgb:kauf:w03")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.miete version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-miete";
+// § 545 Satz 1: setzt der Mieter nach Ablauf der Mietzeit den Gebrauch fort, verlängert sich das Mietverhältnis auf unbestimmte Zeit, sofern nicht eine Partei innerhalb von zwei Wochen ihren entgegenstehenden Willen erklärt. Die Mietzeit endet am 30. April 2025, der Gebrauch wird am Donnerstag, dem 1. Mai 2025, fortgesetzt (§ 545 Satz 2 Nr. 1). Zwei Wochen nach § 188 Abs. 2 enden mit dem Ablauf des Donnerstags, 15. Mai 2025 — ein Werktag, § 193 verlegt nichts. Die Erklärung an diesem Tag ist rechtzeitig, das Mietverhältnis verlängert sich nicht: die rechtzeitige Erklärung poraussiert die Regel des § 545 Satz 1, und die Verlängerung bleibt ohne Stütze (NEITHER).
+test "§ 545: zwei Wochen — der entgegenstehende Wille am letzten Tag verhindert die Verlängerung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_MIETE_KALENDER; }
+        assert "f1": vermieter(entity_ref("urn:de:bgb:miete:a03"), entity_ref("urn:de:bgb:miete:a03:V")) { origin case_input; }
+        assert "f2": mieter(entity_ref("urn:de:bgb:miete:a03"), entity_ref("urn:de:bgb:miete:a03:M")) { origin case_input; }
+        assert "f3": vertragsart(entity_ref("urn:de:bgb:miete:a03"), Miete) { origin case_input; }
+        assert "f4": gegenstandsart(entity_ref("urn:de:bgb:miete:a03"), Wohnraum) { origin case_input; }
+        assert "f5": mietzeit_bestimmt(entity_ref("urn:de:bgb:miete:a03")) { origin case_input; }
+        assert "f6": mietzeit_ende(entity_ref("urn:de:bgb:miete:a03"), @2025-04-30) { origin case_input; }
+        assert "f7": gebrauch_nach_ablauf_fortgesetzt_am(entity_ref("urn:de:bgb:miete:a03"), @2025-05-01) { origin case_input; }
+        assert "f8": entgegenstehender_wille_erklaert_am(entity_ref("urn:de:bgb:miete:a03"), @2025-05-15) { origin case_input; }
+    }
+    evaluate truth(widerspruchsfrist_545_ende(entity_ref("urn:de:bgb:miete:a03"), @2025-05-15));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(entgegenstehender_wille_rechtzeitig(entity_ref("urn:de:bgb:miete:a03")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(mietverhaeltnis_auf_unbestimmte_zeit_verlaengert(entity_ref("urn:de:bgb:miete:a03")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 188 Abs. 2 und 3: Ereignis 31. Januar 2026, ein Monat; der 31. Februar fehlt — kalendarisches Ende ist Sonnabend, 28. Februar; § 193 verlegt auf Montag, 2. März 2026.
+test "§ 188 Abs. 3 und § 193: Monatsfrist vom 31. Januar endet kalendarisch am 28. Februar und verlegt auf den 2. März 2026" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": frist_ereignis(entity_ref("urn:de:bgb:fristen:pilot:f04"), @2026-01-31) { origin case_input; }
+        assert "d": frist_dauer_kalender(entity_ref("urn:de:bgb:fristen:pilot:f04"), 1 calendar_month) { origin case_input; }
+    }
+    evaluate truth(frist_ende_kalender(entity_ref("urn:de:bgb:fristen:pilot:f04"), @2026-02-28));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(frist_ende(entity_ref("urn:de:bgb:fristen:pilot:f04"), @2026-03-02));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

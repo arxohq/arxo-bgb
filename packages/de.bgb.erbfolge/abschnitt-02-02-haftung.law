@@ -1,0 +1,1395 @@
+// BÜRGERLICHES GESETZBUCH, BUCH 5 ABSCHNITT 2 TITEL 2 — HAFTUNG DES ERBEN
+// (§§ 1967–2017: Nachlassverbindlichkeiten, Aufgebot der Nachlassgläubiger,
+// Beschränkung der Haftung, Inventar, aufschiebende Einreden).
+//
+// TRÄGER. Die Verbindlichkeit ist eine eigene Entität; ihr Gläubiger und
+// ihr Betrag sind Eingaben des Falls. Der Erbe wird über den Erbfall
+// geführt, damit die Haftung mehrerer Erben (Titel 4) dieselben Prädikate
+// lesen kann.
+//
+// GELD. Die einzige Geldrechnung dieses Titels ist der Vergleich des
+// § 1990 Abs. 1 (der Nachlass reicht zur Befriedigung nicht aus) und des
+// § 1973 Abs. 1 (Erschöpfung des Nachlasses durch die nicht ausgeschlossenen
+// Gläubiger): beides sind VERGLEICHE von Money, keine Division und keine
+// Rundung. Die Verteilungsquote im Insolvenzverfahren ist Sache der InsO
+// und bleibt Grenze (SOURCES.json.external).
+//
+// WERTUNGEN. „unverzüglich“ (§ 1980 Abs. 1 Satz 1) ist ein Wertungsmerkmal,
+// kein Nullfristbeginn (DECISION-0194, Ledger-Eintrag D-04-06 im selben
+// Sinn); „angemessene Vergütung“ (§ 1987) und „erhebliche Unvollständigkeit“
+// (§ 2005 Abs. 1) ebenso — Kanal §47.3. Die Anordnungen des Nachlassgerichts
+// und die Eröffnung des Nachlassinsolvenzverfahrens sind FESTGESTELLTE
+// TATSACHEN (`origin adjudicated`), nicht Wertungen dieses Pakets.
+
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+pub entity Nachlassverbindlichkeit {
+    label de official "Nachlassverbindlichkeit (§ 1967 Abs. 2): vom Erblasser herrührende Schuld oder den Erben als solchen treffende Verbindlichkeit";
+    label en unofficial "liability of the estate (§ 1967 (2)): a debt derived from the decedent or a liability incumbent on the heir as such";
+}
+
+// --- § 1967 Erbenhaftung, Nachlassverbindlichkeiten --------------------------------------------------
+
+pub relation verbindlichkeit_des_erbfalls(v: Nachlassverbindlichkeit, e: Erbfall) kind empirical {
+    key(v);
+    label de official "Der Erbfall, zu dessen Nachlass die Verbindlichkeit gehört (§ 1967 Abs. 1)";
+    label en unofficial "the devolution to whose estate the liability belongs (§ 1967 (1))";
+}
+pub relation glaeubiger(v: Nachlassverbindlichkeit, g: Person) kind empirical {
+    key(v);
+    label de official "Nachlassgläubiger dieser Verbindlichkeit (§ 1967)";
+    label en unofficial "creditor of the estate for this liability (§ 1967)";
+}
+pub relation betrag_der_verbindlichkeit(v: Nachlassverbindlichkeit, betrag: Money) kind empirical {
+    key(v);
+    label de official "Betrag der Nachlassverbindlichkeit (§ 1967)";
+    label en unofficial "amount of the liability of the estate (§ 1967)";
+}
+pub relation vom_erblasser_herruehrende_schuld(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Vom Erblasser herrührende Schuld (§ 1967 Abs. 2)";
+    label en unofficial "debt derived from the decedent (§ 1967 (2))";
+}
+pub relation verbindlichkeit_aus_pflichtteil_vermaechtnis_auflage(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Verbindlichkeit aus Pflichtteilsrechten, Vermächtnissen und Auflagen (§ 1967 Abs. 2)";
+    label en unofficial "liability arising from compulsory portions, legacies and testamentary burdens (§ 1967 (2))";
+}
+pub relation nachlassverbindlichkeit(v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Zu den Nachlassverbindlichkeiten gehören außer den vom Erblasser herrührenden Schulden die den Erben als solchen treffenden Verbindlichkeiten (§ 1967 Abs. 2)";
+    label en unofficial "The liabilities of the estate comprise, besides debts derived from the decedent, the liabilities incumbent on the heir as such (§ 1967 (2))";
+}
+pub relation haftet_fuer_nachlassverbindlichkeit(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Der Erbe haftet für die Nachlassverbindlichkeiten (§ 1967 Abs. 1)";
+    label en unofficial "The heir is liable for the liabilities of the estate (§ 1967 (1))";
+}
+
+@source(BGB_P1967) {
+    rule ErblasserschuldIstNachlassverbindlichkeit(v: Nachlassverbindlichkeit) strict {
+        label de official "Zu den Nachlassverbindlichkeiten gehören die vom Erblasser herrührenden Schulden (§ 1967 Abs. 2)";
+        label en unofficial "The liabilities of the estate include the debts derived from the decedent (§ 1967 (2))";
+        when vom_erblasser_herruehrende_schuld(v);
+        then nachlassverbindlichkeit(v);
+    }
+    rule ErbfallschuldIstNachlassverbindlichkeit(v: Nachlassverbindlichkeit) strict {
+        label de official "Zu den Nachlassverbindlichkeiten gehören die den Erben als solchen treffenden Verbindlichkeiten, insbesondere die Verbindlichkeiten aus Pflichtteilsrechten, Vermächtnissen und Auflagen (§ 1967 Abs. 2)";
+        label en unofficial "The liabilities of the estate include those incumbent on the heir as such, in particular liabilities from compulsory portions, legacies and burdens (§ 1967 (2))";
+        when verbindlichkeit_aus_pflichtteil_vermaechtnis_auflage(v);
+        then nachlassverbindlichkeit(v);
+    }
+    rule ErbeHaftet(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+        label de official "Der Erbe haftet für die Nachlassverbindlichkeiten (§ 1967 Abs. 1)";
+        label en unofficial "The heir is liable for the liabilities of the estate (§ 1967 (1))";
+        when erbschaft_angefallen(e, p) and verbindlichkeit_des_erbfalls(v, e) and nachlassverbindlichkeit(v);
+        then haftet_fuer_nachlassverbindlichkeit(e, p, v);
+    }
+}
+
+// --- §§ 1968, 1969 Beerdigungskosten und Dreißigster ------------------------------------------------
+
+pub relation beerdigungskosten(e: Erbfall, betrag: Money) kind empirical {
+    key(e);
+    label de official "Kosten der Beerdigung des Erblassers (§ 1968)";
+    label en unofficial "costs of the decedent's funeral (§ 1968)";
+}
+pub relation traegt_beerdigungskosten(e: Erbfall, p: Person, betrag: Money) kind institutional {
+    key(e, p);
+    label de official "Der Erbe trägt die Kosten der Beerdigung des Erblassers (§ 1968)";
+    label en unofficial "The heir bears the costs of the decedent's funeral (§ 1968)";
+}
+pub relation familienangehoeriger_des_hausstands(e: Erbfall, p: Person) kind empirical {
+    label de official "Familienangehöriger des Erblassers, der zur Zeit des Todes zu dessen Hausstand gehört und von ihm Unterhalt bezogen hat (§ 1969 Abs. 1 Satz 1)";
+    label en unofficial "family member of the decedent belonging to his household at the time of death and maintained by him (§ 1969 (1) sentence 1)";
+}
+pub relation abweichende_anordnung_zum_dreissigsten(e: Erbfall) kind empirical {
+    label de official "Der Erblasser hat durch letztwillige Verfügung eine abweichende Anordnung getroffen (§ 1969 Abs. 1 Satz 2)";
+    label en unofficial "The decedent made a divergent provision by will (§ 1969 (1) sentence 2)";
+}
+pub relation dreissigster_ende(e: Erbfall, tag: Date) kind derived {
+    key(e);
+    label de official "Ablauf der ersten 30 Tage nach dem Eintritt des Erbfalls (§ 1969 Abs. 1 Satz 1)";
+    label en unofficial "expiry of the first 30 days after the devolution (§ 1969 (1) sentence 1)";
+}
+pub relation unterhalt_und_wohnung_geschuldet(e: Erbfall, p: Person, bis: Date) kind institutional {
+    key(e, p);
+    label de official "Der Erbe ist verpflichtet, in den ersten 30 Tagen nach dem Eintritt des Erbfalls in demselben Umfang wie der Erblasser Unterhalt zu gewähren und die Benutzung der Wohnung und der Haushaltsgegenstände zu gestatten (§ 1969 Abs. 1 Satz 1)";
+    label en unofficial "The heir must, for the first 30 days after the devolution, grant maintenance to the same extent as the decedent and permit use of the dwelling and household objects (§ 1969 (1) sentence 1)";
+}
+pub relation auf_dreissigsten_gelten_vermaechtnisvorschriften(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Vorschriften über Vermächtnisse finden entsprechende Anwendung (§ 1969 Abs. 2)";
+    label en unofficial "The provisions on legacies apply accordingly (§ 1969 (2))";
+}
+
+@source(BGB_P1968)
+rule Beerdigungskosten(e: Erbfall, p: Person, betrag: Money) strict {
+    label de official "Der Erbe trägt die Kosten der Beerdigung des Erblassers (§ 1968)";
+    label en unofficial "The heir bears the costs of the decedent's funeral (§ 1968)";
+    when erbschaft_angefallen(e, p) and beerdigungskosten(e, betrag);
+    then traegt_beerdigungskosten(e, p, betrag);
+}
+
+@source(BGB_P1969) {
+    rule DreissigTage(e: Erbfall, tag: Date) strict {
+        label de official "Die ersten 30 Tage nach dem Eintritt des Erbfalls (§ 1969 Abs. 1 Satz 1); der Tag des Erbfalls wird nicht mitgerechnet (§ 187 Abs. 1)";
+        label en unofficial "The first 30 days after the devolution (§ 1969 (1) sentence 1); the day of the devolution is not counted (§ 187 (1))";
+        when erbfall_am(e, tag);
+        then dreissigster_ende(e, add_calendar_period(tag, 30 calendar_day));
+    }
+    rule Dreissigster(e: Erbfall, p: Person, angehoeriger: Person, ende: Date) strict {
+        label de official "Der Erbe ist verpflichtet, Familienangehörigen des Erblassers, die zur Zeit des Todes zu dessen Hausstand gehören und von ihm Unterhalt bezogen haben, in den ersten 30 Tagen nach dem Eintritt des Erbfalls Unterhalt zu gewähren und die Benutzung der Wohnung zu gestatten (§ 1969 Abs. 1 Satz 1)";
+        label en unofficial "The heir must grant maintenance and permit use of the dwelling to family members belonging to the decedent's household and maintained by him, for the first 30 days after the devolution (§ 1969 (1) sentence 1)";
+        when erbschaft_angefallen(e, p) and familienangehoeriger_des_hausstands(e, angehoeriger)
+            and dreissigster_ende(e, ende) and not_known(abweichende_anordnung_zum_dreissigsten(e));
+        then unterhalt_und_wohnung_geschuldet(e, angehoeriger, ende);
+    }
+    rule DreissigsterIstVermaechtnis(e: Erbfall, p: Person, ende: Date) strict {
+        label de official "Die Vorschriften über Vermächtnisse finden entsprechende Anwendung (§ 1969 Abs. 2)";
+        label en unofficial "The provisions on legacies apply accordingly (§ 1969 (2))";
+        when unterhalt_und_wohnung_geschuldet(e, p, ende);
+        then auf_dreissigsten_gelten_vermaechtnisvorschriften(e, p);
+    }
+}
+
+// --- §§ 1970–1974 Aufgebot der Nachlassgläubiger ----------------------------------------------------
+
+pub relation aufgebot_beantragt_am(e: Erbfall, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag, an dem der Antrag auf Einleitung des Aufgebotsverfahrens der Nachlassgläubiger gestellt worden ist (§ 1970, § 2015 Abs. 1) — Verfahren nach der ZPO, Grenze des Pakets";
+    label en unofficial "day on which the application to institute the public notice proceedings was filed (§ 1970, § 2015 (1)) — procedure under the Code of Civil Procedure, boundary of the package";
+}
+pub relation forderung_im_aufgebot_angemeldet(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Die Forderung ist im Aufgebotsverfahren angemeldet worden (§ 1970, § 1974 Abs. 1)";
+    label en unofficial "The claim was registered in the public notice proceedings (§ 1970, § 1974 (1))";
+}
+pub relation im_aufgebotsverfahren_ausgeschlossen(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Der Nachlassgläubiger ist im Aufgebotsverfahren ausgeschlossen (§ 1973 Abs. 1 Satz 1) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "The creditor of the estate has been excluded in the public notice proceedings (§ 1973 (1) sentence 1) — established fact, origin adjudicated";
+}
+pub relation pfandglaeubiger_oder_gleichgestellt(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Pfandgläubiger, im Insolvenzverfahren gleichstehender Gläubiger, Gläubiger mit Recht auf Befriedigung aus unbeweglichem Vermögen, durch Vormerkung gesicherter Gläubiger oder Aussonderungsberechtigter (§ 1971)";
+    label en unofficial "pledgee, creditor of equal rank in insolvency, creditor with a right to satisfaction from immovable property, creditor secured by a priority notice or person entitled to separation (§ 1971)";
+}
+pub relation vom_aufgebot_nicht_betroffen(v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Der Gläubiger wird durch das Aufgebot nicht betroffen (§ 1971, § 1972)";
+    label en unofficial "The creditor is not affected by the public notice (§ 1971, § 1972)";
+}
+pub relation aufforderung_zur_anmeldung_zulaessig(e: Erbfall) kind institutional {
+    label de official "Die Nachlassgläubiger können im Wege des Aufgebotsverfahrens zur Anmeldung ihrer Forderungen aufgefordert werden (§ 1970)";
+    label en unofficial "The creditors of the estate may be summoned to register their claims by way of public notice proceedings (§ 1970)";
+}
+pub relation nachlass_durch_nicht_ausgeschlossene_erschoepft(e: Erbfall) kind empirical {
+    label de official "Der Nachlass wird durch die Befriedigung der nicht ausgeschlossenen Gläubiger erschöpft (§ 1973 Abs. 1 Satz 1)";
+    label en unofficial "The estate is exhausted by satisfying the creditors not excluded (§ 1973 (1) sentence 1)";
+}
+pub relation befriedigung_verweigerbar(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Der Erbe kann die Befriedigung dieses Nachlassgläubigers verweigern (§ 1973 Abs. 1, § 1990 Abs. 1, § 1992)";
+    label en unofficial "The heir may refuse to satisfy this creditor of the estate (§ 1973 (1), § 1990 (1), § 1992)";
+}
+pub relation ueberschuss_herauszugeben(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Einen Überschuss hat der Erbe zum Zwecke der Befriedigung des Gläubigers nach den Vorschriften über die Herausgabe einer ungerechtfertigten Bereicherung herauszugeben (§ 1973 Abs. 2 Satz 1)";
+    label en unofficial "The heir must hand over any surplus for the creditor's satisfaction under the rules on unjust enrichment (§ 1973 (2) sentence 1)";
+}
+pub relation forderung_geltend_gemacht_am(v: Nachlassverbindlichkeit, tag: Date) kind empirical {
+    key(v);
+    label de official "Tag, an dem der Nachlassgläubiger seine Forderung dem Erben gegenüber geltend macht (§ 1974 Abs. 1 Satz 1)";
+    label en unofficial "day on which the creditor asserts his claim against the heir (§ 1974 (1) sentence 1)";
+}
+pub relation forderung_dem_erben_bekannt_geworden(v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Die Forderung ist dem Erben vor dem Ablauf der fünf Jahre bekannt geworden (§ 1974 Abs. 1 Satz 1)";
+    label en unofficial "The claim became known to the heir before the five years elapsed (§ 1974 (1) sentence 1)";
+}
+pub relation todeserklaerung_rechtskraeftig_am(e: Erbfall, tag: Date) kind empirical {
+    key(e);
+    label de official "Eintritt der Rechtskraft des Beschlusses über die Todeserklärung oder die Feststellung der Todeszeit nach dem Verschollenheitsgesetz (§ 1974 Abs. 1 Satz 2) — Verfahren außerhalb des BGB";
+    label en unofficial "the decision declaring death or establishing the time of death becomes final under the Missing Persons Act (§ 1974 (1) sentence 2) — proceedings outside the Civil Code";
+}
+pub relation verschweigungsfrist_ende(e: Erbfall, tag: Date) kind derived {
+    key(e);
+    label de official "Ablauf der fünf Jahre nach dem Erbfall (§ 1974 Abs. 1 Satz 1, Satz 2)";
+    label en unofficial "expiry of the five years after the devolution (§ 1974 (1) sentences 1, 2)";
+}
+pub relation steht_ausgeschlossenem_glaeubiger_gleich(v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Der Nachlassgläubiger steht einem ausgeschlossenen Gläubiger gleich (§ 1974 Abs. 1 Satz 1)";
+    label en unofficial "The creditor of the estate is treated as an excluded creditor (§ 1974 (1) sentence 1)";
+}
+
+@source(BGB_P1970)
+rule AufgebotZulaessig(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+    label de official "Die Nachlassgläubiger können im Wege des Aufgebotsverfahrens zur Anmeldung ihrer Forderungen aufgefordert werden (§ 1970)";
+    label en unofficial "The creditors of the estate may be summoned to register their claims by way of public notice proceedings (§ 1970)";
+    when erbschaft_angefallen(e, p) and verbindlichkeit_des_erbfalls(v, e) and nachlassverbindlichkeit(v);
+    then aufforderung_zur_anmeldung_zulaessig(e);
+}
+
+@source(BGB_P1971)
+rule PfandglaeubigerNichtBetroffen(v: Nachlassverbindlichkeit) strict {
+    label de official "Pfandgläubiger und die ihnen im Insolvenzverfahren Gleichstehenden sowie Gläubiger mit einem Recht auf Befriedigung aus dem unbeweglichen Vermögen werden durch das Aufgebot nicht betroffen (§ 1971)";
+    label en unofficial "Pledgees and those of equal rank in insolvency, and creditors with a right to satisfaction from immovable property, are not affected by the public notice (§ 1971)";
+    when pfandglaeubiger_oder_gleichgestellt(v);
+    then vom_aufgebot_nicht_betroffen(v);
+}
+
+@source(BGB_P1972)
+rule PflichtteilVermaechtnisAuflageNichtBetroffen(v: Nachlassverbindlichkeit) strict {
+    label de official "Pflichtteilsrechte, Vermächtnisse und Auflagen werden durch das Aufgebot nicht betroffen, unbeschadet der Vorschrift des § 2060 Nr. 1 (§ 1972)";
+    label en unofficial "Compulsory portions, legacies and burdens are not affected by the public notice, without prejudice to § 2060 no. 1 (§ 1972)";
+    when verbindlichkeit_aus_pflichtteil_vermaechtnis_auflage(v);
+    then vom_aufgebot_nicht_betroffen(v);
+}
+
+@source(BGB_P1973) {
+    rule BefriedigungAusgeschlossenerVerweigerbar(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Der Erbe kann die Befriedigung eines im Aufgebotsverfahren ausgeschlossenen Nachlassgläubigers insoweit verweigern, als der Nachlass durch die Befriedigung der nicht ausgeschlossenen Gläubiger erschöpft wird (§ 1973 Abs. 1 Satz 1)";
+        label en unofficial "The heir may refuse to satisfy a creditor excluded in the public notice proceedings to the extent the estate is exhausted by satisfying the creditors not excluded (§ 1973 (1) sentence 1)";
+        when verbindlichkeit_des_erbfalls(v, e) and im_aufgebotsverfahren_ausgeschlossen(v)
+            and nachlass_durch_nicht_ausgeschlossene_erschoepft(e);
+        then befriedigung_verweigerbar(e, v);
+    }
+    rule UeberschussHerauszugeben(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Einen Überschuss hat der Erbe zum Zwecke der Befriedigung des Gläubigers im Wege der Zwangsvollstreckung nach den Vorschriften über die Herausgabe einer ungerechtfertigten Bereicherung herauszugeben (§ 1973 Abs. 2 Satz 1)";
+        label en unofficial "The heir must hand over any surplus for the creditor's satisfaction by execution under the rules on unjust enrichment (§ 1973 (2) sentence 1)";
+        when verbindlichkeit_des_erbfalls(v, e) and im_aufgebotsverfahren_ausgeschlossen(v)
+            and not_known(nachlass_durch_nicht_ausgeschlossene_erschoepft(e));
+        then ueberschuss_herauszugeben(e, v);
+    }
+}
+
+@source(BGB_P1974) {
+    rule VerschweigungsfristFuenfJahre(e: Erbfall, tag: Date) strict {
+        label de official "Fünf Jahre nach dem Erbfall (§ 1974 Abs. 1 Satz 1)";
+        label en unofficial "Five years after the devolution (§ 1974 (1) sentence 1)";
+        when erbfall_am(e, tag) and not_known(todeserklaerung_bekannt(e));
+        then verschweigungsfrist_ende(e, add_calendar_period(tag, 5 calendar_year));
+    }
+    rule VerschweigungsfristNachTodeserklaerung(e: Erbfall, tag: Date) strict {
+        label de official "Wird der Erblasser für tot erklärt oder wird seine Todeszeit festgestellt, so beginnt die Frist nicht vor dem Eintritt der Rechtskraft des Beschlusses (§ 1974 Abs. 1 Satz 2)";
+        label en unofficial "Where the decedent is declared dead or the time of death is established, the period does not begin before the decision becomes final (§ 1974 (1) sentence 2)";
+        when todeserklaerung_rechtskraeftig_am(e, tag);
+        then verschweigungsfrist_ende(e, add_calendar_period(tag, 5 calendar_year));
+    }
+    rule TodeserklaerungBekannt(e: Erbfall, tag: Date) strict {
+        label de official "Eine Todeserklärung oder Feststellung der Todeszeit liegt vor (§ 1974 Abs. 1 Satz 2)";
+        label en unofficial "A declaration of death or establishment of the time of death exists (§ 1974 (1) sentence 2)";
+        when todeserklaerung_rechtskraeftig_am(e, tag);
+        then todeserklaerung_bekannt(e);
+    }
+    rule Verschweigungseinrede(e: Erbfall, v: Nachlassverbindlichkeit, geltend: Date, ende: Date) strict {
+        label de official "Ein Nachlassgläubiger, der seine Forderung später als fünf Jahre nach dem Erbfall dem Erben gegenüber geltend macht, steht einem ausgeschlossenen Gläubiger gleich, es sei denn, dass die Forderung dem Erben vorher bekannt geworden oder im Aufgebotsverfahren angemeldet worden ist (§ 1974 Abs. 1 Satz 1)";
+        label en unofficial "A creditor asserting his claim later than five years after the devolution is treated as excluded, unless the claim became known to the heir earlier or was registered in the public notice proceedings (§ 1974 (1) sentence 1)";
+        when verbindlichkeit_des_erbfalls(v, e) and forderung_geltend_gemacht_am(v, geltend)
+            and verschweigungsfrist_ende(e, ende) and geltend > ende
+            and not_known(forderung_dem_erben_bekannt_geworden(v)) and not_known(forderung_im_aufgebot_angemeldet(v))
+            and not_known(vom_aufgebot_nicht_betroffen(v));
+        then steht_ausgeschlossenem_glaeubiger_gleich(v);
+    }
+    rule VerschweigungseinredeWirktWieAusschluss(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Der Gleichgestellte wird wie ein ausgeschlossener Gläubiger behandelt (§ 1974 Abs. 1 Satz 1 mit § 1973 Abs. 1)";
+        label en unofficial "The creditor treated as excluded is dealt with like an excluded creditor (§ 1974 (1) sentence 1 with § 1973 (1))";
+        when steht_ausgeschlossenem_glaeubiger_gleich(v) and verbindlichkeit_des_erbfalls(v, e)
+            and nachlass_durch_nicht_ausgeschlossene_erschoepft(e);
+        then befriedigung_verweigerbar(e, v);
+    }
+}
+
+pub relation todeserklaerung_bekannt(e: Erbfall) kind derived {
+    label de official "Eine Todeserklärung oder Feststellung der Todeszeit des Erblassers liegt vor (§ 1974 Abs. 1 Satz 2)";
+    label en unofficial "a declaration of death or establishment of the time of death exists (§ 1974 (1) sentence 2)";
+}
+
+// --- §§ 1975–1992 Nachlassverwaltung, Nachlassinsolvenz, Einreden ------------------------------------
+
+pub relation nachlassverwaltung_angeordnet(e: Erbfall) kind empirical {
+    label de official "Eine Nachlasspflegschaft zum Zwecke der Befriedigung der Nachlassgläubiger (Nachlassverwaltung) ist angeordnet (§ 1975) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "An administration of the estate for satisfying the creditors has been ordered (§ 1975) — established fact, origin adjudicated";
+}
+pub relation nachlassinsolvenzverfahren_eroeffnet(e: Erbfall) kind empirical {
+    label de official "Das Nachlassinsolvenzverfahren ist eröffnet (§ 1975; Insolvenzordnung) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "The insolvency proceedings over the estate have been opened (§ 1975; Insolvency Code) — established fact, origin adjudicated";
+}
+pub relation haftung_auf_den_nachlass_beschraenkt(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Haftung des Erben für die Nachlassverbindlichkeiten beschränkt sich auf den Nachlass (§ 1975)";
+    label en unofficial "The heir's liability for the estate's liabilities is limited to the estate (§ 1975)";
+}
+pub relation erloschenes_rechtsverhaeltnis_gilt_als_nicht_erloschen(e: Erbfall) kind institutional {
+    label de official "Die infolge des Erbfalls durch Vereinigung von Recht und Verbindlichkeit oder von Recht und Belastung erloschenen Rechtsverhältnisse gelten als nicht erloschen (§ 1976, § 1991 Abs. 2)";
+    label en unofficial "Legal relationships extinguished by merger of right and liability or right and encumbrance are deemed not extinguished (§ 1976, § 1991 (2))";
+}
+pub relation aufrechnung_vor_anordnung_erklaert(e: Erbfall, g: Person) kind empirical {
+    label de official "Ein Nachlassgläubiger hat vor der Anordnung der Nachlassverwaltung oder vor der Eröffnung des Nachlassinsolvenzverfahrens seine Forderung gegen eine nicht zum Nachlass gehörende Forderung des Erben ohne dessen Zustimmung aufgerechnet (§ 1977 Abs. 1)";
+    label en unofficial "A creditor of the estate set off his claim against a claim of the heir not belonging to the estate without the heir's consent before the order or opening (§ 1977 (1))";
+}
+pub relation aufrechnung_eines_eigenglaeubigers(e: Erbfall, g: Person) kind empirical {
+    label de official "Ein Gläubiger, der nicht Nachlassgläubiger ist, hat die ihm gegen den Erben zustehende Forderung gegen eine zum Nachlass gehörende Forderung aufgerechnet (§ 1977 Abs. 2)";
+    label en unofficial "A creditor who is not a creditor of the estate set off his claim against the heir against a claim belonging to the estate (§ 1977 (2))";
+}
+pub relation aufrechnung_gilt_als_nicht_erfolgt(e: Erbfall, g: Person) kind institutional {
+    label de official "Die Aufrechnung ist als nicht erfolgt anzusehen (§ 1977 Abs. 1, 2)";
+    label en unofficial "The set-off is to be regarded as not having taken place (§ 1977 (1), (2))";
+}
+pub relation verantwortlich_wie_beauftragter(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe ist den Nachlassgläubigern für die bisherige Verwaltung des Nachlasses so verantwortlich, wie wenn er von der Annahme der Erbschaft an die Verwaltung für sie als Beauftragter zu führen gehabt hätte (§ 1978 Abs. 1 Satz 1)";
+    label en unofficial "The heir is answerable to the creditors for his previous administration as if he had conducted it for them as a mandatary from the acceptance on (§ 1978 (1) sentence 1)";
+}
+pub relation aufwendungen_des_erben(e: Erbfall, p: Person, betrag: Money) kind empirical {
+    key(e, p);
+    label de official "Aufwendungen des Erben auf den Nachlass (§ 1978 Abs. 3)";
+    label en unofficial "expenses of the heir on the estate (§ 1978 (3))";
+}
+pub relation aufwendungsersatz_aus_dem_nachlass(e: Erbfall, p: Person, betrag: Money) kind institutional {
+    key(e, p);
+    label de official "Aufwendungen sind dem Erben aus dem Nachlass zu ersetzen, soweit er nach den Vorschriften über den Auftrag oder über die Geschäftsführung ohne Auftrag Ersatz verlangen könnte (§ 1978 Abs. 3)";
+    label en unofficial "Expenses are to be reimbursed to the heir from the estate to the extent he could claim under the rules on mandate or agency without mandate (§ 1978 (3))";
+}
+pub relation berichtigung_durch_den_erben(e: Erbfall, v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Der Erbe hat eine Nachlassverbindlichkeit berichtigt (§ 1979)";
+    label en unofficial "The heir has discharged a liability of the estate (§ 1979)";
+}
+pub relation durfte_zulaenglichkeit_annehmen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe durfte den Umständen nach annehmen, dass der Nachlass zur Berichtigung aller Nachlassverbindlichkeiten ausreiche (§ 1979) — festgestellte Tatsache des Falls";
+    label en unofficial "The heir was entitled in the circumstances to assume that the estate sufficed to discharge all liabilities (§ 1979) — established fact of the case";
+}
+pub relation berichtigung_fuer_rechnung_des_nachlasses(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Die Berichtigung müssen die Nachlassgläubiger als für Rechnung des Nachlasses erfolgt gelten lassen (§ 1979)";
+    label en unofficial "The creditors must accept the discharge as having been made for the account of the estate (§ 1979)";
+}
+pub relation kenntnis_von_zahlungsunfaehigkeit_oder_ueberschuldung(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat von der Zahlungsunfähigkeit oder der Überschuldung des Nachlasses Kenntnis erlangt; der Kenntnis steht die auf Fahrlässigkeit beruhende Unkenntnis gleich (§ 1980 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "The heir has learned of the estate's insolvency or over-indebtedness; negligent ignorance is equivalent to knowledge (§ 1980 (1) sentence 1, (2))";
+}
+pub relation insolvenzantrag_gestellt(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat die Eröffnung des Nachlassinsolvenzverfahrens beantragt (§ 1980 Abs. 1 Satz 1)";
+    label en unofficial "The heir has applied for the opening of insolvency proceedings over the estate (§ 1980 (1) sentence 1)";
+}
+pub external judgment relation unverzueglich_beantragt(p: Person, e: Erbfall) {
+    authority Court;
+    label de official "Der Erbe hat die Eröffnung des Nachlassinsolvenzverfahrens UNVERZÜGLICH beantragt (§ 1980 Abs. 1 Satz 1) — Wertungsmerkmal, kein Nullfristbeginn (DECISION-0194), Kanal §47.3";
+    label en unofficial "The heir applied for the opening of the insolvency proceedings WITHOUT UNDUE DELAY (§ 1980 (1) sentence 1) — evaluative element, not a zero-length period (DECISION-0194), channel §47.3";
+}
+pub relation insolvenzantragspflicht(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe hat unverzüglich die Eröffnung des Nachlassinsolvenzverfahrens zu beantragen (§ 1980 Abs. 1 Satz 1)";
+    label en unofficial "The heir must apply without undue delay for the opening of insolvency proceedings over the estate (§ 1980 (1) sentence 1)";
+}
+pub relation schadensersatzpflicht_wegen_antragsverletzung(e: Erbfall, p: Person) kind institutional {
+    label de official "Verletzt der Erbe die Antragspflicht, so ist er den Gläubigern für den daraus entstehenden Schaden verantwortlich (§ 1980 Abs. 1 Satz 2)";
+    label en unofficial "If the heir breaches the duty to apply he is answerable to the creditors for the resulting damage (§ 1980 (1) sentence 2)";
+}
+pub relation nachlassverwaltung_beantragt_vom_erben(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat die Anordnung der Nachlassverwaltung beantragt (§ 1981 Abs. 1)";
+    label en unofficial "The heir has applied for the administration of the estate to be ordered (§ 1981 (1))";
+}
+pub relation nachlassverwaltung_beantragt_vom_glaeubiger(e: Erbfall, g: Person) kind empirical {
+    label de official "Ein Nachlassgläubiger hat die Anordnung der Nachlassverwaltung beantragt (§ 1981 Abs. 2 Satz 1)";
+    label en unofficial "A creditor of the estate has applied for the administration to be ordered (§ 1981 (2) sentence 1)";
+}
+pub external judgment relation befriedigung_durch_verhalten_des_erben_gefaehrdet(e: Erbfall, p: Person) {
+    authority Court;
+    label de official "Es besteht Grund zu der Annahme, dass die Befriedigung der Nachlassgläubiger aus dem Nachlass durch das Verhalten oder die Vermögenslage des Erben gefährdet wird (§ 1981 Abs. 2 Satz 1) — Wertung, Kanal §47.3";
+    label en unofficial "There is reason to assume that satisfaction of the creditors from the estate is endangered by the heir's conduct or financial position (§ 1981 (2) sentence 1) — evaluative standard, channel §47.3";
+}
+pub relation annahme_der_erbschaft_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag der Annahme der Erbschaft (§ 1981 Abs. 2 Satz 2, § 2014, § 2015 Abs. 1)";
+    label en unofficial "day of acceptance of the inheritance (§ 1981 (2) sentence 2, § 2014, § 2015 (1))";
+}
+pub relation antragsfrist_1981_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf der zwei Jahre seit der Annahme der Erbschaft, nach denen der Gläubigerantrag nicht mehr gestellt werden kann (§ 1981 Abs. 2 Satz 2)";
+    label en unofficial "expiry of the two years since acceptance after which the creditor's application can no longer be made (§ 1981 (2) sentence 2)";
+}
+pub relation nachlassverwaltung_anzuordnen(e: Erbfall) kind institutional {
+    label de official "Die Nachlassverwaltung ist von dem Nachlassgericht anzuordnen (§ 1981 Abs. 1, 2)";
+    label en unofficial "The administration of the estate must be ordered by the probate court (§ 1981 (1), (2))";
+}
+pub relation kostendeckende_masse_fehlt(e: Erbfall) kind empirical {
+    label de official "Eine den Kosten entsprechende Masse ist nicht vorhanden (§ 1982, § 1988 Abs. 2, § 1990 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "There is no estate sufficient to cover the costs (§ 1982, § 1988 (2), § 1990 (1)) — established fact";
+}
+pub relation anordnung_ablehnbar(e: Erbfall) kind institutional {
+    label de official "Die Anordnung der Nachlassverwaltung kann abgelehnt werden, wenn eine den Kosten entsprechende Masse nicht vorhanden ist (§ 1982)";
+    label en unofficial "The order may be refused where there is no estate sufficient to cover the costs (§ 1982)";
+}
+pub relation bekanntmachung_geschuldet(e: Erbfall) kind institutional {
+    label de official "Das Nachlassgericht hat die Anordnung der Nachlassverwaltung durch das für seine Bekanntmachungen bestimmte Blatt zu veröffentlichen (§ 1983)";
+    label en unofficial "The probate court must publish the order in the gazette designated for its announcements (§ 1983)";
+}
+pub relation verwaltungs_und_verfuegungsbefugnis_verloren(e: Erbfall, p: Person) kind institutional {
+    label de official "Mit der Anordnung der Nachlassverwaltung verliert der Erbe die Befugnis, den Nachlass zu verwalten und über ihn zu verfügen (§ 1984 Abs. 1 Satz 1)";
+    label en unofficial "With the order the heir loses the power to administer and dispose of the estate (§ 1984 (1) sentence 1)";
+}
+pub relation anspruch_nur_gegen_verwalter(e: Erbfall, g: Person) kind institutional {
+    label de official "Ein Anspruch, der sich gegen den Nachlass richtet, kann nur gegen den Nachlassverwalter geltend gemacht werden (§ 1984 Abs. 1 Satz 3)";
+    label en unofficial "A claim against the estate may be asserted only against the administrator (§ 1984 (1) sentence 3)";
+}
+pub relation zwangsvollstreckung_eigenglaeubiger_ausgeschlossen(e: Erbfall) kind institutional {
+    label de official "Zwangsvollstreckungen und Arreste in den Nachlass zugunsten eines Gläubigers, der nicht Nachlassgläubiger ist, sind ausgeschlossen (§ 1984 Abs. 2)";
+    label en unofficial "Execution and attachment against the estate in favour of a creditor who is not a creditor of the estate are excluded (§ 1984 (2))";
+}
+pub relation nachlassverwalter_bestellt(e: Erbfall, verwalter: Person) kind empirical {
+    label de official "Der Nachlassverwalter ist bestellt (§ 1985) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "The administrator of the estate has been appointed (§ 1985) — established fact, origin adjudicated";
+}
+pub relation verwalterpflicht_zur_verwaltung_und_berichtigung(e: Erbfall, verwalter: Person) kind institutional {
+    label de official "Der Nachlassverwalter hat den Nachlass zu verwalten und die Nachlassverbindlichkeiten aus dem Nachlass zu berichtigen; er ist auch den Nachlassgläubigern verantwortlich (§ 1985 Abs. 1, 2)";
+    label en unofficial "The administrator must administer the estate and discharge its liabilities from it; he is also answerable to the creditors (§ 1985 (1), (2))";
+}
+pub relation bekannte_verbindlichkeiten_berichtigt(e: Erbfall) kind empirical {
+    label de official "Die bekannten Nachlassverbindlichkeiten sind berichtigt (§ 1986 Abs. 1)";
+    label en unofficial "The known liabilities of the estate have been discharged (§ 1986 (1))";
+}
+pub relation ausantwortung_zulaessig(e: Erbfall, verwalter: Person) kind institutional {
+    label de official "Der Nachlassverwalter darf den Nachlass dem Erben ausantworten (§ 1986 Abs. 1)";
+    label en unofficial "The administrator may hand the estate over to the heir (§ 1986 (1))";
+}
+pub relation verbindlichkeit_streitig_oder_nicht_ausfuehrbar(e: Erbfall, v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Die Berichtigung einer Verbindlichkeit ist zur Zeit nicht ausführbar oder die Verbindlichkeit ist streitig (§ 1986 Abs. 2 Satz 1)";
+    label en unofficial "Discharge of a liability is not currently feasible or the liability is disputed (§ 1986 (2) sentence 1)";
+}
+pub relation sicherheitsleistung_erforderlich(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Die Ausantwortung darf nur erfolgen, wenn dem Gläubiger Sicherheit geleistet wird (§ 1986 Abs. 2 Satz 1)";
+    label en unofficial "The estate may be handed over only if security is provided to the creditor (§ 1986 (2) sentence 1)";
+}
+pub external judgment relation angemessene_verguetung_des_verwalters(verwalter: Person, betrag: Money) {
+    authority Court;
+    label de official "Angemessene Vergütung des Nachlassverwalters für die Führung seines Amts (§ 1987) — Wertung, Kanal §47.3";
+    label en unofficial "appropriate remuneration of the administrator for conducting his office (§ 1987) — evaluative standard, channel §47.3";
+}
+pub relation verguetungsanspruch_des_verwalters(e: Erbfall, verwalter: Person, betrag: Money) kind institutional {
+    key(e, verwalter);
+    label de official "Der Nachlassverwalter kann für die Führung seines Amts eine angemessene Vergütung verlangen (§ 1987)";
+    label en unofficial "The administrator may demand appropriate remuneration for conducting his office (§ 1987)";
+}
+pub relation nachlassverwaltung_beendet(e: Erbfall) kind institutional {
+    label de official "Die Nachlassverwaltung endigt mit der Eröffnung des Nachlassinsolvenzverfahrens (§ 1988 Abs. 1)";
+    label en unofficial "The administration of the estate ends with the opening of the insolvency proceedings (§ 1988 (1))";
+}
+pub relation nachlassverwaltung_aufhebbar(e: Erbfall) kind institutional {
+    label de official "Die Nachlassverwaltung kann aufgehoben werden, wenn sich ergibt, dass eine den Kosten entsprechende Masse nicht vorhanden ist (§ 1988 Abs. 2)";
+    label en unofficial "The administration may be terminated where it turns out that there is no estate sufficient to cover the costs (§ 1988 (2))";
+}
+pub relation insolvenzverfahren_beendet(e: Erbfall) kind empirical {
+    label de official "Das Nachlassinsolvenzverfahren ist durch Verteilung der Masse oder durch einen Insolvenzplan beendet (§ 1989, § 2013 Abs. 1, § 2060 Nr. 3) — festgestellte Tatsache";
+    label en unofficial "The insolvency proceedings ended by distribution of the assets or by an insolvency plan (§ 1989, § 2013 (1), § 2060 no. 3) — established fact";
+}
+pub relation erschoepfungseinrede(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Ist das Nachlassinsolvenzverfahren durch Verteilung der Masse oder durch einen Insolvenzplan beendet, so findet auf die Haftung des Erben die Vorschrift des § 1973 entsprechende Anwendung (§ 1989)";
+    label en unofficial "Where the insolvency proceedings ended by distribution or by an insolvency plan, § 1973 applies accordingly to the heir's liability (§ 1989)";
+}
+pub relation nachlasswert_des_erbfalls(e: Erbfall, wert: Money) kind empirical {
+    key(e);
+    label de official "Wert des Nachlasses, aus dem die Nachlassgläubiger zu befriedigen sind (§ 1990 Abs. 1 Satz 1)";
+    label en unofficial "value of the estate from which the creditors are to be satisfied (§ 1990 (1) sentence 1)";
+}
+pub relation summe_der_verbindlichkeiten(e: Erbfall, betrag: Money) kind empirical {
+    key(e);
+    label de official "Summe der zu berichtigenden Nachlassverbindlichkeiten (§ 1990 Abs. 1 Satz 1) — Eingabe des Falls: über welche Verbindlichkeiten zu summieren ist, entscheidet die Rangordnung der InsO und nicht dieses Paket";
+    label en unofficial "total of the liabilities to be discharged (§ 1990 (1) sentence 1) — case input: which liabilities are summed follows the ranking of the Insolvency Code, not this package";
+}
+pub relation nachlass_reicht_nicht_aus(e: Erbfall) kind derived {
+    label de official "Der Nachlass reicht zur Befriedigung der Nachlassgläubiger nicht aus (§ 1990 Abs. 1 Satz 1)";
+    label en unofficial "The estate does not suffice to satisfy the creditors (§ 1990 (1) sentence 1)";
+}
+pub relation duerftigkeitseinrede(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Der Erbe kann die Befriedigung eines Nachlassgläubigers insoweit verweigern, als der Nachlass nicht ausreicht (§ 1990 Abs. 1 Satz 1)";
+    label en unofficial "The heir may refuse to satisfy a creditor to the extent the estate does not suffice (§ 1990 (1) sentence 1)";
+}
+pub relation herausgabe_des_nachlasses_geschuldet(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe ist verpflichtet, den Nachlass zum Zwecke der Befriedigung des Gläubigers im Wege der Zwangsvollstreckung herauszugeben (§ 1990 Abs. 1 Satz 2)";
+    label en unofficial "The heir must hand over the estate for the creditor's satisfaction by way of execution (§ 1990 (1) sentence 2)";
+}
+pub relation pfandrecht_nach_dem_erbfall_erlangt(e: Erbfall, v: Nachlassverbindlichkeit) kind empirical {
+    label de official "Der Gläubiger hat nach dem Eintritt des Erbfalls im Wege der Zwangsvollstreckung ein Pfandrecht, eine Hypothek oder eine Vormerkung erlangt (§ 1990 Abs. 2, § 2016 Abs. 2)";
+    label en unofficial "The creditor obtained a pledge, mortgage or priority notice by execution after the devolution (§ 1990 (2), § 2016 (2))";
+}
+pub relation duerftigkeitseinrede_nicht_ausgeschlossen(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Das Recht des Erben wird nicht dadurch ausgeschlossen, dass der Gläubiger nach dem Eintritt des Erbfalls ein Pfandrecht, eine Hypothek oder eine Vormerkung erlangt hat (§ 1990 Abs. 2)";
+    label en unofficial "The heir's right is not excluded by the creditor having obtained a pledge, mortgage or priority notice after the devolution (§ 1990 (2))";
+}
+pub relation ueberschuldung_durch_vermaechtnisse(e: Erbfall) kind empirical {
+    label de official "Die Überschuldung des Nachlasses beruht auf Vermächtnissen und Auflagen (§ 1992 Satz 1)";
+    label en unofficial "The estate's over-indebtedness rests on legacies and burdens (§ 1992 sentence 1)";
+}
+pub relation berichtigung_nach_1990_1991_zulaessig(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Beruht die Überschuldung auf Vermächtnissen und Auflagen, so ist der Erbe auch ohne die Voraussetzungen des § 1990 berechtigt, die Berichtigung dieser Verbindlichkeiten nach den §§ 1990, 1991 zu bewirken (§ 1992 Satz 1)";
+    label en unofficial "Where the over-indebtedness rests on legacies and burdens the heir may, even without the conditions of § 1990, discharge those liabilities under §§ 1990, 1991 (§ 1992 sentence 1)";
+}
+pub relation abwendung_durch_wertzahlung(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe kann die Herausgabe der noch vorhandenen Nachlassgegenstände durch Zahlung des Wertes abwenden (§ 1973 Abs. 2 Satz 2, § 1992 Satz 2)";
+    label en unofficial "The heir may avert handing over the remaining objects of the estate by paying their value (§ 1973 (2) sentence 2, § 1992 sentence 2)";
+}
+
+@source(BGB_P1975) {
+    rule HaftungBeschraenktDurchVerwaltung(e: Erbfall, p: Person) strict {
+        label de official "Die Haftung des Erben beschränkt sich auf den Nachlass, wenn eine Nachlassverwaltung angeordnet ist (§ 1975)";
+        label en unofficial "The heir's liability is limited to the estate where an administration has been ordered (§ 1975)";
+        when erbschaft_angefallen(e, p) and nachlassverwaltung_angeordnet(e) and not_known(unbeschraenkte_haftung(e, p));
+        then haftung_auf_den_nachlass_beschraenkt(e, p);
+    }
+    rule HaftungBeschraenktDurchInsolvenz(e: Erbfall, p: Person) strict {
+        label de official "Die Haftung des Erben beschränkt sich auf den Nachlass, wenn das Nachlassinsolvenzverfahren eröffnet ist (§ 1975)";
+        label en unofficial "The heir's liability is limited to the estate where insolvency proceedings have been opened (§ 1975)";
+        when erbschaft_angefallen(e, p) and nachlassinsolvenzverfahren_eroeffnet(e) and not_known(unbeschraenkte_haftung(e, p));
+        then haftung_auf_den_nachlass_beschraenkt(e, p);
+    }
+}
+
+@source(BGB_P1976)
+rule VereinigungGiltAlsNichtErloschen(e: Erbfall, p: Person) strict {
+    label de official "Ist die Nachlassverwaltung angeordnet oder das Nachlassinsolvenzverfahren eröffnet, so gelten die infolge des Erbfalls durch Vereinigung erloschenen Rechtsverhältnisse als nicht erloschen (§ 1976)";
+    label en unofficial "Where the administration is ordered or insolvency opened, legal relationships extinguished by merger are deemed not extinguished (§ 1976)";
+    when haftung_auf_den_nachlass_beschraenkt(e, p);
+    then erloschenes_rechtsverhaeltnis_gilt_als_nicht_erloschen(e);
+}
+
+@source(BGB_P1977) {
+    rule AufrechnungDesNachlassglaeubigers(e: Erbfall, g: Person, p: Person) strict {
+        label de official "Hat ein Nachlassgläubiger vor der Anordnung oder der Eröffnung ohne Zustimmung des Erben aufgerechnet, so ist die Aufrechnung danach als nicht erfolgt anzusehen (§ 1977 Abs. 1)";
+        label en unofficial "Where a creditor set off before the order or opening without the heir's consent, the set-off is afterwards regarded as not having taken place (§ 1977 (1))";
+        when aufrechnung_vor_anordnung_erklaert(e, g) and haftung_auf_den_nachlass_beschraenkt(e, p);
+        then aufrechnung_gilt_als_nicht_erfolgt(e, g);
+    }
+    rule AufrechnungDesEigenglaeubigers(e: Erbfall, g: Person, p: Person) strict {
+        label de official "Das Gleiche gilt, wenn ein Gläubiger, der nicht Nachlassgläubiger ist, gegen eine zum Nachlass gehörende Forderung aufgerechnet hat (§ 1977 Abs. 2)";
+        label en unofficial "The same applies where a creditor who is not a creditor of the estate set off against a claim belonging to the estate (§ 1977 (2))";
+        when aufrechnung_eines_eigenglaeubigers(e, g) and haftung_auf_den_nachlass_beschraenkt(e, p);
+        then aufrechnung_gilt_als_nicht_erfolgt(e, g);
+    }
+}
+
+@source(BGB_P1978) {
+    rule VerantwortlichkeitWieBeauftragter(e: Erbfall, p: Person) strict {
+        label de official "Ist die Nachlassverwaltung angeordnet oder das Nachlassinsolvenzverfahren eröffnet, so ist der Erbe den Nachlassgläubigern für die bisherige Verwaltung des Nachlasses so verantwortlich, wie wenn er sie als Beauftragter geführt hätte (§ 1978 Abs. 1 Satz 1)";
+        label en unofficial "Where the administration is ordered or insolvency opened, the heir is answerable for the previous administration as if he had conducted it as a mandatary (§ 1978 (1) sentence 1)";
+        when haftung_auf_den_nachlass_beschraenkt(e, p);
+        then verantwortlich_wie_beauftragter(e, p);
+    }
+    rule Aufwendungsersatz(e: Erbfall, p: Person, betrag: Money) strict {
+        label de official "Aufwendungen sind dem Erben aus dem Nachlass zu ersetzen, soweit er nach den Vorschriften über den Auftrag oder über die Geschäftsführung ohne Auftrag Ersatz verlangen könnte (§ 1978 Abs. 3)";
+        label en unofficial "Expenses are reimbursed to the heir from the estate to the extent he could claim under mandate or agency without mandate (§ 1978 (3))";
+        when verantwortlich_wie_beauftragter(e, p) and aufwendungen_des_erben(e, p, betrag);
+        then aufwendungsersatz_aus_dem_nachlass(e, p, betrag);
+    }
+}
+
+@source(BGB_P1979)
+rule BerichtigungFuerRechnungDesNachlasses(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+    label de official "Die Berichtigung einer Nachlassverbindlichkeit durch den Erben müssen die Nachlassgläubiger als für Rechnung des Nachlasses erfolgt gelten lassen, wenn der Erbe den Umständen nach annehmen durfte, dass der Nachlass zur Berichtigung aller Nachlassverbindlichkeiten ausreiche (§ 1979)";
+    label en unofficial "The creditors must accept a discharge by the heir as made for the account of the estate where he was entitled to assume that the estate sufficed for all liabilities (§ 1979)";
+    when berichtigung_durch_den_erben(e, v) and verbindlichkeit_des_erbfalls(v, e) and durfte_zulaenglichkeit_annehmen(e, p);
+    then berichtigung_fuer_rechnung_des_nachlasses(e, v);
+}
+
+@source(BGB_P1980) {
+    rule Insolvenzantragspflicht(e: Erbfall, p: Person) strict {
+        label de official "Hat der Erbe von der Zahlungsunfähigkeit oder der Überschuldung des Nachlasses Kenntnis erlangt, so hat er unverzüglich die Eröffnung des Nachlassinsolvenzverfahrens zu beantragen (§ 1980 Abs. 1 Satz 1)";
+        label en unofficial "If the heir has learned of the estate's insolvency or over-indebtedness he must apply without undue delay for the opening of insolvency proceedings (§ 1980 (1) sentence 1)";
+        when erbschaft_angefallen(e, p) and kenntnis_von_zahlungsunfaehigkeit_oder_ueberschuldung(e, p);
+        then insolvenzantragspflicht(e, p);
+    }
+    rule VerletzungDerAntragspflicht(e: Erbfall, p: Person) strict {
+        label de official "Verletzt der Erbe diese Pflicht, so ist er den Gläubigern für den daraus entstehenden Schaden verantwortlich (§ 1980 Abs. 1 Satz 2)";
+        label en unofficial "If the heir breaches this duty he is answerable to the creditors for the resulting damage (§ 1980 (1) sentence 2)";
+        when insolvenzantragspflicht(e, p) and insolvenzantrag_gestellt(e, p) and not unverzueglich_beantragt(p, e);
+        then schadensersatzpflicht_wegen_antragsverletzung(e, p);
+    }
+}
+
+@source(BGB_P1981) {
+    rule NachlassverwaltungAufErbenantrag(e: Erbfall, p: Person) strict {
+        label de official "Die Nachlassverwaltung ist von dem Nachlassgericht anzuordnen, wenn der Erbe die Anordnung beantragt (§ 1981 Abs. 1)";
+        label en unofficial "The administration must be ordered by the probate court where the heir applies for it (§ 1981 (1))";
+        when nachlassverwaltung_beantragt_vom_erben(e, p) and not_known(unbeschraenkte_haftung(e, p));
+        then nachlassverwaltung_anzuordnen(e);
+    }
+    rule AntragsfristZweiJahre(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Der Antrag des Gläubigers kann nicht mehr gestellt werden, wenn seit der Annahme der Erbschaft zwei Jahre verstrichen sind (§ 1981 Abs. 2 Satz 2)";
+        label en unofficial "The creditor's application can no longer be made once two years have elapsed since acceptance (§ 1981 (2) sentence 2)";
+        when annahme_der_erbschaft_am(e, p, tag);
+        then antragsfrist_1981_ende(e, p, add_calendar_period(tag, 2 calendar_year));
+    }
+    rule NachlassverwaltungAufGlaeubigerantrag(e: Erbfall, p: Person, g: Person) strict {
+        label de official "Auf Antrag eines Nachlassgläubigers ist die Nachlassverwaltung anzuordnen, wenn Grund zu der Annahme besteht, dass die Befriedigung der Nachlassgläubiger durch das Verhalten oder die Vermögenslage des Erben gefährdet wird (§ 1981 Abs. 2 Satz 1)";
+        label en unofficial "On a creditor's application the administration must be ordered where there is reason to assume that satisfaction is endangered by the heir's conduct or means (§ 1981 (2) sentence 1)";
+        when nachlassverwaltung_beantragt_vom_glaeubiger(e, g) and befriedigung_durch_verhalten_des_erben_gefaehrdet(e, p);
+        then nachlassverwaltung_anzuordnen(e);
+    }
+}
+
+@source(BGB_P1982)
+rule AnordnungAblehnbar(e: Erbfall) strict {
+    label de official "Die Anordnung der Nachlassverwaltung kann abgelehnt werden, wenn eine den Kosten entsprechende Masse nicht vorhanden ist (§ 1982)";
+    label en unofficial "The order of administration may be refused where there is no estate sufficient to cover the costs (§ 1982)";
+    when nachlassverwaltung_anzuordnen(e) and kostendeckende_masse_fehlt(e);
+    then anordnung_ablehnbar(e);
+}
+
+@source(BGB_P1983)
+rule BekanntmachungDerAnordnung(e: Erbfall) strict {
+    label de official "Das Nachlassgericht hat die Anordnung der Nachlassverwaltung durch das für seine Bekanntmachungen bestimmte Blatt zu veröffentlichen (§ 1983)";
+    label en unofficial "The probate court must publish the order in the gazette designated for its announcements (§ 1983)";
+    when nachlassverwaltung_angeordnet(e);
+    then bekanntmachung_geschuldet(e);
+}
+
+@source(BGB_P1984) {
+    rule VerfuegungsbefugnisVerloren(e: Erbfall, p: Person) strict {
+        label de official "Mit der Anordnung der Nachlassverwaltung verliert der Erbe die Befugnis, den Nachlass zu verwalten und über ihn zu verfügen (§ 1984 Abs. 1 Satz 1)";
+        label en unofficial "With the order the heir loses the power to administer and dispose of the estate (§ 1984 (1) sentence 1)";
+        when erbschaft_angefallen(e, p) and nachlassverwaltung_angeordnet(e);
+        then verwaltungs_und_verfuegungsbefugnis_verloren(e, p);
+    }
+    rule AnspruchNurGegenVerwalter(e: Erbfall, g: Person) strict {
+        label de official "Ein Anspruch, der sich gegen den Nachlass richtet, kann nur gegen den Nachlassverwalter geltend gemacht werden (§ 1984 Abs. 1 Satz 3)";
+        label en unofficial "A claim against the estate may be asserted only against the administrator (§ 1984 (1) sentence 3)";
+        when nachlassverwaltung_angeordnet(e) and anspruch_gegen_den_nachlass(e, g);
+        then anspruch_nur_gegen_verwalter(e, g);
+    }
+    rule ZwangsvollstreckungAusgeschlossen(e: Erbfall, g: Person) strict {
+        label de official "Zwangsvollstreckungen und Arreste in den Nachlass zugunsten eines Gläubigers, der nicht Nachlassgläubiger ist, sind ausgeschlossen (§ 1984 Abs. 2)";
+        label en unofficial "Execution and attachment against the estate in favour of a creditor who is not a creditor of the estate are excluded (§ 1984 (2))";
+        when nachlassverwaltung_angeordnet(e) and aufrechnung_eines_eigenglaeubigers(e, g);
+        then zwangsvollstreckung_eigenglaeubiger_ausgeschlossen(e);
+    }
+}
+
+@source(BGB_P1985)
+rule PflichtenDesVerwalters(e: Erbfall, verwalter: Person) strict {
+    label de official "Der Nachlassverwalter hat den Nachlass zu verwalten und die Nachlassverbindlichkeiten aus dem Nachlass zu berichtigen; er ist für die Verwaltung auch den Nachlassgläubigern verantwortlich (§ 1985 Abs. 1, 2)";
+    label en unofficial "The administrator must administer the estate and discharge its liabilities; he is also answerable to the creditors (§ 1985 (1), (2))";
+    when nachlassverwalter_bestellt(e, verwalter);
+    then verwalterpflicht_zur_verwaltung_und_berichtigung(e, verwalter);
+}
+
+@source(BGB_P1986) {
+    rule AusantwortungNachBerichtigung(e: Erbfall, verwalter: Person) strict {
+        label de official "Der Nachlassverwalter darf den Nachlass dem Erben erst ausantworten, wenn die bekannten Nachlassverbindlichkeiten berichtigt sind (§ 1986 Abs. 1)";
+        label en unofficial "The administrator may hand the estate to the heir only once the known liabilities are discharged (§ 1986 (1))";
+        when nachlassverwalter_bestellt(e, verwalter) and bekannte_verbindlichkeiten_berichtigt(e);
+        then ausantwortung_zulaessig(e, verwalter);
+    }
+    rule SicherheitsleistungBeiStreit(e: Erbfall, v: Nachlassverbindlichkeit, verwalter: Person) strict {
+        label de official "Ist die Berichtigung einer Verbindlichkeit zur Zeit nicht ausführbar oder ist eine Verbindlichkeit streitig, so darf die Ausantwortung nur erfolgen, wenn dem Gläubiger Sicherheit geleistet wird (§ 1986 Abs. 2 Satz 1)";
+        label en unofficial "Where discharge is not currently feasible or the liability is disputed, the estate may be handed over only if security is provided (§ 1986 (2) sentence 1)";
+        when nachlassverwalter_bestellt(e, verwalter) and verbindlichkeit_streitig_oder_nicht_ausfuehrbar(e, v);
+        then sicherheitsleistung_erforderlich(e, v);
+    }
+}
+
+@source(BGB_P1987)
+rule VerguetungDesVerwalters(e: Erbfall, verwalter: Person, betrag: Money) strict {
+    label de official "Der Nachlassverwalter kann für die Führung seines Amts eine angemessene Vergütung verlangen (§ 1987)";
+    label en unofficial "The administrator may demand appropriate remuneration for conducting his office (§ 1987)";
+    when nachlassverwalter_bestellt(e, verwalter) and angemessene_verguetung_des_verwalters(verwalter, betrag);
+    then verguetungsanspruch_des_verwalters(e, verwalter, betrag);
+}
+
+@source(BGB_P1988) {
+    rule VerwaltungEndetMitInsolvenz(e: Erbfall) strict {
+        label de official "Die Nachlassverwaltung endigt mit der Eröffnung des Nachlassinsolvenzverfahrens (§ 1988 Abs. 1)";
+        label en unofficial "The administration ends with the opening of the insolvency proceedings (§ 1988 (1))";
+        when nachlassverwaltung_angeordnet(e) and nachlassinsolvenzverfahren_eroeffnet(e);
+        then nachlassverwaltung_beendet(e);
+    }
+    rule VerwaltungAufhebbar(e: Erbfall) strict {
+        label de official "Die Nachlassverwaltung kann aufgehoben werden, wenn sich ergibt, dass eine den Kosten entsprechende Masse nicht vorhanden ist (§ 1988 Abs. 2)";
+        label en unofficial "The administration may be terminated where it turns out that there is no estate sufficient to cover the costs (§ 1988 (2))";
+        when nachlassverwaltung_angeordnet(e) and kostendeckende_masse_fehlt(e);
+        then nachlassverwaltung_aufhebbar(e);
+    }
+}
+
+@source(BGB_P1989)
+rule Erschoepfungseinrede(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+    label de official "Ist das Nachlassinsolvenzverfahren durch Verteilung der Masse oder durch einen Insolvenzplan beendet, so findet auf die Haftung des Erben die Vorschrift des § 1973 entsprechende Anwendung (§ 1989)";
+    label en unofficial "Where the insolvency proceedings ended by distribution or by an insolvency plan, § 1973 applies accordingly (§ 1989)";
+    when insolvenzverfahren_beendet(e) and verbindlichkeit_des_erbfalls(v, e) and nachlassverbindlichkeit(v);
+    then erschoepfungseinrede(e, v);
+}
+
+@source(BGB_P1990) {
+    rule NachlassReichtNichtAus(e: Erbfall, wert: Money, schulden: Money) strict {
+        label de official "Der Nachlass reicht zur Befriedigung der Nachlassgläubiger nicht aus, wenn sein Wert hinter der Summe der zu berichtigenden Verbindlichkeiten zurückbleibt (§ 1990 Abs. 1 Satz 1)";
+        label en unofficial "The estate does not suffice where its value falls short of the total of the liabilities to be discharged (§ 1990 (1) sentence 1)";
+        when nachlasswert_des_erbfalls(e, wert) and summe_der_verbindlichkeiten(e, schulden) and wert < schulden;
+        then nachlass_reicht_nicht_aus(e);
+    }
+    rule Duerftigkeitseinrede(e: Erbfall, v: Nachlassverbindlichkeit, p: Person) strict {
+        label de official "Ist die Anordnung der Nachlassverwaltung oder die Eröffnung des Nachlassinsolvenzverfahrens wegen Mangels einer den Kosten entsprechenden Masse nicht tunlich, so kann der Erbe die Befriedigung eines Nachlassgläubigers insoweit verweigern, als der Nachlass nicht ausreicht (§ 1990 Abs. 1 Satz 1)";
+        label en unofficial "Where administration or insolvency is not feasible for want of assets covering the costs, the heir may refuse satisfaction to the extent the estate does not suffice (§ 1990 (1) sentence 1)";
+        when erbschaft_angefallen(e, p) and verbindlichkeit_des_erbfalls(v, e) and kostendeckende_masse_fehlt(e)
+            and nachlass_reicht_nicht_aus(e) and not_known(unbeschraenkte_haftung(e, p));
+        then duerftigkeitseinrede(e, v);
+    }
+    rule HerausgabeDesNachlasses(e: Erbfall, v: Nachlassverbindlichkeit, p: Person) strict {
+        label de official "Der Erbe ist in diesem Falle verpflichtet, den Nachlass zum Zwecke der Befriedigung des Gläubigers im Wege der Zwangsvollstreckung herauszugeben (§ 1990 Abs. 1 Satz 2)";
+        label en unofficial "In this case the heir must hand over the estate for the creditor's satisfaction by execution (§ 1990 (1) sentence 2)";
+        when duerftigkeitseinrede(e, v) and erbschaft_angefallen(e, p);
+        then herausgabe_des_nachlasses_geschuldet(e, p);
+    }
+    rule EinredeTrotzPfandrecht(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Das Recht des Erben wird nicht dadurch ausgeschlossen, dass der Gläubiger nach dem Eintritt des Erbfalls im Wege der Zwangsvollstreckung ein Pfandrecht, eine Hypothek oder eine Vormerkung erlangt hat (§ 1990 Abs. 2)";
+        label en unofficial "The heir's right is not excluded by a pledge, mortgage or priority notice obtained by execution after the devolution (§ 1990 (2))";
+        when duerftigkeitseinrede(e, v) and pfandrecht_nach_dem_erbfall_erlangt(e, v);
+        then duerftigkeitseinrede_nicht_ausgeschlossen(e, v);
+    }
+}
+
+@source(BGB_P1991) {
+    rule FolgenDerDuerftigkeitseinrede(e: Erbfall, v: Nachlassverbindlichkeit, p: Person) strict {
+        label de official "Macht der Erbe von dem ihm nach § 1990 zustehenden Recht Gebrauch, so finden auf seine Verantwortlichkeit und den Ersatz seiner Aufwendungen die Vorschriften der §§ 1978, 1979 Anwendung (§ 1991 Abs. 1)";
+        label en unofficial "Where the heir exercises the right under § 1990, §§ 1978, 1979 apply to his responsibility and the reimbursement of his expenses (§ 1991 (1))";
+        when duerftigkeitseinrede(e, v) and erbschaft_angefallen(e, p);
+        then verantwortlich_wie_beauftragter(e, p);
+    }
+    rule VereinigungGiltAlsNichtErloschen1991(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Die infolge des Erbfalls durch Vereinigung erloschenen Rechtsverhältnisse gelten im Verhältnis zwischen dem Gläubiger und dem Erben als nicht erloschen (§ 1991 Abs. 2)";
+        label en unofficial "Legal relationships extinguished by merger are deemed not extinguished as between creditor and heir (§ 1991 (2))";
+        when duerftigkeitseinrede(e, v);
+        then erloschenes_rechtsverhaeltnis_gilt_als_nicht_erloschen(e);
+    }
+}
+
+@source(BGB_P1992) {
+    rule UeberschuldungDurchVermaechtnisse(e: Erbfall, v: Nachlassverbindlichkeit) strict {
+        label de official "Beruht die Überschuldung des Nachlasses auf Vermächtnissen und Auflagen, so ist der Erbe, auch wenn die Voraussetzungen des § 1990 nicht vorliegen, berechtigt, die Berichtigung dieser Verbindlichkeiten nach den §§ 1990, 1991 zu bewirken (§ 1992 Satz 1)";
+        label en unofficial "Where the over-indebtedness rests on legacies and burdens the heir may, even absent the conditions of § 1990, discharge them under §§ 1990, 1991 (§ 1992 sentence 1)";
+        when ueberschuldung_durch_vermaechtnisse(e) and verbindlichkeit_des_erbfalls(v, e)
+            and verbindlichkeit_aus_pflichtteil_vermaechtnis_auflage(v);
+        then berichtigung_nach_1990_1991_zulaessig(e, v);
+    }
+    rule AbwendungDurchWertzahlung(e: Erbfall, v: Nachlassverbindlichkeit, p: Person) strict {
+        label de official "Der Erbe kann die Herausgabe der noch vorhandenen Nachlassgegenstände durch Zahlung des Wertes abwenden (§ 1992 Satz 2)";
+        label en unofficial "The heir may avert handing over the remaining objects of the estate by paying their value (§ 1992 sentence 2)";
+        when berichtigung_nach_1990_1991_zulaessig(e, v) and erbschaft_angefallen(e, p);
+        then abwendung_durch_wertzahlung(e, p);
+    }
+}
+
+// --- §§ 1993–2012 Inventar --------------------------------------------------------------------------
+
+pub relation inventar_eingereicht_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem der Erbe ein Verzeichnis des Nachlasses (Inventar) bei dem Nachlassgericht eingereicht hat (§ 1993, § 1994 Abs. 1 Satz 2)";
+    label en unofficial "day on which the heir filed an inventory of the estate with the probate court (§ 1993, § 1994 (1) sentence 2)";
+}
+pub relation inventarerrichtung_berechtigt(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe ist berechtigt, ein Verzeichnis des Nachlasses (Inventar) bei dem Nachlassgericht einzureichen (§ 1993)";
+    label en unofficial "The heir is entitled to file an inventory of the estate with the probate court (§ 1993)";
+}
+pub relation inventarfrist_beantragt(e: Erbfall, g: Person) kind empirical {
+    label de official "Ein Nachlassgläubiger hat die Bestimmung einer Inventarfrist beantragt und seine Forderung glaubhaft gemacht (§ 1994 Abs. 1 Satz 1, Abs. 2 Satz 1)";
+    label en unofficial "A creditor applied for an inventory period to be fixed and made his claim credible (§ 1994 (1) sentence 1, (2) sentence 1)";
+}
+pub relation inventarfrist_zu_bestimmen(e: Erbfall, p: Person) kind institutional {
+    label de official "Das Nachlassgericht hat dem Erben auf Antrag eines Nachlassgläubigers zur Errichtung des Inventars eine Frist (Inventarfrist) zu bestimmen (§ 1994 Abs. 1 Satz 1)";
+    label en unofficial "On a creditor's application the probate court must fix a period for the heir to draw up the inventory (§ 1994 (1) sentence 1)";
+}
+pub relation zustellung_des_fristbeschlusses_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag der Zustellung des Beschlusses, durch den die Inventarfrist bestimmt wird (§ 1995 Abs. 1 Satz 2)";
+    label en unofficial "day of service of the decision fixing the inventory period (§ 1995 (1) sentence 2)";
+}
+pub relation inventarfrist_dauer_monate(e: Erbfall, p: Person, monate: Integer) kind empirical {
+    key(e, p);
+    label de official "Vom Nachlassgericht bestimmte Dauer der Inventarfrist in Monaten; sie soll mindestens einen Monat, höchstens drei Monate betragen (§ 1995 Abs. 1 Satz 1) — festgestellte Tatsache, origin adjudicated";
+    label en unofficial "duration of the inventory period in months fixed by the probate court; it shall be at least one and at most three months (§ 1995 (1) sentence 1) — established fact, origin adjudicated";
+}
+pub relation inventarfrist_dauer_zulaessig(e: Erbfall, p: Person) kind institutional {
+    label de official "Die bestimmte Dauer hält sich in den Grenzen des § 1995 Abs. 1 Satz 1 (mindestens ein, höchstens drei Monate)";
+    label en unofficial "The fixed duration keeps within the limits of § 1995 (1) sentence 1 (at least one, at most three months)";
+}
+pub relation inventarfrist_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf der Inventarfrist (§ 1995 Abs. 1 Satz 2, § 1997 mit § 193)";
+    label en unofficial "expiry of the inventory period (§ 1995 (1) sentence 2, § 1997 with § 193)";
+}
+pub relation fristverlaengerung_beantragt(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat die Verlängerung der Inventarfrist beantragt (§ 1995 Abs. 3)";
+    label en unofficial "The heir applied for an extension of the inventory period (§ 1995 (3))";
+}
+pub relation fristverlaengerung_zulaessig(e: Erbfall, p: Person) kind institutional {
+    label de official "Auf Antrag des Erben kann das Nachlassgericht die Frist nach seinem Ermessen verlängern (§ 1995 Abs. 3)";
+    label en unofficial "On the heir's application the probate court may extend the period in its discretion (§ 1995 (3))";
+}
+pub relation ohne_verschulden_verhindert(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe war ohne sein Verschulden verhindert, das Inventar rechtzeitig zu errichten oder die Verlängerung zu beantragen (§ 1996 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "The heir was prevented without his fault from drawing up the inventory in time or applying for an extension (§ 1996 (1)) — established fact";
+}
+pub relation hindernis_beseitigt_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag der Beseitigung des Hindernisses (§ 1996 Abs. 2)";
+    label en unofficial "day on which the impediment was removed (§ 1996 (2))";
+}
+pub relation zweiwochenfrist_1996_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf der zwei Wochen nach der Beseitigung des Hindernisses (§ 1996 Abs. 2)";
+    label en unofficial "expiry of the two weeks after removal of the impediment (§ 1996 (2))";
+}
+pub relation jahresfrist_1996_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf eines Jahres nach dem Ende der zuerst bestimmten Inventarfrist (§ 1996 Abs. 2)";
+    label en unofficial "expiry of one year after the end of the inventory period first fixed (§ 1996 (2))";
+}
+pub relation neue_inventarfrist_zu_bestimmen(e: Erbfall, p: Person) kind institutional {
+    label de official "Das Nachlassgericht hat dem Erben auf seinen Antrag eine neue Inventarfrist zu bestimmen (§ 1996 Abs. 1)";
+    label en unofficial "On his application the probate court must fix a new inventory period for the heir (§ 1996 (1))";
+}
+pub relation neue_frist_beantragt_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem der Erbe die Bestimmung einer neuen Inventarfrist beantragt hat (§ 1996 Abs. 2)";
+    label en unofficial "day on which the heir applied for a new inventory period (§ 1996 (2))";
+}
+pub relation hemmungstage_der_inventarfrist(e: Erbfall, p: Person, tage: Integer) kind empirical {
+    key(e, p);
+    label de official "Zahl der Tage, um die der Lauf der Inventarfrist nach dem entsprechend anwendbaren § 210 gehemmt war (§ 1997) — festgestellte Tatsache";
+    label en unofficial "number of days by which the running of the inventory period was suspended under § 210 applied accordingly (§ 1997) — established fact";
+}
+pub relation inventarfrist_ende_gehemmt(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ende der Inventarfrist nach Zurechnung der Hemmungstage (§ 1997 mit § 210)";
+    label en unofficial "end of the inventory period after adding the days of suspension (§ 1997 with § 210)";
+}
+pub relation erbe_vor_inventarfristablauf_gestorben(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe ist vor dem Ablauf der Inventarfrist gestorben (§ 1998)";
+    label en unofficial "The heir died before expiry of the inventory period (§ 1998)";
+}
+pub relation inventarfrist_endet_nicht_vor_ausschlagungsfrist(e: Erbfall, p: Person, tag: Date) kind institutional {
+    key(e, p);
+    label de official "Stirbt der Erbe vor dem Ablauf der Inventarfrist, so endigt die Frist nicht vor dem Ablauf der für die Erbschaft des Erben vorgeschriebenen Ausschlagungsfrist (§ 1998)";
+    label en unofficial "If the heir dies before expiry of the inventory period, it does not end before the disclaimer period for the heir's own estate (§ 1998)";
+}
+pub relation erbe_unter_sorge_oder_vormundschaft(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe steht unter elterlicher Sorge oder unter Vormundschaft; oder die Nachlassangelegenheit fällt in den Aufgabenkreis eines Betreuers (§ 1999)";
+    label en unofficial "The heir is under parental care or guardianship, or the estate matter falls within a custodian's remit (§ 1999)";
+}
+pub relation mitteilung_an_das_familiengericht_geschuldet(e: Erbfall, p: Person) kind institutional {
+    label de official "Das Nachlassgericht soll dem Familiengericht oder dem Betreuungsgericht von der Bestimmung der Inventarfrist Mitteilung machen (§ 1999)";
+    label en unofficial "The probate court shall notify the family court or the custody court of the fixing of the inventory period (§ 1999)";
+}
+pub relation fristbestimmung_unwirksam(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Bestimmung einer Inventarfrist wird unwirksam, wenn eine Nachlassverwaltung angeordnet oder das Nachlassinsolvenzverfahren eröffnet wird (§ 2000 Satz 1, 2)";
+    label en unofficial "The fixing of an inventory period becomes ineffective where administration is ordered or insolvency opened (§ 2000 sentences 1, 2)";
+}
+pub relation inventarerrichtung_entbehrlich(e: Erbfall, p: Person) kind institutional {
+    label de official "Ist das Nachlassinsolvenzverfahren durch Verteilung der Masse oder durch einen Insolvenzplan beendet, so bedarf es zur Abwendung der unbeschränkten Haftung der Inventarerrichtung nicht (§ 2000 Satz 3)";
+    label en unofficial "Where the insolvency proceedings ended by distribution or by an insolvency plan, no inventory is needed to avert unlimited liability (§ 2000 sentence 3)";
+}
+pub relation gegenstaende_und_verbindlichkeiten_angegeben(e: Erbfall, p: Person) kind empirical {
+    label de official "Die bei dem Eintritt des Erbfalls vorhandenen Nachlassgegenstände und die Nachlassverbindlichkeiten sind vollständig angegeben; Beschreibung und Wert sind enthalten (§ 2001 Abs. 1, 2)";
+    label en unofficial "The objects of the estate existing at the devolution and its liabilities are completely stated, with description and value (§ 2001 (1), (2))";
+}
+pub relation inventar_inhaltlich_ordnungsgemaess(e: Erbfall, p: Person) kind institutional {
+    label de official "Das Inventar entspricht den Anforderungen des § 2001";
+    label en unofficial "The inventory meets the requirements of § 2001";
+}
+pub relation behoerde_oder_notar_zugezogen(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat zu der Aufnahme des Inventars eine zuständige Behörde, einen zuständigen Beamten oder einen Notar zugezogen (§ 2002)";
+    label en unofficial "The heir called in a competent authority, official or notary to draw up the inventory (§ 2002)";
+}
+pub relation inventar_formgerecht(e: Erbfall, p: Person) kind institutional {
+    label de official "Das Inventar ist unter Zuziehung einer zuständigen Stelle aufgenommen (§ 2002) oder amtlich aufgenommen (§ 2003)";
+    label en unofficial "The inventory was drawn up with a competent body (§ 2002) or officially (§ 2003)";
+}
+pub relation amtliche_aufnahme_beantragt_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem der Erbe die amtliche Aufnahme des Inventars beantragt hat; durch die Stellung des Antrags wird die Inventarfrist gewahrt (§ 2003 Abs. 1)";
+    label en unofficial "day on which the heir applied for the official drawing up of the inventory; the application preserves the inventory period (§ 2003 (1))";
+}
+pub relation auskunftspflicht_zur_inventaraufnahme(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe ist verpflichtet, die zur Aufnahme des Inventars erforderliche Auskunft zu erteilen (§ 2003 Abs. 2)";
+    label en unofficial "The heir must provide the information needed to draw up the inventory (§ 2003 (2))";
+}
+pub relation bezugnahme_auf_vorhandenes_inventar_am(e: Erbfall, p: Person, tag: Date) kind empirical {
+    key(e, p);
+    label de official "Tag, an dem der Erbe erklärt hat, dass ein schon beim Nachlassgericht befindliches Inventar als von ihm eingereicht gelten soll (§ 2004)";
+    label en unofficial "day on which the heir declared that an inventory already held by the probate court should count as filed by him (§ 2004)";
+}
+pub relation inventar_rechtzeitig_errichtet(e: Erbfall, p: Person) kind derived {
+    label de official "Das Inventar ist rechtzeitig errichtet (§§ 1993–2004, § 2009)";
+    label en unofficial "The inventory was drawn up in time (§§ 1993–2004, § 2009)";
+}
+pub external judgment relation erhebliche_unvollstaendigkeit_absichtlich(p: Person, e: Erbfall) {
+    authority Court;
+    label de official "Der Erbe hat absichtlich eine ERHEBLICHE Unvollständigkeit der Angabe der Nachlassgegenstände herbeigeführt oder in Benachteiligungsabsicht eine nicht bestehende Verbindlichkeit aufgenommen (§ 2005 Abs. 1 Satz 1) — Wertung, Kanal §47.3";
+    label en unofficial "The heir intentionally brought about a SUBSTANTIAL incompleteness of the statement of the estate's objects or entered a non-existent liability intending to prejudice creditors (§ 2005 (1) sentence 1) — evaluative standard, channel §47.3";
+}
+pub relation auskunft_verweigert_oder_verzoegert(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe hat im Falle des § 2003 die Erteilung der Auskunft verweigert oder absichtlich in erheblichem Maße verzögert (§ 2005 Abs. 1 Satz 2)";
+    label en unofficial "In the case of § 2003 the heir refused the information or intentionally delayed it substantially (§ 2005 (1) sentence 2)";
+}
+pub relation angabe_unvollstaendig_ohne_absicht(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Angabe der Nachlassgegenstände ist unvollständig, ohne dass ein Fall des § 2005 Abs. 1 vorliegt (§ 2005 Abs. 2)";
+    label en unofficial "The statement of the estate's objects is incomplete without a case of § 2005 (1) (§ 2005 (2))";
+}
+pub relation unbeschraenkte_haftung(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe haftet für die Nachlassverbindlichkeiten unbeschränkt (§ 1994 Abs. 1 Satz 2, § 2005 Abs. 1, § 2006 Abs. 3)";
+    label en unofficial "The heir is liable for the estate's liabilities without limitation (§ 1994 (1) sentence 2, § 2005 (1), § 2006 (3))";
+}
+pub relation ergaenzungsfrist_bestimmbar(e: Erbfall, p: Person) kind institutional {
+    label de official "Ist die Angabe unvollständig, ohne dass ein Fall des Absatzes 1 vorliegt, so kann dem Erben zur Ergänzung eine neue Inventarfrist bestimmt werden (§ 2005 Abs. 2)";
+    label en unofficial "Where the statement is incomplete without a case of (1), a new inventory period may be fixed for completion (§ 2005 (2))";
+}
+pub relation eidesstattliche_versicherung_verlangt(e: Erbfall, g: Person) kind empirical {
+    label de official "Ein Nachlassgläubiger hat die eidesstattliche Versicherung verlangt (§ 2006 Abs. 1)";
+    label en unofficial "A creditor of the estate has demanded the affirmation in lieu of oath (§ 2006 (1))";
+}
+pub relation eidesstattliche_versicherung_verweigert(e: Erbfall, p: Person) kind empirical {
+    label de official "Der Erbe verweigert die Abgabe der eidesstattlichen Versicherung oder erscheint weder im Termin noch in einem neuen Termin (§ 2006 Abs. 3)";
+    label en unofficial "The heir refuses the affirmation or fails to appear at the hearing or a new hearing (§ 2006 (3))";
+}
+pub relation entschuldigungsgrund_fuer_nichterscheinen(e: Erbfall, p: Person) kind empirical {
+    label de official "Es liegt ein Grund vor, durch den das Nichterscheinen genügend entschuldigt wird (§ 2006 Abs. 3 Satz 2)";
+    label en unofficial "There is a ground sufficiently excusing the failure to appear (§ 2006 (3) sentence 2)";
+}
+pub relation eidesstattliche_versicherung_geschuldet(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe hat auf Verlangen eines Nachlassgläubigers an Eides statt zu versichern, dass er die Nachlassgegenstände nach bestem Wissen so vollständig angegeben habe, als er dazu imstande sei (§ 2006 Abs. 1)";
+    label en unofficial "On a creditor's demand the heir must affirm in lieu of oath that he stated the estate's objects as completely as he was able (§ 2006 (1))";
+}
+pub relation haftung_je_erbteil_getrennt(e: Erbfall, p: Person) kind institutional {
+    label de official "Ist ein Erbe zu mehreren Erbteilen berufen, so bestimmt sich seine Haftung in Ansehung eines jeden der Erbteile so, wie wenn die Erbteile verschiedenen Erben gehörten (§ 2007 Satz 1)";
+    label en unofficial "Where an heir is called to several shares, his liability is determined for each share as if the shares belonged to different heirs (§ 2007 sentence 1)";
+}
+pub relation guetergemeinschaft_erbschaft_im_gesamtgut(e: Erbfall, p: Person) kind empirical {
+    label de official "Ein in Gütergemeinschaft lebender Ehegatte ist Erbe und die Erbschaft gehört zum Gesamtgut (§ 2008 Abs. 1 Satz 1)";
+    label en unofficial "A spouse living in community of property is heir and the inheritance belongs to the joint property (§ 2008 (1) sentence 1)";
+}
+pub relation fristbestimmung_auch_gegen_den_anderen_ehegatten(e: Erbfall, p: Person) kind empirical {
+    label de official "Die Bestimmung der Inventarfrist ist auch dem anderen Ehegatten gegenüber erfolgt (§ 2008 Abs. 1 Satz 1)";
+    label en unofficial "The inventory period was also fixed vis-à-vis the other spouse (§ 2008 (1) sentence 1)";
+}
+pub relation fristbestimmung_wirksam(e: Erbfall, p: Person) kind institutional {
+    label de official "Die Bestimmung der Inventarfrist ist wirksam (§ 2008 Abs. 1 Satz 1)";
+    label en unofficial "The fixing of the inventory period is effective (§ 2008 (1) sentence 1)";
+}
+pub relation vermutung_keine_weiteren_gegenstaende(e: Erbfall, p: Person) kind institutional {
+    label de official "Ist das Inventar rechtzeitig errichtet, so wird im Verhältnis zwischen dem Erben und den Nachlassgläubigern vermutet, dass zur Zeit des Erbfalls weitere Nachlassgegenstände als die angegebenen nicht vorhanden gewesen seien (§ 2009)";
+    label en unofficial "Where the inventory was drawn up in time, it is presumed as between heir and creditors that no objects other than those stated existed at the devolution (§ 2009)";
+}
+pub relation weitere_gegenstaende_nachgewiesen(e: Erbfall, p: Person) kind empirical {
+    label de official "Es ist nachgewiesen, dass weitere Nachlassgegenstände vorhanden waren (§ 2009 im Gegenbeweis)";
+    label en unofficial "It is proved that further objects of the estate existed (§ 2009, rebuttal)";
+}
+pub relation rechtliches_interesse_glaubhaft_gemacht(e: Erbfall, wer: Person) kind empirical {
+    label de official "Der Einsichtsuchende hat ein rechtliches Interesse glaubhaft gemacht (§ 2010, § 1953 Abs. 3 Satz 2)";
+    label en unofficial "The person seeking inspection has made a legal interest credible (§ 2010, § 1953 (3) sentence 2)";
+}
+pub relation einsicht_zu_gestatten(e: Erbfall, wer: Person) kind institutional {
+    label de official "Das Nachlassgericht hat die Einsicht des Inventars jedem zu gestatten, der ein rechtliches Interesse glaubhaft macht (§ 2010)";
+    label en unofficial "The probate court must permit inspection of the inventory to anyone making a legal interest credible (§ 2010)";
+}
+pub relation keine_inventarfrist_moeglich(e: Erbfall, p: Person) kind institutional {
+    label de official "Dem Fiskus als gesetzlichem Erben, dem Nachlasspfleger und dem Nachlassverwalter kann eine Inventarfrist nicht bestimmt werden (§ 2011 Satz 1, § 2012 Abs. 1 Satz 1, Abs. 2)";
+    label en unofficial "No inventory period may be fixed for the treasury as statutory heir, the administrator or the curator of the estate (§ 2011 sentence 1, § 2012 (1) sentence 1, (2))";
+}
+pub relation auskunftspflicht_ueber_den_bestand(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Fiskus, der Nachlasspfleger und der Nachlassverwalter sind den Nachlassgläubigern gegenüber verpflichtet, über den Bestand des Nachlasses Auskunft zu erteilen (§ 2011 Satz 2, § 2012 Abs. 1 Satz 2)";
+    label en unofficial "The treasury, the curator and the administrator must inform the creditors about the composition of the estate (§ 2011 sentence 2, § 2012 (1) sentence 2)";
+}
+pub relation verzicht_auf_haftungsbeschraenkung_ausgeschlossen(e: Erbfall, pfleger: Person) kind institutional {
+    label de official "Der Nachlasspfleger kann nicht auf die Beschränkung der Haftung des Erben verzichten (§ 2012 Abs. 1 Satz 3)";
+    label en unofficial "The curator of the estate cannot waive the limitation of the heir's liability (§ 2012 (1) sentence 3)";
+}
+
+@source(BGB_P1993)
+rule Inventarerrichtung(e: Erbfall, p: Person) strict {
+    label de official "Der Erbe ist berechtigt, ein Verzeichnis des Nachlasses (Inventar) bei dem Nachlassgericht einzureichen (Inventarerrichtung, § 1993)";
+    label en unofficial "The heir is entitled to file an inventory of the estate with the probate court (§ 1993)";
+    when erbschaft_angefallen(e, p);
+    then inventarerrichtung_berechtigt(e, p);
+}
+
+@source(BGB_P1994) {
+    rule InventarfristZuBestimmen(e: Erbfall, p: Person, g: Person) strict {
+        label de official "Das Nachlassgericht hat dem Erben auf Antrag eines Nachlassgläubigers zur Errichtung des Inventars eine Frist zu bestimmen (§ 1994 Abs. 1 Satz 1); der Antragsteller hat seine Forderung glaubhaft zu machen (Abs. 2 Satz 1)";
+        label en unofficial "On a creditor's application the probate court must fix a period for drawing up the inventory (§ 1994 (1) sentence 1); the applicant must make his claim credible ((2) sentence 1)";
+        when erbschaft_angefallen(e, p) and inventarfrist_beantragt(e, g) and not_known(keine_inventarfrist_moeglich(e, p));
+        then inventarfrist_zu_bestimmen(e, p);
+    }
+    rule UnbeschraenkteHaftungNachFristablauf(e: Erbfall, p: Person, ende: Date, eingereicht: Date) strict {
+        label de official "Nach dem Ablauf der Frist haftet der Erbe für die Nachlassverbindlichkeiten unbeschränkt, wenn nicht vorher das Inventar errichtet wird (§ 1994 Abs. 1 Satz 2)";
+        label en unofficial "After the period expires the heir is liable without limitation unless the inventory was drawn up before (§ 1994 (1) sentence 2)";
+        when inventarfrist_ende(e, p, ende) and inventar_eingereicht_am(e, p, eingereicht) and eingereicht > ende
+            and not_known(fristbestimmung_unwirksam(e, p));
+        then unbeschraenkte_haftung(e, p);
+    }
+}
+
+@source(BGB_P1995) {
+    rule InventarfristDauerZulaessig(e: Erbfall, p: Person, monate: Integer) strict {
+        label de official "Die Inventarfrist soll mindestens einen Monat, höchstens drei Monate betragen (§ 1995 Abs. 1 Satz 1)";
+        label en unofficial "The inventory period shall be at least one and at most three months (§ 1995 (1) sentence 1)";
+        when inventarfrist_dauer_monate(e, p, monate) and monate >= 1 and monate <= 3;
+        then inventarfrist_dauer_zulaessig(e, p);
+    }
+    rule InventarfristEinMonat(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beginnt mit der Zustellung des Beschlusses, durch den die Frist bestimmt wird (§ 1995 Abs. 1 Satz 2): ein Monat";
+        label en unofficial "The period begins with service of the decision fixing it (§ 1995 (1) sentence 2): one month";
+        when zustellung_des_fristbeschlusses_am(e, p, tag) and inventarfrist_dauer_monate(e, p, 1);
+        then inventarfrist_ende_gehemmt(e, p, add_calendar_period(tag, 1 calendar_month));
+    }
+    rule InventarfristZweiMonate(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beginnt mit der Zustellung des Beschlusses (§ 1995 Abs. 1 Satz 2): zwei Monate";
+        label en unofficial "The period begins with service of the decision (§ 1995 (1) sentence 2): two months";
+        when zustellung_des_fristbeschlusses_am(e, p, tag) and inventarfrist_dauer_monate(e, p, 2);
+        then inventarfrist_ende_gehemmt(e, p, add_calendar_period(tag, 2 calendar_month));
+    }
+    rule InventarfristDreiMonate(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die Frist beginnt mit der Zustellung des Beschlusses (§ 1995 Abs. 1 Satz 2): drei Monate";
+        label en unofficial "The period begins with service of the decision (§ 1995 (1) sentence 2): three months";
+        when zustellung_des_fristbeschlusses_am(e, p, tag) and inventarfrist_dauer_monate(e, p, 3);
+        then inventarfrist_ende_gehemmt(e, p, add_calendar_period(tag, 3 calendar_month));
+    }
+    rule Fristverlaengerung(e: Erbfall, p: Person) strict {
+        label de official "Auf Antrag des Erben kann das Nachlassgericht die Frist nach seinem Ermessen verlängern (§ 1995 Abs. 3)";
+        label en unofficial "On the heir's application the probate court may extend the period in its discretion (§ 1995 (3))";
+        when inventarfrist_zu_bestimmen(e, p) and fristverlaengerung_beantragt(e, p);
+        then fristverlaengerung_zulaessig(e, p);
+    }
+}
+
+@source(BGB_P1996) {
+    rule ZweiWochenNachBeseitigung(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Der Antrag muss binnen zwei Wochen nach der Beseitigung des Hindernisses gestellt werden (§ 1996 Abs. 2)";
+        label en unofficial "The application must be made within two weeks after removal of the impediment (§ 1996 (2))";
+        when hindernis_beseitigt_am(e, p, tag);
+        then zweiwochenfrist_1996_ende(e, p, add_business_days(add_calendar_period(tag, 2 calendar_week), 1 business_day));
+    }
+    rule JahrNachErsterFrist(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Der Antrag muss spätestens vor dem Ablauf eines Jahres nach dem Ende der zuerst bestimmten Frist gestellt werden (§ 1996 Abs. 2)";
+        label en unofficial "The application must be made at the latest before one year after the end of the period first fixed (§ 1996 (2))";
+        when inventarfrist_ende(e, p, tag);
+        then jahresfrist_1996_ende(e, p, add_calendar_period(tag, 1 calendar_year));
+    }
+    rule NeueInventarfrist(e: Erbfall, p: Person, gestellt: Date, zwei: Date, jahr: Date) strict {
+        label de official "War der Erbe ohne sein Verschulden verhindert, das Inventar rechtzeitig zu errichten, so hat ihm auf seinen Antrag das Nachlassgericht eine neue Inventarfrist zu bestimmen (§ 1996 Abs. 1, 2)";
+        label en unofficial "If the heir was prevented without fault from drawing up the inventory in time, the probate court must on his application fix a new period (§ 1996 (1), (2))";
+        when ohne_verschulden_verhindert(e, p) and neue_frist_beantragt_am(e, p, gestellt)
+            and zweiwochenfrist_1996_ende(e, p, zwei) and jahresfrist_1996_ende(e, p, jahr)
+            and gestellt <= zwei and gestellt <= jahr;
+        then neue_inventarfrist_zu_bestimmen(e, p);
+    }
+}
+
+@source(BGB_P1997)
+rule InventarfristEndeNach193(e: Erbfall, p: Person, tag: Date) strict {
+    label de official "Auf den Lauf der Inventarfrist findet die für die Verjährung geltende Vorschrift des § 210 entsprechende Anwendung (§ 1997); innerhalb der Frist ist das Inventar bei dem Nachlassgericht einzureichen, deshalb gilt § 193";
+    label en unofficial "§ 210 on limitation applies accordingly to the running of the inventory period (§ 1997); as the inventory must be filed within the period, § 193 applies";
+    when inventarfrist_ende_gehemmt(e, p, tag);
+    then inventarfrist_ende(e, p, add_business_days(tag, 1 business_day));
+}
+
+@source(BGB_P1998)
+rule InventarfristBeiTodDesErben(e: Erbfall, p: Person, zweite: Date, eigene: Date) strict {
+    label de official "Stirbt der Erbe vor dem Ablauf der Inventarfrist, so endigt die Frist nicht vor dem Ablauf der für die Erbschaft des Erben vorgeschriebenen Ausschlagungsfrist (§ 1998)";
+    label en unofficial "If the heir dies before expiry of the inventory period, it does not end before the disclaimer period for his own estate (§ 1998)";
+    when erbe_vor_inventarfristablauf_gestorben(e, p) and ausschlagungsfrist_des_erbeserben_ende(e, p, zweite)
+        and inventarfrist_ende(e, p, eigene) and zweite > eigene;
+    then inventarfrist_endet_nicht_vor_ausschlagungsfrist(e, p, zweite);
+}
+
+@source(BGB_P1999)
+rule MitteilungAnDasFamiliengericht(e: Erbfall, p: Person) strict {
+    label de official "Steht der Erbe unter elterlicher Sorge oder unter Vormundschaft, so soll das Nachlassgericht dem Familiengericht von der Bestimmung der Inventarfrist Mitteilung machen; fällt die Nachlassangelegenheit in den Aufgabenkreis eines Betreuers, tritt das Betreuungsgericht an seine Stelle (§ 1999)";
+    label en unofficial "If the heir is under parental care or guardianship the probate court shall notify the family court of the fixing of the period; if a custodian's remit covers the matter, the custody court takes its place (§ 1999)";
+    when inventarfrist_zu_bestimmen(e, p) and erbe_unter_sorge_oder_vormundschaft(e, p);
+    then mitteilung_an_das_familiengericht_geschuldet(e, p);
+}
+
+@source(BGB_P2000) {
+    rule FristbestimmungUnwirksamDurchVerwaltung(e: Erbfall, p: Person) strict {
+        label de official "Die Bestimmung einer Inventarfrist wird unwirksam, wenn eine Nachlassverwaltung angeordnet oder das Nachlassinsolvenzverfahren eröffnet wird (§ 2000 Satz 1)";
+        label en unofficial "The fixing of an inventory period becomes ineffective where administration is ordered or insolvency opened (§ 2000 sentence 1)";
+        when inventarfrist_zu_bestimmen(e, p) and nachlassverwaltung_angeordnet(e);
+        then fristbestimmung_unwirksam(e, p);
+    }
+    rule FristbestimmungUnwirksamDurchInsolvenz(e: Erbfall, p: Person) strict {
+        label de official "Während der Dauer des Nachlassinsolvenzverfahrens kann eine Inventarfrist nicht bestimmt werden (§ 2000 Satz 2)";
+        label en unofficial "During the insolvency proceedings no inventory period may be fixed (§ 2000 sentence 2)";
+        when inventarfrist_zu_bestimmen(e, p) and nachlassinsolvenzverfahren_eroeffnet(e);
+        then fristbestimmung_unwirksam(e, p);
+    }
+    rule InventarEntbehrlichNachInsolvenz(e: Erbfall, p: Person) strict {
+        label de official "Ist das Nachlassinsolvenzverfahren durch Verteilung der Masse oder durch einen Insolvenzplan beendet, so bedarf es zur Abwendung der unbeschränkten Haftung der Inventarerrichtung nicht (§ 2000 Satz 3)";
+        label en unofficial "Where the insolvency proceedings ended by distribution or by an insolvency plan, no inventory is needed to avert unlimited liability (§ 2000 sentence 3)";
+        when erbschaft_angefallen(e, p) and insolvenzverfahren_beendet(e);
+        then inventarerrichtung_entbehrlich(e, p);
+    }
+}
+
+@source(BGB_P2001)
+rule InhaltDesInventars(e: Erbfall, p: Person) strict {
+    label de official "In dem Inventar sollen die bei dem Eintritt des Erbfalls vorhandenen Nachlassgegenstände und die Nachlassverbindlichkeiten vollständig angegeben werden; es soll außerdem eine Beschreibung und die Angabe des Wertes enthalten (§ 2001 Abs. 1, 2)";
+    label en unofficial "The inventory shall completely state the estate's objects existing at the devolution and its liabilities, with a description and the value (§ 2001 (1), (2))";
+    when gegenstaende_und_verbindlichkeiten_angegeben(e, p);
+    then inventar_inhaltlich_ordnungsgemaess(e, p);
+}
+
+@source(BGB_P2002)
+rule AufnahmeDurchDenErben(e: Erbfall, p: Person) strict {
+    label de official "Der Erbe muss zu der Aufnahme des Inventars eine zuständige Behörde oder einen zuständigen Beamten oder Notar zuziehen (§ 2002)";
+    label en unofficial "The heir must call in a competent authority, official or notary to draw up the inventory (§ 2002)";
+    when behoerde_oder_notar_zugezogen(e, p);
+    then inventar_formgerecht(e, p);
+}
+
+@source(BGB_P2003) {
+    rule AmtlicheAufnahmeWahrtDieFrist(e: Erbfall, p: Person, gestellt: Date, ende: Date) strict {
+        label de official "Die amtliche Aufnahme des Inventars erfolgt auf Antrag des Erben durch einen vom Nachlassgericht beauftragten Notar; durch die Stellung des Antrags wird die Inventarfrist gewahrt (§ 2003 Abs. 1)";
+        label en unofficial "The official drawing up is done on the heir's application by a notary instructed by the probate court; the application preserves the period (§ 2003 (1))";
+        when amtliche_aufnahme_beantragt_am(e, p, gestellt) and inventarfrist_ende(e, p, ende) and gestellt <= ende;
+        then inventar_rechtzeitig_errichtet(e, p);
+    }
+    rule AuskunftZurAufnahme(e: Erbfall, p: Person, gestellt: Date) strict {
+        label de official "Der Erbe ist verpflichtet, die zur Aufnahme des Inventars erforderliche Auskunft zu erteilen (§ 2003 Abs. 2)";
+        label en unofficial "The heir must provide the information needed to draw up the inventory (§ 2003 (2))";
+        when amtliche_aufnahme_beantragt_am(e, p, gestellt);
+        then auskunftspflicht_zur_inventaraufnahme(e, p);
+    }
+}
+
+@source(BGB_P2004)
+rule BezugnahmeAufVorhandenesInventar(e: Erbfall, p: Person, tag: Date, ende: Date) strict {
+    label de official "Befindet sich bei dem Nachlassgericht schon ein den Vorschriften der §§ 2002, 2003 entsprechendes Inventar, so genügt es, wenn der Erbe vor dem Ablauf der Inventarfrist erklärt, dass es als von ihm eingereicht gelten soll (§ 2004)";
+    label en unofficial "Where the probate court already holds an inventory meeting §§ 2002, 2003, it suffices that the heir declares before expiry of the period that it counts as filed by him (§ 2004)";
+    when bezugnahme_auf_vorhandenes_inventar_am(e, p, tag) and inventarfrist_ende(e, p, ende) and tag <= ende;
+    then inventar_rechtzeitig_errichtet(e, p);
+}
+
+@source(BGB_P2005) {
+    rule UnbeschraenkteHaftungBeiUnrichtigkeit(e: Erbfall, p: Person) strict {
+        label de official "Führt der Erbe absichtlich eine erhebliche Unvollständigkeit der Angabe der Nachlassgegenstände herbei oder bewirkt er in Benachteiligungsabsicht die Aufnahme einer nicht bestehenden Nachlassverbindlichkeit, so haftet er für die Nachlassverbindlichkeiten unbeschränkt (§ 2005 Abs. 1 Satz 1)";
+        label en unofficial "If the heir intentionally brings about a substantial incompleteness or enters a non-existent liability to prejudice creditors, he is liable without limitation (§ 2005 (1) sentence 1)";
+        when erbschaft_angefallen(e, p) and erhebliche_unvollstaendigkeit_absichtlich(p, e);
+        then unbeschraenkte_haftung(e, p);
+    }
+    rule UnbeschraenkteHaftungBeiAuskunftsverweigerung(e: Erbfall, p: Person) strict {
+        label de official "Das Gleiche gilt, wenn der Erbe im Falle des § 2003 die Erteilung der Auskunft verweigert oder absichtlich in erheblichem Maße verzögert (§ 2005 Abs. 1 Satz 2)";
+        label en unofficial "The same applies where the heir refuses or intentionally substantially delays the information under § 2003 (§ 2005 (1) sentence 2)";
+        when auskunftspflicht_zur_inventaraufnahme(e, p) and auskunft_verweigert_oder_verzoegert(e, p);
+        then unbeschraenkte_haftung(e, p);
+    }
+    rule ErgaenzungsfristBeiUnvollstaendigkeit(e: Erbfall, p: Person) strict {
+        label de official "Ist die Angabe der Nachlassgegenstände unvollständig, ohne dass ein Fall des Absatzes 1 vorliegt, so kann dem Erben zur Ergänzung eine neue Inventarfrist bestimmt werden (§ 2005 Abs. 2)";
+        label en unofficial "Where the statement is incomplete without a case of (1), a new inventory period may be fixed for completion (§ 2005 (2))";
+        when angabe_unvollstaendig_ohne_absicht(e, p) and not_known(unbeschraenkte_haftung(e, p));
+        then ergaenzungsfrist_bestimmbar(e, p);
+    }
+}
+
+@source(BGB_P2006) {
+    rule EidesstattlicheVersicherungGeschuldet(e: Erbfall, p: Person, g: Person, tag: Date) strict {
+        label de official "Der Erbe hat auf Verlangen eines Nachlassgläubigers zu Protokoll des Nachlassgerichts an Eides statt zu versichern, dass er die Nachlassgegenstände nach bestem Wissen so vollständig angegeben habe, als er dazu imstande sei (§ 2006 Abs. 1)";
+        label en unofficial "On a creditor's demand the heir must affirm in lieu of oath before the probate court that he stated the objects as completely as he could (§ 2006 (1))";
+        when inventar_eingereicht_am(e, p, tag) and eidesstattliche_versicherung_verlangt(e, g);
+        then eidesstattliche_versicherung_geschuldet(e, p);
+    }
+    rule UnbeschraenkteHaftungBeiVerweigerung(e: Erbfall, p: Person) strict {
+        label de official "Verweigert der Erbe die Abgabe der eidesstattlichen Versicherung, so haftet er dem Gläubiger, der den Antrag gestellt hat, unbeschränkt; das Gleiche gilt beim Nichterscheinen, es sei denn, dass ein Entschuldigungsgrund vorliegt (§ 2006 Abs. 3)";
+        label en unofficial "If the heir refuses the affirmation he is liable without limitation to the applying creditor; the same applies to non-appearance unless there is an excuse (§ 2006 (3))";
+        when eidesstattliche_versicherung_geschuldet(e, p) and eidesstattliche_versicherung_verweigert(e, p)
+            and not_known(entschuldigungsgrund_fuer_nichterscheinen(e, p));
+        then unbeschraenkte_haftung(e, p);
+    }
+}
+
+@source(BGB_P2007)
+rule HaftungBeiMehrerenErbteilen(e: Erbfall, p: Person) strict {
+    label de official "Ist ein Erbe zu mehreren Erbteilen berufen, so bestimmt sich seine Haftung für die Nachlassverbindlichkeiten in Ansehung eines jeden der Erbteile so, wie wenn die Erbteile verschiedenen Erben gehörten (§ 2007 Satz 1)";
+    label en unofficial "Where an heir is called to several shares, his liability for each share is determined as if the shares belonged to different heirs (§ 2007 sentence 1)";
+    when mehrfach_verwandt(e, p);
+    then haftung_je_erbteil_getrennt(e, p);
+}
+
+@source(BGB_P2008)
+rule FristbestimmungBeiGuetergemeinschaft(e: Erbfall, p: Person) strict {
+    label de official "Ist ein in Gütergemeinschaft lebender Ehegatte Erbe und gehört die Erbschaft zum Gesamtgut, so ist die Bestimmung der Inventarfrist nur wirksam, wenn sie auch dem anderen Ehegatten gegenüber erfolgt (§ 2008 Abs. 1 Satz 1)";
+    label en unofficial "Where a spouse in community of property is heir and the inheritance belongs to the joint property, the fixing of the period is effective only if also made vis-à-vis the other spouse (§ 2008 (1) sentence 1)";
+    when guetergemeinschaft_erbschaft_im_gesamtgut(e, p) and fristbestimmung_auch_gegen_den_anderen_ehegatten(e, p);
+    then fristbestimmung_wirksam(e, p);
+}
+
+@source(BGB_P2009) {
+    rule InventarRechtzeitigEingereicht(e: Erbfall, p: Person, tag: Date, ende: Date) strict {
+        label de official "Das Inventar ist rechtzeitig errichtet, wenn es vor dem Ablauf der Inventarfrist eingereicht worden ist (§ 2009, § 1994 Abs. 1 Satz 2)";
+        label en unofficial "The inventory was drawn up in time where it was filed before expiry of the period (§ 2009, § 1994 (1) sentence 2)";
+        when inventar_eingereicht_am(e, p, tag) and inventarfrist_ende(e, p, ende) and tag <= ende
+            and inventar_formgerecht(e, p);
+        then inventar_rechtzeitig_errichtet(e, p);
+    }
+    presumption KeineWeiterenNachlassgegenstaende(e: Erbfall, p: Person) {
+        label de official "Ist das Inventar rechtzeitig errichtet worden, so wird im Verhältnis zwischen dem Erben und den Nachlassgläubigern VERMUTET, dass zur Zeit des Erbfalls weitere Nachlassgegenstände als die angegebenen nicht vorhanden gewesen seien (§ 2009)";
+        label en unofficial "Where the inventory was drawn up in time it is PRESUMED as between heir and creditors that no objects other than those stated existed at the devolution (§ 2009)";
+        when inventar_rechtzeitig_errichtet(e, p);
+        presume vermutung_keine_weiteren_gegenstaende(e, p);
+        unless weitere_gegenstaende_nachgewiesen(e, p);
+    }
+}
+
+@source(BGB_P2010)
+rule EinsichtDesInventars(e: Erbfall, p: Person, wer: Person, tag: Date) strict {
+    label de official "Das Nachlassgericht hat die Einsicht des Inventars jedem zu gestatten, der ein rechtliches Interesse glaubhaft macht (§ 2010)";
+    label en unofficial "The probate court must permit inspection of the inventory to anyone making a legal interest credible (§ 2010)";
+    when inventar_eingereicht_am(e, p, tag) and rechtliches_interesse_glaubhaft_gemacht(e, wer);
+    then einsicht_zu_gestatten(e, wer);
+}
+
+@source(BGB_P2011) {
+    rule KeineInventarfristFuerDenFiskus(e: Erbfall, p: Person) strict {
+        label de official "Dem Fiskus als gesetzlichem Erben kann eine Inventarfrist nicht bestimmt werden (§ 2011 Satz 1)";
+        label en unofficial "No inventory period may be fixed for the treasury as statutory heir (§ 2011 sentence 1)";
+        when fiskus_als_gesetzlicher_erbe(e, p);
+        then keine_inventarfrist_moeglich(e, p);
+    }
+    rule AuskunftspflichtDesFiskus(e: Erbfall, p: Person) strict {
+        label de official "Der Fiskus ist den Nachlassgläubigern gegenüber verpflichtet, über den Bestand des Nachlasses Auskunft zu erteilen (§ 2011 Satz 2)";
+        label en unofficial "The treasury must inform the creditors about the composition of the estate (§ 2011 sentence 2)";
+        when fiskus_als_gesetzlicher_erbe(e, p);
+        then auskunftspflicht_ueber_den_bestand(e, p);
+    }
+}
+
+@source(BGB_P2012) {
+    rule KeineInventarfristFuerDenPfleger(e: Erbfall, pfleger: Person) strict {
+        label de official "Einem nach den §§ 1960, 1961 bestellten Nachlasspfleger kann eine Inventarfrist nicht bestimmt werden; dies gilt auch für den Nachlassverwalter (§ 2012 Abs. 1 Satz 1, Abs. 2)";
+        label en unofficial "No inventory period may be fixed for a curator appointed under §§ 1960, 1961; this also applies to the administrator (§ 2012 (1) sentence 1, (2))";
+        when nachlasspfleger_bestellt(e, pfleger);
+        then keine_inventarfrist_moeglich(e, pfleger);
+    }
+    rule AuskunftspflichtDesPflegers(e: Erbfall, pfleger: Person) strict {
+        label de official "Der Nachlasspfleger ist den Nachlassgläubigern gegenüber verpflichtet, über den Bestand des Nachlasses Auskunft zu erteilen (§ 2012 Abs. 1 Satz 2)";
+        label en unofficial "The curator must inform the creditors about the composition of the estate (§ 2012 (1) sentence 2)";
+        when nachlasspfleger_bestellt(e, pfleger);
+        then auskunftspflicht_ueber_den_bestand(e, pfleger);
+    }
+    rule PflegerKannNichtVerzichten(e: Erbfall, pfleger: Person) strict {
+        label de official "Der Nachlasspfleger kann nicht auf die Beschränkung der Haftung des Erben verzichten (§ 2012 Abs. 1 Satz 3)";
+        label en unofficial "The curator cannot waive the limitation of the heir's liability (§ 2012 (1) sentence 3)";
+        when nachlasspfleger_bestellt(e, pfleger);
+        then verzicht_auf_haftungsbeschraenkung_ausgeschlossen(e, pfleger);
+    }
+}
+
+// --- §§ 2013–2017 Folgen der unbeschränkten Haftung und aufschiebende Einreden ------------------------
+
+pub relation einreden_ausgeschlossen(e: Erbfall, p: Person) kind institutional {
+    label de official "Haftet der Erbe unbeschränkt, so finden die Vorschriften der §§ 1973 bis 1975, 1977 bis 1980, 1989 bis 1992 keine Anwendung und er ist nicht berechtigt, die Anordnung einer Nachlassverwaltung zu beantragen (§ 2013 Abs. 1 Satz 1)";
+    label en unofficial "Where the heir is liable without limitation, §§ 1973 to 1975, 1977 to 1980, 1989 to 1992 do not apply and he may not apply for administration (§ 2013 (1) sentence 1)";
+}
+pub relation dreimonatseinrede_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf der ersten drei Monate nach der Annahme der Erbschaft (§ 2014)";
+    label en unofficial "expiry of the first three months after acceptance of the inheritance (§ 2014)";
+}
+pub relation dreimonatseinrede(e: Erbfall, p: Person, bis: Date) kind institutional {
+    key(e, p);
+    label de official "Der Erbe ist berechtigt, die Berichtigung einer Nachlassverbindlichkeit bis zum Ablauf der ersten drei Monate nach der Annahme der Erbschaft, jedoch nicht über die Errichtung des Inventars hinaus, zu verweigern (§ 2014)";
+    label en unofficial "The heir may refuse to discharge a liability until the first three months after acceptance have elapsed, but not beyond the drawing up of the inventory (§ 2014)";
+}
+pub relation aufgebotsfrist_2015_ende(e: Erbfall, p: Person, tag: Date) kind derived {
+    key(e, p);
+    label de official "Ablauf eines Jahres nach der Annahme der Erbschaft, innerhalb dessen der Antrag auf Einleitung des Aufgebotsverfahrens zu stellen ist (§ 2015 Abs. 1)";
+    label en unofficial "expiry of one year after acceptance within which the application for public notice proceedings must be made (§ 2015 (1))";
+}
+pub relation aufgebotsantrag_zugelassen(e: Erbfall) kind empirical {
+    label de official "Der Antrag auf Einleitung des Aufgebotsverfahrens ist zugelassen (§ 2015 Abs. 1) — festgestellte Tatsache";
+    label en unofficial "The application to institute public notice proceedings has been admitted (§ 2015 (1)) — established fact";
+}
+pub relation aufgebotsverfahren_beendet(e: Erbfall) kind empirical {
+    label de official "Das Aufgebotsverfahren ist beendet; wird der Ausschließungsbeschluss erlassen oder der Antrag zurückgewiesen, so ist es erst mit der Rechtskraft beendet (§ 2015 Abs. 3)";
+    label en unofficial "The public notice proceedings have ended; where the exclusion order is issued or the application dismissed, they end only when the decision becomes final (§ 2015 (3))";
+}
+pub relation aufgebotseinrede(e: Erbfall, p: Person) kind institutional {
+    label de official "Der Erbe ist berechtigt, die Berichtigung einer Nachlassverbindlichkeit bis zur Beendigung des Aufgebotsverfahrens zu verweigern (§ 2015 Abs. 1)";
+    label en unofficial "The heir may refuse to discharge a liability until the public notice proceedings end (§ 2015 (1))";
+}
+pub relation nachlasspfleger_vor_annahme_bestellt_am(e: Erbfall, tag: Date) kind empirical {
+    key(e);
+    label de official "Tag der Bestellung eines Nachlasspflegers zur Verwaltung des Nachlasses vor der Annahme der Erbschaft (§ 2017)";
+    label en unofficial "day of appointment of a curator to administer the estate before acceptance of the inheritance (§ 2017)";
+}
+
+@source(BGB_P2013)
+rule FolgenDerUnbeschraenktenHaftung(e: Erbfall, p: Person) strict {
+    label de official "Haftet der Erbe für die Nachlassverbindlichkeiten unbeschränkt, so finden die Vorschriften der §§ 1973 bis 1975, 1977 bis 1980, 1989 bis 1992 keine Anwendung (§ 2013 Abs. 1 Satz 1)";
+    label en unofficial "Where the heir is liable without limitation, §§ 1973 to 1975, 1977 to 1980, 1989 to 1992 do not apply (§ 2013 (1) sentence 1)";
+    when unbeschraenkte_haftung(e, p);
+    then einreden_ausgeschlossen(e, p);
+}
+
+@source(BGB_P2014) {
+    rule DreimonatsfristAbAnnahme(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Die ersten drei Monate nach der Annahme der Erbschaft (§ 2014)";
+        label en unofficial "The first three months after acceptance of the inheritance (§ 2014)";
+        when annahme_der_erbschaft_am(e, p, tag) and not_known(nachlasspfleger_vor_annahme(e));
+        then dreimonatseinrede_ende(e, p, add_calendar_period(tag, 3 calendar_month));
+    }
+    rule Dreimonatseinrede(e: Erbfall, p: Person, ende: Date) strict {
+        label de official "Der Erbe ist berechtigt, die Berichtigung einer Nachlassverbindlichkeit bis zum Ablauf der ersten drei Monate nach der Annahme der Erbschaft, jedoch nicht über die Errichtung des Inventars hinaus, zu verweigern (§ 2014)";
+        label en unofficial "The heir may refuse discharge until the first three months after acceptance elapse, but not beyond the drawing up of the inventory (§ 2014)";
+        when dreimonatseinrede_ende(e, p, ende) and not_known(inventar_rechtzeitig_errichtet(e, p))
+            and not_known(einreden_ausgeschlossen(e, p));
+        then dreimonatseinrede(e, p, ende);
+    }
+}
+
+@source(BGB_P2015) {
+    rule Jahresfrist2015(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Der Antrag auf Einleitung des Aufgebotsverfahrens ist innerhalb eines Jahres nach der Annahme der Erbschaft zu stellen (§ 2015 Abs. 1)";
+        label en unofficial "The application to institute the public notice proceedings must be made within one year after acceptance (§ 2015 (1))";
+        when annahme_der_erbschaft_am(e, p, tag) and not_known(nachlasspfleger_vor_annahme(e));
+        then aufgebotsfrist_2015_ende(e, p, add_calendar_period(tag, 1 calendar_year));
+    }
+    rule Aufgebotseinrede(e: Erbfall, p: Person, gestellt: Date, ende: Date) strict {
+        label de official "Hat der Erbe den Antrag auf Einleitung des Aufgebotsverfahrens innerhalb eines Jahres nach der Annahme der Erbschaft gestellt und ist der Antrag zugelassen, so ist er berechtigt, die Berichtigung einer Nachlassverbindlichkeit bis zur Beendigung des Aufgebotsverfahrens zu verweigern (§ 2015 Abs. 1)";
+        label en unofficial "If the heir applied within one year after acceptance and the application was admitted, he may refuse discharge until the proceedings end (§ 2015 (1))";
+        when aufgebot_beantragt_am(e, gestellt) and aufgebotsfrist_2015_ende(e, p, ende) and gestellt <= ende
+            and aufgebotsantrag_zugelassen(e) and not_known(aufgebotsverfahren_beendet(e))
+            and not_known(einreden_ausgeschlossen(e, p));
+        then aufgebotseinrede(e, p);
+    }
+}
+
+@source(BGB_P2016) {
+    rule EinredenBeiUnbeschraenkterHaftungAusgeschlossen(e: Erbfall, p: Person, ende: Date) strict {
+        label de official "Die Vorschriften der §§ 2014, 2015 finden keine Anwendung, wenn der Erbe unbeschränkt haftet (§ 2016 Abs. 1)";
+        label en unofficial "§§ 2014, 2015 do not apply where the heir is liable without limitation (§ 2016 (1))";
+        when unbeschraenkte_haftung(e, p) and dreimonatseinrede_ende(e, p, ende);
+        then einreden_ausgeschlossen(e, p);
+    }
+    rule EinredenGegenNichtBetroffeneAusgeschlossen(e: Erbfall, p: Person, v: Nachlassverbindlichkeit) strict {
+        label de official "Das Gleiche gilt, soweit ein Gläubiger nach § 1971 von dem Aufgebot der Nachlassgläubiger nicht betroffen wird (§ 2016 Abs. 2)";
+        label en unofficial "The same applies where a creditor is not affected by the public notice under § 1971 (§ 2016 (2))";
+        when erbschaft_angefallen(e, p) and verbindlichkeit_des_erbfalls(v, e) and pfandglaeubiger_oder_gleichgestellt(v)
+            and not_known(pfandrecht_nach_dem_erbfall_erlangt(e, v));
+        then einrede_gegen_diesen_glaeubiger_ausgeschlossen(e, v);
+    }
+}
+
+pub relation einrede_gegen_diesen_glaeubiger_ausgeschlossen(e: Erbfall, v: Nachlassverbindlichkeit) kind institutional {
+    label de official "Gegen diesen Gläubiger stehen dem Erben die Einreden der §§ 2014, 2015 nicht zu (§ 2016 Abs. 2)";
+    label en unofficial "The heir has no defences under §§ 2014, 2015 against this creditor (§ 2016 (2))";
+}
+pub relation nachlasspfleger_vor_annahme(e: Erbfall) kind derived {
+    label de official "Vor der Annahme der Erbschaft ist zur Verwaltung des Nachlasses ein Nachlasspfleger bestellt worden (§ 2017)";
+    label en unofficial "Before acceptance of the inheritance a curator was appointed to administer it (§ 2017)";
+}
+
+@source(BGB_P2017) {
+    rule NachlasspflegerVorAnnahme(e: Erbfall, tag: Date) strict {
+        label de official "Vor der Annahme der Erbschaft ist zur Verwaltung des Nachlasses ein Nachlasspfleger bestellt worden (§ 2017)";
+        label en unofficial "Before acceptance a curator was appointed to administer the estate (§ 2017)";
+        when nachlasspfleger_vor_annahme_bestellt_am(e, tag);
+        then nachlasspfleger_vor_annahme(e);
+    }
+    rule FristbeginnBeiNachlasspflegschaft(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Wird vor der Annahme der Erbschaft zur Verwaltung des Nachlasses ein Nachlasspfleger bestellt, so beginnen die in § 2014 und in § 2015 Abs. 1 bestimmten Fristen mit der Bestellung (§ 2017): Dreimonatsfrist";
+        label en unofficial "Where a curator is appointed before acceptance, the periods of § 2014 and § 2015 (1) begin with the appointment (§ 2017): three months";
+        when erbschaft_angefallen(e, p) and nachlasspfleger_vor_annahme_bestellt_am(e, tag);
+        then dreimonatseinrede_ende(e, p, add_calendar_period(tag, 3 calendar_month));
+    }
+    rule JahresfristBeiNachlasspflegschaft(e: Erbfall, p: Person, tag: Date) strict {
+        label de official "Wird vor der Annahme der Erbschaft ein Nachlasspfleger bestellt, so beginnt auch die Jahresfrist des § 2015 Abs. 1 mit der Bestellung (§ 2017)";
+        label en unofficial "Where a curator is appointed before acceptance, the one-year period of § 2015 (1) also begins with the appointment (§ 2017)";
+        when erbschaft_angefallen(e, p) and nachlasspfleger_vor_annahme_bestellt_am(e, tag);
+        then aufgebotsfrist_2015_ende(e, p, add_calendar_period(tag, 1 calendar_year));
+    }
+}

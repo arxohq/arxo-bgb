@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 1006 Abs. 1 Satz 2: die Vermutung zugunsten des Besitzers gilt nicht einem früheren Besitzer gegenüber, dem die Sache abhanden gekommen ist — es sei denn, es handelt sich um Geld oder Inhaberpapiere.
+test "§ 1006 Abs. 1 Satz 2: keine Eigentumsvermutung gegenüber dem bestohlenen früheren Besitzer" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": besitzlage_sache(entity_ref("urn:de:bgb:be:h:besitz"), entity_ref("urn:de:bgb:be:h:fahrrad")) { origin case_input; }
+        assert "f2": besitzlage_person(entity_ref("urn:de:bgb:be:h:besitz"), entity_ref("urn:de:bgb:be:h:B")) { origin case_input; }
+        assert "f3": tatsaechliche_gewalt_erlangt_am(entity_ref("urn:de:bgb:be:h:besitz"), @2026-01-10) { origin case_input; }
+        assert "f4": uebt_die_gewalt_fuer_sich_aus(entity_ref("urn:de:bgb:be:h:besitz")) { origin case_input; }
+        assert "f5": eigentuemer_vor_dem_vorgang(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:E")) { origin case_input; }
+        assert "f6": bewegliche_sache(entity_ref("urn:de:bgb:be:h:fahrrad")) { origin case_input; }
+        assert "f7": frueherer_besitzer_der_sache(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:frueherer")) { origin case_input; }
+        assert "f8": dem_frueheren_besitzer_abhanden_gekommen(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:frueherer")) { origin adjudicated; }
+    }
+    evaluate truth(vermutung_des_1006_ausgeschlossen(entity_ref("urn:de:bgb:be:h:fahrrad")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(eigentum_vermutet(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:B")));
+    expect truth_status == FALSE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(herausgabeanspruch_des_frueheren_besitzers(entity_ref("urn:de:bgb:be:h:fahrrad"), entity_ref("urn:de:bgb:be:h:frueherer"), entity_ref("urn:de:bgb:be:h:B")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

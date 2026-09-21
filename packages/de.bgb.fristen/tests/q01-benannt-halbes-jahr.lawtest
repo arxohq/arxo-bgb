@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.fristen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-fristen";
+// § 189 Abs. 1: "ein halbes Jahr" = sechs Monate. Ereignis Donnerstag, 15. Januar 2026; Ende Mittwoch, 15. Juli 2026 (Werktag, keine Verlegung).
+test "§ 189 Abs. 1: ein halbes Jahr sind sechs Monate — Ende am 15. Juli 2026" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_FRISTEN_KALENDER; }
+        assert "e": frist_ereignis(entity_ref("urn:de:bgb:fristen:pilot:q01"), @2026-01-15) { origin case_input; }
+        assert "b": frist_dauer_benannt(entity_ref("urn:de:bgb:fristen:pilot:q01"), HalbesJahr) { origin case_input; }
+    }
+    evaluate truth(frist_dauer_kalender(entity_ref("urn:de:bgb:fristen:pilot:q01"), 6 calendar_month));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(frist_ende(entity_ref("urn:de:bgb:fristen:pilot:q01"), @2026-07-15));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

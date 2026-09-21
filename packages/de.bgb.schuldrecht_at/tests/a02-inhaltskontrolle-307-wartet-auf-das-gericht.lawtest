@@ -1,0 +1,18 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 307 Abs. 1 überlässt die Wertung dem Gericht (Kanal § 47.3): dieselbe
+// Klausel, aber eine, die unter keine Nummer des § 309 fällt. Ohne
+// Feststellung der unangemessenen Benachteiligung ist die Klausel nicht
+// unwirksam — das Recht schweigt (NEITHER) und fragt das Gericht.
+test "§ 307 Abs. 1: ohne Urteil über die unangemessene Benachteiligung schweigt das Recht" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": klausel_des_vertrags(entity_ref("urn:de:bgb:sr-at:a02:k1"), entity_ref("urn:de:bgb:sr-at:a02:v1")) { origin case_input; }
+        assert "a2": abweichende_oder_ergaenzende_regelung(entity_ref("urn:de:bgb:sr-at:a02:k1")) { origin case_input; }
+    }
+    evaluate truth(klausel_unwirksam(entity_ref("urn:de:bgb:sr-at:a02:k1")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == REQUIRES_JUDGMENT;
+    expect judgment_request(unangemessene_benachteiligung, Court);
+}

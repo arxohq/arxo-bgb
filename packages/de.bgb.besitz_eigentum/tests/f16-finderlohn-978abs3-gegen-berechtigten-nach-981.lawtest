@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.besitz_eigentum version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-besitz-eigentum";
+// § 978 Abs. 3 Satz 1: fällt der Versteigerungserlös an den nach § 981 Abs. 1 Berechtigten, besteht gegen ihn ein Finderlohn nach Absatz 2 Satz 1 bis 3 — hier 400 Euro Wert, also die Hälfte von fünf vom Hundert (10 Euro). Satz 2: eigene Dreijahresfrist ab Entstehung (10. Februar 2023 bis Dienstag, den 10. Februar 2026, ohne Verlegung nach § 193, da kein Sonn- oder Feiertag) — als eigenständiges, zeitunabhängiges Ergebnis neben dem Anspruch selbst (D-10-08).
+test "§ 978 Abs. 3: Finderlohn gegen den nach § 981 Abs. 1 Berechtigten und die eigene Dreijahresfrist" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.besitz_eigentum::KALENDER_BUNDESWEIT; deadline_policy BGB_BESITZ_EIGENTUM_KALENDER; }
+        assert "f1": berechtigter_nach_981(entity_ref("urn:de:bgb:be:f16:fund"), entity_ref("urn:de:bgb:be:f16:gemeinde")) { origin adjudicated; }
+        assert "f2": wert_der_fundsache(entity_ref("urn:de:bgb:be:f16:fund"), 400.00 EUR) { origin case_input; }
+        assert "f3": fundsache_ist_kein_tier(entity_ref("urn:de:bgb:be:f16:fund")) { origin case_input; }
+        assert "f4": finder(entity_ref("urn:de:bgb:be:f16:fund"), entity_ref("urn:de:bgb:be:f16:F")) { origin case_input; }
+        assert "f5": finderlohnanspruch_978abs3_entstanden_am(entity_ref("urn:de:bgb:be:f16:fund"), @2023-02-10) { origin case_input; }
+        assert "f6": finderlohnfrist_978abs3(entity_ref("urn:de:bgb:be:f16:fund"), entity_ref("urn:de:bgb:be:f16:frist")) { origin case_input; }
+    }
+    evaluate truth(finderlohnanspruch(entity_ref("urn:de:bgb:be:f16:fund"), entity_ref("urn:de:bgb:be:f16:gemeinde"), 10.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finderlohnanspruch_978abs3_erloschen_am(entity_ref("urn:de:bgb:be:f16:fund"), @2026-02-10));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(finderlohnanspruch_978abs3_ausgeschlossen(entity_ref("urn:de:bgb:be:f16:fund")));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

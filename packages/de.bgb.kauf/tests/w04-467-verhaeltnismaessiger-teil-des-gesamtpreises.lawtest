@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 467 Satz 1: der Dritte hat den Gegenstand des Vorkaufs mit anderen Gegenständen zu einem Gesamtpreis von 1 000,00 € gekauft. Der Wert des Vorkaufsgegenstandes beträgt ein Drittel des Wertes aller Gegenstände; der verhältnismäßige Teil 333,333… € wird EINMAL kaufmännisch auf den Cent gerundet: 333,33 €.
+test "§ 467 Satz 1: der verhältnismäßige Teil beträgt 333,33 €" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": gesamtpreis_betrag(entity_ref("urn:de:bgb:kauf:w04:VK"), 1000.00 EUR) { origin case_input; }
+        assert "f2": wert_des_vorkaufsgegenstandes_in_cent(entity_ref("urn:de:bgb:kauf:w04:VK"), 100000) { origin case_input; }
+        assert "f3": wert_aller_gegenstaende_in_cent(entity_ref("urn:de:bgb:kauf:w04:VK"), 300000) { origin case_input; }
+    }
+    evaluate truth(verhaeltnismaessiger_teil_des_gesamtpreises(entity_ref("urn:de:bgb:kauf:w04:VK"), 333.33 EUR));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(verhaeltnismaessiger_teil_des_gesamtpreises(entity_ref("urn:de:bgb:kauf:w04:VK"), 333.34 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

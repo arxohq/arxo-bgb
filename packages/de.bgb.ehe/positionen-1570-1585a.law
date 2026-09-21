@@ -1,0 +1,17 @@
+language "law.core" version "0.2";
+package de.bgb.ehe version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-ehe";
+
+pub relation position_trigger_1570(ehe: Ehe, berechtigter: Person, pflichtiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zum Betreuungsunterhalt (§ 1570)"; label en unofficial "case input for maintenance for childcare (§ 1570)"; }
+pub relation unterhalt_1570_geschuldet(ehe: Ehe, pflichtiger: Person, berechtigter: Person) kind empirical { label de official "Unterhalt wegen Pflege oder Erziehung des Kindes ist geschuldet (§ 1570)"; label en unofficial "maintenance for childcare is owed (§ 1570)"; }
+pub relation position_trigger_1580(ehe: Ehe, berechtigter: Person, verpflichteter: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Auskunft über Einkommen und Vermögen (§ 1580)"; label en unofficial "case input for information about income and assets (§ 1580)"; }
+pub relation auskunft_1580_geschuldet(ehe: Ehe, verpflichteter: Person, berechtigter: Person) kind empirical { label de official "Auskunft über Einkommen und Vermögen ist geschuldet (§ 1580)"; label en unofficial "information about income and assets is owed (§ 1580)"; }
+pub relation position_trigger_1585a(ehe: Ehe, pflichtiger: Person, tag: Date) kind empirical { label de official "Eingang des Falls zur Sicherheitsleistung für Unterhalt (§ 1585a)"; label en unofficial "case input for security for maintenance (§ 1585a)"; }
+pub relation sicherheit_1585a_geschuldet(ehe: Ehe, pflichtiger: Person) kind empirical { label de official "Sicherheit für die Unterhaltsleistung ist geschuldet (§ 1585a)"; label en unofficial "security for maintenance is owed (§ 1585a)"; }
+
+@source(BGB_P1570)
+rule PositionBetreuungsunterhalt1570(ehe: Ehe, berechtigter: Person, pflichtiger: Person, tag: Date) strict { label de official "Der verpflichtete Ehegatte schuldet Betreuungsunterhalt (§ 1570)"; label en unofficial "The liable spouse owes maintenance for childcare (§ 1570)"; when position_trigger_1570(ehe, berechtigter, pflichtiger, tag); then duty Betreuungsunterhalt1570 { bearer pflichtiger; beneficiary berechtigter; achieve unterhalt_1570_geschuldet(ehe, pflichtiger, berechtigter) during [tag, infinity); }; }
+@source(BGB_P1580)
+rule PositionAuskunft1580(ehe: Ehe, berechtigter: Person, verpflichteter: Person, tag: Date) strict { label de official "Der geschiedene Ehegatte muss auf Verlangen Auskunft erteilen (§ 1580)"; label en unofficial "The divorced spouse must provide information on demand (§ 1580)"; when position_trigger_1580(ehe, berechtigter, verpflichteter, tag); then duty Auskunft1580 { bearer verpflichteter; beneficiary berechtigter; achieve auskunft_1580_geschuldet(ehe, verpflichteter, berechtigter) during [tag, infinity); }; }
+@source(BGB_P1585a)
+rule PositionSicherheit1585a(ehe: Ehe, pflichtiger: Person, tag: Date) strict { label de official "Der Unterhaltspflichtige muss auf Verlangen Sicherheit leisten (§ 1585a)"; label en unofficial "The maintenance obligor must provide security on demand (§ 1585a)"; when position_trigger_1585a(ehe, pflichtiger, tag); then duty Sicherheit1585a { bearer pflichtiger; achieve sicherheit_1585a_geschuldet(ehe, pflichtiger) during [tag, infinity); }; }

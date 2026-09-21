@@ -1,0 +1,24 @@
+language "law.core" version "0.2";
+package de.bgb.bereicherung_delikt version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-bereicherung-delikt";
+// § 818 Abs. 2 und 3: Herausgabe unmöglich, Wert des Erlangten 10.000,00 €, weggefallen 4.000,00 € — geschuldet bleiben 6.000,00 €. Der volle Wert ist NICHT geschuldet.
+test "§ 818 Abs. 2 und 3: Wertersatz abzüglich der weggefallenen Bereicherung" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_DELIKT_JAHR; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_erbracht(entity_ref("urn:de:bgb:bd:b06")) { origin case_input; }
+        assert "f2": etwas_erlangt(entity_ref("urn:de:bgb:bd:b06")) { origin case_input; }
+        assert "f3": ohne_rechtlichen_grund(entity_ref("urn:de:bgb:bd:b06")) { origin case_input; }
+        assert "f4": herausgabe_nicht_moeglich(entity_ref("urn:de:bgb:bd:b06")) { origin case_input; }
+        assert "f5": wert_des_erlangten(entity_ref("urn:de:bgb:bd:b06"), 10000.00 EUR) { origin case_input; }
+        assert "f6": weggefallene_bereicherung(entity_ref("urn:de:bgb:bd:b06"), 4000.00 EUR) { origin case_input; }
+    }
+    evaluate truth(wertersatzpflicht(entity_ref("urn:de:bgb:bd:b06"), 10000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(geschuldeter_betrag(entity_ref("urn:de:bgb:bd:b06"), 6000.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(geschuldeter_betrag(entity_ref("urn:de:bgb:bd:b06"), 10000.00 EUR));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

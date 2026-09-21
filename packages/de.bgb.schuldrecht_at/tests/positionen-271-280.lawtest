@@ -1,0 +1,34 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+
+test "§§ 271, 280: Positionen vor Erfüllung aktiv" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:p271:l"), entity_ref("urn:de:bgb:sr-at:p271:s")) { origin case_input; }
+        assert "f2": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:p271:s"), entity_ref("urn:de:bgb:sr-at:p271:g")) { origin case_input; }
+        assert "f3": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:p271:s"), entity_ref("urn:de:bgb:sr-at:p271:sch")) { origin case_input; }
+        assert "f4": faelligkeit(entity_ref("urn:de:bgb:sr-at:p271:l"), @2026-06-01) { origin case_input; }
+        assert "f5": schuldverhaeltnis_begruendet_am(entity_ref("urn:de:bgb:sr-at:p271:s"), @2026-01-01) { origin case_input; }
+        assert "f6": schadensersatz_wegen_pflichtverletzung(entity_ref("urn:de:bgb:sr-at:p271:s"), entity_ref("urn:de:bgb:sr-at:p271:sch"), entity_ref("urn:de:bgb:sr-at:p271:sch")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(LeistungFaelligkeit271, ACTIVE);
+    expect position(Schadensersatz280, SATISFIED);
+}
+
+test "§§ 271, 280: Leistung bewirkt, Schadensersatz bleibt beobachtbar" {
+    given {
+        context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": leistung_aus_schuldverhaeltnis(entity_ref("urn:de:bgb:sr-at:p271b:l"), entity_ref("urn:de:bgb:sr-at:p271b:s")) { origin case_input; }
+        assert "f2": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:p271b:s"), entity_ref("urn:de:bgb:sr-at:p271b:g")) { origin case_input; }
+        assert "f3": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:p271b:s"), entity_ref("urn:de:bgb:sr-at:p271b:sch")) { origin case_input; }
+        assert "f4": faelligkeit(entity_ref("urn:de:bgb:sr-at:p271b:l"), @2026-06-01) { origin case_input; }
+        assert "f5": leistung_bewirkt(entity_ref("urn:de:bgb:sr-at:p271b:l"), @2026-06-10) { origin case_input; }
+        assert "f6": schuldverhaeltnis_begruendet_am(entity_ref("urn:de:bgb:sr-at:p271b:s"), @2026-01-01) { origin case_input; }
+        assert "f7": schadensersatz_wegen_pflichtverletzung(entity_ref("urn:de:bgb:sr-at:p271b:s"), entity_ref("urn:de:bgb:sr-at:p271b:sch"), entity_ref("urn:de:bgb:sr-at:p271b:sch")) { origin case_input; }
+    }
+    evaluate positions();
+    expect position(LeistungFaelligkeit271, SATISFIED);
+    expect position(Schadensersatz280, SATISFIED);
+}

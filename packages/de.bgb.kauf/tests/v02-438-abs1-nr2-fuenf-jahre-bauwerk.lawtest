@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.kauf version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-kauf";
+// § 438 Abs. 1 Nr. 2 Buchst. a: der Kaufgegenstand ist ein Bauwerk — fünf Jahre ab Ablieferung. Abgeliefert am 30. Juni 2021, Ablauf mit dem 30. Juni 2026. Die andere Seite der Schwelle zeigt v01 (zwei Jahre).
+test "§ 438 Abs. 1 Nr. 2: fünf Jahre beim Bauwerk enden am 30. Juni 2026" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; deadline_policy BGB_KAUF_KALENDER; }
+        assert "f1": verkaeufer(entity_ref("urn:de:bgb:kauf:v02"), entity_ref("urn:de:bgb:kauf:v02:V")) { origin case_input; }
+        assert "f2": kaeufer(entity_ref("urn:de:bgb:kauf:v02"), entity_ref("urn:de:bgb:kauf:v02:K")) { origin case_input; }
+        assert "f3": maengelanspruch(entity_ref("urn:de:bgb:kauf:v02:A"), entity_ref("urn:de:bgb:kauf:v02")) { origin case_input; }
+        assert "f4": bauwerk(entity_ref("urn:de:bgb:kauf:v02")) { origin case_input; }
+        assert "f5": ablieferung_am(entity_ref("urn:de:bgb:kauf:v02"), @2021-06-30) { origin adjudicated; }
+        assert "f6": not grundstueckskauf(entity_ref("urn:de:bgb:kauf:v02")) { origin case_input; }
+        assert "f7": not mangel_in_dinglichem_herausgaberecht(entity_ref("urn:de:bgb:kauf:v02")) { origin case_input; }
+        assert "f8": not mangel_in_eingetragenem_recht(entity_ref("urn:de:bgb:kauf:v02")) { origin case_input; }
+        assert "f9": not mangel_arglistig_verschwiegen(entity_ref("urn:de:bgb:kauf:v02")) { origin adjudicated; }
+    }
+    evaluate truth(frist_ende_438(entity_ref("urn:de:bgb:kauf:v02:A"), @2026-06-30));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(fuenfjahresende_438(entity_ref("urn:de:bgb:kauf:v02:A"), @2026-06-30));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

@@ -1,0 +1,34 @@
+language "law.core" version "0.2";
+package de.bgb.verfuegungen version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verfuegungen";
+
+// § 2325 Abs. 3 Satz 2: seit der Leistung (15.1.2015) sind zehn Jahre verstrichen — die Schenkung bleibt unberücksichtigt: null Zehntel, Ergänzung 0 €.
+test "§ 2325 Abs. 3 Satz 2: Schenkung nach zehn Jahren unberücksichtigt" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_VERFUEGUNGEN_JAHR; calendar "urn:de:corpus:clir:bgb-fristen#KALENDER_BUNDESWEIT"; }
+        assert "f1": de.bgb.erbfolge::erblasser(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:D")) { origin case_input; }
+        assert "f2": de.bgb.erbfolge::erbfall_am(entity_ref("urn:de:bgb:pilot:v04:E"), @2026-03-01) { origin case_input; }
+        assert "f3": de.bgb.erbfolge::familie(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:F")) { origin case_input; }
+        assert "f4": de.bgb.erbfolge::ehe_beim_erbfall(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:EHE")) { origin case_input; }
+        assert "f5": de.bgb.ehe::ehegatten(entity_ref("urn:de:bgb:pilot:v04:EHE"), entity_ref("urn:de:bgb:pilot:v04:D"), entity_ref("urn:de:bgb:pilot:v04:S")) { origin case_input; }
+        assert "f6": de.bgb.erbfolge::lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:S")) { origin case_input; }
+        assert "f7": de.bgb.ehe::kein_ehevertrag(entity_ref("urn:de:bgb:pilot:v04:EHE")) { origin case_input; }
+        assert "f10": de.bgb.erbfolge::abstammung(entity_ref("urn:de:bgb:pilot:v04:F"), entity_ref("urn:de:bgb:pilot:v04:D"), entity_ref("urn:de:bgb:pilot:v04:T")) { origin case_input; }
+        assert "f11": de.bgb.erbfolge::lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:T")) { origin case_input; }
+        assert "f12": durch_verfuegung_von_todes_wegen_ausgeschlossen(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:T")) { origin case_input; }
+        assert "f13": nachlasswert(entity_ref("urn:de:bgb:pilot:v04:E"), 100000.00 EUR) { origin case_input; }
+        assert "f14": schenkung_des_erblassers(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:SCH"), entity_ref("urn:de:bgb:pilot:v04:X")) { origin case_input; }
+        assert "f15": anzusetzender_wert(entity_ref("urn:de:bgb:pilot:v04:SCH"), 40000.00 EUR) { origin case_input; }
+        assert "f16": geleistet_am(entity_ref("urn:de:bgb:pilot:v04:SCH"), @2015-01-15) { origin case_input; }
+        assert "f17": schenkung_nicht_an_ehegatten(entity_ref("urn:de:bgb:pilot:v04:SCH")) { origin case_input; }
+    }
+    evaluate truth(abschmelzung_zehntel(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:SCH"), 0));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(pflichtteilsergaenzung(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:T"), 0.00 EUR));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(schenkung_im_jahr_vor_dem_erbfall(entity_ref("urn:de:bgb:pilot:v04:E"), entity_ref("urn:de:bgb:pilot:v04:SCH"), 10));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+}

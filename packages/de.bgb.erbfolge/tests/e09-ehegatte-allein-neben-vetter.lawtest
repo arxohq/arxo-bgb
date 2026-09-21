@@ -1,0 +1,42 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+// § 1931 Abs. 2: weder Verwandte der ersten oder zweiten Ordnung noch Großeltern vorhanden (Eltern und Großeltern vorverstorben); der Vetter K (Abkömmling der Großeltern) ist Verwandter der dritten Ordnung — der überlebende Ehegatte erhält die ganze Erbschaft, K nichts.
+test "§ 1931 Abs. 2: Ehegatte erhält die ganze Erbschaft neben einem Vetter" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; deadline_policy BGB_ERBFOLGE_KALENDER; calendar KALENDER_BUNDESWEIT; }
+        assert "f1": erblasser(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:D")) { origin case_input; }
+        assert "f2": erbfall_am(entity_ref("urn:de:bgb:pilot:e09:E"), @2026-03-01) { origin case_input; }
+        assert "f3": familie(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:F")) { origin case_input; }
+        assert "f4": ehe_beim_erbfall(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:EHE")) { origin case_input; }
+        assert "f5": de.bgb.ehe::ehegatten(entity_ref("urn:de:bgb:pilot:e09:EHE"), entity_ref("urn:de:bgb:pilot:e09:D"), entity_ref("urn:de:bgb:pilot:e09:S")) { origin case_input; }
+        assert "f6": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:S")) { origin case_input; }
+        assert "f7": de.bgb.ehe::kein_ehevertrag(entity_ref("urn:de:bgb:pilot:e09:EHE")) { origin case_input; }
+        assert "f10": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:M"), entity_ref("urn:de:bgb:pilot:e09:D")) { origin case_input; }
+        assert "f11": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:V"), entity_ref("urn:de:bgb:pilot:e09:D")) { origin case_input; }
+        assert "f12": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:GVv"), entity_ref("urn:de:bgb:pilot:e09:V")) { origin case_input; }
+        assert "f13": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:GMv"), entity_ref("urn:de:bgb:pilot:e09:V")) { origin case_input; }
+        assert "f14": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:GVv"), entity_ref("urn:de:bgb:pilot:e09:O")) { origin case_input; }
+        assert "f15": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:GMv"), entity_ref("urn:de:bgb:pilot:e09:O")) { origin case_input; }
+        assert "f16": abstammung(entity_ref("urn:de:bgb:pilot:e09:F"), entity_ref("urn:de:bgb:pilot:e09:O"), entity_ref("urn:de:bgb:pilot:e09:K")) { origin case_input; }
+        assert "f17": lebt_beim_erbfall(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:K")) { origin case_input; }
+        assert "f18": vorverstorben(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:M")) { origin case_input; }
+        assert "f19": vorverstorben(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:V")) { origin case_input; }
+        assert "f20": vorverstorben(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:GVv")) { origin case_input; }
+        assert "f21": vorverstorben(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:GMv")) { origin case_input; }
+        assert "f22": vorverstorben(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:O")) { origin case_input; }
+    }
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:S"), 1 / 1));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesetzlicher_erbteil(entity_ref("urn:de:bgb:pilot:e09:E"), entity_ref("urn:de:bgb:pilot:e09:K"), 1 / 1));
+    expect truth_status == NEITHER;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(berufene_ordnung(entity_ref("urn:de:bgb:pilot:e09:E"), 3));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(erbschaft_vollstaendig_verteilt(entity_ref("urn:de:bgb:pilot:e09:E")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

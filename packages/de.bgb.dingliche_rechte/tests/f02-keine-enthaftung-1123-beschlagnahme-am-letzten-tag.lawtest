@@ -1,0 +1,19 @@
+language "law.core" version "0.2";
+package de.bgb.dingliche_rechte version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-dingliche-rechte";
+// § 1123 Abs. 2 Satz 1 Halbsatz 2 — eine Seite der Grenze: Die Beschlagnahme erfolgt am 15.03.2026, dem letzten Tag der Jahresfrist. Sie ist „vorher“ im Sinne der Norm; die Haftung dauert fort.
+test "§ 1123 Abs. 2 Satz 1: Beschlagnahme am letzten Tag der Jahresfrist — die Haftung dauert fort" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.dingliche_rechte::KALENDER_BUNDESWEIT; deadline_policy BGB_DINGLICHE_RECHTE_KALENDER; }
+        assert "f1": belastungsgegenstand_grundstueck(entity_ref("urn:de:bgb:dr:f02:hyp"), entity_ref("urn:de:bgb:dr:f02:grundstueck")) { origin case_input; }
+        assert "f2": grundstueck_vermietet_oder_verpachtet(entity_ref("urn:de:bgb:dr:f02:grundstueck")) { origin case_input; }
+        assert "f3": gegenstand_des_grundstuecks(entity_ref("urn:de:bgb:dr:f02:miete"), entity_ref("urn:de:bgb:dr:f02:grundstueck")) { origin case_input; }
+        assert "f4": miet_oder_pachtforderung(entity_ref("urn:de:bgb:dr:f02:miete")) { origin case_input; }
+        assert "f5": faellig_geworden_am(entity_ref("urn:de:bgb:dr:f02:miete"), @2025-03-15) { origin adjudicated; }
+        assert "f6": enthaftungsfrist(entity_ref("urn:de:bgb:dr:f02:miete"), entity_ref("urn:de:bgb:dr:f02:frist")) { origin case_input; }
+        assert "f7": beschlagnahme_am(entity_ref("urn:de:bgb:dr:f02:miete"), @2026-03-15) { origin adjudicated; }
+    }
+    evaluate truth(haftung_dauert_trotz_fristablaufs_fort(entity_ref("urn:de:bgb:dr:f02:miete"), entity_ref("urn:de:bgb:dr:f02:hyp")));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+}

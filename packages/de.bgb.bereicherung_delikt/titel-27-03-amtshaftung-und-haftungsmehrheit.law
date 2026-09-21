@@ -1,0 +1,254 @@
+// --- Titel 27, dritter Teil: Amtspflichtverletzung, gerichtlicher
+// --- Sachverständiger, Haftung mehrerer und Ausgleichung (§§ 839–841)
+//
+// FREMDES RECHT. WELCHE Amtspflicht den Beamten einem Dritten gegenüber trifft,
+// sagt nicht das BGB; ebenso wenig, wer Beamter im haftungsrechtlichen Sinne ist
+// und wann die Haftung nach Art. 34 GG auf den Staat übergeht. Beides ist hier
+// typisierte EINGABE des Falls (SOURCES.json, external), nicht Formalisierung.
+//
+// ZWEI RICHTUNGEN DES § 839 Abs. 1 Satz 2. „Fällt dem Beamten nur Fahrlässigkeit
+// zur Last“ wird nicht als Verneinung des Vorsatzes gebaut (ein klassisches
+// `not` ohne negativen Erzeuger feuert nie), sondern als zwei Regeln: bei
+// festgestelltem Vorsatz haftet der Beamte ohne Weiteres, bei festgestellter
+// Fahrlässigkeit nur, wenn der Fall ausdrücklich angibt, dass der Verletzte
+// nicht auf andere Weise Ersatz zu erlangen vermag.
+
+pub relation beamter(h: Handlung, p: Person) kind empirical {
+    label de official "der Beamte, der die Amtspflicht verletzt hat (§ 839 Abs. 1 Satz 1)";
+    label en unofficial "the public official who breached the official duty (§ 839 (1) sentence 1)";
+}
+pub relation amtspflichtverletzung_gegenueber_drittem(h: Handlung) kind empirical {
+    label de official "Verletzung der dem Beamten einem Dritten gegenüber obliegenden Amtspflicht (§ 839 Abs. 1 Satz 1) — Inhalt der Amtspflicht ist Eingabe des Falls";
+    label en unofficial "breach of the official duty owed by the official to a third party (§ 839 (1) sentence 1) — the content of the duty is an input of the case";
+}
+pub relation anderweitiger_ersatz_nicht_erlangbar(h: Handlung) kind empirical {
+    label de official "der Verletzte vermag nicht auf andere Weise Ersatz zu erlangen (§ 839 Abs. 1 Satz 2) — ausdrückliche Angabe des Falls";
+    label en unofficial "the injured party is unable to obtain compensation in another way (§ 839 (1) sentence 2) — express statement of the case";
+}
+pub relation urteil_in_einer_rechtssache(h: Handlung) kind empirical {
+    label de official "der Beamte hat bei dem Urteil in einer Rechtssache seine Amtspflicht verletzt (§ 839 Abs. 2 Satz 1)";
+    label en unofficial "the official breached his duty in giving judgment in a legal matter (§ 839 (2) sentence 1)";
+}
+pub relation pflichtverletzung_ist_straftat(h: Handlung) kind empirical {
+    label de official "die Pflichtverletzung besteht in einer Straftat (§ 839 Abs. 2 Satz 1) — festgestellte Tatsache";
+    label en unofficial "the breach of duty consists in a criminal offence (§ 839 (2) sentence 1) — established fact";
+}
+pub relation pflichtwidrige_verweigerung_oder_verzoegerung(h: Handlung) kind empirical {
+    label de official "pflichtwidrige Verweigerung oder Verzögerung der Ausübung des Amts (§ 839 Abs. 2 Satz 2)";
+    label en unofficial "wrongful refusal or delay in exercising the office (§ 839 (2) sentence 2)";
+}
+@source(BGB_P839)
+pub external judgment relation rechtsmittel_schuldhaft_unterlassen(h: Handlung) {
+    authority Court;
+    label de official "§ 839 Abs. 3. Der Verletzte hat es vorsätzlich oder fahrlässig unterlassen, den Schaden durch Gebrauch eines Rechtsmittels abzuwenden";
+    label en unofficial "§ 839 (3). The injured party intentionally or negligently failed to avert the damage by making use of a legal remedy";
+}
+
+pub relation haftungsgrund_839(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: Amtspflichtverletzung (§ 839 Abs. 1)";
+    label en unofficial "ground of liability: breach of official duty (§ 839 (1))";
+}
+pub relation richterprivileg(h: Handlung) kind institutional {
+    label de official "Haftungsbeschränkung beim Urteil in einer Rechtssache (§ 839 Abs. 2)";
+    label en unofficial "limitation of liability for judgment in a legal matter (§ 839 (2))";
+}
+pub relation amtshaftung_dem_grunde_nach(h: Handlung) kind institutional {
+    label de official "die Amtshaftung besteht dem Grunde nach (§ 839 Abs. 1 bis 3)";
+    label en unofficial "official liability exists in principle (§ 839 (1) to (3))";
+}
+pub relation haftung_839(h: Handlung, beamter: Person, verletzter: Person) kind institutional {
+    label de official "Verpflichtung des Beamten zum Ersatz des Schadens (§ 839 Abs. 1 Satz 1)";
+    label en unofficial "obligation of the official to compensate the damage (§ 839 (1) sentence 1)";
+}
+
+@source(BGB_P839)
+rule Amtshaftung839Vorsatz(h: Handlung) strict {
+    label de official "Verletzt ein Beamter vorsätzlich die ihm einem Dritten gegenüber obliegende Amtspflicht, so hat er dem Dritten den daraus entstehenden Schaden zu ersetzen (§ 839 Abs. 1 Satz 1)";
+    label en unofficial "If an official intentionally breaches the official duty owed to a third party, he must compensate the third party for the resulting damage (§ 839 (1) sentence 1)";
+    when amtspflichtverletzung_gegenueber_drittem(h) and vorsatz(h) and kausal_verursacht(h);
+    then haftungsgrund_839(h);
+}
+@source(BGB_P839)
+rule Amtshaftung839FahrlaessigkeitSubsidiaer(h: Handlung) strict {
+    label de official "Fällt dem Beamten nur Fahrlässigkeit zur Last, so kann er nur dann in Anspruch genommen werden, wenn der Verletzte nicht auf andere Weise Ersatz zu erlangen vermag (§ 839 Abs. 1 Satz 2)";
+    label en unofficial "If only negligence is attributable to the official, he may be held liable only if the injured party is unable to obtain compensation in another way (§ 839 (1) sentence 2)";
+    when amtspflichtverletzung_gegenueber_drittem(h) and fahrlaessigkeit(h)
+     and anderweitiger_ersatz_nicht_erlangbar(h) and kausal_verursacht(h);
+    then haftungsgrund_839(h);
+}
+
+@source(BGB_P839)
+rule Richterprivileg839Abs2(h: Handlung) defeasible {
+    label de official "Verletzt ein Beamter bei dem Urteil in einer Rechtssache seine Amtspflicht, so ist er für den daraus entstehenden Schaden nur dann verantwortlich, wenn die Pflichtverletzung in einer Straftat besteht; auf eine pflichtwidrige Verweigerung oder Verzögerung der Ausübung des Amts findet diese Vorschrift keine Anwendung (§ 839 Abs. 2)";
+    label en unofficial "If an official breaches his duty in giving judgment in a legal matter, he is responsible only if the breach constitutes a criminal offence; this provision does not apply to a wrongful refusal or delay in exercising the office (§ 839 (2))";
+    when urteil_in_einer_rechtssache(h);
+    unless pflichtverletzung_ist_straftat(h);
+    unless pflichtwidrige_verweigerung_oder_verzoegerung(h);
+    then richterprivileg(h);
+}
+
+@source(BGB_P839)
+rule AmtshaftungDemGrundeNach(h: Handlung) defeasible {
+    label de official "Die Amtshaftung besteht dem Grunde nach, wenn kein Fall des § 839 Abs. 2 vorliegt und der Verletzte den Schaden nicht schuldhaft durch Gebrauch eines Rechtsmittels abzuwenden unterlassen hat (§ 839 Abs. 3)";
+    label en unofficial "Official liability exists in principle where § 839 (2) does not apply and the injured party did not culpably fail to avert the damage by a legal remedy (§ 839 (3))";
+    when haftungsgrund_839(h);
+    unless richterprivileg(h);
+    unless rechtsmittel_schuldhaft_unterlassen(h);
+    then amtshaftung_dem_grunde_nach(h);
+}
+
+@source(BGB_P839)
+rule Haftung839(h: Handlung, b: Person, d: Person) defeasible {
+    label de official "Der Beamte hat dem Dritten den aus der Amtspflichtverletzung entstehenden Schaden zu ersetzen (§ 839 Abs. 1 Satz 1)";
+    label en unofficial "The official must compensate the third party for the damage resulting from the breach of official duty (§ 839 (1) sentence 1)";
+    when amtshaftung_dem_grunde_nach(h) and beamter(h, b) and geschaedigter_dritter(h, d);
+    then haftung_839(h, b, d);
+}
+
+// --- § 839a Haftung des gerichtlichen Sachverständigen ---------------------------------------------
+
+pub relation gerichtlicher_sachverstaendiger(h: Handlung, p: Person) kind empirical {
+    label de official "vom Gericht ernannter Sachverständiger (§ 839a Abs. 1)";
+    label en unofficial "expert appointed by the court (§ 839a (1))";
+}
+pub relation unrichtiges_gutachten(h: Handlung) kind empirical {
+    label de official "der Sachverständige hat ein unrichtiges Gutachten erstattet (§ 839a Abs. 1)";
+    label en unofficial "the expert gave an incorrect opinion (§ 839a (1))";
+}
+pub relation entscheidung_beruht_auf_gutachten(h: Handlung) kind empirical {
+    label de official "einem Verfahrensbeteiligten ist durch eine gerichtliche Entscheidung, die auf diesem Gutachten beruht, ein Schaden entstanden (§ 839a Abs. 1)";
+    label en unofficial "a party to the proceedings suffered damage from a judicial decision based on that opinion (§ 839a (1))";
+}
+pub relation verfahrensbeteiligter(h: Handlung, p: Person) kind empirical {
+    label de official "der geschädigte Verfahrensbeteiligte (§ 839a Abs. 1)";
+    label en unofficial "the injured party to the proceedings (§ 839a (1))";
+}
+@source(BGB_P839a)
+pub external judgment relation grobe_fahrlaessigkeit(h: Handlung) {
+    authority Court;
+    label de official "§ 839a Abs. 1. Der Sachverständige hat das unrichtige Gutachten grob fahrlässig erstattet";
+    label en unofficial "§ 839a (1). The expert gave the incorrect opinion with gross negligence";
+}
+
+pub relation haftungsgrund_839a(h: Handlung) kind institutional {
+    label de official "Haftungsgrund: unrichtiges Gutachten des gerichtlichen Sachverständigen (§ 839a Abs. 1)";
+    label en unofficial "ground of liability: incorrect opinion of a court-appointed expert (§ 839a (1))";
+}
+pub relation sachverstaendigenhaftung_dem_grunde_nach(h: Handlung) kind institutional {
+    label de official "die Haftung des gerichtlichen Sachverständigen besteht dem Grunde nach (§ 839a Abs. 1, Abs. 2)";
+    label en unofficial "the court expert's liability exists in principle (§ 839a (1), (2))";
+}
+pub relation haftung_839a(h: Handlung, sachverstaendiger: Person, beteiligter: Person) kind institutional {
+    label de official "Verpflichtung des Sachverständigen zum Ersatz des Schadens (§ 839a Abs. 1)";
+    label en unofficial "obligation of the expert to compensate the damage (§ 839a (1))";
+}
+
+@source(BGB_P839a)
+rule Sachverstaendigenhaftung839aVorsatz(h: Handlung) strict {
+    label de official "Erstattet ein vom Gericht ernannter Sachverständiger vorsätzlich ein unrichtiges Gutachten, so ist er zum Ersatz des Schadens verpflichtet, der einem Verfahrensbeteiligten durch eine darauf beruhende gerichtliche Entscheidung entsteht (§ 839a Abs. 1)";
+    label en unofficial "If a court-appointed expert intentionally gives an incorrect opinion, he must compensate the damage suffered by a party from a judicial decision based on it (§ 839a (1))";
+    when unrichtiges_gutachten(h) and vorsatz(h) and entscheidung_beruht_auf_gutachten(h);
+    then haftungsgrund_839a(h);
+}
+@source(BGB_P839a)
+rule Sachverstaendigenhaftung839aGrobeFahrlaessigkeit(h: Handlung) strict {
+    label de official "Dasselbe gilt, wenn der Sachverständige das unrichtige Gutachten grob fahrlässig erstattet (§ 839a Abs. 1)";
+    label en unofficial "The same applies if the expert gives the incorrect opinion with gross negligence (§ 839a (1))";
+    when unrichtiges_gutachten(h) and grobe_fahrlaessigkeit(h) and entscheidung_beruht_auf_gutachten(h);
+    then haftungsgrund_839a(h);
+}
+@source(BGB_P839a)
+rule Sachverstaendigenhaftung839aDemGrundeNach(h: Handlung) defeasible {
+    label de official "§ 839 Abs. 3 ist entsprechend anzuwenden (§ 839a Abs. 2): die Haftung des Sachverständigen besteht dem Grunde nach, wenn der Verletzte den Schaden nicht schuldhaft durch Gebrauch eines Rechtsmittels abzuwenden unterlassen hat";
+    label en unofficial "§ 839 (3) applies mutatis mutandis (§ 839a (2)): the expert's liability exists in principle where the injured party did not culpably fail to avert the damage by a legal remedy";
+    when haftungsgrund_839a(h);
+    unless rechtsmittel_schuldhaft_unterlassen(h);
+    then sachverstaendigenhaftung_dem_grunde_nach(h);
+}
+@source(BGB_P839a)
+rule Haftung839a(h: Handlung, s: Person, b: Person) defeasible {
+    label de official "Der Sachverständige haftet dem Verfahrensbeteiligten (§ 839a Abs. 1)";
+    label en unofficial "The expert is liable to the party to the proceedings (§ 839a (1))";
+    when sachverstaendigenhaftung_dem_grunde_nach(h) and gerichtlicher_sachverstaendiger(h, s) and verfahrensbeteiligter(h, b);
+    then haftung_839a(h, s, b);
+}
+
+// --- § 840 Haftung mehrerer, § 841 Ausgleichung bei Beamtenhaftung ---------------------------------
+
+pub relation nebeneinander_verantwortlich(h: Handlung, p: Person) kind empirical {
+    label de official "für den aus einer unerlaubten Handlung entstehenden Schaden nebeneinander verantwortlich (§ 840 Abs. 1)";
+    label en unofficial "responsible side by side for the damage arising from a tort (§ 840 (1))";
+}
+pub relation verpflichteter_nach_831_oder_832(h: Handlung, p: Person) kind empirical {
+    label de official "wer nach den §§ 831, 832 zum Ersatz des von einem anderen verursachten Schadens verpflichtet ist (§ 840 Abs. 2)";
+    label en unofficial "a person liable under §§ 831, 832 for damage caused by another (§ 840 (2))";
+}
+pub relation der_andere_selbst_verantwortlich(h: Handlung, p: Person) kind empirical {
+    label de official "auch der andere ist für den Schaden verantwortlich (§ 840 Abs. 2)";
+    label en unofficial "the other person is also responsible for the damage (§ 840 (2))";
+}
+pub relation aufsichtspflichtiger_im_falle_829(h: Handlung, p: Person) kind empirical {
+    label de official "der Aufsichtspflichtige im Falle des § 829 (§ 840 Abs. 2 Halbsatz 2)";
+    label en unofficial "the supervisor in the case of § 829 (§ 840 (2) half-sentence 2)";
+}
+pub relation verpflichteter_nach_833_bis_838(h: Handlung, p: Person) kind empirical {
+    label de official "wer nach den §§ 833 bis 838 zum Ersatz des Schadens verpflichtet ist (§ 840 Abs. 3)";
+    label en unofficial "a person liable under §§ 833 to 838 (§ 840 (3))";
+}
+pub relation dritter_fuer_den_schaden_verantwortlich(h: Handlung, p: Person) kind empirical {
+    label de official "ein Dritter ist für den Schaden verantwortlich (§ 840 Abs. 3)";
+    label en unofficial "a third party is responsible for the damage (§ 840 (3))";
+}
+pub relation bestellender_beamter(h: Handlung, p: Person) kind empirical {
+    label de official "der Beamte, der vermöge seiner Amtspflicht einen anderen zur Geschäftsführung zu bestellen, zu beaufsichtigen oder bei ihr mitzuwirken hat (§ 841)";
+    label en unofficial "the official who by virtue of his duty must appoint, supervise or concur in another's management of affairs (§ 841)";
+}
+pub relation geschaeftsfuehrer_des_841(h: Handlung, p: Person) kind empirical {
+    label de official "der andere, der den Schaden verursacht hat (§ 841)";
+    label en unofficial "the other person who caused the damage (§ 841)";
+}
+
+pub relation gesamtschuldner(h: Handlung, p: Person) kind institutional {
+    label de official "haftet als Gesamtschuldner (§ 840 Abs. 1)";
+    label en unofficial "liable as a joint and several debtor (§ 840 (1))";
+}
+pub relation im_innenverhaeltnis_allein_verpflichtet(h: Handlung, p: Person) kind institutional {
+    label de official "im Verhältnis der Ersatzpflichtigen zueinander allein verpflichtet (§ 840 Abs. 2 und 3, § 841)";
+    label en unofficial "solely liable as between the persons liable (§ 840 (2) and (3), § 841)";
+}
+
+@source(BGB_P840)
+rule Gesamtschuld840Abs1(h: Handlung, p: Person) strict {
+    label de official "Sind für den aus einer unerlaubten Handlung entstehenden Schaden mehrere nebeneinander verantwortlich, so haften sie als Gesamtschuldner (§ 840 Abs. 1)";
+    label en unofficial "If several persons are responsible side by side for damage arising from a tort, they are liable as joint and several debtors (§ 840 (1))";
+    when nebeneinander_verantwortlich(h, p);
+    then gesamtschuldner(h, p);
+}
+@source(BGB_P840)
+rule Innenverhaeltnis840Abs2(h: Handlung, a: Person, g: Person) strict {
+    label de official "Ist neben demjenigen, welcher nach den §§ 831, 832 zum Ersatz des von einem anderen verursachten Schadens verpflichtet ist, auch der andere für den Schaden verantwortlich, so ist in ihrem Verhältnis zueinander der andere allein verpflichtet (§ 840 Abs. 2 Halbsatz 1)";
+    label en unofficial "Where, alongside the person liable under §§ 831, 832 for damage caused by another, that other is also responsible, then as between them the other is solely liable (§ 840 (2) half-sentence 1)";
+    when verpflichteter_nach_831_oder_832(h, g) and der_andere_selbst_verantwortlich(h, a);
+    then im_innenverhaeltnis_allein_verpflichtet(h, a);
+}
+@source(BGB_P840)
+rule Innenverhaeltnis840Abs2Fall829(h: Handlung, a: Person) strict {
+    label de official "Im Falle des § 829 ist der Aufsichtspflichtige allein verpflichtet (§ 840 Abs. 2 Halbsatz 2)";
+    label en unofficial "In the case of § 829 the supervisor is solely liable (§ 840 (2) half-sentence 2)";
+    when aufsichtspflichtiger_im_falle_829(h, a);
+    then im_innenverhaeltnis_allein_verpflichtet(h, a);
+}
+@source(BGB_P840)
+rule Innenverhaeltnis840Abs3(h: Handlung, d: Person, g: Person) strict {
+    label de official "Ist neben demjenigen, welcher nach den §§ 833 bis 838 zum Ersatz des Schadens verpflichtet ist, ein Dritter für den Schaden verantwortlich, so ist in ihrem Verhältnis zueinander der Dritte allein verpflichtet (§ 840 Abs. 3)";
+    label en unofficial "Where, alongside the person liable under §§ 833 to 838, a third party is responsible, then as between them the third party is solely liable (§ 840 (3))";
+    when verpflichteter_nach_833_bis_838(h, g) and dritter_fuer_den_schaden_verantwortlich(h, d);
+    then im_innenverhaeltnis_allein_verpflichtet(h, d);
+}
+@source(BGB_P841)
+rule Ausgleichung841(h: Handlung, b: Person, a: Person) strict {
+    label de official "Ist ein Beamter, der vermöge seiner Amtspflicht einen anderen zur Geschäftsführung für einen Dritten zu bestellen oder eine solche Geschäftsführung zu beaufsichtigen oder durch Genehmigung von Rechtsgeschäften bei ihr mitzuwirken hat, wegen Verletzung dieser Pflichten neben dem anderen für den von diesem verursachten Schaden verantwortlich, so ist in ihrem Verhältnis zueinander der andere allein verpflichtet (§ 841)";
+    label en unofficial "Where an official who by virtue of his duty must appoint, supervise or concur in another's management of affairs is responsible, alongside that other, for damage caused by him, then as between them the other is solely liable (§ 841)";
+    when bestellender_beamter(h, b) and geschaeftsfuehrer_des_841(h, a) and amtspflichtverletzung_gegenueber_drittem(h);
+    then im_innenverhaeltnis_allein_verpflichtet(h, a);
+}

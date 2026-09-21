@@ -1,0 +1,23 @@
+language "law.core" version "0.2";
+package de.bgb.erbfolge version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-erbfolge";
+
+pub relation position_trigger_1968(e: Erbfall, p: Person, betrag: Money, tag: Date) kind empirical { label de official "Erbenhaftung für Beerdigungskosten nach § 1968"; label en unofficial "heir's liability for funeral costs under § 1968"; }
+pub relation position_trigger_1973(e: Erbfall, p: Person, v: Nachlassverbindlichkeit, tag: Date) kind empirical { label de official "Ausschluss eines Nachlassgläubigers nach § 1973"; label en unofficial "exclusion of an estate creditor under § 1973"; }
+pub relation position_trigger_1990(e: Erbfall, p: Person, v: Nachlassverbindlichkeit, tag: Date) kind empirical { label de official "Dürftigkeit des Nachlasses nach § 1990"; label en unofficial "insufficiency of the estate under § 1990"; }
+pub relation position_trigger_2018(e: Erbfall, erbe: Person, besitzer: Person, tag: Date) kind empirical { label de official "Erbschaftsanspruch nach § 2018"; label en unofficial "claim to the estate under § 2018"; }
+pub relation position_trigger_2034(v: Anteilsverkauf, p: Person, tag: Date) kind empirical { label de official "Vorkaufsfall unter Miterben nach § 2034"; label en unofficial "co-heir pre-emption case under § 2034"; }
+pub relation position_trigger_2050(e: Erbfall, p: Person, z: Zuwendung, tag: Date) kind empirical { label de official "Ausgleichung unter Abkömmlingen nach § 2050"; label en unofficial "equalisation among descendants under § 2050"; }
+
+@source(BGB_P1968)
+rule PositionBeerdigungskosten1968(e: Erbfall, p: Person, betrag: Money, tag: Date) strict { label de official "Der Erbe muss die Beerdigungskosten tragen (§ 1968)"; label en unofficial "The heir must bear funeral costs (§ 1968)"; when position_trigger_1968(e, p, betrag, tag); then duty Beerdigungskosten1968 { bearer p; achieve traegt_beerdigungskosten(e, p, betrag) during [tag, infinity); }; }
+@source(BGB_P1973)
+rule PositionVerweigerung1973(e: Erbfall, p: Person, v: Nachlassverbindlichkeit, tag: Date) strict { label de official "Der Erbe darf die Befriedigung des ausgeschlossenen Gläubigers verweigern (§ 1973)"; label en unofficial "The heir may refuse satisfaction of the excluded creditor (§ 1973)"; when position_trigger_1973(e, p, v, tag); then liberty Verweigerung1973 { holder p; action befriedigung_verweigerbar(e, v); window [tag, infinity); }; }
+@source(BGB_P1990)
+rule PositionDuernftigkeit1990(e: Erbfall, p: Person, v: Nachlassverbindlichkeit, tag: Date) strict { label de official "Der Erbe darf die Befriedigung wegen Dürftigkeit verweigern (§ 1990)"; label en unofficial "The heir may refuse satisfaction due to insufficiency (§ 1990)"; when position_trigger_1990(e, p, v, tag); then liberty Duernftigkeit1990 { holder p; action duerftigkeitseinrede(e, v); window [tag, infinity); }; }
+@source(BGB_P2018)
+rule PositionHerausgabe2018(e: Erbfall, erbe: Person, besitzer: Person, tag: Date) strict { label de official "Der Erbe darf Herausgabe des Erlangten verlangen (§ 2018)"; label en unofficial "The heir may demand surrender of what was obtained (§ 2018)"; when position_trigger_2018(e, erbe, besitzer, tag); then liberty Herausgabe2018 { holder erbe; action herausgabeanspruch_des_erben(e, erbe, besitzer); window [tag, infinity); }; }
+@source(BGB_P2034)
+rule PositionVorkauf2034(v: Anteilsverkauf, p: Person, tag: Date) strict { label de official "Der Miterbe darf sein Vorkaufsrecht ausüben (§ 2034)"; label en unofficial "The co-heir may exercise pre-emption (§ 2034)"; when position_trigger_2034(v, p, tag); then liberty Vorkauf2034 { holder p; action vorkaufsberechtigt(v, p); window [tag, infinity); }; }
+@source(BGB_P2050)
+rule PositionAusgleichung2050(e: Erbfall, p: Person, z: Zuwendung, tag: Date) strict { label de official "Der Abkömmling muss die Ausstattung zur Ausgleichung bringen (§ 2050)"; label en unofficial "The descendant must bring the endowment into equalisation (§ 2050)"; when position_trigger_2050(e, p, z, tag); then duty Ausgleichung2050 { bearer p; achieve zur_ausgleichung_zu_bringen(e, p, z) during [tag, infinity); }; }

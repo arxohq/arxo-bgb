@@ -1,0 +1,145 @@
+// BÜRGERLICHES GESETZBUCH — NABE (BG-01) DER PAKETE de.bgb.*
+//
+// Dieses Paket ist der gemeinsame Kern der vollständigen Formalisierung des
+// geltenden BGB (docs/plans/domains/DE-BGB-FULL-PLAN.ru.md §4.4; DECISION-0319).
+// Es erklärt die Typen, die mehrere Pakete teilen — Personen, Sachen und
+// Tiere, den Anspruch als eigenen Träger, das Schuldverhältnis, die vom Text
+// benannten Gerichte und Behörden — damit ein Anspruch in `fristen`, `kauf`
+// und `erbfolge` dieselbe Sache ist. Normen enthält die Nabe nicht: jeder
+// Paragraph ist genau einmal gepinnt, im Fachpaket, dem sein Bereich gehört.
+//
+// PERSONENTYPEN. `Person` leitet vom Standardtyp `Actor` ab: die Standard-
+// relation `has_role` §43 nimmt nur einen Actor, und der Rechner
+// `calc.kinship` typisiert seine Kanten mit `Actor` — die Personen der Nabe
+// gehen dort ohne Zwillingsentität hinein.
+//
+// ANSPRUCH ALS EIGENER TRÄGER (Plan §4.4). Der Anspruch ist KEIN Untertyp
+// von `calc.obligations::Position`: jene ist eine Buchungsposition eines
+// Journals. Hier geht es um das Rechtsverhältnis selbst — wer von wem was
+// verlangen kann (§ 194 Abs. 1) — mit Grund, Parteien und Entstehungszeit;
+// nur so lassen sich mehrere Ansprüche zwischen denselben Parteien nach Grund
+// und Verjährung unterscheiden.
+//
+// SPRACHE. In den Paketen de.bgb.* nur Deutsch und Englisch (DECISION-0319, Р7):
+// `label de official` trägt den Normtext bzw. die Bezeichnung, `label en unofficial`
+// die Übersetzung.
+//
+// Die öffentliche API dieser Nabe wird nach dem Pilot B1 (Erbfolge)
+// eingefroren: jede Änderung senkt alle Importeure und ihre Locks neu ab —
+// Abschnitt „Eingefrorene API“ in README.md.
+
+language "law.core" version "0.2";
+package de.bgb.core version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-core";
+
+// --- Personen (Buch 1 Abschnitt 1) ---------------------------------------------------------
+
+pub entity Person : Actor {
+    label de official "Person, Rechtssubjekt des bürgerlichen Rechts";
+    label en unofficial "Person, subject of civil law";
+}
+pub entity NatuerlichePerson : Person {
+    label de official "Natürliche Person (§§ 1 ff.)";
+    label en unofficial "Natural person (§§ 1 et seq.)";
+}
+pub entity JuristischePerson : Person {
+    label de official "Juristische Person (§§ 21 ff.)";
+    label en unofficial "Legal person (§§ 21 et seq.)";
+}
+
+// --- Sachen und Tiere (Buch 1 Abschnitt 2) ---------------------------------------------------
+//
+// § 90a: Tiere sind keine Sachen; die für Sachen geltenden Vorschriften sind
+// entsprechend anzuwenden. Der Typ `Tier` ist daher KEIN Untertyp von
+// `Sache`; die entsprechende Anwendung erklärt das Fachpaket
+// `de.bgb.allgemeiner_teil` mit Anker an § 90a, nicht die Typhierarchie.
+
+pub entity Sache {
+    label de official "Sache: körperlicher Gegenstand (§ 90)";
+    label en unofficial "Thing: corporeal object (§ 90)";
+}
+pub entity Tier {
+    label de official "Tier — keine Sache; Vorschriften über Sachen entsprechend anwendbar (§ 90a)";
+    label en unofficial "Animal — not a thing; provisions on things apply mutatis mutandis (§ 90a)";
+}
+
+// --- Schuldverhältnis und Anspruch ------------------------------------------------------------
+
+pub entity Schuldverhaeltnis {
+    label de official "Schuldverhältnis (§ 241): Gläubiger ist berechtigt, von dem Schuldner eine Leistung zu fordern";
+    label en unofficial "Obligation (§ 241): the creditor is entitled to claim performance from the debtor";
+}
+pub entity Anspruch {
+    label de official "Anspruch (§ 194 Abs. 1): das Recht, von einem anderen ein Tun oder Unterlassen zu verlangen";
+    label en unofficial "Claim (§ 194 (1)): the right to demand an act or omission from another";
+}
+
+pub relation schuldverhaeltnis_glaeubiger(s: Schuldverhaeltnis, p: Person) kind empirical {
+    label de official "Gläubiger des Schuldverhältnisses";
+    label en unofficial "creditor of the obligation";
+}
+pub relation schuldverhaeltnis_schuldner(s: Schuldverhaeltnis, p: Person) kind empirical {
+    label de official "Schuldner des Schuldverhältnisses (mehrere bei Gesamtschuld, §§ 420 ff.)";
+    label en unofficial "debtor of the obligation (several in case of joint liability, §§ 420 et seq.)";
+}
+pub relation anspruch_aus_schuldverhaeltnis(a: Anspruch, s: Schuldverhaeltnis) kind empirical {
+    key(a);
+    label de official "Schuldverhältnis, aus dem der Anspruch folgt";
+    label en unofficial "obligation from which the claim arises";
+}
+pub relation anspruchsinhaber(a: Anspruch, p: Person) kind empirical {
+    key(a);
+    label de official "Inhaber des Anspruchs (Gläubiger)";
+    label en unofficial "holder of the claim (creditor)";
+}
+pub relation anspruchsgegner(a: Anspruch, p: Person) kind empirical {
+    label de official "Anspruchsgegner (Schuldner)";
+    label en unofficial "party against whom the claim lies (debtor)";
+}
+pub relation anspruch_geldbetrag(a: Anspruch, betrag: Money) kind empirical {
+    key(a);
+    label de official "Betrag eines auf Geld gerichteten Anspruchs";
+    label en unofficial "amount of a monetary claim";
+}
+pub relation anspruch_entstanden_am(a: Anspruch, tag: Date) kind empirical {
+    key(a);
+    label de official "Tag, an dem der Anspruch entstanden ist (§ 199 Abs. 1 Nr. 1, § 200)";
+    label en unofficial "day on which the claim arose (§ 199 (1) no. 1, § 200)";
+}
+
+// --- Gerichte und Behörden: Vertrag der Urteilsanfrage (DECISION-0194) ---------------------------
+//
+// Das BGB überlässt Wertungen dem Gericht (§ 138 gute Sitten, § 242 Treu und
+// Glauben, § 254 Mitverschulden, „angemessene Frist“, Kindeswohl) und fordert
+// an anderer Stelle FESTGESTELLTE Tatsachen (Kenntnis und ihr Zeitpunkt,
+// § 199 Abs. 1 Nr. 2). Jedes Fachpaket erklärt diese Elemente PRO PARAGRAPH,
+// nie in einem gemeinsamen Katalog:
+//
+//   der Text delegiert eine WERTUNG →
+//       external judgment relation <element>(…) { authority Court; label de official "…"; }
+//       ohne Antwort: REQUIRES_JUDGMENT; Antwort im Fall: origin adjudicated;
+//   der Text verlangt eine FESTGESTELLTE TATSACHE →
+//       relation … kind empirical, im Fall mit origin adjudicated;
+//   die LESARTEN gehen auseinander (§§ 133, 157) →
+//       interpretation … of <Fragment> { status disputed; } in einer Gruppe any_of (§152).
+//
+// Eine Fallaussage, die die rechtliche Schlussfolgerung nachspricht („der
+// Anspruch ist verjährt“), ist verboten: der Lint
+// `evaluative-fact-without-producer` weist sie zurück. Die Nabe liefert nur
+// die vom Text benannte Stelle für Tatsachen, die durch Entscheidung
+// festgestellt sind.
+
+pub enum Gericht {
+    label de official "Gericht oder Behörde, die entscheidet oder feststellt (vom Text benannt)";
+    label en unofficial "Court or authority that rules or records (named by the text)";
+    Amtsgericht,
+    Landgericht,
+    Oberlandesgericht,
+    Bundesgerichtshof,
+    Familiengericht,
+    Nachlassgericht,
+    Betreuungsgericht,
+    Grundbuchamt,
+    Standesamt,
+    Notar
+}

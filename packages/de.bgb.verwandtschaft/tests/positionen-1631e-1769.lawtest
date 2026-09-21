@@ -1,0 +1,38 @@
+language "law.core" version "0.2";
+package de.bgb.verwandtschaft version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-verwandtschaft";
+
+test "§§ 1631e, 1666a, 1745, 1762, 1769: Positionen aktiv" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.verwandtschaft::KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1631e(entity_ref("urn:kin:k1631e"), entity_ref("urn:kin:p1631e"), @2026-01-01) { origin case_input; }
+ assert "b": position_trigger_1666a(entity_ref("urn:kin:k1666a"), entity_ref("urn:kin:p1666a"), @2026-01-01) { origin case_input; }
+ assert "c": position_trigger_1745(entity_ref("urn:kin:a1745"), entity_ref("urn:kin:k1745"), @2026-01-01) { origin case_input; }
+ assert "d": position_trigger_1762(entity_ref("urn:kin:p1762"), entity_ref("urn:kin:a1762"), entity_ref("urn:kin:k1762"), @2026-01-01) { origin case_input; }
+ assert "e": position_trigger_1769(entity_ref("urn:kin:a1769"), entity_ref("urn:kin:k1769"), @2026-01-01) { origin case_input; } }
+ evaluate positions();
+ expect position(Genehmigung1631e, ACTIVE); expect position(Massnahme1666a, ACTIVE); expect position(Annahmeverbot1745, ACTIVE); expect position(Aufhebung1762, ACTIVE); expect position(Annahmeverbot1769, ACTIVE);
+}
+
+test "§§ 1631e, 1666a, 1745, 1762, 1769: Pflichten erfüllt" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.verwandtschaft::KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1631e(entity_ref("urn:kin:k1631e"), entity_ref("urn:kin:p1631e"), @2026-01-01) { origin case_input; }
+ assert "ag": genehmigung_1631e_geschuldet(entity_ref("urn:kin:k1631e")) { origin case_input; }
+ assert "b": position_trigger_1666a(entity_ref("urn:kin:k1666a"), entity_ref("urn:kin:p1666a"), @2026-01-01) { origin case_input; }
+ assert "bg": massnahme_1666a_zulaessig(entity_ref("urn:kin:k1666a")) { origin case_input; }
+ assert "c": position_trigger_1745(entity_ref("urn:kin:a1745"), entity_ref("urn:kin:k1745"), @2026-01-01) { origin case_input; }
+ assert "d": position_trigger_1762(entity_ref("urn:kin:p1762"), entity_ref("urn:kin:a1762"), entity_ref("urn:kin:k1762"), @2026-01-01) { origin case_input; }
+ assert "dg": aufhebung_1762_ausuebbar(entity_ref("urn:kin:p1762"), entity_ref("urn:kin:a1762"), entity_ref("urn:kin:k1762")) { origin case_input; }
+ assert "e": position_trigger_1769(entity_ref("urn:kin:a1769"), entity_ref("urn:kin:k1769"), @2026-01-01) { origin case_input; } }
+ evaluate positions();
+ expect position(Genehmigung1631e, SATISFIED); expect position(Massnahme1666a, SATISFIED); expect position(Annahmeverbot1745, ACTIVE); expect position(Aufhebung1762, ACTIVE); expect position(Annahmeverbot1769, ACTIVE);
+}
+
+test "§§ 1745, 1769: Verbote verletzt" {
+ given { context { legal_time @2026-06-15; decision_time @2026-06-15T09:00:00Z; knowledge_time @2026-06-15T09:00:00Z; timezone "Europe/Berlin"; calendar de.bgb.verwandtschaft::KALENDER_BUNDESWEIT; }
+ assert "a": position_trigger_1745(entity_ref("urn:kin:v1745:A"), entity_ref("urn:kin:v1745:K"), @2026-01-01) { origin case_input; }
+ assert "b": position_trigger_1769(entity_ref("urn:kin:v1769:A"), entity_ref("urn:kin:v1769:K"), @2026-01-01) { origin case_input; }
+ assert "c": annahme_ausgesprochen(entity_ref("urn:kin:v1745:A"), entity_ref("urn:kin:v1745:K")) { origin case_input; }
+ assert "d": annahme_ausgesprochen(entity_ref("urn:kin:v1769:A"), entity_ref("urn:kin:v1769:K")) { origin case_input; } }
+ evaluate positions();
+ expect position(Annahmeverbot1745, VIOLATED); expect position(Annahmeverbot1769, VIOLATED);
+}

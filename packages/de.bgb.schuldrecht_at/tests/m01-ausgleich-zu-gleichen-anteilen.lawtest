@@ -1,0 +1,26 @@
+language "law.core" version "0.2";
+package de.bgb.schuldrecht_at version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-schuldrecht-at";
+// § 426 Abs. 1 Satz 1 mit § 421: drei Gesamtschuldner, Gesamtschuld 10 000,00 EUR.
+// Die Anteile im Innenverhältnis sind gleich: je 1/3 — ein exakter Bruch, keine
+// Dezimalzahl. Der Geldbetrag entsteht einmal, gerundet auf den Cent:
+// 10 000,00 / 3 = 3 333,33 EUR (Politik des Pakets, README „Rundung“).
+test "§ 426 Abs. 1: drei Gesamtschuldner tragen je ein Drittel, 3 333,33 EUR" {
+    given {
+        context { legal_time @2026-09-17; decision_time @2026-09-17T09:00:00Z; knowledge_time @2026-09-17T09:00:00Z; timezone "Europe/Berlin"; calendar KALENDER_BUNDESWEIT; }
+        assert "a1": gesamtschuld_vereinbart_oder_bestimmt(entity_ref("urn:de:bgb:sr-at:m01:s1")) { origin case_input; }
+        assert "a2": de.bgb.core::schuldverhaeltnis_glaeubiger(entity_ref("urn:de:bgb:sr-at:m01:s1"), entity_ref("urn:de:bgb:sr-at:m01:g1")) { origin case_input; }
+        assert "a3": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:m01:s1"), entity_ref("urn:de:bgb:sr-at:m01:p1")) { origin case_input; }
+        assert "a4": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:m01:s1"), entity_ref("urn:de:bgb:sr-at:m01:p2")) { origin case_input; }
+        assert "a5": de.bgb.core::schuldverhaeltnis_schuldner(entity_ref("urn:de:bgb:sr-at:m01:s1"), entity_ref("urn:de:bgb:sr-at:m01:p3")) { origin case_input; }
+        assert "a6": keine_abweichende_bestimmung_der_ausgleichung(entity_ref("urn:de:bgb:sr-at:m01:s1")) { origin case_input; }
+        assert "a7": gesamtschuld_betrag(entity_ref("urn:de:bgb:sr-at:m01:s1"), 10000.00 EUR) { origin case_input; }
+    }
+    evaluate truth(zahl_der_schuldner(entity_ref("urn:de:bgb:sr-at:m01:s1"), 3));
+    expect truth_status == TRUE_ONLY;
+    expect evaluation_status == COMPUTED;
+    evaluate truth(gesamtschuldner(entity_ref("urn:de:bgb:sr-at:m01:s1"), entity_ref("urn:de:bgb:sr-at:m01:p2")));
+    expect truth_status == TRUE_ONLY;
+    evaluate truth(ausgleichsbetrag(entity_ref("urn:de:bgb:sr-at:m01:s1"), entity_ref("urn:de:bgb:sr-at:m01:p2"), 3333.33 EUR));
+    expect truth_status == TRUE_ONLY;
+}

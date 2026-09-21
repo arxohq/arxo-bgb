@@ -1,0 +1,25 @@
+// FÜNFTES BUCH, ABSCHNITTE 1–2 — succession: on death the property passes as a
+// whole to the heirs (§ 1922); statutory heirs of the first order are the
+// descendants (§ 1924); the estate devolves on the called heir with the right
+// to disclaim (§ 1942); the heir is liable for the estate’s debts (§ 1967).
+
+language "law.core" version "0.2";
+package de.bgb_1896 version "0.1.0";
+namespace "urn:de:corpus:clir:bgb-1896";
+
+relation erbfall(erblasser: Persona) kind institutional { label de official "Erbfall"; label en unofficial "the succession is opened by death (§ 1922)"; }
+relation gesetzlicher_erbe_erster_ordnung(erbe: Persona, erblasser: Persona) kind institutional { label de official "gesetzlicher Erbe der ersten Ordnung"; label en unofficial "a descendant is the statutory heir of the first order (§ 1924)"; }
+relation erbschaft_angefallen(erbe: Persona, erblasser: Persona) kind institutional { label de official "Anfall der Erbschaft"; label en unofficial "the estate has devolved on the called heir, without prejudice to the right to disclaim (§ 1942)"; }
+relation gesamtrechtsnachfolge(erbe: Persona, erblasser: Persona) kind institutional { label de official "Vermögen geht als Ganzes über"; label en unofficial "the deceased’s property has passed to the heir as a whole, including claims (§ 1922)"; }
+relation nachlassverbindlichkeit(erblasser: Persona, causa: Causa) kind institutional { label de official "Nachlaßverbindlichkeit"; label en unofficial "a debt of the deceased is an estate liability for which the heir is liable (§ 1967)"; }
+
+@source(BGB_P1922)
+rule Erbfall(d: Persona) strict { label de official "Mit dem Tode einer Person (Erbfall)"; label en unofficial "Death opens the succession (§ 1922)"; when doctrine.ius_privatum::mortuus(d); then erbfall(d); }
+@source(BGB_P1924)
+rule ErsteOrdnung(h: Persona, d: Persona) strict { label de official "Gesetzliche Erben der ersten Ordnung sind die Abkömmlinge des Erblassers"; label en unofficial "Intestate, the deceased’s children are statutory heirs of the first order (§ 1924)"; when erbfall(d) and doctrine.ius_privatum::sine_testamento(d) and doctrine.ius_privatum::filius(h, d); then gesetzlicher_erbe_erster_ordnung(h, d); }
+@source(BGB_P1942)
+rule Anfall(h: Persona, d: Persona) strict { label de official "Die Erbschaft geht auf den berufenen Erben unbeschadet des Rechtes über, sie auszuschlagen"; label en unofficial "The estate devolves on the called heir, without prejudice to the right to disclaim (§ 1942)"; when gesetzlicher_erbe_erster_ordnung(h, d); then erbschaft_angefallen(h, d); }
+@source(BGB_P1922)
+rule Gesamtrechtsnachfolge(h: Persona, d: Persona) strict { label de official "geht deren Vermögen als Ganzes auf eine oder mehrere andere Personen (Erben) über"; label en unofficial "The deceased’s property passes to the heir as a whole (§ 1922)"; when erbschaft_angefallen(h, d); then gesamtrechtsnachfolge(h, d); }
+@source(BGB_P1967)
+rule Nachlassverbindlichkeit(x: Persona, d: Persona, c: Causa) strict { label de official "Der Erbe haftet für die Nachlaßverbindlichkeiten"; label en unofficial "A contractual debt of the deceased is an estate liability (§ 1967)"; when doctrine.ius_privatum::contractus(x, d, c) and erbfall(d); then nachlassverbindlichkeit(d, c); }
