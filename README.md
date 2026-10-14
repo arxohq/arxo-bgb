@@ -1,5 +1,7 @@
 # arxo-bgb.git
 
+[![Smithery](https://smithery.ai/badge/arxohq/de-bgb)](https://smithery.ai/servers/arxohq/de-bgb)
+
 Pinned canon, executable as it stands: source text with provenance, the
 model built over it and the scenarios that check its answers. The norms
 here are data — they are executed by `law`; this repository carries no
