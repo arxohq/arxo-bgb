@@ -1,6 +1,6 @@
 # arxo-bgb.git
 
-[![Smithery](https://smithery.ai/badge/arxohq/de-bgb)](https://smithery.ai/servers/arxohq/de-bgb)
+[![LightNow capabilities](https://lightnow.ai/badge/io.arxo/de-bgb)](https://lightnow.ai/servers/io.arxo/de-bgb)
 
 Pinned canon, executable as it stands: source text with provenance, the
 model built over it and the scenarios that check its answers. The norms
